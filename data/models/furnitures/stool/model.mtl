@@ -1,0 +1,12 @@
+# Blender MTL File: 'Stool.blend'
+# Material Count: 1
+
+newmtl Texture
+Ns 366.666667
+Ka 0.000000 0.000000 0.000000
+Kd 0.640000 0.640000 0.640000
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+map_Kd C:/Blender y Photoshop/X Otros modelos de blender/Pixel art/Stool/Stool texture.png

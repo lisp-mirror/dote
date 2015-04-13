@@ -1,0 +1,56 @@
+## quads
+# depth 6
+# length 1
+# randomize-length 0.0
+# angle 10
+# randomize-angle 0.0
+# radius 0.05
+# colors 1.1 0.0 0.0 1.0, 0.0 1.0 0.0 0.3, 0.0 0.0 1.0 1.0 , 0.27 0.47 0.27 1.0 ;
+# bending-factor 0.0
+# tropism -0.0 -0.3 0.0;
+# texture /texture/test.tga;
+
+# c +-------+ d
+#   |\      |
+#   | \ T2  |
+#   |  \    |
+#   |   \   |
+#   |    \  |
+#   | T1  \ |
+#   |      \|
+#   +-------+ 
+#   a       b
+
+XY_AABB_QUAD = (a a=90.0 
+	     	  (t incr_s=0.0 incr_t=0.0 z- . z++)  
+		     (t incr_s=0.25 incr_t=0.0 . z- : z--) 
+		     (t incr_s=0.0 incr_t=0.25 . z++ z- : z+) 
+		     (t incr_s=0.25 incr_t=0.0 . z+)
+		     (t incr_s=0.25 incr_t=0.25 . z+)
+		     (t incr_s=0.0 incr_t=0.25 .)));
+
+inline XY_AABB_CENTERED_QUAD = (a a=90 %l=0.5 z+ : z- %l=2.0 XY_AABB_QUAD);
+
+inline Y_DIAGONAL_ALIGNED_QUAD = (a a=45 a=45 z- a=90 z+ : z- XY_AABB_QUAD);
+
+Z_CONCAVE_XY_AABB_QUAD = (a a=90.0 
+	  	       	  
+			     (t incr_s=0.0 incr_t=0.0
+			     	%l=0.4 x+ : x-- . x+ %l=2.5
+			     	 z- : z++)
+############################### put a to b <-
+		     	     (t incr_s=0.25 incr_t=0.0 . z- : z--)
+############################### put b to c V
+		     	     (t incr_s=0.0 incr_t=0.25 . z+ : z+)
+############################### put c to b ^ first triangle ends
+			     (t incr_s=0.25 incr_t=0.0 .)
+############################## put b to d ^
+			     (t incr_s=0.25 incr_t=0.25
+			     	%l=0.4 x+ : x-- . x+ %l=2.5
+				z+ : z+)
+############################## put d to c V
+		     	     (t incr_s=0.0 incr_t=0.25 . z++));
+
+inline CONCAVE_QUAD_Y_DIAG_ALIGNED = (a a=45 z- a=90 z+ : z-  Z_CONCAVE_XY_AABB_QUAD);
+
+#inline ROOT = . (a s=0.75 t=0.0 CONCAVE_QUAD_Y_DIAG_ALIGNED);

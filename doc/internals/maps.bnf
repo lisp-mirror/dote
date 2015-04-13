@@ -1,0 +1,177 @@
+LEVEL                      := PACKAGE LEVEL-DEFINE
+
+LEVEL-DEFINE               := '(define-level SEED
+			      		     CLOUDNESS
+					     BUILDINGS-LEVEL
+			      		     EXTERNAL-SCRIPT*
+			   		     TEXTURE-DEFINITION* 
+		           		     TERRAIN-DEFINITION
+					     TREE-DEFINITION+
+					     FURNITURE-DEFINITION+ ')'
+
+TERRAIN-DEFINITION         := GENERATE MAP WITH SIZE '(tiny small medium large huge)'
+			      WITH MOUNTAIN-RATE               '(' RANDOM FLOAT FLOAT ')'
+		       	      WITH MOUNTAIN-Z-HEIGHT-FUNCTION  FREE-SYMBOL
+		       	      WITH MOUNTAIN-W-FUNCTION         FREE-SYMBOL
+		       	      WITH MOUNTAIN-H-FUNCTION         FREE-SYMBOL
+		       	      WITH MOUNTAIN-SIGMA-W-FUNCTION   FREE-SYMBOL
+		       	      WITH MOUNTAIN-SIGMA-H-FUNCTION   FREE-SYMBOL
+                       	      WITH LAKE-RATE                   '(' RANDOM FLOAT FLOAT ')'
+                       	      WITH LAKE-SIZE-FUNCTION          FREE-SYMBOL
+                       	      WITH LABYRINTH-RATE              '(' RANDOM FLOAT FLOAT ')'
+                       	      WITH LABYRINTH-SIZE-FUNCTION     FREE-SYMBOL
+                       	      WITH LABYRINTH-SIGMA-W-FUNCTION  FREE-SYMBOL
+                       	      WITH LABYRINTH-SIGMA-H-FUNCTION  FREE-SYMBOL
+                       	      WITH LABYRINTH-DOOR-FUNCTION     FREE-SYMBOL
+                       	      WITH LABYRINTH-WIN-FUNCTION      FREE-SYMBOL
+
+
+MOUNTAIN-RATE              :=             'mountain-rate'              
+MOUNTAIN-Z-HEIGHT-FUNCTION :=		  'mountain-z-height-function'
+MOUNTAIN-W-FUNCTION        :=		  'mountain-w-function'
+MOUNTAIN-H-FUNCTION        :=		  'mountain-h-function'
+MOUNTAIN-SIGMA-W-FUNCTION  :=		  'mountain-sigma-w-function'
+MOUNTAIN-SIGMA-H-FUNCTION  :=		  'mountain-sigma-h-function'
+LAKE-RATE                  :=		  'lake-rate'  
+LAKE-SIZE-FUNCTION         :=		  'lake-size-function'
+LABYRINTH-RATE             :=		  'labyrinth-rate'
+LABYRINTH-SIZE-FUNCTION    :=		  'labyrinth-size-function'
+LABYRINTH-SIGMA-W-FUNCTION :=		  'labyrinth-sigma-w-function'
+LABYRINTH-SIGMA-H-FUNCTION :=		  'labyrinth-sigma-h-function'
+LABYRINTH-DOOR-FUNCTION    :=		  'labyrinth-door-function'
+LABYRINTH-WIN-FUNCTION     :=		  'labyrinth-win-function'
+
+
+
+SEED                       := SET SEED FREE-STRING
+
+CLOUDNESS                  := SET 'cloud' RANDOM '(clear cloudy covered)'
+
+BUILDINGS-LEVEL            := SET 'buildings-level' ( '(' RANDOM LIST-OF-NUMBERS ')' |
+			      	  		       LIST-OF-NUMBERS )
+                                                      
+EXTERNAL-SCRIPT            := LOAD FREE-STRING
+
+TREE-DEFINITION            := GENERATE TREE-LABEL
+			      ( TREE-FROM-SCRIPT | TREE-FROM-FILE )
+      			      WITH-NORMALMAP-PARAMETERS
+
+TREE-FROM-FILE             := FROM FILE-LABEL PATH
+
+TREE-LABEL                 := 'tree'
+
+TREE-FROM-FILE             := FROM SCRIPT-LABEL PATH
+
+FURNITURE-DEFINITION       := GENERATE FURNITURE-LABEL FROM FURNITURE-FROM-FILE
+
+FURNITURE-FROM-FILE        := FILE-LABEL PATH
+
+FURNITURE-LABEL            := 'furniture'
+
+TEXTURE-DEFINITION         := GENERATE HANDLE-NAME FROM 
+                              (TEXTURE-FROM-FILE | TEXURE-FROM-STRING | 
+			      TEXTURE-FROM-FUNCTION) 
+                              WITH-TAGS
+			      WITH-NORMALMAP-PARAMETERS
+
+TEXTURE-FROM-FILE          := FILE-LABEL PATH
+
+FILE-LABEL                 := 'file'
+
+SCRIPT-LABEL               := 'script'
+
+TEXTURE-FROM-STRING        := STRING-TERMINAL BASE64-STRING
+
+TEXTURE-FROM-FUNCTION      := FUNCTION FUNCTION-NAME FREE-SYMBOL WITH-PARAMETER-CLAUSE
+			      (AND OPTIONAL-CLAUSES)* 
+
+OPTIONAL-CLAUSES           := WITH-POSTPROCESS
+
+WITH-POSTPROCESS           := WITH POSTPROCESS POSTPROCESS-FUNCTION
+
+POSTPROCESS-FUNCTION       := FREE-SYMBOL
+
+WITH-PARAMETER-CLAUSE      := PARAMETER-TERMINAL ARGS
+
+ARGS                       := '(' NUMBER | FREE-SYMBOL | FREE-STRING | RANDOM-CHOICE)+ ')'
+
+RANDOM-CHOICE              := RANDOM (LIST-OF-SYMBOLS | LIST-OF-NUMBERS | LIST-OF-COLORS)
+
+LIST-OF-SYMBOLS            := '(' (FREE-SYMBOL SPACE+)+ ')'
+
+LIST-OF-NUMBERS            := '(' (INTEGER SPACE+)+ ')' | '(' (FLOAT SPACE+)+ ')' 
+
+LIST-OF-COLORS             := '(' (COLOR SPACE+)+ ')' 
+
+COLOR                      := COLOR-PREFIX RR GG BB AA
+
+COLOR-PREFIX               :=  '#g'
+
+RR                         := [0123456789abcdef][0123456789abcdef]
+
+GG                         := [0123456789abcdef][0123456789abcdef]
+
+BB                         := [0123456789abcdef][0123456789abcdef]
+
+AA                         := [0123456789abcdef][0123456789abcdef]
+
+NUMBER                     := INTEGER | FLOAT
+
+INTEGER                    := '0|[1-9][0-9]+|[1-9]'
+
+FLOAT                      := '-?[0-9]+(\\.[0-9]+([eE]-?[0-9]+)?)?'
+
+WITH-TAGS                  := WITH TAGS TAG-LIST
+
+WITH-NORMALMAP-PARAMETERS  := WITH NORMALMAP-PARAMETERS NORMALMAP-PARAMS-LIST
+
+TAG-LIST                   := '(' (TAG SPACE)+ ')
+
+TAG                        := FREE-STRING
+
+TAGS                       := 'tags'
+
+NORMALMAP-PARAMETERS       := 'normalmap-parameters'
+
+NORMALMAP-PARAMS-LIST      := '(' ('ka' float)? ('kd' float)? ('ks' float)? ('roughness' float)?
+                                  ('shininess' float)
+                               ')'
+
+WITH                       := 'with'
+
+GENERATE                   := 'generate'
+
+HANDLE-NAME                := '[a-z,0-9,\-]+'
+
+RANDOM                     := 'random'
+
+SET                        := 'set'
+
+LOAD                       := 'load'
+
+SEED                       := 'seed'
+
+FROM                       := 'from'
+
+PACKAGE                    := "(in-package :level-config)"
+
+SPACE                      := ' '
+
+PATH                       := FREE-STRING
+
+FREE-STRING                := '\"[[:alpha:]]+\"'
+
+FREE-SYMBOL                := '[[:alpha:]]+'
+
+STRING-TERMINAL            := 'string'
+
+PARAMETERS-TERMINAL        := 'parameters'
+
+BASE-64-STRING             := \" [ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=]+ \"
+
+FUNCTION                   := 'function'
+
+POSTPROCESS                := 'postprocess'
+
+SIZE                       := 'size'
+

@@ -1,0 +1,389 @@
+;; dawn of the Era: a tactical game.
+;; Copyright (C) 2015  cage
+
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+(in-package :shaders-utils)
+
+(alexandria:define-constant +attribute-position-location+        0 :test #'=)
+
+(alexandria:define-constant +attribute-normal-location+          4 :test #'=)
+
+(alexandria:define-constant +attribute-tangent-location+         8 :test #'=)
+
+(alexandria:define-constant +attribute-texture-location+        12 :test #'=)
+
+;; for terrain decals (roads etc...)
+(alexandria:define-constant +attribute-texture-decals-location+ 13 :test #'=)
+
+(alexandria:define-constant +texture-unit-diffuse+               0 :test #'=)
+
+(alexandria:define-constant +texture-unit-normalmap+             1 :test #'=)
+
+(alexandria:define-constant +texture-unit-projector+             4 :test #'=)
+
+(alexandria:define-constant +texture-unit-clouds-1+              1 :test #'=)
+
+(alexandria:define-constant +texture-unit-clouds-2+              2 :test #'=)
+
+(alexandria:define-constant +texture-unit-clouds-3+              3 :test #'=)
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun get-shader-source (name)
+    (filesystem-utils:slurp-file (res:get-resource-file name +shaders-resource+))))
+
+
+;; (defvar *shader-dict*
+;;   '((:solid
+;;      (:uniforms ((x "x") (y "y")))
+;;      (:shaders
+;;       :vertex-shader "..."
+;;       :fragment-shader "..."))))
+
+(defun compile-and-check-shader (shader source)
+  (gl:shader-source shader source)
+  (gl:compile-shader shader)
+  (unless (gl:get-shader shader :compile-status)
+    (gl:get-shader-info-log shader)))
+
+(defun compile-and-link-program (&rest shaders)
+  "(compile-and-link-program :vertex-shader STRING :fragment-shader STRING ...)"
+  (let (compiled-shaders)
+    (loop for type in shaders by #'cddr
+          for text in (cdr shaders) by #'cddr
+          do (let ((shader (gl:create-shader type)))
+               (alexandria:when-let ((log (compile-and-check-shader shader text)))
+                 (format *error-output* "Compile Log for ~A:~%~A~%" type log))
+               (push shader compiled-shaders)))
+    (let ((program (gl:create-program)))
+      (if (= 0 program)
+          (progn
+            (loop for shader in compiled-shaders
+                  do (gl:delete-shader shader))
+            (error "Error creating program"))
+          (progn
+            (loop for shader in compiled-shaders
+                  do (gl:attach-shader program shader))
+            (gl:link-program program)
+            (let ((log (gl:get-program-info-log program)))
+              (unless (string= "" log)
+                (format *error-output* "Link Log:~%~A~%" log)))
+            (loop for shader in compiled-shaders
+                  do (gl:detach-shader program shader)
+                     (gl:delete-shader shader))))
+      program)))
+
+(defclass program ()
+  ((name
+    :initform nil
+    :initarg :name)
+   (id
+    :initform nil)
+   (uniforms
+    :initform (make-hash-table :test 'equal))))
+
+(defclass shader-dictionary ()
+  ((programs
+    :initform (make-hash-table))
+   (active-program
+    :initform nil)))
+
+(defgeneric preprocess-program-entry (type entry program))
+
+(defgeneric postprocess-program-entry (type entry program))
+
+(defmethod preprocess-program-entry (type entry program))
+
+(defmethod postprocess-program-entry (type entry program))
+
+(defmethod interfaces:destroy ((object program))
+  (with-slots (id) object
+    (gl:delete-program id)))
+
+(defmethod interfaces:destroy ((object shader-dictionary))
+  (with-slots (programs) object
+    (loop for program being the hash-values in programs do
+	 (interfaces:destroy program))))
+
+(defmethod preprocess-program-entry ((type (eql :shaders)) entry program)
+  (let ((p (apply #'compile-and-link-program entry)))
+    (gl:use-program p)
+    (with-slots (id) program
+      (setf id p))))
+
+(defun symbol-to-uniform (symbol)
+  (substitute #\_ #\- (string-downcase (symbol-name symbol))))
+
+(defmethod postprocess-program-entry ((type (eql :uniforms)) entry program)
+  (with-slots (id uniforms) program
+    (loop for uniform in entry
+          as symbol = (if (symbolp uniform) uniform (car uniform))
+          as name = (if (or (symbolp uniform)
+                            (not (cadr uniform)))
+                        (symbol-to-uniform uniform)
+                        (cadr uniform))
+          as loc = (gl:get-uniform-location id name)
+          do (setf (gethash symbol uniforms) loc))))
+
+(defun find-program (dictionary name)
+  (with-slots (programs) dictionary
+    (gethash name programs)))
+
+(defun find-uniform (dictionary program name)
+  (with-slots (uniforms) (find-program dictionary program)
+    (gethash name uniforms)))
+
+(defun compile-shader-dictionary (dictionary)
+  "Input is a well-formatted list of shaders.  Returns a new
+SHADER-DICTIONARY object.  This must be called with a valid, active
+GL-CONTEXT.  The result is only valid while that GL-CONTEXT is
+valid."
+  (let ((sd (make-instance 'shader-dictionary)))
+    (with-slots (programs) sd
+      (loop for program-spec in dictionary
+            as name = (car program-spec)
+            as program = (make-instance 'program :name name)
+            do (setf (gethash name programs) program)
+               (loop for entry in (cdr program-spec)
+                     do (preprocess-program-entry
+                         (car entry) (cdr entry) program))
+               (loop for entry in (cdr program-spec)
+                     do (postprocess-program-entry
+                         (car entry) (cdr entry) program))))
+    sd))
+
+(defun use-program (dict program)
+  "Set program named `PROGRAM` in `DICT` as the active program."
+  (with-slots (active-program) dict
+    (let ((p (find-program dict program)))
+      (with-slots (id) p
+        (setf active-program p)
+        (gl:use-program id)))))
+
+(defmacro with-uniform-location ((var name) dict &body body)
+  `(with-slots (active-program) ,dict
+     (with-slots (uniforms) active-program
+       (let ((,var (gethash ,name uniforms)))
+         ,@body))))
+
+(declaim (inline uniformi uniformf uniformfv uniform-matrix))
+(defun uniformi (dict name x &optional y z w)
+  "Set the value for uniform with name `NAME` in the
+active program (set by sdk2.kit:use-program)."
+  (with-uniform-location (u name) dict
+    (cond
+      (w (%gl:uniform-4i u x y z w))
+      (z (%gl:uniform-3i u x y z))
+      (y (%gl:uniform-2i u x y))
+      (x (%gl:uniform-1i u x)))))
+
+(defun uniformf (dict name x &optional y z w)
+  "Set the value for uniform with name `NAME` in the
+active program (set by sdk2.kit:use-program)."
+  (with-uniform-location (u name) dict
+    (cond
+      (w (%gl:uniform-4f u x y z w))
+      (z (%gl:uniform-3f u x y z))
+      (y (%gl:uniform-2f u x y))
+      (x (%gl:uniform-1f u x)))))
+
+(defun uniformfv (dict name a)
+  (with-uniform-location (u name) dict
+    (gl:uniformfv u a)))
+
+(defun uniform-matrix (dict name dim matrices &optional (transpose t))
+  (with-uniform-location (u name) dict
+    (gl:uniform-matrix u dim matrices transpose)))
+
+(defparameter *shaders-library*
+  `((:terrain
+     (:uniforms
+      ;; fragment
+      :height-texture-thrs
+      :texture-terrain-level-1
+      :texture-terrain-level-2
+      :texture-terrain-level-3
+      :texture-terrain-rock-level-1
+      :texture-terrain-rock-level-2
+      :texture-soil-decal
+      :texture-roads-decal
+      :texture-building-decal
+      :scale-building-text-coord
+      :scale-road-text-coord
+      :scale-soil-text-coord
+      :decals-weights
+      :light-pos
+      :ia
+      :id
+      :is
+      :ka
+      :kd
+      :ks
+      :shine
+      ;; vertex
+      :terrain-size
+      :clip-plane
+      :modelview-matrix
+      :proj-matrix)
+     (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
+               :vertex-shader   ,(get-shader-source "terrain.vert")
+	       :fragment-shader ,(get-shader-source "terrain.frag")))
+    (:water
+     (:uniforms :light-pos
+		:ia
+		:id
+		:is
+		:ka
+		:kd
+		:ks
+		:shine
+		:time
+		:wave-ampl
+		:wave-freq
+		:modelview-matrix
+		:proj-matrix
+		:proj-texture-matrix
+		:texture-object)
+     (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
+	       :vertex-shader   ,(get-shader-source "water.vert")
+	       :fragment-shader ,(get-shader-source "water.frag")))
+    (:tree
+     (:uniforms :light-pos
+		:ia
+		:id
+		:is
+		:ka
+		:kd
+		:ks
+		:shine
+		:time
+		:modelview-matrix
+		:proj-matrix
+		:texture-object)
+     (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
+	       :vertex-shader   ,(get-shader-source "tree.vert")
+	       :fragment-shader ,(get-shader-source "tree.frag")))
+    (:mesh-bump
+     (:uniforms :light-pos
+		:ia
+		:id
+		:is
+		:ka
+		:kd
+		:ks
+		:shine
+		:modelview-matrix
+		:proj-matrix
+		:texture-object
+		:normal-map)
+     (:shaders :vertex-shader   ,(get-shader-source "bump.vert")
+               :vertex-shader   ,(get-shader-source "mesh-bump.vert")
+	       :fragment-shader ,(get-shader-source "mesh-bump.frag")))
+    (:building-floor
+     (:uniforms :light-pos
+		:ia
+		:id
+		:is
+		:ka
+		:kd
+		:ks
+		:shine
+		:modelview-matrix
+		:proj-matrix
+		:texture-object
+		:normal-map
+		:scale-text-coord)
+     (:shaders :vertex-shader   ,(get-shader-source "bump.vert")
+               :vertex-shader   ,(get-shader-source "building-floor.vert")
+	       :fragment-shader ,(get-shader-source "building-floor.frag")))
+
+    (:mesh-ads
+     (:uniforms :light-pos
+		:ia
+		:id
+		:is
+		:ka
+		:kd
+		:ks
+		:shine
+		:modelview-matrix
+		:proj-matrix
+		:texture-object
+		:scale-text-coord)
+     (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
+	       :vertex-shader   ,(get-shader-source "mesh-ads.vert")
+	       :fragment-shader ,(get-shader-source "mesh-ads.frag")))
+    (:mesh-debug
+     (:uniforms :out-color
+		:modelview-matrix
+		:proj-matrix)
+     (:shaders :vertex-shader   ,(get-shader-source "mesh-debug.vert")
+	       :fragment-shader ,(get-shader-source "mesh-debug.frag")))
+    (:wall-decorated
+     (:uniforms :light-pos
+		:ia
+		:id
+		:is
+		:ka
+		:kd
+		:ks
+		:shine
+		:modelview-matrix
+		:proj-matrix
+		:proj-texture-matrix
+		:texture-object
+		:texture-projector)
+     (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
+	       :vertex-shader   ,(get-shader-source "wall-decorated.vert")
+	       :fragment-shader ,(get-shader-source "wall-decorated.frag")))
+    (:skydome
+     (:uniforms :modelview-matrix
+		:proj-matrix
+		:proj-texture-matrix
+		:texture-object
+		:texture-clouds-1
+		:texture-clouds-2
+		:texture-clouds-3
+		:texture-smoke
+		:traslation-clouds-speed
+		:weather-type
+		:sky-color
+		:ia
+		:ka)
+     (:shaders :vertex-shader   ,(get-shader-source "skydome.vert")
+	       :fragment-shader ,(get-shader-source "skydome.frag")))
+    (:gui
+     (:uniforms :modelview-matrix
+		:proj-matrix
+		:texture-object
+		:ia)
+     (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
+	       :fragment-shader ,(get-shader-source "gui.frag")))
+    (:gui-naked-button
+     (:uniforms :modelview-matrix
+		:proj-matrix
+		:texture-object
+		:texture-overlay
+		:ia)
+     (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
+	       :fragment-shader ,(get-shader-source "gui-naked-button.frag")))))
+
+(defun compile-library ()
+  (let ((*error-output* (make-string-output-stream)))
+    (handler-case
+	(compile-shader-dictionary *shaders-library*)
+      (error ()
+	(progn
+	  (misc:dbg "error compiling shaders ~a" (get-output-stream-string *error-output*))
+	  nil)))))

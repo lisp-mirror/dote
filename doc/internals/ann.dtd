@@ -1,0 +1,14 @@
+<!ELEMENT ann (layer+)>
+
+<!ELEMENT layer (neuron+)>
+
+<!ELEMENT neuron (weight+)>
+
+<!ELEMENT weight (#CDATA)>
+
+<!ATTLIST ann 
+	  activation-function (sigmoid|step) "sigmoid" #REQUIRED
+	  activation-function-param CDATA #REQUIRED>
+
+
+

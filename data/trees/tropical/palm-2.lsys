@@ -1,0 +1,85 @@
+depth 6
+length 1.0
+randomize-length 0.0
+angle 30.0
+randomize-angle 0.0
+radius 0.35
+colors 1.1 0.0 0.0 1.0, 0.0 1.0 0.0 0.3, 0.0 0.0 1.0 1.0, 0.27 0.47 0.27 1.0 ;
+bending-factor 0.08
+tropism -1.2 0.0 0.0;
+texture /texture/palm_2/texture.tga;
+polygon-magnetic-range 0.2
+section-magnetic-range 0.3
+
+XY_AABB_QUAD = (a a=90.0 
+	     	   (t incr_s=0.0   incr_t=0.0  z- . z++)  
+		   (t incr_s=0.125 incr_t=0.0  . z- %l=2.0 : z--) 
+		   (t incr_s=0.0   incr_t=0.25 . z++ z- %l=0.5 : z+)
+		   (t incr_s=0.125 incr_t=0.0  %l=2.0 . z+)
+		   (t incr_s=0.125 incr_t=0.25 %l=0.5 . z+)
+		   (t incr_s=0.0   incr_t=0.25 %l=2.0 .));
+	  
+R_SUBLEAF = (a 
+	     (a s=0.75 incr_t=0.0 a=22.5 y+ XY_AABB_QUAD)
+	      a=22.5 y+ a=90.0 z- : z+
+       	     (a s=0.875 incr_t=0.0 a=22.5 y+ XY_AABB_QUAD));
+
+L_SUBLEAF = (a 
+	     a=22.5 y- a=90.0 z+ : z-
+	     (a s=0.625 incr_t=0.0 XY_AABB_QUAD)
+	     a=22.5 y- a=90.0 z+ : z-
+	     (a s=0.5 incr_t=0.0 XY_AABB_QUAD));
+
+LEAF chance=0.5 = (a (m t=0.0 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+           	     a=22.5 
+	   	     x- t=0.25 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+	   	     x- t=0.50 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+   	   	     x- t=0.75 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5));
+
+LEAF chance=0.5 = (a (m t=0.0 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+      	   	     a=30 
+	   	     x- t=0.25 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+	   	     x- t=0.50 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+   	   	     x- t=0.75 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5));
+
+# LEAF chance=0.5 = (a (m t=0.0 R_SUBLEAF L_SUBLEAF  : 
+#            	     	a=22.5 
+# 	   	     	x- t=0.25 R_SUBLEAF L_SUBLEAF : 
+# 	   	     	x- t=0.50 R_SUBLEAF L_SUBLEAF : 
+#    	   	     	x- t=0.75 R_SUBLEAF L_SUBLEAF  ));
+
+# LEAF chance=0.5 = (a (m t=0.0 R_SUBLEAF L_SUBLEAF  : 
+#       	   	     	a=30 
+# 	   	     	x- t=0.25 R_SUBLEAF L_SUBLEAF : 
+# 	   	     	x- t=0.50 R_SUBLEAF L_SUBLEAF : 
+#    	   	     	x- t=0.75 R_SUBLEAF L_SUBLEAF  ));
+
+LEAFS chance=0.5 =  (a a=30 x- LEAF) 
+      		    (a a=10 y+
+      		       (a a=40 x- LEAF));
+
+LEAFS chance=0.25 =  (a a=20 x- LEAF)
+      		     (a a=10 y-
+		     	(a a=60 x- LEAF));
+
+LEAFS chance=0.25 =  (a a=10 x- LEAF)
+      		     (a a=10 y+
+	             	(a a=70 x- LEAF));
+
+LEAFS_GROUP =   a=90.0 
+	       (a LEAFS)
+	       (a y- LEAFS)
+	       (a y-- LEAFS)
+	       (a y--- LEAFS);
+
+TRUNK_SIN = a=12.0 z- sec_s=0.0 sec_t=0.0 sec_t_end=0.5 . %t=1.25 TRUNK_SIN;
+
+TRUNK_CURVE chance=0.5 = a=3.5 z- sec_s=0.0 sec_t=0.0 sec_t_end=0.5 . TRUNK_CURVE;
+
+TRUNK_CURVE chance=0.5 = a=3.5 z+ sec_s=0.0 sec_t=0.0 sec_t_end=0.5 . TRUNK_CURVE;
+
+TRUNK chance=0.99 = TRUNK_SIN TRUNK_SIN;
+
+TRUNK chance=0.01 = TRUNK_CURVE TRUNK_CURVE;
+
+ROOT = TRUNK %l=0.6 LEAFS_GROUP;

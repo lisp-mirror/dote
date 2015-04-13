@@ -1,0 +1,203 @@
+# Italian translations for random-map package.
+# Copyright (C) 2015 cage
+# This file is distributed under the same license as the random-map package.
+# cage <cage@katamail.com>, 2015.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: dote 0.0.1\n"
+"Report-Msgid-Bugs-To: cage@katamail.com\n"
+"POT-Creation-Date: 2015-04-12 14:20+0200\n"
+"PO-Revision-Date: 2015-04-13 17:11+0200\n"
+"Last-Translator: cage <cage@katamail.com>\n"
+"Language-Team: Italian\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ASCII\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/gui/widget.lisp:1599
+msgid "Choose file"
+msgstr ""
+
+#: src/gui/widget.lisp:1968
+msgid "Class"
+msgstr "Classe"
+
+#: src/gui/widget.lisp:1981
+msgid "Warrior "
+msgstr "Guerriero "
+
+#: src/gui/widget.lisp:1992
+msgid "Wizard "
+msgstr "Mago "
+
+#: src/gui/widget.lisp:2003
+msgid "Healer "
+msgstr "Guaritore "
+
+#: src/gui/widget.lisp:2014
+msgid "Archer "
+msgstr "Arciere "
+
+#: src/gui/widget.lisp:2025
+msgid "Ranger "
+msgstr "Ranger "
+
+#: src/gui/widget.lisp:2031
+msgid "Gender"
+msgstr "Genere"
+
+#: src/gui/widget.lisp:2046
+msgid "Male "
+msgstr "Maschile "
+
+#: src/gui/widget.lisp:2057
+msgid "Female "
+msgstr "Femminile "
+
+#: src/gui/widget.lisp:2070
+msgid "Generate new"
+msgstr "Genera nuovo"
+
+#: src/gui/widget.lisp:2083
+msgid "Save"
+msgstr "Salva"
+
+#: src/gui/widget.lisp:2095
+msgid "Load"
+msgstr "Carica"
+
+#: src/gui/widget.lisp:2115
+msgid "Damage point: "
+msgstr ""
+
+#: src/gui/widget.lisp:2140
+msgid "Movement point: "
+msgstr ""
+
+#: src/gui/widget.lisp:2165
+msgid "Magic point: "
+msgstr ""
+
+#: src/gui/widget.lisp:2190
+msgid "Dodge chance: "
+msgstr ""
+
+#: src/gui/widget.lisp:2215
+msgid "Short range attack chance: "
+msgstr ""
+
+#: src/gui/widget.lisp:2240
+msgid "Long range attack chance: "
+msgstr ""
+
+#: src/gui/widget.lisp:2265
+msgid "Short Range attack damage: "
+msgstr ""
+
+#: src/gui/widget.lisp:2290
+msgid "Long Range attack damage: "
+msgstr ""
+
+#: src/gui/widget.lisp:2315
+msgid "Edge weapon chance bonus: "
+msgstr ""
+
+#: src/gui/widget.lisp:2340
+msgid "Edge weapon damage bonus: "
+msgstr ""
+
+#: src/gui/widget.lisp:2365
+msgid "Impact weapon chance bonus: "
+msgstr ""
+
+#: src/gui/widget.lisp:2390
+msgid "Impact weapon damage bonus: "
+msgstr ""
+
+#: src/gui/widget.lisp:2415
+msgid "Pole weapon chance bonus: "
+msgstr ""
+
+#: src/gui/widget.lisp:2440
+msgid "Pole weapon damage bonus: "
+msgstr ""
+
+#: src/gui/widget.lisp:2465
+msgid "Unlock chance: "
+msgstr ""
+
+#: src/gui/widget.lisp:2490
+msgid "Deactivate trap chance: "
+msgstr ""
+
+#: src/gui/widget.lisp:2515
+msgid "Reply to attack chance: "
+msgstr ""
+
+#: src/gui/widget.lisp:2540
+msgid "Ambush attack chance: "
+msgstr ""
+
+#: src/gui/widget.lisp:2565
+msgid "Spell chance: "
+msgstr ""
+
+#: src/gui/widget.lisp:2590
+msgid "Attack spell chance: "
+msgstr ""
+
+#: src/gui/widget.lisp:2615
+msgid "Level: "
+msgstr ""
+
+#: src/gui/widget.lisp:2625
+msgid "Experience points: "
+msgstr ""
+
+#: src/gui/widget.lisp:2637
+msgid "Name"
+msgstr "Nome"
+
+#: src/gui/widget.lisp:2648
+msgid "Last name"
+msgstr "Cognome"
+
+#: src/gui/widget.lisp:2660
+msgid "STR: "
+msgstr "STR: "
+
+#: src/gui/widget.lisp:2673
+#, fuzzy
+msgid "ST:  "
+msgstr "ST: "
+
+#: src/gui/widget.lisp:2686
+#, fuzzy
+msgid "DX:  "
+msgstr "DX: "
+
+#: src/gui/widget.lisp:2699
+#, fuzzy
+msgid "AG:  "
+msgstr "AG: "
+
+#: src/gui/widget.lisp:2712
+#, fuzzy
+msgid "SM:  "
+msgstr "SM: "
+
+#: src/gui/widget.lisp:2725
+#, fuzzy
+msgid "EM:  "
+msgstr "EM: "
+
+#: src/gui/widget.lisp:2738
+msgid "WG: "
+msgstr "WG: "
+
+#: src/gui/widget.lisp:3229
+msgid "Generate character"
+msgstr "Genera personaggio"

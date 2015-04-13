@@ -1,0 +1,112 @@
+depth 9
+length 8
+randomize-length 0.0
+angle 90.0
+randomize-angle 0.0
+radius 0.4
+colors 1.1 0.0 0.0 1.0, 0.0 1.0 0.0 0.3, 0.0 0.0 1.0 1.0, 0.27 0.47 0.27 1.0 ;
+bending-factor 0.2
+tropism -0.0 1.0 0.0;
+texture /texture/fir/texture.tga;
+polygon-magnetic-range 0.9
+section-magnetic-range 0.3
+
+inline XY_AABB_QUAD = (a a=90.0 
+	     	      	 (m (t incr_s=0.0 incr_t=0.0 z- . z++)  
+		      	    (t incr_s=0.25 incr_t=0.0 . z- : z--) 
+		     	    (t incr_s=0.0 incr_t=0.25 . z++ z- : z+) 
+		     	    (t incr_s=0.25 incr_t=0.0 . z+)
+		     	    (t incr_s=0.25 incr_t=0.25 . z+)
+		     	    (t incr_s=0.0 incr_t=0.25 .)));
+
+
+
+inline Y_DIAGONAL_ALIGNED_QUAD = (a a=45 a=45 z- a=90 z+ : z- XY_AABB_QUAD);
+
+Z_CONCAVE_XY_AABB_QUAD = (a a=90.0 
+	  	       	  
+			     (t incr_s=0.0 incr_t=0.0
+			     	%l=0.4 x+ : x-- . x+ %l=2.5
+			     	 z+ : z--)
+############################### put a to b <-
+		     	     (t incr_s=0.50 incr_t=0.0 . z+ : z++)
+############################### put b to c V
+		     	     (t incr_s=0.0 incr_t=0.5 . z- : z-)
+############################### put c to b ^ first triangle ends
+			     (t incr_s=0.5 incr_t=0.0 .)
+############################## put b to d ^
+			     (t incr_s=0.5 incr_t=0.5
+			     	%l=0.4 x+ : x-- . x+ %l=2.5
+				z- : z-)
+############################## put d to c V
+		     	     (t incr_s=0.0 incr_t=0.5 . z--));
+
+inline CONCAVE_QUAD_Y_DIAG_ALIGNED = (a a=45 z+ (a a=90 z-: z+ Z_CONCAVE_XY_AABB_QUAD));
+
+
+LEAF chance=0.33 = (a (m s=0.5 t=0.0 %l=0.6 CONCAVE_QUAD_Y_DIAG_ALIGNED));
+
+LEAF chance=0.33 = (a (m s=0.0 t=0.5 %l=0.6 CONCAVE_QUAD_Y_DIAG_ALIGNED));
+
+LEAF chance=0.34 = (a (m s=0.5 t=0.5 %l=0.6 CONCAVE_QUAD_Y_DIAG_ALIGNED));
+
+inline BRANCH = if r < 0.007
+               	       	   (a sec_s=0.25 sec_t=0.25 sec_t_end=0.50
+ 		    	      (a a=45 x- . %r=0.3  y++ %l=10 LEAF) 
+         	    	      (a a=45 x+ . %r=0.2  y++ %l=10 LEAF));
+ 		 	   (a sec_s=0.0 sec_t=0.0 sec_t_end=0.25
+ 		 	      (a a=45 x- . %r=0.3  y++ %l=10 LEAF) 
+         	 	      (a a=45 x+ . %r=0.2  y++ %l=10 LEAF));
+
+
+
+inline TIP = %l=2.0 (a a=45 y- s=0.25 t=0.0  Y_DIAGONAL_ALIGNED_QUAD)
+       	     	    (a a=45 y+ s=0.25 t=0.0  Y_DIAGONAL_ALIGNED_QUAD);
+
+inline TRUNK chance=0.25 = (l %l=0.6 .)
+                 (a %r=0.3 %l=0.15 
+          	  (a a=22.5 y+ a=90.0 z- . BRANCH)
+            	  (a a=22.5 y++ a=90.0 z- . BRANCH)
+		  (a a=22.5 y- a=90.0  z- .  BRANCH)
+       		  (a a=22.5 y+ a=90.0 z+ . y++ BRANCH)
+		  (a a=22.5 y- a=90.0  z+ .y++  BRANCH))
+       
+                %r=0.7 %l=0.8 a=22.5 y+ a=90 %t=1.15 TRUNK;
+
+
+inline TRUNK chance=0.25 = (l %l=0.7 .)
+                 (a %r=0.2 %l=0.15 
+          	  (a a=30.0 y+ a=90.0 z- . BRANCH) 
+		  (a a=30.0 y- a=90.0  z- .  BRANCH)
+       		  (a a=30.0 y+ a=90.0 z+ . y++ BRANCH)
+		  (a a=30.0 y- a=90.0  z+ .y++  BRANCH))
+       
+                %r=0.7 %l=0.8 a=22.5 y+ a=90 %t=1.15 TRUNK;
+
+inline TRUNK chance=0.25 = (l %l=0.6 .)
+                 (a %r=0.2 %l=0.15 
+          	  (a a=22.5 y+ a=90.0 z- . BRANCH) 
+	       	  (a a=22.5 y++ a=90.0 z- . BRANCH)
+		  (a a=22.5 y+++ a=90.0 z- . BRANCH)
+		  (a a=22.5 y- a=90.0  z- .  BRANCH)
+       		  (a a=22.5 y+ a=90.0 z+ . y++ BRANCH)
+		  (a a=22.5 y- a=90.0  z+ .y++  BRANCH))
+       
+                %r=0.7 %l=0.8 a=22.5 y+++ a=90 %t=1.15 TRUNK;
+
+inline TRUNK chance=0.25 = (l %l=0.6 .)
+                 (a %r=0.2 %l=0.15 
+          	  (a a=22.5 y+ a=90.0 z- . BRANCH) 
+          	  (a a=22.5 y+ a=90.0 z- . BRANCH) 
+	       	  (a a=22.5 y++ a=90.0 z- . BRANCH)
+		  (a a=22.5 y+++ a=90.0 z- . BRANCH)
+		  (a a=25.0 y- a=90.0  z- .  BRANCH)
+       		  (a a=25.0 y+ a=90.0 z+ . y++ BRANCH)
+		  (a a=25.0 y- a=90.0  z+ .y++  BRANCH))
+                %r=0.7 %l=0.8 a=22.5 y++++ a=90 %t=1.15 TRUNK;
+
+ROOT chance=0.33 =  sec_s=0.0 sec_t=0.0 sec_t_end=0.50 a=1 z- (l %l=0.12 .) TRUNK TIP;
+
+ROOT chance=0.33 =  sec_s=0.0 sec_t=0.0 sec_t_end=0.50 a=1 z+ (l %l=0.12 .) TRUNK TIP;
+
+ROOT chance=0.34 =  sec_s=0.0 sec_t=0.0 sec_t_end=0.50 a=1    (l %l=0.12 .) TRUNK TIP;

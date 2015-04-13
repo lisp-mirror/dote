@@ -1,0 +1,81 @@
+depth 26
+length 1.0
+randomize-length 0.0
+angle 30.0
+randomize-angle 0.0
+radius 0.4
+colors 1.1 0.0 0.0 1.0, 0.0 1.0 0.0 0.3, 0.0 0.0 1.0 1.0, 0.27 0.47 0.27 1.0 ;
+bending-factor 0.0
+tropism -0.05 -0.3 0.0;
+texture /texture/palm/texture.tga;
+polygon-magnetic-range 0.2
+section-magnetic-range 0.2
+
+XY_AABB_QUAD = (a a=90.0 
+	     	   (t incr_s=0.0 incr_t=0.0 z- . z++)  
+		     (t incr_s=0.083 incr_t=0.0 . z- %l=2.0 : z--) 
+		     (t incr_s=0.0 incr_t=0.25 . z++ z- %l=0.5 : z+)
+		     (t incr_s=0.083 incr_t=0.0 %l=2.0 . z+)
+		     (t incr_s=0.083 incr_t=0.25 %l=0.5 . z+)
+		     (t incr_s=0.0 incr_t=0.25  %l=2.0 .));
+	  
+R_SUBLEAF = (a 
+	     (a s=0.8337 incr_t=0.0 a=22.5 y+ XY_AABB_QUAD)
+	      a=22.5 y+ a=90.0 z- : z+
+       	     (a s=0.91 incr_t=0.0 a=22.5 y+ XY_AABB_QUAD));
+
+L_SUBLEAF = (a 
+	     a=22.5 y- a=90.0 z+ : z-
+	     (a s=0.750 incr_t=0.0 XY_AABB_QUAD)
+	     a=22.5 y- a=90.0 z+ : z-
+	     (a s=0.667 incr_t=0.0 XY_AABB_QUAD));
+
+LEAF chance=0.5 = (a (m t=0.0 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+           	     a=22.5 
+	   	     x- t=0.25 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+	   	     x- t=0.50 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+   	   	     x- t=0.75 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5));
+
+LEAF chance=0.5 = (a (m t=0.0 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+      	   	     a=30 
+	   	     x- t=0.25 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+	   	     x- t=0.50 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+   	   	     x- t=0.75 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5));
+
+LEAFS chance=0.5 =  (a a=10 x- LEAF) 
+      		    (a a=10 y+
+      		       (a a=40 x- LEAF));
+
+LEAFS chance=0.25 =  (a a=20 x- LEAF)
+      		     (a a=10 y-
+		     	(a a=60 x- LEAF));
+
+LEAFS chance=0.25 =  (a a=30 x- LEAF)
+      		     (a a=10 y+
+	             	(a a=70 x- LEAF));
+
+
+TRUNK_TWO chance=0.33 = TRUNK_TWO_ACT;
+
+TRUNK_TWO chance=0.33 = y+ TRUNK_TWO_ACT;
+
+TRUNK_TWO chance=0.34 = y++ TRUNK_TWO_ACT;
+
+
+TRUNK_TWO_ACT= (a %r=1.5 (l %j=1.33 %l=0.8 sec_s=0.33 sec_t=0.0 sec_t_end=0.33 .)
+	        (l %l=0.7
+               	   a=90.0 
+	       	   (a LEAFS)
+	       	   (a y- LEAFS)
+	       	   (a y-- LEAFS)
+	       	   (a y--- LEAFS)));
+
+TRUNK chance=0.5 = if r < 0.8
+                    %r=1.05 a=2.5 z+ sec_s=0.0 sec_t=0.0 sec_t_end=0.5 . TRUNK;
+		    TRUNK_TWO;
+		   
+TRUNK chance=0.5 = if r < 0.8
+                    %r=1.1 a=2.5 z- sec_s=0.0 sec_t=0.0 sec_t_end=0.5 . TRUNK;
+		    TRUNK_TWO;
+
+ROOT = TRUNK;

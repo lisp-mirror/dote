@@ -1,0 +1,96 @@
+depth 10
+length 8
+randomize-length 0.0
+angle 90.0
+randomize-angle 0.0
+radius 0.4
+colors 1.1 0.0 0.0 1.0, 0.0 1.0 0.0 0.3, 0.0 0.0 1.0 1.0, 0.27 0.47 0.27 1.0 ;
+bending-factor 0.15
+tropism -0.0 2.8 0.0;
+texture /texture/fir/texture-2.tga;
+polygon-magnetic-range 0.06
+section-magnetic-range 0.3
+
+# c.-----  d
+#  |\
+#  | \
+#  |  \
+#  |   \
+#  |    \
+#  +-----+
+#  b        a
+
+
+inline XY_AABB_QUAD = (a a=90.0 
+       		      	 z- : z++
+# a -> b ^
+			 (t incr_s=0.125 incr_t=0.0 . z-) 
+# b -> c v
+		      	 (t incr_s=0.0 incr_t=0.0 %l=2.0 . z++)  
+# c -> c ^
+			 (t incr_s=0.0 incr_t=0.125 . z++ :)
+
+# c -> d v			 
+			 (t incr_s=0.0 incr_t=0.125 z- %l=0.5 . z-)
+# d -> a < 
+		     	 (t incr_s=0.125 incr_t=0.125 %l=2.0 . z++)
+# a -> b ^
+		     	 (t incr_s=0.125 incr_t=0.0 %l=0.5 . z-));
+
+
+inline XY_AABB_QUAD_TIP = (a a=90.0
+	     	  (m (t incr_s=0.0 incr_t=0.0 z- . z++)
+		     (t incr_s=0.25 incr_t=0.0 . z- %l=2.0 : z--)
+		     (t incr_s=0.0 incr_t=0.25 . z++ z- %l=0.5 : z+)
+		     (t incr_s=0.25 incr_t=0.0 %l=2.0 . z+)
+		     (t incr_s=0.25 incr_t=0.25 %l=0.5 . z+)
+		     (t incr_s=0.0 incr_t=0.25  %l=2.0 .)));
+
+inline R_SUBLEAF = (a
+       		     (a incr_s=0.25 incr_t=0.0 a=15 y+ XY_AABB_QUAD)
+	      	     	a=15 y+ a=90.0 z- : z+
+       	     		(a incr_s=0.375 incr_t=0.0 a=15 y+ XY_AABB_QUAD));
+
+inline L_SUBLEAF = (a
+	     a=15 y- a=90.0 z+ : z-
+	     (a incr_s=0.125 incr_t=0.0 XY_AABB_QUAD)
+	     a=15 y- a=90.0 z+ : z-
+	     (a incr_s=0.0 incr_t=0.0 XY_AABB_QUAD));
+
+
+inline LEAF  chance=0.5 = (a s=0.0 t=0.5 a=15
+       	     		    (m
+				R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+       	     		    	x- incr_t=0.125 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+   	     		    	x- incr_t=0.125 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+	     		    	x- incr_t=0.125 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5));
+
+inline LEAF chance=0.5 = (a s=0.5 t=0.5
+       	    	       	    	  (m R_SUBLEAF L_SUBLEAF
+				  %l=2.0 : %l=0.5
+       	     	       	    	  a=15
+
+					x- incr_t=0.125 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+    	     		    		x- incr_t=0.125 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+ 	     		    		x- incr_t=0.125 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5));
+
+
+TRUNK chance=0.5 = sec_s=0.0 sec_t=0.0 sec_t_end=0.5 %l=0.5 (g .)
+	       %l=2
+         (a %r=0.3 %l=0.1
+ 	   (a y+ z-  a=90 y+ %l=1.0 LEAF) (a y- z-  a=90 y+ %l=1.0 LEAF)
+ 	   (a z+   a=90 y- %l=1.0 LEAF) (a  z-  a=90 y+ %l=1.0 LEAF))
+          %r=0.7 %l=0.75 a=30 y+ a=90  TRUNK;
+
+TRUNK chance=0.5 = sec_s=0.0 sec_t=0.0 sec_t_end=0.5 %l=0.5 (g .)
+       	       %l=2
+                (a %r=0.3 %l=0.1
+        	   (a y+ z-  a=90 y+ %l=1.0 LEAF) (a y- z-  a=90 y+ %l=1.0 LEAF)
+        	   (a z+  a=90 y- %l=1.0 LEAF) (a z-  a=90 y+ %l=1.0 LEAF))
+                 %r=0.7 %l=0.75 a=30 y+ a=90  TRUNK;
+
+inline TIP = s=0.5 t=0.0
+       	     (a a=90 z+ : z- XY_AABB_QUAD_TIP z- : z+  s=0.75 t=0 XY_AABB_QUAD_TIP);
+
+ROOT = s=0.0 t=0.0 TRUNK rd %l=0.5 TIP a=90 y+ TIP;
+

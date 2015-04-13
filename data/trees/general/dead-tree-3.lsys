@@ -1,0 +1,29 @@
+depth 4
+length 1.0
+randomize-length 0.0
+angle 45
+randomize-angle 0.0
+radius 0.07
+colors 1.1 0.0 0.0 1.0, 0.0 1.0 0.0 0.3, 0.0 0.0 1.0 1.0 , 0.27 0.47 0.27 1.0 ;
+bending-factor 0.1
+tropism 0.0 1.1 0.0;
+texture /texture/lemon/texture.tga;
+polygon-magnetic-range 0.001
+section-magnetic-range 0.4
+
+TRUNK chance=0.25 = %l=0.9  %r=0.8 a=12.5 z+ . %a=2.0 TRUNK ;
+
+TRUNK chance=0.25 =  %l=0.9 %r=0.8 a=12.5 z- . %a=2.0 TRUNK ;
+
+TRUNK chance=0.25 =  %l=0.9 %r=0.8 a=22 z+  .  %a=2.0 TRUNK ;
+
+TRUNK chance=0.25 =   %l=0.9 %r=0.8 a=22 z-  . %a=2.0 TRUNK ;
+
+ROOT_TWO = sec_s=0.0 sec_t=0.0 sec_t_end=1.0 
+      		  (a TRUNK (a x+ %r=0.7 %l=0.7 TRUNK) (a x- %r=0.7 %l=0.7 TRUNK))
+ 		  (a %l=0.1 z++ : z-- %l=10 TRUNK (a %l=0.5 TRUNK TRUNK));
+
+ROOT = sec_s=0.0 sec_t=0.0 sec_t_end=1.0 
+      		  (a TRUNK (a x+ %r=0.7 %l=0.9 TRUNK ROOT) (a x- %r=0.7 %l=0.9 TRUNK ROOT))
+ 		  (a TRUNK (a z+ %r=0.7 %l=0.9 TRUNK TRUNK) (a z- %r=0.7 %l=0.9 TRUNK ROOT));
+

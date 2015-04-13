@@ -1,0 +1,69 @@
+depth 9
+length 0.1
+randomize-length 0.0
+angle 60.0
+randomize-angle 0.0
+radius 0.2
+colors 1.1 0.0 0.0 1.0, 0.0 1.0 0.0 0.3, 0.0 0.0 1.0 1.0, 0.27 0.47 0.27 1.0 ;
+bending-factor 0.5
+tropism -0.0 0.5 0.0;
+texture /texture/fern/texture.tga;
+polygon-magnetic-range 0.05
+section-magnetic-range 0.3
+
+inline XY_AABB_QUAD = (a a=90.0 
+	     	  (t incr_s=0.0 incr_t=0.0 z- . z++)  
+		     (t incr_s=0.25 incr_t=0.0 . z- %l=4.0 : z--) 
+		     (t incr_s=0.0 incr_t=0.25 . z++ z- %l=0.25 : z+)
+		     (t incr_s=0.25 incr_t=0.0 %l=4.0 . z+)
+		     (t incr_s=0.25 incr_t=0.25 %l=0.25 . z+)
+		     (t incr_s=0.0 incr_t=0.25  %l=4.0 .));
+
+inline Y_DIAGONAL_ALIGNED_QUAD = (a a=45 a=45 z- a=90 z+ : z- XY_AABB_QUAD);
+	  
+inline R_SUBLEAF = (a 
+	     (a incr_s=0.5 incr_t=0.0 a=22.5 y+ XY_AABB_QUAD)
+	      a=22.5 y+ a=90.0 z- : z+
+       	     (a incr_s=0.75 incr_t=0.0 a=22.5 y+ XY_AABB_QUAD));
+
+inline L_SUBLEAF = (a 
+	     a=22.5 y- a=90.0 z+ : z-
+	     (a incr_s=0.25 incr_t=0.0 XY_AABB_QUAD)
+	     a=22.5 y- a=90.0 z+ : z-
+	     (a incr_s=0.0 incr_t=0.0 XY_AABB_QUAD));
+
+
+
+SINGLE_LEAF = (a (m a=90 y+(a s=0.0 t=0.0 R_SUBLEAF L_SUBLEAF %l=4.0 : %l=0.25
+        	         a=25 
+    	         	 x- incr_t=0.25 R_SUBLEAF L_SUBLEAF %l=4.0 : %l=0.25
+    	         	 x- incr_t=0.25 R_SUBLEAF L_SUBLEAF %l=4.0 : %l=0.25
+ 	         	 x- incr_t=0.25 R_SUBLEAF L_SUBLEAF %l=4.0 : %l=0.25)));
+
+
+LEAF chance=0.05 = z+ SINGLE_LEAF;
+LEAF chance=0.05 = (g a=18 y+)  z+ SINGLE_LEAF;
+LEAF chance=0.05 = (g a=36 y+)  z+ SINGLE_LEAF;
+LEAF chance=0.05 = (g a=57 y+)  z+ SINGLE_LEAF;
+LEAF chance=0.05 = (g a=72 y+)  z+ SINGLE_LEAF;
+LEAF chance=0.05 = (g a=90 y+)  z+ SINGLE_LEAF;
+LEAF chance=0.05 = (g a=108 y+) z+ SINGLE_LEAF;
+LEAF chance=0.05 = (g a=126 y+) z+ SINGLE_LEAF;
+LEAF chance=0.05 = (g a=144 y+) z+ SINGLE_LEAF;
+LEAF chance=0.05 = (g a=162 y+) z+ SINGLE_LEAF;
+LEAF chance=0.05 = (g a=180 y+) z+ SINGLE_LEAF;
+LEAF chance=0.05 = (g a=198 y+) z+ SINGLE_LEAF;
+LEAF chance=0.05 = (g a=216 y+) z+ SINGLE_LEAF;
+LEAF chance=0.05 = (g a=234 y+) z+ SINGLE_LEAF;
+LEAF chance=0.05 = (g a=252 y+) z+ SINGLE_LEAF;
+LEAF chance=0.05 = (g a=270 y+) z+ SINGLE_LEAF;
+LEAF chance=0.05 = (g a=288 y+) z+ SINGLE_LEAF;
+LEAF chance=0.05 = (g a=306 y+) z+ SINGLE_LEAF;
+LEAF chance=0.05 = (g a=324 y+) z+ SINGLE_LEAF;
+LEAF chance=0.05 = (g a=342 y+) z+ SINGLE_LEAF;
+
+LEAF_CROWN = (a LEAF) LEAF_CROWN;
+
+#ROOT = SINGLE_LEAF;
+
+ROOT = LEAF_CROWN %l=1.1 %a=0.7 ROOT;

@@ -1,0 +1,39 @@
+dnl dawn of the Era: a tactical game.
+dnl Copyright (C) 2015  cage
+
+dnl This program is free software: you can redistribute it and/or modify
+dnl it under the terms of the GNU General Public License as published by
+dnl the Free Software Foundation, either version 3 of the License, or
+dnl (at your option) any later version.
+
+dnl This program is distributed in the hope that it will be useful,
+dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl GNU General Public License for more details.
+
+dnl You should have received a copy of the GNU General Public License
+dnl along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+AC_INIT([dote],[0.0.1],[cage@katamail.com],[dote])
+
+AM_INIT_AUTOMAKE([-Wall foreign])
+
+AM_GNU_GETTEXT([external])
+
+AC_PATH_PROGS([LISP_COMPILER],[sbcl],[AC_MSG_ERROR([Can not find a Common Lisp compiler.])])
+
+AC_CONFIG_FILES([Makefile po/Makefile.in])
+AC_OUTPUT	
+
+
+
+
+
+
+
+
+
+
+
+
+

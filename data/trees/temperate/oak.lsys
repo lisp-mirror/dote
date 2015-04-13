@@ -1,0 +1,92 @@
+depth 120
+length 2.0
+randomize-length 0.0
+angle 22.5
+randomize-angle 0.0
+radius 1.27
+colors 1.1 0.0 0.0 1.0, 0.2 0.1 0.1 0.3;
+bending-factor 0.0
+tropism 0.0 -1.0 0.0;
+texture /texture/oak/texture.tga;
+polygon-magnetic-range 0.2
+section-magnetic-range 0.4
+
+Z_CONCAVE_XY_AABB_QUAD = (a a=90.0 
+       	  	       	  (m
+			     (t incr_s=0.0 incr_t=0.0
+			     	%l=0.4 x+ : x-- . x+ %l=2.5
+			     	 z- : z++)
+############################### put a to b <-
+		     	     (t incr_s=0.50 incr_t=0.0 . z- : z--)
+############################### put b to c V
+		     	     (t incr_s=0.0 incr_t=0.5 . z+ : z+)
+############################### put c to b ^ first triangle ends
+			     (t incr_s=0.5 incr_t=0.0 .)
+############################## put b to d ^
+			     (t incr_s=0.5 incr_t=0.5
+			     	%l=0.4 x+ : x-- . x+ %l=2.5
+				z+ : z+)
+############################## put d to c V
+		     	     (t incr_s=0.0 incr_t=0.5 . z++)));
+
+CONCAVE_QUAD_Y_DIAG_ALIGNED = (a a=45 z- a=90 z+ : z-  Z_CONCAVE_XY_AABB_QUAD);
+
+
+LEAF chance=0.33 = (a s=0.5 t=0.0 l=2.0 CONCAVE_QUAD_Y_DIAG_ALIGNED);
+
+LEAF chance=0.33 = (a s=0.0 t=0.5 l=2.0 CONCAVE_QUAD_Y_DIAG_ALIGNED);
+
+LEAF chance=0.34 = (a s=0.5 t=0.5 l=2.0 CONCAVE_QUAD_Y_DIAG_ALIGNED);
+
+LEAF_GROUP = (a x++ LEAF) (a x-- LEAF)
+	     (a z++ LEAF) (a z-- LEAF);
+
+BRANCH chance=0.1 = (a x++ ELONG_A) (a x-- ELONG_A);
+
+BRANCH chance=0.1 = (a z-- ELONG_A);
+
+BRANCH chance=0.1 = (a z++ ELONG_A);
+
+BRANCH chance=0.1 = (a x-- ELONG_A) (a z-- ELONG_A);
+
+BRANCH chance=0.1 = (a z++ ELONG_A);
+
+BRANCH chance=0.1 = (a z++ ELONG_A) (a z-- ELONG_A);
+
+BRANCH chance=0.1 = (a z++ ELONG_A) (a x-- ELONG_A);
+
+BRANCH chance=0.1 = (a z++ ELONG_A) (a x++ ELONG_A);
+
+BRANCH chance=0.1 = (a z-- ELONG_A) (a x-- ELONG_A);
+
+BRANCH chance=0.1 = (a z-- ELONG_A) (a x++ ELONG_A);
+
+ELONG_BASE = if r > 0.1
+	        (r z- . %r=0.5 %l=0.9 ELONG_A);
+	        if r > 0.08
+	           (r z+ . %r=0.5 %l=0.9 ELONG_A);
+	            if r > 0.06
+	       	       . %r=0.8 BRANCH;
+	       	       z+ . LEAF_GROUP;
+
+ELONG_B chance=0.25 = z++ ELONG_BASE;
+
+ELONG_B chance=0.25 = z-- ELONG_BASE;
+
+ELONG_B chance=0.25 = x++ ELONG_BASE;
+
+ELONG_B chance=0.25 = x-- ELONG_BASE;
+
+ELONG_A chance=0.73 = ELONG_B;
+
+ELONG_A chance=0.27 = %l=0.9 BRANCH;
+
+MAIN_TRUNK = (r %r=0.8 (l %l=0.7  . (a sec_incr_t=0.125 sec_incr_t_end=0.125 .))
+	     	       (l %l=0.5  . (a sec_incr_t=0.125 sec_incr_t_end=0.125 .)));
+
+ROOT = sec_t=0.0 sec_t_end=0.125 sec_s=0.0 MAIN_TRUNK a=10 %r=0.8 %l=0.7
+       sec_incr_t=0.125 sec_incr_t_end=0.125
+       (a z- BRANCH) (a (g a=135 y+) z- BRANCH) (a (g a=-135 y+) z- BRANCH) 
+       sec_incr_t=0.125 sec_incr_t_end=0.125
+       ELONG_A;
+

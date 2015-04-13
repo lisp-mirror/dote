@@ -1,0 +1,82 @@
+depth 5
+length 1.4
+randomize-length 0.0
+angle 30.0
+randomize-angle 0.0
+radius 0.65
+colors 1.1 0.0 0.0 1.0, 0.0 1.0 0.0 0.3, 0.0 0.0 1.0 1.0, 0.27 0.47 0.27 1.0 ;
+bending-factor 0.5
+tropism -0.0 0.5 0.0;
+texture /texture/gumtree/texture.tga;
+polygon-magnetic-range 0.12
+section-magnetic-range 0.4
+
+inline XY_AABB_QUAD = (a a=90.0 
+	     	   (t incr_s=0.0 incr_t=0.0 z- . z++)  
+		     (t incr_s=0.1875 incr_t=0.0 . z- %l=2.0 : z--) 
+		     (t incr_s=0.0 incr_t=0.25 . z++ z- %l=0.5 : z+)
+		     (t incr_s=0.1875 incr_t=0.0 %l=2.0 . z+)
+		     (t incr_s=0.1875 incr_t=0.25 %l=0.5 . z+)
+		     (t incr_s=0.0 incr_t=0.25  %l=2.0 .));
+
+inline Y_DIAGONAL_ALIGNED_QUAD = (a a=45 a=45 z- a=90 z+ : z- XY_AABB_QUAD);
+	  
+inline R_SUBLEAF = (a 
+	     (a incr_s=0.625 incr_t=0.0 a=22.5 y+ XY_AABB_QUAD)
+	      a=22.5 y+ a=90.0 z- : z+
+       	     (a incr_s=0.8125 incr_t=0.0 a=22.5 y+ XY_AABB_QUAD));
+
+inline L_SUBLEAF = (a 
+	     a=22.5 y- a=90.0 z+ : z-
+	     (a incr_s=0.4375 incr_t=0.0 XY_AABB_QUAD)
+	     a=22.5 y- a=90.0 z+ : z-
+	     (a incr_s=0.25 incr_t=0.0 XY_AABB_QUAD));
+
+
+inline LEAF  = (a (m a=90 y+ (a s=0.0 t=0.0 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+        	               a=15 
+    	         	       x- incr_t=0.25 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+    	         	       x- incr_t=0.25 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
+ 	         	       x- incr_t=0.25 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5)));
+
+#inline LEAF  = ;
+
+
+BRANCH chance=0.5 = (g a=15 z+ .);
+
+BRANCH chance=0.5 = (g a=15 z- .);
+
+TRUNK chance=0.4 = %r=0.5 BRANCH (a a=120.0 (a a=60 z+ BRANCH BRANCH BRANCH SUB_TRUNK)
+      	     	     	  	    	    (a y+ a=60 z+ BRANCH BRANCH BRANCH  SUB_TRUNK)
+      	     	     	  		    (a y++ a=60 z+ BRANCH BRANCH BRANCH SUB_TRUNK));
+
+TRUNK chance=0.3 = %r=0.5 BRANCH (a a=120.0 (a a=60 z+ BRANCH BRANCH BRANCH TRUNK)
+      	     	     	  	    	    (a y+ a=60 z+ BRANCH BRANCH BRANCH  TRUNK)
+      	     	     	  		    (a y++ a=60 z+ BRANCH BRANCH BRANCH TRUNK));
+
+
+TRUNK chance=0.3 = %r=0.5 BRANCH (a a=60 z+ BRANCH BRANCH BRANCH TRUNK)
+      		      	      	  (a a=60 z- BRANCH BRANCH BRANCH TRUNK);
+
+
+
+
+inline SUB_TRUNK  =  %l=0.7 %r=0.5  z+ (a BRANCH BRANCH BRANCH BRANCH TIP LEAF_GROUP) 
+       	       	     	       (a a=30 y+ z+ BRANCH BRANCH BRANCH BRANCH TIP LEAF_GROUP);
+
+inline TIP  chance=0.5 =   %l=0.7  %r=0.5  z+ 
+     		    	    (a a=15 z+ . z- . z+ . z- .   (a a=60 z+ %l=0.5  TIP  LEAF_GROUP) 
+     	       	      	    	      	      	          (a a=60 z-   %l=0.5 TIP  LEAF_GROUP));
+
+inline  TIP  chance=0.5 =  %l=0.8  %r=0.5 y+ z+ (a a=15 z+ . z- .   (a a=60 z+  TIP LEAF_GROUP) 
+     	       	      	    	      	       (a a=60 z-  TIP  LEAF_GROUP));
+
+inline LEAF_GROUP = (a (a a=60 z+  LEAF) 
+	     	(a a=60 y+ z+  LEAF)
+		(a a=60 y++ z+  LEAF) 
+	     	(a a=60 y+++ z+  LEAF));
+
+
+ROOT = s=0.0 t=0.0 BRANCH BRANCH BRANCH %r=2.0 TRUNK;
+
+

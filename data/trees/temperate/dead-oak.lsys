@@ -1,0 +1,64 @@
+depth 120
+length 2.0
+randomize-length 0.0
+angle 22.5
+randomize-angle 0.0
+radius 1.27
+colors 1.1 0.0 0.0 1.0, 0.2 0.1 0.1 0.3;
+bending-factor 0.0
+tropism 0.0 -1.0 0.0;
+texture /texture/oak/texture.tga;
+polygon-magnetic-range 0.2
+section-magnetic-range 0.4
+
+LEAF_GROUP = (a: );
+
+BRANCH chance=0.1 = (a x++ ELONG_A) (a x-- ELONG_A);
+
+BRANCH chance=0.1 = (a x++ ELONG_A) (a z-- ELONG_A);
+
+BRANCH chance=0.1 = (a x++ ELONG_A) (a z++ ELONG_A);
+
+BRANCH chance=0.1 = (a x-- ELONG_A) (a z-- ELONG_A);
+
+BRANCH chance=0.1 = (a x-- ELONG_A) (a z++ ELONG_A);
+
+BRANCH chance=0.1 = (a z++ ELONG_A) (a z-- ELONG_A);
+
+BRANCH chance=0.1 = (a z++ ELONG_A) (a x-- ELONG_A);
+
+BRANCH chance=0.1 = (a z++ ELONG_A) (a x++ ELONG_A);
+
+BRANCH chance=0.1 = (a z-- ELONG_A) (a x-- ELONG_A);
+
+BRANCH chance=0.1 = (a z-- ELONG_A) (a x++ ELONG_A);
+
+ELONG_BASE = if r > 0.1
+	        (r z- . %r=0.5 %l=0.9 ELONG_A);
+	        if r > 0.08
+	           (r z+ . %r=0.5 %l=0.9 ELONG_A);
+	            if r > 0.04
+	       	       . %r=0.5 ELONG_A;
+	       	       z+ .;
+
+ELONG_B chance=0.25 = z++ ELONG_BASE;
+
+ELONG_B chance=0.25 = z-- ELONG_BASE;
+
+ELONG_B chance=0.25 = x++ ELONG_BASE;
+
+ELONG_B chance=0.25 = x-- ELONG_BASE;
+
+ELONG_A chance=0.73 = ELONG_B;
+
+ELONG_A chance=0.27 = %l=0.9 BRANCH;
+
+MAIN_TRUNK = (r %r=0.8 (l %l=0.7  . (a sec_incr_t=0.125 sec_incr_t_end=0.125 .))
+	     	       (l %l=0.5  . (a sec_incr_t=0.125 sec_incr_t_end=0.125 .)));
+
+ROOT = sec_t=0.0 sec_t_end=0.125 sec_s=0.0 MAIN_TRUNK a=10 %r=0.8 %l=0.7
+       sec_incr_t=0.125 sec_incr_t_end=0.125
+       (a z- BRANCH) (a (g a=135 y+) z- BRANCH) (a (g a=-135 y+) z- BRANCH) 
+       sec_incr_t=0.125 sec_incr_t_end=0.125
+       ELONG_A;
+

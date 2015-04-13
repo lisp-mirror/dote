@@ -1,0 +1,20 @@
+depth 9
+length 2
+randomize-length 0.0
+angle 45.0
+randomize-angle 0.0
+radius 0.4
+colors 1.1 0.0 0.0 1.0, 0.2 0.1 0.1 0.3;
+bending-factor 0.1
+tropism 0.0 -1.0 0.0;
+texture /texture/pattern_116/diffuse.tga;
+polygon-magnetic-range 0.02
+section-magnetic-range 0.3
+
+B chance=0.7 =  .;
+B chance=0.3 = sec_incr_s=0.5 . sec_incr_s=-0.5;
+
+C chance=0.30 = a=22.5 %r=0.65 B(a z+C)(a z-C)(a x+C)(a x-C);
+C chance=0.35 = a=22.5 %r=0.65 z+B C;
+C chance=0.35 = a=22.5 %r=0.65 z-B C;
+ROOT= sec_t=0.0 sec_t_end=0.25 .. sec_incr_t=0.25 sec_incr_t_end=0.25 C;

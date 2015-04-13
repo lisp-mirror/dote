@@ -1,0 +1,145 @@
+preprocessor
+
+FILE := LINE* SEPARATOR
+
+LINE := INCLUDE SPACE CHAR+ | CHAR+
+
+INCLUDE := '%include'
+
+SPACE := \p{Z}
+
+CHAR := any valid char
+
+actual l-systemm's grammar
+
+SYSTEM := DEPTH LENGTH RANDOMIZE_LENGTH ANGLE RANDOMIZE_ANGLE 
+       	  RADIUS COLOR_DEF BENDING_FACTOR TROPISM TEXTURE_FILE
+	  POLYGON-MAGNETIC-RANGE SECTION-MAGNETIC-RANGE
+	  AXIOMS+ 
+
+COLOR_DEF := 'colors' ( NUMBER NUMBER NUMBER NUMBER ',')+ STOPPER
+
+BENDING_FACTOR := 'bending-factor' NUMBER
+
+TROPISM := 'tropism' NUMBER NUMBER NUMBER STOPPER
+
+TEXTURE_FILE := 'texture' string encoded relative file path (relative to this file) STOPPER
+
+POLYGON-MAGNETIC-RANGE := 'polygon-magnetic-range' NUMBER 
+
+SECTION-MAGNETIC-RANGE := 'section-magnetic-range' NUMBER
+
+AXIOM := INLINE? RULE_NAME CHANCE EQUAL EXPRESSION STOPPER
+
+INLINE := 'inline'
+
+CHANCE := 'chance=' NUMBER
+
+EXPRESSION :=  CONDITIONAL |'(' ATTRIBUTE EXPRESSION ')' | OPCODE EXPRESSION | OPCODE
+
+CONDITIONAL := 'if' BOOLEAN_EXPR  EXPRESSION STOPPER EXPRESSION STOPPER
+
+BOOLEAN_EXPR := VARNAME BOOL_OP NUMBER
+
+VARNAME := 'r' | 'l'
+
+BOOL_OP := '<' | '>' | '<=' | '>='
+
+ATTRIBUTE := 'a' | ; push all
+	     'c' | ; push color
+	     'd' | ; push direction
+             'g' | ; push rotation angle
+	     'l' | ; push length
+	     'm' | ; enter polygon mode
+             'p' | ; push position
+	     'r' | ; push radius
+	     't' | ; push texture coordinates
+	     'x'   ; push rotation axis
+
+OPCODE  := '+' | ; rotate positive
+           '-' | ; rotate negative
+	   '.' | ; draw forward
+	   ':' | ; forward not drawing
+	   'x' | ; select x rotation axe
+	   'y' | ; select y rotation axe
+	   'z' | ; select z rotation axe
+	   '/' | ; next rotation axe
+	   '\' | ; previous rotation axe
+	   'n' | ; next color
+	   '$' | ; delete next expression
+	   's' | ; go to start position
+	   'rd' | ; reset turtle direction
+	   SCALE_LENGTH |
+	   SCALE_RADIUS |
+	   SCALE_ANGLE |
+	   SCALE_TROPISM_BENDING_FACTOR |
+	   SCALE_MAGNETIC_POLYGON_RANGE |
+	   SCALE-SECTION-MAGNETIC-RANGE |
+   	   COLOR  | 
+	   LENGTH |
+	   ANGLE  |
+	   RADIUS |
+	   S_COORD |
+	   T_COORD |
+	   INCR_S_COORD |
+	   INCR_T_COORD |
+	   S_COORD_SECTION |
+	   T_COORD_SECTION |
+	   T_COORD_SECTION_END |
+	   INCR_S_COORD_SECTION |
+	   INCR_T_COORD_SECTION |
+	   INCR_T_COORD_SECTION_END
+
+COLOR := 'c=' NUMBER
+
+LENGTH := 'l=' NUMBER
+
+ANGLE  := 'a=' NUMBER
+
+RADIUS := 'r=' NUMBER
+
+S_COORD := 's=' NUMBER
+
+T_COORD := 't=' NUMBER
+
+S_COORD_SECTION := 'sec_s=' NUMBER
+
+T_COORD_SECTION := 'sec_t=' NUMBER
+
+T_COORD_SECTION_END := 'sec_t_end=' NUMBER
+
+SCALE_LENGTH := '%l=' NUMBER
+
+SCALE_RADIUS := '%r=' NUMBER
+
+SCALE_ANGLE := '%a=' NUMBER
+
+SCALE_MAGNETIC_POLYGON_RANGE := '%m=' NUMBER
+
+SCALE-SECTION-MAGNETIC-RANGE := '%j=' NUMBER
+
+INCR_S_COORD := 'incr_s=' NUMBER
+
+INCR_T_COORD := 'incr_t=' NUMBER
+
+INCR_S_COORD_SECTION := 'sec_incr_s=' NUMBER
+
+INCR_T_COORD_SECTION := 'sec_incr_t=' NUMBER
+
+INCR_T_COORD_SECTION_END := 'sec_incr_t_end=' NUMBER
+
+DEPTH := 'depth' NUMBER
+
+SCALE_TROPISM_BENDING_FACTOR := '%t=' NUMBER
+
+RANDOMIZE_LENGTH 'randomize-length' NUMBER
+
+RANDOMIZE_ANGLE 'randomize-angle' NUMBER
+
+RULE_NAME := [A-Z,\\-]+
+
+EQUAL := '=' 
+
+NUMBER := [0-9]+(\\.[0-9]+)?
+
+STOPPER := ';'
