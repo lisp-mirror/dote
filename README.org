@@ -86,7 +86,7 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
   
   I strongly  recomend you to  compile and run  the demo in  a testing
   environment as it is unstable (i. e. frequently crash), remember also
-  that there is [[NO WARRANTY][section below]].
+  that there is [[NO WARRANTY]].
 
 * BUGS
 
