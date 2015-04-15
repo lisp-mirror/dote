@@ -1654,10 +1654,12 @@
 
 (defpackage :mesh
   (:use :cl
-	:config
-	:constants
 	:sb-cga
 	:sb-cga-utils
+	:config
+	:constants
+	:conditions
+	:misc
 	:shaders-utils
 	:cl-gl-utils
 	:interfaces
@@ -1681,6 +1683,9 @@
    :+vbo-count+
    :+vao-count+
    :+aabb-vertex-count+
+   :+tag-head-key+
+   :+tag-left-weapon-key+
+   :+tag-right-weapon-key+
    :triangle-mesh
    :load-mesh
    :save-mesh
@@ -1712,6 +1717,9 @@
    :renderer-data-aabb-obj-space
    :prepare-for-rendering-phong
    :prepare-for-rendering-normal-map
+   :tags-table
+   :tags-matrices
+   :tag-key-parent
    :vbo
    :vao
    :vao-vertex-buffer-handle
@@ -1779,6 +1787,12 @@
    :tree-mesh-shell
    :fill-mesh-data
    :fill-shell-from-mesh
+   :load-tag-file
+   :load-tags
+   :tag->matrix
+   :nsetup-tag-matrix
+   :find-tag-cdr
+   :find-tag
    :skydome
    :texture-clouds
    :texture-smoke

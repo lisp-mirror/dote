@@ -24,6 +24,12 @@
 
 (alexandria:define-constant +aabb-points-count+ 24 :test #'=)
 
+(alexandria:define-constant +tag-head-key+        "tag_head"     :test #'string=)
+
+(alexandria:define-constant +tag-left-weapon-key+ "tag_lweapon"  :test #'string=)
+
+(alexandria:define-constant +tag-right-weapon-key+ "tag_rweapon" :test #'string=)
+
 (defclass triangle ()
   ((vertex-index
     :initform (uivec 0 0 0)
@@ -363,6 +369,22 @@
     :initform nil
     :initarg :parent-mesh
     :accessor parent-mesh)
+   (tags-table
+    :initform '()
+    :initarg  :tags-table
+    :accessor tags-table
+    :type cons)
+   (tags-matrices
+    :initform '()
+    :initarg  :tags-matrices
+    :accessor tags-matrices
+    :type cons)
+   (tag-key-parent
+    :initform +tag-head-key+
+    :initarg  :tag-key-parent
+    :accessor tag-key-parent
+    :type string)
+
    (aabb
     :initform (make-instance 'aabb)
     :initarg :aabb
@@ -591,6 +613,8 @@
 (defgeneric save-mesh (object place))
 
 (defgeneric load-mesh (object place))
+
+(defgeneric load-tags (object file))
 
 (defgeneric transform-vertices (object transformation))
 
@@ -2125,6 +2149,139 @@
 	(texture:gen-name-and-inject-in-database (normal-map res))
 	(texture:prepare-for-rendering (normal-map res)))
       res)))
+
+(alexandria:define-constant +magic-num-md2-tag-file '(74 68 80 50) :test #'equalp)
+
+(alexandria:define-constant +tag-file-name-size+ 64 :test #'=)
+
+(define-condition md2-tag-error (text-error)
+  ()
+  (:report (lambda (condition stream) 
+	     (format stream "~a" (text condition)))))
+
+(defclass md2-tag () ())
+
+(define-offset-size mesh tag (id 0 4) (version 4 4) (num-tags 8 4)
+		    (num-frames 12 4) (offset-names 16 4) (offset-tags 20 4)
+		    (offset-end 24 4) (offset-extract-end 28 4))
+
+(define-parse-header-chunk (tag-id +tag-id-offset+ +tag-id-size+ md2-tag nil))
+
+(define-parse-header-chunk (tag-num +tag-num-tags-offset+ +tag-num-tags-size+ md2-tag nil))
+
+(define-parse-header-chunk (frames-num +tag-num-frames-offset+ +tag-num-frames-size+
+					    md2-tag nil))
+
+(define-parse-header-chunk (offset-names +tag-offset-names-offset+
+					      +tag-offset-names-size+
+					      md2-tag nil))
+
+(define-parse-header-chunk (offset-tags +tag-offset-tags-offset+
+					      +tag-offset-tags-size+
+					      md2-tag nil))
+
+(defun load-tag-file (file)
+  "returns ((\"tag\" . #(rotation1 rotation2 rotation3 origin) ...))"
+  (let ((tag-results (make-instance 'md2-tag))
+	(results '()))
+      (with-open-file (stream file :direction :input :if-does-not-exist :error
+			      :element-type '(unsigned-byte 8))
+	(if (equalp +magic-num-md2-tag-file (parse-tag-id tag-results stream))
+	    (let* ((num-tags     (misc:byte->int (parse-tag-num tag-results stream)))
+		   (num-frames   (misc:byte->int (parse-frames-num tag-results stream)))
+		   (offset-names (misc:byte->int (parse-offset-names tag-results stream)))
+		   (offset-tags  (misc:byte->int (parse-offset-tags tag-results stream)))
+		   (names (loop
+			    repeat num-tags
+			    for seek-pos from offset-names by +tag-file-name-size+ collect
+			      (text-utils:clean-unprintable-chars
+			       (misc:bytes->string (misc:read-list stream +tag-file-name-size+
+								   :offset seek-pos))))))
+	      (file-position stream offset-tags)
+	      (loop for name in names do
+		   (let ((orientation (loop for j from 0 below num-frames collect
+					   (vector
+					    (vec (misc:read-ieee-float-32 stream) ;; rotation1
+						 (misc:read-ieee-float-32 stream)
+						 (misc:read-ieee-float-32 stream))
+					    (vec (misc:read-ieee-float-32 stream) ;; rotation2
+						 (misc:read-ieee-float-32 stream)
+						 (misc:read-ieee-float-32 stream))
+					    (vec (misc:read-ieee-float-32 stream) ;; rotation3
+						 (misc:read-ieee-float-32 stream)
+						 (misc:read-ieee-float-32 stream))
+					    (vec (misc:read-ieee-float-32 stream) ;; origin
+						 (misc:read-ieee-float-32 stream)
+						 (misc:read-ieee-float-32 stream))))))
+		     (push (cons name
+				 (list->simple-array orientation nil
+						     '(simple-array
+						       (simple-array single-float (3)) (4))))
+			   results)))
+	      results)
+	    (error 'md2-tag-error
+		   :text (format nil "Wrong magic number ~a"
+				 (parse-tag-id tag-results stream)))))))
+
+(defun tag->matrix (orientation)
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (declare ((simple-array (simple-array single-float (3)) (4)) orientation))
+  (let ((orien (elt orientation 0))
+	(r1    (elt orientation 1))
+	(r2    (elt orientation 2))
+	(r3    (elt orientation 3)))
+    (sb-cga:matrix (elt r1 0)    (elt r2 1)     (elt r3 2)    (elt orien 0)
+		   (elt r1 0)    (elt r2 1)     (elt r3 2)    (elt orien 1)
+		   (elt r1 0)    (elt r2 1)     (elt r3 2)    (elt orien 2)
+		   0.0           0.0            0.0              1.0)))
+
+(defun nsetup-tag-matrix (matrix orientation)
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (declare ((simple-array (simple-array single-float (3)) (4)) orientation))
+  (declare (sb-cga:matrix matrix))
+  (let ((r1    (elt orientation 0))
+	(r2    (elt orientation 1))
+	(r3    (elt orientation 2))
+	(orien (elt orientation 3)))
+    (setf (mref matrix 0 0) (elt r1 0)
+	  (mref matrix 1 0) (elt r1 1)
+	  (mref matrix 2 0) (elt r1 2)
+	  (mref matrix 3 0) 0.0
+	  ;; second column
+	  (mref matrix 0 1) (elt r2 0)
+	  (mref matrix 1 1) (elt r2 1)
+	  (mref matrix 2 1) (elt r2 2)
+	  (mref matrix 3 1) 0.0
+	  ;; third column
+	  (mref matrix 0 2) (elt r3 0)
+	  (mref matrix 1 2) (elt r3 1)
+	  (mref matrix 2 2) (elt r3 2)
+	  (mref matrix 3 2) 0.0
+	  ;; fourth colum
+	  (mref matrix 0 3) (elt orien 0)
+	  (mref matrix 1 3) (elt orien 1)
+	  (mref matrix 2 3) (elt orien 2)
+	  (mref matrix 3 3) 1.0)
+    matrix))
+
+(defun find-tag-cdr (key tags-list)
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (cdr (find-tag key tags-list)))
+
+(defun find-tag (key tags-list)
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (assoc key tags-list :test #'string=))
+
+(defmethod load-tags ((object triangle-mesh) file)
+  (with-accessors ((tags-table tags-table) (tags-matrices tags-matrices)) object
+    (restart-case
+	(progn
+	  (setf tags-table (load-tag-file file))
+	  (when tags-table
+	    (loop for name in tags-table do
+		 (push (cons (car name) (sb-cga:identity-matrix)) tags-matrices))))
+      (use-value (v) v))))
+
 
 (defmethod deserialize ((object triangle-mesh) place)
   (load-mesh object place))

@@ -84,7 +84,7 @@
 ;;; All of these methods are OPTIONAL.  However, without a render
 ;;; method, your window will not look like much!
 
-(defparameter *test-trees* '("s.lsys"                     ;  0
+(defparameter *test-trees* '("test.lsys"                  ;  0
 			     "tropical/palm.lsys"         ;  1
 			     "tropical/palm-2.lsys"       ;  2
 			     "general/dead-tree.lsys"     ;  3
