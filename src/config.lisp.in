@@ -39,9 +39,19 @@
 
 (defparameter *workers-number* 0)
 
-(defun _ (a) (cl-i18n:translate a))
+(defun _ (a)
+  (handler-bind ((i18n-conditions:no-translation-table-error
+		  #'(lambda(e)
+		      (declare (ignore e))
+		      (invoke-restart 'cl-i18n:return-untranslated))))
+    (cl-i18n:translate a)))
 
-(defun n_ (a n) (cl-i18n:ntranslate a a n))
+(defun n_ (a n)
+  (handler-bind ((i18n-conditions:no-translation-table-error
+		  #'(lambda(e)
+		      (declare (ignore e))
+		      (invoke-restart 'cl-i18n:return-untranslated))))
+      (cl-i18n:ntranslate a a n)))
 
 (alexandria:define-constant +debug-mode+ nil  :test #'eq)
 

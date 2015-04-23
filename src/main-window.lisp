@@ -393,8 +393,12 @@
 		   (camera:drag-camera (world:camera (world object)) offset))))))))))
 
 (defun main ()
-  (setf cl-i18n:*translation-file-root* +catalog-dir+)
-  (cl-i18n:load-language +text-domain+ :locale (cl-i18n:find-locale))
+  (handler-bind ((error
+		  #'(lambda(e)
+		      (declare (ignore e))
+		      (invoke-restart 'cl-i18n:return-empty-translation-table))))
+    (setf cl-i18n:*translation-file-root* +catalog-dir+)
+    (cl-i18n:load-language +text-domain+ :locale (cl-i18n:find-locale)))
   (setf *workers-number* (if (> (os-utils:cpu-number) 1)
 			     (os-utils:cpu-number)
 			     1))
