@@ -3183,10 +3183,10 @@
 						 xt zt
 						 text-inc-x text-inc-z
 						 :normal bottom-normal)))
-    ;; side
+    ;; sides
     (loop
-       repeat 4
-       for alpha from 0.0 by +pi/2+ do
+       repeat 2
+       for alpha from 0.0 by +pi+ do
 	 (with-pushed-matrix (mesh :what :modelview)
 	   (load-matrix mesh (identity-matrix))
 	   (mult-matrix mesh (translate (vec (d- (d/ x-size 2.0)) 0.0 0.0)))
@@ -3203,6 +3203,27 @@
 						   (vec2 1.0 1.0)  ; d
 						   (vec2 0.0 1.0)) ; c
 					   +zero-vec+ nil t)))
+    (loop
+       repeat 2
+       for alpha from 0.0 by +pi+ do
+	 (with-pushed-matrix (mesh :what :modelview)
+	   (load-matrix mesh (identity-matrix))
+	   (mult-matrix mesh (translate (vec (d- (d/ z-size 2.0)) 0.0 0.0)))
+	   (mult-matrix mesh (translate (vec 0.0                  0.0 (d/ x-size 2.0))))
+	   (mult-matrix mesh (translate (vec 0.0                  (d- h/2) 0.0)))
+	   (mult-matrix mesh (rotate-around +y-axe+ +pi/2+))
+	   (mult-matrix mesh (rotate-around +y-axe+ alpha))
+	   (quad-w-explicit-texture-coords mesh
+					   z-size
+					   h
+					   (vector (vec2 0.0 0.0)  ; a
+						   (vec2 1.0 0.0)  ; b
+						   (vec2 0.0 1.0)  ; c
+						   (vec2 1.0 0.0)  ; b
+						   (vec2 1.0 1.0)  ; d
+						   (vec2 0.0 1.0)) ; c
+					   +zero-vec+ nil t)))
+    (remove-orphaned-vertices mesh)
     mesh))
 
 (defun gen-skydome (radius &optional (parallel-div 16.0) (meridian-div 16.0))
