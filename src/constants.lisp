@@ -30,6 +30,8 @@
 
 (alexandria:define-constant +maximum-map-size+                 512.0          :test #'=)
 
+(alexandria:define-constant +minimium-map-size+                 32.0          :test #'=)
+
 (alexandria:define-constant +zero-height+                       10.0          :test '=)
 
 (alexandria:define-constant +terrain-clip-plane-dist-for-water+ -9.0          :test '=)

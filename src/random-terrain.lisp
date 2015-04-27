@@ -818,16 +818,24 @@
 			    (graph:node->node-id graph end)))))
 	path)))
 
+(defun lake-particle-inside-limits-p (matrix x y)
+  (let ((limit 2))
+    (and (> x limit)
+	 (< x (f- (width matrix) limit))
+	 (> y limit)
+	 (< y (f- (height matrix) limit)))))
+
 (defmethod grow-with-flood-fill ((object random-terrain) x y z area randomize-growth)
   (with-accessors ((matrix matrix)) object
     (restart-case
 	(if (inside-any-aabb object x y)
 	    (error 'invalid-position-error :coord (list x y))
 	    (matrix:with-check-matrix-borders (matrix x y)
-	      (let ((aabb   (matrix::good-aabb-start))
+	      (let ((aabb   (matrix:good-aabb-start))
 		    (pixels (matrix:flood-fill matrix x y :max-iteration area 
 				     :tolerance 0
-				     :randomize-growth randomize-growth)))
+				     :randomize-growth randomize-growth
+				     :position-acceptable-p-fn #'lake-particle-inside-limits-p)))
 		(if (= (length pixels) area)
 		    (progn
 		      (loop for pix in pixels do
@@ -843,9 +851,10 @@
 		    nil))))
       (use-value (v) v))))
 
-(defun %default-mountain-z-height-function (sigma mean 
-					   &optional (minimum-z +minimum-mountain-height+)
-					   (maximum-z +maximum-mountain-height+))
+(defun %default-mountain-z-height-function (sigma mean
+					    &optional
+					      (minimum-z +minimum-mountain-height+)
+					      (maximum-z +maximum-mountain-height+))
   #'(lambda (map x y iteration)
       (declare (ignore map x y iteration))
       (alexandria:clamp
@@ -876,7 +885,6 @@
   #'(lambda (map x y iteration)
       (declare (ignore x y iteration))
       (let ((area (* fraction (area-size map))))
-	;;(misc:dbg "area size (area-size map ~a) ~a ~a" (area-size map) area fraction)
 	(round (abs (%gaussian-probability (* sigma area) area))))))
 
 (defun default-lake-size-function ()

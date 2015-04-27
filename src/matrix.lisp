@@ -187,7 +187,9 @@
 
   (defgeneric pixel-inside-p (object x y))
 
-  (defgeneric flood-fill (object x y &key tolerance max-iteration randomize-growth))
+  (defgeneric flood-fill (object x y &key
+				       tolerance max-iteration randomize-growth
+				       position-acceptable-p-fn))
 
   (defgeneric apply-kernel (object kernel &key round-fn))
 
@@ -868,8 +870,8 @@ else
        (>= y 0)
        (< y (height object))))
 
-(defmacro good-aabb-start ()
-  `(list (1+ +maximum-map-size+) (1+ +maximum-map-size+) -1.0 -1.0))
+(defun good-aabb-start ()
+  (list (1+ +maximum-map-size+) (1+ +maximum-map-size+) -1.0 -1.0))
 
 (defmacro gen-neighbour-form (matrix queue x y)
   (alexandria:with-gensyms (neighbour)
@@ -878,8 +880,11 @@ else
 	    (when (pixel-inside-p ,matrix (first i) (second i))
 	      (push i ,queue))))))
 
-(defmethod flood-fill ((object matrix) x y &key (tolerance 0) (max-iteration 1d10)
-					     (randomize-growth nil))
+(defmethod flood-fill ((object matrix) x y &key
+					     (tolerance 0)
+					     (max-iteration 1d10)
+					     (randomize-growth nil)
+					     (position-acceptable-p-fn #'pixel-inside-p))
   (labels ((tolerance-p (px1 px2 tol)
 	     (cond
 	       ((or (arrayp px1) (listp px1))
@@ -912,11 +917,11 @@ else
 	      (when (and (not (find pixel affected-pixels :test #'equalp))
 			 (tolerance-p (matrix-elt object (second pixel) (first pixel))
 				      pixel-value tolerance))
-
-		(setf aabb (2d-utils:expand-aabb2 aabb (mapcar #'desired pixel)))
 		(push pixel affected-pixels)
-		(incf iteration-ct)
-		(gen-neighbour-form object queue (first pixel) (second pixel))))))))))
+		(when (funcall position-acceptable-p-fn object (elt pixel 0) (elt pixel 1))
+		  (setf aabb (2d-utils:expand-aabb2 aabb (mapcar #'desired pixel)))
+		  (incf iteration-ct)
+		  (gen-neighbour-form object queue (first pixel) (second pixel)))))))))))
 
 (defun gauss (x y sigma xc yc)
   (declare (optimize (speed 3) (safety 0) (debug 0)))

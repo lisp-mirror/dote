@@ -46,6 +46,7 @@
    :+wall-h+
    :+gravity+ 
    :+maximum-map-size+
+   :+minimium-map-size+
    :+zero-height+
    :+min-height+
    :+lake-height+
@@ -1000,6 +1001,7 @@
    :matrix-vline
    :matrix-rect
    :pixel-inside-p
+   :good-aabb-start
    :flood-fill
    :kernel-+
    :kernel-*
