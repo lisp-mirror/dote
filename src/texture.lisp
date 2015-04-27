@@ -130,8 +130,7 @@
 
 (alexandria:define-constant +id-handle-invalid+  -1 :test #'=) 
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defparameter *texture-factory-db* '()))
+(defparameter *texture-factory-db* '())
 
 (defun clean-db ()
   (map 'nil #'destroy *texture-factory-db*)
@@ -367,7 +366,12 @@
 
 (defmethod setup-finalizer ((object texture))
   (let ((texture-handle (handle object)))
-    (tg:finalize object #'(lambda () (free-memory texture-handle)))))
+    (let ((handle   (slot-value object 'handle))
+	  (filename (slot-value object 'filename)))
+      (tg:finalize object #'(lambda ()
+			      (when +debug-mode+
+				(misc:dbg "finalize texture ~a ~a" handle filename))
+			      (free-memory texture-handle))))))
 
 (defmethod bind-texture ((object texture))
   (unbind-texture object)

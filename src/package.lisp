@@ -1271,6 +1271,7 @@
 	:interfaces)
   (:export
    :*clone-id*
+   :*entity-id-counter*
    :identificable
    :id))
 
@@ -1391,6 +1392,7 @@
    :+attribute-texture-location+
    ;; for terrain decals (roads etc...)
    :+attribute-texture-decals-location+
+   :+attribute-pick-weight-location+
    :+texture-unit-diffuse+
    :+texture-unit-normalmap+
    :+texture-unit-projector+
@@ -1436,6 +1438,8 @@
 
 (defpackage :texture
   (:use :cl
+	:config
+	:constants
 	:interfaces
 	:matrix
 	:pixmap
@@ -1687,6 +1691,7 @@
    :+tag-left-weapon-key+
    :+tag-right-weapon-key+
    :triangle-mesh
+   :free-memory*
    :load-mesh
    :save-mesh
    :vertex-index
@@ -1812,6 +1817,41 @@
    :setup-texture-coord-scaling
    :setup-projective-texture))
 
+(defpackage :pickable-mesh
+  (:use :cl
+	:sb-cga
+	:sb-cga-utils
+	:config
+	:constants
+	:conditions
+	:misc
+	:shaders-utils
+	:cl-gl-utils
+	:interfaces
+	:transformable
+	:identificable
+	:num
+	:vec2
+	:vec4
+	:uivec
+	:mtree-utils
+	:identificable
+	:mesh)
+  (:shadowing-import-from :alexandria :define-constant)
+  (:export
+   :+attribute-pick-overlay+
+   :+color-tile-pick-can-move+
+   :+color-tile-pick-cannot-move+
+   :+pick-color-lerp-weight+
+   :pickable-mesh
+   :pick-overlay-values
+   :renderer-data-count-pick-overlay
+   :renderer-data-pick-overlay
+   :push-pickable-attribute
+   :set-pickable-attribute
+   :push-pickable-attribute
+   :set-pickable-attribute))
+ 
 ;; UI
 
 (defpackage :gui-events
@@ -2006,6 +2046,7 @@
 
 (defpackage :terrain-chunk
   (:use :cl
+	:config
 	:constants
 	:sb-cga
 	:sb-cga-utils
@@ -2013,6 +2054,7 @@
 	:cl-gl-utils
 	:interfaces
 	:transformable
+	:identificable
 	:parser
 	:num-utils
 	:misc-utils
@@ -2024,9 +2066,12 @@
 	:camera
 	:entity
 	:game-state
-	:mesh)
+	:mesh
+	:pickable-mesh)
   (:shadowing-import-from :sb-cga :matrix)
+  (:shadowing-import-from :alexandria :define-constant)
   (:export
+   :+pick-color-lerp-weight+
    :terrain-chunk
    :heightmap
    :decal-weights
@@ -2047,9 +2092,9 @@
 	:conditions
 	:interfaces
 	:transformable
+	:identificable
 	:num
 	:misc
-	:interfaces
 	:mesh-material
 	:mesh)
   (:export

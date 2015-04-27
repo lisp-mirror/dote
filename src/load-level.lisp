@@ -308,7 +308,7 @@
 						     :door-e *door-e*
 						     :door-w *door-w*))
     (setf (floor-bag world)      *floor*)
-    (setf (furnitures-bag world) *furnitures*)           
+    (setf (furnitures-bag world) *furnitures*)
     (setup-terrains world        *map*)
     (setup-floor    world        *map*)
     (setup-ceiling  world        *map*)

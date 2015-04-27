@@ -141,7 +141,7 @@
 
 (defparameter *floor*  nil)
 
-(defparameter *furnitures* nil)
+(defparameter *furnitures* '())
 
 (defun gen-normalmap-if-needed (diffuse-texture)
   (let ((roughness (texture:n-roughness diffuse-texture)))
@@ -277,8 +277,9 @@
 (defmacro define-level (&body body)
   (ensure-cache-running
     ;; clean a bit
-    (setf *map* nil
-	  *trees* '())
+    (setf *map*         nil
+	  *trees*      '()
+	  *furnitures* '())
     (need-keyword ((first body) :set)
       (need-keyword ((second body) :seed)
 	(need-type ((third body) 'string)
@@ -730,7 +731,6 @@
 					(fourth body)
 					(elt body 6))))
 	       (setf (texture:use-mipmap (mesh:texture-object mesh)) t)
-	       (texture:prepare-for-rendering (mesh:texture-object mesh))
 	       (push mesh *trees*))
 	     (err (format nil "tree mesh: file-not-supported: ~a" (fourth body))))
 	 (setf offset 8))

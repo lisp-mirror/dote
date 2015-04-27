@@ -87,6 +87,7 @@
 	       (:file "entity")
 	       (:file "camera")
 	       (:file "mesh")
+	       (:file "pickable-mesh")
 	       (:file "wall-mesh-shell")
 	       (:file "building-floor-mesh-shell")
 	       (:file "character")

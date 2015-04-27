@@ -61,7 +61,13 @@
     :accessor door-w
     :initarg :door-w
     :initform nil)))
-   
+
+(defmethod destroy ((object doors))
+  (destroy (door-n object))
+  (destroy (door-s object))
+  (destroy (door-e object))
+  (destroy (door-w object)))
+
 (defclass world (transformable renderizable)
   ((camera
     :accessor camera
@@ -138,9 +144,19 @@
 
 (defmethod destroy ((object world))
   (destroy (skydome object))
+  (map nil #'destroy (trees-bag object))
+  (setf (trees-bag object) nil)
+  (destroy (walls-bag object))
+  (destroy (floor-bag object))
+  (destroy (doors-bag object))
+  (map nil #'destroy (furnitures-bag object))
+  (setf (furnitures-bag object) nil)
+  (destroy (windows-bag object))
+  (destroy (gui object))
   ;; TODO sostituire con quadtree
   (loop for entity across (entities object) do
-       (destroy entity)))
+       (destroy entity))
+  (setf (entities object) nil))
 
 (defmethod (setf main-state) (new-state (object world))
   (with-slots (main-state skydome camera) object
@@ -171,7 +187,7 @@
 
 (defmethod initialize-instance :after ((object world) &key &allow-other-keys)
   (setf (camera object) (make-instance 'camera :pos (vec 0.0 0.0 1.0)))
-  ;;;just testing gui!
+  ;; gui
   (let* ((toolbar    (make-instance 'widget:main-toolbar
 				    :x 0.0 :y 0.0
 				    :width  (num:d *window-w*)

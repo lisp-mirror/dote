@@ -2,6 +2,8 @@
 
 layout (location = 0)  in vec4 position;
 
+layout (location = 1)  in float pick_weights;
+
 layout (location = 4)  in vec3 normal;
 
 layout (location = 12) in vec2 texture_coord;
@@ -26,6 +28,8 @@ out float height;
 
 out float slope;
 
+out float pick_weight;
+
 out vec3 N;
 out vec3 V;
 out vec3 L;
@@ -39,6 +43,7 @@ void main () {
   ADS(position, normal, vec4(light_pos,1.0), normal_matrix, modelview_matrix, N, V, L);
   frag_text_coord        = texture_coord;
   frag_text_coord_decals = texture_coord_decals;
+  pick_weight            = pick_weights;
   height                 = position.y / 255.0;
   slope                  = 1.0 - normal.y;
   gl_ClipDistance[0]     = dot(position, clip_plane);

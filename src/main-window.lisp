@@ -403,6 +403,7 @@
 			     (os-utils:cpu-number)
 			     1))
   (setf lparallel:*kernel* (lparallel:make-kernel *workers-number*))
+  (setf identificable:*entity-id-counter* +start-id-counter+)
   (start)
   (sdl2:gl-set-attr :context-profile-mask  1)
   (sdl2:gl-set-attr :context-major-version 3)

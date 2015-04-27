@@ -22,7 +22,7 @@
 
 (alexandria:define-constant +wall-w+       +terrain-chunk-tile-size+          :test #'=)
 
-(alexandria:define-constant +wall-h-scale+                      2.5           :test #'=)
+(alexandria:define-constant +wall-h-scale+                       2.5          :test #'=)
 
 (alexandria:define-constant +wall-h+     (* +wall-h-scale+ +wall-w+)          :test #'=)
 

@@ -16,28 +16,24 @@
 
 (in-package :terrain-chunk)
 
-(alexandria:define-constant +texture-tag-shore-terrain+    "shore-terrain" :test #'string= )
+(define-constant +texture-tag-shore-terrain+        "shore-terrain"      :test #'string= )
 
-(alexandria:define-constant +texture-tag-grass-terrain+    "grass-terrain" :test #'string= )
+(define-constant +texture-tag-grass-terrain+        "grass-terrain"      :test #'string= )
 
-(alexandria:define-constant +texture-tag-snow-terrain+     "snow-terrain"  :test #'string= )
+(define-constant +texture-tag-snow-terrain+         "snow-terrain"       :test #'string= )
 
-(alexandria:define-constant +texture-tag-soil-terrain-level-1+ 
-                                                           "soil-level-1" :test #'string= )
+(define-constant +texture-tag-soil-terrain-level-1+ "soil-level-1"       :test #'string= )
 
-(alexandria:define-constant +texture-tag-soil-terrain-level-2+ 
-                                                           "soil-level-2" :test #'string= )
+(define-constant +texture-tag-soil-terrain-level-2+ "soil-level-2"       :test #'string= )
 
-(alexandria:define-constant +decals-weights-size+ 512.0 :test #'=)
+(define-constant +decals-weights-size+              512.0                :test #'=)
 
-(alexandria:define-constant +decal-texture-coordinates+ :texture-decals :test #'eq)
+(define-constant +attribute-decal-texture+          :texture-decals      :test #'eq)
 
-(alexandria:define-constant +clip-plane-no-clip+
-    (vec4:vec4 0.0 1.0 0.0 +terrain-noclip-plane-dist+)
+(define-constant +clip-plane-no-clip+ (vec4:vec4 0.0 1.0 0.0 +terrain-noclip-plane-dist+)
   :test #'vec4:vec4~)
 
-(alexandria:define-constant +clip-plane-for-water+
-    (vec4:vec4 0.0 1.0 0.0 (- +water-mesh-starting-y+))
+(define-constant +clip-plane-for-water+ (vec4:vec4 0.0 1.0 0.0 (- +water-mesh-starting-y+))
   :test #'vec4:vec4~)
 
 (defparameter *clip-plane* +clip-plane-no-clip+)
@@ -48,7 +44,7 @@
 	(elt l (lcg-next-upto (length l)))
 	nil)))
 
-(defclass terrain-chunk (triangle-mesh)
+(defclass terrain-chunk (pickable-mesh)
   ((heightmap
     :initform nil
     :initarg  :heightmap
@@ -119,8 +115,11 @@
 
 (defmethod destroy :after ((object terrain-chunk))
   (with-accessors ((renderer-data-text-weights renderer-data-text-weights)) object
+    (when +debug-mode+
+      (misc:dbg "destroy terrain-chunk"))
     (when renderer-data-text-weights
-      (gl:free-gl-array renderer-data-text-weights))))
+      (gl:free-gl-array renderer-data-text-weights)
+      (setf renderer-data-text-weights nil))))
 
 (defmethod make-data-for-opengl :after ((object terrain-chunk))
   (with-accessors ((renderer-data-count-weights renderer-data-count-weights)
@@ -131,7 +130,7 @@
 	 for triangle in (triangles object)
 	 for ct from 0 by 6                 do
 	   (let ((decal-indices (get-custom-attribute triangle
-						      +decal-texture-coordinates+)))
+						      +attribute-decal-texture+)))
 	     (loop
 		for i across decal-indices
 		for offset from 0 by 2 do
@@ -143,7 +142,12 @@
       (setf renderer-data-text-weights  weights)
       (setf renderer-data-count-weights (* 6 (length (triangles object)))))
     ;; setup finalizer
-    (tg:finalize object #'(lambda () (gl:free-gl-array renderer-data-text-weights)))))
+    (let ((gl-arr-weight (slot-value object 'renderer-data-text-weights))
+	  (id            (slot-value object 'id)))
+      (tg:finalize object #'(lambda ()
+			      (when +debug-mode+
+				(misc:dbg "finalize destroy terrain ~a" id))
+			      (gl:free-gl-array gl-arr-weight))))))
 
 (defmethod render ((object terrain-chunk) renderer)
   (actual-render object renderer))
@@ -286,6 +290,7 @@
 	  (uniformf  compiled-shaders :kd        1.0)
 	  (uniformf  compiled-shaders :ks        1.0)
 	  (uniformf  compiled-shaders :shine    50.0)
+	  (uniformfv compiled-shaders :pick-color +color-tile-pick-can-move+)
 	  (uniformfv compiled-shaders :clip-plane (the vec4 *clip-plane*))
 	  (uniform-matrix compiled-shaders :modelview-matrix 4
 				   (vector (matrix* camera-vw-matrix
@@ -371,7 +376,7 @@
 	 (b-index        (- (length (text-coord-weights object)) 2))
 	 (a-index        (- (length (text-coord-weights object)) 3))
 	 (indices        (uivec a-index b-index c-index)))
-    (set-custom-attribute first-triangle +decal-texture-coordinates+ indices)))
+    (set-custom-attribute first-triangle +attribute-decal-texture+ indices)))
 
 (defmethod build-mesh ((object terrain-chunk))
 "                       d
@@ -421,7 +426,11 @@
 		(push-decal-weights-text-coord object (d+ x inc-x) z)
 		(%put-vertex object x z s-tex t-tex inc-x 0.0 inc-tex 0.0)
 	      ;; assign texture-decals coordinates for triangle a b c
-		(set-decals-triangle-attribute object))))))
+		(set-decals-triangle-attribute object)
+	      ;; assign pick weight value
+		(push-pickable-attribute object 0.0)
+		(set-pickable-attribute  object :triangle-index 0)
+		(set-pickable-attribute  object :triangle-index 1))))))
 		
 (defmethod build-mesh-dbg ((object terrain-chunk))
   (with-accessors ((heightmap heightmap)) object

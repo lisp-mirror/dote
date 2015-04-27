@@ -101,7 +101,10 @@
     :initform t
     :initarg :cycle-animation
     :accessor cycle-animation)))
- 
+
+(defmethod print-object ((object md2-mesh) stream)
+  (print-unreadable-object (object stream :type t :identity t)))
+
 (defgeneric push-errors (object the-error))
 
 (defgeneric load (object file))
@@ -116,7 +119,8 @@
 
 (defgeneric %alloc-arrays (object))
 
-(defmethod destroy :after ((object md2-mesh)))
+(defmethod destroy :after ((object md2-mesh))
+  (map nil #'destroy (frames object)))
  
 (define-header-offsets (magic-number
 			version
@@ -275,7 +279,28 @@
 			      renderer-data-count-tangents)
       (setf triangles-mesh (triangles start-frame)
 	    renderer-data-normals-obj-space
-	    (gl:alloc-gl-array :float (normals-obj-space-vertex-count object))))))
+	    (gl:alloc-gl-array :float (normals-obj-space-vertex-count object)))
+            ;; setup finalizer
+      (let ((gl-arr-vert     (slot-value object 'renderer-data-vertices))
+	    (gl-arr-tex      (slot-value object 'renderer-data-texture))
+	    (gl-arr-norm     (slot-value object 'renderer-data-normals))
+	    (gl-arr-norm-obj (slot-value object 'renderer-data-normals-obj-space))
+	    (gl-arr-tan      (slot-value object 'renderer-data-tangents))
+	    (gl-arr-aabb     (slot-value object 'renderer-data-aabb-obj-space))
+	    (vbos            (slot-value object 'vbo))
+	    (vaos            (slot-value object 'vao))
+	    (id              (slot-value object 'id)))
+	(tg:finalize object
+		     #'(lambda ()
+			 (when +debug-mode+
+			   (misc:dbg "finalize destroy md2 mesh ~a" id))
+			 (free-memory* (list gl-arr-vert
+					     gl-arr-tex
+					     gl-arr-norm
+					     gl-arr-norm-obj
+					     gl-arr-tan
+					     gl-arr-aabb)
+				       vbos vaos)))))))
 
 (defmethod load ((object md2-mesh) file)
   (with-accessors ((renderer-data-vertices renderer-data-vertices)

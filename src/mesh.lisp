@@ -288,7 +288,7 @@
     :accessor renderer-data-tangents-obj-space
     :documentation "For debug only")
    (renderer-data-aabb-obj-space
-    :initform (gl:alloc-gl-array :float +aabb-vertex-count+)
+    :initform nil
     :initarg :renderer-data-aabb-obj-space
     :accessor renderer-data-aabb-obj-space
     :documentation "For debug only")
@@ -987,6 +987,7 @@
 		   (vbo vbo)
 		   (vao vao)) object
     (%reset-data-renderer-count object)
+    (setf renderer-data-aabb-obj-space (gl:alloc-gl-array :float +aabb-vertex-count+))
     (labels ((get-vertices (triangle results offset)
 	       (let* ((indices (vertex-index triangle))
 		      (v1 (elt vertices (elt indices 0)))
@@ -1072,15 +1073,28 @@
 	(make-data-for-opengl-tangents-obj-space object)
 	(make-data-for-opengl-aabb-obj-space object)
 	;; setup finalizer
-	(tg:finalize object
-		     #'(lambda () (free-memory* (list renderer-data-vertices
-						      renderer-data-texture
-						      renderer-data-normals
-						      renderer-data-normals-obj-space
-						      renderer-data-tangents
-						      renderer-data-tangents-obj-space
-						      renderer-data-aabb-obj-space)
-						vbo vao)))
+	(let ((gl-arr-vert     (slot-value object 'renderer-data-vertices))
+	      (gl-arr-tex      (slot-value object 'renderer-data-texture))
+	      (gl-arr-norm     (slot-value object 'renderer-data-normals))
+	      (gl-arr-norm-obj (slot-value object 'renderer-data-normals-obj-space))
+	      (gl-arr-tan      (slot-value object 'renderer-data-tangents))
+	      (gl-arr-tan-obj  (slot-value object 'renderer-data-tangents-obj-space))
+	      (gl-arr-aabb     (slot-value object 'renderer-data-aabb-obj-space))
+	      (vbos            (slot-value object 'vbo))
+	      (vaos            (slot-value object 'vao))
+	      (id              (slot-value object 'id)))
+	  (tg:finalize object
+		       #'(lambda ()
+			   (when +debug-mode+
+			     (misc:dbg "finalize destroy mesh ~a" id))
+			   (free-memory* (list gl-arr-vert
+					       gl-arr-tex
+					       gl-arr-norm
+					       gl-arr-norm-obj
+					       gl-arr-tan
+					       gl-arr-tan-obj
+					       gl-arr-aabb)
+					 vbos vaos))))
 	(do-children-mesh (i object)
 	  (make-data-for-opengl i))))))
 
@@ -1229,8 +1243,10 @@
 
 (defun free-memory* (arrays vbos vaos)
   (loop for i in arrays do (and i (gl:free-gl-array i)))
-  (gl:delete-buffers vbos)
-  (gl:delete-vertex-arrays vaos))
+  (when vbos
+    (gl:delete-buffers vbos))
+  (when vaos
+    (gl:delete-vertex-arrays vaos)))
 
 (defmethod destroy ((object triangle-mesh))
   (with-accessors ((renderer-data-vertices renderer-data-vertices)
@@ -1242,14 +1258,25 @@
 		   (renderer-data-aabb-obj-space renderer-data-aabb-obj-space)
 		   (vbo vbo) (vao vao)) object
     (tg:cancel-finalization object)
+    (when +debug-mode+
+      (misc:dbg "destroy tree mesh ~a" (id object)))
     (free-memory* (list renderer-data-vertices
 			renderer-data-texture
 			renderer-data-normals
 			renderer-data-normals-obj-space
 			renderer-data-tangents
-			renderer-data-tangents-obj-space)
-					;renderer-data-aabb-obj-space)
+			renderer-data-tangents-obj-space
+			renderer-data-aabb-obj-space)
 		  vbo vao)
+    (setf vbo nil
+	  vao nil
+	  renderer-data-vertices nil
+	  renderer-data-texture nil
+	  renderer-data-normals nil
+	  renderer-data-normals-obj-space nil
+	  renderer-data-tangents nil
+	  renderer-data-tangents-obj-space nil
+	  renderer-data-aabb-obj-space     nil)
     (do-children-mesh (i object)
       (destroy i))))
 
@@ -2544,15 +2571,13 @@
     :initarg :measures
     :accessor measures)
    (triangle-step
-    :initform 20.0
+    :initform (* 2.0 +terrain-chunk-tile-size+)
     :initarg :triangle-step
     :accessor triangle-step)
    (fluid-speed
     :initform 0.15
     :initarg :fluid-speed
     :accessor fluid-speed)))
-
-(defgeneric render-plane (object renderer))
 
 (defmethod initialize-instance :after ((object water) &key &allow-other-keys)
   (with-accessors ((texture-object texture-object)) object
@@ -2575,10 +2600,13 @@
     (setf (framebuffer object)  (elt framebuffers 0)
 	  (depthbuffer object) (elt depthbuffers 0))
     ;; setup finalizer
-    (tg:finalize object
-		 #'(lambda ()
-		     (gl:delete-framebuffers framebuffers)
-		     (gl:delete-renderbuffers depthbuffers)))))
+    (let ((id (slot-value object 'id)))
+      (tg:finalize object
+		   #'(lambda ()
+		       (when +debug-mode+
+			 (misc:dbg "finalize water ~a" id))
+		       (gl:delete-framebuffers framebuffers)
+		       (gl:delete-renderbuffers depthbuffers))))))
 
 (defmethod prepare-for-rendering ((object water))
   "                    d
@@ -2670,6 +2698,18 @@
     (look-at* camera))
   (gl:viewport 0 0 (the fixnum *window-w*) (the fixnum *window-h*))
   (render-plane object renderer))
+
+(defmethod destroy :after ((object water))
+  (with-accessors ((framebuffer framebuffer) (depthbuffer depthbuffer)) object
+    (when +debug-mode+
+      (misc:dbg "destroy water ~a" (id object)))
+    (when framebuffer
+      (gl:delete-framebuffers  (list (framebuffer object))))
+    (when depthbuffer
+      (gl:delete-renderbuffers (list (depthbuffer object))))
+    (tg:cancel-finalization object)))
+
+(defgeneric render-plane (object renderer))
 
 (defmethod render-plane ((object water) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))

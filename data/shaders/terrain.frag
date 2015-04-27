@@ -12,6 +12,8 @@ in float slope;
 
 in vec2 frag_text_coord_decals;
 
+in float pick_weight;
+
 const int thrs_sand  = 0;
 const int thrs_grass = 1;
 const int thrs_empty = 2;
@@ -22,6 +24,8 @@ const int idx_decal_building = 1;
 const int idx_decal_soil     = 2;
 
 uniform vec4 height_texture_thrs = vec4(0.02, 0.03, 0.2, 0.65);
+
+uniform vec4 pick_color          = vec4(0.0, 0.0, 1.0, 1.0);
 
 // sand
 uniform sampler2D texture_terrain_level_1;
@@ -152,6 +156,8 @@ void main () {
   spec_color = ks * (pow(max(dot(R, V),0.0),shine) * is);
   spec_color *=  smoothstep(0.0, 1.0, decals[idx_decal_road]);
 
-  color = vec4(amb_diff_color,1.0) * texel + vec4(spec_color,1.0);
+  color = mix(vec4(amb_diff_color,1.0) * texel + vec4(spec_color,1.0),
+	      pick_color,
+	      pick_weight);
 }
 

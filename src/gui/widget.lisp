@@ -2735,7 +2735,7 @@
 				    +input-text-w+
 				    (d/ (d *window-w*) 12.0))
 			     :y (d* 6.0 (d+ +spacing+ +input-text-h+))
-			     :prefix (_ "WG: ")
+			     :prefix (_ "WG:  ")
 			     :label "")
     :initarg  :lb-weight
     :accessor lb-weight)))

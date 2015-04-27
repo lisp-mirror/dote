@@ -27,6 +27,8 @@
 ;; for terrain decals (roads etc...)
 (alexandria:define-constant +attribute-texture-decals-location+ 13 :test #'=)
 
+(alexandria:define-constant +attribute-pick-weight-location+     1 :test #'=)
+
 (alexandria:define-constant +texture-unit-diffuse+               0 :test #'=)
 
 (alexandria:define-constant +texture-unit-normalmap+             1 :test #'=)
@@ -211,6 +213,7 @@ active program (set by sdk2.kit:use-program)."
      (:uniforms
       ;; fragment
       :height-texture-thrs
+      :pick-color
       :texture-terrain-level-1
       :texture-terrain-level-2
       :texture-terrain-level-3
