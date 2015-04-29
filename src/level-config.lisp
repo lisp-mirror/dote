@@ -279,7 +279,14 @@
     ;; clean a bit
     (setf *map*         nil
 	  *trees*      '()
-	  *furnitures* '())
+	  *furnitures* '()
+	  *wall*       nil
+          *window*     nil
+	  *door-n*     nil
+	  *door-s*     nil
+	  *door-e*     nil
+	  *door-w*     nil
+	  *floor*      nil)
     (need-keyword ((first body) :set)
       (need-keyword ((second body) :seed)
 	(need-type ((third body) 'string)

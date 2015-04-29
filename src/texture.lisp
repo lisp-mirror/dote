@@ -204,9 +204,9 @@
   (prepared-for-rendering object))
 
 (defmethod destroy :after ((object texture))
-  (tg:cancel-finalization object)
   (when (and (initializedp object)
 	     (/= (handle object) +id-handle-invalid+))
+    (tg:cancel-finalization object)
     (free-memory (handle object))
     (setf (handle object) +id-handle-invalid+)))
 
@@ -365,13 +365,12 @@
     (gl:tex-parameter :texture-2d :texture-border-color border-color)))
 
 (defmethod setup-finalizer ((object texture))
-  (let ((texture-handle (handle object)))
-    (let ((handle   (slot-value object 'handle))
-	  (filename (slot-value object 'filename)))
-      (tg:finalize object #'(lambda ()
-			      (when +debug-mode+
-				(misc:dbg "finalize texture ~a ~a" handle filename))
-			      (free-memory texture-handle))))))
+  (let ((handle   (slot-value object 'handle))
+	(filename (slot-value object 'filename)))
+    (tg:finalize object #'(lambda ()
+			    (when +debug-mode+
+			      (misc:dbg "finalize texture ~a ~a" handle filename))
+			    (free-memory handle)))))
 
 (defmethod bind-texture ((object texture))
   (unbind-texture object)

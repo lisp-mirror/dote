@@ -66,7 +66,11 @@
   (destroy (door-n object))
   (destroy (door-s object))
   (destroy (door-e object))
-  (destroy (door-w object)))
+  (destroy (door-w object))
+  (setf    (door-n object) nil
+	   (door-s object) nil
+	   (door-e object) nil
+	   (door-w object) nil))
 
 (defclass world (transformable renderizable)
   ((camera

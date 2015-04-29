@@ -193,6 +193,11 @@
 	(normalize cross-product)
 	cross-product)))
 
+(defun triangle-centroid (a b c)
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (declare (vec a b c))
+  (vec/ (vec+ a (vec+ b c)) 3.0))
+
 (defun tangent-TBN (a b c tex-a tex-b tex-c)
   "counterclockwise"
   (let* ((e1 (vec- b a))
