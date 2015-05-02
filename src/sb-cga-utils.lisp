@@ -426,4 +426,13 @@
 	    (d- (elt f 0)) (d- (elt f 1)) (d- (elt f 2)) (dot-product f eye)
 	    0.0 0.0 0.0 1.0)))
 
-(define-compiler-macros look@ eye center up)
+(defun-inline-function unproject (x y z model-view proj win-x win-y win-w win-h)
+  (let* ((inv (inverse-matrix (matrix* proj model-view)))
+	 (tmp (vec4- (vec4* (vec4 (d/ (d- x win-x) win-w) (d/ (d- y  win-y) win-h) z 1.0)
+			    2.0)
+		     (vec4 1.0 1.0 1.0 1.0)))
+	 (obj (transform-vec4 tmp inv))
+	 (w   (elt obj 3)))
+    (vec/ (vec (elt obj 0) (elt obj 1) (elt obj 2)) w)))
+
+(define-compiler-macros unproject x y z model-view proj win-x win-y win-w win-h)

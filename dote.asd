@@ -88,8 +88,8 @@
 	       (:file "camera")
 	       (:file "mesh")
 	       (:file "pickable-mesh")
+	       (:file "building-floor-mesh")
 	       (:file "wall-mesh-shell")
-	       (:file "building-floor-mesh-shell")
 	       (:file "character")
 	       (:module gui
 			:components ((:file "gui-events")

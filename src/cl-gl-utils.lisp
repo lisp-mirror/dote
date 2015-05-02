@@ -124,3 +124,10 @@
 	 (gl:delete-framebuffers  ,framebuffers)
 	 (gl:delete-renderbuffers ,depthbuffers)
 	 (interfaces:destroy ,texture)))))
+
+(defun pick-position (x y modelview-matrix projection-matrix win-w win-h)
+  (let* ((dx (d x))
+	 (z  (elt (gl:read-pixels x (f- win-h y) 1 1 :depth-component :float) 0)))
+    ;; Note gl:read-pixels return a vector
+    (3d-utils:unproject dx (d (f- win-h y)) z modelview-matrix projection-matrix
+			0.0 0.0 (d win-w) (d win-h))))

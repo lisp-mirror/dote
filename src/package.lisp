@@ -389,6 +389,7 @@
    :compiled-shaders
    :prepare-for-rendering
    :update-for-rendering
+   :pick-pointer-position
    :main-state
    :calculate
    :render
@@ -396,6 +397,7 @@
    :render-for-reflection
    :clone
    :clone-into
+   :with-simple-clone
    :initializedp
    :to-sexp
    :from-sexp
@@ -666,6 +668,7 @@
    :infinite-perspective
    :frustum
    :project
+   :unproject
    :look@
    :look@*))
 
@@ -1369,7 +1372,8 @@
 (defpackage :cl-gl-utils
   (:use :cl
 	:cl-opengl
-	:misc)
+	:misc
+	:num)
   (:nicknames :gl-utils)
   (:export
    :+transform-matrix-cointainer+
@@ -1381,7 +1385,8 @@
    :lerp-gl-array
    :render-to-texture
    :with-render-to-texture
-   :with-render-to-file))
+   :with-render-to-file
+   :pick-position))
 
 (defpackage :shaders-utils
   (:use :cl
@@ -1761,6 +1766,7 @@
    :push-matrix
    :pop-matrix
    :load-matrix
+   :mult-matrix
    :make-data-for-opengl
    :make-data-for-opengl-aabb-obj-space
    :prepare-for-rendering
@@ -1810,13 +1816,11 @@
    :parallelepiped
    :quad
    :quad-w-explicit-texture-coords
-   :floor-tile
+   :quads-plane
    :gen-ceiling
    :gen-skydome
    :with-pushed-matrix
    :wall-mesh-shell
-   :building-floor-mesh-shell
-   :setup-texture-coord-scaling
    :setup-projective-texture))
 
 (defpackage :pickable-mesh
@@ -1837,7 +1841,6 @@
 	:vec4
 	:uivec
 	:mtree-utils
-	:identificable
 	:mesh)
   (:shadowing-import-from :alexandria :define-constant)
   (:export
@@ -1853,7 +1856,33 @@
    :set-pickable-attribute
    :push-pickable-attribute
    :set-pickable-attribute))
- 
+
+(defpackage :building-floor-mesh
+  (:use :cl
+	:sb-cga
+	:sb-cga-utils
+	:config
+	:constants
+	:conditions
+	:misc
+	:shaders-utils
+	:cl-gl-utils
+	:interfaces
+	:transformable
+	:identificable
+	:num
+	:vec2
+	:vec4
+	:uivec
+	:mtree-utils
+	:mesh
+	:mesh-material
+	:pickable-mesh)
+  (:export
+   :building-floor-mesh
+   :setup-texture-coord-scaling
+   :floor-tile))
+
 ;; UI
 
 (defpackage :gui-events

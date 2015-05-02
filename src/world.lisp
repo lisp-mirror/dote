@@ -151,12 +151,17 @@
   (map nil #'destroy (trees-bag object))
   (setf (trees-bag object) nil)
   (destroy (walls-bag object))
+  (setf (walls-bag object) nil)
   (destroy (floor-bag object))
+  (setf (floor-bag object) nil)
   (destroy (doors-bag object))
+  (setf (doors-bag object) nil)
   (map nil #'destroy (furnitures-bag object))
   (setf (furnitures-bag object) nil)
   (destroy (windows-bag object))
+  (setf (windows-bag object) nil)
   (destroy (gui object))
+  (setf (gui object) nil)
   ;; TODO sostituire con quadtree
   (loop for entity across (entities object) do
        (destroy entity))
@@ -175,27 +180,21 @@
     `(defmethod ,fn-name (new-value (object world))
        (with-slots (,name) object
 	 (setf (elt ,name 0) new-value))
-       (setf (,get-name (skydome object)) new-value))))
+       (setf (,get-name (camera object)) new-value))))
 
 (gen-accessors-matrix model-matrix)
 
 (gen-accessors-matrix view-matrix)
 
-(defmethod (setf projection-matrix) (new-value (object world))
-  (with-slots (projection-matrix) object
-    (setf (elt projection-matrix 0) new-value))
-  (setf (projection-matrix (camera object)) new-value)
-  ;; TODO sostituire con quadtree
-  (loop for entity across (entities object) do
-       (setf (projection-matrix entity) new-value)))
+(gen-accessors-matrix projection-matrix)
 
 (defmethod initialize-instance :after ((object world) &key &allow-other-keys)
   (setf (camera object) (make-instance 'camera :pos (vec 0.0 0.0 1.0)))
   ;; gui
-  (let* ((toolbar    (make-instance 'widget:main-toolbar
-				    :x 0.0 :y 0.0
-				    :width  (num:d *window-w*)
-				    :height (num:d *window-h*)))
+  (let* ((toolbar (make-instance 'widget:main-toolbar
+				 :x 0.0 :y 0.0
+				 :width  (num:d *window-w*)
+				 :height (num:d *window-h*)))
 	 (player-character (widget:make-player-generator)))
     (add-child (gui object) toolbar)
     (add-child (gui object) player-character)))
@@ -227,6 +226,13 @@
   (loop for entity across (entities object) do
        (when (frustum-intersects-p object entity)
 	 (render-for-reflection entity object))))
+
+(defmethod pick-pointer-position ((object world) renderer x y)
+  (loop for entity across (entities object) do
+       (let ((pos (pick-pointer-position entity renderer x y)))
+	 (when pos
+	   (return-from pick-pointer-position pos))))
+  nil)
 
 (defmethod main-light-pos ((object world))
   (declare (optimize (debug 0) (safety 0) (speed 3)))

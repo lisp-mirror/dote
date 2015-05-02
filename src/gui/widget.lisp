@@ -810,7 +810,7 @@
       nil))
 
 (defmethod on-mouse-released ((object text-field) event)
-  nil)
+  (mouse-over object (x-event event) (y-event event)))
 
 (defmethod on-key-pressed ((object text-field) event)
   (let ((old-label (label object)))
@@ -1186,24 +1186,28 @@
 	(d* (bottom-frame-offset *reference-sizes*) (height (frame object))))))
 	
 (defmethod on-mouse-pressed ((object window) event)
-  (if (mouse-over object (x-event event) (y-event event))
+  (if (and (shown object)
+	   (mouse-over object (x-event event) (y-event event)))
       (progn
 	(loop for w across (children object) do
 	     (when (and (widgetp w)
 			(on-mouse-pressed w event))
-	       (return-from on-mouse-pressed t))))
+	       (return-from on-mouse-pressed t)))
+	t)
       nil))
 
 (defmethod on-mouse-released ((object window) event)
   (with-accessors ((dragging-mode dragging-mode)) object
     (when dragging-mode
       (setf dragging-mode nil)))
-  (if (mouse-over object (x-event event) (y-event event))
+  (if (and (shown object)
+	   (mouse-over object (x-event event) (y-event event)))
       (progn
 	(loop for w across (children object) do
 	     (when (and (widgetp w)
 			(on-mouse-released w event))
-	       (return-from on-mouse-released t))))
+	       (return-from on-mouse-released t)))
+	t)
       nil))
 
 (defmethod on-mouse-dragged ((object window) event)

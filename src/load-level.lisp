@@ -172,7 +172,7 @@
   (loop
      for aabb in (labyrinths-aabb map)
      for bmp  in (mapcar #'(lambda (a)
-			     (clean-and-redraw-mat a) 
+			     (clean-and-redraw-mat a)
 			     (shared-matrix        a))
 			 (labyrinths map))             do
        (let* ((min-x   (iaabb2-min-x aabb))
@@ -198,31 +198,41 @@
 		
 (defun setup-single-floor (world aabb)
   (let* ((rect            (aabb2->rect2 aabb))
-	 (mesh            (floor-bag world))
-	 (shell           (mesh:fill-shell-from-mesh mesh 'mesh:building-floor-mesh-shell))
+	 (ref-mesh        (floor-bag world))
 	 (min-x           (aabb2-min-x aabb))
 	 (min-y           (aabb2-min-y aabb))
-	 (w               (d* +terrain-chunk-size-scale+ (elt rect 2)))
-	 (h               (d* +terrain-chunk-size-scale+ (elt rect 3)))
+	 (w               (d* +terrain-chunk-size-scale+
+			      +terrain-chunk-tile-size+ (elt rect 2)))
+	 (h               (d* +terrain-chunk-size-scale+
+			      +terrain-chunk-tile-size+ (elt rect 3)))
+	 (w/2             (d/ w 2.0))
+	 (h/2             (d/ h 2.0))
 	 (actual-x        (d+ (d* +terrain-chunk-size-scale+ min-x)
 			      (coord-map->chunk min-x :tile-offset 0.0)
 			      (coord-map->chunk (d/ w 2.0) :tile-offset 0.0)))
 	 (actual-z        (d+ (d* +terrain-chunk-size-scale+ min-y)
 			      (coord-map->chunk min-y :tile-offset 0.0)
-			      (coord-map->chunk (d/ h 2.0) :tile-offset 0.0))))
-    (setf (compiled-shaders shell) (compiled-shaders world))
-    (setf (entity:pos shell) (vec actual-x +zero-height+ actual-z))
-    (setf (entity:scaling shell) (vec w 1.0 h))
-    (mesh:setup-texture-coord-scaling  shell)
+			      (coord-map->chunk (d/ h 2.0) :tile-offset 0.0)))
+	 (transformation  (sb-cga:matrix*
+			   (sb-cga:translate (vec actual-x +zero-height+ actual-z))
+			   (sb-cga:translate (3d-utils:vec-negate (sb-cga:vec w/2 0.0 h/2)))))
+	 (mesh            (building-floor-mesh:floor-tile w h :wrapper-transformation
+							  transformation)))
+    (setf (compiled-shaders mesh) (compiled-shaders world))
+    (setf (mesh:texture-object  mesh) (mesh:texture-object ref-mesh)
+	  (mesh:normal-map      mesh) (mesh:normal-map ref-mesh)
+	  (mesh:material-params mesh) (clone (mesh:material-params ref-mesh)))
+    (prepare-for-rendering mesh)
+    (building-floor-mesh:setup-texture-coord-scaling mesh)
     ;;for each tile
-    (loop for x from 0.0 below w do
-     	 (loop for y from 0.0 below h do
-     	      (setup-map-state-tile world
-     				    (truncate (+ x (coord-layer->map-state min-x)))
-				    (truncate (+ y (coord-layer->map-state min-y)))
-     				    +floor-type+
-     				    (identificable:id shell))))
-    shell))
+    (loop for x from 0.0 below (d/ w +terrain-chunk-size-scale+) do
+      	 (loop for y from 0.0 below (d/ h +terrain-chunk-size-scale+) do
+      	      (setup-map-state-tile world
+      				    (truncate (+ x (coord-layer->map-state min-x)))
+     				    (truncate (+ y (coord-layer->map-state min-y)))
+      				    +floor-type+
+     				    (Identificable:id mesh))))
+    mesh))
 
 (defun build-ceiling-mesh (w h)
   (let* ((tag        (elt +available-level-ceil+ *building-level*))

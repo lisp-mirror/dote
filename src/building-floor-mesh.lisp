@@ -14,9 +14,9 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(in-package :mesh)
+(in-package :building-floor-mesh)
 
-(defclass building-floor-mesh-shell (triangle-mesh-shell)
+(defclass building-floor-mesh (pickable-mesh)
   ((texture-coord-scaling
     :initform 1.0
     :initarg :texture-coord-scaling
@@ -24,7 +24,7 @@
 
 (defgeneric setup-texture-coord-scaling (object))
 
-(defmethod setup-texture-coord-scaling ((object building-floor-mesh-shell))
+(defmethod setup-texture-coord-scaling ((object building-floor-mesh))
   (bubbleup-modelmatrix object)
   (let* ((aabb  (aabb object))
 	 (min-x (min-x aabb))
@@ -32,7 +32,7 @@
     (setf (texture-coord-scaling object)
 	  (d/ (d- max-x min-x) (d* 5.0 +terrain-chunk-tile-size+)))))
 
-(defmethod render-phong ((object building-floor-mesh-shell) renderer)
+(defmethod render-phong ((object building-floor-mesh) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((vbo vbo)
 		   (vao vao)
@@ -76,7 +76,7 @@
 	  (gl:draw-arrays :triangles 0 (* 3 (length triangles)))
 	  (render-debug object renderer))))))
 
-(defmethod render-normalmap ((object building-floor-mesh-shell) renderer)
+(defmethod render-normalmap ((object building-floor-mesh) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((vbo vbo)
 		   (vao vao)
@@ -122,3 +122,28 @@
 	  (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
 	  (gl:draw-arrays :triangles 0 (* 3 (length triangles)))
 	  (render-debug object renderer))))))
+
+(defmethod clone-into :after ((from building-floor-mesh) (to building-floor-mesh))
+  to)
+
+(defmethod clone ((object building-floor-mesh))
+  (let ((res (make-instance 'building-floor-mesh)))
+    (clone-into object res)
+    res))
+
+(defun floor-tile (size-x size-z &key
+				   (wrapper-transformation (identity-matrix)))
+  (let* ((mesh (make-instance 'building-floor-mesh)))
+    (with-pushed-matrix (mesh :what :modelview)
+      (load-matrix mesh wrapper-transformation)
+      (quads-plane mesh size-x size-z
+		   (d/ size-x +terrain-chunk-tile-size+)
+		   (d/ size-z +terrain-chunk-tile-size+)
+		   0.0)
+      (loop for i from 0 below (length (triangles mesh)) do
+	   (push-pickable-attribute mesh 0.0)
+	   (set-pickable-attribute  mesh :triangle-index i :pick-index 0)))
+    (remove-orphaned-vertices mesh)
+    (loop for i from 0 below (length (normals mesh)) do
+	 (setf (elt (normals mesh) i) +y-axe+))
+    mesh))

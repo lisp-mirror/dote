@@ -50,7 +50,7 @@
 (defmethod destroy :after ((object pickable-mesh))
   (with-accessors ((renderer-data-pick-overlay renderer-data-pick-overlay)) object
     (when +debug-mode+
-      (misc:dbg "destroy pickable-mesh"))
+      (misc:dbg "destroy pickable-mesh ~a" (id object)))
     (when renderer-data-pick-overlay
       (gl:free-gl-array renderer-data-pick-overlay)
       (setf renderer-data-pick-overlay nil))))
@@ -99,14 +99,15 @@
 
 (defgeneric push-pickable-attribute (object value))
 
-(defgeneric set-pickable-attribute (object &key triangle-index))
+(defgeneric set-pickable-attribute (object &key triangle-index pick-index))
 
 (defmethod push-pickable-attribute ((object pickable-mesh) value)
   (declare (desired-type value))
   (vector-push-extend value (pick-overlay-values object)))
 
-(defmethod set-pickable-attribute ((object pickable-mesh) &key (triangle-index 0))
+(defmethod set-pickable-attribute ((object pickable-mesh) &key
+							    (triangle-index 0)
+							    (pick-index 0))
   (let* ((first-triangle (elt (triangles object) triangle-index))
-	 (index        (- (length (pick-overlay-values object)) 1))
-	 (indices      (uivec index index index)))
+	 (indices        (uivec pick-index pick-index pick-index)))
     (set-custom-attribute first-triangle +attribute-pick-overlay+ indices)))

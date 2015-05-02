@@ -16,10 +16,10 @@
 
 (in-package :level-config)
 
-(alexandria:define-constant +error-wrong-type+ "Expected a ~s got ~s (a ~a) instead" 
+(alexandria:define-constant +error-wrong-type+ "Expected a ~s got ~s (a ~a) instead"
   :test #'string=)
 
-(alexandria:define-constant +error-wrong-keyword+ "Expected ~s got ~s instead" 
+(alexandria:define-constant +error-wrong-keyword+ "Expected ~s got ~s instead"
   :test #'string=)
 
 (alexandria:define-constant +error-cannot-create-texture-from-function+
@@ -88,7 +88,7 @@
     (setf ,output ,var)))
 
 (defun set-value-random (bag)
-  (cond 
+  (cond
     ((or (every #'floatp   bag)
 	 (every #'integerp bag))
      (assert (> (length bag) 1))
@@ -104,7 +104,7 @@
        (output '()))
       ((not l) (reverse output))
     (if (numberp (elt l 0))
-	(progn 
+	(progn
 	  (push (elt l 0) output)
 	  (setf l (rest l)))
 	(case (alexandria:make-keyword (elt l 0))
@@ -241,24 +241,19 @@
     (interfaces:prepare-for-rendering mesh)
     (setf *door-n* (mesh:prepare-for-rendering (interfaces:clone mesh))
 	  *door-s* (mesh:prepare-for-rendering (interfaces:clone mesh))
-	  *door-e* (mesh:prepare-for-rendering (mesh:transform-vertices 
+	  *door-e* (mesh:prepare-for-rendering (mesh:transform-vertices
 						(interfaces:clone mesh)
 						(sb-cga:rotate-around +y-axe+ +pi/2+)))
-	  *door-w* (mesh:prepare-for-rendering (mesh:transform-vertices 
+	  *door-w* (mesh:prepare-for-rendering (mesh:transform-vertices
 						(interfaces:clone mesh)
 						(sb-cga:rotate-around +y-axe+ +pi/2+))))))
-  
+
 (defun setup-floor ()
    (let* ((tag        (elt +available-level-floor+ *building-level*))
 	  (texture    (random-elt (texture:list-of-texture-by-tag tag)))
 	  (normal-map (gen-normalmap-if-needed texture))
-	  (mesh       (mesh:floor-tile +terrain-chunk-tile-size+ 
-				       :start-s-texture  0.0
-				       :end-s-texture    1.0
-				       :start-t-texture  0.0
-				       :end-t-texture    1.0
-				       :manifold         nil
-				       :compact-vertices t)))
+	  (mesh       (building-floor-mesh:floor-tile +terrain-chunk-tile-size+
+						      +terrain-chunk-tile-size+)))
      (mesh:gen-tangents mesh)
      (setf (texture:use-mipmap texture)    t)
      (setf (texture:interpolation-type texture) :linear)
@@ -420,9 +415,9 @@
            (texture-from-file (elt body 3) target-db (elt body 6) (elt body 9) t)
            +offset-file+)
           (:function
-           (texture-from-function-w-cache (elt body 3) target-db  
+           (texture-from-function-w-cache (elt body 3) target-db
                                           (append (elt body 6)
-                                                  (list (num:lcg-next-in-range (first density) 
+                                                  (list (num:lcg-next-in-range (first density)
                                                                                (second density))))
                                           (elt body 9)
 					  (elt body 12))
@@ -483,7 +478,7 @@
 		 (progn
 		   (when (not just-consume-input)
 		     (funcall (fourth body) tx)) ;; the function
-		   (iterate-texture-from-function target :and 
+		   (iterate-texture-from-function target :and
 						  (subseq body +offset-postprocess+)
 						  :offset
 						  (+ +offset-function+ +offset-postprocess+)
@@ -533,7 +528,7 @@
 
 (defun texture-from-function (function-name target args tags normalmap-parameters)
   (need-type (function-name 'symbol)
-    (let* ((pixmap  (apply (symbol-function function-name) 
+    (let* ((pixmap  (apply (symbol-function function-name)
 			   (process-parameter-list args)))
 	   (texture (texture:gen-name-and-inject-in-database pixmap)))
       (if texture
@@ -553,7 +548,7 @@
 						   args tags normalmap-parameters)
 			    cache-key))
     +offset-function+))
-  
+
 (defun texture-from-string (data target type tags normalmap-parameters)
   (need-type (data 'string)
     (let* ((pixmap (ecase type
@@ -593,8 +588,8 @@
    (let ((fn-name (second body))
          (fn      (third  body)))
      (get-fn-parameter-for-map (subseq body 3)
-			       (push (cons fn-name 
-					   (cond 
+			       (push (cons fn-name
+					   (cond
 					     ((symbolp fn)
 					      (symbol-function fn))
 					     ((functionp fn)
@@ -615,7 +610,7 @@
        (let* ((size (keyword-to-int  '(:tiny :small :medium :large)
 				     (list (truncate +minimium-map-size+)        ; 32
 					   (truncate (* +minimium-map-size+ 2))  ; 64
-					   (truncate (* +minimium-map-size+ 4))  ; 128 
+					   (truncate (* +minimium-map-size+ 4))  ; 128
 					   (truncate (* +minimium-map-size+ 8))) ; 256
 				     (first (process-parameter-list (elt body 3)))
 				     64))
@@ -623,41 +618,41 @@
 	 (multiple-value-bind (fns offset-fn)
 	     (get-fn-parameter-for-map (subseq body 4))
 	   (let ((mountain-rate (or (cdr (assoc 'mountain-rate fns)) '(0.05)))
-		 (mountain-z-height-function 
-		  (or (cdr (assoc 'mountain-z-height-function fns)) 
+		 (mountain-z-height-function
+		  (or (cdr (assoc 'mountain-z-height-function fns))
 		      #'random-terrain:default-mountain-z-height-function))
 		 (mountain-w-function
-		  (or (cdr (assoc 'mountain-w-function fns)) 
+		  (or (cdr (assoc 'mountain-w-function fns))
 		      #'random-terrain:default-mountain-size-function))
-		 (mountain-h-function        
-		  (or (cdr (assoc 'mountain-h-function fns)) 
+		 (mountain-h-function
+		  (or (cdr (assoc 'mountain-h-function fns))
 		      #'random-terrain:default-mountain-size-function))
 		 (mountain-sigma-w-function
-		  (or (cdr (assoc 'mountain-sigma-w-function fns)) 
+		  (or (cdr (assoc 'mountain-sigma-w-function fns))
 		      #'random-terrain:default-mountain-sigma-function))
 		 (mountain-sigma-h-function
-		  (or (cdr (assoc 'mountain-sigma-h-function fns)) 
+		  (or (cdr (assoc 'mountain-sigma-h-function fns))
 		      #'random-terrain:default-mountain-sigma-function))
 		 (lake-rate (or (cdr (assoc 'lake-rate fns)) '(0.05)))
 		 (lake-size-function
-		  (or (cdr (assoc 'lake-size-function fns)) 
+		  (or (cdr (assoc 'lake-size-function fns))
 		      #'random-terrain:default-lake-size-function))
-		 (labyrinth-rate (or (cdr (assoc 'labyrinth-rate fns)) 
-				     '(0.1)))            
+		 (labyrinth-rate (or (cdr (assoc 'labyrinth-rate fns))
+				     '(0.1)))
 		 (labyrinth-size-function
-		  (or (cdr (assoc 'labyrinth-size-function fns)) 
+		  (or (cdr (assoc 'labyrinth-size-function fns))
 		      #'random-terrain:default-labyrinth-size-function))
 		 (labyrinth-sigma-w-function
-		  (or (cdr (assoc 'labyrinth-sigma-w-function fns)) 
+		  (or (cdr (assoc 'labyrinth-sigma-w-function fns))
 		      #'random-terrain:default-labyrinth-sigma-w-function))
 		 (labyrinth-sigma-h-function
-		  (or (cdr (assoc 'labyrinth-sigma-h-function fns)) 
+		  (or (cdr (assoc 'labyrinth-sigma-h-function fns))
 		      #'random-terrain:default-labyrinth-sigma-h-function))
 		 (labyrinth-door-function
-		  (or (cdr (assoc 'labyrinth-door-function fns)) 
+		  (or (cdr (assoc 'labyrinth-door-function fns))
 		      #'random-terrain:default-labyrinth-door-function))
 		 (labyrinth-win-function
-		  (or (cdr (assoc 'labyrinth-win-function fns)) 
+		  (or (cdr (assoc 'labyrinth-win-function fns))
 		      #'random-terrain:default-labyrinth-win-function))
 		 (soil-decal-threshold (or (cdr (assoc 'soil-decal-threshold fns))
 					   '(0.8)))
@@ -669,7 +664,7 @@
 	       (if (cache-miss* cache-key)
 		   (progn
 		     (setf *map*
-			   (random-terrain:make-map 
+			   (random-terrain:make-map
 			    map
 			    :mountain-rate              (elt mountain-rate 0)
 			    :mountain-z-height-function (funcall mountain-z-height-function)
@@ -720,14 +715,14 @@
 			      :flatten t)))
     (setf (mesh:material-params mesh) normalmap-parameters)
     mesh))
-    
+
 (defun generate-tree-w-cache (body)
   (let ((offset 0))
     (need-phrase (body (:tree :from) 0)
       (ecase (alexandria:make-keyword (third body))
 	(:script
 	 (let ((cache-key (make-tree-dump-cache-key (fourth body))))
-	   (push (mesh:prepare-for-rendering 
+	   (push (mesh:prepare-for-rendering
 		  (if (not (cache-miss* cache-key))
 		      (tree-from-dump cache-key nil)
 		      (%gen-tree (fourth body) (elt body 6))))

@@ -28,9 +28,9 @@
 
 (defparameter *zeye*  32.0)
 
-(defparameter *far*   600.0)
+(defparameter *far*   1000.0)
 
-(defparameter *near*  1.0)
+(defparameter *near*  10.0)
 
 (defparameter *fov*   50.0)
 
@@ -80,9 +80,6 @@
      ,@body))
 
 (defgeneric keydown-event (object ts repeat-p keysym))
-  
-;;; All of these methods are OPTIONAL.  However, without a render
-;;; method, your window will not look like much!
 
 (defparameter *test-trees* '("test.lsys"                  ;  0
 			     "tropical/palm.lsys"         ;  1
@@ -119,53 +116,51 @@
       ;; set up world
       (setf world (make-instance 'world :frame-window object))
       (setf (interfaces:compiled-shaders (world::gui world)) compiled-shaders)
-      (let ((map (load-level:load-level world (game-state object)
-					compiled-shaders "test.lisp")))
-	(setf *map* map)
+      (load-level:load-level world (game-state object) compiled-shaders "test.lisp")
 	;; setup camera
-	(camera:look-at (world:camera (world object))
-			*xpos* *ypos* *zpos* *xeye* *yeye* *zeye* 0.0 1.0 0.0)
-	(setf (mode (world:camera (world object))) :fp)
-	(camera:install-path-interpolator (world:camera (world object)) 
-					  (vec  0.0  15.0 0.0)
-					  (vec  64.0 30.0 0.0)
-					  (vec  64.0 20.0 64.0)
-					  (vec  0.0  30.0 64.0)
-					  (vec  64.0  90.0 64.0))
-	(camera:install-drag-interpolator (world:camera (world object)))
-	(camera:install-orbit-interpolator (world:camera (world object)) 5.0 5.0 10.0)
-	;; setup projection
-	(setf projection-matrix (perspective *fov* (num:desired (/ *window-w* *window-h*)) 
-					     *near* *far*))
-	(setf (projection-matrix world) (elt projection-matrix 0))
-	(setf *placeholder* (trees:gen-tree
-			     (res:get-resource-file (elt *test-trees* 0)
-						    constants:+trees-resource+
-						    :if-does-not-exists :error)
-			     :flatten t))
-	(setf (interfaces:compiled-shaders *placeholder*) compiled-shaders)
-	(setf (entity:pos *placeholder*)
-	      (vec (misc:coord-map->chunk 1.0)
-		   +zero-height+
-		   (misc:coord-map->chunk 1.0)))
-	(world:push-entity world *placeholder*)
-	(let ((body (md2:load-md2-model "ortnok/"
-	 				    :mesh-file "body01.md2"
-	 				    :animation-file "body-animation.lisp"
-	 				    :texture-file   "body-texture.tga"
-	 				    :tags-file      "body01.tag"))
-	      (head (md2:load-md2-model "ortnok/"
-					:mesh-file "head01.md2"
-					:animation-file "head-animation.lisp"
-					:texture-file   "head-texture.tga"
-					:tags-file      nil)))
-	  (setf (interfaces:compiled-shaders body) compiled-shaders
-	        (interfaces:compiled-shaders head) compiled-shaders)
-	  (md2:set-animation body :move)
-	  (md2:set-animation head :stand)
-	  (setf (md2:tag-key-parent head) md2:+tag-head-key+)
-	  (mtree-utils:add-child body head)
-	  (world:push-entity world body))
+      (camera:look-at (world:camera (world object))
+		      *xpos* *ypos* *zpos* *xeye* *yeye* *zeye* 0.0 1.0 0.0)
+      (setf (mode (world:camera (world object))) :fp)
+      (camera:install-path-interpolator (world:camera (world object))
+					(vec  0.0  15.0 0.0)
+					(vec  64.0 30.0 0.0)
+					(vec  64.0 20.0 64.0)
+					(vec  0.0  30.0 64.0)
+					(vec  64.0  90.0 64.0))
+      (camera:install-drag-interpolator (world:camera (world object)))
+      (camera:install-orbit-interpolator (world:camera (world object)) 5.0 5.0 10.0)
+      ;; setup projection
+      (setf projection-matrix (perspective *fov* (num:desired (/ *window-w* *window-h*))
+					   *near* *far*))
+      (setf (projection-matrix world) (elt projection-matrix 0))
+      (setf *placeholder* (trees:gen-tree
+			   (res:get-resource-file (elt *test-trees* 0)
+						  constants:+trees-resource+
+						  :if-does-not-exists :error)
+			   :flatten t))
+      (setf (interfaces:compiled-shaders *placeholder*) compiled-shaders)
+      (setf (entity:pos *placeholder*)
+	    (vec (misc:coord-map->chunk 1.0)
+		 +zero-height+
+		 (misc:coord-map->chunk 1.0)))
+      (world:push-entity world *placeholder*)
+      (let ((body (md2:load-md2-model "ortnok/"
+				      :mesh-file "body01.md2"
+				      :animation-file "body-animation.lisp"
+				      :texture-file   "body-texture.tga"
+				      :tags-file      "body01.tag"))
+	    (head (md2:load-md2-model "ortnok/"
+				      :mesh-file "head01.md2"
+				      :animation-file "head-animation.lisp"
+				      :texture-file   "head-texture.tga"
+				      :tags-file      nil)))
+	(setf (interfaces:compiled-shaders body) compiled-shaders
+	      (interfaces:compiled-shaders head) compiled-shaders)
+	(md2:set-animation body :move)
+	(md2:set-animation head :stand)
+	(setf (md2:tag-key-parent head) md2:+tag-head-key+)
+	(mtree-utils:add-child body head)
+	(world:push-entity world body)
 	(setf delta-time-elapsed (sdl2:get-ticks))))))
 
 (defmacro with-gui ((world) &body body)
@@ -176,11 +171,9 @@
 	    (progn
 	      (gl:disable :depth-test)
 	      (gl:depth-mask :false)
-	      (gl:clear :depth-buffer)
 	      (setf (projection-matrix ,world)
 		    (ortho 0.0 (num:d *window-w*) 0.0 (num:d *window-h*) -1.0 1.0))
-	      (setf (view-matrix (camera ,world))
-		    (identity-matrix))
+	      (setf (view-matrix (camera ,world)) (identity-matrix))
 	      ,@body)
 	 (gl:depth-mask :true)
 	 (gl:enable :depth-test)
@@ -311,7 +304,8 @@
 	    (close-window object))
 	  (when (eq :scancode-f8 scancode)
 	    (with-accessors ((world world) (mesh mesh)) object
-	      (cl-gl-utils:with-render-to-file ((fs:file-in-package "screenshot.tga") 1024 768)
+	      (cl-gl-utils:with-render-to-file ((fs:file-in-package "screenshot.tga")
+						*window-w* *window-h*)
 		(interfaces:render world world))))
 	  (when *placeholder*
 	    (let ((old-pos (entity:pos *placeholder*)))
@@ -353,7 +347,7 @@
 (defmethod keyboard-event ((object test-window) state ts repeat-p keysym)
   (when (eq state :keydown)
     (keydown-event object ts repeat-p keysym)))
-    
+
 (defmethod mousebutton-event ((object test-window) state ts b x y)
   (with-accessors ((world world)) object
     (let ((gui-event (make-instance 'gui-events:mouse-pressed
@@ -362,6 +356,8 @@
 				    :y-event (num:d (- *window-h* y)))))
       (if (eq state :mousebuttondown)
 	  (when (not (widget:on-mouse-pressed (world:gui world) gui-event))
+	    ;; picking test
+	    (interfaces:pick-pointer-position world world x y)
 	    (misc:dbg "~s button: ~A at ~A, ~A" state b x y))
 	  (when (not (widget:on-mouse-released (world:gui world) gui-event))
 	    (misc:dbg "~s button: ~A at ~A, ~A" state b x y))))))
@@ -393,6 +389,7 @@
 		   (camera:drag-camera (world:camera (world object)) offset))))))))))
 
 (defun main ()
+  (tg:gc :full t)
   (handler-bind ((error
 		  #'(lambda(e)
 		      (declare (ignore e))

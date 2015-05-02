@@ -42,6 +42,12 @@
 
 (defmethod  clone-into (from to))
 
+(defmacro with-simple-clone ((object type))
+  (alexandria:with-gensyms (res)
+    `(let ((,res (make-instance ,type)))
+       (clone-into ,object ,res)
+       ,res)))
+
 (defgeneric initializedp (object))
 
 (defgeneric serialize (object))
@@ -75,6 +81,8 @@
 
 (defgeneric render-for-reflection (object renderer))
 
+(defgeneric pick-pointer-position (object renderer x y))
+
 (defmethod  render-for-reflection (object renderer)
   (render object renderer))
 
@@ -85,6 +93,9 @@
 (defmethod render ((object renderizable) renderer))
 
 (defmethod calculate ((object renderizable) dt))
+
+(defmethod pick-pointer-position ((object renderizable) renderer x y)
+  nil)
 
 (defgeneric main-state (object))
 

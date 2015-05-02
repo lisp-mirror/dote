@@ -74,6 +74,19 @@
     custom-attributes-indices
     emitted-edges))
 
+(defmethod clone-into :after ((from triangle) (to triangle))
+  (setf (vertex-index              to) (copy-uivec (vertex-index from))
+	(texture-index             to) (copy-uivec (texture-index from))
+	(normal-index              to) (copy-uivec (normal-index from))
+	(tangent-index             to) (copy-uivec (tangent-index from))
+	(emitted-edges             to) (alexandria:copy-array (emitted-edges from))
+	(custom-attributes-indices to) (alexandria:copy-hash-table
+					(custom-attributes-indices from)))
+    to)
+
+(defmethod clone ((object triangle))
+  (with-simple-clone (object 'triangle)))
+
 (defgeneric tuple-vertex-texel-normal-index (object))
 
 (defgeneric find-vertex-attibute-by-vertex-index (object index))
@@ -384,7 +397,6 @@
     :initarg  :tag-key-parent
     :accessor tag-key-parent
     :type string)
-
    (aabb
     :initform (make-instance 'aabb)
     :initarg :aabb
@@ -834,7 +846,6 @@
 					 :what :texture))
 	  (texture3 (find-value-by-index guest (elt (texture-index triangle) 2)
 					 :what :texture))
-
 	  (normal1 (find-value-by-index guest (elt (normal-index triangle) 0)
 					:what :normal))
 	  (normal2 (find-value-by-index guest (elt (normal-index triangle) 1)
@@ -2114,27 +2125,36 @@
 	      (triangles object))))
 
 (defmethod clone-into :after ((from triangle-mesh) (to triangle-mesh))
-  (let ((as-manifold (and (> (length (triangles from)) 0)
-			  (not (null (emitted-edges (elt (triangles from) 0)))))))
-    (setf (texture-object    to) (texture-object    from)
-	  (normal-map        to) (normal-map        from)
-	  (texture-projector to) (texture-projector from)
-	  (render-normals    to) (render-normals    from)
-	  (render-aabb       to) (render-aabb       from)
-	  (render-tangents   to) (render-tangents   from)
-	  (material-params   to) (clone (material-params from))
-	  (projector         to) (and (projector from)
-				      (clone-matrix (projector from))))
-    (merge-mesh to from :manifold as-manifold)
-    (setf (children to)
-	  (map (type-of (children from))
-	       #'(lambda (a)
-		   (let ((clone (make-instance 'triangle-mesh)))
-		     (clone-into a clone)
-		     (setf (parent clone) to)
-		     clone))
-	       (children from)))
-    to))
+  (setf (texture-object            to) (texture-object    from)
+	(normal-map                to) (normal-map        from)
+	(texture-projector         to) (texture-projector from)
+	(render-normals            to) (render-normals    from)
+	(render-aabb               to) (render-aabb       from)
+	(render-tangents           to) (render-tangents   from)
+	(material-params           to) (clone (material-params from))
+	(projector                 to) (and (projector from)
+					    (clone-matrix (projector from)))
+	(triangles                 to) (map 'list #'clone (triangles from))
+	(normals                   to) (alexandria:copy-array (normals from))
+	(normals-count             to) (normals-count from)
+	(vertices                  to) (alexandria:copy-array (vertices from))
+	(vertices-count            to) (vertices-count from)
+	(tangents                  to) (alexandria:copy-array (tangents from))
+	(tangents-count            to) (tangents-count from)
+	(cumulative-vertices-count to) (cumulative-vertices-count from)
+	(texture-coord             to) (alexandria:copy-array (texture-coord from))
+	(texture-count             to) (texture-count from)
+	(material-params           to) (clone (material-params from))
+	(edges                     to) (alexandria:copy-array (edges from)))
+  (setf (children to)
+	(map (type-of (children from))
+	     #'(lambda (a)
+		 (let ((clone (make-instance 'triangle-mesh)))
+		   (clone-into a clone)
+		   (setf (parent clone) to)
+		   clone))
+	     (children from)))
+  to)
 
 (defmethod clone ((object triangle-mesh))
   (let ((res (make-instance 'triangle-mesh)))
@@ -2309,7 +2329,6 @@
 		 (push (cons (car name) (sb-cga:identity-matrix)) tags-matrices))))
       (use-value (v) v))))
 
-
 (defmethod deserialize ((object triangle-mesh) place)
   (load-mesh object place))
 
@@ -2319,7 +2338,6 @@
 	  (push-matrix ,object :what ,what)
 	  ,@body)
      (pop-matrix ,object :what ,what)))
-
 
 (defclass triangle-mesh-shell (triangle-mesh) ())
 
@@ -2473,7 +2491,6 @@
   (with-accessors ((vbo vbo)
 		   (vao vao)
 		   (texture-object texture-object)
-		   (projection-matrix projection-matrix)
 		   (model-matrix model-matrix)
 		   (view-matrix view-matrix)
 		   (compiled-shaders compiled-shaders)
@@ -2486,7 +2503,7 @@
 		   (triangles triangles)) object
     (declare (list triangles))
     (declare ((simple-array texture:texture (*)) texture-clouds))
-    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
+    (declare ((simple-array simple-array (1)) model-matrix view-matrix))
     (when (> (length triangles) 0)
       (with-camera-view-matrix (camera-vw-matrix renderer)
 	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
@@ -2545,7 +2562,6 @@
   (mesh:vertex plane (d+ x inc-x) y (d+ z inc-z)
 	       :gen-normal nil :gen-triangle t
 	       :compact-vertices t :manifoldp nil))
-
 
 (alexandria:define-constant +reflection-texture-size+ 256 :test #'=)
 
@@ -3079,30 +3095,6 @@
       (average-normals mesh))
     mesh))
 
-(defun floor-tile (size &key
-			  (start-s-texture 0.0)
-			  (end-s-texture 1.0)
-			  (start-t-texture 0.0)
-			  (end-t-texture 1.0)
-			  (wrapper-transformation (identity-matrix))
-			  (manifold t)
-			  (compact-vertices t))
-  (let* ((mesh (make-instance 'triangle-mesh))
-	 (alpha  (d- +pi/2+))
-	 (size/2 (d/ size 2.0)))
-    (with-pushed-matrix (mesh :what :modelview)
-      (load-matrix mesh wrapper-transformation)
-      (mult-matrix mesh (translate (vec (d- size/2) (d- size/2) 0.0)))
-      (mult-matrix mesh (rotate-around +x-axe+ alpha))
-      (quad mesh size size
-	    start-s-texture  start-t-texture
-	    end-s-texture    end-t-texture
-	    +zero-vec+ manifold compact-vertices))
-    (remove-orphaned-vertices mesh)
-    (loop for i from 0 below (length (normals mesh)) do
-	 (setf (elt (normals mesh) i) +y-axe+))
-    mesh))
-
 (defun put-simple-plane-vertex-w-texture (plane x y z
 					  inc-x inc-z
 					  s-coord t-coord
@@ -3114,6 +3106,76 @@
   (mesh:vertex plane (d+ x inc-x) y (d+ z inc-z)
 	       :gen-normal nil :gen-triangle t
 	       :compact-vertices t :manifoldp nil))
+
+
+(defun quads-plane (mesh x-size z-size x-divisions z-divisions h
+		    &key (set-find-index-by-value-from-end t))
+  "The center of the mesh is on the axes origin"
+  ;;             a        d
+  ;;             +--------+--------+ ...
+  ;;    x	 |\-      |\-      |
+  ;;   +----->   |  \-    |  \-    |
+  ;; z |         |    \-  |    \-  |
+  ;;   |         |      \-|c     \-|
+  ;;   |        b+--------+--------+ ...
+  ;;   v         |\-      |\-      |
+  ;; 	         |  \-    |  \-    |
+  ;; 	         |    \-  |    \-  |
+  ;; 	         |      \-|      \-|
+  ;; 	         +--------+--------+ ...
+  (setf (find-index-by-value-from-end mesh) set-find-index-by-value-from-end)
+  (let* ((inc-x         (d/ x-size x-divisions))
+	 (inc-z         (d/ z-size z-divisions))
+	 (text-inc-x    (d/ 1.0 x-divisions))
+	 (text-inc-z    (d/ 1.0 z-divisions))
+	 (h/2           (d/ h 2.0))
+	 (top-normal    +y-axe+))
+    ;; top
+    (loop
+       for x from (d- (d/ x-size 2.0)) below (d/ x-size 2.0) by inc-x
+       for xt from 0.0 below 1.0 by text-inc-x do
+	 (loop
+	    for z from (d- (d/ z-size 2.0)) below (d/ z-size 2.0) by inc-z
+	    for zt from 0.0 below 1.0 by text-inc-z do
+	    ;; a
+	      (put-simple-plane-vertex-w-texture mesh
+						 x h/2 z
+						 0.0 0.0
+						 xt zt
+						 0.0 0.0
+						 :normal top-normal)
+	    ;; b
+	      (put-simple-plane-vertex-w-texture mesh x h/2 z
+						 0.0 inc-z
+						 xt zt
+						 0.0 text-inc-z
+						 :normal top-normal)
+	    ;; c
+	      (put-simple-plane-vertex-w-texture mesh x h/2 z
+						 inc-x inc-z
+						 xt zt
+						 text-inc-x text-inc-z
+						 :normal top-normal)
+	    ;; a
+	      (put-simple-plane-vertex-w-texture mesh x h/2 z
+						 0.0 0.0
+						 xt zt
+						 0.0 0.0
+						 :normal top-normal)
+	    ;; c
+	      (put-simple-plane-vertex-w-texture mesh x h/2 z
+						 inc-x inc-z
+						 xt zt
+						 text-inc-x text-inc-z
+						 :normal top-normal)
+	    ;; d
+	      (put-simple-plane-vertex-w-texture mesh x h/2 z
+						 inc-x 0.0
+						 xt zt
+						 text-inc-x 0.0
+						 :normal top-normal)))
+    mesh))
+
 
 (defun gen-ceiling (x-size z-size x-divisions z-divisions h)
   ;;             a        d

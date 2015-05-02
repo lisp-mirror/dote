@@ -190,6 +190,16 @@
       (gl:enable-vertex-attrib-array +attribute-texture-decals-location+))
     object))
 
+(defmethod pick-pointer-position ((object terrain-chunk) renderer x y)
+  (with-accessors ((model-matrix model-matrix)
+		   (view-matrix view-matrix)) object
+    (with-camera-view-matrix (camera-vw-matrix renderer)
+      (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped nil)
+	(let ((modelview (matrix* camera-vw-matrix (elt view-matrix 0) (elt model-matrix 0))))
+	  (misc:dbg "terrain says: ~a" (pick-position x y modelview camera-proj-matrix
+						      *window-w* *window-h*))
+	  (pick-position x y modelview camera-proj-matrix *window-w* *window-h*))))))
+
 (defmethod clone-into :after ((from terrain-chunk) (to terrain-chunk))
   (setf (heightmap              to) (matrix:clone          (heightmap  from))
 	(text-coord-weights     to) (alexandria:copy-array (text-coord-weights from))
@@ -429,8 +439,9 @@
 		(set-decals-triangle-attribute object)
 	      ;; assign pick weight value
 		(push-pickable-attribute object 0.0)
-		(set-pickable-attribute  object :triangle-index 0)
-		(set-pickable-attribute  object :triangle-index 1))))))
+		(let ((pick-index (- (length (pick-overlay-values object)) 1)))
+		  (set-pickable-attribute  object :triangle-index 0 :pick-index pick-index)
+		  (set-pickable-attribute  object :triangle-index 1 :pick-index pick-index)))))))
 		
 (defmethod build-mesh-dbg ((object terrain-chunk))
   (with-accessors ((heightmap heightmap)) object
