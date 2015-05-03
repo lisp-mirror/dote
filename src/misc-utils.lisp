@@ -427,7 +427,12 @@
 
 (defun coord-chunk->costs (a)
   "convert from terrain chunk to costs matrix"
+  (coord-chunk->matrix (num:desired a)))
+
+(definline coord-chunk->matrix (a)
+  "convert from terrain chunk to matrix"
   (truncate (num:d/ (num:desired a) +terrain-chunk-tile-size+)))
+
 
 ;; cffi
 

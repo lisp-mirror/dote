@@ -160,6 +160,7 @@
    :coord-map->chunk
    :coord-terrain->chunk
    :coord-chunk->costs
+   :coord-chunk->matrix
    :make-null-pointer))
 
 (defpackage :base64

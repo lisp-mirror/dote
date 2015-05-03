@@ -1954,9 +1954,9 @@
 		   (new-current (if plus
 				    (d+ current scale-plus)
 				    (d- current scale-minus))))
-	      (when (and (>= new-capital 0)
+	      (when (and (d>= new-capital 0.0)
 			 (or plus
-			     (>  current 0)))
+			     (d>= new-current 0.0)))
 		(setf (label widget-capital)               (format nil "~,2f" new-capital)
 		      (label widget-destination)           (format nil "~,2f" new-current)
 		      (slot-value player slot)             new-current
