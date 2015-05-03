@@ -2624,6 +2624,10 @@
 		       (gl:delete-framebuffers framebuffers)
 		       (gl:delete-renderbuffers depthbuffers))))))
 
+(defun %water-step-calculator (size min)
+  (dmax min
+	(d+ (d* 0.05 size) 3.8)))
+
 (defmethod prepare-for-rendering ((object water))
   "                    d
              a+--------+--------+ ...
@@ -2638,19 +2642,21 @@
 	      |      \-|      \-|
 	      +--------+--------+ ...
 "
-  (let* ((aabb       (map 'vector #'(lambda (a) (misc:coord-terrain->chunk a :tile-offset 0.0))
-			  (vec4:vec4 (d- (elt (measures object) 0) +terrain-chunk-tile-size+)
-				     (d- (elt (measures object) 1) +terrain-chunk-tile-size+)
-				     (d+ (elt (measures object) 2) +terrain-chunk-tile-size+)
-				     (d+ (elt (measures object) 3) +terrain-chunk-tile-size+))))
-	 (width      (aabb2-max-x aabb))
-	 (height     (aabb2-max-y aabb))
-	 (x-start    (aabb2-min-x aabb))
-	 (y-start    (aabb2-min-y aabb))
-	 (inc-x      (d/ width (triangle-step object)))
-	 (inc-z      (d/ height (triangle-step object))))
-    (loop for x from x-start below width by inc-x do
-	 (loop for z from y-start below height by inc-z do
+  (let* ((aabb   (map 'vector #'(lambda (a) (misc:coord-terrain->chunk a :tile-offset 0.0))
+		      (vec4:vec4 (d- (elt (measures object) 0) +terrain-chunk-tile-size+)
+				 (d- (elt (measures object) 1) +terrain-chunk-tile-size+)
+				 (d+ (elt (measures object) 2) +terrain-chunk-tile-size+)
+				 (d+ (elt (measures object) 3) +terrain-chunk-tile-size+))))
+	 (x-end   (aabb2-max-x aabb))
+	 (y-end   (aabb2-max-y aabb))
+	 (x-start (aabb2-min-x aabb))
+	 (y-start (aabb2-min-y aabb))
+	 (width   (d- x-end x-start))
+	 (height  (d- y-end y-start))
+	 (inc-x   (%water-step-calculator width  (triangle-step object)))
+	 (inc-z   (%water-step-calculator height (triangle-step object))))
+    (loop for x from x-start below x-end by inc-x do
+	 (loop for z from y-start below y-end by inc-z do
 	    ;; a
 	      (put-simple-plane-vertex object x +water-mesh-starting-y+ z
 				       0.0 0.0 :normal +y-axe+)

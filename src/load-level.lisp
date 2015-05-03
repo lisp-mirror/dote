@@ -226,12 +226,12 @@
     (building-floor-mesh:setup-texture-coord-scaling mesh)
     ;;for each tile
     (loop for x from 0.0 below (d/ w +terrain-chunk-size-scale+) do
-      	 (loop for y from 0.0 below (d/ h +terrain-chunk-size-scale+) do
-      	      (setup-map-state-tile world
-      				    (truncate (+ x (coord-layer->map-state min-x)))
-     				    (truncate (+ y (coord-layer->map-state min-y)))
-      				    +floor-type+
-     				    (Identificable:id mesh))))
+	 (loop for y from 0.0 below (d/ h +terrain-chunk-size-scale+) do
+	      (setup-map-state-tile world
+				    (truncate (+ x (coord-layer->map-state min-x)))
+				    (truncate (+ y (coord-layer->map-state min-y)))
+				    +floor-type+
+				    (Identificable:id mesh))))
     mesh))
 
 (defun build-ceiling-mesh (w h)
