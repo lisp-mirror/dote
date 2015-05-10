@@ -165,7 +165,7 @@
     (mesh:make-data-for-opengl object)
     (with-unbind-vao
       ;; decals-weights
-      (gl:bind-buffer :array-buffer (alexandria:last-elt vbo))
+      (gl:bind-buffer :array-buffer (last-elt vbo))
       (gl:buffer-data :array-buffer :static-draw renderer-data-text-weights)
       (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
       ;; vertices
@@ -184,7 +184,7 @@
 				(gl-utils:mock-null-pointer))
       (gl:enable-vertex-attrib-array +attribute-texture-location+)
       ;; decals texture
-      (gl:bind-buffer :array-buffer (alexandria:last-elt vbo))
+      (gl:bind-buffer :array-buffer (last-elt vbo))
       (gl:vertex-attrib-pointer +attribute-texture-decals-location+ 2 :float 0 0
 				(gl-utils:mock-null-pointer))
       (gl:enable-vertex-attrib-array +attribute-texture-decals-location+))
@@ -203,20 +203,27 @@
 					     (coord-chunk->matrix (elt raw-position 2))))
 	       (matrix-position (uivec2 (coord-chunk->matrix (d- (elt raw-position 0) x-origin))
 					(coord-chunk->matrix (d- (elt raw-position 2) z-origin)))))
-	  (values cost-matrix-position matrix-position raw-position))))))
+	  (set-tile-highlight object
+			      (elt matrix-position 0)
+			      (elt matrix-position 1)
+			      :clear-highligthed-set t
+			      :add-to-highligthed-set t
+			      :weight +pick-color-lerp-weight+)
+	  (update-for-rendering object)
+	  (values object cost-matrix-position matrix-position raw-position))))))
 
 (defmethod clone-into :after ((from terrain-chunk) (to terrain-chunk))
-  (setf (heightmap              to) (matrix:clone          (heightmap  from))
-	(text-coord-weights     to) (alexandria:copy-array (text-coord-weights from))
-	(texture-shore          to) (texture-shore from)
-	(texture-grass          to) (texture-grass  from)
-	(texture-snow           to) (texture-snow     from)
-	(texture-soil-level-1   to) (texture-soil-level-1 from)
-	(texture-soil-level-2   to) (texture-soil-level-2 from)
-	(texture-soil-decal     to) (texture-soil-decal from)
-	(texture-road-decal     to) (texture-road-decal from)
+  (setf (heightmap              to) (matrix:clone  (heightmap  from))
+	(text-coord-weights     to) (copy-array    (text-coord-weights from))
+	(texture-shore          to) (texture-shore          from)
+	(texture-grass          to) (texture-grass          from)
+	(texture-snow           to) (texture-snow           from)
+	(texture-soil-level-1   to) (texture-soil-level-1   from)
+	(texture-soil-level-2   to) (texture-soil-level-2   from)
+	(texture-soil-decal     to) (texture-soil-decal     from)
+	(texture-road-decal     to) (texture-road-decal     from)
 	(texture-building-decal to) (texture-building-decal from)
-	(decal-weights          to) (decal-weights from))
+	(decal-weights          to) (decal-weights          from))
   to)
 
 (defmethod clone ((object terrain-chunk))
@@ -371,14 +378,13 @@
 				   :interpolate-fn #'(lambda (w a b) (dlerp w a b))))
 	 (delta-fx (d- fx-dx fx+dx))
 	 (delta-fz (d- fz-dz fz+dz))
-	 (normal   (normalize (vec (d* delta-fx 1.0) 2.0 (d* delta-fz 1.0)))))
+	 (normal   (normalize (vec (d* delta-fx 1.0) 2.0 (d* delta-fz 1.0))))
+	 (world-x  (d* nx d-width  +terrain-chunk-tile-size+ 2.0))
+	 (world-z  (d* nz d-height +terrain-chunk-tile-size+ 2.0)))
     (normal-v map normal)
     (tangent-v map +x-axe+)
     (texel map (d+ s-tex inc-tex-s) (d+ t-tex inc-tex-t))
-    (mesh:vertex map
-		 (d* nx d-width  +terrain-chunk-tile-size+ 2.0)
-		 fx
-		 (d* nz d-height +terrain-chunk-tile-size+ 2.0)
+    (mesh:vertex map world-x fx world-z
 		 :gen-normal nil :gen-triangle t
 		 :compact-vertices t :manifoldp nil)))
 
@@ -394,7 +400,7 @@
     (set-custom-attribute first-triangle +attribute-decal-texture+ indices)))
 
 (defmethod build-mesh ((object terrain-chunk))
-"                       d
+  "                    d
              a\--------\--------+ ...
 	      |\-      |\-      |
 	      |  \-    |  \-    |
@@ -407,12 +413,17 @@
 	      |      \-|      \-|
 	      +--------\--------\ ...
 "
-  (with-accessors ((heightmap heightmap)) object
+  (with-accessors ((heightmap heightmap) (lookup-tile-triangle lookup-tile-triangle)) object
     (let* ((d-width  (desired (matrix:width heightmap)))
 	   (d-height (desired (matrix:height heightmap)))
 	   (inc-x   (d/ 1.0 (d* d-width  +terrain-chunk-size-scale+)))
 	   (inc-z   (d/ 1.0 (d* d-height +terrain-chunk-size-scale+)))
 	   (inc-tex 0.1))
+      (setf lookup-tile-triangle
+	    (matrix:gen-matrix-frame (* (truncate +terrain-chunk-size-scale+)
+					(matrix:width heightmap))
+				     (* (truncate +terrain-chunk-size-scale+)
+					(matrix:height heightmap))))
       (loop 
 	 for x     from 0.0 below 1.0 by inc-x 
 	 for s-tex from 0.0           by inc-tex do
@@ -440,13 +451,17 @@
 	      ;; d
 		(push-decal-weights-text-coord object (d+ x inc-x) z)
 		(%put-vertex object x z s-tex t-tex inc-x 0.0 inc-tex 0.0)
-	      ;; assign texture-decals coordinates for triangle a b c
+	      ;; assign texture-decals coordinates for triangle a c d
 		(set-decals-triangle-attribute object)
 	      ;; assign pick weight value
-		(push-pickable-attribute object 0.0)
+		(loop repeat 2 do
+		     (push-pickable-attribute object 0.0))
 		(let ((pick-index (- (length (pick-overlay-values object)) 1)))
-		  (set-pickable-attribute  object :triangle-index 0 :pick-index pick-index)
-		  (set-pickable-attribute  object :triangle-index 1 :pick-index pick-index)))))))
+		  (setup-pickable-attribute object
+					    :triangle-index 0
+					    :pick-index pick-index)
+		  (setup-pickable-attribute object :triangle-index 1
+					    :pick-index (1- pick-index))))))))
 		
 (defmethod build-mesh-dbg ((object terrain-chunk))
   (with-accessors ((heightmap heightmap)) object
@@ -509,3 +524,4 @@
     (mesh:prepare-for-rendering res)
     (setf (mesh:render-normals res) nil)
     res))
+

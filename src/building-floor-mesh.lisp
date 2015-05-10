@@ -142,7 +142,7 @@
 		   0.0)
       (loop for i from 0 below (length (triangles mesh)) do
 	   (push-pickable-attribute mesh 0.0)
-	   (set-pickable-attribute  mesh :triangle-index i :pick-index 0)))
+	   (setup-pickable-attribute  mesh :triangle-index i :pick-index 0)))
     (remove-orphaned-vertices mesh)
     (loop for i from 0 below (length (normals mesh)) do
 	 (setf (elt (normals mesh) i) +y-axe+))

@@ -41,14 +41,17 @@
 (defgeneric seq->gl-array (seq))
 
 (defmethod seq->gl-array ((seq vector))
+  (declare (optimize (debug 0) (safety 0) (speed 1)))
+  (declare ((array desired-type (*)) seq))
   (let ((results (gl:alloc-gl-array :float (length seq))))
-    (loop for i from 0 below (length seq) do
+    (loop for i fixnum from 0 below (length seq) do
 	 (setf (fast-glaref results i) (aref seq i)))
     results))
 
 (defmethod seq->gl-array ((seq list))
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
   (let ((results (gl:alloc-gl-array :float (length seq))))
-    (loop for i from 0 below (length seq) do
+    (loop for i fixnum from 0 below (length seq) do
 	 (setf (fast-glaref results i) (elt seq i)))
     results))
 
@@ -56,11 +59,19 @@
   (loop for i from 0 below count do (setf (fast-glaref b i) (fast-glaref a i))))
 
 (defun lerp-gl-array (a b c count interpolation-factor)
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (declare (fixnum count))
+  (declare (desired-type interpolation-factor))
   (dotimes (i count)
+    (declare (fixnum i))
     (setf (fast-glaref c i)
       (alexandria:lerp interpolation-factor
 		       (fast-glaref a i)
 		       (fast-glaref b i)))))
+
+(defun gl-array->list (seq)
+  (loop for i fixnum from 0 below (gl::gl-array-size seq) collect
+	 (fast-glaref seq i)))
 
 (defun prepare-framebuffer-for-rendering  (framebuffer depthbuffer texture w h)
   (gl:bind-framebuffer :framebuffer framebuffer)

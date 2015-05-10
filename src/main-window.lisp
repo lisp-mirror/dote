@@ -36,8 +36,6 @@
 
 (defparameter *placeholder* nil)
 
-(defparameter *map* nil)
-
 (defparameter *dt* .0017)
 
 (defclass test-window (transformable gl-window)
@@ -290,8 +288,9 @@
 	      (perspective *fov* (num:desired (/ *window-w* *window-h*)) 
 			   *near* *far*))
 	(camera:look-at* (world:camera (world object)))))
-      (when (string= "q" text)
-	(close-window object)))
+  (when (string= "q" text)
+    (setf *placeholder* nil)
+    (close-window object)))
 
 (defmethod keydown-event ((object test-window) ts repeat-p keysym)
   (with-accessors ((world world)) object
@@ -301,6 +300,7 @@
       (when (not (widget:on-key-pressed (world:gui world) gui-event))
 	(let ((scancode (sdl2:scancode keysym)))
 	  (when (eq :scancode-escape scancode)
+	    (setf *placeholder* nil)
 	    (close-window object))
 	  (when (eq :scancode-f8 scancode)
 	    (with-accessors ((world world) (mesh mesh)) object

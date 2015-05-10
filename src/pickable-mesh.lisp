@@ -16,17 +16,39 @@
 
 (in-package :pickable-mesh)
 
-(define-constant +attribute-pick-overlay+           :pick-overlay        :test #'eq)
+(define-constant +attribute-pick-overlay+      :pick-overlay                :test #'eq)
 
-(define-constant +color-tile-pick-can-move+ (vec4 0.408 0.737 0.945 1.0) :test #'vec4~)
+(define-constant +color-tile-pick-can-move+    (vec4 0.408 0.737 0.945 1.0) :test #'vec4~)
 
-(define-constant +color-tile-pick-cannot-move+ (vec4 1.0 0.0 0.0 1.0)    :test #'vec4~)
+(define-constant +color-tile-pick-cannot-move+ (vec4 1.0 0.0 0.0 1.0)       :test #'vec4~)
 
-(define-constant +pick-color-lerp-weight+      0.2                       :test #'=)
+(define-constant +pick-color-lerp-weight+      0.2                          :test #'=)
+
+(defstruct pickable-tile
+  triangle-1
+  triangle-2
+  index-tr-1
+  index-tr-2)
+
+(defun init-pick-overlay-value ()
+  (make-fresh-array 0 (num:desired 0.0) 'desired-type nil))
+
+(defun init-highligthed-tiles-coords ()
+  (make-fresh-array 0 nil 'uivec2 nil))
 
 (defclass pickable-mesh (triangle-mesh)
-  ((pick-overlay-values
-    :initform (misc:make-fresh-array 0 (num:desired 0.0) 'desired-type nil)
+  ((lookup-tile-triangle
+    :initform nil
+    :initarg  :lookup-tile-triangle
+    :accessor lookup-tile-triangle
+    :type matrix:matrix)
+   (highligthed-tiles-coords
+    :initform (init-highligthed-tiles-coords)
+    :initarg  :highligthed-tiles-coords
+    :accessor highligthed-tiles-coords
+    :type array)
+   (pick-overlay-values
+    :initform (init-pick-overlay-value)
     :initarg  :pick-overlay-values
     :accessor pick-overlay-values)
    (renderer-data-count-pick-overlay
@@ -39,7 +61,7 @@
     :accessor renderer-data-pick-overlay)))
 
 (defmethod clone-into :after ((from pickable-mesh) (to pickable-mesh))
-  (setf (pick-overlay-values to) (alexandria:copy-array (pick-overlay-values from)))
+  (setf (pick-overlay-values to) (copy-array (pick-overlay-values from)))
   to)
 
 (defmethod clone ((object pickable-mesh))
@@ -55,6 +77,9 @@
       (gl:free-gl-array renderer-data-pick-overlay)
       (setf renderer-data-pick-overlay nil))))
 
+(defun vbo-pick-weights-handle (vbos)
+  (elt vbos (- (length vbos) 2)))
+
 (defmethod make-data-for-opengl :after ((object pickable-mesh))
   (with-accessors ((renderer-data-count-pick-overlay renderer-data-count-pick-overlay)
 		   (renderer-data-pick-overlay renderer-data-pick-overlay)
@@ -68,8 +93,8 @@
 		for i across pick-indices
 		for offset from 0 by 1 do
 		  (let ((weight (elt pick-overlay-values i)))
-		    (setf (gl-utils:fast-glaref weights (+ ct offset)) weight)))))
-      (setf renderer-data-pick-overlay  weights)
+		    (setf (fast-glaref weights (+ ct offset)) weight)))))
+      (setf renderer-data-pick-overlay weights)
       (setf renderer-data-count-pick-overlay (* 3 (length (triangles object)))))
     ;; setup finalizer
     (let ((gl-arr-weight (slot-value object 'renderer-data-pick-overlay))
@@ -83,31 +108,158 @@
   (with-accessors ((vbo vbo)
  		   (vao vao)
  		   (renderer-data-pick-overlay renderer-data-pick-overlay)) object
-    (setf vbo (append vbo (gl:gen-buffers 1))
- 	  vao (append vao (gl:gen-vertex-arrays 1)))
+    (setf vbo (append vbo (gl:gen-buffers 1)))
     (mesh:make-data-for-opengl object)
     (with-unbind-vao
       ;; pick-weights
-      (gl:bind-buffer :array-buffer (alexandria:last-elt vbo))
+      (gl:bind-buffer :array-buffer (last-elt vbo))
       (gl:buffer-data :array-buffer :dynamic-draw renderer-data-pick-overlay)
       (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-      (gl:bind-buffer :array-buffer (alexandria:last-elt vbo))
       (gl:vertex-attrib-pointer +attribute-pick-weight-location+ 1 :float 0 0
-				(gl-utils:mock-null-pointer))
+				(mock-null-pointer))
       (gl:enable-vertex-attrib-array +attribute-pick-weight-location+))
+    object))
+
+(defmethod update-for-rendering ((object pickable-mesh))
+  (with-accessors ((vbo vbo) (vao vao)
+		   (renderer-data-pick-overlay renderer-data-pick-overlay)
+		   (pick-overlay-values pick-overlay-values)) object
+    (with-unbind-vao
+      (gl:bind-buffer :array-buffer (vbo-pick-weights-handle vbo))
+      (gl:buffer-sub-data :array-buffer renderer-data-pick-overlay))
     object))
 
 (defgeneric push-pickable-attribute (object value))
 
-(defgeneric set-pickable-attribute (object &key triangle-index pick-index))
+(defgeneric setup-pickable-attribute (object &key triangle-index pick-index))
+
+(defgeneric setup-lookup-triangle-element (object &key first-triangle-index second-triangle-index))
+
+(defgeneric set-tile-highlight (object row column &key
+						    weight
+						    clear-highligthed-set
+						    add-to-highligthed-set))
+
+(defgeneric turn-off-highligthed-tiles (object))
+
+(defgeneric add-highligthed-tiles-coords (object row column))
+
+(defgeneric add-highligthed-tiles-coords* (object coord))
 
 (defmethod push-pickable-attribute ((object pickable-mesh) value)
   (declare (desired-type value))
   (vector-push-extend value (pick-overlay-values object)))
 
-(defmethod set-pickable-attribute ((object pickable-mesh) &key
+(defmethod setup-pickable-attribute ((object pickable-mesh) &key
 							    (triangle-index 0)
 							    (pick-index 0))
   (let* ((first-triangle (elt (triangles object) triangle-index))
 	 (indices        (uivec pick-index pick-index pick-index)))
     (set-custom-attribute first-triangle +attribute-pick-overlay+ indices)))
+
+(defmethod setup-lookup-triangle-element ((object pickable-mesh) &key
+								 (first-triangle-index 0)
+								 (second-triangle-index 1))
+  (with-accessors ((lookup-tile-triangle lookup-tile-triangle)) object
+    (let* ((first-triangle           (elt (triangles object) first-triangle-index))
+	   (first-triangle-indices   (vertex-index first-triangle))
+	   (second-triangle          (elt (triangles object) second-triangle-index))
+	   (first-triangle-vertices  (vector (find-value-by-index object
+								  (elt first-triangle-indices 0)
+								  :what :vertex)
+					     (find-value-by-index object
+								  (elt first-triangle-indices 1)
+								  :what :vertex)
+					     (find-value-by-index object
+								  (elt first-triangle-indices 2)
+								  :what :vertex)))
+	   (barycenter-first-triangle (3d-utils:triangle-centroid (elt first-triangle-vertices 0)
+								  (elt first-triangle-vertices 1)
+								  (elt first-triangle-vertices 2)))
+	   (column                    (coord-chunk->matrix (elt barycenter-first-triangle 2)))
+	   (row                       (coord-chunk->matrix (elt barycenter-first-triangle 0)))
+	   (element         (make-pickable-tile :triangle-1 first-triangle
+						:triangle-2 second-triangle
+						:index-tr-1 first-triangle-index
+						:index-tr-2 second-triangle-index)))
+
+      (setf (matrix:matrix-elt lookup-tile-triangle row column) element)
+      (values row column))))
+
+(define-condition null-tile-element (warning)
+  ((coordinates
+    :initarg :coordinates
+    :reader coordinates))
+  (:report (lambda (condition stream)
+	     (format stream "Element null in row ~a, column ~a"
+		     (elt (coordinates condition) 0)
+		     (elt (coordinates condition) 1)))))
+
+(define-condition out-of-bonds-tile-element (warning)
+  ((coordinates
+    :initarg :coordinates
+    :reader coordinates)
+   (mat
+    :initarg :mat
+    :reader   mat))
+  (:report (lambda (condition stream)
+	     (format stream "Element in row ~a, column ~a for a marix ~aX~a"
+		     (elt (coordinates condition) 0)
+		     (elt (coordinates condition) 1)
+		     (matrix:width  (mat condition))
+		     (matrix:height (mat condition))))))
+
+(defmethod set-tile-highlight ((object pickable-mesh) row column
+			       &key
+				 (weight +pick-color-lerp-weight+)
+				 (clear-highligthed-set nil)
+				 (add-to-highligthed-set nil))
+  "row and column are integer coordinates relative to lookup-tile-triangle"
+  (with-accessors ((renderer-data-pick-overlay renderer-data-pick-overlay)
+		   (lookup-tile-triangle lookup-tile-triangle)
+		   (pick-overlay-values pick-overlay-values)) object
+    (matrix:with-check-matrix-borders-then-else (lookup-tile-triangle row column)
+      (let ((tile (matrix:matrix-elt lookup-tile-triangle row column)))
+	(if tile
+	    (let* ((w1 (get-custom-attribute (pickable-tile-triangle-1 tile)
+					     +attribute-pick-overlay+))
+		   (w2 (get-custom-attribute (pickable-tile-triangle-2 tile)
+					     +attribute-pick-overlay+))
+		   (idx-triangle-1 (pickable-tile-index-tr-1 tile))
+		   (idx-triangle-2 (pickable-tile-index-tr-2 tile))
+		   (gl-arr-offset-1 (* idx-triangle-1 3))
+		   (gl-arr-offset-2 (* idx-triangle-2 3)))
+	      (when clear-highligthed-set
+		(turn-off-highligthed-tiles object))
+	      (when add-to-highligthed-set
+		(add-highligthed-tiles-coords object row column))
+	      (setf (fast-glaref renderer-data-pick-overlay gl-arr-offset-1) weight
+		    (fast-glaref renderer-data-pick-overlay (+ gl-arr-offset-1 1)) weight
+		    (fast-glaref renderer-data-pick-overlay (+ gl-arr-offset-1 2)) weight
+		    (fast-glaref renderer-data-pick-overlay gl-arr-offset-2) weight
+		    (fast-glaref renderer-data-pick-overlay (+ gl-arr-offset-2 1)) weight
+		    (fast-glaref renderer-data-pick-overlay (+ gl-arr-offset-2 2)) weight)
+	      (setf (elt pick-overlay-values (elt w1 0)) weight
+		    (elt pick-overlay-values (elt w1 1)) weight
+		    (elt pick-overlay-values (elt w1 2)) weight
+		    (elt pick-overlay-values (elt w2 0)) weight
+		    (elt pick-overlay-values (elt w2 1)) weight
+		    (elt pick-overlay-values (elt w2 2)) weight))
+	    (error 'null-tile-element :coordinates (vector row column))))
+      (error 'out-of-bonds-tile-element :coordinates (vector row column)
+	     :mat lookup-tile-triangle))))
+
+(defmethod turn-off-highligthed-tiles ((object pickable-mesh))
+  (with-accessors ((highligthed-tiles-coords highligthed-tiles-coords)) object
+    (loop for i across highligthed-tiles-coords do
+	 (set-tile-highlight object (elt i 0) (elt i 1) :weight 0.0))
+    (setf highligthed-tiles-coords (init-highligthed-tiles-coords))
+    object))
+
+(defmethod add-highligthed-tiles-coords ((object pickable-mesh) row column)
+  (add-highligthed-tiles-coords* object (uivec2 row column))
+  object)
+
+(defmethod add-highligthed-tiles-coords* ((object pickable-mesh) coord)
+  (vector-push-extend coord (highligthed-tiles-coords object))
+  object)

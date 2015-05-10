@@ -37,7 +37,8 @@
    :n_))
 
 (defpackage :constants
-  (:use :cl)
+  (:use :cl
+	:alexandria)
   (:export
    :+terrain-chunk-tile-size+
    :+terrain-chunk-size-scale+
@@ -648,6 +649,7 @@
    :sphere-radius
    :aabb->bounding-sphere
    :triangle-normal
+   :triangle-centroid
    :tangent-TBN
    :tangent-in-normal-space
    :ccw-poly-fannify
@@ -1383,6 +1385,7 @@
    :fast-glaref
    :seq->gl-array
    :copy-gl-array
+   :gl-array->list
    :lerp-gl-array
    :render-to-texture
    :with-render-to-texture
@@ -1826,6 +1829,7 @@
 
 (defpackage :pickable-mesh
   (:use :cl
+	:alexandria
 	:sb-cga
 	:sb-cga-utils
 	:config
@@ -1843,20 +1847,36 @@
 	:uivec
 	:mtree-utils
 	:mesh)
-  (:shadowing-import-from :alexandria :define-constant)
+  (:shadowing-import-from :misc   :random-elt :shuffle)
+  (:shadowing-import-from :sb-cga :rotate)
+  (:shadowing-import-from :2d-utils :uivec2)
   (:export
    :+attribute-pick-overlay+
    :+color-tile-pick-can-move+
    :+color-tile-pick-cannot-move+
    :+pick-color-lerp-weight+
+   :pickable-tile
+   :copy-pickable-tile
+   :pickable-tile-p
+   :pickable-tile-triangle-1
+   :pickable-tile-triangle-2
+   :pickable-tile-index-tr-1
+   :pickable-tile-index-tr-2
+   :make-pickable-tile
    :pickable-mesh
+   :lookup-tile-triangle
+   :highligthed-tiles-coords
    :pick-overlay-values
    :renderer-data-count-pick-overlay
    :renderer-data-pick-overlay
    :push-pickable-attribute
-   :set-pickable-attribute
+   :setup-pickable-attribute
    :push-pickable-attribute
-   :set-pickable-attribute))
+   :setup-lookup-triangle-element
+   :set-tile-highlight
+   :turn-off-highligthed-tiles
+   :add-highligthed-tiles-coords
+   :add-highligthed-tiles-coords*))
 
 (defpackage :building-floor-mesh
   (:use :cl
@@ -2078,6 +2098,7 @@
 
 (defpackage :terrain-chunk
   (:use :cl
+	:alexandria
 	:config
 	:constants
 	:sb-cga
@@ -2100,8 +2121,8 @@
 	:game-state
 	:mesh
 	:pickable-mesh)
-  (:shadowing-import-from :sb-cga :matrix)
-  (:shadowing-import-from :alexandria :define-constant)
+  (:shadowing-import-from :sb-cga :matrix     :rotate)
+  (:shadowing-import-from :misc   :random-elt :shuffle)
   (:export
    :+pick-color-lerp-weight+
    :terrain-chunk

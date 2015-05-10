@@ -283,7 +283,7 @@
   (loop for aabb in (labyrinths-aabb map) do
        (push-entity world (setup-single-ceiling world aabb))))
 
-(defun setup-terrains (world map)
+(defun setup-terrain (world map)
   (let ((whole (terrain-chunk:make-terrain-chunk map (compiled-shaders world))))
     (loop for aabb in (labyrinths-aabb map) do
 	 (when config:+debug-mode+
@@ -293,9 +293,13 @@
      					    #'(lambda (a)
      						(coord-terrain->chunk a :tile-offset 0.0))
      					    aabb)
-				       :regenerate-rendering-data nil
+				       :regenerate-rendering-data t
      				       :clip-if-inside t))
-    (prepare-for-rendering whole)
+    (loop for tr from 0 below (length (mesh:triangles whole)) by 2 do
+       ;; assign triandle indices for this tile
+	 (pickable-mesh:setup-lookup-triangle-element whole
+						      :first-triangle-index tr
+						      :second-triangle-index (1+ tr)))
     (push-entity world whole)))
 
 (defun load-level (world game-state compiled-shaders file)
@@ -319,7 +323,7 @@
 						     :door-w *door-w*))
     (setf (floor-bag world)      *floor*)
     (setf (furnitures-bag world) *furnitures*)
-    (setup-terrains world        *map*)
+    (setup-terrain  world        *map*)
     (setup-floor    world        *map*)
     (setup-ceiling  world        *map*)
     (setup-walls    world        *map*)
