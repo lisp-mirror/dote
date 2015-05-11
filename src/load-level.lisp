@@ -277,7 +277,9 @@
 
 (defun setup-floor (world map)
   (loop for aabb in (labyrinths-aabb map) do
-       (push-entity world (setup-single-floor world aabb))))
+       (let ((mesh (setup-single-floor world aabb)))
+	 (pickable-mesh:populate-lookup-triangle-matrix mesh)
+	 (push-entity world mesh))))
 
 (defun setup-ceiling (world map)
   (loop for aabb in (labyrinths-aabb map) do
@@ -295,11 +297,7 @@
      					    aabb)
 				       :regenerate-rendering-data t
      				       :clip-if-inside t))
-    (loop for tr from 0 below (length (mesh:triangles whole)) by 2 do
-       ;; assign triandle indices for this tile
-	 (pickable-mesh:setup-lookup-triangle-element whole
-						      :first-triangle-index tr
-						      :second-triangle-index (1+ tr)))
+    (pickable-mesh:populate-lookup-triangle-matrix whole)
     (push-entity world whole)))
 
 (defun load-level (world game-state compiled-shaders file)

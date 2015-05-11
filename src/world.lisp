@@ -228,11 +228,27 @@
 	 (render-for-reflection entity object))))
 
 (defmethod pick-pointer-position ((object world) renderer x y)
+  ;; TODO quadtree needed here
   (loop for entity across (entities object) do
-       (let ((pos (pick-pointer-position entity renderer x y)))
-	 (when pos
-	   (return-from pick-pointer-position pos))))
+       (multiple-value-bind (picked cost-matrix-position matrix-position raw-position)
+	   (pick-pointer-position entity renderer x y)
+	 (declare (ignore raw-position))
+	 (when picked
+	   (turn-off-highligthed-tiles object)
+	   (pickable-mesh:set-tile-highlight entity
+					     (elt matrix-position 0)
+					     (elt matrix-position 1)
+					     :clear-highligthed-set nil
+					     :add-to-highligthed-set t)
+	   (return-from pick-pointer-position cost-matrix-position))))
   nil)
+
+(defmethod turn-off-highligthed-tiles ((object world))
+  ;; TODO quadtree needed here
+  (loop for entity across (entities object) do
+       (when (pickable-mesh:pickable-mesh-p entity)
+	 (pickable-mesh:turn-off-highligthed-tiles entity)))
+  object)
 
 (defmethod main-light-pos ((object world))
   (declare (optimize (debug 0) (safety 0) (speed 3)))

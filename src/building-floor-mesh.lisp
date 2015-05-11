@@ -22,15 +22,17 @@
     :initarg :texture-coord-scaling
     :accessor texture-coord-scaling)))
 
-(defgeneric setup-texture-coord-scaling (object))
+(defmethod vbo-pick-weights-handle ((object building-floor-mesh))
+  (with-accessors ((vbo vbo)) object
+    (alexandria:last-elt vbo)))
 
-(defmethod setup-texture-coord-scaling ((object building-floor-mesh))
-  (bubbleup-modelmatrix object)
-  (let* ((aabb  (aabb object))
-	 (min-x (min-x aabb))
-	 (max-x (max-x aabb)))
-    (setf (texture-coord-scaling object)
-	  (d/ (d- max-x min-x) (d* 5.0 +terrain-chunk-tile-size+)))))
+(defmethod render ((object building-floor-mesh) renderer)
+  (with-accessors ((normal-map normal-map)) object
+    (if normal-map
+	(render-normalmap object renderer)
+	(render-phong object renderer))
+    (do-children-mesh (c object)
+      (render c renderer))))
 
 (defmethod render-phong ((object building-floor-mesh) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -51,7 +53,7 @@
     (when (> (length triangles) 0)
       (with-camera-view-matrix (camera-vw-matrix renderer)
 	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	  (use-program compiled-shaders :mesh-ads)
+	  (use-program compiled-shaders :building-floor-ads)
 	  (gl:active-texture :texture0)
 	  (texture:bind-texture texture-object)
 	  (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
@@ -66,6 +68,7 @@
 	  (uniformf  compiled-shaders :kd    (kd material-params))
 	  (uniformf  compiled-shaders :ks    (ks material-params))
 	  (uniformf  compiled-shaders :shine (shininess material-params))
+	  (uniformfv compiled-shaders :pick-color pickable-mesh:+color-tile-pick-can-move+)
 	  (uniform-matrix compiled-shaders :modelview-matrix 4
 				   (vector (matrix* camera-vw-matrix
 						    (elt view-matrix 0)
@@ -96,7 +99,7 @@
     (when (> (length triangles) 0)
       (with-camera-view-matrix (camera-vw-matrix renderer)
 	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	  (use-program compiled-shaders :building-floor)
+	  (use-program compiled-shaders :building-floor-bump)
 	  (gl:active-texture :texture0)
 	  (texture:bind-texture texture-object)
 	  (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
@@ -105,7 +108,7 @@
 	  (uniformf  compiled-shaders :scale-text-coord texture-coord-scaling)
 	  (uniformi  compiled-shaders :normal-map +texture-unit-normalmap+)
 	  (uniformfv compiled-shaders :light-pos
-			      (the vec (main-light-pos-eye-space renderer)))
+		     (the vec (main-light-pos-eye-space renderer)))
 	  (uniformfv compiled-shaders :ia    #(1.0 1.0 1.0))
 	  (uniformfv compiled-shaders :id    #(1.0 1.0 1.0))
 	  (uniformfv compiled-shaders :is    #(1.0 1.0 1.0))
@@ -113,6 +116,7 @@
 	  (uniformf  compiled-shaders :kd    (kd material-params))
 	  (uniformf  compiled-shaders :ks    (ks material-params))
 	  (uniformf  compiled-shaders :shine (shininess material-params))
+	  (uniformfv compiled-shaders :pick-color pickable-mesh:+color-tile-pick-can-move+)
 	  (uniform-matrix compiled-shaders :modelview-matrix 4
 				   (vector (matrix* camera-vw-matrix
 						    (elt view-matrix 0)
@@ -131,6 +135,16 @@
     (clone-into object res)
     res))
 
+(defgeneric setup-texture-coord-scaling (object))
+
+(defmethod setup-texture-coord-scaling ((object building-floor-mesh))
+  (bubbleup-modelmatrix object)
+  (let* ((aabb  (aabb object))
+	 (min-x (min-x aabb))
+	 (max-x (max-x aabb)))
+    (setf (texture-coord-scaling object)
+	  (d/ (d- max-x min-x) (d* 5.0 +terrain-chunk-tile-size+)))))
+
 (defun floor-tile (size-x size-z &key
 				   (wrapper-transformation (identity-matrix)))
   (let* ((mesh (make-instance 'building-floor-mesh)))
@@ -146,4 +160,8 @@
     (remove-orphaned-vertices mesh)
     (loop for i from 0 below (length (normals mesh)) do
 	 (setf (elt (normals mesh) i) +y-axe+))
+    (setf (lookup-tile-triangle mesh)
+	  (matrix:gen-matrix-frame (truncate (coord-chunk->matrix size-z))
+				   (truncate (coord-chunk->matrix size-x))))
     mesh))
+

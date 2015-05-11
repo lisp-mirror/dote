@@ -293,7 +293,7 @@ active program (set by sdk2.kit:use-program)."
      (:shaders :vertex-shader   ,(get-shader-source "bump.vert")
                :vertex-shader   ,(get-shader-source "mesh-bump.vert")
 	       :fragment-shader ,(get-shader-source "mesh-bump.frag")))
-    (:building-floor
+    (:building-floor-bump
      (:uniforms :light-pos
 		:ia
 		:id
@@ -302,15 +302,32 @@ active program (set by sdk2.kit:use-program)."
 		:kd
 		:ks
 		:shine
+		:pick-color
 		:modelview-matrix
 		:proj-matrix
 		:texture-object
 		:normal-map
 		:scale-text-coord)
      (:shaders :vertex-shader   ,(get-shader-source "bump.vert")
-               :vertex-shader   ,(get-shader-source "building-floor.vert")
-	       :fragment-shader ,(get-shader-source "building-floor.frag")))
-
+               :vertex-shader   ,(get-shader-source "building-floor-bump.vert")
+	       :fragment-shader ,(get-shader-source "building-floor-bump.frag")))
+    (:building-floor-ads
+     (:uniforms :light-pos
+		:ia
+		:id
+		:is
+		:ka
+		:kd
+		:ks
+		:shine
+		:pick-color
+		:modelview-matrix
+		:proj-matrix
+		:texture-object
+		:scale-text-coord)
+     (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
+	       :vertex-shader   ,(get-shader-source "building-floor-ads.vert")
+	       :fragment-shader ,(get-shader-source "building-floor-ads.frag")))
     (:mesh-ads
      (:uniforms :light-pos
 		:ia

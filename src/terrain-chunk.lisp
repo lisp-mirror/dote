@@ -190,28 +190,6 @@
       (gl:enable-vertex-attrib-array +attribute-texture-decals-location+))
     object))
 
-(defmethod pick-pointer-position ((object terrain-chunk) renderer x y)
-  (with-accessors ((model-matrix model-matrix) (view-matrix view-matrix) (aabb aabb)) object
-    (with-camera-view-matrix (camera-vw-matrix renderer)
-      (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped nil)
-	(let* ((modelview    (matrix* camera-vw-matrix (elt view-matrix 0) (elt model-matrix 0)))
-	       (raw-position (pick-position x y modelview camera-proj-matrix
-					    *window-w* *window-h*))
-	       (x-origin     (min-x aabb))
-	       (z-origin     (min-z aabb))
-	       (cost-matrix-position (uivec2 (coord-chunk->matrix (elt raw-position 0))
-					     (coord-chunk->matrix (elt raw-position 2))))
-	       (matrix-position (uivec2 (coord-chunk->matrix (d- (elt raw-position 0) x-origin))
-					(coord-chunk->matrix (d- (elt raw-position 2) z-origin)))))
-	  (set-tile-highlight object
-			      (elt matrix-position 0)
-			      (elt matrix-position 1)
-			      :clear-highligthed-set t
-			      :add-to-highligthed-set t
-			      :weight +pick-color-lerp-weight+)
-	  (update-for-rendering object)
-	  (values object cost-matrix-position matrix-position raw-position))))))
-
 (defmethod clone-into :after ((from terrain-chunk) (to terrain-chunk))
   (setf (heightmap              to) (matrix:clone  (heightmap  from))
 	(text-coord-weights     to) (copy-array    (text-coord-weights from))

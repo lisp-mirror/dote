@@ -1855,6 +1855,8 @@
    :+color-tile-pick-can-move+
    :+color-tile-pick-cannot-move+
    :+pick-color-lerp-weight+
+   :null-tile-element
+   :out-of-bonds-tile-element
    :pickable-tile
    :copy-pickable-tile
    :pickable-tile-p
@@ -1863,6 +1865,7 @@
    :pickable-tile-index-tr-1
    :pickable-tile-index-tr-2
    :make-pickable-tile
+   :pickable-mesh-p
    :pickable-mesh
    :lookup-tile-triangle
    :highligthed-tiles-coords
@@ -1876,7 +1879,10 @@
    :set-tile-highlight
    :turn-off-highligthed-tiles
    :add-highligthed-tiles-coords
-   :add-highligthed-tiles-coords*))
+   :add-highligthed-tiles-coords*
+   :populate-lookup-triangle-matrix
+   :lookup-tile-triangle->dbg-matrix
+   :vbo-pick-weights-handle))
 
 (defpackage :building-floor-mesh
   (:use :cl
@@ -1895,6 +1901,7 @@
 	:vec2
 	:vec4
 	:uivec
+	:2d-utils
 	:mtree-utils
 	:mesh
 	:mesh-material

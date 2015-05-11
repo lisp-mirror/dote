@@ -132,11 +132,13 @@ data/shaders/water.frag \
 data/shaders/gui.frag \
 data/shaders/tree.vert \
 data/shaders/mesh-bump.frag \
-data/shaders/building-floor.frag \
+data/shaders/building-floor-bump.frag \
+data/shaders/building-floor-bump.vert \
+data/shaders/building-floor-ads.frag \
+data/shaders/building-floor-ads.vert \
 data/shaders/phong.frag \
 data/shaders/ads.vert \
 data/shaders/wall-decorated.vert \
-data/shaders/building-floor.vert \
 data/shaders/mesh-bump.vert \
 data/shaders/mesh-debug.frag \
 data/shaders/gui.vert \

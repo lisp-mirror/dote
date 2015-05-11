@@ -66,7 +66,7 @@
   generate soil                  from function pixmap:soil
   with parameters (512)
   with tags ("soil-level-1" "floor-level-1" "floor-level-2")
-  with normalmap-parameters      (ka 0.0 kd 1.0 ks .2 roughness 1.0 shininess 10.0) and
+  with normalmap-parameters      (ka 0.0 kd 1.0 ks .2 roughness 0.0 shininess 10.0) and
   with postprocess pixmap:tileize
   
   generate rock-1                from function pixmap:rock-1

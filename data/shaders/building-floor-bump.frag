@@ -5,6 +5,8 @@ in vec3 eye_dir;
 in vec3 light_dir;
 in vec3 N_stat;
 
+in float pick_weight;
+
 uniform sampler2D texture_object;
 uniform sampler2D normal_map;
 
@@ -16,9 +18,11 @@ uniform float  ka   = 0.0;
 uniform float  kd   = 1.0;
 uniform float  ks   = 1.0;
 
-uniform float scale_text_coord  = 10.0;
-
 uniform float shine = 10.0;
+
+uniform vec4 pick_color          = vec4(0.0, 0.0, 1.0, 1.0);
+
+uniform float scale_text_coord  = 10.0;
 
 out vec4 color;
 
@@ -31,6 +35,7 @@ void main () {
   vec3 R              = reflect(-L, N);
   vec3 amb_diff_color = ka * ia + kd * (max(dot(N , L),0.0) * texel.rgb);
   vec3 spec_color     = ks * (pow(max(dot(R, V),0.0),shine) * is);
-  color               = vec4(amb_diff_color,1.0) + vec4(spec_color,1.0);
+
+  color = mix(vec4(amb_diff_color,1.0) + vec4(spec_color,1.0), pick_color, pick_weight);
 }
 
