@@ -309,7 +309,7 @@
     (setf (main-state world)          game-state)
     (setf (compiled-shaders world)    compiled-shaders)
     (setup-game-hour game-state       *game-hour*)
-    (setf (movement-costs game-state) (cost-matrix *map*))
+    (setf (movement-costs game-state) (graph:matrix->graph (cost-matrix *map*)))
     (prepare-map-state game-state     *map*)
     (setf (trees-bag world)           *trees*)
     (setf (walls-bag world)           *wall*)

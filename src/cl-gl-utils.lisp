@@ -25,6 +25,12 @@
 	  ,@body)
      (gl:bind-vertex-array 0)))
 
+(defmacro with-no-cull-face (&body body)
+  `(progn
+     (gl:disable :cull-face)
+     ,@body
+     (gl:enable :cull-face)))
+
 (definline fast-glaref (v offset)
   (cffi:mem-aref (gl::gl-array-pointer v) :float offset))
 

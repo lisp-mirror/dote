@@ -145,7 +145,11 @@
    (npc-characters
     :initform (make-hash-table :test 'equal)
     :initarg  :npc-characters
-    :accessor npc-characters)))
+    :accessor npc-characters)
+   (selected-pc
+    :initform nil
+    :initarg  :selected-pc
+    :accessor selected-pc)))
 
 (defgeneric setup-game-hour (object hour))
 
@@ -154,6 +158,8 @@
 (defgeneric el-type-in-pos (object x y))
 
 (defgeneric entity-id-in-pos (object x y))
+
+(defgeneric build-movement-path (object start end))
 
 (defmethod  setup-game-hour ((object game-state) hour)
   (with-accessors ((game-hour game-hour)
@@ -194,3 +200,15 @@
  			    (truncate (* (height (matrix map)) +terrain-chunk-size-scale+))))
      (loop for i from 0 below (length (data map-state)) do
 	  (setf (elt (data map-state) i) (make-instance 'map-state-element)))))
+
+(defmethod build-movement-path ((object game-state) start end)
+  (with-accessors ((movement-costs movement-costs)) object
+    (let ((tree	(graph:astar-search movement-costs
+				    (graph:node->node-id movement-costs start)
+				    (graph:node->node-id movement-costs end)
+				    :heuristic-cost-function (graph:heuristic-manhattam))))
+      (multiple-value-bind (raw-path cost)
+	  (graph:graph->path tree (graph:node->node-id movement-costs end))
+	(values
+	 (map 'vector #'(lambda (id) (graph:node-id->node movement-costs id)) raw-path)
+	 cost)))))

@@ -26,14 +26,6 @@
   (with-accessors ((vbo vbo)) object
     (alexandria:last-elt vbo)))
 
-(defmethod render ((object building-floor-mesh) renderer)
-  (with-accessors ((normal-map normal-map)) object
-    (if normal-map
-	(render-normalmap object renderer)
-	(render-phong object renderer))
-    (do-children-mesh (c object)
-      (render c renderer))))
-
 (defmethod render-phong ((object building-floor-mesh) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((vbo vbo)

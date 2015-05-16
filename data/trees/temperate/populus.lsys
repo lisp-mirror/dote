@@ -1,4 +1,4 @@
-depth 10
+depth 12
 length 5.0
 randomize-length 0.0
 angle 90.0
@@ -46,17 +46,17 @@ inline LEAF chance=0.5 = (a (m s=0.5 t=0.5 R_SUBLEAF L_SUBLEAF %l=2.0 : %l=0.5
 
 inline TRUNK chance=0.5 = sec_s=0.0 sec_t=0.0 sec_t_end=0.5 %l=0.5 (g %t=0.1 a=2 z+ . %t=10)
        	       %l=2
-                (a %r=0.2 %l=0.1
+                (a %r=0.3 %l=0.1
         	   (a y+ z- . a=90 y+ %l=1.5 LEAF) (a y- z- . a=90 y+ %l=1.5 LEAF)
         	   (a z+ .  a=90 y- %l=1.5 LEAF) (a  z- . a=90 y+ %l=1.5 LEAF))
                  %r=0.6 %l=0.9 a=30 y+ a=90  TRUNK;
 
 inline TRUNK chance=0.5 = sec_s=0.0 sec_t=0.0 sec_t_end=0.5 %l=0.5 (g %t=0.1 a=2 z- . %t=10)
        	       %l=2
-                (a %r=0.2 %l=0.1
+                (a %r=0.3 %l=0.12
         	   (a y+ z- . a=90 y+ %l=1.5 LEAF) (a y- z- . a=90 y+ %l=1.5 LEAF)
         	   (a z+ .  a=90 y- %l=1.5 LEAF) (a  z- . a=90 y+ %l=1.5 LEAF))
-                 %r=0.6 %l=0.9 a=30 y+ a=90  TRUNK;
+                 %r=0.6 %l=0.9 a=30 y- a=90  TRUNK;
 
 
 inline TIP = rd %l=0.3 LEAF a=10 x---- a=180 y+ LEAF;

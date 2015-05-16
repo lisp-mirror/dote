@@ -152,6 +152,12 @@
 
 (defgeneric vbo-pick-weights-handle (object))
 
+(defgeneric lookup-tile-triangle->dbg-matrix (object))
+
+(defgeneric lookup-tile-coord->cost (object x y))
+
+(defgeneric cost-coord->lookup-tile (object x y))
+
 (defmethod push-pickable-attribute ((object pickable-mesh) value)
   (declare (desired-type value))
   (vector-push-extend value (pick-overlay-values object)))
@@ -232,7 +238,7 @@
 					     (coord-chunk->matrix (elt raw-position 2))))
 	       (row             (coord-chunk->matrix (d- (elt raw-position 0) x-origin)))
 	       (column          (coord-chunk->matrix (d- (elt raw-position 2) z-origin)))
-	       (matrix-position (uivec2 row column)))
+	       (matrix-position (uivec2 column row)))
 	  (handler-bind ((pickable-mesh:null-tile-element
 			  #'(lambda(e)
 			      (declare (ignore e))
@@ -246,8 +252,8 @@
 		  (let ((tile (matrix:matrix-elt lookup-tile-triangle row column)))
 		    (if tile
 			(values object cost-matrix-position matrix-position raw-position)
-			(error 'null-tile-element :coordinates (vector row column))))
-		  (error 'out-of-bonds-tile-element :coordinates (vector row column)
+			(error 'null-tile-element :coordinates (vector column row))))
+		  (error 'out-of-bonds-tile-element :coordinates (vector column row)
 			 :mat lookup-tile-triangle))
 	      (use-value (v) v))))))))
 
@@ -289,20 +295,20 @@
 			(elt pick-overlay-values (elt w2 1)) weight
 			(elt pick-overlay-values (elt w2 2)) weight)
 		  (update-for-rendering object))
-		(error 'null-tile-element :coordinates (vector row column))))
-	  (error 'out-of-bonds-tile-element :coordinates (vector row column)
+		(error 'null-tile-element :coordinates (vector column row))))
+	  (error 'out-of-bonds-tile-element :coordinates (vector column row)
 		 :mat lookup-tile-triangle))
       (use-value (v) v))))
 
 (defmethod turn-off-highligthed-tiles ((object pickable-mesh))
   (with-accessors ((highligthed-tiles-coords highligthed-tiles-coords)) object
     (loop for i across highligthed-tiles-coords do
-	 (set-tile-highlight object (elt i 0) (elt i 1) :weight 0.0))
+	 (set-tile-highlight object (elt i 1) (elt i 0) :weight 0.0))
     (setf highligthed-tiles-coords (init-highligthed-tiles-coords))
     object))
 
 (defmethod add-highligthed-tiles-coords ((object pickable-mesh) row column)
-  (add-highligthed-tiles-coords* object (uivec2 row column))
+  (add-highligthed-tiles-coords* object (uivec2 column row))
   object)
 
 (defmethod add-highligthed-tiles-coords* ((object pickable-mesh) coord)

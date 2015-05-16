@@ -143,6 +143,8 @@
 
 (defgeneric render-gui (object))
 
+(defgeneric highlight-tile-screenspace (object renderer x y))
+
 (defmethod main-state ((object world))
   (slot-value object 'main-state))
 
@@ -232,18 +234,32 @@
   (loop for entity across (entities object) do
        (multiple-value-bind (picked cost-matrix-position matrix-position raw-position)
 	   (pick-pointer-position entity renderer x y)
-	 (declare (ignore raw-position))
 	 (when picked
-	   (turn-off-highligthed-tiles object)
-	   (pickable-mesh:set-tile-highlight entity
-					     (elt matrix-position 0)
-					     (elt matrix-position 1)
-					     :clear-highligthed-set nil
-					     :add-to-highligthed-set t)
-	   (return-from pick-pointer-position cost-matrix-position))))
+	   (return-from pick-pointer-position
+	     (values cost-matrix-position matrix-position raw-position)))))
   nil)
 
-(defmethod turn-off-highligthed-tiles ((object world))
+(defmethod highlight-tile-screenspace ((object world) renderer x y)
+  "Coordinates in screen space"
+  ;; TODO quadtree needed here
+  (loop for entity across (entities object) do
+       (multiple-value-bind (picked cost-matrix-position matrix-position raw-position)
+	   (pick-pointer-position entity renderer x y)
+	 (declare (ignore raw-position))
+	 (when picked
+	   (pickable-mesh:turn-off-highligthed-tiles object)
+	   (pickable-mesh:set-tile-highlight entity
+					     (elt matrix-position 1)
+					     (elt matrix-position 0)
+					     :clear-highligthed-set nil
+					     :add-to-highligthed-set t)
+	   (return-from highlight-tile-screenspace cost-matrix-position))))
+  nil)
+
+(defmethod selected-pc ((object world))
+  (selected-pc (main-state object)))
+
+(defmethod pickable-mesh:turn-off-highligthed-tiles ((object world))
   ;; TODO quadtree needed here
   (loop for entity across (entities object) do
        (when (pickable-mesh:pickable-mesh-p entity)

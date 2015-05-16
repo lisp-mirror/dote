@@ -69,10 +69,19 @@
     :initarg :ids
     :accessor ids)))
 
-(defmethod initialize-instance :after ((object tile-based-graph) &key (w 4) (h 4)
-				       &allow-other-keys)
-  (setf (matrix object) (matrix:gen-matrix-frame w h nil))
-  (setf (ids object) (matrix:gen-matrix-frame w h nil))
+(defun matrix->graph (matrix-costs)
+  (declare (optimize (speed 0) (safety 3) (debug 3)))
+  (declare (matrix:matrix matrix-costs))
+  (make-instance 'graph:tile-based-graph :matrix matrix-costs))
+
+(defmethod initialize-instance :after ((object tile-based-graph) &key
+								   (w nil) (h nil)
+								   &allow-other-keys)
+  (when (and w h)
+    (setf (matrix object) (matrix:gen-matrix-frame w h nil)))
+  (setf (ids object) (matrix:gen-matrix-frame (matrix:width  (matrix object))
+					      (matrix:height (matrix object))
+					      nil))
   (let ((start-id 0))
     (matrix:loop-matrix ((ids object) x y)
       (setf (matrix:matrix-elt (ids object) y x) start-id)
@@ -367,35 +376,46 @@
 (defun equal-function* ()
   #'(lambda (a b)
       (let ((ca (bs-tree:data (bs-tree:search *cumulative-cost-plus-heuristic* a
-						:key #'first 
-						:compare #'< 
-						:equal #'=)))
+					      :key #'first
+					      :compare #'<
+					      :equal #'=)))
 	    (cb (bs-tree:data (bs-tree:search *cumulative-cost-plus-heuristic* b
-						:key #'first
-						:compare #'< 
-						:equal #'=))))
+					      :key #'first
+					      :compare #'<
+					      :equal #'=))))
 	(and ca cb (= (second ca) (second cb))))))
 
 (defun compare-function* ()
   #'(lambda (a b)
       (let ((ca (bs-tree:data (bs-tree:search *cumulative-cost-plus-heuristic* a
-						:key #'first 
-						:compare #'< 
-						:equal #'=)))
+					      :key #'first
+					      :compare #'<
+					      :equal #'=)))
 	    (cb (bs-tree:data (bs-tree:search *cumulative-cost-plus-heuristic* b
-						:key #'first
-						:compare #'< 
-						:equal #'=))))
+					      :key #'first
+					      :compare #'<
+					      :equal #'=))))
 	(and ca cb (< (second ca) (second cb))))))
+
+(defun heuristic-manhattam ()
+  #'(lambda (object a b start-node)
+      (declare (ignore object))
+      ;;(declare (list a b start-node))
+      (declare (optimize (speed 0) (safety 3) (debug 3)))
+      (let* ((cost  (+ (abs (- (elt b 0) (elt a 0)))
+		       (abs (- (elt b 1) (elt a 1)))))
+	     (dx1   (- (elt b 0) (elt a 0)))
+	     (dy1   (- (elt b 1) (elt a 1)))
+	     (dx2   (- (elt start-node 0) (elt a 0)))
+	     (dy2   (- (elt start-node 1) (elt a 1)))
+	     (cross (abs (- (* dx1 dy2) (* dx2 dy1)))))
+	(+ cost (* cross 0.05)))))
 
 (defmethod astar-search ((object graph) from-id to-id 
 			 &key (heuristic-cost-function #'(lambda (object a b)
 							   (declare (ignore object a b)) 0)))
   (labels ((find-node-in-set (node-id the-set)
-	     (let ((found (bs-tree:search the-set node-id
-					    :key #'first 
-					    :compare #'< 
-					    :equal #'=)))
+	     (let ((found (bs-tree:search the-set node-id :key #'first :compare #'< :equal #'=)))
 	       (if found 
 		   (bs-tree:data found)
 		   (list node-id 0))))

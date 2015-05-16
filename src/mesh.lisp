@@ -2425,29 +2425,30 @@
     (when (> (length triangles) 0)
       (with-camera-view-matrix (camera-vw-matrix renderer)
 	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	  (use-program compiled-shaders :tree)
-	  (gl:active-texture :texture0)
-	  (texture:bind-texture texture-object)
-	  (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
-	  (uniformfv compiled-shaders :light-pos
-			      (the vec (main-light-pos-eye-space renderer)))
-	  (uniformfv compiled-shaders :ia    #(1.0 1.0 1.0))
-	  (uniformfv compiled-shaders :id    (the vec (main-light-color renderer)))
-	  (uniformfv compiled-shaders :is    (the vec (main-light-color renderer)))
-	  (uniformf  compiled-shaders :ka    (ka material-params))
-	  (uniformf  compiled-shaders :kd    (kd material-params))
-	  (uniformf  compiled-shaders :ks    (ks material-params))
-	  (uniformf  compiled-shaders :shine (shininess material-params))
-	  (uniformf  compiled-shaders :time  el-time)
-	  (uniform-matrix compiled-shaders :modelview-matrix 4
-				   (vector (matrix* camera-vw-matrix
-						    (elt view-matrix 0)
-						    (elt model-matrix 0)))
-				   nil)
-	  (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
-	  (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-	  (gl:draw-arrays :triangles 0 (* 3 (length triangles))))
-	(render-debug object renderer)))))
+	  (with-no-cull-face
+	    (use-program compiled-shaders :tree)
+	    (gl:active-texture :texture0)
+	    (texture:bind-texture texture-object)
+	    (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+	    (uniformfv compiled-shaders :light-pos
+		       (the vec (main-light-pos-eye-space renderer)))
+	    (uniformfv compiled-shaders :ia    #(1.0 1.0 1.0))
+	    (uniformfv compiled-shaders :id    (the vec (main-light-color renderer)))
+	    (uniformfv compiled-shaders :is    (the vec (main-light-color renderer)))
+	    (uniformf  compiled-shaders :ka    (ka material-params))
+	    (uniformf  compiled-shaders :kd    (kd material-params))
+	    (uniformf  compiled-shaders :ks    (ks material-params))
+	    (uniformf  compiled-shaders :shine (shininess material-params))
+	    (uniformf  compiled-shaders :time  el-time)
+	    (uniform-matrix compiled-shaders :modelview-matrix 4
+			    (vector (matrix* camera-vw-matrix
+					     (elt view-matrix 0)
+					     (elt model-matrix 0)))
+			    nil)
+	    (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
+	    (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+	    (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))
+      (render-debug object renderer))))
 
 (alexandria:define-constant +clouds-levels+ 3 :test #'=)
 

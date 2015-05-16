@@ -1207,10 +1207,7 @@
 							    (* el +costs-scale-mountain+)
 							    el)))))
 				 (graph-costs (make-instance 'graph:tile-based-graph 
-							     :w (matrix:width matrix-costs)
-							     :h (matrix:height matrix-costs)
 							     :matrix matrix-costs)))
-			    (setf (graph:matrix graph-costs) matrix-costs)
 			    (get-road-path object graph-costs 
 					   (elt path 0)
 					   (elt path 1)
@@ -1235,9 +1232,8 @@
 							      (num:epsilon= el +labirinth-height+))
 							  +invalicable-element-cost+
 							  el)))))
-	       (graph-costs (make-instance 'graph:tile-based-graph 
-					   :w (matrix:width matrix-costs)
-					   :h (matrix:height matrix-costs)))
+	       (graph-costs (make-instance 'graph:tile-based-graph
+					   :matrix matrix-costs))
 	       (rect-start (2d-utils:aabb2->rect2
 			    (nth (num:lcg-next-upto (length (labyrinths-aabb object)))
 				 (labyrinths-aabb object))))
@@ -1258,7 +1254,6 @@
 			  (+ 0 (elt rect-end 1) (num:lcg-next-upto (elt rect-end 3)))
 			  (+ (1- (elt rect-end 1)) (* (num:lcg-next-in-range 0 2)
 						      (1+ (elt rect-end 3)))))))
-	  (setf (graph:matrix graph-costs) matrix-costs)
 	  (when (not (equalp rect-start rect-end))
 	    (incf count)
 	    (push

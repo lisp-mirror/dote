@@ -1,7 +1,7 @@
 (in-package :level-config)
 
 (define-level
-  set seed "1"
+  set seed "2"
   set clouds random (clear cloudy covered)
   set buildings-level (random (0 1 2))
   
@@ -66,7 +66,7 @@
   generate soil                  from function pixmap:soil
   with parameters (512)
   with tags ("soil-level-1" "floor-level-1" "floor-level-2")
-  with normalmap-parameters      (ka 0.0 kd 1.0 ks .2 roughness 0.0 shininess 10.0) and
+  with normalmap-parameters      (ka 0.0 kd 1.0 ks .2 roughness 1.0 shininess 10.0) and
   with postprocess pixmap:tileize
   
   generate rock-1                from function pixmap:rock-1
@@ -77,8 +77,8 @@
 
   generate grass-stones-floor from function pixmap:grass-stones-floor
   with parameters (512)  
-  with tags ("building-decal")
-  with normalmap-parameters      (ka 1.0 kd 1.0 ks 1.0 roughness 0.0 shininess 128.0) and
+  with tags ("building-decal" "floor-level-1")
+  with normalmap-parameters      (ka 0.0 kd 1.0 ks .2 roughness 1.0 shininess 12.0) and
   with postprocess pixmap:tileize
 
   generate dry-soil              from function pixmap:dry-soil

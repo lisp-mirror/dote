@@ -33,7 +33,8 @@
 (define-constant +clip-plane-no-clip+ (vec4:vec4 0.0 1.0 0.0 +terrain-noclip-plane-dist+)
   :test #'vec4:vec4~)
 
-(define-constant +clip-plane-for-water+ (vec4:vec4 0.0 1.0 0.0 (- +water-mesh-starting-y+))
+(define-constant +clip-plane-for-water+ (vec4:vec4 0.0 1.0 0.0
+						   (d+ (d- +water-mesh-starting-y+) 1.0))
   :test #'vec4:vec4~)
 
 (defparameter *clip-plane* +clip-plane-no-clip+)

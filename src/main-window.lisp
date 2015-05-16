@@ -28,7 +28,7 @@
 
 (defparameter *zeye*  32.0)
 
-(defparameter *far*   1000.0)
+(defparameter *far*   600.0)
 
 (defparameter *near*  10.0)
 
@@ -115,7 +115,7 @@
       (setf world (make-instance 'world :frame-window object))
       (setf (interfaces:compiled-shaders (world::gui world)) compiled-shaders)
       (load-level:load-level world (game-state object) compiled-shaders "test.lisp")
-	;; setup camera
+      ;; setup camera
       (camera:look-at (world:camera (world object))
 		      *xpos* *ypos* *zpos* *xeye* *yeye* *zeye* 0.0 1.0 0.0)
       (setf (mode (world:camera (world object))) :fp)
@@ -229,13 +229,7 @@
   (if (string= text "s")
       (progn
 	(game-state:setup-game-hour (game-state object)
-				    (mod (1+ (game-hour (game-state object))) 24))
-	(let ((tex (texture:get-texture
-		    (fs:file-in-package
-		     (format nil  "skydome-~a.tga" (game-hour (game-state object)))))))
-	  (setf (texture::interpolation-type tex) :linear)
-	  (texture:prepare-for-rendering tex)
-	  (setf (mesh::texture-object (world:skydome (world object))) tex)))
+				    (mod (1+ (game-hour (game-state object))) 24)))
       (progn
 	(when (string= text "P")
 	  (let ((camera (world:camera (world object))))
@@ -356,8 +350,6 @@
 				    :y-event (num:d (- *window-h* y)))))
       (if (eq state :mousebuttondown)
 	  (when (not (widget:on-mouse-pressed (world:gui world) gui-event))
-	    ;; picking test
-	    (interfaces:pick-pointer-position world world x y)
 	    (misc:dbg "~s button: ~A at ~A, ~A" state b x y))
 	  (when (not (widget:on-mouse-released (world:gui world) gui-event))
 	    (misc:dbg "~s button: ~A at ~A, ~A" state b x y))))))
@@ -386,7 +378,11 @@
 		 (sdl2:warp-mouse-in-window (sdl-window object) (/ w 2) (/ h 2))
 		 (let ((offset (vec2:vec2 (num:d- (num:d/ (num:desired w) 2.0) (num:desired x)) 
 					  (num:d- (num:d/ (num:desired h) 2.0) (num:desired y)))))
-		   (camera:drag-camera (world:camera (world object)) offset))))))))))
+		   (camera:drag-camera (world:camera (world object)) offset)))))))
+	;; picking test
+	(when (not (selected-pc world))
+	  (world:highlight-tile-screenspace world world x y)))))
+
 
 (defun main ()
   (tg:gc :full t)

@@ -1026,10 +1026,12 @@
   (:export
    :graph
    :tile-based-graph
+   :matrix->graph
    :matrix-graph
    :matrix
    :list-graph
    :*cumulative-cost-plus-heuristic*
+   :heuristic-manhattam
    :astar-search
    :dijkstra-search
    :graph->path
@@ -1381,6 +1383,7 @@
   (:export
    :+transform-matrix-cointainer+
    :with-unbind-vao
+   :with-no-cull-face
    :mock-null-pointer
    :fast-glaref
    :seq->gl-array
@@ -1617,7 +1620,9 @@
    :get-cost
    :get-cost-insecure
    :el-type-in-pos
-   :entity-id-in-pos))
+   :entity-id-in-pos
+   :selected-pc
+   :build-movement-path))
 
 ;; engine
 
@@ -1775,6 +1780,8 @@
    :make-data-for-opengl-aabb-obj-space
    :prepare-for-rendering
    :render
+   :render-phong
+   :render-normalmap
    :destroy
    :merge-mesh
    :make-shared-vertices
@@ -2101,7 +2108,8 @@
    :main-light-pos
    :main-light-color
    :initialize-skydome
-   :render-gui))
+   :render-gui
+   :highlight-tile-screenspace))
 
 (defpackage :terrain-chunk
   (:use :cl
