@@ -178,7 +178,7 @@
 
 (defmethod get-cost-insecure ((object game-state) x y)
   (declare (optimize (speed 0) (safety 3) (debug 3)))
-  (matrix-elt (movement-costs object) y x))
+  (matrix-elt (graph:matrix (movement-costs object)) y x))
 
 (defmacro gen-map-state-reader (&rest names)
   `(progn

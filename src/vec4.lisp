@@ -55,14 +55,6 @@
   (defun-inline-function make-fresh-vec4 ()
     (make-array-frame 4 0.0 'vec4-type t)))
 
-(definline vec4-average (&rest vecs)
-  (vec4/ (reduce #'(lambda (a b) (vec4+ a b)) vecs :initial-value +vec4-zero+)
-	 (coerce (length vecs) 'vec4-type)))
-
-(definline vec4-average* (vecs)
-  (vec4/ (reduce #'(lambda (a b) (vec4+ a b)) vecs :initial-value +vec4-zero+)
-	 (coerce (length vecs) 'vec4-type)))
-
 (defun copy-vec4 (old)
   (let ((res (make-array-frame 4 0.0 'vec4-type t)))
     (declare (vec4 res))
@@ -153,3 +145,12 @@
 	(- (elt a 3))))
 
 (define-compiler-macros vec4-negate a)
+
+
+(definline vec4-average (&rest vecs)
+  (vec4/ (reduce #'(lambda (a b) (vec4+ a b)) vecs :initial-value +vec4-zero+)
+	 (coerce (length vecs) 'vec4-type)))
+
+(definline vec4-average* (vecs)
+  (vec4/ (reduce #'(lambda (a b) (vec4+ a b)) vecs :initial-value +vec4-zero+)
+	 (coerce (length vecs) 'vec4-type)))

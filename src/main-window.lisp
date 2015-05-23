@@ -86,7 +86,7 @@
 			     "general/dead-tree-2.lsys"   ;  4
 			     "tropical/eucalyptus.lsys"   ;  5
 			     "temperate/oak.lsys"         ;  6
-			     "temperate/populus.lsys"     ;  7
+			     "temperate/cypress.lsys"     ;  7
 			     "temperate/fir.lsys"         ;  8
 			     "temperate/fir-2.lsys"       ;  9
 			     "temperate/willow.lsys"      ; 10

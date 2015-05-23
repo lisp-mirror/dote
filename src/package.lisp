@@ -1889,7 +1889,9 @@
    :add-highligthed-tiles-coords*
    :populate-lookup-triangle-matrix
    :lookup-tile-triangle->dbg-matrix
-   :vbo-pick-weights-handle))
+   :vbo-pick-weights-handle
+   :cost-coord->lookup-tile
+   :lookup-tile-coord->cost))
 
 (defpackage :building-floor-mesh
   (:use :cl
@@ -2082,7 +2084,9 @@
 	:game-state
 	:transformable
 	:interfaces
-	:camera)
+	:camera
+	:mesh
+	:pickable-mesh)
   (:export
    :doors
    :door-n

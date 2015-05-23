@@ -61,6 +61,8 @@
 							  texture:+texture-tag-ceil-level-3+)
   :test #'equalp)
 
+(alexandria:define-constant +saved-seed-key+ "random-seed" :test #'string=)
+
 (defmacro err (str &rest param)
   `(format nil ,str ,@param))
 
@@ -116,6 +118,8 @@
 	   (setf l (rest l)))))))
 
 (defparameter *raw-seed* "")
+
+(defparameter *seed-after-loading* "")
 
 (defparameter *game-hour* 0)
 
@@ -292,7 +296,18 @@
 	(setup-floor)
 	(setup-walls)
 	(setup-window)
-	(setup-doors)))))
+	(setup-doors)
+	(setup-seed)))))
+
+(defun setup-seed ()
+  (let ((cache-key (regular-file-strings->cache-key *raw-seed* +saved-seed-key+)))
+    (if (cache-miss* cache-key)
+	(with-open-file (stream cache-key :direction :output :if-does-not-exist :create)
+	  (setf *seed-after-loading* num:*lcg-seed*)
+	  (format stream "~a~%" *seed-after-loading*))
+	(with-open-file (stream cache-key :direction :input :if-does-not-exist :error)
+	  (let ((seed (parse-integer (read-line stream))))
+	    (setf num:*lcg-seed* seed))))))
 
 (defun branch-key-value (body)
   (if body

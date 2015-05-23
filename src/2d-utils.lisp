@@ -187,6 +187,18 @@
    (num:epsilon= (elt a 2) (elt b 2))
    (num:epsilon= (elt a 3) (elt b 3))))
 
+(misc:definline aabb2-min-x (aabb)
+  (elt aabb 0))
+
+(misc:definline aabb2-max-x (aabb)
+  (elt aabb 2))
+
+(misc:definline aabb2-min-y (aabb)
+  (elt aabb 1))
+
+(misc:definline aabb2-max-y (aabb)
+  (elt aabb 3))
+
 (define-condition invalid-aabb-error (error)
   ((aabb
     :initarg :aabb
@@ -356,19 +368,6 @@
 	  (funcall randomfunc (elt rect 2)))
 	(let ((*sigma-rand* sigmah))
 	  (funcall randomfunc (elt rect 3)))))
-
-(misc:definline aabb2-min-x (aabb)
-  (elt aabb 0))
-
-(misc:definline aabb2-max-x (aabb)
-  (elt aabb 2))
-
-(misc:definline aabb2-min-y (aabb)
-  (elt aabb 1))
-
-(misc:definline aabb2-max-y (aabb)
-  (elt aabb 3))
-  
 
 (defun line-eqn(a b &optional (thresh 1e-5))
   "Calculate a bidimensional line equation crossing vector a and b.

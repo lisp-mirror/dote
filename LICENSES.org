@@ -5,17 +5,17 @@
   A L-System fractal generator
   Copyright (c) 2005 Jari Komppa
   [[http://iki.fi/sol][http://iki.fi/sol]]
-  
+
   License
-  
+
   This software is provided 'as-is', without any express or implied
   warranty.    In no event will the authors be held liable for any damages
   arising from the use of this software.
-  
+
   Permission is granted to anyone to use this software for any purpose,
   including commercial applications, and to alter it and redistribute it
   freely, subject to the following restrictions:
-  
+
   1. The origin of this software must not be misrepresented; you must not
      claim that you wrote the original software. If you use this software
      in a product, an acknowledgment in the product documentation would be
@@ -23,9 +23,9 @@
   2. Altered source versions must be plainly marked as such, and must not be
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
- 
+
   (eg. same as ZLIB license)
- 
+
 - data/trees/texture/willow/*
   are based on the work of Nobiax
   Provided by Nobiax.
@@ -44,7 +44,7 @@
 
   So  absolutely  free  to use  or  to  modify  in  any kind  of  work
   (personal, commercial or else) =)
-  
+
   Please, give me a link  of the result at nobiax.deviantart.com or my
   other account on  OpenGameArt.com (yughues) or ShareCG.com (yughues)
   (watch my journal on deviantart to find them) ;)
@@ -62,19 +62,19 @@
   Public Domain Dedication
   No Copyright
   This license is acceptable for Free Cultural Works
-	
+
   The person  who associated a work  with this deed  has dedicated the
   work to the public domain by waiving all of his or her rights to the
   work  worldwide  under  copyright  law, including  all  related  and
   neighboring rights, to the extent allowed by law.
-  
+
   You  can copy,  modify, distribute  and perform  the work,  even for
   commercial purposes, all without asking permission.
 
   So  absolutely  free  to use  or  to  modify  in  any kind  of  work
   (personal, commercial or else) =)
 
-- data/trees/texture/fir/texture*.tga 
+- data/trees/texture/fir/texture*.tga
 
   based on the work of Nobiax
   Provided by Nobiax.
@@ -93,7 +93,7 @@
 
   So  absolutely  free  to use  or  to  modify  in  any kind  of  work
   (personal, commercial or else) =)
-  
+
   Please, give me a link  of the result at nobiax.deviantart.com or my
   other account on  OpenGameArt.com (yughues) or ShareCG.com (yughues)
   (watch my journal on deviantart to find them) ;)
@@ -101,22 +101,12 @@
   and on the works of titus tscharntke placed on the public domain
   according to [[http://www.burningwell.org/][www.burningwell.org]]
 
-- data/trees/texture/populus/texture.tga
+- data/trees/texture/cypress/texture.tga
 
-  based on work of
-
-  ©  2014 Dario  Librizzi  released  under Attribution-ShareAlike  4.0
-  International (CC BY-SA 4.0) License
-
-  and
-
-  Provided by Nobiax.
-  CC0 1.0 Universal (CC0 1.0)
-  Public Domain Dedication
-  No Copyright
-
-  this derivative  work is  released under  Attribution-ShareAlike 4.0
-  International (CC BY-SA 4.0) License © 2014 cage
+  derived from [[https://en.wikipedia.org/wiki/File:Leyland_Cypress.jpg][wikipedia]].
+  photo by MPF [[https://en.wikipedia.org/wiki/User:MPF][MPF]]
+  licensed under the Creative Commons Attribution-Share Alike 3.0 Unported license.
+  https://creativecommons.org/licenses/by-sa/3.0/deed.en
 
 - data/trees/texture/gumtree/* is based on the work of Lattice
 
@@ -134,33 +124,33 @@
 
 - data/trees/texture/oak/texture.tga
   is based on the work Copyright (C) 2009  Julius Krischan Makowka
-  
+
   This content is free software;  you can redistribute it and/or modify
   it under the terms of the  GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or any
   later version.
-  
+
   This content is  distributed in the hope that it  will be useful, but
   WITHOUT  ANY   WARRANTY;  without   even  the  implied   warranty  of
   MERCHANTABILITY  or FITNESS FOR  A PARTICULAR  PURPOSE.  See  the GNU
   General Public License for more details.
-  
+
   You should  have received  a copy of  the GNU General  Public License
   along  with  this  program;  if  not,  write  to  the  Free  Software
   Foundation,  Inc.,  51  Franklin  Street,  Fifth  Floor,  Boston,  MA
   02110-1301, USA.
-  
+
   Alternativly [sic]  you can also  use these  under the terms  of the
   Creative  Commons Share  Alike 3.0  License, or  maybe another  more
   liberal license if you contact me.
 
 - data/trees/texture/fir/texture-2.tga
-  
+
   ©  2014 Dario  Librizzi  released  under Attribution-ShareAlike  4.0
   International (CC BY-SA 4.0) License
 
 - data/trees/texture/lemon/texture.tga
-  
+
   ©  2014 Dario  Librizzi  released  under Attribution-ShareAlike  4.0
   International (CC BY-SA 4.0) License
 
@@ -196,31 +186,31 @@
   according to: http://opengameart.org/content/pixel-dungeons-set1-props-and-stuff
 
 - data/trees/temperate/pine/*
-  yughues released under https://creativecommons.org/publicdomain/zero/1.0/ 
+  yughues released under https://creativecommons.org/publicdomain/zero/1.0/
   according to http://opengameart.org/content/freebies-mundo-commissions
 
 - data/models/rat/*
   models and texture got from [[http://opengameart.org/content/creature-rat][OGA]]
   and released under public domain https://creativecommons.org/publicdomain/zero/1.0/
 
-- data/models/ortnok/body-animation.lisp 
+- data/models/ortnok/body-animation.lisp
   based on works © Lukas "Rastaman" Beyeler released under GNU General Public License
-  2.0 (see UFO Alien invasion sources 
+  2.0 (see UFO Alien invasion sources
   [[http://ufoai.org/wiki/News][http://ufoai.org/wiki/News]])
 
-- data/models/ortnok/body01.md2 
+- data/models/ortnok/body01.md2
   © Lukas "Rastaman" Beyeler released under GNU General Public License
-  2.0 (see UFO Alien invasion sources 
+  2.0 (see UFO Alien invasion sources
   [[http://ufoai.org/wiki/News][http://ufoai.org/wiki/News]])
 
 - data/models/ortnok/body01.tag
   © Lukas "Rastaman" Beyeler released under GNU General Public License
-  2.0 (see UFO Alien invasion sources 
+  2.0 (see UFO Alien invasion sources
   [[http://ufoai.org/wiki/News][http://ufoai.org/wiki/News]])
 
 - data/models/models/ortnok/body-texture.tga
   based on works © Lukas "Rastaman" Beyeler;MCR
-  GNU General Public License 2.0 (see UFO Alien invasion sources 
+  GNU General Public License 2.0 (see UFO Alien invasion sources
   [[http://ufoai.org/wiki/News][http://ufoai.org/wiki/News]])
 
 - data/models/ortnok/head-animation.lisp
@@ -228,22 +218,22 @@
   3.0           Unported            (CC           BY-SA           3.0)
   https://creativecommons.org/licenses/by-sa/3.0/
 
-- data/models/ortnok/head01.md2 
+- data/models/ortnok/head01.md2
   © Lukas "Rastaman" Beyeler released under GNU General Public License
-  2.0 (see UFO Alien invasion sources 
+  2.0 (see UFO Alien invasion sources
   [[http://ufoai.org/wiki/News][http://ufoai.org/wiki/News]])
 
 - data/models/models/ortnok/head-texture.tga
   based on works © Lukas "Rastaman" Beyeler;MCR
-  GNU General Public License 2.0 (see UFO Alien invasion sources 
+  GNU General Public License 2.0 (see UFO Alien invasion sources
   [[http://ufoai.org/wiki/News][http://ufoai.org/wiki/News]])
-  
+
 - data/names/surnames.lisp
   is based on the output got from:
   http://www.seventhsanctum.com/generate.php?Genname=fantasynameex
   according to:
   http://www.seventhsanctum.com/about.php
-  
+
   the output is placed under public domain
 
   and from https://en.wikipedia.org/wiki/List_of_most_common_surnames_in_North_America
@@ -252,7 +242,7 @@
   Released under [[https://en.wikipedia.org/wiki/Wikipedia:Text_of_Creative_Commons_Attribution-ShareAlike_3.0_Unported_License][CC-by-SA]]
 
 - data/names/names.lisp
-  is based on [[totro's][http://www.dwheeler.com/totro.html]] 
+  is based on [[totro's][http://www.dwheeler.com/totro.html]]
   output released under GPLv3 ol later
 
 - data/img/avatar-portrait
@@ -261,7 +251,7 @@
   You  are  free  to  use  the  graphics/source  both  commercially  and
   non-commercially as long as the following credits are included:
 
-  1. graphics   created   by   Noble   Master   Games  
+  1. graphics   created   by   Noble   Master   Games
      [[http://www.noblemaster.com][http://www.noblemaster.com]]
 
   2. Avatar graphics designed     by      Mei-Li     Nieuwland
@@ -304,7 +294,7 @@
 
 - data/gui/default/next-turn-overlay.tga
   data/gui/default/portrait-unknown.tga
-  data/gui/default/up-overlay.tga 
+  data/gui/default/up-overlay.tga
   data/gui/default/down-overlay.tga
   © 2015 cage released under Creative Commons Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0)
   https://creativecommons.org/licenses/by-sa/3.0/
@@ -316,15 +306,15 @@
   data/gui/default/terror.tga
   based on the works
   © 2105
-  - Lorc; 
-  - Delapouite; 
-  - John Colburn; 
-  - Felbrigg; 
-  - John Redman; 
-  - Carl Olsen; 
-  - sbed; 
-  - PriorBlue; 
-  - Willdabeast. 
+  - Lorc;
+  - Delapouite;
+  - John Colburn;
+  - Felbrigg;
+  - John Redman;
+  - Carl Olsen;
+  - sbed;
+  - PriorBlue;
+  - Willdabeast.
   released under released under Creative Commons Attribution 3.0 Unported (CC BY 3.0)
   https://creativecommons.org/licenses/by/3.0/
   Downloaded from: http://game-icons.net/
@@ -334,14 +324,14 @@
   data/gui/default/attack-long-range-overlay.tga
   data/gui/default/attack-long-range-imprecise-overlay.tga
   according to http://opengameart.org/content/32x32-fantasy-tileset
-  © 2015 Jerom released under Creative 
+  © 2015 Jerom released under Creative
   Commons Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0)
   https://creativecommons.org/licenses/by-sa/3.0/
 
 - data/gui/default/open-overlay.tga
   data/gui/default/close-overlay.tga
   according to http://opengameart.org/content/roguelike-dungeonworld-tiles
-  © 2015 Joe Williamson released under Creative Commons Attribution-ShareAlike 3.0 
+  © 2015 Joe Williamson released under Creative Commons Attribution-ShareAlike 3.0
   Unported (CC BY-SA 3.0)
   https://creativecommons.org/licenses/by-sa/3.0/
 
@@ -351,13 +341,13 @@
   https://creativecommons.org/publicdomain/zero/1.0/
 
 - src/test/data/avatars/avatar0.tga
-  derived from 
+  derived from
   Licensed     under    CC-BY-3.0
   (http://creativecommons.org/licenses/by/3.0/)
   You  are  free  to  use  the  graphics/source  both  commercially  and
   non-commercially as long as the following credits are included:
 
-  1. graphics   created   by   Noble   Master   Games  
+  1. graphics   created   by   Noble   Master   Games
      [[http://www.noblemaster.com][http://www.noblemaster.com]]
 
   2. Avatar graphics designed     by      Mei-Li     Nieuwland
@@ -371,26 +361,26 @@
   International (CC BY 4.0)
 
   https://creativecommons.org/licenses/by/4.0/
- 
+
 
 ** Source code
-   
+
 - src/mesh.lisp use codes from cl-opengl
-  
-  Copyright (c) 2004, Oliver Markovic <entrox@entrox.org> 
-  All rights reserved. 
+
+  Copyright (c) 2004, Oliver Markovic <entrox@entrox.org>
+  All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
 
    - Redistributions of source code must retain the above copyright notice,
-     this list of conditions and the following disclaimer. 
+     this list of conditions and the following disclaimer.
    - Redistributions in binary form must reproduce the above copyright
      notice, this list of conditions and the following disclaimer in the
      documentation and/or other materials provided with the distribution.
    - Neither the name of the author nor the names of the contributors may be
      used to endorse or promote products derived from this software without
-     specific prior written permission. 
+     specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -406,25 +396,25 @@
 
 - src/md2-mesh-normal-lut.lisp
   Copyright (C) 1997-2001 Id Software, Inc.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free  Software Foundation; either  version 2 of the  License, or
   (at your option) any later version.
-  
+
   This program is distributed in the  hope that it will be useful, but
   WITHOUT  ANY   WARRANTY;  without  even  the   implied  warranty  of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-  
+
   See the GNU General Public License for more details.
-  
+
   You should  have received a copy  of the GNU  General Public License
   along  with  this  program;  if  not, write  to  the  Free  Software
   Foundation,  Inc.,   59  Temple  Place  -  Suite   330,  Boston,  MA
   02111-1307, USA.
 
 - src/md2-mesh.lisp user portion
-  
+
   Copyright (C) 1997-2001 Id Software, Inc.
 
   This program is free software; you can redistribute it and/or
@@ -443,39 +433,39 @@
   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 - src/typed-ops.lisp, src/profiling.lisp
-  
-  Copyright (c) 2013 Masataro Asai 
+
+  Copyright (c) 2013 Masataro Asai
 
   Licensed    under   the   [[LLGPL][http://opensource.franz.com/preamble.html]]
   License   (according    to   this
   [[repository][https://github.com/guicho271828/guicho-utilities]]).
 
 - src/with-rgb-texture.lisp and portion of src/noise.lisp
-  
+
   derived from
   [[black-tie][https://github.com/aerique/black-tie]]
 
   The BSD License
-  
+
   Copyright (c) 2009, Erik Winkels
   All rights reserved.
-  
+
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are
   met:
-  
+
     - Redistributions of source code must retain the above copyright
       notice, this list of conditions and the following disclaimer.
-      
+
     - Redistributions in binary form must reproduce the above
       copyright notice, this list of conditions and the following
       disclaimer in the documentation and/or other materials provided
       with the distribution.
-      
+
     - The name of its contributor may not be used to endorse or
       promote products derived from this software without specific
       prior written permission.
-      
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -502,10 +492,10 @@
   distribute, sublicense,  and/or sell  copies of  the Software,  and to
   permit persons to whom the Software  is furnished to do so, subject to
   the following conditions:
-  
+
   The  above  copyright  notice  and this  permission  notice  shall  be
   included in all copies or substantial portions of the Software.
-  
+
   THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
   EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -515,7 +505,7 @@
   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 - src/shaders-utils.lisp
-  uses code from sdl2kit https://github.com/lispgames/sdl2kit/ 
+  uses code from sdl2kit https://github.com/lispgames/sdl2kit/
 
   mit licensed according to
   https://github.com/lispgames/sdl2kit/blob/master/sdl2kit.asd
@@ -529,10 +519,10 @@
   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
   copies of the Software, and to permit persons to whom the Software is
   furnished to do so, subject to the following conditions:
-  
+
   The above copyright notice and this permission notice shall be included in
   all copies or substantial portions of the Software.
-  
+
   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -540,4 +530,3 @@
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
-  

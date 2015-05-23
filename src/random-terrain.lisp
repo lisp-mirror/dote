@@ -1423,10 +1423,14 @@
 	       (loop-matrix (matrix x y)
 		  (let ((pos-x (f+ startx x))
 			(pos-y (f+ starty y)))
-		    (when (random-labyrinth:invalicablep (matrix-elt matrix y x))
-		      (setf (matrix-elt res pos-y pos-x) (if debugp
-							     +invalicable-element-cost-dbg+
-							     +invalicable-element-cost+)))))))
+		    (cond
+		      ((random-labyrinth:doorp (matrix-elt matrix y x))
+		       ;; cancel, if necessary, muddy terrain or others modifier
+		       (setf (matrix-elt res pos-y pos-x) +open-terrain-cost+))
+		      ((random-labyrinth:invalicablep (matrix-elt matrix y x))
+		       (setf (matrix-elt res pos-y pos-x) (if debugp
+							      +invalicable-element-cost-dbg+
+							      +invalicable-element-cost+))))))))
 	;;trees
 	(loop for tree-pos in trees do
 	     (let ((x (truncate (* (elt tree-pos 0) +terrain-chunk-size-scale+)))

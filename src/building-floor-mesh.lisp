@@ -153,7 +153,7 @@
     (loop for i from 0 below (length (normals mesh)) do
 	 (setf (elt (normals mesh) i) +y-axe+))
     (setf (lookup-tile-triangle mesh)
-	  (matrix:gen-matrix-frame (truncate (coord-chunk->matrix size-z))
-				   (truncate (coord-chunk->matrix size-x))))
+	  (matrix:gen-matrix-frame (truncate (coord-chunk->matrix size-x))
+				   (truncate (coord-chunk->matrix size-z))))
     mesh))
 

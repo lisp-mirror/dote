@@ -28,8 +28,8 @@
 
 (defun extract-traslation-mat (mat)
   (let ((res (identity-matrix)))
-    (setf (mref res 0 3) (mref mat 0 3) 
-	  (mref res 1 3) (mref mat 1 3) 
+    (setf (mref res 0 3) (mref mat 0 3)
+	  (mref res 1 3) (mref mat 1 3)
 	  (mref res 2 3) (mref mat 2 3))
     res))
 
@@ -268,7 +268,7 @@
     (vec->vec4 n d)))
 
 (defun same-plane-p (vertex &optional (tolerance 1e-6))
-  (cond 
+  (cond
     ((<= (length vertex) 3)
      t)
     (t
@@ -323,14 +323,14 @@
 							    0.0 0.0 0.5 0.5
 							    0.0 0.0 0.0 1.0)
   :test #'matrix~)
-  
+
 (defun-inline-function ortho (left right bottom top near far)
-  (matrix (d/ 2.0 (d- right left)) 0.0 0.0 (d/ (d- (d+ right left)) (d- right left))    
+  (matrix (d/ 2.0 (d- right left)) 0.0 0.0 (d/ (d- (d+ right left)) (d- right left))
  	  0.0 (d/ 2.0 (d- top  bottom)) 0.0 (d/ (d- (d+ top bottom)) (d- top bottom))
  	  0.0 0.0 (d/ -2.0 (d- far near)) (d/ (d- (d+ far near)) (d- far near))
  	  0.0 0.0 0.0 1.0))
 
-(define-compiler-macros ortho left right bottom top near far)		   
+(define-compiler-macros ortho left right bottom top near far)
 
 (defun-inline-function ortho* (left right bottom top)
   (matrix (d/ 2.0 (d- right left)) 0.0 0.0 (d/ (d- (d+ right left)) (d- right  left))
@@ -398,7 +398,7 @@
 (define-compiler-macros frustum left right bottom top near far)
 
 (defun-inline-function project (obj model proj viewport)
-  (let ((vect (transform-vec4 
+  (let ((vect (transform-vec4
 	       (transform-vec4 (vec4 (elt obj 0) (elt obj 1) (elt obj 2) 1.0) model)
 	       proj)))
     (setf vect (vec4/ vect (elt vect 3)))
@@ -411,12 +411,6 @@
     (setf (elt vect 1) (d+ (d* (elt vect 0) (elt viewport 3)) (elt viewport 1)))
     (vec (elt vect 0) (elt vect 1) (elt vect 2))))
 
-(defun-inline-function look@* (eye-x eye-y eye-z center-x center-y center-z up-x up-y up-z)
-  (look@ (vec eye-x eye-y eye-z) (vec center-x center-y center-z) 
-	   (vec up-x up-y up-z)))
-
-(define-compiler-macros look@* eye-x eye-y eye-z center-x center-y center-z up-x up-y up-z)
-
 (defun-inline-function look@ (eye center up)
   (let* ((f (normalize (vec- center eye)))
 	 (s (normalize (cross-product f up)))
@@ -425,6 +419,12 @@
 	    (elt u 0) (elt u 1) (elt u 2) (d- (dot-product u eye))
 	    (d- (elt f 0)) (d- (elt f 1)) (d- (elt f 2)) (dot-product f eye)
 	    0.0 0.0 0.0 1.0)))
+
+(defun-inline-function look@* (eye-x eye-y eye-z center-x center-y center-z up-x up-y up-z)
+  (look@ (vec eye-x eye-y eye-z) (vec center-x center-y center-z)
+	   (vec up-x up-y up-z)))
+
+(define-compiler-macros look@* eye-x eye-y eye-z center-x center-y center-z up-x up-y up-z)
 
 (defun-inline-function unproject (x y z model-view proj win-x win-y win-w win-h)
   (let* ((inv (inverse-matrix (matrix* proj model-view)))

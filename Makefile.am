@@ -101,7 +101,7 @@ data/trees/texture/willow/texture.tga \
 data/trees/texture/pattern_116/diffuse.tga \
 data/trees/texture/lemon/texture.tga \
 data/trees/texture/palm/texture.tga \
-data/trees/texture/populus/texture.tga \
+data/trees/texture/cypress/texture.tga \
 data/trees/texture/oak/texture.tga \
 data/trees/texture/fir/texture.tga \
 data/trees/texture/fir/texture-2.tga \
@@ -114,7 +114,7 @@ data/trees/temperate/oak.lsys \
 data/trees/temperate/fern.lsys \
 data/trees/temperate/dead-oak.lsys \
 data/trees/temperate/fir-2.lsys \
-data/trees/temperate/populus.lsys \
+data/trees/temperate/cypress.lsys \
 data/trees/temperate/willow.lsys \
 data/trees/temperate/pine/texture.tga \
 data/trees/temperate/pine/pine.obj \

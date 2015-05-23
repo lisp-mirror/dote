@@ -154,9 +154,9 @@
 
 (defgeneric lookup-tile-triangle->dbg-matrix (object))
 
-(defgeneric lookup-tile-coord->cost (object x y))
+(defgeneric lookup-tile-coord->cost (object row column))
 
-(defgeneric cost-coord->lookup-tile (object x y))
+(defgeneric cost-coord->lookup-tile (object row column))
 
 (defmethod push-pickable-attribute ((object pickable-mesh) value)
   (declare (desired-type value))
@@ -190,10 +190,10 @@
 	   (barycenter-first-triangle (3d-utils:triangle-centroid (elt first-triangle-vertices 0)
 								  (elt first-triangle-vertices 1)
 								  (elt first-triangle-vertices 2)))
-	   (column                    (coord-chunk->matrix (d- (elt barycenter-first-triangle 2)
-							       z-origin)))
-	   (row                       (coord-chunk->matrix (d- (elt barycenter-first-triangle 0)
-							       x-origin)))
+	   (row                       (coord-chunk->matrix (d- (elt barycenter-first-triangle 2)
+								  z-origin)))
+	   (column                    (coord-chunk->matrix (d- (elt barycenter-first-triangle 0)
+								  x-origin)))
 	   (element                   (make-pickable-tile :triangle-1 first-triangle
 							  :triangle-2 second-triangle
 							  :index-tr-1 first-triangle-index
@@ -236,8 +236,8 @@
 	       (z-origin     (min-z aabb))
 	       (cost-matrix-position (uivec2 (coord-chunk->matrix (elt raw-position 0))
 					     (coord-chunk->matrix (elt raw-position 2))))
-	       (row             (coord-chunk->matrix (d- (elt raw-position 0) x-origin)))
-	       (column          (coord-chunk->matrix (d- (elt raw-position 2) z-origin)))
+	       (column             (coord-chunk->matrix (d- (elt raw-position 0) x-origin)))
+	       (row                (coord-chunk->matrix (d- (elt raw-position 2) z-origin)))
 	       (matrix-position (uivec2 column row)))
 	  (handler-bind ((pickable-mesh:null-tile-element
 			  #'(lambda(e)
@@ -257,12 +257,28 @@
 			 :mat lookup-tile-triangle))
 	      (use-value (v) v))))))))
 
+(defmethod lookup-tile-coord->cost ((object pickable-mesh) row column)
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (declare (fixnum row column))
+  (with-accessors ((aabb aabb)) object
+    (let ((x-origin (min-x aabb))
+	  (z-origin (min-z aabb)))
+      (declare (desired-type x-origin z-origin))
+      (uivec2 (f+ column (the fixnum (coord-chunk->matrix x-origin)))
+	      (f+ row    (the fixnum (coord-chunk->matrix z-origin)))))))
+
+(defmethod cost-coord->lookup-tile ((object pickable-mesh) row column)
+  (with-accessors ((aabb aabb)) object
+    (uivec2 (f- column (coord-chunk->matrix (min-x aabb)))
+	    (f- row    (coord-chunk->matrix (min-z aabb))))))
+
+
 (defmethod set-tile-highlight ((object pickable-mesh) row column
 			       &key
 				 (weight +pick-color-lerp-weight+)
 				 (clear-highligthed-set nil)
 				 (add-to-highligthed-set nil))
-  "row and column are integer coordinates relative to lookup-tile-triangle"
+  "Row and column are integer coordinates relative to lookup-tile-triangle"
   (with-accessors ((renderer-data-pick-overlay renderer-data-pick-overlay)
 		   (lookup-tile-triangle lookup-tile-triangle)
 		   (pick-overlay-values pick-overlay-values)) object

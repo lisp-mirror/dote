@@ -83,7 +83,6 @@
 (gen-door-side-p (+door-color-n+ +door-color-s+ +door-color-e+ +door-color-w+)
 		 (n s e w))
 
-
 (defmacro gen-stuff-p (name &rest colors)
   (let ((fn-name (alexandria:format-symbol t "~:@(~ap~)" name)))
     `(defun ,fn-name (c)

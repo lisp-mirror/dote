@@ -217,7 +217,7 @@
 ;; sequence utils
 
 (defun vector-empty-p (v)
-  (declare (optimize (speed 0) (safety 3) (debug 3)))
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
   (declare (vector v))
   (= (length v) 0))
   
@@ -416,7 +416,7 @@
 ;; maps 
 
 (defun coord-map->chunk (a &key (tile-offset (num:d/ +terrain-chunk-tile-size+ 2.0)))
-  "convert from logical to actual rendering coordinate"
+  "convert from logical (i.e. matrix of integer) to actual (float) rendering coordinate"
   (num:d+ (num:d* (num:desired a) +terrain-chunk-size-scale+) tile-offset))
 
 (defun coord-terrain->chunk (a &key (tile-offset (num:d/ +terrain-chunk-tile-size+ 2.0)))
@@ -425,14 +425,15 @@
 		  (num:d+ +terrain-chunk-tile-size+ +terrain-chunk-size-scale+))
 	  tile-offset))
 
-(defun coord-chunk->costs (a)
-  "convert from terrain chunk to costs matrix"
-  (coord-chunk->matrix (num:desired a)))
-
 (definline coord-chunk->matrix (a)
   "convert from terrain chunk to matrix"
-  (truncate (num:d/ (num:desired a) +terrain-chunk-tile-size+)))
+  (declare (optimize (speed 1) (safety 0) (debug 0)))
+  (declare (num:desired-type a))
+  (truncate (num:d/ a +terrain-chunk-tile-size+)))
 
+(definline coord-chunk->costs (a)
+  "convert from terrain chunk to costs matrix"
+  (coord-chunk->matrix (num:d a)))
 
 ;; cffi
 

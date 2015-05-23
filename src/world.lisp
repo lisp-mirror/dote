@@ -17,31 +17,31 @@
 (in-package :world)
 
 (defun make-skydome (bg cloud-1 cloud-2 cloud-3 smoke)
-  (let ((mesh (mesh:gen-skydome 100.0)))
+  (let ((mesh (gen-skydome 100.0)))
     ;; background
     (setf (texture:interpolation-type bg) :linear)
     (texture:prepare-for-rendering bg)
-    (setf (mesh:texture-object mesh) bg)
+    (setf (texture-object mesh) bg)
     ;; cloud layer 1
     (setf (texture::interpolation-type cloud-1) :linear)
     (texture:prepare-for-rendering cloud-1)
-    (setf (elt (mesh:texture-clouds mesh) 0) cloud-1)
+    (setf (elt (texture-clouds mesh) 0) cloud-1)
     ;; cloud layer 2
     (setf (texture::interpolation-type cloud-2) :linear)
     (texture:prepare-for-rendering cloud-2)
-    (setf (elt (mesh:texture-clouds mesh) 1) cloud-2)
+    (setf (elt (texture-clouds mesh) 1) cloud-2)
     ;; cloud layer 3
     (setf (texture::interpolation-type cloud-3) :linear)
     (texture:prepare-for-rendering cloud-3)
-    (setf (elt (mesh:texture-clouds mesh) 2) cloud-3)
+    (setf (elt (texture-clouds mesh) 2) cloud-3)
     ;; smoke
     (setf (texture:interpolation-type smoke) :linear)
     (setf (texture:s-wrap-mode smoke) :clamp-to-border)
     (setf (texture:t-wrap-mode smoke) :clamp-to-border)
     (setf (texture:border-color smoke) §c00000000)
     (texture:prepare-for-rendering smoke)
-    (setf (mesh:texture-projector mesh) smoke)
-    (mesh:prepare-for-rendering mesh)	
+    (setf (texture-projector mesh) smoke)
+    (prepare-for-rendering mesh)
     mesh))
 
 (defclass doors ()
@@ -110,11 +110,11 @@
     :accessor doors-bag
     :initarg  :doors-bag
     :initform (make-instance 'doors))
-   (furnitures-bag 
+   (furnitures-bag
     :accessor furnitures-bag
     :initarg  :furnitures-bag
     :initform nil)
-   (windows-bag 
+   (windows-bag
     :accessor windows-bag
     :initarg  :windows-bag
     :initform nil)
@@ -136,7 +136,7 @@
 (defgeneric frustum-intersects-p (object ent))
 
 (defgeneric frustum-bounding-sphere-intersects-p (object ent))
-  
+
 (defgeneric frustum-aabb-intersects-p (object ent))
 
 (defgeneric initialize-skydome (object &key bg clouds-1 clouds-2 clouds-3 smoke weather-type))
@@ -247,23 +247,48 @@
 	   (pick-pointer-position entity renderer x y)
 	 (declare (ignore raw-position))
 	 (when picked
-	   (pickable-mesh:turn-off-highligthed-tiles object)
-	   (pickable-mesh:set-tile-highlight entity
-					     (elt matrix-position 1)
-					     (elt matrix-position 0)
-					     :clear-highligthed-set nil
-					     :add-to-highligthed-set t)
+	   (turn-off-highligthed-tiles object)
+	   (set-tile-highlight entity
+			       (elt matrix-position 1) ; row
+			       (elt matrix-position 0) ; column
+			       :clear-highligthed-set nil
+			       :add-to-highligthed-set t)
 	   (return-from highlight-tile-screenspace cost-matrix-position))))
   nil)
+
+(defmethod highlight-path-costs-space ((object world) renderer path)
+  "Path contains coordinates from cost matrix"
+  (declare (ignore renderer))
+  (turn-off-highligthed-tiles object)
+  (map nil
+       #'(lambda (coord)
+	   ;; TODO quadtree needed here
+	   (loop named entity-loop for entity across (entities object) do
+		(when (pickable-mesh-p entity)
+		  (let ((tile-coord (cost-coord->lookup-tile entity (elt coord 1) (elt coord 0))))
+		    (handler-bind ((null-tile-element
+				    #'(lambda(e)
+					(declare (ignore e))
+					(invoke-restart 'pickable-mesh::use-value nil)))
+				   (out-of-bonds-tile-element
+				    #'(lambda(e)
+					(declare (ignore e))
+					(invoke-restart 'pickable-mesh::use-value nil))))
+		      (when (set-tile-highlight entity (elt tile-coord 1) (elt tile-coord 0)
+						:add-to-highligthed-set t
+						:clear-highligthed-set nil)
+			(return-from entity-loop)))))))
+       path))
+
 
 (defmethod selected-pc ((object world))
   (selected-pc (main-state object)))
 
-(defmethod pickable-mesh:turn-off-highligthed-tiles ((object world))
+(defmethod turn-off-highligthed-tiles ((object world))
   ;; TODO quadtree needed here
   (loop for entity across (entities object) do
-       (when (pickable-mesh:pickable-mesh-p entity)
-	 (pickable-mesh:turn-off-highligthed-tiles entity)))
+       (when (pickable-mesh-p entity)
+	 (turn-off-highligthed-tiles entity)))
   object)
 
 (defmethod main-light-pos ((object world))
@@ -364,17 +389,17 @@
 	   (when totally-outside
 	     (return-from frustum-aabb-intersects-p nil))))
     t))
-    
+
 (defmethod initialize-skydome ((object world)
 			       &key
 				 (bg       (texture:get-texture texture:+skydome-bg+))
-				 (clouds-1 (texture:get-texture texture:+cloud-1+))   
+				 (clouds-1 (texture:get-texture texture:+cloud-1+))
 				 (clouds-2 (texture:get-texture texture:+cloud-2+))
 				 (clouds-3 (texture:get-texture texture:+cloud-3+))
 				 (smoke    (texture:get-texture texture:+smoke-tray+))
 				 (weather-type :foggy-night-clear-day))
   (setf (skydome object)   (make-skydome bg clouds-1 clouds-2 clouds-3 smoke)
-	(mesh:weather-type (skydome object)) weather-type))
+	(weather-type (skydome object)) weather-type))
 
 (defmethod get-window-size ((object world))
   (sdl2:get-window-size (frame-window object)))
