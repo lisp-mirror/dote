@@ -61,7 +61,7 @@
   (declare (ignore object))
   (marshal:unmarshal (read-from-string (filesystem-utils:slurp-file file))))
 
-(defclass renderizable () 
+(defclass renderizable ()
   ((compiled-shaders
     :initform nil
     :accessor compiled-shaders
@@ -101,10 +101,10 @@
 
 (defgeneric to-sexp (object))
 
-(defmethod-inline-function to-sexp ((object number))
+(defmethod to-sexp ((object number))
   object)
 
-(defmethod-inline-function to-sexp ((object (eql nil)))
+(defmethod to-sexp ((object (eql nil)))
   nil)
 
 (defgeneric from-sexp (object sexp))

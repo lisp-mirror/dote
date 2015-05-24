@@ -195,7 +195,7 @@
 	       (setup-door world :door-w min-x min-y x y))
 	      ((furniturep (matrix-elt bmp y x))
 	       (setup-furnitures world min-x min-y x y)))))))
-		
+
 (defun setup-single-floor (world aabb)
   (let* ((rect            (aabb2->rect2 aabb))
 	 (ref-mesh        (floor-bag world))
