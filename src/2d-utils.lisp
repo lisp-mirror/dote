@@ -46,7 +46,7 @@
   (elt aabb 3))
 
 (defun iaabb2~ (a b)
-  (and 
+  (and
    (= (elt a 0) (elt b 0))
    (= (elt a 1) (elt b 1))
    (= (elt a 2) (elt b 2))
@@ -64,7 +64,7 @@
   (let ((cp (copy-ivec4 aabb)))
     (when (< (elt coord 0) (elt aabb 0))
       (setf (elt cp 0) (elt coord 0)))
-    
+
     (when (> (elt coord 0) (elt aabb 2))
       (setf (elt cp 2) (elt coord 0)))
 
@@ -111,7 +111,7 @@
    (<= y (elt aabb 3))))
 
 (defun iaabb2-intersect-p (aabb1 aabb2)
-  (if 
+  (if
    (or
     (>= (elt aabb1 0) (elt aabb2 2))
     (<= (elt aabb1 2) (elt aabb2 0))
@@ -119,6 +119,10 @@
     (<= (elt aabb1 3) (elt aabb2 1)))
    nil
    t))
+
+(defun iaabb2-inglobe-p (host guest)
+  (and (inside-iaabb2-p host (iaabb2-min-x guest) (iaabb2-min-x guest))
+       (inside-iaabb2-p host (iaabb2-max-x guest) (iaabb2-max-x guest))))
 
 (defun iaabb2-null-p (aabb)
   (let ((rect (iaabb2->irect2 aabb)))
@@ -152,26 +156,26 @@
   (let ((rect (iaabb2->irect2 aabb)))
     (ivec2 (+ (elt rect 0) (/ (elt rect 2) 2))
 	   (+ (elt rect 1) (/ (elt rect 3) 2)))))
-		 
+
 (defun rotate-iaabb2 (aabb angle &optional (pivot (list 0 0)))
   (let ((traslated (trasl-iaabb2 aabb (- (elt pivot 0)) (- (elt pivot 1)))))
     (trasl-iaabb2 (rotate-iaabb2* traslated angle) (elt pivot 0) (elt pivot 1))))
 
 (defparameter *sigma-rand* 0.001)
 
-(defun random-sub-iaabb2 (aabb &optional (sigmaw 1) (sigmah 1) 
+(defun random-sub-iaabb2 (aabb &optional (sigmaw 1) (sigmah 1)
 			(randomfunc #'aabb-safe-random))
   (let ((trasl-aabb (trasl-iaabb2 aabb)))
-    (ivec4 0 0 
+    (ivec4 0 0
 	  (let ((*sigma-rand* sigmaw))
 	    (funcall randomfunc (elt trasl-aabb 2)))
 	  (let ((*sigma-rand* sigmah))
 	    (funcall randomfunc (elt trasl-aabb 3))))))
 
-(defun random-sub-irect2 (rect &optional (sigmaw 1) (sigmah 1) 
+(defun random-sub-irect2 (rect &optional (sigmaw 1) (sigmah 1)
 				 (randomfunc #'aabb-safe-random)
 				 (rounding-fn #'round))
-  (ivec4 0 0 
+  (ivec4 0 0
 	  (funcall rounding-fn
 		   (let ((*sigma-rand* sigmaw))
 		     (funcall randomfunc (elt rect 2))))
@@ -181,7 +185,7 @@
 ;;; float aabb
 
 (defun aabb2~ (a b)
-  (and 
+  (and
    (num:epsilon= (elt a 0) (elt b 0))
    (num:epsilon= (elt a 1) (elt b 1))
    (num:epsilon= (elt a 2) (elt b 2))
@@ -219,7 +223,7 @@
   (let ((cp (copy-vec4 aabb)))
     (when (< (elt coord 0) (elt aabb 0))
       (setf (elt cp 0) (elt coord 0)))
-    
+
     (when (> (elt coord 0) (elt aabb 2))
       (setf (elt cp 2) (elt coord 0)))
 
@@ -266,7 +270,7 @@
    (<= y (elt aabb 3))))
 
 (defun aabb2-intersect-p (aabb1 aabb2)
-  (if 
+  (if
    (or
     (>= (elt aabb1 0) (elt aabb2 2))
     (<= (elt aabb1 2) (elt aabb2 0))
@@ -275,12 +279,11 @@
    nil
    t))
 
+(defun aabb2-inglobe-p (host guest)
+  (and (inside-aabb2-p host (aabb2-min-x guest) (aabb2-min-x guest))
+       (inside-aabb2-p host (aabb2-max-x guest) (aabb2-max-x guest))))
+
 (defun approx-aabb2-intersect-p (aabb1 aabb2 enlarge)
-  (misc:dbg "~a ~a ~a ~a"
-	    (num:epsilon= (elt aabb1 0) (elt aabb2 2))
-	    (num:epsilon= (elt aabb1 2) (elt aabb2 0))
-	    (num:epsilon= (elt aabb1 1) (elt aabb2 3))
-	    (num:epsilon= (elt aabb1 3) (elt aabb2 1)))
   (if enlarge
    (or
     (not (num:epsilon= (elt aabb1 0) (elt aabb2 2)))
@@ -326,7 +329,7 @@
   (let ((rect (aabb2->rect2 aabb)))
     (vec2 (+ (elt rect 0) (/ (elt rect 2) 2))
 	  (+ (elt rect 1) (/ (elt rect 3) 2)))))
-		 
+
 (defun rotate-aabb2 (aabb angle &optional (pivot (list 0 0)))
   (let ((traslated (trasl-aabb2 aabb (- (elt pivot 0)) (- (elt pivot 1)))))
     (trasl-aabb2 (rotate-aabb2* traslated angle) (elt pivot 0) (elt pivot 1))))
@@ -341,7 +344,7 @@
 	   (c (* (aabb2-max-x translated) scale-x))
 	   (d (* (aabb2-max-y translated) scale-y)))
       (vec4 (+ a cx) (+ b cy) (+ c cx) (+ d cy)))))
-	     
+
 (defparameter *sigma-rand* 0.001)
 
 (defun aabb-safe-random (size)
@@ -352,18 +355,18 @@
 	     (if (= 0 randw) 1 randw)
 	     size))))
 
-(defun random-sub-aabb (aabb &optional (sigmaw 1) (sigmah 1) 
+(defun random-sub-aabb (aabb &optional (sigmaw 1) (sigmah 1)
 			(randomfunc #'aabb-safe-random))
   (let ((trasl-aabb (trasl-aabb2 aabb)))
-    (vec4 0.0 0.0 
+    (vec4 0.0 0.0
 	  (let ((*sigma-rand* sigmaw))
 	    (funcall randomfunc (elt trasl-aabb 2)))
 	  (let ((*sigma-rand* sigmah))
 	    (funcall randomfunc (elt trasl-aabb 3))))))
 
-(defun random-sub-rect (rect &optional (sigmaw 1) (sigmah 1) 
+(defun random-sub-rect (rect &optional (sigmaw 1) (sigmah 1)
 			(randomfunc #'aabb-safe-random))
-  (vec4 0.0 0.0 
+  (vec4 0.0 0.0
 	(let ((*sigma-rand* sigmaw))
 	  (funcall randomfunc (elt rect 2)))
 	(let ((*sigma-rand* sigmah))
@@ -382,7 +385,7 @@
        (list 0 0 nil t))
       (t
        (list (/ dy dx) (- (second a ) (* (/ dy dx) (elt a 0))) nil nil)))))
-  
+
 (defun recursive-bezier (pairs &key (threshold 1))
   (labels ((midpoint (pb pe)
 	     (mapcar #'(lambda (x) (/ x 2)) (2d-vector-sum pb pe)))
@@ -407,7 +410,7 @@
 		   (list p4))
 	   :test #'eqvec-p)
 	  nil))))
-    
+
 (defmacro funcall-if-not-null (func val)
   (if (not (null func))
       `(funcall ,func ,val)
@@ -435,8 +438,8 @@
 
 (defun 2d-vector-list-translate (pairs &optional (dx 0) (dy 0))
   "translate pairs by dx and dy"
-  (mapcar #'(lambda (v) (2d-vector-map v 
-				       :funcx #'(lambda (x) (+ x dx)) 
+  (mapcar #'(lambda (v) (2d-vector-map v
+				       :funcx #'(lambda (x) (+ x dx))
 				       :funcy #'(lambda (y) (+ y dy))))
 	  pairs))
 
@@ -446,38 +449,38 @@
 (defgeneric 2d-vector-sum (a b))
 
 (defmethod 2d-vector-sum ((a list) (b list))
-  (mapcar #'(lambda (x y) (+ x y)) a b)) 
+  (mapcar #'(lambda (x y) (+ x y)) a b))
 
 (defmethod 2d-vector-sum ((a vector) (b vector))
-  (map 'vector #'(lambda (x y) (+ x y)) a b)) 
+  (map 'vector #'(lambda (x y) (+ x y)) a b))
 
 (defmethod 2d-vector-sum (a b)
-  (map 'vector #'(lambda (x y) (+ x y)) a b)) 
+  (map 'vector #'(lambda (x y) (+ x y)) a b))
 
 (defgeneric 2d-vector-diff (a b))
 
 (defmethod 2d-vector-diff ((a list) (b list))
-  (mapcar #'(lambda (x y) (- x y)) a b)) 
+  (mapcar #'(lambda (x y) (- x y)) a b))
 
 (defmethod 2d-vector-diff ((a vector) (b vector))
-  (map 'vector #'(lambda (x y) (- x y)) a b)) 
+  (map 'vector #'(lambda (x y) (- x y)) a b))
 
 (defmethod 2d-vector-diff (a b)
-  (map 'vector #'(lambda (x y) (- x y)) a b)) 
+  (map 'vector #'(lambda (x y) (- x y)) a b))
 
 (defgeneric d2d-vector-diff (a b))
 
 (defmethod d2d-vector-diff ((a list) (b list))
-  (mapcar #'(lambda (x y) (num:d- (num:desired x) (num:desired y))) a b)) 
+  (mapcar #'(lambda (x y) (num:d- (num:desired x) (num:desired y))) a b))
 
 (defmethod d2d-vector-diff ((a vector) (b vector))
-  (map 'vector #'(lambda (x y) (num:d- (num:desired x) (num:desired y))) a b)) 
+  (map 'vector #'(lambda (x y) (num:d- (num:desired x) (num:desired y))) a b))
 
 (defun 2d-vector-dot-product (a b)
   (+ (* (elt a 0) (elt b 0)) (* (elt a 1) (elt b 1))))
 
 (defun d2d-vector-dot-product (a b)
-  (num:d+ (num:d* (num:desired (elt a 0)) (num:desired (elt b 0))) 
+  (num:d+ (num:d* (num:desired (elt a 0)) (num:desired (elt b 0)))
 	  (num:d* (num:desired (elt a 1)) (num:desired (elt b 1)))))
 
 (defun 2d-vector-cross-product (a b)
@@ -549,10 +552,10 @@
 				  (if (not (null modfunc-y))
 				      (mapcar modfunc-y ys)
 				      ys))))
-		  
+
 (defun interleaved-xy->pair (xy)
   (macrolet ((get-from-list (when-clause list)
-	       `(loop 
+	       `(loop
 		   for i in ,list
 		   for c = 0 then (1+ c)
 		   when (,when-clause c)

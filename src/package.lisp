@@ -24,7 +24,7 @@
    :+home-data-dir+
    :+model-animations-filename+
    :+model-animations-filename+
-   :+model-filename+           
+   :+model-filename+
    :+model-texture-filename+
    :+random-first-names-filename+
    :+random-last-names-filename+
@@ -45,7 +45,7 @@
    :+wall-w+
    :+wall-h-scale+
    :+wall-h+
-   :+gravity+ 
+   :+gravity+
    :+maximum-map-size+
    :+minimium-map-size+
    :+zero-height+
@@ -67,11 +67,11 @@
    :+z-axe+
    :+zero-vec+
    :+simple-array-fixnum-type+
-   :+id-camera+  
+   :+id-camera+
    :+id-skydome+
    :+start-id-counter+
    :+obj-mesh-file-extension+
-   :+trees-resource+ 
+   :+trees-resource+
    :+names-resource+
    :+avatar-portrait-resource+
    :+maps-resource+
@@ -105,7 +105,7 @@
 
 (defpackage :parallel-utils
   (:use :cl)
-  (:export 
+  (:export
    :*parallel-setf-queue*
    :parallel-setf))
 
@@ -176,7 +176,7 @@
   (:use :cl
 	:constants)
   (:nicknames :num)
-  (:export 
+  (:export
    :primes-list
    :make-primes-array
    :*array-primes*
@@ -236,14 +236,14 @@
    :desired-type
    :desired
    :d
-   :d+ 
-   :d* 
-   :d- 
-   :d/ 
+   :d+
+   :d*
+   :d-
+   :d/
    :dsqrt
    :daref
-   :dmin 
-   :dmax 
+   :dmin
+   :dmax
    :d>
    :d<
    :d>=
@@ -311,13 +311,13 @@
 
 (defpackage :os-utils
   (:use :cl)
-  (:export 
+  (:export
    :cpu-number))
 
 (defpackage :text-utils
   (:use :cl)
   (:import-from :misc :definline)
-  (:export 
+  (:export
    :+float-regexp+
    :+integer-regexp+
    :uchar-length
@@ -363,13 +363,13 @@
    :regular-file-strings->cache-key
    :regular-file-strings->cache-key*
    :directory-strings->cache-key
-   :directory-strings->cache-key* 
+   :directory-strings->cache-key*
    :cons->cache-key
    :cons->cache-key*
    :cache-miss*
    :cache-miss
-   :file-miss 
-   :file-miss* 
+   :file-miss
+   :file-miss*
    :directory-miss
    :directory-miss*
    :ensure-cache-directory
@@ -410,7 +410,7 @@
   (:use :cl
 	:constants
 	:misc)
-  (:export 
+  (:export
    :ivec2-type
    :ivec2
    :+ivec2-zero+
@@ -429,7 +429,7 @@
   (:use :cl
 	:constants
 	:misc)
-  (:export 
+  (:export
    :vec2-type
    :vec2
    :+vec2-zero+
@@ -592,7 +592,7 @@
    :cl)
   (:nicknames :tree)
   (:export
-   :traverse-apply-tree 
+   :traverse-apply-tree
    :traverse-napply-tree
    :traverse-find-if-tree
    :traverse-find-all-if-tree
@@ -618,62 +618,6 @@
    :bottom-up-visit
    :remove-all-children
    :remove-child))
-
-(defpackage :sb-cga-utils
-  (:use :cl
-	:sb-cga
-	:vec4
-	:interfaces
-	:num-utils
-	:misc)
-  (:nicknames :3d-utils)
-  (:export
-   :extract-traslation-vec
-   :extract-traslation-mat
-   :vec-negate
-   :safe-normalize
-   :aabb
-   :aabb-p1
-   :aabb-p2
-   :expand
-   :insidep
-   :reset
-   :min-x
-   :min-y
-   :min-z
-   :max-x
-   :max-y
-   :max-z
-   :bounding-sphere
-   :sphere-center
-   :sphere-radius
-   :aabb->bounding-sphere
-   :triangle-normal
-   :triangle-centroid
-   :tangent-TBN
-   :tangent-in-normal-space
-   :ccw-poly-fannify
-   :plane-equation
-   :plane-equation-as-vec4
-   :same-plane-p
-   :same-plane-p*
-   :plane-point-same-side-p
-   :extract-frustum-plane
-   :vec-average
-   :vec-average*
-   :clone-matrix
-   :transform-vec4
-   :+projective-scale-bias+
-   :ortho
-   :ortho*
-   :perspective
-   :perspective-fov
-   :infinite-perspective
-   :frustum
-   :project
-   :unproject
-   :look@
-   :look@*))
 
 (defpackage :xmls-utils
   (:use :cl
@@ -727,13 +671,13 @@
 	:ivec4
 	:vec2
 	:vec4)
-  (:export 
+  (:export
    :uivec2
    :90deg->rad
-   :iaabb2-min-x 
-   :iaabb2-max-x 
-   :iaabb2-min-y    
-   :iaabb2-max-y 
+   :iaabb2-min-x
+   :iaabb2-max-x
+   :iaabb2-min-y
+   :iaabb2-max-y
    :iaabb2~
    :valid-iaabb2
    :expand-iaabb2
@@ -742,6 +686,7 @@
    :irect2->iaabb2
    :inside-iaabb2-p
    :iaabb2-intersect-p
+   :iaabb2-inglobe-p
    :iaabb2-null-p
    :trasl-iaabb2
    :trasl-irect2
@@ -751,10 +696,10 @@
    :iaabb2-safe-random
    :random-sub-iaabb2
    :random-sub-irect2
-   :aabb2-min-x 
-   :aabb2-max-x 
-   :aabb2-min-y    
-   :aabb2-max-y 
+   :aabb2-min-x
+   :aabb2-max-x
+   :aabb2-min-y
+   :aabb2-max-y
    :aabb2~
    :valid-aabb2-p
    :expand-aabb2
@@ -763,6 +708,7 @@
    :rect2->aabb2
    :inside-aabb2-p
    :aabb2-intersect-p
+   :aabb2-inglobe-p
    :approx-aabb2-intersect-p
    :aabb2-null-p
    :trasl-aabb2
@@ -798,8 +744,65 @@
    :xy->interleaved-xy
    :interleaved-xy->pair))
 
+(defpackage :sb-cga-utils
+  (:use :cl
+	:sb-cga
+	:vec4
+	:interfaces
+	:num-utils
+	:misc)
+  (:nicknames :3d-utils)
+  (:export
+   :extract-traslation-vec
+   :extract-traslation-mat
+   :vec-negate
+   :safe-normalize
+   :aabb
+   :aabb-p1
+   :aabb-p2
+   :expand
+   :insidep
+   :flatten-to-aabb2-xz
+   :reset
+   :min-x
+   :min-y
+   :min-z
+   :max-x
+   :max-y
+   :max-z
+   :bounding-sphere
+   :sphere-center
+   :sphere-radius
+   :aabb->bounding-sphere
+   :triangle-normal
+   :triangle-centroid
+   :tangent-TBN
+   :tangent-in-normal-space
+   :ccw-poly-fannify
+   :plane-equation
+   :plane-equation-as-vec4
+   :same-plane-p
+   :same-plane-p*
+   :plane-point-same-side-p
+   :extract-frustum-plane
+   :vec-average
+   :vec-average*
+   :clone-matrix
+   :transform-vec4
+   :+projective-scale-bias+
+   :ortho
+   :ortho*
+   :perspective
+   :perspective-fov
+   :infinite-perspective
+   :frustum
+   :project
+   :unproject
+   :look@
+   :look@*))
+
 (defpackage :bs-tree
-  (:use 
+  (:use
    :cl
    :interfaces)
   (:shadow :search :map)
@@ -834,7 +837,7 @@
    :from-sexp))
 
 (defpackage :rb-tree
-  (:use 
+  (:use
    :cl
    :interfaces
    :bs-tree)
@@ -864,7 +867,7 @@
    :from-sexp))
 
 (defpackage :kd-tree
-  (:use 
+  (:use
    :cl
    :sb-cga
    :sb-cga-utils
@@ -888,8 +891,8 @@
    :leafp
    :node->dot))
 
-(defpackage :quad-tree 
-  (:use 
+(defpackage :quad-tree
+  (:use
    :cl
    :num-utils
    :vec4
@@ -909,8 +912,13 @@
    :make-leaf-quad-tree
    :subdivide
    :query-smallest-intersect-aabb
-   :calculate-subaabb))
- 
+   :calculate-subaabb
+   :map-quadtree-intersect
+   :node-quadrant
+   :path-to
+   :push-down
+   :query-aabb2-intersect-p))
+
 (defpackage :priority-queue
   (:use :cl)
   (:nicknames :pq)
@@ -1181,9 +1189,9 @@
   (:import-from :sb-cga :vec :copy-vec :alloc-vec :vec+ :vec- :vec/)
   (:shadow :load)
   (:export
-   :+red-channel+   
-   :+green-channel+ 
-   :+blue-channel+  
+   :+red-channel+
+   :+green-channel+
+   :+blue-channel+
    :+alpha-channel+
    :make-pixmap-frame
    :make-pixmap-template
@@ -1342,9 +1350,9 @@
    :gen-empty-terrain
    :default-lake-size-function
    :default-labyrinth-size-function
-   :default-mountain-z-height-function 
+   :default-mountain-z-height-function
    :radial-mountain-z-height-function
-   :default-mountain-size-function     
+   :default-mountain-size-function
    :default-mountain-sigma-function
    :default-labyrinth-sigma-w-function
    :default-labyrinth-sigma-h-function
@@ -1400,7 +1408,7 @@
 	:sdl2.kit
 	:constants)
   (:export
-   :+attribute-position-location+   
+   :+attribute-position-location+
    :+attribute-normal-location+
    :+attribute-tangent-location+
    :+attribute-texture-location+
@@ -1447,7 +1455,7 @@
    :kd
    :ks
    :roughness
-   :shininess 
+   :shininess
    :make-mesh-material))
 
 (defpackage :texture
@@ -1484,21 +1492,21 @@
    :+sand+
    :+grass+
    :+snow+
-   :+texture-db-floor-level-1+         
-   :+texture-db-floor-level-2+         
+   :+texture-db-floor-level-1+
+   :+texture-db-floor-level-2+
    :+texture-db-floor-level-3+
-   :+texture-db-wall-level-1+         
-   :+texture-db-wall-level-2+         
+   :+texture-db-wall-level-1+
+   :+texture-db-wall-level-2+
    :+texture-db-wall-level-3+
-   :+texture-db-int-decal+            
-   :+texture-db-ext-decal+            
-   :+texture-db-water-terrain+        
-   :+texture-db-shore-terrain+        
-   :+texture-db-grass-terrain+        
+   :+texture-db-int-decal+
+   :+texture-db-ext-decal+
+   :+texture-db-water-terrain+
+   :+texture-db-shore-terrain+
+   :+texture-db-grass-terrain+
    :+texture-db-snow-terrain+
-   :+texture-db-soil-terrain-level-1+ 
-   :+texture-db-soil-terrain-level-2+ 
-   :+texture-db-soil-terrain-level-3+ 
+   :+texture-db-soil-terrain-level-1+
+   :+texture-db-soil-terrain-level-2+
+   :+texture-db-soil-terrain-level-3+
    :+texture-tag-home-terrain+
    :+texture-tag-wall-level-1+
    :+texture-tag-wall-level-2+
@@ -1521,8 +1529,8 @@
    :+texture-tag-shore-terrain+
    :+texture-tag-grass-terrain+
    :+texture-tag-snow-terrain+
-   :+texture-tag-soil-terrain-level-1+ 
-   :+texture-tag-soil-terrain-level-2+ 
+   :+texture-tag-soil-terrain-level-1+
+   :+texture-tag-soil-terrain-level-2+
    :+texture-tag-soil-terrain-level-3+
    :texture
    :free-memory
@@ -1545,7 +1553,7 @@
    :n-kd
    :n-ks
    :n-roughness
-   :n-shininess 
+   :n-shininess
    :bind-texture
    :unbind-texture))
 
@@ -1560,10 +1568,10 @@
 	:resource-cache
 	:random-terrain)
   (:export
-   :+available-level-wall+ 
+   :+available-level-wall+
    :+available-level-floor+
-   :+available-level-door+ 
-   :+available-level-ceil+ 
+   :+available-level-door+
+   :+available-level-ceil+
    :*game-hour*
    :*map*
    :*building-level*
@@ -1640,9 +1648,10 @@
    :dir
    :scaling
    :up
-   :state))
+   :state
+   :aabb-2d))
 
-(defpackage :camera 
+(defpackage :camera
   (:use :cl
 	:constants
 	:sb-cga
@@ -1793,7 +1802,7 @@
    :vbo-normals-object-space-buffer-handle
    :vbo-aabb-object-space-buffer-handle
    :normals-obj-space-vertex-count
-   :average-normals 
+   :average-normals
    :average-normals-by-shared-vertices
    :average-normals-if-near-vertices
    :gen-tangents
@@ -1805,7 +1814,7 @@
    :remove-orphaned-vertices
    :find-value-by-index
    :bubbleup-modelmatrix
-   :normals-count 
+   :normals-count
    :triangle
    :triangle-mesh-shell
    :tree-mesh-shell
@@ -2171,7 +2180,7 @@
 	:mesh)
   (:export
    :+tag-head-key+
-   :+tag-left-weapon-key+ 
+   :+tag-left-weapon-key+
    :+tag-right-weapon-key+
    :find-tag
    :load-md2-model
@@ -2302,7 +2311,7 @@
    :ambush-attack-chance
    :spell-chance
    :attack-spell-chance
-   :status 
+   :status
    :race
    :level
    :exp-points

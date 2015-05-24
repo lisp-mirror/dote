@@ -50,10 +50,10 @@
 	       (:file "vec4")
 	       (:file "quaternion")
 	       (:file "mtree-utils")
-	       (:file "sb-cga-utils")
 	       (:file "xmls-utils")
 	       (:file "color-utils")
 	       (:file "2d-utils")
+	       (:file "sb-cga-utils")
 	       (:file "bs-tree")
 	       (:file "rb-tree")
 	       (:file "kd-tree")
@@ -129,5 +129,3 @@
 				     (:file "procedural-texture-test")
 				     (:file "terrain-chunk-test")
 				     (:file "avatar-test")))))
-   
-

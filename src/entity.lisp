@@ -50,3 +50,5 @@
 	(up to)       (copy-vec (up from))
 	(state to)    (state    from))
   to)
+
+(defgeneric aabb-2d (object))

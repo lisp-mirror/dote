@@ -20,9 +20,9 @@
 
 
 (deftest test-subdivision-aabb (quadtree-suite)
-  (assert-equality 
+  (assert-equality
       #'(lambda (a b) (every #'2d-utils:aabb2~ a b))
-      (list 
+      (list
        (vec4 10.0 10.0 15.0 15.0)
        (vec4 15.0 10.0 20.0 15.0)
        (vec4 15.0 15.0 20.0 20.0)
@@ -47,26 +47,26 @@
 (deftest test-query-aabb (quadtree-suite)
   (assert-equality  #'num:epsilon=
       12.5
-      (elt 
-       (aabb 
+      (elt
+       (aabb
 	(first
 	 (query-smallest-intersect-aabb (%subdivide 2) (vec4 11.0 11.0 11.5 11.5))))
        2)))
-       
+
 (defun dump-quad-tree-to-pixmap (quad-tree levels &optional (level 0))
   (let ((pixmap (make-pixmap-frame (floor (+ (elt (aabb quad-tree) 0)
 				       (elt (aabb2->rect2 (aabb quad-tree)) 2)))
 			     (floor (+ (elt (aabb quad-tree) 1)
 				       (elt (aabb2->rect2 (aabb quad-tree)) 3))))))
-    (loop for i from 0 below (length (pixmap:data pixmap)) do 
-	 (setf (elt (pixmap:data pixmap) i) 
+    (loop for i from 0 below (length (pixmap:data pixmap)) do
+	 (setf (elt (pixmap:data pixmap) i)
 	       #(0 0 0 255)))
     (labels ((paint (quad level)
 	       (when (<= level levels)
-		 (with-accessors ((aabb aabb) (nw nw) (ne ne) 
+		 (with-accessors ((aabb aabb) (nw nw) (ne ne)
 				  (sw sw) (se se)) quad
 		   (let* ((rect (aabb2->rect2 aabb))
-			  (color (pick-color +rainbow-gradient+ 
+			  (color (pick-color +rainbow-gradient+
 					     (num:desired (* (/ level levels) 1.0))))
 			  (x (round (1+ (elt (aabb quad) 0))))
 			  (y (round (1+ (elt (aabb quad) 1))))
@@ -94,7 +94,49 @@
 
 
 (deftest query-subdivide-dump-test (quadtree-suite)
-  (assert-true 
+  (assert-true
       (equalp
        (pixmap:data (load-test-tga "data/quad.tga"))
        (pixmap:data (test-quad-pixmap 5)))))
+
+(defun map-paths (aabb)
+  (let ((quad (make-leaf-quad-tree (vec4 10.0 10.0 20.0 20.0) nil)))
+    (subdivide quad 2)
+    (let ((paths '()))
+      (map-quadtree-intersect quad #'(lambda (q)
+				       (push (mapcar #'node-quadrant (path-to q)) paths))
+			      aabb)
+      paths)))
+
+(deftest map-test (quadtree-suite)
+  (assert-equalp
+      '((nil :se :nw) (nil :se) (nil :sw :ne) (nil :sw) (nil :ne :sw) (nil :ne)
+	(nil :nw :se) (nil :nw) (nil))
+      (map-paths (vec4 14.0 14.0 16.0 16.0))))
+
+(defclass dummy (entity:entity)
+  ((aabb
+    :initform (vec4 0.0 0.0 5.5 5.5)
+    :initarg :aabb)))
+
+(defmethod entity:aabb-2d ((object dummy))
+  (slot-value object 'aabb))
+
+(defun %push-down (aabb)
+  (let ((quad (make-leaf-quad-tree (vec4 10.0 10.0 20.0 20.0) nil)))
+    (subdivide quad 3)
+    (push-down quad (make-instance 'dummy :aabb aabb))
+    (let ((paths '()))
+      (map-quadtree-intersect quad #'(lambda (q)
+				       (when (not (misc:vector-empty-p (data q)))
+					 (setf paths (mapcar #'node-quadrant (path-to q)))))
+			      (vec4 10.0 10.0 20.0 20.0))
+      paths)))
+
+(deftest push-down-test (quadtree-suite)
+  (assert-equalp
+      '(nil :nw :nw :nw)
+      (%push-down (vec4 10.0 1.0 10.1 10.1)))
+  (assert-equalp
+      '(nil :se :nw :nw)
+      (%push-down (vec4 15.0 15.0 16.1 16.1))))

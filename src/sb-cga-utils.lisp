@@ -68,6 +68,8 @@
 
 (defgeneric overlapp (object1 object2))
 
+(defgeneric flatten-to-aabb2-xz (object))
+
 (defgeneric reset (object))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -155,6 +157,9 @@
        (d< (max-x a) (min-x b))
        (d< (max-y a) (min-y b))
        (d< (max-z a) (min-z b)))))
+
+(defmethod flatten-to-aabb2-xz ((object aabb))
+  (vec4 (min-x object) (min-z object) (max-x object) (max-z object)))
 
 (defmethod reset ((object aabb))
   (declare (optimize (debug 0) (safety 0) (speed 3)))

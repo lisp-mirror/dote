@@ -718,6 +718,9 @@
 	  (setf bounding-sphere (aabb->bounding-sphere res))
 	  res)))))
 
+(defmethod aabb-2d ((object triangle-mesh))
+  (flatten-to-aabb2-xz (aabb object)))
+
 (defmethod reset-aabb ((object triangle-mesh))
   "Recreate the aabb from object space vertices"
   (with-slots (aabb) object
@@ -1545,7 +1548,7 @@
     (declare (fixnum normals-obj-space-vertex-count tangents-obj-space-vertex-count))
     (when (> (length triangles) 0)
       (with-camera-view-matrix (camera-vw-matrix renderer)
-	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)	
+	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
 	  (when (render-normals object)  ;;normal obj space
 	    (use-program compiled-shaders :mesh-debug)
 	    (uniformfv compiled-shaders :out-color +debug-normal-color+)
@@ -2203,7 +2206,7 @@
 
 (define-condition md2-tag-error (text-error)
   ()
-  (:report (lambda (condition stream) 
+  (:report (lambda (condition stream)
 	     (format stream "~a" (text condition)))))
 
 (defclass md2-tag () ())
@@ -3026,7 +3029,7 @@
 		    (draw-bottom t))
   (let* ((mesh (make-instance 'triangle-mesh))
 	 (alpha  +pi/2+)
-	 (size/2 (d/ size 2.0))     
+	 (size/2 (d/ size 2.0))
 	 (origin (vec (d- size/2) 0.0 size/2))
 	 (texture-sstep (d/ (d- max-s-texture start-s-texture) 4.0)))
     (when (or (null draw-bottom)
@@ -3076,7 +3079,7 @@
 			     (manifold t) (average-normals nil) (compact-vertices t)
 			     (draw-top t)
 			     (draw-bottom t))
-  (let ((mesh (cube 1.0 
+  (let ((mesh (cube 1.0
 		    :max-s-texture          max-s-texture
 		    :start-s-texture        start-s-texture
 		    :start-t-texture        start-t-texture

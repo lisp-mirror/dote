@@ -302,7 +302,8 @@
 (defun setup-seed ()
   (let ((cache-key (regular-file-strings->cache-key *raw-seed* +saved-seed-key+)))
     (if (cache-miss* cache-key)
-	(with-open-file (stream cache-key :direction :output :if-does-not-exist :create)
+	(with-open-file (stream cache-key :direction :output :if-does-not-exist :create
+				:if-exists :supersede)
 	  (setf *seed-after-loading* num:*lcg-seed*)
 	  (format stream "~a~%" *seed-after-loading*))
 	(with-open-file (stream cache-key :direction :input :if-does-not-exist :error)

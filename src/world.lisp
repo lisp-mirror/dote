@@ -145,6 +145,8 @@
 
 (defgeneric highlight-tile-screenspace (object renderer x y))
 
+(defgeneric highlight-path-costs-space (object renderer path))
+
 (defmethod main-state ((object world))
   (slot-value object 'main-state))
 

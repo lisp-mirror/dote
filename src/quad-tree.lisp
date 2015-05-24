@@ -42,7 +42,7 @@
     :initarg :aabb
     :accessor aabb)
    (data
-    :initform nil
+    :initform (misc:make-fresh-array 0 nil 'entity:entity nil)
     :initarg :data
     :accessor data)))
 
@@ -52,7 +52,7 @@
 
 (defmethod print-object ((object quad-tree) stream)
   (with-accessors ((aabb aabb) (nw nw) (ne ne) (sw sw) (se se) (data data)) object
-    (format stream "aabb ~a data ~a nw ~a sw ~a se ~a ne ~a~%~%~%~%~%" aabb 
+    (format stream "aabb ~a data ~a nw ~a sw ~a se ~a ne ~a~%~%~%~%~%" aabb
 	    data nw sw se ne)))
 
 (defmethod leafp ((object quad-tree))
@@ -94,14 +94,22 @@
 
 (defgeneric subdivide (object level))
 
+(defgeneric query-aabb2-intersect-p      (object probe))
+
 (defgeneric query-smallest-intersect-aabb (object aabb))
+
+(defgeneric path-to (object &optional path))
+
+(defgeneric node-quadrant (object))
+
+(defgeneric map-quadtree-intersect (object function probe))
 
 (defgeneric rootp (object))
 
 (defmethod subdivide ((object quad-tree) level)
   (with-accessors ((aabb aabb) (nw nw) (ne ne) (sw sw) (se se) (data data)) object
     (if (> level 0)
-	(multiple-value-bind (u i o p) 
+	(multiple-value-bind (u i o p)
 	    (calculate-subaabb aabb)
 	  (setf nw (make-leaf-quad-tree u object)
 	   	sw (make-leaf-quad-tree p object)
@@ -113,10 +121,14 @@
 	  (subdivide se (1- level)))
 	object)))
 
+(defmethod query-aabb2-intersect-p ((object quad-tree) probe)
+  (with-accessors ((aabb aabb)) object
+    (aabb2-intersect-p probe aabb)))
+
 (defmethod query-smallest-intersect-aabb ((object quad-tree) probe)
   (let ((results '()))
     (labels ((%query (object)
-	       (with-accessors ((aabb aabb) (nw nw) (ne ne) (sw sw) (se se) 
+	       (with-accessors ((aabb aabb) (nw nw) (ne ne) (sw sw) (se se)
 				(data data)) object
 		 (when (aabb2-intersect-p probe aabb)
 		   (if (leafp object)
@@ -132,5 +144,47 @@
       (%query object)
       results)))
 
+(defmethod path-to ((object quad-tree) &optional (path '()))
+  (if (rootp object)
+      (reverse (nconc path (list object)))
+      (path-to (parent object) (nconc path (list object)))))
+
+(defmacro %cond-node->pos (object slots)
+  `(cond
+     ,@(loop for i in slots collect
+	    `((eq ,object (,i (parent object))) ,(alexandria:make-keyword i)))))
+
+(defmethod node-quadrant ((object quad-tree))
+  (if (rootp object)
+      nil
+      (%cond-node->pos object (nw ne sw se))))
+
+(defmethod map-quadtree-intersect ((object quad-tree) function probe)
+  (with-accessors ((nw nw) (ne ne) (sw sw) (se se)) object
+    (funcall function object)
+    (when (and nw (query-aabb2-intersect-p nw probe))
+      (map-quadtree-intersect nw function probe))
+    (when (and ne (query-aabb2-intersect-p ne probe))
+      (map-quadtree-intersect ne function probe))
+    (when (and sw (query-aabb2-intersect-p sw probe))
+      (map-quadtree-intersect sw function probe))
+    (when (and se (query-aabb2-intersect-p se probe))
+      (map-quadtree-intersect se function probe))))
+
 (defmethod rootp ((object quad-tree))
   (not (parent object)))
+
+(defmacro %cond-push-down (object entity aabb-entity slots)
+  `(cond
+     ,@(append
+	(loop for i in slots collect
+	     `((aabb2-inglobe-p (aabb ,i) ,aabb-entity)
+	       (push-down (,i ,object) ,entity ,aabb-entity)))
+	`((t
+	   (vector-push-extend ,entity (data ,object)))))))
+
+(defmethod push-down ((object quad-tree) entity &optional (ent-aabb (entity:aabb-2d entity)))
+  (with-accessors ((nw nw) (ne ne) (sw sw) (se se) (data data)) object
+    (if (leafp object)
+	(vector-push-extend entity (data object))
+	(%cond-push-down object entity ent-aabb  (nw ne sw se)))))
