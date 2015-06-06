@@ -192,23 +192,40 @@
     object))
 
 (defmethod clone-into :after ((from terrain-chunk) (to terrain-chunk))
-  (setf (heightmap              to) (matrix:clone  (heightmap  from))
-	(text-coord-weights     to) (copy-array    (text-coord-weights from))
-	(texture-shore          to) (texture-shore          from)
-	(texture-grass          to) (texture-grass          from)
-	(texture-snow           to) (texture-snow           from)
-	(texture-soil-level-1   to) (texture-soil-level-1   from)
-	(texture-soil-level-2   to) (texture-soil-level-2   from)
-	(texture-soil-decal     to) (texture-soil-decal     from)
-	(texture-road-decal     to) (texture-road-decal     from)
-	(texture-building-decal to) (texture-building-decal from)
-	(decal-weights          to) (decal-weights          from))
+  (setf (heightmap              to)     (matrix:clone (heightmap  from))
+	(text-coord-weights     to)     (copy-array (text-coord-weights from))
+	(texture-shore          to)     (texture-shore          from)
+	(texture-grass          to)     (texture-grass          from)
+	(texture-snow           to)     (texture-snow           from)
+	(texture-soil-level-1   to)     (texture-soil-level-1   from)
+	(texture-soil-level-2   to)     (texture-soil-level-2   from)
+	(texture-soil-decal     to)     (texture-soil-decal     from)
+	(texture-road-decal     to)     (texture-road-decal     from)
+	(texture-building-decal to)     (texture-building-decal from)
+	;; we need to use the slot because the accessor is *not* a mere setf, see below.
+	(slot-value to 'decal-weights) (decal-weights          from))
   to)
 
 (defmethod clone ((object terrain-chunk))
-  (let ((res (make-instance 'terrain-chunk)))
-    (clone-into object res)
-    res))
+  (with-simple-clone (object 'terrain-chunk)))
+
+(defmethod copy-flat-into :after ((from terrain-chunk) (to terrain-chunk))
+  (setf (heightmap              to)     (heightmap              from)
+	(text-coord-weights     to)     (text-coord-weights     from)
+	(texture-shore          to)     (texture-shore          from)
+	(texture-grass          to)     (texture-grass          from)
+	(texture-snow           to)     (texture-snow           from)
+	(texture-soil-level-1   to)     (texture-soil-level-1   from)
+	(texture-soil-level-2   to)     (texture-soil-level-2   from)
+	(texture-soil-decal     to)     (texture-soil-decal     from)
+	(texture-road-decal     to)     (texture-road-decal     from)
+	(texture-building-decal to)     (texture-building-decal from)
+	;; we need to use the slot because the accessor is *not* a mere setf, see below.
+	(slot-value to 'decal-weights) (decal-weights          from))
+  to)
+
+(defmethod copy-flat ((object terrain-chunk))
+  (with-simple-copy-flat (object 'terrain-chunk)))
 
 (defgeneric actual-render (object renderer))
 
@@ -218,13 +235,17 @@
 
 (defgeneric (setf decal-weights) (pixmap object))
 
-(defgeneric clip-with-aabb (object patch &key
-					   regenerate-rendering-data
-					   clip-if-inside))
+(defgeneric nclip-with-aabb (object aabb &key regenerate-rendering-data clip-if-inside))
+
+(defgeneric clip-with-aabb (object aabb &key regenerate-rendering-data clip-if-inside))
+
+(defgeneric clip-triangles (object aabb predicate))
 
 (defgeneric push-decal-weights-text-coord (object s-coord t-coord))
 
 (defgeneric set-decals-triangle-attribute (object))
+
+(defgeneric triangle-matrix-elt (object row col))
 
 (defmethod actual-render ((object terrain-chunk) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -307,7 +328,7 @@
     (render i renderer)))
 
 (defmethod (setf decal-weights) (pixmap (object terrain-chunk))
-  "Note: this method is not  a mere writer, it copy and scale 
+  "Note: this method is not  a mere writer, it copy and scale
    the pixmap to 512x512 pixel"
   (with-slots (decal-weights) object
     (let ((copied (interfaces:clone pixmap)))
@@ -315,9 +336,9 @@
       (pixmap:ncopy-matrix-into-pixmap
        copied
        (matrix:scale-matrix copied
-			    (num:d/ +decals-weights-size+ 
+			    (num:d/ +decals-weights-size+
 				    (num:desired (matrix:width  copied)))
-			    (num:d/ +decals-weights-size+ 
+			    (num:d/ +decals-weights-size+
 				    (num:desired (matrix:height copied))))
        4)
       (setf decal-weights (texture:gen-name-and-inject-in-database copied)))))
@@ -348,9 +369,9 @@
 				   :behaivour-on-border-fn #'num:clamp-0->max-less-one
 				   :interpolation t
 				   :clamp t
-				   :interpolate-fn 
+				   :interpolate-fn
 				   #'(lambda (w a b) (dlerp w a b))))
-	 (fz+dz    (matrix:sample@ (heightmap map) nx (d+ nz delta-z) 
+	 (fz+dz    (matrix:sample@ (heightmap map) nx (d+ nz delta-z)
 				   :behaivour-on-border-fn #'num:clamp-0->max-less-one
 				   :interpolation t
 				   :clamp t
@@ -403,8 +424,8 @@
 					(matrix:width heightmap))
 				     (* (truncate +terrain-chunk-size-scale+)
 					(matrix:height heightmap))))
-      (loop 
-	 for x     from 0.0 below 1.0 by inc-x 
+      (loop
+	 for x     from 0.0 below 1.0 by inc-x
 	 for s-tex from 0.0           by inc-tex do
 	   (loop
 	      for z     from 0.0 below 1.0 by inc-z
@@ -441,7 +462,7 @@
 					    :pick-index pick-index)
 		  (setup-pickable-attribute object :triangle-index 1
 					    :pick-index (1- pick-index))))))))
-		
+
 (defmethod build-mesh-dbg ((object terrain-chunk))
   (with-accessors ((heightmap heightmap)) object
     (let* ((res (matrix:gen-matrix-frame (* (truncate +terrain-chunk-size-scale+)
@@ -467,29 +488,70 @@
 
       res)))
 
-(defmethod clip-with-aabb ((object terrain-chunk) aabb
-			   &key (clip-if-inside t)
-			     (regenerate-rendering-data t))
+(defmethod clip-triangles ((object terrain-chunk) aabb predicate)
+  (setf (triangles object)
+	(lparallel:premove-if
+	 #'(lambda (triangle)
+	     (funcall predicate
+		      #'identity
+		      (map 'vector
+			   #'(lambda (idx)
+			       (2d-utils:inside-aabb2-p aabb
+							(elt (elt (vertices object) idx) 0)
+							(elt (elt (vertices object) idx) 2)))
+			   (vertex-index triangle))))
+	 (triangles object))))
+
+(defmethod nclip-with-aabb ((object terrain-chunk) aabb &key
+							  (clip-if-inside t)
+							  (regenerate-rendering-data t))
   (let ((predicate (if clip-if-inside
 		       #'every
 		       #'notevery)))
-    (setf (triangles object)
-	  (remove-if
-	   #'(lambda (triangle)
-	       (funcall predicate
-			#'identity
-			(map 'vector
-			     #'(lambda (idx)
-				 (2d-utils:inside-aabb2-p aabb
-							  (elt (elt (vertices object) idx) 0)
-							  (elt (elt (vertices object) idx) 2)))
-			     (vertex-index triangle))))
-	   (triangles object)))
+    (clip-triangles object aabb predicate)
     (when regenerate-rendering-data
       (prepare-for-rendering object))
     object))
 
-(defun make-terrain-chunk (map shaders)
+(defmethod clip-with-aabb ((object terrain-chunk) aabb &key
+							 (clip-if-inside t)
+							 (regenerate-rendering-data t))
+  (let* ((results   (copy-flat object))
+	 (predicate #'notevery))
+    (setf (lookup-tile-triangle results)
+	  (matrix:submatrix (lookup-tile-triangle results)
+			    (coord-chunk->matrix (aabb2-min-x aabb))
+			    (coord-chunk->matrix (aabb2-min-y aabb))
+			    (f- (coord-chunk->matrix (aabb2-max-x aabb))
+				(coord-chunk->matrix (aabb2-min-x aabb)))
+			    (f- (coord-chunk->matrix (aabb2-max-y aabb))
+				(coord-chunk->matrix (aabb2-min-y aabb)))))
+    (if (not clip-if-inside)
+	(let ((mat (lookup-tile-triangle results))
+	      (nw-triangles '()))
+	  (matrix:loop-matrix (mat x y)
+	    (when (matrix:matrix-elt mat y x)
+	      (push (pickable-tile-triangle-1 (matrix:matrix-elt mat y x)) nw-triangles)
+	      (push (pickable-tile-triangle-2 (matrix:matrix-elt mat y x)) nw-triangles)))
+	  (setf (triangles results) nw-triangles))
+	(clip-triangles results aabb predicate))
+    (reset-aabb results)
+    (when regenerate-rendering-data
+      (prepare-for-rendering results))
+    results))
+
+(defmethod triangle-matrix-elt ((object terrain-chunk) row col)
+  (with-accessors ((aabb aabb) (triangle triangles)) object
+    (let* ((min-x  (min-x aabb))
+	   (min-z  (min-z aabb))
+	   (max-x  (max-x aabb))
+	   (max-z  (max-z aabb))
+	   (width  (truncate (coord-chunk->matrix (d- max-x min-x))))
+	   (height (truncate (coord-chunk->matrix (d- max-z min-z)))))
+      (elt (triangles object)
+	   (f+ (f* width (f- height row) (f- width col)))))))
+
+(defun make-terrain-chunk (map shaders &key (generate-rendering-data nil))
   (let ((res (make-instance 'terrain-chunk:terrain-chunk
 			    :heightmap        (random-terrain:matrix map)
 			    :compiled-shaders shaders)))
@@ -500,7 +562,7 @@
     (setf (texture:interpolation-type (decal-weights res)) :linear)
     (terrain-chunk:build-mesh res)
     (texture:prepare-for-rendering (decal-weights res))
-    (mesh:prepare-for-rendering res)
+    (when generate-rendering-data
+      (mesh:prepare-for-rendering res))
     (setf (mesh:render-normals res) nil)
     res))
-

@@ -48,6 +48,7 @@
    :+gravity+
    :+maximum-map-size+
    :+minimium-map-size+
+   :+quad-tree-leaf-size+
    :+zero-height+
    :+min-height+
    :+lake-height+
@@ -399,7 +400,10 @@
    :render-for-reflection
    :clone
    :clone-into
+   :copy-flat
+   :copy-flat-into
    :with-simple-clone
+   :with-simple-copy-flat
    :initializedp
    :to-sexp
    :from-sexp
@@ -785,6 +789,7 @@
    :same-plane-p*
    :plane-point-same-side-p
    :extract-frustum-plane
+   :3-planes-intersection
    :vec-average
    :vec-average*
    :clone-matrix
@@ -913,11 +918,13 @@
    :subdivide
    :query-smallest-intersect-aabb
    :calculate-subaabb
-   :map-quadtree-intersect
+   :iterate-nodes-intersect
+   :iterate-nodes
    :node-quadrant
    :path-to
    :push-down
-   :query-aabb2-intersect-p))
+   :query-aabb2-intersect-p
+   :quad-sizes->level))
 
 (defpackage :priority-queue
   (:use :cl)
@@ -1442,6 +1449,7 @@
   (:import-from :interfaces :clone :clone-into)
   (:export
    :transformable
+   :build-projection-matrix
    :projection-matrix
    :model-matrix
    :view-matrix))
@@ -1630,7 +1638,8 @@
    :el-type-in-pos
    :entity-id-in-pos
    :selected-pc
-   :build-movement-path))
+   :build-movement-path
+   :terrain-aabb-2d))
 
 ;; engine
 
@@ -1665,6 +1674,7 @@
 	:transformable)
   (:export
    :camera
+   :frustum-aabb
    :reorient-fp-camera
    :drag-camera
    :target
@@ -1679,7 +1689,8 @@
    :look-at*
    :calculate-frustum
    :containsp
-   :frustum-planes))
+   :frustum-planes
+   :calculate-aabb))
 
 (defpackage :mesh
   (:use :cl
@@ -1759,6 +1770,7 @@
    :render-tangents
    :render-aabb
    :aabb
+   :reset-aabb
    :bounding-sphere
    :transform-vertices
    :get-material-from-texture
@@ -1831,6 +1843,7 @@
    :texture-smoke
    :weather-type
    :water
+   :water-mesh-p
    :cylinder
    :cube
    :parallelepiped
@@ -2103,6 +2116,8 @@
    :door-e
    :door-w
    :world
+   :entities
+   :main-state
    :camera
    :frame-window
    :skydome
@@ -2159,6 +2174,7 @@
    :origin-offset
    :build-mesh-dbg
    :build-mesh
+   :nclip-with-aabb
    :clip-with-aabb
    :make-terrain-chunk))
 

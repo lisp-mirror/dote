@@ -103,7 +103,7 @@
   (let ((quad (make-leaf-quad-tree (vec4 10.0 10.0 20.0 20.0) nil)))
     (subdivide quad 2)
     (let ((paths '()))
-      (map-quadtree-intersect quad #'(lambda (q)
+      (iterate-nodes-intersect quad #'(lambda (q)
 				       (push (mapcar #'node-quadrant (path-to q)) paths))
 			      aabb)
       paths)))
@@ -127,7 +127,7 @@
     (subdivide quad 3)
     (push-down quad (make-instance 'dummy :aabb aabb))
     (let ((paths '()))
-      (map-quadtree-intersect quad #'(lambda (q)
+      (iterate-nodes-intersect quad #'(lambda (q)
 				       (when (not (misc:vector-empty-p (data q)))
 					 (setf paths (mapcar #'node-quadrant (path-to q)))))
 			      (vec4 10.0 10.0 20.0 20.0))
@@ -136,7 +136,7 @@
 (deftest push-down-test (quadtree-suite)
   (assert-equalp
       '(nil :nw :nw :nw)
-      (%push-down (vec4 10.0 1.0 10.1 10.1)))
+      (%push-down (vec4 10.0 10.0 11.1 10.1)))
   (assert-equalp
       '(nil :se :nw :nw)
-      (%push-down (vec4 15.0 15.0 16.1 16.1))))
+      (%push-down (vec4 15.0 15.0 15.1 16.1))))

@@ -51,4 +51,12 @@
 	(state to)    (state    from))
   to)
 
+(defmethod marshal:class-persistant-slots ((object entity))
+  (append '(modified
+	    pos
+	    dir
+	    scaling
+	    up)
+	  (call-next-method)))
+
 (defgeneric aabb-2d (object))

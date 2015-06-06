@@ -16,23 +16,29 @@
 
 (in-package :main-window)
 
-(defparameter *xpos*  0.0)
+;; (defparameter *xpos*    0.0)
 
-(defparameter *ypos*  42.0)
+;; (defparameter *ypos*   42.0)
 
-(defparameter *zpos*  0.0)
+;; (defparameter *zpos*    0.0)
 
-(defparameter *xeye*  32.0)
+(defparameter *xpos*    128.0)
 
-(defparameter *yeye*  0.0)
+(defparameter *ypos*     42.0)
 
-(defparameter *zeye*  32.0)
+(defparameter *zpos*     128.0)
 
-(defparameter *far*   600.0)
+(defparameter *xeye*   32.0)
 
-(defparameter *near*  10.0)
+(defparameter *yeye*    0.0)
 
-(defparameter *fov*   50.0)
+(defparameter *zeye*   32.0)
+
+(defparameter *far*   440.0)
+
+(defparameter *near*    5.0)
+
+(defparameter *fov*    50.0)
 
 (defparameter *placeholder* nil)
 
@@ -128,9 +134,8 @@
       (camera:install-drag-interpolator (world:camera (world object)))
       (camera:install-orbit-interpolator (world:camera (world object)) 5.0 5.0 10.0)
       ;; setup projection
-      (setf projection-matrix (perspective *fov* (num:desired (/ *window-w* *window-h*))
-					   *near* *far*))
-      (setf (projection-matrix world) (elt projection-matrix 0))
+      (transformable:build-projection-matrix (world object) *near* *far* *fov*
+					     (num:desired (/ *window-w* *window-h*)))
       (setf *placeholder* (trees:gen-tree
 			   (res:get-resource-file (elt *test-trees* 0)
 						  constants:+trees-resource+
@@ -177,7 +182,7 @@
 	 (gl:enable :depth-test)
 	 (setf (projection-matrix ,world)    ,3d-projection-matrix
 	       (view-matrix (camera ,world)) ,3d-view-matrix)))))
-	       
+
 (defmethod render ((object test-window))
   (declare (optimize (speed 0) (safety 3) (debug 3)))
   (with-accessors ((compiled-shaders   compiled-shaders)
@@ -233,12 +238,12 @@
       (progn
 	(when (string= text "P")
 	  (let ((camera (world:camera (world object))))
-	    (misc:dbg "~a ~a 
-                       up ~a 
+	    (misc:dbg "~a ~a
+                       up ~a
                        ~a"
-		      (camera::pos    camera) 
-		      (camera:target camera) 
-		      (camera::up     camera) 
+		      (camera::pos    camera)
+		      (camera:target camera)
+		      (camera::up     camera)
 		      (camera::dir    camera))))
 	(when (find text '("o" "i" "r" "l" "u" "d" "f" "F" "n" "N" "V" "v") :test #'string=)
 	  (when (string-equal text "o")
@@ -254,14 +259,16 @@
 	    (incf (elt (entity:pos (world:camera (world object))) 1) 1.0))
 	  (when (string-equal text "d")
 	    (incf (elt (entity:pos (world:camera (world object))) 1) -1.0))
-	  (when (string= text "v") 
+	  (when (string= text "v")
 	    (incf *fov* +1.0))
 	  (when (string= text "V")
 	    (incf *fov* -1.0))
-	  (when (string= text "f") 
+	  (when (string= text "f")
+	    (misc:dbg "f ~a" *far*)
 	    (incf *far* +1.0))
 	  (when (string= text "F")
-	    (incf *far* -10.0))
+	    (misc:dbg "f ~a" *far*)
+	    (incf *far* -1.0))
 	  (when (string= text "n")
 	    (misc:dbg "n ~a" *near*)
 	    (incf *near* +.1))
@@ -269,18 +276,16 @@
 	    (misc:dbg "n ~a" *near*)
 	    (incf *near* -.1)))
 	(when (find text '("Y" "y" "X" "x") :test #'string=)
-	  (when (string= text "Y") 
+	  (when (string= text "Y")
 	    (incf (elt (camera:target (world:camera (world object))) 1) 1.0))
-	  (when (string= text "y") 
+	  (when (string= text "y")
 	    (incf (elt (camera:target (world:camera (world object))) 1) -1.0))
-	  (when (string= text "X") 
+	  (when (string= text "X")
 	    (incf (elt (camera:target (world:camera (world object))) 0) 1.0))
-	  (when (string= text "x") 
+	  (when (string= text "x")
 	    (incf (elt (camera:target (world:camera (world object))) 0) -1.0)))
-	;;(misc:dbg "~a ~a" *near* *far*)
-	(setf (projection-matrix object)
-	      (perspective *fov* (num:desired (/ *window-w* *window-h*)) 
-			   *near* *far*))
+	(transformable:build-projection-matrix (world object) *near* *far* *fov*
+					     (num:desired (/ *window-w* *window-h*)))
 	(camera:look-at* (world:camera (world object)))))
   (when (string= "q" text)
     (setf *placeholder* nil)
@@ -365,18 +370,18 @@
 	  (when (not (widget:on-mouse-dragged (world:gui world) gui-event))
 	    (cond
 	      ((eq (camera:mode (world:camera (world object))) :fp)
-	       (multiple-value-bind (w h) 
+	       (multiple-value-bind (w h)
 		   (sdl2:get-window-size (sdl-window object))
 		 (sdl2:warp-mouse-in-window (sdl-window object) (/ w 2) (/ h 2))
-		 (let ((offset (vec2:vec2 (num:d- (num:d/ (num:desired w) 2.0) (num:desired x)) 
+		 (let ((offset (vec2:vec2 (num:d- (num:d/ (num:desired w) 2.0) (num:desired x))
 					  (num:d- (num:d/ (num:desired h) 2.0) (num:desired y)))))
 		   (camera:reorient-fp-camera (world:camera (world object)) offset))))
 	      ((eq (camera:mode (world:camera (world object))) :drag)
 	       ;; does not works!
-	       (multiple-value-bind (w h) 
+	       (multiple-value-bind (w h)
 		   (sdl2:get-window-size (sdl-window object))
 		 (sdl2:warp-mouse-in-window (sdl-window object) (/ w 2) (/ h 2))
-		 (let ((offset (vec2:vec2 (num:d- (num:d/ (num:desired w) 2.0) (num:desired x)) 
+		 (let ((offset (vec2:vec2 (num:d- (num:d/ (num:desired w) 2.0) (num:desired x))
 					  (num:d- (num:d/ (num:desired h) 2.0) (num:desired y)))))
 		   (camera:drag-camera (world:camera (world object)) offset)))))))
 	;; picking test
@@ -402,7 +407,7 @@
   (sdl2:gl-set-attr :context-major-version 3)
   (sdl2:gl-set-attr :context-minor-version 3)
   (let ((w (make-instance 'test-window :w *window-w* :h *window-h* :title +program-name+)))
-    (multiple-value-bind (wi he) 
+    (multiple-value-bind (wi he)
 	(sdl2:get-window-size (sdl-window w))
       (sdl2:warp-mouse-in-window (sdl-window w) (/ wi 2) (/ he 2)))
     (setf (idle-render w) t)

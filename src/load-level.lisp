@@ -286,19 +286,32 @@
        (push-entity world (setup-single-ceiling world aabb))))
 
 (defun setup-terrain (world map)
-  (let ((whole (terrain-chunk:make-terrain-chunk map (compiled-shaders world))))
+  (let ((whole (terrain-chunk:make-terrain-chunk map (compiled-shaders world)
+						 :generate-rendering-data nil))
+	(quadtree-depth (quad-tree:quad-sizes->level
+			 (aabb2-max-x (game-state:terrain-aabb-2d (world:main-state world)))
+			 +quad-tree-leaf-size+)))
     (loop for aabb in (labyrinths-aabb map) do
-	 (when config:+debug-mode+
-	   (misc:dbg "Clip ~a -> ~a" aabb (labyrinths-aabb map)))
-     	 (terrain-chunk:clip-with-aabb whole
-     				       (map 'vector
-     					    #'(lambda (a)
-     						(coord-terrain->chunk a :tile-offset 0.0))
-     					    aabb)
-				       :regenerate-rendering-data t
-     				       :clip-if-inside t))
+	 (terrain-chunk:nclip-with-aabb whole
+					(map 'vector
+					     #'(lambda (a)
+						 (coord-terrain->chunk a :tile-offset 0.0))
+					     aabb)
+					:regenerate-rendering-data nil
+					:clip-if-inside t))
     (pickable-mesh:populate-lookup-triangle-matrix whole)
-    (push-entity world whole)))
+    (setf (quad-tree:aabb (world:entities world)) (entity:aabb-2d whole))
+    (quad-tree:subdivide  (world:entities world)  quadtree-depth)
+    (loop for x from 0.0 below (aabb2-max-x (entity:aabb-2d whole)) by +quad-tree-leaf-size+ do
+	 (loop for z from 0.0 below (aabb2-max-y (entity:aabb-2d whole))
+	    by +quad-tree-leaf-size+ do
+	      (let ((chunk (terrain-chunk:clip-with-aabb whole
+							 (vec4:vec4 x z
+								    (d+ x +quad-tree-leaf-size+)
+								    (d+ z +quad-tree-leaf-size+))
+							 :clip-if-inside nil)))
+		(pickable-mesh:populate-lookup-triangle-matrix chunk)
+		(push-entity world chunk))))))
 
 (defun load-level (world game-state compiled-shaders file)
   (let* ((actual-file (res:get-resource-file file +maps-resource+
@@ -326,8 +339,6 @@
     (setup-ceiling  world        *map*)
     (setup-walls    world        *map*)
     (setup-trees    world        *map*)
-    ;; keep  water for  last until  the data  structure to  hosts the
-    ;; entities in world is a vector
     (setup-water    world        *map*)
     ;; setup map-state
     (values *map* *trees* *wall*)))

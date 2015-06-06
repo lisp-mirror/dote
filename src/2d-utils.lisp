@@ -280,8 +280,8 @@
    t))
 
 (defun aabb2-inglobe-p (host guest)
-  (and (inside-aabb2-p host (aabb2-min-x guest) (aabb2-min-x guest))
-       (inside-aabb2-p host (aabb2-max-x guest) (aabb2-max-x guest))))
+  (and (inside-aabb2-p host (aabb2-min-x guest) (aabb2-min-y guest))
+       (inside-aabb2-p host (aabb2-max-x guest) (aabb2-max-y guest))))
 
 (defun approx-aabb2-intersect-p (aabb1 aabb2 enlarge)
   (if enlarge

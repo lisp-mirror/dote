@@ -53,7 +53,7 @@
 (defmethod print-object ((object quad-tree) stream)
   (with-accessors ((aabb aabb) (nw nw) (ne ne) (sw sw) (se se) (data data)) object
     (format stream "aabb ~a data ~a nw ~a sw ~a se ~a ne ~a~%~%~%~%~%" aabb
-	    data nw sw se ne)))
+	    nil nw sw se ne)))
 
 (defmethod leafp ((object quad-tree))
   (with-accessors ((nw nw) (ne ne) (sw sw) (se se)) object
@@ -102,9 +102,13 @@
 
 (defgeneric node-quadrant (object))
 
-(defgeneric map-quadtree-intersect (object function probe))
+(defgeneric iterate-nodes-intersect (object function probe))
+
+(defgeneric iterate-nodes (object function))
 
 (defgeneric rootp (object))
+
+(defgeneric push-down (object entity &optional ent-aabb))
 
 (defmethod subdivide ((object quad-tree) level)
   (with-accessors ((aabb aabb) (nw nw) (ne ne) (sw sw) (se se) (data data)) object
@@ -159,17 +163,29 @@
       nil
       (%cond-node->pos object (nw ne sw se))))
 
-(defmethod map-quadtree-intersect ((object quad-tree) function probe)
+(defmethod iterate-nodes-intersect ((object quad-tree) function probe)
   (with-accessors ((nw nw) (ne ne) (sw sw) (se se)) object
     (funcall function object)
     (when (and nw (query-aabb2-intersect-p nw probe))
-      (map-quadtree-intersect nw function probe))
+      (iterate-nodes-intersect nw function probe))
     (when (and ne (query-aabb2-intersect-p ne probe))
-      (map-quadtree-intersect ne function probe))
+      (iterate-nodes-intersect ne function probe))
     (when (and sw (query-aabb2-intersect-p sw probe))
-      (map-quadtree-intersect sw function probe))
+      (iterate-nodes-intersect sw function probe))
     (when (and se (query-aabb2-intersect-p se probe))
-      (map-quadtree-intersect se function probe))))
+      (iterate-nodes-intersect se function probe))))
+
+(defmethod iterate-nodes ((object quad-tree) function)
+  (with-accessors ((nw nw) (ne ne) (sw sw) (se se)) object
+    (funcall function object)
+    (when nw
+      (iterate-nodes nw function))
+    (when ne
+      (iterate-nodes ne function))
+    (when sw
+      (iterate-nodes sw function))
+    (when se
+      (iterate-nodes se function))))
 
 (defmethod rootp ((object quad-tree))
   (not (parent object)))
@@ -188,3 +204,8 @@
     (if (leafp object)
 	(vector-push-extend entity (data object))
 	(%cond-push-down object entity ent-aabb  (nw ne sw se)))))
+
+(defun quad-sizes->level (side-host side-guest)
+  (let ((ratio (d/ (dexpt side-host 2.0) (dexpt side-guest 2.0))))
+    (declare (desired-type ratio))
+    (truncate (d/ (dlog ratio 2.0) 2.0))))

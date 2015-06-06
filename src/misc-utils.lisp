@@ -16,7 +16,7 @@
 
 (in-package :misc-utils)
 
-;; debug utils 
+;; debug utils
 
 (defparameter *debug* nil)
 
@@ -78,13 +78,13 @@
 							i
 							(first i)))))
 
-       (defmethod ,function-name (,@arg) (,low-level-function-name 
+       (defmethod ,function-name (,@arg) (,low-level-function-name
 					  ,@(loop for i in arg collect
 						 (if (atom i)
 						     i
 						     (first i)))))
        (defmethod ,low-level-function-name (,@arg) ,@body))))
-			       
+
 (defmacro defcached (name (arg &key (test 'equalp) (clear-cache nil))
 		     declaration
 		     (&body body))
@@ -94,10 +94,10 @@
        (defun ,function-name (,@arg) ,(if declaration
 					  declaration
 					  `(declare (optimize (speed 0) (safety 3) (debug 3))))
-					  
+
 	 (and ,clear-cache (setf ,cache-name (make-hash-table :test (quote ,test))))
 	 ,@(list body)))))
-	 
+
 (defun nest-expressions (data &optional (leaf nil))
   (if (null data)
       (list leaf)
@@ -109,12 +109,12 @@
   (if (null (first expr))
       nil
       (if (atom (first expr))
-	  (append (list 
+	  (append (list
 		   (if (eq (first expr) :e!)
 		       num
 		       (first expr)))
 		  (replace-e! (rest expr) num))
-	  (append (list (replace-e! (first expr) num)) 
+	  (append (list (replace-e! (first expr) num))
 		  (replace-e! (rest expr) num)))))
 
 ;; misc
@@ -146,7 +146,7 @@
 
 (defun byte->int (bytes)
   (let ((res #x0000000000000000))
-    (loop 
+    (loop
        for i in bytes and
        ct = 0 then (+ ct 8) do
 	 (setf res
@@ -158,7 +158,7 @@
 (defmacro gen-intn->bytes (bits)
   (let ((function-name (alexandria:format-symbol t "~:@(int~a->bytes~)" bits)))
   `(defun ,function-name (val &optional (count 0) (res '()))
-     (if (>= count ,(/ bits 8)) 
+     (if (>= count ,(/ bits 8))
 	 res
 	 (,function-name (ash val -8) (1+ count) (push (boole boole-and val #x00ff) res))))))
 
@@ -179,11 +179,11 @@
    `(progn
       ,@(loop for i in name-offset-size collect
 	     `(progn
-		(alexandria:define-constant 
+		(alexandria:define-constant
 		    ,(alexandria:format-symbol package "~@:(+~a-~a-offset+~)" prefix (first i))
 		    ,(second i) :test #'=)
 		,(when (= (length i) 3)
-		       `(alexandria:define-constant 
+		       `(alexandria:define-constant
 			    ,(alexandria:format-symbol package "~@:(+~a-~a-size+~)" prefix
 						       (first i))
 			    ,(third i) :test #'=))))))
@@ -220,7 +220,7 @@
   (declare (optimize (speed 3) (safety 0) (debug 0)))
   (declare (vector v))
   (= (length v) 0))
-  
+
 (defun random-num-filled-vector (size max)
   (map-into (misc:make-array-frame size max (type-of max) t)
 	    #'(lambda () (num:lcg-next-upto max))))
@@ -229,7 +229,7 @@
   `(elt ,seq (num:lcg-next-upto (length ,seq))))
 
 (defun make-fresh-list (size &optional (el nil))
-  (map-into (make-list size) 
+  (map-into (make-list size)
 	    (if (functionp el)
 		el
 		#'(lambda () el))))
@@ -237,19 +237,19 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun make-array-frame (size &optional (el nil) (type t) (simplep nil))
     "All elements points to the same address/reference!"
-    (make-array size 
+    (make-array size
 		:fill-pointer (if (not simplep) size nil)
 		:adjustable (if (not simplep) t nil)
 		:initial-element el
 		:element-type type)))
 
 (defun make-fresh-array (size &optional (el nil) (type t) (simplep nil))
-  (let ((res (make-array size 
+  (let ((res (make-array size
 			 :fill-pointer (if (not simplep) size nil)
 			 :adjustable (if (not simplep) t nil)
 			 :initial-element el
 			 :element-type type)))
-    (map-into res #'(lambda (a) (setf a (cond 
+    (map-into res #'(lambda (a) (setf a (cond
 					  ((functionp el)
 					   (funcall el))
 					  ((arrayp el)
@@ -263,25 +263,25 @@
 (defun list->array (the-list)
   (make-array (length the-list)
 	      :fill-pointer (length the-list)
-	      :adjustable t 
+	      :adjustable t
 	      :initial-contents (copy-list the-list)))
 
 (defun copy-list-into-array (from to)
   (assert (= (length from) (length to)))
   (loop
-     for i in from 
+     for i in from
      for ct from 0 by 1 do
        (setf (elt to ct) i))
   to)
 
 (defun list->simple-array (the-list start-type type)
   (let ((res (make-array-frame (length the-list) start-type type t)))
-    (loop 
+    (loop
        for element in the-list
        for i from 0 below (length the-list) do
 	 (setf (elt res i) element))
     res))
-	 
+
 (defun permutation (li)
   (let ((res-partial '())
 	(res '()))
@@ -294,7 +294,7 @@
       (loop for ct in li do
 	   (do ((start (list (list ct)) res-partial))
 	       ((null (set-difference li (first start)))
-		(progn 
+		(progn
 		  (setf res (append res res-partial))
 		  (setf res-partial '())))
 	     (perm start li))))
@@ -326,17 +326,17 @@
 	    (< ,position (length ,sequence)))
        ,@body
       (error 'conditions:out-of-bounds :seq sequence :idx position)))
-      
+
 
 (defmethod delete@ ((sequence list) position)
-  (gen-delete@ 
+  (gen-delete@
    (sequence position)
    (append (subseq sequence 0 position)
 	   (and (/= position (- (length sequence) 1))
 		(subseq sequence (1+ position))))))
 
 (defmethod delete@ ((sequence vector) position)
-  (gen-delete@ 
+  (gen-delete@
    (sequence position)
     (make-array (1- (length sequence))
 		:fill-pointer (1- (length sequence))
@@ -346,7 +346,7 @@
 						    (subseq sequence (1+ position)))))))
 
 (defmethod safe-delete@ ((sequence sequence) position)
-  (restart-case 
+  (restart-case
       (delete@ sequence position)
     (return-nil () nil)
     (return-whole () sequence)
@@ -355,16 +355,16 @@
 (defgeneric remove-compact-remap-sequence (sequence predicate))
 
 (defmethod remove-compact-remap-sequence ((sequence list) predicate)
-  (let ((nullified (loop 
-		      for i in sequence 
+  (let ((nullified (loop
+		      for i in sequence
 		      for ct from 0 collect
 			(if (funcall predicate ct i)
 			    nil
 			    i)))
 	(mapping nil)
 	(results '()))
-    (loop 
-       for i in nullified 
+    (loop
+       for i in nullified
        for pos from 0 do
 	 (when (not (null i))
 	   (push i results)
@@ -378,7 +378,7 @@
 			    (elt sequence i))))
 	(mapping nil)
 	(results (make-array-frame 0)))
-    (loop for i from 0 below (length nullified) do 
+    (loop for i from 0 below (length nullified) do
 	 (when (not (null (elt nullified i)))
 	   (vector-push-extend (elt nullified i) results)
 	   (push (list i (1- (length results))) mapping)))
@@ -395,8 +395,8 @@
   (alexandria:with-gensyms (first-iteration)
     `(do ,(append (list `(,first-iteration t nil))
 		  declaration)
-	 ,(append (list `(if ,first-iteration 
-			     nil 
+	 ,(append (list `(if ,first-iteration
+			     nil
 			     ,(first return-form)))
 		  (rest return-form))
        ,@body)))
@@ -407,13 +407,13 @@
   (alexandria:with-gensyms (first-iteration)
     `(do* ,(append (list `(,first-iteration t nil))
 		   declaration)
-	  ,(append (list `(if ,first-iteration 
-			      nil 
+	  ,(append (list `(if ,first-iteration
+			      nil
 			      ,(first return-form)))
 		   (rest return-form))
        ,@body)))
-  
-;; maps 
+
+;; maps
 
 (defun coord-map->chunk (a &key (tile-offset (num:d/ +terrain-chunk-tile-size+ 2.0)))
   "convert from logical (i.e. matrix of integer) to actual (float) rendering coordinate"
@@ -429,7 +429,7 @@
   "convert from terrain chunk to matrix"
   (declare (optimize (speed 1) (safety 0) (debug 0)))
   (declare (num:desired-type a))
-  (truncate (num:d/ a +terrain-chunk-tile-size+)))
+  (floor (num:d/ a +terrain-chunk-tile-size+)))
 
 (definline coord-chunk->costs (a)
   "convert from terrain chunk to costs matrix"

@@ -36,7 +36,7 @@
 
   (defun make-primes-array (count)
     (let ((arr (misc:make-array-frame count 0 'fixnum t)))
-      (loop 
+      (loop
 	 for i across arr
 	 for a from 0 by 1 do
 	   (setf (elt arr a) (1+ a)))
@@ -55,14 +55,19 @@
 (defmethod deg->rad ((deg number))
   (/ (* deg +2pi+) 360))
 
+(defmethod deg->rad ((deg §d))
+  (declare (optimize (speed 3) (debug 0) (safety 0)))
+  ;; 0.0027777778 ~= 1 /360
+  (d* (d* deg +2pi+) 0.0027777778))
+
 (defun spherical->cartesian (phi theta)
   (declare (optimize (speed 3) (debug 0) (safety 0)))
   (declare (desired-type phi theta))
   ;;    ^  theta (elevation)
-  ;; z  |  <--+ 
+  ;; z  |  <--+
   ;;    |    /
   ;;    +--+/  phi azimut (ccw)
-  ;;      
+  ;;
   ;; z = r cos (theta)
   ;; x = r sin(theta) cos (phi)
   ;; y = r sin(theta) sin(phi)
@@ -155,10 +160,10 @@
   (setf *lcg-seed* seed))
 
 (defun lcg-next ()
-  (setf *lcg-seed* 
+  (setf *lcg-seed*
 	(ldb (byte +lcg-modulo-pow+ 0)
 	     (+ (* +lcg-a+ *lcg-seed*) +lcg-c+)))
-  (ldb (byte +lcg-good-bit-size+ +lcg-good-bit-starts+) *lcg-seed*)) 
+  (ldb (byte +lcg-good-bit-size+ +lcg-good-bit-starts+) *lcg-seed*))
 
 (defun lcg-next01 ()
     (/ (lcg-next) +lcg-max+))
@@ -298,7 +303,7 @@
 				      (rejection-sampling box function howmany (1+ counts)))
 			 (rejection-sampling box function howmany counts))))
       nil))
-	     
+
 (defun bivariate-sampling (sigma-x sigma-y howmany)
   (loop repeat howmany collect
        (list (first (random-gaussian-distribution sigma-x))
@@ -365,9 +370,9 @@
   (declare (optimize (debug 3) (safety 0) (speed 3)))
   (let ((sigma-xy (d* sigma-x sigma-y))
 	(correlation-sq (dexpt correlation (desired 2))))
-    (d* (d/ (desired 1) 
+    (d* (d/ (desired 1)
 	    (d* (desired 2) constants:+pi+ sigma-xy (sqrt (d- (desired 1) correlation-sq))))
-	(exp (d* (d- (d/ (desired 1) (d* (desired 2) (d- (desired 1) 
+	(exp (d* (d- (d/ (desired 1) (d* (desired 2) (d- (desired 1)
 							 correlation-sq))))
 		 (d+ (d/ (expt (d- x mu-x) (desired 2)) (expt sigma-x (desired 2)))
 		     (d/ (expt (d- y mu-y) (desired 2)) (expt sigma-y (desired 2)))
@@ -381,7 +386,7 @@
 
 (defun gaussian-function (amplitude sigma mean)
   #'(lambda (x)
-      (* amplitude (exp (- (/ (expt (- x mean) 2) (* 2 (expt sigma 2)))))))) 
+      (* amplitude (exp (- (/ (expt (- x mean) 2) (* 2 (expt sigma 2))))))))
 
 (defun damped-impulse (x freq)
   (declare (optimize (debug 3) (safety 0) (speed 3)))
@@ -399,7 +404,7 @@
       (let ((a (d- (d* 2.0 n) m))
 	    (b (d- (d* 2.0 m) (d* 3.0 n)))
 	    (c (d/ x m)))
-	(d+ (d* (d+ (d* a c) b) 
+	(d+ (d* (d+ (d* a c) b)
 		(dexpt c 2.0))
 	    n))))
 
@@ -412,7 +417,7 @@
   (declare (optimize (debug 0) (safety 0) (speed 1)))
   (declare (desired-type x k pow))
   (dexp (d* (d- k) (dexpt x pow))))
- 
+
 (defun cubic-pulse (x center width)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (desired-type x center width))
@@ -482,13 +487,13 @@
 	(declare (fixnum pivot-position))
 	(declare ((simple-array single-float) partition))
 	(let ((k (1+ pivot-position)))
-	  (cond 
+	  (cond
 	    ((= order pivot-position)
 	     (aref partition pivot-position))
 	    ((< order k)
 	     (k-stats (subseq partition from pivot-position) order))
 	    (t
 	     (k-stats (subseq partition (1+ pivot-position)) (- order k))))))))
-	       
+
 (defun median (s)
   (desired (k-stats s (floor (/ (length s) 2)))))

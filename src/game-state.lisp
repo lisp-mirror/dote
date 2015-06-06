@@ -49,7 +49,7 @@
      +white-light-color+)
     (t
      (error "No valid hour..."))))
-  
+
 (defun hour->celestial-body-position-latitude (h)
   (if (<= +start-day+ h +end-day+) ;; day
       (d+ 30.0 (d* 8.57 (d- (d h) (d +start-day+))))
@@ -161,6 +161,8 @@
 
 (defgeneric build-movement-path (object start end))
 
+(defgeneric terrain-aabb-2d (object))
+
 (defmethod  setup-game-hour ((object game-state) hour)
   (with-accessors ((game-hour game-hour)
 		   (sky-bg-color sky-bg-color)
@@ -212,3 +214,11 @@
 	(values
 	 (map 'vector #'(lambda (id) (graph:node-id->node movement-costs id)) raw-path)
 	 cost)))))
+
+(defmethod terrain-aabb-2d ((object game-state))
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (with-accessors ((map-state map-state)) object
+    (vec4 0.0
+	  0.0
+	  (d* (d (the fixnum (width  map-state))) +terrain-chunk-tile-size+)
+	  (d* (d (the fixnum (height map-state))) +terrain-chunk-tile-size+))))

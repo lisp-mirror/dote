@@ -45,8 +45,10 @@
 
 (gen-accessors-matrix view-matrix)
 
+(defgeneric build-projection-matrix (object near far fov ratio))
+
 (defmethod clone-into :after ((from transformable) (to transformable))
   (setf (projection-matrix to) (3d-utils:clone-matrix (elt (projection-matrix from) 0))
-	(model-matrix      to) (3d-utils:clone-matrix (elt (model-matrix      from) 0))     
+	(model-matrix      to) (3d-utils:clone-matrix (elt (model-matrix      from) 0))
 	(view-matrix       to) (3d-utils:clone-matrix (elt (model-matrix      from) 0)))
   to)

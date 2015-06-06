@@ -137,8 +137,7 @@
     (setf (texture-coord-scaling object)
 	  (d/ (d- max-x min-x) (d* 5.0 +terrain-chunk-tile-size+)))))
 
-(defun floor-tile (size-x size-z &key
-				   (wrapper-transformation (identity-matrix)))
+(defun floor-tile (size-x size-z &key (wrapper-transformation (identity-matrix)))
   (let* ((mesh (make-instance 'building-floor-mesh)))
     (with-pushed-matrix (mesh :what :modelview)
       (load-matrix mesh wrapper-transformation)
@@ -153,7 +152,6 @@
     (loop for i from 0 below (length (normals mesh)) do
 	 (setf (elt (normals mesh) i) +y-axe+))
     (setf (lookup-tile-triangle mesh)
-	  (matrix:gen-matrix-frame (truncate (coord-chunk->matrix size-x))
-				   (truncate (coord-chunk->matrix size-z))))
+	  (matrix:gen-matrix-frame (coord-chunk->matrix size-x)
+				   (coord-chunk->matrix size-z)))
     mesh))
-

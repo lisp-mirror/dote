@@ -62,6 +62,9 @@
 (defmethod clone ((object aabb))
   (make-instance 'aabb :aabb-p1 (copy-vec (aabb-p1 object)) :aabb-p2 (copy-vec (aabb-p2 object))))
 
+(defmethod copy-flat ((object aabb))
+  (make-instance 'aabb :aabb-p1 (aabb-p1 object) :aabb-p2 (aabb-p2 object)))
+
 (defgeneric expand (object v))
 
 (defgeneric insidep (object v))
@@ -310,6 +313,21 @@
 	  (elt plane 1) (d+ (elt matrix 7)  (d* scale (elt matrix (f+ act-row 4))))
 	  (elt plane 2) (d+ (elt matrix 11) (d* scale (elt matrix (f+ act-row 8))))
 	  (elt plane 3) (d+ (elt matrix 15) (d* scale (elt matrix (f+ act-row 12)))))))
+
+(defun 3-planes-intersection (a b c)
+  (let ((n1 (vec (elt a 0) (elt a 1) (elt a 2)))
+	(n2 (vec (elt b 0) (elt b 1) (elt b 2)))
+	(n3 (vec (elt c 0) (elt c 1) (elt c 2)))
+	(d1 (elt a 3))
+	(d2 (elt b 3))
+	(d3 (elt c 3)))
+    (vec* (vec+
+	   (vec+
+	    (vec* (cross-product n2 n3) d1)
+	    (vec* (cross-product n3 n1) d2))
+	   (vec* (cross-product n1 n2) d3))
+	  (d/ 1.0
+	      (dot-product (cross-product n1 n2) n3)))))
 
 (defun copy-matrix-element (from to row column)
   (setf (mref to row column) (mref from row column)))

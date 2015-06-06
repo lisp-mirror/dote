@@ -45,11 +45,11 @@
     :accessor orbit-interpolator
     :initarg :orbit-interpolator
     :documentation "a function returning next position and direction for an orbiting camera.")
-   (current-phi 
+   (current-phi
     :accessor current-phi
     :initarg :current-phi
     :initform 0.0)
-   (current-theta 
+   (current-theta
     :accessor current-theta
     :initarg :current-theta
     :initform 0.0)
@@ -66,18 +66,50 @@
      :initarg  drag-target-pos
      :initform +zero-vec+)
    (drag-equilibrium-pos
-     :accessor drag-equilibrium-pos
-     :initarg  drag-equilibrium-pos
-     :initform +zero-vec+)
+    :accessor drag-equilibrium-pos
+    :initarg  drag-equilibrium-pos
+    :initform +zero-vec+)
    (drag-interpolator
     :accessor drag-interpolator
     :initarg  :drag-interpolator
     :initform nil)
+   (frustum-far
+    :accessor frustum-far
+    :initarg  :frustum-far
+    :initform 0.0)
+   (frustum-near
+    :accessor frustum-near
+    :initarg  :frustum-near
+    :initform 0.0)
+   (frustum-fov
+    :accessor frustum-fov
+    :initarg  :frustum-fov
+    :initform 0.0)
    (frustum-planes
     :accessor frustum-planes
     :initarg  :frustum-planes
-    :initform (misc:make-fresh-array 6 (vec4:vec4 0.0 0.0 0.0 0.0) 'vec4:vec4 t))))
-    
+    :initform (misc:make-fresh-array 6 (vec4:vec4 0.0 0.0 0.0 0.0) 'vec4:vec4 t))
+   (frustum-h-near
+    :accessor frustum-h-near
+    :initarg  :frustum-h-near
+    :initform 0.0)
+   (frustum-w-near
+    :accessor frustum-w-near
+    :initarg  :frustum-w-near
+    :initform 0.0)
+   (frustum-h-far
+    :accessor frustum-h-far
+    :initarg  :frustum-h-far
+    :initform 0.0)
+   (frustum-w-far
+    :accessor frustum-w-far
+    :initarg  :frustum-w-far
+    :initform 0.0)
+   (frustum-aabb
+    :accessor frustum-aabb
+    :initarg  :frustum-aabb
+    :initform (make-instance '3d-utils:aabb))))
+
 (defmethod game-state:current-time ((object camera))
   (game-state:current-time (state object)))
 
@@ -124,11 +156,11 @@
      t)))
 
 (defgeneric %draw-path-mode (object dt))
-    
+
 (defgeneric %draw-orbit-mode (object dt))
 
 (defgeneric %draw-drag-mode (object dt))
-     
+
 (defgeneric look-at* (object))
 
 (defgeneric look-at (object eye-x eye-y eye-z target-x target-y target-z up-x up-y up-z))
@@ -151,6 +183,8 @@
 
 (defgeneric calculate-frustum (object))
 
+(defgeneric calculate-aabb    (object))
+
 (defgeneric containsp (object p))
 
 (defmethod %draw-path-mode ((object camera) dt)
@@ -160,7 +194,7 @@
       (let ((new-dir (funcall (dir-interpolator object) dt)))
 	(setf target (vec+ (vec* new-dir (vec-length target)) pos))))
     (look-at* object)))
-    
+
 (defmethod %draw-orbit-mode ((object camera) dt)
   (multiple-value-bind (pos dir)
       (funcall (orbit-interpolator object) dt)
@@ -185,9 +219,9 @@
   (setf (dir object) (normalize (vec- (target object) (pos object))))
   (setf (view-matrix object) (sb-cga-utils:look@ (pos object) (target object) (up object))))
 
-(defmethod look-at ((object camera) 
-		    eye-x eye-y eye-z 
-		    target-x target-y target-z 
+(defmethod look-at ((object camera)
+		    eye-x eye-y eye-z
+		    target-x target-y target-z
 		    up-x up-y up-z)
   (setf (pos    object) (vec  eye-x eye-y eye-z)
 	(target object) (vec  target-x target-y target-z)
@@ -210,8 +244,8 @@
 
 (defmethod reorient-fp-camera ((object camera) offset)
   (let ((offset-scaled (vec2:vec2* offset 0.01)))
-     (with-accessors ((dir dir) (up up) (pos pos) 
-		      (target target) 
+     (with-accessors ((dir dir) (up up) (pos pos)
+		      (target target)
 		      (current-rotation current-rotation)) object
        (let* ((qy           (axis-rad->quat +y-axe+ (elt offset-scaled 0)))
 	      (qx           (axis-rad->quat (cross-product dir up) (elt offset-scaled 1)))
@@ -237,7 +271,7 @@
   (declare (vec up dir))
   (declare (desired-type offset))
   (let* ((u      (actual-up-vector camera))
-	 (push-y (vec* (normalize (map 'vec 
+	 (push-y (vec* (normalize (map 'vec
 				       #'(lambda (a b) (dlerp (dot-product up +y-axe+) a b))
 				       u dir))
 		       offset)))
@@ -269,7 +303,7 @@
 (defun gen-path-interpolator* (knots)
   (let* ((interpolator (interpolation:catmul-roll-interpolation* knots))
 	 (time 0.0))
-    #'(lambda (dt) 
+    #'(lambda (dt)
 	(let ((res (funcall interpolator (incf time dt))))
 	  (vec (matrix:matrix-elt res 0 0)
 	       (matrix:matrix-elt res 1 0)
@@ -296,7 +330,7 @@
 				   (d+
 				    (d- (d* spring-k       (elt pos      :e!)))
 				    (d- (d* friction-coeff (elt velocity :e!))))))))
-	 (status (make-instance 'status 
+	 (status (make-instance 'status
 				:force forces
 				:velocity (vec 0.0 0.0 0.0)
 				:current-pos (vec 0.0 0.0 0.0)
@@ -313,9 +347,9 @@
 		   (setf current-theta (d* dt theta-angular-velocity))
 		   (orbit camera current-phi current-theta dist))))
 
-(defmethod install-orbit-interpolator ((object camera) phi-angular-velocity 
+(defmethod install-orbit-interpolator ((object camera) phi-angular-velocity
 				       theta-angular-velocity dist)
-  (setf (orbit-interpolator object) 
+  (setf (orbit-interpolator object)
 	(gen-orbit-interpolator object phi-angular-velocity theta-angular-velocity dist)))
 
 (defmethod calculate-frustum ((object camera))
@@ -331,10 +365,66 @@
       (extract-frustum-plane (elt frustum-planes 4) projection-view-matrix  3)
       (extract-frustum-plane (elt frustum-planes 5) projection-view-matrix -3))))
 
+(defmethod build-projection-matrix ((object camera) near far fov ratio)
+  (setf (frustum-fov object)  fov
+	(frustum-near object) near
+	(frustum-far object)  far)
+  (let ((fov-radians (deg->rad fov)))
+    (setf (frustum-h-near object) (d* 2.0 (tan (d/ fov-radians 2.0))  near))
+    (setf (frustum-w-near object) (d* (frustum-h-near object) ratio))
+    (setf (frustum-h-far  object) (d* 2.0 (tan (d/ fov-radians 2.0))  far))
+    (setf (frustum-w-near object) (d* (frustum-h-far object) ratio)))
+  (setf (projection-matrix object) (perspective fov ratio near far)))
+
+(defmethod calculate-aabb ((object camera))
+  (with-accessors ((up up) (dir dir) (target target) (pos pos)
+		   (frustum-far frustum-far) (frustum-near frustum-near)
+		   (frustum-h-near frustum-h-near)
+		   (frustum-w-near frustum-w-near)
+		   (frustum-h-far  frustum-h-far)
+		   (frustum-w-far frustum-w-far)
+		   (frustum-aabb frustum-aabb)) object
+    (let* ((side         (normalize (cross-product dir up)))
+	   (far-center   (vec+ pos (vec* (normalize dir) frustum-far)))
+	   (near-center  (vec+ pos (vec* (normalize dir) frustum-near)))
+	   (hfar/2       (d/ frustum-h-far 2.0))
+	   (wfar/2       (d/ frustum-w-far 2.0))
+	   (hnear/2      (d/ frustum-h-near 2.0))
+	   (wnear/2      (d/ frustum-w-near 2.0))
+	   (far-top-left  (vec- (vec+ far-center (vec* up hfar/2))
+				(vec* side wfar/2)))
+	   (far-top-right (vec+ (vec+ far-center (vec* up hfar/2))
+				(vec* side wfar/2)))
+	   (far-bottom-left  (vec- (vec- far-center (vec* up hfar/2))
+				   (vec* side wfar/2)))
+	   (far-bottom-right (vec+ (vec- far-center (vec* up hfar/2))
+				   (vec* side wfar/2)))
+	   (near-top-left  (vec- (vec+ near-center (vec* up hnear/2))
+				 (vec* side wnear/2)))
+	   (near-top-right (vec+ (vec+ near-center (vec* up hnear/2))
+				 (vec* side wnear/2)))
+	   (near-bottom-left  (vec- (vec- near-center (vec* up hnear/2))
+				   (vec* side wnear/2)))
+	   (near-bottom-right (vec+ (vec- near-center (vec* up hnear/2))
+				    (vec* side wnear/2)))
+	   (aabb (make-instance 'aabb)))
+      (expand aabb far-top-left)
+      (expand aabb far-top-right)
+      (expand aabb far-bottom-left)
+      (expand aabb far-bottom-right)
+      (expand aabb near-top-left)
+      (expand aabb near-top-right)
+      (expand aabb near-bottom-left)
+      (expand aabb near-bottom-right)
+      (setf frustum-aabb aabb)
+      object)))
+
+(defmethod aabb-2d ((object camera))
+  (flatten-to-aabb2-xz (frustum-aabb object)))
+
 (defmethod containsp ((object camera) (p vector))
   (with-accessors ((frustum-planes frustum-planes)) object
     (loop for plane across frustum-planes do
 	 (when (not (plane-point-same-side-p plane p))
 	     (return-from containsp nil)))
     t))
-

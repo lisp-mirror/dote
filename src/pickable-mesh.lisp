@@ -64,13 +64,20 @@
     :accessor renderer-data-pick-overlay)))
 
 (defmethod clone-into :after ((from pickable-mesh) (to pickable-mesh))
-  (setf (pick-overlay-values to) (copy-array (pick-overlay-values from)))
+  (setf (pick-overlay-values  to) (copy-array (pick-overlay-values from))
+	(lookup-tile-triangle to) (clone      (lookup-tile-triangle from)))
   to)
 
 (defmethod clone ((object pickable-mesh))
-  (let ((res (make-instance 'pickable-mesh)))
-    (clone-into object res)
-    res))
+  (with-simple-clone (object 'pickable-mesh)))
+
+(defmethod copy-flat-into :after ((from pickable-mesh) (to pickable-mesh))
+  (setf (pick-overlay-values  to) (pick-overlay-values from)
+	(lookup-tile-triangle to) (lookup-tile-triangle from))
+  to)
+
+(defmethod copy-flat ((object pickable-mesh))
+  (with-simple-copy-flat (object 'pickable-mesh)))
 
 (defmethod destroy :after ((object pickable-mesh))
   (with-accessors ((renderer-data-pick-overlay renderer-data-pick-overlay)) object
@@ -133,7 +140,10 @@
 
 (defgeneric setup-pickable-attribute (object &key triangle-index pick-index))
 
-(defgeneric setup-lookup-triangle-element (object &key first-triangle-index second-triangle-index))
+(defgeneric setup-lookup-triangle-element (object &key
+						    first-triangle-index
+						    second-triangle-index
+						    aabb))
 
 (defgeneric set-tile-highlight (object row column &key
 						    weight
@@ -147,8 +157,6 @@
 (defgeneric add-highligthed-tiles-coords* (object coord))
 
 (defgeneric populate-lookup-triangle-matrix (object))
-
-(defgeneric print-dbg-lookup-tile-triangle (object))
 
 (defgeneric vbo-pick-weights-handle (object))
 
@@ -170,14 +178,17 @@
     (set-custom-attribute first-triangle +attribute-pick-overlay+ indices)))
 
 (defmethod setup-lookup-triangle-element ((object pickable-mesh) &key
-								 (first-triangle-index 0)
-								 (second-triangle-index 1))
-  (with-accessors ((lookup-tile-triangle lookup-tile-triangle) (aabb aabb)) object
+								   (first-triangle-index 0)
+								   (second-triangle-index 1)
+								   (aabb (aabb object)))
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (with-accessors ((lookup-tile-triangle lookup-tile-triangle) (triangles triangles)) object
+    (declare (list triangles))
     (let* ((x-origin                 (min-x aabb))
 	   (z-origin                 (min-z aabb))
-	   (first-triangle           (elt (triangles object) first-triangle-index))
+	   (first-triangle           (elt triangles first-triangle-index))
 	   (first-triangle-indices   (vertex-index first-triangle))
-	   (second-triangle          (elt (triangles object) second-triangle-index))
+	   (second-triangle          (elt triangles second-triangle-index))
 	   (first-triangle-vertices  (vector (find-value-by-index object
 								  (elt first-triangle-indices 0)
 								  :what :vertex)
@@ -198,6 +209,8 @@
 							  :triangle-2 second-triangle
 							  :index-tr-1 first-triangle-index
 							  :index-tr-2 second-triangle-index)))
+      (declare (uivec first-triangle-indices))
+      (declare (vec barycenter-first-triangle))
       (setf (matrix:matrix-elt lookup-tile-triangle row column) element)
       (values row column))))
 
@@ -248,7 +261,7 @@
 			      (declare (ignore e))
 			      (invoke-restart 'pickable-mesh::use-value nil))))
 	    (restart-case
-		(matrix:with-check-matrix-borders-then-else (lookup-tile-triangle row column)
+		(matrix:with-check-matrix-borders-then-else (lookup-tile-triangle column row)
 		  (let ((tile (matrix:matrix-elt lookup-tile-triangle row column)))
 		    (if tile
 			(values object cost-matrix-position matrix-position raw-position)
@@ -283,7 +296,7 @@
 		   (lookup-tile-triangle lookup-tile-triangle)
 		   (pick-overlay-values pick-overlay-values)) object
     (restart-case
-	(matrix:with-check-matrix-borders-then-else (lookup-tile-triangle row column)
+	(matrix:with-check-matrix-borders-then-else (lookup-tile-triangle column row)
 	  (let ((tile (matrix:matrix-elt lookup-tile-triangle row column)))
 	    (if tile
 		(let* ((w1 (get-custom-attribute (pickable-tile-triangle-1 tile)
@@ -332,12 +345,14 @@
   object)
 
 (defmethod populate-lookup-triangle-matrix ((object pickable-mesh))
-  (loop for tr from 0 below (length (mesh:triangles object)) by 2 do
-     ;; assign triandle indices for this tile
-       (pickable-mesh:setup-lookup-triangle-element object
-						    :first-triangle-index tr
-						    :second-triangle-index (1+ tr)))
-  object)
+  (with-accessors ((aabb aabb)) object
+    (loop for tr from 0 below (length (mesh:triangles object)) by 2 do
+       ;; assign triandle indices for this tile
+	 (pickable-mesh:setup-lookup-triangle-element object
+						      :first-triangle-index tr
+						      :second-triangle-index (1+ tr)
+						      :aabb aabb))
+    object))
 
 (defmethod lookup-tile-triangle->dbg-matrix ((object pickable-mesh))
   (matrix:map-matrix (lookup-tile-triangle object)

@@ -42,10 +42,24 @@
 
 (defmethod  clone-into (from to))
 
+(defgeneric copy-flat (object))
+
+(defmethod  copy-flat (object))
+
+(defgeneric copy-flat-into (from to))
+
+(defmethod  copy-flat-into (from to))
+
 (defmacro with-simple-clone ((object type))
   (alexandria:with-gensyms (res)
     `(let ((,res (make-instance ,type)))
        (clone-into ,object ,res)
+       ,res)))
+
+(defmacro with-simple-copy-flat ((object type))
+  (alexandria:with-gensyms (res)
+    `(let ((,res (make-instance ,type)))
+       (copy-flat-into ,object ,res)
        ,res)))
 
 (defgeneric initializedp (object))
@@ -70,6 +84,16 @@
 (defmethod clone-into :after ((from renderizable) (to renderizable))
   (setf (compiled-shaders to) (compiled-shaders from))
   to)
+
+(defmethod clone :after ((object renderizable))
+  (with-simple-clone (object 'renderizable)))
+
+(defmethod copy-flat-into :after ((from renderizable) (to renderizable))
+  (setf (compiled-shaders to) (compiled-shaders from))
+  to)
+
+(defmethod copy-flat :after ((object renderizable))
+  (with-simple-copy-flat (object 'renderizable)))
 
 (defgeneric prepare-for-rendering (object))
 

@@ -84,8 +84,10 @@
    (entities
     :accessor entities
     :initarg :entities
-    ;; TODO change with a quad-tree
-    :initform (misc:make-fresh-array 0 nil 'triangle-mesh nil))
+    :initform (make-instance 'quad-tree:quad-tree
+			     :aabb (vec4:vec4 0.0 0.0
+					      (num:d +map-max-size+)
+					      (num:d +map-max-size+))))
     (main-state
     :initarg :main-state
     :initform nil
@@ -147,6 +149,20 @@
 
 (defgeneric highlight-path-costs-space (object renderer path))
 
+(defgeneric iterate-quad-tree (object function probe))
+
+(defmethod iterate-quad-tree ((object world) function probe)
+  (quad-tree:iterate-nodes-intersect (entities object)
+				    function
+				    probe))
+
+(defmacro walk-quad-tree ((object &optional (aabb `(aabb-2d (camera ,object)))) &body body)
+  `(iterate-quad-tree ,object
+		      #'(lambda (entities)
+			  (loop named entity-loop for entity across (quad-tree:data entities) do
+			       ,@body))
+		      ,aabb))
+
 (defmethod main-state ((object world))
   (slot-value object 'main-state))
 
@@ -166,9 +182,8 @@
   (setf (windows-bag object) nil)
   (destroy (gui object))
   (setf (gui object) nil)
-  ;; TODO sostituire con quadtree
-  (loop for entity across (entities object) do
-       (destroy entity))
+  (quad-tree:iterate-nodes (entities object)
+			   #'(lambda (a) (map 'nil #'destroy (quad-tree:data a))))
   (setf (entities object) nil))
 
 (defmethod (setf main-state) (new-state (object world))
@@ -192,6 +207,9 @@
 
 (gen-accessors-matrix projection-matrix)
 
+(defmethod build-projection-matrix ((object world) near far fov ratio)
+  (build-projection-matrix (camera object) near far fov ratio))
+
 (defmethod initialize-instance :after ((object world) &key &allow-other-keys)
   (setf (camera object) (make-instance 'camera :pos (vec 0.0 0.0 1.0)))
   ;; gui
@@ -211,52 +229,54 @@
   (calculate (camera object)  dt)
   (calculate (skydome object) dt)
   (calculate-frustum (camera object))
-  ;; TODO quadtree needed here
-  (loop for entity across (entities object) do
-       (calculate entity dt)))
+  (calculate-aabb    (camera object))
+  (quad-tree:iterate-nodes (entities object)
+			   #'(lambda (a) (map 'nil #'(lambda(e) (calculate e dt))
+					      (quad-tree:data a)))))
 
 (defmethod render ((object world) (renderer world))
   (render (camera  object) object)
   (render (skydome object) object)
-  ;; TODO quadtree needed here
-  (loop for entity across (entities object) do
-       (when (frustum-intersects-p object entity)
-	 (render entity object))))
+  (walk-quad-tree (object)
+    (when (and (not (water-mesh-p entity))
+	       (frustum-intersects-p object entity))
+      (render entity renderer)))
+  (walk-quad-tree (object)
+    (when (and (water-mesh-p entity)
+	       (frustum-intersects-p object entity))
+      (render entity renderer))))
 
 (defmethod render-for-reflection ((object world) (renderer world))
   (render-for-reflection (camera  object) object)
   (render-for-reflection (skydome object) object)
-  ;; TODO quadtree needed here
-  (loop for entity across (entities object) do
-       (when (frustum-intersects-p object entity)
-	 (render-for-reflection entity object))))
+  (walk-quad-tree (object)
+    (when (frustum-intersects-p object entity)
+      (render-for-reflection entity renderer))))
 
 (defmethod pick-pointer-position ((object world) renderer x y)
-  ;; TODO quadtree needed here
-  (loop for entity across (entities object) do
-       (multiple-value-bind (picked cost-matrix-position matrix-position raw-position)
-	   (pick-pointer-position entity renderer x y)
-	 (when picked
-	   (return-from pick-pointer-position
-	     (values cost-matrix-position matrix-position raw-position)))))
+  (walk-quad-tree (object)
+    (multiple-value-bind (picked cost-matrix-position matrix-position raw-position)
+	(pick-pointer-position entity renderer x y)
+      (when picked
+	(return-from pick-pointer-position
+	  (values cost-matrix-position matrix-position raw-position)))))
   nil)
 
 (defmethod highlight-tile-screenspace ((object world) renderer x y)
   "Coordinates in screen space"
-  ;; TODO quadtree needed here
-  (loop for entity across (entities object) do
-       (multiple-value-bind (picked cost-matrix-position matrix-position raw-position)
-	   (pick-pointer-position entity renderer x y)
-	 (declare (ignore raw-position))
-	 (when picked
-	   (turn-off-highligthed-tiles object)
-	   (set-tile-highlight entity
-			       (elt matrix-position 1) ; row
-			       (elt matrix-position 0) ; column
-			       :clear-highligthed-set nil
-			       :add-to-highligthed-set t)
-	   (return-from highlight-tile-screenspace cost-matrix-position))))
-  nil)
+    (walk-quad-tree (object)
+      (multiple-value-bind (picked cost-matrix-position matrix-position raw-position)
+	  (pick-pointer-position entity renderer x y)
+	(declare (ignore raw-position))
+	(when picked
+	  (turn-off-highligthed-tiles object)
+	  (set-tile-highlight entity
+			      (elt matrix-position 1) ; row
+			      (elt matrix-position 0) ; column
+			      :clear-highligthed-set nil
+			      :add-to-highligthed-set t)
+	  (return-from highlight-tile-screenspace cost-matrix-position))))
+    nil)
 
 (defmethod highlight-path-costs-space ((object world) renderer path)
   "Path contains coordinates from cost matrix"
@@ -264,33 +284,56 @@
   (turn-off-highligthed-tiles object)
   (map nil
        #'(lambda (coord)
-	   ;; TODO quadtree needed here
-	   (loop named entity-loop for entity across (entities object) do
-		(when (pickable-mesh-p entity)
-		  (let ((tile-coord (cost-coord->lookup-tile entity (elt coord 1) (elt coord 0))))
-		    (handler-bind ((null-tile-element
-				    #'(lambda(e)
-					(declare (ignore e))
-					(invoke-restart 'pickable-mesh::use-value nil)))
-				   (out-of-bonds-tile-element
-				    #'(lambda(e)
-					(declare (ignore e))
-					(invoke-restart 'pickable-mesh::use-value nil))))
-		      (when (set-tile-highlight entity (elt tile-coord 1) (elt tile-coord 0)
-						:add-to-highligthed-set t
-						:clear-highligthed-set nil)
-			(return-from entity-loop)))))))
+	   (block walking
+	     (walk-quad-tree (object)
+	       (when (pickable-mesh-p entity)
+		 (let ((tile-coord (cost-coord->lookup-tile entity (elt coord 1) (elt coord 0))))
+		   (handler-bind ((null-tile-element
+				   #'(lambda(e)
+				       (declare (ignore e))
+				       (invoke-restart 'pickable-mesh::use-value nil)))
+				  (out-of-bonds-tile-element
+				   #'(lambda(e)
+				       (declare (ignore e))
+				       (invoke-restart 'pickable-mesh::use-value nil))))
+		     (when (set-tile-highlight entity (elt tile-coord 1) (elt tile-coord 0)
+					       :add-to-highligthed-set t
+					       :clear-highligthed-set nil)
+		       (return-from walking))))))))
        path))
 
+
+;; (defmethod highlight-path-costs-space ((object world) renderer path)
+;;   "Path contains coordinates from cost matrix"
+;;   (declare (ignore renderer))
+;;   (turn-off-highligthed-tiles object)
+;;   (map nil
+;;        #'(lambda (coord)
+;; 	   ;; TODO quadtree needed here
+;; 	   (loop named entity-loop for entity across (entities object) do
+;; 		(when (pickable-mesh-p entity)
+;; 		  (let ((tile-coord (cost-coord->lookup-tile entity (elt coord 1) (elt coord 0))))
+;; 		    (handler-bind ((null-tile-element
+;; 				    #'(lambda(e)
+;; 					(declare (ignore e))
+;; 					(invoke-restart 'pickable-mesh::use-value nil)))
+;; 				   (out-of-bonds-tile-element
+;; 				    #'(lambda(e)
+;; 					(declare (ignore e))
+;; 					(invoke-restart 'pickable-mesh::use-value nil))))
+;; 		      (when (set-tile-highlight entity (elt tile-coord 1) (elt tile-coord 0)
+;; 						:add-to-highligthed-set t
+;; 						:clear-highligthed-set nil)
+;; 			(return-from entity-loop)))))))
+;;        path))
 
 (defmethod selected-pc ((object world))
   (selected-pc (main-state object)))
 
 (defmethod turn-off-highligthed-tiles ((object world))
-  ;; TODO quadtree needed here
-  (loop for entity across (entities object) do
-       (when (pickable-mesh-p entity)
-	 (turn-off-highligthed-tiles entity)))
+  (walk-quad-tree (object)
+    (when (pickable-mesh-p entity)
+      (turn-off-highligthed-tiles entity)))
   object)
 
 (defmethod main-light-pos ((object world))
@@ -316,7 +359,14 @@
   (current-time (main-state object)))
 
 (defmethod push-entity ((object world) entity)
-  (vector-push-extend entity (entities object)))
+  (bubbleup-modelmatrix entity)
+  (quad-tree:push-down (entities object) entity)
+  (let ((paths '()))
+    (quad-tree:iterate-nodes (entities object)
+			    #'(lambda (q)
+				(when (not (misc:vector-empty-p (quad-tree:data q)))
+				  (setf paths (mapcar #'quad-tree:node-quadrant
+						      (quad-tree:path-to q))))))))
 
 (defmethod (setf compiled-shaders) (new-value (object world))
   (with-slots (compiled-shaders) object
