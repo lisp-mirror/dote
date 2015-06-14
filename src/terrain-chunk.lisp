@@ -117,10 +117,8 @@
 (defmethod destroy :after ((object terrain-chunk))
   (with-accessors ((renderer-data-text-weights renderer-data-text-weights)) object
     (when +debug-mode+
-      (misc:dbg "destroy terrain-chunk"))
-    (when renderer-data-text-weights
-      (gl:free-gl-array renderer-data-text-weights)
-      (setf renderer-data-text-weights nil))))
+      (misc:dbg "destroy terrain-chunk ~a" (identificable:id object)))
+      (setf renderer-data-text-weights nil)))
 
 (defmethod make-data-for-opengl :after ((object terrain-chunk))
   (with-accessors ((renderer-data-count-weights renderer-data-count-weights)
@@ -148,7 +146,8 @@
       (tg:finalize object #'(lambda ()
 			      (when +debug-mode+
 				(misc:dbg "finalize destroy terrain ~a" id))
-			      (gl:free-gl-array gl-arr-weight))))))
+			      (free-memory* (list (gl:free-gl-array gl-arr-weight)) nil nil)
+			      (setf gl-arr-weight nil))))))
 
 (defmethod render ((object terrain-chunk) renderer)
   (actual-render object renderer))
@@ -531,10 +530,11 @@
 	      (nw-triangles '()))
 	  (matrix:loop-matrix (mat x y)
 	    (when (matrix:matrix-elt mat y x)
-	      (push (pickable-tile-triangle-1 (matrix:matrix-elt mat y x)) nw-triangles)
-	      (push (pickable-tile-triangle-2 (matrix:matrix-elt mat y x)) nw-triangles)))
+	      (push (triangle-1 (matrix:matrix-elt mat y x)) nw-triangles)
+	      (push (triangle-2 (matrix:matrix-elt mat y x)) nw-triangles)))
 	  (setf (triangles results) nw-triangles))
 	(clip-triangles results aabb predicate))
+    (remove-orphaned-vertices results)
     (reset-aabb results)
     (when regenerate-rendering-data
       (prepare-for-rendering results))

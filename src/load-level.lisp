@@ -16,6 +16,8 @@
 
 (in-package :load-level)
 
+(alexandria:define-constant +terrain-chunk-cache-name+ "terrain-chunk" :test #'string=)
+
 (defun setup-water (world map)
   (loop for water-aabb in (random-terrain:lakes-aabb map) do
        (let ((water (make-instance 'mesh:water :measures water-aabb)))
@@ -252,7 +254,7 @@
       (interfaces:prepare-for-rendering normal-map))
     (setf (mesh:texture-object mesh) texture)
     (mesh:get-material-from-texture mesh)
-    (setf (mesh:normal-map mesh)     normal-map)
+    (setf (mesh:normal-map mesh) normal-map)
     (mesh:transform-vertices mesh (sb-cga:translate* 0.0 (d* 1.05 +wall-h+) 0.0))
     (interfaces:prepare-for-rendering mesh)
     mesh))
@@ -283,14 +285,29 @@
 
 (defun setup-ceiling (world map)
   (loop for aabb in (labyrinths-aabb map) do
-       (push-entity world (setup-single-ceiling world aabb))))
+       (let ((mesh (setup-single-ceiling world aabb)))
+	 (push-entity world mesh))))
+
+(defun make-cache-key (world filename)
+  (resource-cache:regular-file-strings->cache-key (map-cache-dir (main-state world))
+						  filename))
+
+(defun make-terrain-chunk-cache-key (world row column)
+  (resource-cache:regular-file-strings->cache-key (map-cache-dir (main-state world))
+						  (format nil "~a-~a-~a"
+							  +terrain-chunk-cache-name+
+							  row column)))
+
+(defun cache-miss-p (filename)
+  (resource-cache:cache-miss* filename))
 
 (defun setup-terrain (world map)
-  (let ((whole (terrain-chunk:make-terrain-chunk map (compiled-shaders world)
-						 :generate-rendering-data nil))
-	(quadtree-depth (quad-tree:quad-sizes->level
-			 (aabb2-max-x (game-state:terrain-aabb-2d (world:main-state world)))
-			 +quad-tree-leaf-size+)))
+  (let* ((whole          (terrain-chunk:make-terrain-chunk map
+							   (compiled-shaders world)
+							   :generate-rendering-data nil))
+	 (quadtree-depth (quad-tree:quad-sizes->level
+			  (aabb2-max-x (game-state:terrain-aabb-2d (world:main-state world)))
+			  +quad-tree-leaf-size+)))
     (loop for aabb in (labyrinths-aabb map) do
 	 (terrain-chunk:nclip-with-aabb whole
 					(map 'vector
@@ -303,42 +320,44 @@
     (setf (quad-tree:aabb (world:entities world)) (entity:aabb-2d whole))
     (quad-tree:subdivide  (world:entities world)  quadtree-depth)
     (loop for x from 0.0 below (aabb2-max-x (entity:aabb-2d whole)) by +quad-tree-leaf-size+ do
-	 (loop for z from 0.0 below (aabb2-max-y (entity:aabb-2d whole))
-	    by +quad-tree-leaf-size+ do
-	      (let ((chunk (terrain-chunk:clip-with-aabb whole
-							 (vec4:vec4 x z
-								    (d+ x +quad-tree-leaf-size+)
-								    (d+ z +quad-tree-leaf-size+))
-							 :clip-if-inside nil)))
-		(pickable-mesh:populate-lookup-triangle-matrix chunk)
-		(push-entity world chunk))))))
+    	 (loop for z from 0.0 below (aabb2-max-y (entity:aabb-2d whole))
+    	    by +quad-tree-leaf-size+ do
+    	      (let ((chunk (terrain-chunk:clip-with-aabb whole
+    							 (vec4:vec4 x z
+    								    (d+ x +quad-tree-leaf-size+)
+    								    (d+ z +quad-tree-leaf-size+))
+    							 :clip-if-inside nil)))
+    		(pickable-mesh:populate-lookup-triangle-matrix chunk)
+    		(push-entity world chunk))))))
 
 (defun load-level (world game-state compiled-shaders file)
   (let* ((actual-file (res:get-resource-file file +maps-resource+
 					     :if-does-not-exists :error))
 	 (resource-cache:*cache-reference-file* actual-file))
     (load actual-file :verbose nil :print nil)
-    (initialize-skydome world)
-    (setf (main-state world)          game-state)
-    (setf (compiled-shaders world)    compiled-shaders)
-    (setup-game-hour game-state       *game-hour*)
-    (setf (movement-costs game-state) (graph:matrix->graph (cost-matrix *map*)))
-    (prepare-map-state game-state     *map*)
-    (setf (trees-bag world)           *trees*)
-    (setf (walls-bag world)           *wall*)
-    (setf (windows-bag world)         *window*)
-    (setf (doors-bag world)           (make-instance 'world:doors
-						     :door-n *door-n*
-						     :door-s *door-s*
-						     :door-e *door-e*
-						     :door-w *door-w*))
-    (setf (floor-bag world)      *floor*)
-    (setf (furnitures-bag world) *furnitures*)
-    (setup-terrain  world        *map*)
-    (setup-floor    world        *map*)
-    (setup-ceiling  world        *map*)
-    (setup-walls    world        *map*)
-    (setup-trees    world        *map*)
-    (setup-water    world        *map*)
-    ;; setup map-state
-    (values *map* *trees* *wall*)))
+    (resource-cache:ensure-cache-running
+      (initialize-skydome world)
+      (setf (main-state world)          game-state)
+      (setf (compiled-shaders world)    compiled-shaders)
+      (setup-game-hour game-state       *game-hour*)
+      (setf (map-cache-dir game-state)  *raw-seed*)
+      (setf (movement-costs game-state) (graph:matrix->graph (cost-matrix *map*)))
+      (prepare-map-state game-state     *map*)
+      (setf (trees-bag world)           *trees*)
+      (setf (walls-bag world)           *wall*)
+      (setf (windows-bag world)         *window*)
+      (setf (doors-bag world)           (make-instance 'world:doors
+						       :door-n *door-n*
+						       :door-s *door-s*
+						       :door-e *door-e*
+						       :door-w *door-w*))
+      (setf (floor-bag world)      *floor*)
+      (setf (furnitures-bag world) *furnitures*)
+      (setup-terrain  world *map*)
+      (setup-floor    world *map*)
+      (setup-ceiling  world *map*)
+      (setup-walls    world *map*)
+      (setup-trees    world *map*)
+      (setup-water    world *map*)
+      ;; free memory associed with *map*, *wall* etc.
+      (clean-global-wars))))

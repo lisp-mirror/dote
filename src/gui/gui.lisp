@@ -83,7 +83,7 @@
 (definline gui-printable-p (char &key
 			       (min-code-value 32)
 			       (max-code-value 126))
-  (<= min-code-value (char->code char) max-code-value)) 
+  (<= min-code-value (char->code char) max-code-value))
 
 (defun char->quad-texture (char &key
 				  (min-code-value 32)
@@ -138,6 +138,18 @@
 	   (prepare-for-rendering mesh)
 	   (setf (gethash (code-char i) map) mesh)))
     (setf (gethash handle *fonts-db*) map)))
+
+(defun clean-font-db ()
+  (maphash #'(lambda (k v)
+	       (declare (ignore k))
+	       (maphash #'(lambda (k2 v2)
+			    (declare (ignore k2))
+			    (interfaces:destroy v2))
+			v))
+	   *fonts-db*)
+  (maphash #'(lambda (k v) (declare (ignore k)) (setf v nil)) *fonts-db*)
+  (setf *fonts-db* nil)
+  (setf *fonts-db* (make-hash-table :test 'eql)))
 
 (defmacro gen-simple-bg-setup (function-name texture-handle parameter file
 			       resource-name
@@ -318,7 +330,7 @@
 
 (gen-simple-bg-setup frame
 		     +frame-texture-name+
-		     *bg-frame* 
+		     *bg-frame*
 		     "basic-frame.tga"
 		     +default-gui-resource+)
 

@@ -222,6 +222,7 @@
 	(interfaces:destroy (world w))
 	(interfaces:destroy (compiled-shaders w))
 	(texture:clean-db)
+	(gui:clean-font-db)
 	(lparallel:end-kernel :wait t)
 	(tg:gc :full t)
 	(call-next-method)))))

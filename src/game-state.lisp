@@ -138,6 +138,10 @@
     :accessor map-state
     :initarg  :map-state
     :initform nil)
+   (map-cache-dir
+    :accessor map-cache-dir
+    :initarg  :map-cache-dir
+    :initform nil)
    (pc-characters
     :initform (make-hash-table :test 'equal)
     :initarg  :pc-characters

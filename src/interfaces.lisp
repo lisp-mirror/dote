@@ -66,10 +66,15 @@
 
 (defgeneric serialize (object))
 
+(defgeneric serialize-to-stream (object stream))
+
 (defgeneric deserialize (object file))
 
 (defmethod serialize (object)
-    (format nil "~s" (marshal:marshal object)))
+  (format nil "~s" (marshal:marshal object)))
+
+(defmethod serialize-to-stream (object stream)
+  (prin1 (marshal:marshal object) stream))
 
 (defmethod deserialize (object file)
   (declare (ignore object))

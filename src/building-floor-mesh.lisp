@@ -137,7 +137,9 @@
     (setf (texture-coord-scaling object)
 	  (d/ (d- max-x min-x) (d* 5.0 +terrain-chunk-tile-size+)))))
 
-(defun floor-tile (size-x size-z &key (wrapper-transformation (identity-matrix)))
+(defun floor-tile (size-x size-z &key
+				   (wrapper-transformation   (identity-matrix))
+				   (remove-orphaned-vertices nil))
   (let* ((mesh (make-instance 'building-floor-mesh)))
     (with-pushed-matrix (mesh :what :modelview)
       (load-matrix mesh wrapper-transformation)
@@ -148,7 +150,8 @@
       (loop for i from 0 below (length (triangles mesh)) do
 	   (push-pickable-attribute mesh 0.0)
 	   (setup-pickable-attribute  mesh :triangle-index i :pick-index 0)))
-    (remove-orphaned-vertices mesh)
+    (when remove-orphaned-vertices
+      (remove-orphaned-vertices mesh))
     (loop for i from 0 below (length (normals mesh)) do
 	 (setf (elt (normals mesh) i) +y-axe+))
     (setf (lookup-tile-triangle mesh)

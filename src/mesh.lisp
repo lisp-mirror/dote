@@ -529,7 +529,6 @@
 	     material-params
 	     edges
 	     parent-mesh
-	     vao
 	     aabb
 	     render-aabb
 	     render-normals
@@ -646,6 +645,16 @@
 (defgeneric get-material-from-texture (object))
 
 (defgeneric setup-projective-texture (object))
+
+(defgeneric remove-mesh-data (object))
+
+(defmethod remove-mesh-data ((object triangle-mesh))
+  (setf (normals       object) nil
+	(vertices      object) nil
+	(edges         object) nil
+	(tangents      object) nil
+	(texture-coord object) nil
+	(triangles     object) nil))
 
 (defmethod aabb ((object triangle-mesh))
   (with-slots (aabb) object
@@ -1269,7 +1278,11 @@
   (gl:delete-buffers vbo))
 
 (defun free-memory* (arrays vbos vaos)
-  (loop for i in arrays do (and i (gl:free-gl-array i)))
+  (loop for i in arrays do
+       (when (and i
+		  (not (gl::null-pointer-p (gl::gl-array-pointer i))))
+	 (gl:free-gl-array i)
+	 (setf (gl::gl-array-pointer i) (gl::null-pointer))))
   (when vbos
     (gl:delete-buffers vbos))
   (when vaos
@@ -1284,17 +1297,8 @@
 		   (renderer-data-normals-obj-space renderer-data-normals-obj-space)
 		   (renderer-data-aabb-obj-space renderer-data-aabb-obj-space)
 		   (vbo vbo) (vao vao)) object
-    (tg:cancel-finalization object)
     (when +debug-mode+
-      (misc:dbg "destroy tree mesh ~a" (id object)))
-    (free-memory* (list renderer-data-vertices
-			renderer-data-texture
-			renderer-data-normals
-			renderer-data-normals-obj-space
-			renderer-data-tangents
-			renderer-data-tangents-obj-space
-			renderer-data-aabb-obj-space)
-		  vbo vao)
+      (misc:dbg "destroy triangle mesh ~a" (id object)))
     (setf vbo nil
 	  vao nil
 	  renderer-data-vertices nil
@@ -2418,16 +2422,23 @@
                    (children-host children)
 		   (material-params-host material-params)
 		   (compiled-shaders-host compiled-shaders)
+		   (renderer-data-vertices renderer-data-vertices)
+		   (renderer-data-texture  renderer-data-texture)
+		   (renderer-data-normals  renderer-data-normals)
+		   (renderer-data-tangents renderer-data-tangents)
+		   (renderer-data-normals-obj-space renderer-data-normals-obj-space)
+		   (renderer-data-tangents-obj-space  renderer-data-tangents-obj-space)
+		   (renderer-data-aabb-obj-space      renderer-data-aabb-obj-space)
 		   (aabb-host aabb))  object
     (with-slots (aabb) source
-      (setf vao-host              (vao              source)
-	    vbo-host              (vbo              source)
-	    texture-host          (texture-object   source)
-	    normal-map-host       (normal-map       source)
-	    triangles-host        (triangles        source)
-	    material-params-host  (material-params  source)
-	    compiled-shaders-host (compiled-shaders source)
-	    aabb-host             aabb)
+      (setf vao-host                          (vao              source)
+	    vbo-host                          (vbo              source)
+	    texture-host                      (texture-object   source)
+	    normal-map-host                   (normal-map       source)
+	    triangles-host                    (triangles        source)
+	    material-params-host              (material-params  source)
+	    compiled-shaders-host             (compiled-shaders source)
+	    aabb-host                         aabb)
       (do-children-mesh (child source)
 	(let ((new-child (make-instance 'triangle-mesh-shell)))
 	  (fill-mesh-data new-child child)
@@ -2780,11 +2791,8 @@
   (with-accessors ((framebuffer framebuffer) (depthbuffer depthbuffer)) object
     (when +debug-mode+
       (misc:dbg "destroy water ~a" (id object)))
-    (when framebuffer
-      (gl:delete-framebuffers  (list (framebuffer object))))
-    (when depthbuffer
-      (gl:delete-renderbuffers (list (depthbuffer object))))
-    (tg:cancel-finalization object)))
+    (setf framebuffer nil
+	  depthbuffer nil)))
 
 (defgeneric render-plane (object renderer))
 
@@ -3238,7 +3246,7 @@
     mesh))
 
 
-(defun gen-ceiling (x-size z-size x-divisions z-divisions h)
+(defun gen-ceiling (x-size z-size x-divisions z-divisions h &key (remove-orphaned-vertices nil))
   ;;             a        d
   ;;             +--------+--------+ ...
   ;;    x	 |\-      |\-      |
@@ -3386,7 +3394,8 @@
 						   (vec2 1.0 1.0)  ; d
 						   (vec2 0.0 1.0)) ; c
 					   +zero-vec+ nil t)))
-    (remove-orphaned-vertices mesh)
+    (when remove-orphaned-vertices
+      (remove-orphaned-vertices mesh))
     mesh))
 
 (defun gen-skydome (radius &optional (parallel-div 16.0) (meridian-div 16.0))

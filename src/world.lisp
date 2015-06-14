@@ -168,6 +168,7 @@
 
 (defmethod destroy ((object world))
   (destroy (skydome object))
+  (setf    (skydome object) nil)
   (map nil #'destroy (trees-bag object))
   (setf (trees-bag object) nil)
   (destroy (walls-bag object))
@@ -184,6 +185,8 @@
   (setf (gui object) nil)
   (quad-tree:iterate-nodes (entities object)
 			   #'(lambda (a) (map 'nil #'destroy (quad-tree:data a))))
+  (quad-tree:iterate-nodes (entities object)
+			   #'(lambda (a) (setf (quad-tree:data a) nil)))
   (setf (entities object) nil))
 
 (defmethod (setf main-state) (new-state (object world))

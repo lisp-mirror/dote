@@ -36,7 +36,7 @@
 
 (alexandria:define-constant +size-vertex-struct+ 4               :test #'=)
 
-(alexandria:define-constant +default-animation-table+ 
+(alexandria:define-constant +default-animation-table+
     '((stand 0 39 20) ; name starting-frame ending-frame fps
       (move 40 45 20)
       (attack 46 53 20)
@@ -49,8 +49,8 @@
   :test #'equalp)
 
 (defmacro define-header-offsets ((&rest names))
-  `(misc:define-offset-size md2-mesh md2 
-     ,@(loop 
+  `(misc:define-offset-size md2-mesh md2
+     ,@(loop
 	  for name in names
 	  for start from 0 by 4 collect
 	    `(,name ,start 4))))
@@ -120,8 +120,10 @@
 (defgeneric %alloc-arrays (object))
 
 (defmethod destroy :after ((object md2-mesh))
+  (when +debug-mode+
+    (misc:dbg "destroy md2 mesh ~a ~a" (id object) (map 'list #'id (frames object))))
   (map nil #'destroy (frames object)))
- 
+
 (define-header-offsets (magic-number
 			version
 			texture-width
@@ -143,8 +145,8 @@
 (defmacro define-header-function ((&rest names))
   `(progn
      ,@(loop for name in names collect
-	    `(misc:define-parse-header-chunk 
-		 (,name 
+	    `(misc:define-parse-header-chunk
+		 (,name
 		  ,(alexandria:format-symbol t "~@:(+md2-~a-offset+~)" name)
 		  ,(alexandria:format-symbol t "~@:(+md2-~a-size+~)" name)
 		  md2-mesh nil)))))
@@ -173,9 +175,9 @@
 (defun read-texture-coords (stream offset size w-texture h-texture)
   (let ((raw-texture (misc:read-array stream size :offset offset)))
     (declare ((simple-array (unsigned-byte 8)) raw-texture))
-    (loop 
+    (loop
        for i from 0 below (1- (length raw-texture)) by +size-textures-struct+ collect
-	 (list 
+	 (list
 	  (num:d/ (num:desired (misc:2byte->word (elt raw-texture i)
 						 (elt raw-texture (+ i 1))))
 		  (num:desired w-texture))
@@ -188,18 +190,18 @@
   (let ((raw-triangles (misc:read-array stream size :offset offset)))
     (declare ((simple-array (unsigned-byte 8)) raw-triangles))
     (alexandria:flatten
-     (loop 
+     (loop
 	for i from 0 below (1- (length raw-triangles)) by +size-triangles-struct+ collect
-	  (loop 
+	  (loop
 	     for j from i below (+ i +size-triangles-struct+) by +size-elem-triangles+ collect
 	       (misc:2byte->word (elt raw-triangles j)
 				 (elt raw-triangles (+ j 1))))))))
 
 (defstruct md2-vertex
-  pos 
+  pos
   normal)
 
-(defparameter *read-frame-queue* (lparallel.queue:make-queue :initial-contents '(t) 
+(defparameter *read-frame-queue* (lparallel.queue:make-queue :initial-contents '(t)
 							     :fixed-capacity 1))
 
 (defun read-frame (stream num-vertices offset)
@@ -216,21 +218,21 @@
 	 (vertices-normals (misc:read-array stream (* +size-vertex-struct+ num-vertices)))
 	 (vertices (misc:make-array-frame (floor (/ (length vertices-normals) 4))
 					  nil 'md2-vertex t))
-	 
+
 	 (normals (misc:make-array-frame (floor (/ (length vertices-normals) 4))
 					  nil 'vec t)))
-    (loop 
-       for i from 0 below (length vertices-normals) by 4 
+    (loop
+       for i from 0 below (length vertices-normals) by 4
        for j from 0 by 1 do
 	 (setf (elt vertices j)
-	       (make-md2-vertex 
-		:pos (vec 
+	       (make-md2-vertex
+		:pos (vec
 		      (+ (* (elt vertices-normals i) scale-x) translate-x)
 		      (+ (* (elt vertices-normals (+ i 1)) scale-y) translate-y)
 		      (+ (* (elt vertices-normals (+ i 2)) scale-z) translate-z)))))
-    (loop 
+    (loop
        for i from 3 below (length vertices-normals) by 4
-       for j from 0 by 1 do	 
+       for j from 0 by 1 do
 	 (setf (elt normals j)
 	       (elt +md2-normal-lut+ (elt vertices-normals i))))
     (dotimes (ct (length vertices))
@@ -272,10 +274,10 @@
 	    renderer-data-count-normals (mesh:renderer-data-count-normals start-frame)
 	    renderer-data-count-tangents (mesh:renderer-data-count-tangents start-frame))
       (gl-utils:copy-gl-array (mesh:renderer-data-texture start-frame)
-			      renderer-data-texture 
+			      renderer-data-texture
 			      renderer-data-count-texture)
       (gl-utils:copy-gl-array (mesh:renderer-data-tangents start-frame)
-			      renderer-data-tangents 
+			      renderer-data-tangents
 			      renderer-data-count-tangents)
       (setf triangles-mesh (triangles start-frame)
 	    renderer-data-normals-obj-space
@@ -319,12 +321,12 @@
 		   (frames frames)) object
       (with-open-file (stream file :if-does-not-exist :error :element-type +element-type+)
 	(macrolet ((parse-header-integer (name)
-		     `(misc:byte->int 
+		     `(misc:byte->int
 		       (,(alexandria:format-symbol t "~@:(parse-~a~)" name)
 			 object stream))))
 	  (let ((magic-num (misc:bytes->string (parse-magic-number object stream))))
 	    (if (string= magic-num +magic-number+)
-		(let* ((*read-frame-queue* (lparallel.queue:make-queue 
+		(let* ((*read-frame-queue* (lparallel.queue:make-queue
 					       :initial-contents '(t)
 					       :fixed-capacity 1))
 		       (version (parse-header-integer version))
@@ -340,53 +342,53 @@
 		       (offset-triangles (parse-header-integer offset-triangles))
 		       (offset-frames (parse-header-integer offset-frames))
 		       (texture-coords (read-texture-coords stream offset-texture-coords
-							    (* +size-textures-struct+ 
+							    (* +size-textures-struct+
 							       num-texture-coords)
 							    texture-width texture-height))
 		       ;; triangles = (v v v tex tex tex)
 		       (triangles (read-triangles-index stream offset-triangles
 							(* +size-triangles-struct+
 							   num-triangles))))
-		  (declare (ignore version num-texture-names)) 
+		  (declare (ignore version num-texture-names))
 		  (setf frames (misc:make-array-frame num-frames nil 'triangle-mesh t))
 		  (file-position stream offset-frames)
 		    (lparallel:pdotimes (count num-frames)
 		      (let ((vertices (read-frame stream num-vertices (+ offset-frames
 									 (* count frame-size)))))
 			(let ((frame-mesh (make-instance 'triangle-mesh)))
-			  (loop 
+			  (loop
 			     for i from 0 below (length triangles) by +size-triangles-chunk+ do
 			     ;; triangles = (v v v tex tex tex)
 			     ;; first triangle
 			       (texel-v frame-mesh (nth (nth (+ i 5) triangles) texture-coords))
-			       (normal-v frame-mesh (md2-vertex-normal 
-						     (elt 
+			       (normal-v frame-mesh (md2-vertex-normal
+						     (elt
 						      vertices
 						      (nth (+ i 2) triangles))))
 			       (tangent-v frame-mesh +y-axe+) ;; no normalmap yet for md2 mesh
-			       (vertex-v frame-mesh (md2-vertex-pos 
+			       (vertex-v frame-mesh (md2-vertex-pos
 						     (elt vertices (nth (+ i 2) triangles)))
 					 :gen-triangle t :gen-normal nil :manifoldp nil
 					 :compact-vertices nil)
 			     ;; second one
 			       (texel-v frame-mesh (nth (nth (+ i 4) triangles) texture-coords))
-			       (normal-v frame-mesh (md2-vertex-normal 
+			       (normal-v frame-mesh (md2-vertex-normal
 						     (elt
 						      vertices
 						      (nth (+ i 1) triangles))))
 			       (tangent-v frame-mesh +y-axe+)
-			       (vertex-v frame-mesh (md2-vertex-pos 
-						     (elt 
+			       (vertex-v frame-mesh (md2-vertex-pos
+						     (elt
 						      vertices
 						      (nth (+ i 1) triangles)))
 					 :gen-triangle t :gen-normal nil :manifoldp nil
 					 :compact-vertices nil)
 			     ;; third
 			       (texel-v frame-mesh (nth (nth (+ i 3) triangles) texture-coords))
-			       (normal-v frame-mesh (md2-vertex-normal 
+			       (normal-v frame-mesh (md2-vertex-normal
 						     (elt vertices (nth i triangles))))
 			       (tangent-v frame-mesh +y-axe+)
-			       (vertex-v frame-mesh (md2-vertex-pos 
+			       (vertex-v frame-mesh (md2-vertex-pos
 						     (elt
 						      vertices
 						      (nth i triangles)))
@@ -480,14 +482,14 @@
 	    (setf stop-animation t))
 	  (gl-utils:lerp-gl-array (renderer-data-vertices
 	  			   (svref frames starting-frame-idx))
-	  			  (renderer-data-vertices 
+				  (renderer-data-vertices
 	  			   (svref frames next-frame-idx))
 	  			  renderer-data-vertices
 	  			  renderer-data-count-vertices
 	  			  interpolation-factor)
 	  (gl-utils:lerp-gl-array (renderer-data-normals
 	  			   (svref frames starting-frame-idx))
-	  			  (renderer-data-normals 
+				  (renderer-data-normals
 	  			   (svref frames next-frame-idx))
 	  			  renderer-data-normals
 	  			  renderer-data-count-normals
@@ -519,7 +521,7 @@
 	      (reset aabb)
 	      (loop for i fixnum from 0 below renderer-data-count-vertices by 3 do
 		   (let* ((pos (the (unsigned-byte 32) i))
-			  (vert (vec (gl:glaref renderer-data-vertices pos) 
+			  (vert (vec (gl:glaref renderer-data-vertices pos)
 				     (gl:glaref renderer-data-vertices (+ pos 1))
 				     (gl:glaref renderer-data-vertices (+ pos 2)))))
 		     (expand aabb vert)))
@@ -606,8 +608,10 @@
       (load-tags model (res:get-resource-file (text-utils:strcat modeldir tags-file)
 					      +models-resource+
 					      :if-does-not-exists :error)))
-    (misc:dbg "error ~a" (parsing-errors model))
+    (when +debug-mode+
+      (misc:dbg "error md2 parsing ~a" (parsing-errors model)))
     (prepare-for-rendering model)
+    (map nil #'mesh::remove-mesh-data (frames model))
     (set-animation model :stand)
     model))
 
@@ -617,7 +621,7 @@
 
 (define-condition md2-tag-error (text-error)
   ()
-  (:report (lambda (condition stream) 
+  (:report (lambda (condition stream)
 	     (format stream "~a" (text condition)))))
 
 (defclass md2-tag () ())
@@ -640,4 +644,3 @@
 (misc:define-parse-header-chunk (offset-tags +tag-offset-tags-offset+
 					      +tag-offset-tags-size+
 					      md2-tag nil))
-

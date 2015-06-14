@@ -408,6 +408,7 @@
    :to-sexp
    :from-sexp
    :serialize
+   :serialize-to-stream
    :deserialize))
 
 (defpackage :ivec2
@@ -1580,6 +1581,7 @@
    :+available-level-floor+
    :+available-level-door+
    :+available-level-ceil+
+   :*raw-seed*
    :*game-hour*
    :*map*
    :*building-level*
@@ -1593,6 +1595,7 @@
    :*door-s*
    :*door-e*
    :*door-w*
+   :clean-global-wars
    :gen-normalmap-if-needed))
 
 (defpackage :game-state
@@ -1630,6 +1633,7 @@
    :celestial-body-position
    :movement-costs
    :map-state
+   :map-cache-dir
    :light-color
    :setup-game-hour
    :prepare-map-state
@@ -1887,13 +1891,10 @@
    :null-tile-element
    :out-of-bonds-tile-element
    :pickable-tile
-   :copy-pickable-tile
-   :pickable-tile-p
-   :pickable-tile-triangle-1
-   :pickable-tile-triangle-2
-   :pickable-tile-index-tr-1
-   :pickable-tile-index-tr-2
-   :make-pickable-tile
+   :triangle-1
+   :triangle-2
+   :index-tr-1
+   :index-tr-2
    :pickable-mesh-p
    :pickable-mesh
    :lookup-tile-triangle
@@ -1905,6 +1906,7 @@
    :setup-pickable-attribute
    :push-pickable-attribute
    :setup-lookup-triangle-element
+   :setup-lookup-triangle-element*
    :set-tile-highlight
    :turn-off-highligthed-tiles
    :add-highligthed-tiles-coords
@@ -1973,6 +1975,7 @@
 	:texture
 	:mesh)
   (:export
+   :clean-font-db
    :+window-texture-name+
    :+button-texture-name+
    :+button-pressed-texture-name+

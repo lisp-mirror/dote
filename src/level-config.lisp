@@ -273,19 +273,23 @@
      (interfaces:prepare-for-rendering mesh)
      (setf *floor* mesh)))
 
+(defun clean-global-wars ()
+  (setf *map*         nil
+	*trees*      '()
+	*furnitures* '()
+	*wall*       nil
+	*window*     nil
+	*door-n*     nil
+	*door-s*     nil
+	*door-e*     nil
+	*door-w*     nil
+	*floor*      nil)
+  (tg:gc :full t))
+
 (defmacro define-level (&body body)
   (ensure-cache-running
-    ;; clean a bit
-    (setf *map*         nil
-	  *trees*      '()
-	  *furnitures* '()
-	  *wall*       nil
-          *window*     nil
-	  *door-n*     nil
-	  *door-s*     nil
-	  *door-e*     nil
-	  *door-w*     nil
-	  *floor*      nil)
+    ;; clean a bit and free the memory associed with global variables
+    (clean-global-wars)
     (need-keyword ((first body) :set)
       (need-keyword ((second body) :seed)
 	(need-type ((third body) 'string)
