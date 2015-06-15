@@ -18,7 +18,7 @@
 
 (defsuite procedural-texture-suite (all-suite))
 
-(alexandria:define-constant +texture-dir+ 
+(alexandria:define-constant +texture-dir+
     (concatenate 'string (test-dir) "data/procedural-texture/")
   :test #'string=)
 
@@ -27,7 +27,7 @@
 
 (defun test-fuzzy-frame ()
   (let ((pixmap (pixmap::fuzzy-frame 512 0.039 0.25 20)))
-    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "frame.tga") 
+    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "frame.tga")
 			    :direction :output
  			    :if-exists :supersede :if-does-not-exist :create
  			    :element-type +targa-stream-element-type+)
@@ -37,7 +37,7 @@
 (defun test-fuzzy-circular-frame ()
   (let ((pixmap (pixmap::fuzzy-circular-frame 512 0.15 0.21 #xffffffaa
 				      #x00000000 0.05)))
-    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "circular-frame.tga") 
+    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "circular-frame.tga")
 			    :direction :output
  			    :if-exists :supersede :if-does-not-exist :create
  			    :element-type +targa-stream-element-type+)
@@ -52,7 +52,7 @@
 			   (matrix:sample@ lut x y)
 			   (matrix:sample@ lut x y)
 			   1.0))))
-    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "worley.tga") 
+    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "worley.tga")
 			    :direction :output
  			    :if-exists :supersede :if-does-not-exist :create
  			    :element-type +targa-stream-element-type+)
@@ -61,7 +61,7 @@
 
 (defun test-brick-wall (&optional (size 256))
   (let ((pixmap (pixmap::brick-wall size 64 32)))
-    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "bricks-wall.tga") 
+    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "bricks-wall.tga")
 			    :direction :output
  			    :if-exists :supersede :if-does-not-exist :create
  			    :element-type +targa-stream-element-type+)
@@ -70,7 +70,7 @@
 
 (defun test-stone-floor (size)
   (let ((pixmap (pixmap::stone-floor-road size 64 64)))
-    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "floor.tga") 
+    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "floor.tga")
 			    :direction :output
  			    :if-exists :supersede :if-does-not-exist :create
  			    :element-type +targa-stream-element-type+)
@@ -80,7 +80,7 @@
 (defun test-grass-stones-floor ()
     (let ((pixmap (grass-stones-floor 512))
 	  (name "grass-stone-floor.tga"))
-      (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ name) 
+      (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ name)
 			    :direction :output
  			    :if-exists :supersede :if-does-not-exist :create
  			    :element-type +targa-stream-element-type+)
@@ -89,7 +89,7 @@
 
 (defun test-glass-tile (&optional (size 256))
   (let ((pixmap (glass-tile size)))
-    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "glass-tile.tga") 
+    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "glass-tile.tga")
 			    :direction :output
  			    :if-exists :supersede :if-does-not-exist :create
  			    :element-type +targa-stream-element-type+)
@@ -98,7 +98,7 @@
 
 (defun test-starfish-tile (size)
   (let ((pixmap (starfish size)))
-    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "starfish.tga") 
+    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "starfish.tga")
 			    :direction :output
  			    :if-exists :supersede :if-does-not-exist :create
  			    :element-type +targa-stream-element-type+)
@@ -107,7 +107,7 @@
 
 (defun test-blood-splat (&optional (size pixmap::+default-size-pixmap-library+))
   (let ((pixmap (pixmap::blood-splat size)))
-    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "blood-splat.tga") 
+    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "blood-splat.tga")
 			    :direction :output
  			    :if-exists :supersede :if-does-not-exist :create
  			    :element-type +targa-stream-element-type+)
@@ -122,7 +122,7 @@
  			    :element-type +targa-stream-element-type+)
       (write-sequence (pixmap->tga-file pixmap) stream))
     "half-moon.tga"))
-    
+
 (defun test-moon ()
   (let ((pixmap (moon)))
     (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "full-moon.tga")
@@ -131,10 +131,10 @@
  			    :element-type +targa-stream-element-type+)
       (write-sequence (pixmap->tga-file pixmap) stream))
     "full-moon.tga"))
- 
+
 (defun test-floor-broken ()
   (let ((pixmap (pixmap::ruined-stone-floor-road)))
-    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "broken-floor.tga") 
+    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "broken-floor.tga")
 			    :direction :output
  			    :if-exists :supersede :if-does-not-exist :create
  			    :element-type +targa-stream-element-type+)
@@ -156,9 +156,9 @@
 (defun test-perlin-2d ()
    (let ((pixmap (with-draw-normalizated-coord-square (x y 256 pixmap 4)
 		   (let ((pixel (pixmap::range-0to1
-				 (noise:perlin-2d (d/ (d* (desired x) 256.0) 8.0) 
+				 (noise:perlin-2d (d/ (d* (desired x) 256.0) 8.0)
 						  (d/ (d* (desired y) 256.0) 8.0)))))
-		     (vector pixel pixel pixel 1.0)))))
+		     (vec4 pixel pixel pixel 1.0)))))
      (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "perlin-2d.ppm")
 			     :direction :output
 			     :if-exists :supersede :if-does-not-exist :create)
@@ -169,12 +169,12 @@
   (let* ((noise-offset (num:lcg-next))
 	 (pixmap (with-draw-normalizated-coord-square (x y size pixmap 4)
 		  (let* ((noise:*perlin-gradient-random-offset* noise-offset)
-			 (noise (pixmap::gen-fbm (d* 10.0 x ) (d*  10.0 y) 
-					 6 1.0 1.0 0.5 2.0 
+			 (noise (pixmap::gen-fbm (d* 10.0 x ) (d*  10.0 y)
+					 6 1.0 1.0 0.5 2.0
 					 :normalize t :range-0->1 t))
 			 (background (smoothstep-interpolate 0.0 0.5 x))
 			 (color (sb-cga:vec noise noise noise)))
-		    (concatenate 'vector
+		    (concatenate 'vec4
 				 (sb-cga:vec* color background)
 				 (vector 1.0))))))
     (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "fbm.ppm") :direction :output
@@ -190,8 +190,8 @@
 				  (noise:perlin-3d
 				   (d/ (d* (desired x) 256.0) 8.0)
 				   (d/ (d* (desired y) 256.0) 8.0) 0.0))))
-		      (vec4:vec4 pixel pixel pixel 1.0)))))
-      (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "perlin-3d-ref.ppm") 
+		      (vec4 pixel pixel pixel 1.0)))))
+      (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "perlin-3d-ref.ppm")
 			      :direction :output
 			      :if-exists :supersede :if-does-not-exist :create)
 	(format stream "~a" (pixmap:matrix->ppm* pixmap 255))))
@@ -205,8 +205,8 @@
 				  (noise:perlin-2d
 				   (d/ (d* (desired x) 256.0) 8.0)
 				   (d/ (d* (desired y) 256.0) 8.0)))))
-		      (vec4:vec4 pixel pixel pixel 1.0)))))
-      (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "perlin-2d-ref.ppm") 
+		      (vec4 pixel pixel pixel 1.0)))))
+      (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "perlin-2d-ref.ppm")
 			      :direction :output
 			      :if-exists :supersede :if-does-not-exist :create)
 	(format stream "~a" (pixmap:matrix->ppm* pixmap 255))))
@@ -347,22 +347,22 @@
 		      test-voronoize-starfish
 		      test-brick-wall
 		      test-grass-stones-floor
-		      test-perlin-2d-ref 
-		      test-grass 
-		      test-half-moon 
-		      test-moon 
-		      test-floor-broken 
-		      test-fbm 
-		      test-crescent-moon 
+		      test-perlin-2d-ref
+		      test-grass
+		      test-half-moon
+		      test-moon
+		      test-floor-broken
+		      test-fbm
+		      test-crescent-moon
 		      test-wood
 		      test-wood-2
 		      test-wood-3
 		      test-wood-4
-		      test-smoke 
+		      test-smoke
 		      test-sun
 		      test-sun-cheap
 		      test-dry-soil
-		      test-floor-fancy test-perlin-2d 
+		      test-floor-fancy test-perlin-2d
 		      test-glass-tile test-blood-splat
 		      test-perlin-3d-ref
 		      test-clouds
@@ -373,7 +373,7 @@
 			(let* ((tmp (funcall ,(symbol-function i)))
 			       (file-name (concatenate 'string +texture-dir+ tmp))
 			       (tmp-file-name (concatenate 'string +texture-dir-tmp+ tmp)))
-			  (if (= (fs:file-hash file-name) 
+			  (if (= (fs:file-hash file-name)
 				 (fs:file-hash tmp-file-name))
 			      (progn
 				(uiop/filesystem:delete-file-if-exists tmp-file-name)

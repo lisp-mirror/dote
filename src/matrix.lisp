@@ -154,9 +154,9 @@
   (defgeneric rotate-matrix-90-degree-ccw (object fill-value pivot))
 
   (defgeneric rotate-matrix-90-degree-cw (object fill-value pivot))
-  
+
   (defgeneric translate-matrix (object fill-value dx dy))
-  
+
   (defgeneric data-as-list (object))
 
   (defgeneric element-type (object))
@@ -571,7 +571,7 @@ else
 (defun confine-coord (val max)
   (alexandria:clamp val (desired 0.0) (desired max)))
 
-(defun bilinear-interpolation (matrix x y 
+(defun bilinear-interpolation (matrix x y
 			       &key (interpolate-fn #'interpolate)
 				 (behaivour-on-border-fn #'repeat-periodic-coord))
   ;; a          b
@@ -600,7 +600,7 @@ else
 	 (inter-x2 (funcall interpolate-fn dx d c))
 	 (inter-y  (funcall interpolate-fn dy inter-x1 inter-x2)))
     inter-y))
-			  
+
 (defmethod translate-matrix ((object matrix) fill-value dx dy)
   (declare (optimize (speed 3) (safety 0) (debug 0)))
   (declare (fixnum dx dy))

@@ -22,42 +22,42 @@
 				    (declare (ignore char1 num))
 				    (let ((hex (do ((ch (read-char stream nil nil) (read-char stream nil nil))
 						    (res '()))
-						   ((not (cl-ppcre:scan "(?i)[a,b,c,d,e,f,0-9]" (string ch))) 
+						   ((not (cl-ppcre:scan "(?i)[a,b,c,d,e,f,0-9]" (string ch)))
 						    (progn
 						      (unread-char ch stream)
 						      (reverse res)))
 						 (push ch res))))
 				      (int->vec4 (hex-list->int hex)))))
-  
+
   (defun hex-digit->int (hex)
     (position hex '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\a #\b #\c #\d #\e #\f)
 	      :test #'char-equal))
-  
+
   (defun hex-list->int (hex)
     (do ((i (reverse hex) (rest i))
 	 (ct 0 (1+ ct))
 	 (res 0))
 	((null i) res)
       (setf res (+ res (* (expt 16 ct) (hex-digit->int (first i)))))))
-  
+
   (defun float->byte (f)
     (declare (desired-type f))
     (floor (d* 255.0 f)))
-  
+
   (defun byte->float (f)
     (d/ (desired f) 255.0))
-  
+
   (defun int->bytes (octects)
     (do ((ct 0 (1+ ct))
 	 (oct octects (ash oct -8))
 	 (res nil))
 	((not (< ct 4)) res)
       (push (logand oct #xff) res)))
-  
+
   (defun int->vec4 (octects)
     (declare (optimize (safety 0) (speed 3) (debug 0)))
     (map 'vec4 #'byte->float (int->bytes octects)))
-  
+
   (defun byte-vector->vec4 (bytes)
     (map 'vec4 #'byte->float bytes))
 
@@ -75,7 +75,7 @@
   (vec4 (round (alexandria:lerp 0.5 (elt color 0) (lcg-next-upto 256)))
 	(round (alexandria:lerp 0.5 (elt color 1) (lcg-next-upto 256)))
 	(round (alexandria:lerp 0.5 (elt color 2) (lcg-next-upto 256)))))
-       
+
 (defun rgb->hsv (r g b)
   (declare (optimize (safety 0) (speed 3) (debug 0)))
   (declare (desired-type r g b))
@@ -88,8 +88,8 @@
 		0.0))
 	 (h (if (epsilon= s 0.0)
 		-1.0
-		(let ((h-tmp (d* 60.0 
-				 (cond 
+		(let ((h-tmp (d* 60.0
+				 (cond
 				   ((epsilon= max-rgb r)
 				    (d/ (d- g b) delta))
 				   ((epsilon= max-rgb g)
@@ -100,7 +100,7 @@
 		    (d+ 60.0 h-tmp))
 		  h-tmp))))
     (sb-cga:vec h s v)))
-		  
+
 (defun rgb->hsv* (rgb)
   (rgb->hsv (elt rgb 0) (elt rgb 1) (elt rgb 2)))
 
@@ -128,7 +128,7 @@
 		((d<= 5.0 hp 6.0)
 		 (vec4 chroma 0.0 x)))))
     (map 'vec4 #'(lambda (a) (d+ a delta)) rgb)))
-    
+
 (defun hsv->rgb* (hsv)
   (hsv->rgb (elt hsv 0) (elt hsv 1) (elt hsv 2)))
 
@@ -261,7 +261,7 @@
     (make-load-form-saving-slots object
 				 :slot-names '(intensity color)
 				 :environment environment))
-  
+
   (defmethod print-object ((object gradient-color) stream)
     (print-unreadable-object (object stream :type nil :identity nil)
       (format stream "~f -> ~a" (intensity object) (color object))))
@@ -301,8 +301,8 @@
       (let* ((actual-intensity (alexandria:clamp intensity 0.0 1.0))
 	     (interval-pos (position-if #'(lambda (a) (d>= a actual-intensity)) colors
 					:key #'intensity))
-	     (interval (if (= interval-pos 0) 
-			   (list 0 1) 
+	     (interval (if (= interval-pos 0)
+			   (list 0 1)
 			   (list (1- interval-pos) interval-pos)))
 	     (m (d/ 1.0 (d- (intensity (elt colors (second interval)))
 			    (intensity (elt colors (first interval))))))
@@ -331,11 +331,11 @@
 
 (alexandria:define-constant +skydome-gradient+ (make-gradient
 						(make-gradient-color 0.0 §c000000ff)
-						(make-gradient-color (* 0.04167 3) §cffa92fff) 
-						(make-gradient-color (* 0.04167 6) §cf86161ff) 
-						(make-gradient-color (* 0.04167 8) +standard-sky-sunny-color+) 
+						(make-gradient-color (* 0.04167 3) §cffa92fff)
+						(make-gradient-color (* 0.04167 6) §cf86161ff)
+						(make-gradient-color (* 0.04167 8) +standard-sky-sunny-color+)
 						(make-gradient-color (* 0.04167 19) +standard-sky-sunny-color+)
-						(make-gradient-color (* 0.04167 20) §cf86161ff) 
-						(make-gradient-color (* 0.04167 21) §cffa92fff) 
+						(make-gradient-color (* 0.04167 20) §cf86161ff)
+						(make-gradient-color (* 0.04167 21) §cffa92fff)
 						(make-gradient-color (* 0.04167 24) §c000000ff))
   :test #'(lambda (a b) (declare (ignore a b)) t))

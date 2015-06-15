@@ -85,10 +85,10 @@
 				 for c1 from 0 below kernel-w do
 				   (with-check-borders
 				       (c r 0 0 (1- (width object)) (1- (height object)))
-				     (setf sum (kernel-+ sum 
+				     (setf sum (kernel-+ sum
 							 (kernel-* (matrix-elt object r c)
 								   (matrix-elt kernel r1 c1))))
-				     (setf sum (kernel-+ sum 
+				     (setf sum (kernel-+ sum
 							 (kernel-* el
 								   (matrix-elt kernel r1 c1)))))))
 			 (setf (matrix-elt res y x)
@@ -132,14 +132,14 @@
 (defun ubvec4-kernel-+ (el delta)
   (declare (optimize (speed 3) (safety 0) (debug 0)))
   (declare (ubvec4 el delta))
-  (map 'ubvec4 #'(lambda (a b) (alexandria:clamp (f+ (the fixnum a) (the fixnum b)) 0 255)) 
+  (map 'ubvec4 #'(lambda (a b) (alexandria:clamp (f+ (the fixnum a) (the fixnum b)) 0 255))
        el delta))
-  
+
 (defun ubvec4-kernel-* (el mult)
   (declare (optimize (speed 3) (safety 0) (debug 0)))
   (declare (ubvec4 el))
   (declare (desired-type mult))
-  (map 'ubvec4 #'(lambda (a) (alexandria:clamp 
+  (map 'ubvec4 #'(lambda (a) (alexandria:clamp
 			      (the fixnum (round (d* (desired (the fixnum a)) mult))) 0 255))
        el))
 
@@ -224,24 +224,24 @@
     (ploop-matrix (object x y)
       (let* ((el (matrix-elt object y x))
 	     (sum (make-fresh-ubvec4)))
-	(declare (ubvec4 el sum))	
+	(declare (ubvec4 el sum))
 	(loop
-	   for r fixnum 
-	   from (f- (the fixnum y) (the fixnum (truncate (/ kernel-h 2)))) below 
+	   for r fixnum
+	   from (f- (the fixnum y) (the fixnum (truncate (/ kernel-h 2)))) below
 	     (f+ kernel-h y)
 	   for r1 fixnum from 0 below kernel-h do
 	     (loop
-		for c fixnum 
+		for c fixnum
 		from (f- (the fixnum x) (truncate (/ kernel-w 2))) below (f+ kernel-w x)
 		for c1 fixnum from 0 below kernel-w do
 		  (with-check-borders
-		       (c r 0 0 (f- (the fixnum (width object)) 1) 
+		       (c r 0 0 (f- (the fixnum (width object)) 1)
 			  (f- (the fixnum (height object)) 1))
 		    ;; (with-check-borders
 		    ;; 	  (c r 0 0 (1- (width object)) (1- (height object)))
 		    (setf sum (ubvec4-kernel-+ sum (ubvec4-kernel-* (matrix-elt object r c)
 								    (matrix-elt kernel r1 c1))))
-		    (setf sum (ubvec4-kernel-+ sum (ubvec4-kernel-* el 
+		    (setf sum (ubvec4-kernel-+ sum (ubvec4-kernel-* el
 								    (matrix-elt kernel r1 c1)))))))
 	(setf (matrix-elt res y x)
 	      (round-all sum :rounding-function round-fn))))
@@ -308,7 +308,7 @@
 					(tile-divisions (floor (/ (width object) 10)))
 					(mean 8)
 					(sigma 2)
-					(max 10) 
+					(max 10)
 					(average-size 5))
   (let ((worley (2d-worley-lut-indexed size tile-divisions 0 0 mean sigma max))
 	(pixmap (make-pixmap-frame size size))
@@ -354,12 +354,12 @@
 	 (diff-b (if (= (- max-b min-b) 0) 1e-5 (desired (- max-b min-b))))
 	 (diff-a (if (= (- max-a min-a) 0) 1e-5 (desired (- max-a min-a))))
 	 (n (desired (* (width object1) (height object1))))
-	 (diffs (map 'vector #'(lambda (a b) 
+	 (diffs (map 'vector #'(lambda (a b)
 				 (map 'vector #'(lambda (c d) (expt (- c d) 2))
 				      a b))
 		     (data object1) (data object2))))
     (let ((res (vec4 0.0 0.0 0.0 0.0)))
-      (loop for i across diffs do 
+      (loop for i across diffs do
 	   (setf (elt res 0) (desired (+ (elt res 0) (desired (elt i 0))))
 		 (elt res 1) (desired (+ (elt res 1) (desired (elt i 1))))
 		 (elt res 2) (desired (+ (elt res 2) (desired (elt i 2))))
@@ -383,7 +383,7 @@
    	      (= 3 (the fixnum (depth object)))))
   (let ((res (make-pixmap-frame (width object) (height object))))
     (setf (data res) (data
-		      (map-matrix object 
+		      (map-matrix object
 				  #'(lambda (a)
 				      (let ((value (floor (d+ (d* 0.2126 (desired (elt a 0))) ; r
 							      (d* 0.7152 (desired (elt a 1))) ; g
@@ -403,7 +403,7 @@
     (let ((hash 0))
       (loop for i from 0 below 64 do
 	   (let ((pix (elt (elt (data scaled) i) 0))
-		 (pix-before (elt (elt (data scaled) 
+		 (pix-before (elt (elt (data scaled)
 				       (mod (1- i) (* +dhash-w+ +dhash-h+))) 0)))
 	     (when (< pix pix-before)
 	       (setf (ldb (byte 1 i) hash) 1))))
@@ -434,7 +434,7 @@
   (declare (pixmap object))
   (declare (fixnum x y))
   (matrix-elt object y x))
-  
+
 (defmethod (setf pixel@) (color (object pixmap) x y)
   (declare (optimize (speed 3) (safety 0) (debug 0)))
   (declare (pixmap object))
@@ -450,7 +450,7 @@
 	(y-abs (the fixnum (round (d* y (desired (the fixnum (height object))))))))
     (declare (fixnum x-abs y-abs))
     (let ((pixel (funcall conversion-fn (funcall function x y))))
-      (setf (matrix-elt-ubvec4 object y-abs x-abs) pixel))))  
+      (setf (matrix-elt-ubvec4 object y-abs x-abs) pixel))))
 
 (defmethod draw-normalized-coord ((object pixmap) x y function)
   (declare (optimize (speed 3) (safety 0) (debug 0)))
@@ -460,8 +460,8 @@
   (let ((x-abs (the fixnum (round (d* x (desired (the fixnum (width object)))))))
 	(y-abs (the fixnum (round (d* y (desired (the fixnum (height object))))))))
     (declare (fixnum x-abs y-abs))
-    (let ((pixel (map 'ubvec4 #'float->byte (funcall function x y))))
-      (setf (matrix-elt-ubvec4 object y-abs x-abs) pixel))))  
+    (let ((pixel (map 'ubvec4 #'float->byte (the vec4 (funcall function x y)))))
+      (setf (matrix-elt-ubvec4 object y-abs x-abs) pixel))))
 
 (defmethod draw-float-normalized-coord ((object pixmap) x y function)
   (declare (optimize (speed 3) (safety 0) (debug 0)))
@@ -471,7 +471,7 @@
   (let ((x-abs (the fixnum (round (d* x (desired (the fixnum (width object)))))))
 	(y-abs (the fixnum (round (d* y (desired (the fixnum (height object))))))))
     (declare (fixnum x-abs y-abs))
-    (let ((pixel (map 'vec4 #'identity (funcall function x y))))
+    (let ((pixel (map 'vec4 #'identity (the vec4 (funcall function x y)))))
       ;;(misc:dbg "set @ ~a,~a ~a,~a" x y x-abs y-abs)
       (setf (matrix-elt-vec4 object y-abs x-abs) pixel))))
 
@@ -626,7 +626,7 @@
 				 dest
 				 x y x-dest y-dest))))))
 
-(defmethod tileize  ((object pixmap) 
+(defmethod tileize  ((object pixmap)
 		     &key (blend-replace-fn (guess-correct-replace-fn object)))
   (assert (= 4 (depth object)))
 
@@ -637,7 +637,7 @@
   ;; | sw | se |
   ;; |    |    |
   ;; +----+----+
-  
+
   (let* ((w (width object))
 	 (h (height object))
 	 (w/2 (floor (/ w 2)))
@@ -652,17 +652,17 @@
 	 (se-dest (submatrix object w/2 h/2 w/2 h/2)))
     (loop-matrix (nw x y)
         (blend-tileize nw
-    		(matrix-elt nw-dest y x) 
-    		(matrix-elt se-dest y x) 
-    		(matrix-elt nw y x) 
-    		(matrix-elt se y x) 
+    		(matrix-elt nw-dest y x)
+    		(matrix-elt se-dest y x)
+    		(matrix-elt nw y x)
+    		(matrix-elt se y x)
     		x y))
     (loop-matrix (ne x y)
        (blend-tileize-rot ne
       		      (matrix-elt ne-dest y x)
       		      (matrix-elt sw-dest y x)
-      		      (matrix-elt ne y x) 
-      		      (matrix-elt sw y x) 
+      		      (matrix-elt ne y x)
+      		      (matrix-elt sw y x)
       		      x y))
     (blit nw-dest object 0 0 0 0 :function-blend blend-replace-fn)
     (blit ne-dest object 0 0 w/2 0 :function-blend blend-replace-fn)
@@ -675,14 +675,14 @@
 	 (h (desired (height pixmap)))
 	 (norm-x (d/ (desired x)
 		     (desired w)))
-	 (norm-y (d/ (d- (dabs (d- (desired y) h)) 1.0) 
+	 (norm-y (d/ (d- (dabs (d- (desired y) h)) 1.0)
 		     (d- h 1.0))))
     (tileize-interpolate norm-x norm-y dest-1 dest-2 src-1 src-2)))
 
 (defun blend-tileize (pixmap dest-1 dest-2 src-1 src-2 x y)
   (let* ((w (desired (width pixmap)))
 	 (h (desired (height pixmap)))
-	 (norm-x (d/ (d- (dabs (d- (desired x) w)) 1.0) 
+	 (norm-x (d/ (d- (dabs (d- (desired x) w)) 1.0)
 		     (d- w 1.0)))
 	 (norm-y (d/ (d- (dabs (d- (desired y) h)) 1.0)
 		     (d- h 1.0))))
@@ -697,8 +697,8 @@
 			 (d< norm-y 1e-5))
 		    1.0)
 		   (t
-		    (d- 1.0 (d/ (d* norm-x norm-y) 
-				(d+ (d* norm-x norm-y) 
+		    (d- 1.0 (d/ (d* norm-x norm-y)
+				(d+ (d* norm-x norm-y)
 				    (d* (d- 1.0 norm-x)
 					(d- 1.0 norm-y))))))))
 	 (floatp (vec4p src-1))
@@ -708,7 +708,7 @@
 	  (elt dest-2 3) act-alpha)
     (when (/= (elt dest-1 3) 0)
       (loop for i from 0 below 3 do
-	   (let* ((value (d/ (dlerp weight 
+	   (let* ((value (d/ (dlerp weight
 				   (desired (* (elt src-2 i) (elt src-2 3)))
 				   (desired (* (elt src-1 i) (elt src-1 3))))
 			     alpha))
@@ -717,7 +717,7 @@
 		   (elt dest-2 i) act-value))))))
 
 (defmethod average-color ((object pixmap) aabb)
-  (let* ((x-min (elt aabb 0)) 
+  (let* ((x-min (elt aabb 0))
 	 (y-min (elt aabb 1))
 	 (x-max (elt aabb 2))
 	 (y-max (elt aabb 3))
@@ -865,7 +865,7 @@
   (append '(max-color) (call-next-method)))
 
 (defmethod matrix->pixmap ((object matrix))
-  (make-instance 'pixmap 
+  (make-instance 'pixmap
 		 :depth (if (and (data object)
 				 (> (length (data object)) 0))
 			    (if (numberp (elt (data object) 0))
@@ -965,7 +965,7 @@
 		   (width width) (height height) (max-color max-color)
 		   (data data) (depth depth)) object
     (format stream "~a~%~a~%~a~%~a~%" magic-number width height max-color)
-    (when (and (data object) 
+    (when (and (data object)
 	       (> (length (data object)) 0))
       (let ((rows (mapcar #'(lambda (l) (misc:split-into-sublist l +ppm-max-row-length+))
 			  (misc:split-into-sublist (data-as-list object) (width object)))))

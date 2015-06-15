@@ -2,41 +2,41 @@
 
 (alexandria:define-constant +default-size-pixmap-library+ 512 :test #'=)
 
-(defmacro with-draw-normalizated-coord-square ((x y size pixmap depth &key (bindings nil)) 
+(defmacro with-draw-normalizated-coord-square ((x y size pixmap depth &key (bindings nil))
 					       &body body)
   `(let* ((,pixmap (make-pixmap-frame ,size ,size ,depth)))
-     (ploop-matrix (,pixmap ,x ,y :bindings ,bindings) 
+     (ploop-matrix (,pixmap ,x ,y :bindings ,bindings)
        (draw-normalized-coord ,pixmap
 			      (d/ (desired ,x) (desired ,size))
 			      (d/ (desired ,y) (desired ,size))
 			      (lambda (,(intern "X") ,(intern "Y")) ,@body)))
      ,pixmap))
 
-(defmacro with-draw-normalizated-coord ((x y w h pixmap depth &key (bindings nil)) 
+(defmacro with-draw-normalizated-coord ((x y w h pixmap depth &key (bindings nil))
 					&body body)
   `(let* ((,pixmap (make-pixmap-frame ,w ,h ,depth)))
-     (ploop-matrix (,pixmap ,x ,y :bindings ,bindings) 
+     (ploop-matrix (,pixmap ,x ,y :bindings ,bindings)
        (draw-normalized-coord ,pixmap
 			      (d/ (desired ,x) (desired ,w))
 			      (d/ (desired ,y) (desired ,h))
 			      (lambda (,(intern "X") ,(intern "Y")) ,@body)))
      ,pixmap))
 
-(defmacro with-draw-float-normalizated-coord-square ((x y size pixmap depth 
-							&key (bindings nil)) 
+(defmacro with-draw-float-normalizated-coord-square ((x y size pixmap depth
+							&key (bindings nil))
 					     &body body)
   `(let* ((,pixmap (make-pixmap-frame ,size ,size ,depth)))
-     (ploop-matrix (,pixmap ,x ,y :bindings ,bindings) 
+     (ploop-matrix (,pixmap ,x ,y :bindings ,bindings)
        (draw-float-normalized-coord ,pixmap
 				    (d/ (desired ,x) (desired ,size))
 				    (d/ (desired ,y) (desired ,size))
 				    (lambda (,(intern "X") ,(intern "Y")) ,@body)))
      ,pixmap))
 
-(defmacro with-draw-float-normalizated-coord ((x y w h pixmap depth &key (bindings nil)) 
+(defmacro with-draw-float-normalizated-coord ((x y w h pixmap depth &key (bindings nil))
 					     &body body)
   `(let* ((,pixmap (make-pixmap-frame ,w ,h ,depth)))
-     (ploop-matrix (,pixmap ,x ,y :bindings ,bindings) 
+     (ploop-matrix (,pixmap ,x ,y :bindings ,bindings)
        (draw-float-normalized-coord ,pixmap
 				    (d/ (desired ,x) (desired ,w))
 				    (d/ (desired ,y) (desired ,h))
@@ -52,14 +52,14 @@
      ,@body))
 
 (defmacro with-standard-generated-pixmap ((pixmap w h) &body body)
-  `(with-draw-normalizated-coord (x y ,w ,h ,pixmap 4 
-					  :bindings 
+  `(with-draw-normalizated-coord (x y ,w ,h ,pixmap 4
+					  :bindings
 					  (*perlin-gradient-random-offset* *max-dist-to-store* *lcg-seed*))
      ,@body))
 
 (defmacro with-standard-float-generated-pixmap ((pixmap w h) &body body)
-  `(with-draw-float-normalizated-coord (x y ,w ,h ,pixmap 4 
-						:bindings 
+  `(with-draw-float-normalizated-coord (x y ,w ,h ,pixmap 4
+						:bindings
 						(*perlin-gradient-random-offset* *max-dist-to-store* *lcg-seed*))
      ,@body))
 
@@ -69,7 +69,7 @@
 (defmethod gen-normal-map ((object pixmap) &key (roughness 1.0))
   (let ((edges (map-matrix
 		(psobel-edge-detection
-		 (map-matrix (to-grayscale object) 
+		 (map-matrix (to-grayscale object)
 			     #'(lambda (a) (color-utils:byte->float (elt a 0)))))
 		#'(lambda (a)
 		    (sb-cga-utils:safe-normalize
@@ -77,7 +77,7 @@
 			  (d+ (d/ (elt a 1) 2.0) 0.5)
 			  (d+ (d/ (d- 1.0 (d* roughness (elt a 2))) 2.0) 0.5)))))))
     (matrix->pixmap (map-matrix edges
-				#'(lambda (a) 
+				#'(lambda (a)
 				    (ubvec4 (color-utils:float->byte (elt a 0))
 						      (color-utils:float->byte (elt a 1))
 						      (color-utils:float->byte (elt a 2))
@@ -96,10 +96,10 @@
 				  :width size
 				  :data (matrix:data
 					 (pgaussian-blur-separated
-					  (with-draw-normalizated-coord-square 
+					  (with-draw-normalizated-coord-square
 					      (x y size pixmap 4
 						 :bindings (*perlin-gradient-random-offset*))
-					    (let* ((turbulence (d* fuzziness 
+					    (let* ((turbulence (d* fuzziness
 								   (gen-fbm x y 6 1.0
 									    1.0 0.65 2.0
 									    :normalize nil)))
@@ -146,7 +146,7 @@
       (write-sequence (pixmap->tga-file pixmap) stream))
     t))
 
-(defun wood-log-texture (&optional 
+(defun wood-log-texture (&optional
 			   (height +default-size-pixmap-library+)
 			   (color-1 §c583926ff)
 			   (color-2 §c6F4832ff)
@@ -163,14 +163,14 @@
 			       (d/ (desired x) (desired size))
 			       (d/ (desired y) (desired size))
 			       (lambda (x y)
-				 (let* ((p (vector 
+				 (let* ((p (vector
 					    (d- translate-x (desired x))
 					    (d- translate-y (desired y))))
 					(magn-p (2d-utils:2d-vector-magn p))
 					(displ (d+
 						(dsin
 						 (d+
-						  (d* 2.0 
+						  (d* 2.0
 						      (perlin-2d
 						       (d* (desired x) 10.0)
 						       (d* (desired y) 10.0)))
@@ -182,11 +182,11 @@
 						      (d* (desired x) 20.0)
 						      (d* (desired y) 20.0)))
 						 -1.0 1.0)))
-				   (map 'vec4 #'(lambda (a b) 
+				   (map 'vec4 #'(lambda (a b)
 						    (dlerp (dabs weight) a b))
 					color-1
 					color-2)))))
-      (ncopy-matrix-into-pixmap pixmap (rotate-matrix 
+      (ncopy-matrix-into-pixmap pixmap (rotate-matrix
 					(scale-matrix pixmap scale-factor-x scale-factor-y)
 					rotation-angle :fill-value (ubvec4 0 0 0)
 					:repeat t)
@@ -202,10 +202,10 @@
 		    (let ((y-offset (/ (desired (floor (d* 4.0 x))) 4)))
 		      (sample@ slice (d* x 4.0) (d+ y y-offset) :interpolation t :clamp nil)))))
     (ploop-matrix (pixmap x y)
-       (draw-normalized-coord-custom-conversion pixmap 
+       (draw-normalized-coord-custom-conversion pixmap
 						(d/ (desired x) (desired height))
 						(d/ (desired y) (desired height))
-						draw-fn 
+						draw-fn
 						#'identity))
     pixmap))
 
@@ -235,7 +235,7 @@
 					       *max-dist-to-store*))
 	    (let* ((float-x (d/ (desired x) (desired (width pixmap))))
 		   (float-y (d/ (desired y) (desired (height pixmap))))
-		   (turbulence (d* 20.0 (gen-abs-fbm float-x float-y 6 1.0 1.0 0.65 2.0 
+		   (turbulence (d* 20.0 (gen-abs-fbm float-x float-y 6 1.0 1.0 0.65 2.0
 						     :normalize nil)))
 		   (actx (d+ translate-x (desired x) turbulence))
 		   (acty (d+ translate-y (desired y) turbulence))
@@ -249,7 +249,7 @@
 						       1.0))
 				     (data pixmap))))
 	  (ploop-matrix (pixmap x y :bindings (*perlin-gradient-random-offset*))
-	    (setf (pixel@ pixmap x y) 
+	    (setf (pixel@ pixmap x y)
 		  (map 'ubvec4 #'float->byte
 		       (let ((strain (rock-strain (d/ (desired x) (desired size))
 						  (d/ (desired y) (desired size))
@@ -273,7 +273,7 @@
 				    (d- 1.0 (byte->float (elt (pixel@ frame x y) 3))))))))
 	  (values pixmap "dry-stone-wall"))))))
 
-(defun dry-stone-floor (&optional 
+(defun dry-stone-floor (&optional
 			     (mean 8) (sigma 1) (max 9)
 			     (gradient
 			      (make-gradient
@@ -285,7 +285,7 @@
   (with-random-perlin-gradient-offset
     (let* ((size 256)
 	   (granularity 80)
-	   (worley (2d-worley-lut-indexed size granularity 0 0 
+	   (worley (2d-worley-lut-indexed size granularity 0 0
 					  mean sigma max))
 	   (pixmap (make-pixmap-frame size size)))
       (ploop-matrix (worley x y :bindings (*perlin-gradient-random-offset*
@@ -298,11 +298,11 @@
 		(smoothstep-interpolate 0.0 10.0 (elt (pixel@ worley x y) 2))))))
       (setf worley (pgaussian-blur-separated worley #'identity 10))
       (ploop-matrix (pixmap x y :bindings (*perlin-gradient-random-offset*))
-	(draw-normalized-coord pixmap 
+	(draw-normalized-coord pixmap
 			       (d/ (desired x) (desired size))
 			       (d/ (desired y) (desired size))
 			       #'(lambda (x y)
-				   (let ((noise (gen-fbm x y 6 10.0 1.0 0.65 2.0 
+				   (let ((noise (gen-fbm x y 6 10.0 1.0 0.65 2.0
 							 :normalize t :range-0->1 t)))
 				     (multiply-color
 				      (byte-vector->vec4 (sample@ worley x y :clamp t))
@@ -313,7 +313,7 @@
   (let ((grass (grass size))
 	(pav (dry-stone-floor)))
     (ploop-matrix (grass x y :bindings (*perlin-gradient-random-offset*))
-      (draw-normalized-coord 
+      (draw-normalized-coord
        grass
        (d/ (desired x) (desired size))
        (d/ (desired y) (desired size))
@@ -336,7 +336,7 @@
 	(ploop-matrix (pixmap x y :bindings (*perlin-gradient-random-offset*))
 	  (let* ((float-x (d/ (desired x) (desired (width pixmap))))
 		 (float-y (d/ (desired y) (desired (height pixmap))))
-		 (turbulence (d* 20.0 (gen-abs-fbm float-x float-y 6 1.0 1.0 0.65 2.0 
+		 (turbulence (d* 20.0 (gen-abs-fbm float-x float-y 6 1.0 1.0 0.65 2.0
 						   :normalize nil)))
 		 (translate-x (num:lcg-next-in-range 0.0 (d* 2.0 (desired size))))
 		 (translate-y (num:lcg-next-in-range 0.0 (d* 2.0 (desired size))))
@@ -352,7 +352,7 @@
 						     1.0))
 				   (data pixmap))))
 	(ploop-matrix (pixmap x y :bindings (*perlin-gradient-random-offset*))
-	  (setf (pixel@ pixmap x y) 
+	  (setf (pixel@ pixmap x y)
 		(map 'vector #'float->byte
 		     (let ((strain (rock-strain (d/ (desired x) (desired size))
 						(d/ (desired y) (desired size))
@@ -374,10 +374,10 @@
 			 0.4 1.0))))))
 	(values pixmap "grass-dirty")))))
 
-(defun 2d-worley-lut (size granularity displacement-x displacement-y 
-		      mean sigma max fun 
-		      &key 
-			(dist-fn (euclidean-distance)) 
+(defun 2d-worley-lut (size granularity displacement-x displacement-y
+		      mean sigma max fun
+		      &key
+			(dist-fn (euclidean-distance))
 			(sort-fn #'(lambda (a) (declare (vector a))(sort a #'<)))
 			(normalize t))
   (declare (optimize (debug 0) (safety 0) (speed 3)))
@@ -386,23 +386,25 @@
   (with-clear-cache-worley-2d
     (let* ((pixmap (pixmap:make-pixmap-frame size size 4)))
       (ploop-matrix (pixmap x y :bindings (*perlin-gradient-random-offset*
-					   *max-dist-to-store*)) 
-	(let* ((min (worley-2d (f+ displacement-x (the fixnum x)) 
-			       (f+ displacement-y (the fixnum y)) granularity 
-			       :mean mean :sigma sigma :max max 
+					   *max-dist-to-store*))
+	(let* ((min (worley-2d (f+ displacement-x (the fixnum x))
+			       (f+ displacement-y (the fixnum y)) granularity
+			       :mean mean :sigma sigma :max max
 			       :dist-fn dist-fn :sort-fn sort-fn)))
 	  (setf (pixel@ pixmap x y) (funcall fun min))))
       (when normalize
 	(let ((max (find-max (data pixmap))))
-	  (setf (data pixmap) (map 'vector #'(lambda (a) (d/ a max)) (data pixmap)))))
+	  (setf (data pixmap) (map '(simple-array desired-type (*))
+				   #'(lambda (a) (d/ a max))
+				   (the (simple-array t (*)) (data pixmap))))))
       pixmap)))
 
-(defun 2d-worley-lut-indexed (size granularity displacement-x displacement-y 
-			      mean sigma max 
-			      &key (fun #'(lambda (a) 
+(defun 2d-worley-lut-indexed (size granularity displacement-x displacement-y
+			      mean sigma max
+			      &key (fun #'(lambda (a)
 					    (list (elt (elt a 0) 0) ;; index
 						  (elt (elt a 0) 1) ;; index-hash
-						  (d- (elt (elt a 1) 2) 
+						  (d- (elt (elt a 1) 2)
 						      (elt (elt a 0) 2))))))
   (2d-worley-lut size granularity displacement-x displacement-y mean sigma max fun
 		 :dist-fn #'(lambda (pos index)
@@ -473,7 +475,7 @@
     (let* ((pixmap (pixmap:make-pixmap-frame size size 4)))
       (ploop-matrix (pixmap x y :bindings (*perlin-gradient-random-offset*
 					   *max-dist-to-store*))
-	(let* ((min (worley-2d-seamless (+ displacement-x x) (+ displacement-y y) 
+	(let* ((min (worley-2d-seamless (+ displacement-x x) (+ displacement-y y)
 					size size granularity
 					:x1 4.0 :x2 41.0 :y1 4.0 :y2 41.0
 					:mean mean :sigma sigma :max max)))
@@ -487,30 +489,30 @@
 			  (core-size 0.1)
 			  (spot-length 1.9)
 			  (spot-radial-cutoff 10.0))
-  (let ((spikes-vectors (map 'vector #'(lambda (a) 
+  (let ((spikes-vectors (map 'vector #'(lambda (a)
 					 (let ((radian (deg->rad a)))
 					   (vector (dcos radian) (dsin radian))))
 			     spikes)))
     (values
      (with-draw-normalizated-coord-square (x y size pixmap 4)
-       (reduce #'(lambda (a b) (map 'vector #'max a b))
+       (reduce #'(lambda (a b) (map 'vec4 #'max a b))
 	       (loop for spike across spikes-vectors collect
 		    (let* ((*default-epsilon* 0.1)
 			   (p (2d-vector-translate (vector x y) -0.5))
 			   (magn-p (2d-utils:2d-vector-magn p))
-			   (normalized-p (if (epsilon= 0.0 magn-p) 
-					     (vector 0.0 0.0) 
+			   (normalized-p (if (epsilon= 0.0 magn-p)
+					     (vector 0.0 0.0)
 					     (2d-vector-normalize p)))
 			   (dot-product (2d-vector-dot-product normalized-p spike)))
 		      (if (and (d> magn-p core-size)
 			       (epsilon= 0.0 dot-product))
-			  (vector (elt inner-color 0)
-				  (elt inner-color 1)
-				  (elt inner-color 2) 
-				  (smoothstep-interpolate 0.0 1.0 
-							  (d- 1.0 
-							      (max (d* spot-length magn-p)
-								   (dabs (d* spot-radial-cutoff dot-product))))))
+			  (vec4 (elt inner-color 0)
+				(elt inner-color 1)
+				(elt inner-color 2)
+				(smoothstep-interpolate 0.0 1.0
+							(d- 1.0
+							    (max (d* spot-length magn-p)
+								 (dabs (d* spot-radial-cutoff dot-product))))))
 			  outer-color)))
 	       :initial-value §c00000000))
      "sun-spikes")))
@@ -523,7 +525,7 @@
       (write-sequence (pixmap->tga-file pixmap) stream))
     t))
 
-(defun sun-core (size granularity-background &key (granularity-strain 
+(defun sun-core (size granularity-background &key (granularity-strain
 						   (floor (/ granularity-background 5)))
 					       (color-seam #xffff00ff) (color-lake #xffe09bff)
 					       (color-circular-border-inner #xffffffaa)
@@ -531,15 +533,15 @@
   (with-random-perlin-gradient-offset
     (let* ((displacement-x (lcg-next-upto size))
 	   (displacement-y (lcg-next-upto size))
-	   (worley (2d-worley-lut (truncate (/ size 8)) granularity-background displacement-x displacement-y 
-				  8 4 20 
+	   (worley (2d-worley-lut (truncate (/ size 8)) granularity-background displacement-x displacement-y
+				  8 4 20
 				  #'(lambda (a) (d- (elt a 1) (elt a 0)))))
-	   (worley-2 (2d-worley-lut (truncate (/ size 8)) granularity-strain 0 0 6 4 10 
+	   (worley-2 (2d-worley-lut (truncate (/ size 8)) granularity-strain 0 0 6 4 10
 				    #'(lambda (a) (d- (elt a 1) (elt a 0)))))
 	   (frame (fuzzy-circular-frame (/ +default-size-pixmap-library+ 4)
 					0.15 0.21 color-circular-border-inner
 					color-circular-border-outer 0.02))
-	   (spikes (sun-spikes 128 :spikes (loop repeat (lcg-next-in-range 2 6) collect 
+	   (spikes (sun-spikes 128 :spikes (loop repeat (lcg-next-in-range 2 6) collect
 						(lcg-next-upto 360.0))))
 	   (pixmap (pixmap:make-pixmap-frame size size 4)))
       (setf (data spikes) (data (pgaussian-blur-separated spikes #'floor 5)))
@@ -548,20 +550,20 @@
 			       (d/ (desired x) (desired size))
 			       (d/ (desired y) (desired size))
 			       #'(lambda (x y)
-				   (let* ((noise-bg (d* 1.8 (gen-abs-fbm x y 6 1.0 2.0 
-									 0.65 2.0 
+				   (let* ((noise-bg (d* 1.8 (gen-abs-fbm x y 6 1.0 2.0
+									 0.65 2.0
 									 :normalize nil)))
-					  
+
 					  (noise-strain (d* 3.0
-							    (gen-abs-fbm (d/ x 2.0) 
-									 (d/ y 2.0) 
+							    (gen-abs-fbm (d/ x 2.0)
+									 (d/ y 2.0)
 									 6 1.0 2.0 0.5 2.0
 									 :normalize nil)))
 					  (background (sample@ worley
 							       (d+ noise-bg x)
 							       (d+ noise-bg y)
 							       :clamp nil))
-					  (strain (sample@ worley-2 
+					  (strain (sample@ worley-2
 							   (d+ noise-strain x)
 							   (d+ noise-strain y)
 							   :clamp nil))
@@ -570,12 +572,12 @@
 				     (let ((color (mix-color
 						   (mix-color color-seam color-lake  background)
 						   #xffffffff strain)))
-				       (setf (elt color 3) 
+				       (setf (elt color 3)
 					     (byte->float (elt (sample@ frame x y) 3)))
 				       (mix-color spike color
 						  (max (elt color 3)
 						       (elt spike 3))))))))
-      
+
       (values pixmap "sun-core"))))
 
 (defun sun-crown (size &key (inner-color #xffffffff) (outer-color #xffff0000))
@@ -584,7 +586,7 @@
 	   (pixmap (with-draw-normalizated-coord-square (x y size pixmap 4
 						   :bindings (*perlin-gradient-random-offset*))
 		     (let* ((afbm (d* 0.2 (gen-abs-fbm x y 6 2.0 1.0 0.65 2.0 :normalize nil)))
-			    (p (2d-utils:2d-vector-translate 
+			    (p (2d-utils:2d-vector-translate
 				(vector x y)
 				(d+ displ -0.5)
 				(d+ displ -0.5)))
@@ -606,7 +608,7 @@
 (defun smoke-tray (size &key (inner-color §cffffffff) (outer-color §cffffff00)
 			  (direction -90.0)
 			  (evanescence 1.0)
-			  (noise-fn #'(lambda (x y) 
+			  (noise-fn #'(lambda (x y)
 					(* 0.6 (gen-abs-fbm x y 8 1.0 1.0 0.5 2.0 :normalize nil))))
 			  (amplitude .03)
 			  (density .99))
@@ -614,7 +616,7 @@
 	 (direction-vector (let ((radian (deg->rad direction)))
 			     (vector (dcos radian) (dsin radian))))
 	 (frame (fuzzy-frame 128 0.2 0.2 10 :inner-color #x00000000 :outer-color #xffffffff))
-	 (pixmap (with-draw-normalizated-coord-square 
+	 (pixmap (with-draw-normalizated-coord-square
 		     (x y size pixmap 4 :bindings (*perlin-gradient-random-offset*))
 		   (let* ((*default-epsilon* amplitude)
 			  (afbm (funcall noise-fn x y))
@@ -633,7 +635,7 @@
 				(elt inner-color 2)
 				(smoothstep-interpolate 0.0 1.0
 							(d*
-							 (d- 1.0 (alexandria:clamp 
+							 (d- 1.0 (alexandria:clamp
 								  (d* evanescence magn-p)
 								  0.0 1.0))
 							 (d* density (expt dot-product (d/ 1.0 amplitude))))))
@@ -649,20 +651,22 @@
 						     origin (vector c r)))))
     origin))
 
-(defun sun (&key (size 256) (color-seam #xffff00ff) (color-lake #xffe09bff)
+(defun sun (&key
+	      (size 256) (color-seam #xffff00ff) (color-lake #xffe09bff)
 	      (inner-color #xffffffff) (outer-color #xffff0000)
 	      (color-circular-border-inner #xffffffaa)
 	      (color-circular-border-outer #x00000000)
 	      (mix-core-crown-fn #'(lambda (c cr) (declare (ignore c cr)) 0.5)))
-  (let* ((core (sun-core size 100 :color-seam color-seam :color-lake color-lake
+  (let* ((core (sun-core size 100
+			 :color-seam color-seam :color-lake color-lake
 			 :color-circular-border-inner color-circular-border-inner
 			 :color-circular-border-outer color-circular-border-outer))
 	 (crown (sun-crown size :inner-color inner-color :outer-color outer-color))
 	 (pixmap (with-draw-normalizated-coord-square (x y 512 pixmap 4)
-		   (let ((weight (funcall mix-core-crown-fn 
-					  (map 'vector #'byte->float
+		   (let ((weight (funcall mix-core-crown-fn
+					  (map 'vec4 #'byte->float
 					       (sample@ core x y))
-					  (map 'vector #'byte->float
+					  (map 'vec4 #'byte->float
 					       (sample@ crown x y)))))
 		     (mix-color
 		      (map 'vec4 #'byte->float (sample@ core x y))
@@ -694,9 +698,9 @@
   (with-random-perlin-gradient-offset
     (let ((noise:*max-dist-to-store* 3))
       (let* ((worley (2d-worley-lut-seamless 128 (lcg-next-in-range 11 31)
-					     (lcg-next-in-range 0 128) 
 					     (lcg-next-in-range 0 128)
-					     20 
+					     (lcg-next-in-range 0 128)
+					     20
 					     (num:lcg-next-in-range 8 10)
 					     (num:lcg-next-in-range 20 40)
  					     #'(lambda (a) (d- (elt a 1) (elt a 0)))))
@@ -712,10 +716,10 @@
 							       (d* 2.0 (desired y))
 							      3 0.5 1.0 0.5 2.0
 							      :normalize t :range-0->1 t
-							      :x1 0.0 :x2 15.0 :y1 0.0 
+							      :x1 0.0 :x2 15.0 :y1 0.0
 							      :y2 15.0))
-					    (color (mix-color 
-						    (mix-color #xffffffee 
+					    (color (mix-color
+						    (mix-color #xffffffee
 							       #xaaaaaaff weight)
 						    (vec4 noise noise noise 1.0)
 						    (smoothstep-interpolate 0.0 1.0 sample))))
@@ -741,38 +745,38 @@
 				   (let* ((sample (sample@ worley x y :clamp t :interpolation t))
 					  (weight (smoothstep-interpolate 0.1 0.2 sample))
 					  (noise (alexandria:clamp (dabs
-								    (gen-fbm x y 6 
-									     10.0 1.0 0.65 
-									     2.0 
+								    (gen-fbm x y 6
+									     10.0 1.0 0.65
+									     2.0
 									     :normalize nil))
 								   0.0 1.0))
 					  (color (mix-color #xaaaaaa21 #x000000af weight))
 					  (color-noise (mix-color color #xaaaaaaff
 								  noise))
-					  (frame (map 'vec4 #'byte->float 
+					  (frame (map 'vec4 #'byte->float
 						      (sample@ frame x y)))
-					  (gaps (map 'vec4 #'byte->float 
+					  (gaps (map 'vec4 #'byte->float
 						     (sample@ gaps x y))))
 				     ;;(setf color-noise (mix-color color-noise frame (elt frame 3)))
-				     (setf (elt color-noise 3) (min (elt frame 3) 
+				     (setf (elt color-noise 3) (min (elt frame 3)
 								    (elt color-noise 3)))
 				     (setf (elt color-noise 3) (min (elt gaps 3)
 								    (elt color-noise 3)))
 				     color-noise))))
       (values pixmap "ruined-stone-floor-road"))))
 
-(defun stone-floor-road-brick-lut (size xs ys 
-					&key 
+(defun stone-floor-road-brick-lut (size xs ys
+					&key
 					  (roughness .1)
-					  (gradient 
+					  (gradient
 					   (make-instance 'gradient
-							  :colors 
-							  (list 
+							  :colors
+							  (list
 							   (make-gradient-color 1.0 §c00000000)
 							   (make-gradient-color 0.95 §c000000ff)
 							   (make-gradient-color 0.7 §cb2b1acff)
 							   (make-gradient-color 0.0 §cb2b1acff)))))
-  (with-random-perlin-gradient-offset 
+  (with-random-perlin-gradient-offset
     (let* ((pixmap (make-pixmap-frame size size 4))
 	   (push nil)
 	   (raw-count 0))
@@ -781,7 +785,7 @@
 		(draw-normalized-coord pixmap
 				       (d/ (desired x) (desired size))
 				       (d/ (desired y) (desired size))
-				       (lambda (x y) 
+				       (lambda (x y)
 					 (let* ((offset-align (/ ys (* 2 size)))
 						(offset (+ offset-align
 							   (if push
@@ -797,22 +801,22 @@
 						(col-y (if (< rel-y (truncate (/ ys 2)))
 							   slope-y
 							   (abs (1- (fract slope-y)))))
-						(col (+ (* roughness 
-							   (gen-abs-fbm (d* x 1.1) 
+						(col (+ (* roughness
+							   (gen-abs-fbm (d* x 1.1)
 									(d* y 1.1)
 									8 15.5 5.0
 									0.5 2.0))
 							(max col-x col-y))))
 					   (incf raw-count)
 					   (let ((noise (gen-fbm
-							 (d* x 100.0)  
+							 (d* x 100.0)
 							 (d* y 150.0)
 							 8 .5 1.0
 							 0.5 2.0 :normalize t :range-0->1 t)))
 					     (multiply-color
 					      (vec4 noise noise noise 1.0)
 					      (pick-color gradient
-							  (alexandria:clamp 
+							  (alexandria:clamp
 							   (desired col)
 							   0.0 1.0))))))))
 	   (when (= 0 (mod y ys))
@@ -823,15 +827,15 @@
   (with-random-perlin-gradient-offset
     (let* ((frame (fuzzy-frame size 0.09 0.05 20 :outer-color #x000000ff
 			       :inner-color #x00000000))
-	   (gradient 
+	   (gradient
 	    (make-instance 'gradient
-			   :colors 
-			   (list 
+			   :colors
+			   (list
 			    (make-gradient-color 1.0 §cffffffff)
 			    (make-gradient-color 0.7 §c515151ff)
 			    (make-gradient-color 0.0 §c000000ff)))))
       (values
-       (with-draw-normalizated-coord-square (x y size pixmap 4 
+       (with-draw-normalizated-coord-square (x y size pixmap 4
 				       :bindings (*perlin-gradient-random-offset*))
 	 (let ((color (pick-color gradient (gen-abs-fbm x y 6 5.5 1.0 0.5 2.0))))
 	   (setf (elt color 3) (byte->float (elt (sample@ frame x y) 3)))
@@ -840,10 +844,10 @@
 
 (defun brick-wall (size &optional (xs 64) (ys 32))
   (let ((bricks (stone-floor-road-brick-lut size xs ys
-						 :gradient 
+						 :gradient
 						 (make-instance 'gradient
-								:colors 
-								(list 
+								:colors
+								(list
 								 (make-gradient-color 1.0 §cffefdcff)
 								 (make-gradient-color 0.96 §c0000000ff)
 								 (make-gradient-color 0.80 §c961a1aff)
@@ -861,7 +865,7 @@
 (defun stone-floor-road (size xs ys)
   (let ((background (grass size))
 	(bricks (stone-floor-road-brick-lut size xs ys)))
-    (values 
+    (values
      (with-draw-normalizated-coord-square (x y size pixmap 4)
 	   (mix-color (map 'vec4 #'byte->float (sample@ background x y))
 		      (map 'vec4 #'byte->float (sample@ bricks x y))
@@ -885,7 +889,7 @@
 			  (abs (1- (fract slope-y))))
 		      0.0 0.8))
 	      (col (+ col-x col-y)))
-	 (mix-color #xffffffff #x000000ff (smoothstep-interpolate 0.8 1.0 
+	 (mix-color #xffffffff #x000000ff (smoothstep-interpolate 0.8 1.0
 								  (coerce col 'single-float)))))
      "octagonal-floor")))
 
@@ -926,26 +930,26 @@
 		   (let* ((bg
 			   (mix-color
 			    (vec4 0.0 0.0 0.0 1.0)
-			    (pick-color gradient 
+			    (pick-color gradient
 					(smoothstep-interpolate 0.0 0.5
-								(/ (+ (funcall fun-t x y) (- min)) 
+								(/ (+ (funcall fun-t x y) (- min))
 								   (+ max (- min)))))
-			    (if (d< (elt (pick-color gradient 
+			    (if (d< (elt (pick-color gradient
 						     (smoothstep-interpolate 0.0 0.5
-									     (/ (+ (funcall fun-t x y) (- min)) 
+									     (/ (+ (funcall fun-t x y) (- min))
 										(+ max (- min)))))
 					 3) 0.8)
-				(- 1.0 (smoothstep-interpolate 0.0 1.0 
-							       (elt (pick-color gradient 
-										(smoothstep-interpolate 
+				(- 1.0 (smoothstep-interpolate 0.0 1.0
+							       (elt (pick-color gradient
+										(smoothstep-interpolate
 										 0.0 0.5
-										 (/ (+ (funcall fun-t x y) 
-										       (- min)) 
+										 (/ (+ (funcall fun-t x y)
+										       (- min))
 										    (+ max (- min)))))
 								    3)))
-				(elt (pick-color gradient 
+				(elt (pick-color gradient
 						 (1- (smoothstep-interpolate 0.0 1.5
-									     (/ (+ (funcall fun-t x y) 
+									     (/ (+ (funcall fun-t x y)
 										   (- min))
 										(+ max (- min))))))
 				     3))))
@@ -984,15 +988,15 @@
 		 (let* ((magn (desired (2d-vector-magn (vector x y))))
 			(alpha (datan (desired y) (desired x)))
 			(density (d+
-				  (d* 0.05 (dexpt (d+ 1.0 (dcos 
+				  (d* 0.05 (dexpt (d+ 1.0 (dcos
 							   (d* 20.0 alpha)))
-						  1.9)) 
+						  1.9))
 				  (d* 0.3 (dsin (d* 5.0 alpha)))
 				  (bidimensional-gaussian x y 0.04 0.04)))
 			(color (if (d< magn density)
 				   (mix-color §c3b0d06ff
 					       (mix-color §cb32512ff §c3b0d06ff
-							   (smoothstep-interpolate 
+							   (smoothstep-interpolate
 							    0.0 10.0
 							    (d+
 							     (d* 10.0 (dcos (* 1.1 (dsin (* 5.0 alpha)))))
@@ -1022,10 +1026,10 @@
 
 (defun hourglass-cheap (size)
   (with-random-perlin-gradient-offset
-    (let ((pixmap 
-	   (with-draw-normalizated-coord-square (x y size pixmap 4 :bindings 
+    (let ((pixmap
+	   (with-draw-normalizated-coord-square (x y size pixmap 4 :bindings
 						   (*perlin-gradient-random-offset*))
-	     (let* ((x (d- (desired x) 0.5)) 
+	     (let* ((x (d- (desired x) 0.5))
 		    (y (d- (desired y) 0.5))
 		    (alpha (datan y x))
 		    (density (d* 1.3 (dcos (d* 2.0 alpha))
@@ -1037,27 +1041,27 @@
 
 (defun sun-cheap (size)
     (let* ((frame (fuzzy-circular-frame (f/ size 4) 0.4 0.5  §cffffffff §cffffff00 0.02))
-	   (pixmap (with-draw-normalizated-coord-square (x y size pixmap 4 :bindings 
+	   (pixmap (with-draw-normalizated-coord-square (x y size pixmap 4 :bindings
 							   (*perlin-gradient-random-offset*))
-		     (let* ((act-x (d- (desired x) 0.5)) 
+		     (let* ((act-x (d- (desired x) 0.5))
 			    (act-y (d- (desired y) 0.5))
 			    (alpha (datan act-y act-x ))
 			    (v    (vec2 act-x  act-y))
 			    (magn (vec2-length v))
 			    (density (d+
-				      (d* 2.0 
-					  (dexpt 
-					   (dcos 
-					    (d* (d* 2.0 2.0) alpha)) 
+				      (d* 2.0
+					  (dexpt
+					   (dcos
+					    (d* (d* 2.0 2.0) alpha))
 					   2.0))
 				      (d* (dcos (d* 0.1 alpha))
 					  (bidimensional-gaussian act-x  act-y 0.04 0.04))))
-			    (color (mix-color 
+			    (color (mix-color
 				    §cffffffff
-				    (mix-color §cffffffff   §c6ec0ff00 
-					       (smoothstep-interpolate 0.0 1.0 
+				    (mix-color §cffffffff   §c6ec0ff00
+					       (smoothstep-interpolate 0.0 1.0
 								       (d+ magn density)))
-				    (smoothstep-interpolate 0.0 0.1 
+				    (smoothstep-interpolate 0.0 0.1
 							    (d* magn magn)))))
 		       (multiply-color color (byte-vector->vec4 (sample@ frame x y)))))))
       pixmap))
@@ -1073,7 +1077,7 @@
 (defun blood-splat (size)
   (with-random-perlin-gradient-offset
     (labels ((noise (x y range-01)
-	       (gen-fbm x y 6 1.0 1.0 0.5 2.0 
+	       (gen-fbm x y 6 1.0 1.0 0.5 2.0
 			:normalize t :range-0->1 range-01)))
       (values
        (let* ((pixmap (make-pixmap-frame size size 4))
@@ -1085,14 +1089,14 @@
 		     (let* ((magn (2d-vector-magn (vector x y)))
 			    (alpha (atan y x)))
 		       (smoothstep-interpolate 0.2 0.0
-					       (d- magn 
-						   (d*  
+					       (d- magn
+						   (d*
 						    (noise (d* 10.0 x ) (d* 10.0 y) t)
 						    (d+
-						     (d* 0.4 
-							 (dexpt 
-							  (dcos 
-							   (d* (d* 2.0 branch) alpha)) 
+						     (d* 0.4
+							 (dexpt
+							  (dcos
+							   (d* (d* 2.0 branch) alpha))
 							  2.0))
 						     (d* 0.3 (dcos (d* branch alpha)))
 						     (bidimensional-gaussian x y 0.04 0.04))))))))))
@@ -1117,7 +1121,7 @@
 
 (defun moon-background (&optional (size +default-size-pixmap-library+))
   (with-random-perlin-gradient-offset
-    (let* ((worley (2d-worley-lut 256 100 (lcg-next-upto size) (lcg-next-upto size) 
+    (let* ((worley (2d-worley-lut 256 100 (lcg-next-upto size) (lcg-next-upto size)
 				  4 2 5 #'(lambda (a) (d- (elt a 1) (elt a 0)))))
 	   (pixmap (make-pixmap-frame size size 4)))
       (ploop-matrix (pixmap x y :bindings (*perlin-gradient-random-offset*))
@@ -1127,16 +1131,16 @@
 			       #'(lambda (x y)
 				   (let* ((noise (smoothstep-interpolate
 						  0.0 1.0
-						  (gen-fbm x y 6 1.0 2.0 0.5 2.0 
+						  (gen-fbm x y 6 1.0 2.0 0.5 2.0
 							   :normalize nil)))
 					  (noise-lake (d* 0.17
 							  (gen-fbm x y 6 2.0 1.0 0.5 2.0
 								   :normalize nil)))
-					  (sample (sample@ worley 
-							   (d+ noise-lake x) 
+					  (sample (sample@ worley
+							   (d+ noise-lake x)
 							   (d+ noise-lake y) :clamp nil))
 					  (weight (smoothstep-interpolate 0.0 1.0 sample)))
-				     (mix-color 
+				     (mix-color
 				      (mix-color #xaaaaaaff #x222222ff weight)
 				      #x222222ff noise)))))
       (values pixmap "moon-backround"))))
@@ -1165,9 +1169,9 @@
 					       0.4 0.45 #x00000000 #x000000ff 0.0))
 	 (pixmap (with-draw-normalizated-coord-square (x y 256 pixmap 4)
 		   (let ((weight (smoothstep-interpolate 0.0 1.0 (d- x shadow-entity)))
-			 (frame (d- 1.0 (byte->float 
+			 (frame (d- 1.0 (byte->float
 					 (elt (sample@ circular-frame x y) 3))))
-			 (old-color (map 'vec4 #'byte->float 
+			 (old-color (map 'vec4 #'byte->float
 					 (sample@ moon x y))))
 		     (setf (elt old-color 3) (min weight frame))
 		     old-color))))
@@ -1189,13 +1193,13 @@
 						   (sample@ frame (d+ x 0.2) y :clamp t))))
 				   (when (d> (elt bg 3) 0.9)
 				     (setf (elt bg 3) (d- 1.0 (elt frame 3))))
-				   
+
 				   (when (d< x 0.4)
 				      (setf (elt bg 3) 0.0))
 				    bg))))
     (values pixmap "crescent-moon")))
 
-(defun grass (size &key 
+(defun grass (size &key
 		     (gradient (make-gradient
 				(make-gradient-color 0.0 §c073502ff)
 				(make-gradient-color 0.1  §c328341ff)
@@ -1231,7 +1235,7 @@
 
 (defun snow (size)
   (make-pixmap size size 4 (ubvec4:ubvec4 255 255 255 255)))
-    
+
 (defun dry-soil (size)
   (with-random-perlin-gradient-offset
     (let* ((gradient (make-gradient
@@ -1240,30 +1244,30 @@
 	   (lut (2d-worley-lut (floor (/ size 2)) (floor (/ size 7)) 0 0 1 3 32
 			       #'(lambda (a) (d- (elt a 1) (elt a 0)))))
 	   (lut-noise-bg (let* ((pixmap (pixmap:make-pixmap-frame size size 4)))
-			   (ploop-matrix (pixmap x y 
+			   (ploop-matrix (pixmap x y
 						 :bindings (*perlin-gradient-random-offset*))
 			     (setf (pixel@ pixmap x y)
 				   (let ((val (d* 0.1
-						  (- 1.0 
+						  (- 1.0
 						     (gen-fbm (d/ (desired x) (/ size 4.0))
 							      (d/ (desired y) (/ size 4.0))
 							      4 4.0 2.0 0.5 2.0 :normalize t)))))
 				     (vec4 val val val 1.0))))
 			   pixmap))
 	   (lut-noise (let* ((pixmap (pixmap:make-pixmap-frame size size 4)))
-			(ploop-matrix (pixmap x y 
+			(ploop-matrix (pixmap x y
 					      :bindings (*perlin-gradient-random-offset*))
 			  (setf (pixel@ pixmap x y)
 				(* 0.5 (gen-abs-fbm (d/ (desired x) (desired size))
 						    (d/ (desired y) (desired size))
 						    4 2.0 1.0 0.5 2.0 :normalize t))))
 			pixmap))
-	   (pixmap (with-draw-normalizated-coord-square (x y size pixmap 4 
+	   (pixmap (with-draw-normalizated-coord-square (x y size pixmap 4
 						   :bindings (*perlin-gradient-random-offset*))
 		     (let ((worley-x (d+ x (d* 0.3 (sample@ lut-noise x y))))
 			   (worley-y (d+ y (d* 0.3 (sample@ lut-noise x y)))))
-		       (subtract-color (pick-color 
-					gradient 
+		       (subtract-color (pick-color
+					gradient
 					(smoothstep-interpolate 0.0 0.05
 								(sample@ lut worley-x worley-y)))
 				       (vec4 (elt (sample@ lut-noise-bg x y) 0)
@@ -1284,8 +1288,8 @@
     (values vor "voronoized-graal")))
 
 (defun soil (size &key (gradient (make-instance 'gradient
-						:colors 
-						(list 
+						:colors
+						(list
 						 (make-gradient-color 0.0 §c000000ff)
 						 (make-gradient-color 0.8 §c741a0eff)
 						 (make-gradient-color 1.0 §c874006ff)))))
@@ -1300,18 +1304,18 @@
 					 (d* 1.5 (base x y))
 					 (d- 1.0 (d* 0.9 (sample@ bumps x y))))))
 				   0.0 1.0)))
-		       (mix-color 
+		       (mix-color
 			(pick-color gradient color)
 			(pick-color gradient 0.9)
 			(smoothstep-interpolate 0.5 1.0
 						(sample@ grains x y)))))))
-      
-      
+
+
       (values pixmap "soil"))))
 
 (defun rock-1 (size &key (gradient-base (make-instance 'gradient
-						:colors 
-						(list 
+						:colors
+						(list
 						 (make-gradient-color 0.0 §c343944ff)
 						 (make-gradient-color 0.3 §c5c6266ff)
 						 (make-gradient-color 1.0 §cced1d2ff)))))
@@ -1319,11 +1323,11 @@
 	 (worley (2d-worley-lut 128 50 0 0 1 1 2 #'(lambda (a) (d- (elt a 1) (elt a 0)))))
 	 (pixmap (with-standard-generated-pixmap-square (pixmap size)
 		   (let* ((base (alexandria:clamp
-				 (d+ 
+				 (d+
 				  (d* 0.5 (sample@ worley x y))
-				  (d* 0.3 (gen-fbm (* x 2.0) (* y 2.0) 8 8.0 2.1 0.5 2.1 
+				  (d* 0.3 (gen-fbm (* x 2.0) (* y 2.0) 8 8.0 2.1 0.5 2.1
 						   :normalize t))
-				  (gen-abs-fbm (* x .9) (* y .9) 6 2.0 0.1 0.2 2.1 
+				  (gen-abs-fbm (* x .9) (* y .9) 6 2.0 0.1 0.2 2.1
 					       :normalize t))
 				 0.0 1.0))
 			  (strain (rock-strain x y §c8d7e63ff §cffffffff)))
@@ -1332,7 +1336,7 @@
 		      (pick-color gradient-base base))))))
     (values pixmap "rock-1")))
 
-(defun rock-2 (size &key (gradient 
+(defun rock-2 (size &key (gradient
 			  (make-gradient
 			   (make-gradient-color 1.0 §c8b6236ff)
 			   (make-gradient-color 0.3 §cc09664ff)
@@ -1342,12 +1346,12 @@
       (let* ((pixmap (with-standard-generated-pixmap-square (pixmap size)
 		       (let* ((layers (dsin (d* 100.0 (dsin (d* (noise x y t) 5.0 y)) y)))
 			      (color (pick-color gradient layers)))
-			  
+
 			  color))))
 	(values pixmap "rock-2")))))
 
 (defun wood-2 (size &optional
-		      (gradient 
+		      (gradient
 		       (make-gradient
 			(make-gradient-color 1.0 §c8b6236ff)
 			(make-gradient-color 0.3 §cc09664ff)
@@ -1355,27 +1359,27 @@
 		      (min-closeness-rings 50.0)
 		      (max-closeness-rings 100.0)
 		      (max-nodes-shift     2.0))
-  (with-standard-fbm 
+  (with-standard-fbm
     (with-random-perlin-gradient-offset
       (let* ((rings-closeness (lcg-next-in-range min-closeness-rings
 						 max-closeness-rings))
 	     (nodes-shift     (lcg-next-upto max-nodes-shift))
 	     (pixmap (with-standard-generated-pixmap-square (pixmap size)
 		       (let* ((y-dist (d+ (noise x y t) y))
-			      (layers (smoothstep-interpolate 0.0 3.0 
+			      (layers (smoothstep-interpolate 0.0 3.0
 							      (dsin
 							       (d* rings-closeness
 								   (dsin (d+ nodes-shift
 									     (d* 5.0 y)))
 								   y-dist))))
 			      (color (pick-color gradient layers)))
-			 
+
 			 color))))
 	(setf (data pixmap) (data (matrix:rotate-matrix pixmap 90.0)))
 	(values pixmap "wood-2")))))
 
 (defun wood-3 (size &optional
-		      (gradient 
+		      (gradient
 		       (make-gradient
 			(make-gradient-color 1.0 §c8b6236ff)
 			(make-gradient-color 0.3 §cc09664ff)
@@ -1383,7 +1387,7 @@
 		      (min-closeness-rings 50.0)
 		      (max-closeness-rings 100.0)
 		      (max-nodes-shift     2.0))
-  (with-standard-fbm 
+  (with-standard-fbm
     (with-random-perlin-gradient-offset
       (let* ((rings-closeness (lcg-next-in-range min-closeness-rings
 						 max-closeness-rings))
@@ -1391,7 +1395,7 @@
 	     (pixmap
 	      (with-standard-generated-pixmap-square (pixmap size)
 		(let* ((y-dist (d+ (noise x y t) y))
-		       (layers      (smoothstep-interpolate 0.0 3.0 
+		       (layers      (smoothstep-interpolate 0.0 3.0
 						       (dsin
 							(d* rings-closeness
 							    (dsin (d+ nodes-shift (d* 5.0 y)))
@@ -1402,7 +1406,7 @@
 	(setf (data pixmap) (data (matrix:rotate-matrix pixmap 90.0)))
 	(values pixmap "wood-3")))))
 
-(defun wood-4 (size &key (gradient 
+(defun wood-4 (size &key (gradient
 			  (make-gradient
 			   (make-gradient-color 1.0 §c583926ff)
 			   (make-gradient-color 0.0 §c6F4832ff))))
@@ -1417,13 +1421,13 @@
                   color))))
         (values pixmap "wood-4")))))
 
-(defun rock-layers (size &key (gradient 
+(defun rock-layers (size &key (gradient
 				(make-gradient
 				 (make-gradient-color 0.8 §c583b1bff)
 				 (make-gradient-color 0.6 §c8d683eff)
 				 (make-gradient-color 0.4 §cc3b6a6ff)
 				 (make-gradient-color 0.0 §cdceeeeff)))
-			    (gradient-erosion 
+			    (gradient-erosion
 			     (make-gradient
 			      (make-gradient-color 1.0 §cffffffff)
 			      (make-gradient-color 0.0 §c2a2a2aff))))
@@ -1448,13 +1452,13 @@
 		       (pick-color gradient (noise (d* x 9.9) (d* y 9.9)))))
 	     (pixmap (with-standard-generated-pixmap-square (pixmap size)
 		       (multiply-color (sample@ erosion x y)
-				       (multiply-color (sample@ texture x y) 
+				       (multiply-color (sample@ texture x y)
 						       (sample@ base x y))))))
 	(values pixmap "rock-layers")))))
 
 (defun brown-velvet (size &key (gradient-base (make-instance 'gradient
-						:colors 
-						(list 
+						:colors
+						(list
 						 (make-gradient-color 0.0 §c343944ff)
 
 						 (make-gradient-color 0.3 §c5c6266ff)
@@ -1462,11 +1466,11 @@
   (let* ((worley (2d-worley-lut 128 50 0 0 1 1 2 #'(lambda (a) (d- (elt a 1) (elt a 0)))))
 	 (pixmap (with-standard-generated-pixmap-square (pixmap size)
 		   (let* ((base (alexandria:clamp
-				 (d+ 
+				 (d+
 				  (d* 0.5 (sample@ worley x y))
-				  (d* 0.2 (gen-fbm (* x 2.0) (* y 2.0) 8 8.0 2.1 0.5 2.1 
+				  (d* 0.2 (gen-fbm (* x 2.0) (* y 2.0) 8 8.0 2.1 0.5 2.1
 						   :normalize t))
-				  (gen-abs-fbm (* x .9) (* y .9) 6 2.0 0.1 0.2 2.1 
+				  (gen-abs-fbm (* x .9) (* y .9) 6 2.0 0.1 0.2 2.1
 					       :normalize t))
 				 0.0 1.0))
 			  (strain (rock-strain x y §c8d7e63ff §c000000ff)))
@@ -1479,7 +1483,7 @@
 		     		  (make-gradient-color 1.0 §c8b6236ff)
 		     		  (make-gradient-color 0.3 §cc09664ff)
 		     		  (make-gradient-color 0.0 §cf3d599ff))))
-  (with-standard-fbm 
+  (with-standard-fbm
     (with-random-perlin-gradient-offset
       (let* ((pixmap (tileize
 		      (with-standard-generated-pixmap-square (pixmap size)
@@ -1489,14 +1493,14 @@
 							    (d* 0.2 (dsin (d+
 									   (d* 50.0 (d+ y (d* 0.3 (noise x y nil))))
 									   (d* 2.0 (dsin (d* 10.0 x)))))))))
-			       
+
 			       (color (pick-color gradient dunes)))
-			  
+
 			  color)))))
 	(values pixmap "sand")))))
 
 (defun water-daytime (size &optional
-			     (gradient 
+			     (gradient
 			      (make-gradient
 			       (make-gradient-color 0.000 (vec4 0.007 0.480 1.0 1.0))
 			       (make-gradient-color 0.132 (vec4 0.139 0.681 1.0 1.0))
@@ -1581,12 +1585,12 @@
 (defun test-sample2 ()
   (let ((check (make-instance 'tga)))
     (load check (fs:file-in-package "check.tga"))
-    (loop-matrix (check x y) 
-       (draw-normalized-coord 
+    (loop-matrix (check x y)
+       (draw-normalized-coord
         check
         (d/ (desired x) (desired (width check)))
         (d/ (desired y) (desired (height check)))
-        #'(lambda (x y) 
+        #'(lambda (x y)
 	    (byte-vector->vec4 (sample@ check x y :interpolation t :clamp t)))))
     (save-pixmap check (fs:file-in-package "check-2.tga"))
     t))
@@ -1636,7 +1640,7 @@
 (defun test-perlin-2d ()
   (let ((pixmap (with-draw-normalizated-coord-square (x y 256 pixmap 4)
 		  (let ((pixel (range-0to1
-				(perlin-2d (d/ (d* (desired x) 256.0) 8.0) 
+				(perlin-2d (d/ (d* (desired x) 256.0) 8.0)
 					   (d/ (d* (desired y) 256.0) 8.0)))))
 		    (vec4 pixel pixel pixel 1.0)))))
     (with-open-file (stream (fs:file-in-package "perlin-2d.ppm") :direction :output
@@ -1648,7 +1652,7 @@
     (let ((pixmap (with-draw-normalizated-coord-square (x y 256 pixmap 4
 						  :bindings (*perlin-gradient-random-offset*))
 		    (let ((pixel (range-0to1
-				  (perlin-2d (d/ (d* (desired x) 256.0) 8.0) 
+				  (perlin-2d (d/ (d* (desired x) 256.0) 8.0)
 					     (d/ (d* (desired y) 256.0) 8.0)))))
 		      (vec4 pixel pixel pixel 1.0)))))
       (with-open-file (stream (fs:file-in-package "perlin-2d-ref.ppm") :direction :output
@@ -1673,8 +1677,8 @@
   (let* ((noise-offset (lcg-next))
 	 (pixmap (with-draw-normalizated-coord-square (x y size pixmap 4)
 		   (let* ((*perlin-gradient-random-offset* noise-offset)
-			  (noise (gen-fbm (d* 10.0 x) (d*  10.0 y) 
-					  6 1.0 1.0 0.5 2.0 
+			  (noise (gen-fbm (d* 10.0 x) (d*  10.0 y)
+					  6 1.0 1.0 0.5 2.0
 					  :normalize t :range-0->1 t))
 			  (background (smoothstep-interpolate 0.0 0.5 x))
 			  (color (sb-cga:vec noise noise noise)))
@@ -1739,7 +1743,7 @@
     (loop for octave from 2 to 10 do
 	 (let* ((pixmap (with-draw-normalizated-coord-square (x y size pixmap 4
 							:bindings (*perlin-gradient-random-offset*))
-			  (let* ((noise (gen-fbm (d* x 2.0) (d* y 2.0) octave 1.0 1.0 0.5 2.0 :normalize t 
+			  (let* ((noise (gen-fbm (d* x 2.0) (d* y 2.0) octave 1.0 1.0 0.5 2.0 :normalize t
 						 :range-0->1 t))
 				 (color (vec4 noise noise noise 1.0)))
 			    color)))
@@ -1759,7 +1763,7 @@
 	      for row from 0 below rows do
 		(let* ((pixmap (with-draw-normalizated-coord-square (x y size pixmap 4
 							       :bindings (*perlin-gradient-random-offset*))
-				 (let* ((noise (gen-fbm (d* x 2.0) (d* y 2.0) octave freq 1.0 0.5 2.0 :normalize t 
+				 (let* ((noise (gen-fbm (d* x 2.0) (d* y 2.0) octave freq 1.0 0.5 2.0 :normalize t
 							:range-0->1 t))
 					(color (vec4 noise noise noise 1.0)))
 				   color))))
@@ -1781,7 +1785,7 @@
 		(let* ((pixmap (with-draw-normalizated-coord-square (x y size pixmap 4
 							       :bindings (*perlin-gradient-random-offset*))
 				 (let* ((noise (gen-fbm (d* x 2.0) (d* y 2.0) octave 2.0 ampl
-							0.5 2.0 :normalize t 
+							0.5 2.0 :normalize t
 							:range-0->1 t))
 					(color (vec4 noise noise noise 1.0)))
 				   color))))
@@ -1802,10 +1806,10 @@
 	      for row from 0 below rows do
 		(let* ((pixmap (with-draw-normalizated-coord-square (x y size pixmap 4
 							       :bindings (*perlin-gradient-random-offset*))
-				 (let* ((noise (gen-fbm (d* x 2.0) (d* y 2.0) 
+				 (let* ((noise (gen-fbm (d* x 2.0) (d* y 2.0)
 
 							octave 1.0 0.5
-							ampl 2.0 :normalize t 
+							ampl 2.0 :normalize t
 							:range-0->1 t))
 					(color (vec4 noise noise noise 1.0)))
 				   color))))
@@ -1826,10 +1830,10 @@
 	      for row from 0 below rows do
 		(let* ((pixmap (with-draw-normalizated-coord-square (x y size pixmap 4
 								      :bindings (*perlin-gradient-random-offset*))
-				 (let* ((noise (gen-fbm (d* x 2.0) (d* y 2.0) 
+				 (let* ((noise (gen-fbm (d* x 2.0) (d* y 2.0)
 
 							octave 1.0 0.5
-							2.0 freq :normalize t 
+							2.0 freq :normalize t
 							:range-0->1 t))
 					(color (vec4 noise noise noise 1.0)))
 				   color))))
@@ -1841,13 +1845,13 @@
   (lambda (h)
     (declare (optimize (debug 0) (safety 0) (speed 3)))
     (declare (desired-type h))
-    (let ((x (num:dlerp (num:d* (d- h 6.0) (desired 1/14)) 
+    (let ((x (num:dlerp (num:d* (d- h 6.0) (desired 1/14))
 			0.25 0.75)))
       (values x
-	      (d+ (d* -15.0 (dexpt (d- x 0.5) 2.0)) 
+	      (d+ (d* -15.0 (dexpt (d- x 0.5) 2.0))
 		  0.7)))))
 
-(defun mountain (w h &key (gradient 
+(defun mountain (w h &key (gradient
 			   (make-gradient
 			    (make-gradient-color 1.0 §c641a0eff)
 			    (make-gradient-color 0.0 §c874006ff))))
@@ -1933,7 +1937,7 @@
 
 (defun gen-bg-sky-colors-day (hour &optional (sky-gradient +skydome-gradient+))
   (let ((act-h (hour->act-hour hour)))
-    (cond 
+    (cond
       ((< hour 8)
        (pick-color sky-gradient (d/ act-h 15.0)))
       ((= hour 8)
@@ -1952,12 +1956,12 @@
   (if (<= 6 hour 20)
       (gen-bg-sky-colors-day hour sky-gradient)
       §c000000ff))
-  
+
 (defun skydome-day (hour &key (pos-fn (skydome-approx-pos-celestial-body))
 			   (sky-gradient +skydome-gradient+)
 			   (sun-size      48))
   (with-random-perlin-gradient-offset
-    (multiple-value-bind (dx dy) 
+    (multiple-value-bind (dx dy)
 	(funcall pos-fn (desired hour))
       (let* ((sun (if (< 10 hour 17)
 		      (sun-cheap  sun-size)
@@ -1972,7 +1976,7 @@
 			   (p     (d+ (vec2:vec2-length v)))
 			   (w     (dlerp (smoothstep-interpolate 0.0 0.5 p) 0.0 1.0))
 			   (act-h (hour->act-hour hour)))
-		      (cond 
+		      (cond
 			((< hour 8)
 			 (mix-color
 			  (pick-color sky-gradient (d/ (d+ 1.0 act-h ) 15.0))
@@ -2002,10 +2006,10 @@
 				       (d/ (desired (width sun)) 2.0))))
 		 (y-dst-blit  (floor (d- (d* (d- 1.0 dy) (desired (height bg)))
 					 (d/ (desired (height sun)) 2.0))))
-		 (w-blit      (f- (width sun) 
+		 (w-blit      (f- (width sun)
 				  (f- (f+ x-dst-blit (width sun))
 				      (width bg))))
-		 (h-blit      (f- (height sun) 
+		 (h-blit      (f- (height sun)
 				 (f- (f+ y-dst-blit (height sun))
 				     (height bg)))))
 	    (pblit-unsafe sun bg 0 0 x-dst-blit y-dst-blit
@@ -2018,7 +2022,7 @@
 			     (pos-fn (skydome-approx-pos-celestial-body))
 			     (moon-texture-size 128))
   (with-random-perlin-gradient-offset
-    (multiple-value-bind (dx dy) 
+    (multiple-value-bind (dx dy)
 	(funcall pos-fn (desired (if (<= 0 hour 20)
 				     (+ hour 13)
 				     (- hour 14))))
@@ -2049,10 +2053,10 @@
 				       (d/ (desired (width moon)) 2.0))))
 		 (y-dst-blit  (floor (d- (d* (d- 1.0 dy) (desired (height bg)))
 					 (d/ (desired (height moon)) 2.0))))
-		 (w-blit      (f- (width moon) 
+		 (w-blit      (f- (width moon)
 				  (f- (f+ x-dst-blit (width moon))
 				      (width bg))))
-		 (h-blit      (f- (height moon) 
+		 (h-blit      (f- (height moon)
 				 (f- (f+ y-dst-blit (height moon))
 				     (height bg)))))
 	    (pblit-unsafe moon bg 0 0 x-dst-blit y-dst-blit
@@ -2063,7 +2067,7 @@
 	    (loop for x fixnum from 0 below width-blit do
 		 (loop for y fixnum from 0  below (height bg) do
 		      (setf (pixel@ bg (- (width bg) 1 x) y)
-			    (map 'ubvec4:ubvec4 
+			    (map 'ubvec4:ubvec4
 				 #'(lambda (a b) (floor (alexandria:lerp (d (/ x width-blit))
 									 b a)))
 				 (pixel@ bg (- (width bg) 1 x) y)
@@ -2079,7 +2083,7 @@
     (values bg (format nil "skydome-~a.tga" hour))))
 
 (defun dump-skydomes ()
-  (loop for i from 0 below 24 do (format t "~a~%" i) 
+  (loop for i from 0 below 24 do (format t "~a~%" i)
        (save-pixmap (time (pixmap::skydome i))
 		    (format nil (fs:file-in-package "skydome-~a.tga") i))))
 
@@ -2103,7 +2107,7 @@
 		     (let* ((noise (gen-fbm (d* x 2.0) (d* y 2.0) 10
 					    1.0 1.0 0.5 2.0 :normalize t :range-0->1 t))
 			    (color (vec4 noise noise noise 1.0)))
-		       (setf (elt color 3) 
+		       (setf (elt color 3)
 			     (desired (cloud-exp-curve noise actual-density fuzziness)))
 		       color))))
       (values (tileize pixmap) "clouds"))))
@@ -2147,12 +2151,12 @@
   (let ((tests '(test-single-skydome
 		 test-wood-2 test-wood-3 test-wood-4 test-rock-2
 		 test-soil test-voronoize-graal test-voronoize-starfish test-clouds
-		 test-brick-wall test-smoke test-perlin-2d-ref test-perlin-3d test-grass 
-		 test-half-moon test-moon test-floor-broken test-dry-stone-wall 
+		 test-brick-wall test-smoke test-perlin-2d-ref test-perlin-3d test-grass
+		 test-half-moon test-moon test-floor-broken test-dry-stone-wall
 		 test-fbm test-crescent-moon test-wood  test-sun test-grass-stones
 		 test-sunset test-floor-fancy test-perlin-2d test-dry-soil
 		 test-glass-tile test-blood-splat test-rock-1 test-sand
-		 test-rock-layers test-wood-wall 
+		 test-rock-layers test-wood-wall
 		 test-stone-floor-road)))
     (loop for i in tests do
 	 (num:with-lcg-seed (1)
@@ -2162,7 +2166,7 @@
 (defun dump-gradient (&optional (gradient
 				 (make-instance 'gradient
 						:colors
-						(list 
+						(list
 						 (make-gradient-color 0.0 §c776d6bff)
 						 (make-gradient-color 0.3 §c000000ff)
 						 (make-gradient-color 0.4 §c000000ff)

@@ -17,7 +17,7 @@
 (defpackage :all-test
   (:use :cl
 	:clunit)
-  (:export 
+  (:export
    :test-dir
    :all-suite
    :load-test-tga
@@ -157,6 +157,7 @@
 	:clunit
 	:all-test
 	:num
+	:vec4
 	:pixmap)
   (:shadowing-import-from :pixmap :load)
   (:export :test-generated-textures))
