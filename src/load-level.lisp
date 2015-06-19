@@ -301,13 +301,50 @@
 (defun cache-miss-p (filename)
   (resource-cache:cache-miss* filename))
 
+(defun %terrain-remove-mesh-data (terrain)
+  (setf (mesh:normals       terrain) nil
+	(mesh:edges         terrain) nil
+	(mesh:tangents      terrain) nil
+	(mesh:texture-coord terrain) nil
+	(pickable-mesh:pick-overlay-values terrain) (pickable-mesh:init-pick-overlay-value)))
+
+(defun revive-terrain-chunk (whole cache-key)
+  (let ((chunk   (copy-flat   whole))
+	(revived (deserialize 'terrain-chunk:terrain-chunk cache-key)))
+    (setf (pickable-mesh:lookup-tile-triangle chunk)
+	  (pickable-mesh:lookup-tile-triangle revived))
+    (setf (mesh:triangles chunk) (mesh:triangles revived))
+    (setf (mesh:vertices  chunk) (mesh:vertices revived))
+    (setf (pick-overlay-values chunk) (pick-overlay-values whole))
+    (mesh:reset-aabb chunk)
+    (misc:dbg "cache ~a ~a" (mesh:aabb chunk) (length (mesh:triangles chunk)))
+    chunk))
+
+(defun build-and-cache-terrain-chunk (x z whole cache-key)
+  (let ((chunk (terrain-chunk:clip-with-aabb whole
+					     (vec4:vec4 x z
+							(d+ x +quad-tree-leaf-size+)
+							(d+ z +quad-tree-leaf-size+))
+					     :clip-if-inside nil)))
+    (pickable-mesh:populate-lookup-triangle-matrix chunk)
+    (let ((in-cache (copy-flat chunk)))
+      (%terrain-remove-mesh-data in-cache)
+      (with-open-file (stream cache-key
+			      :direction :output
+			      :if-exists :supersede
+			      :if-does-not-exist :create)
+	(interfaces:serialize-to-stream in-cache stream)))
+    chunk))
+
 (defun setup-terrain (world map)
   (let* ((whole          (terrain-chunk:make-terrain-chunk map
 							   (compiled-shaders world)
 							   :generate-rendering-data nil))
 	 (quadtree-depth (quad-tree:quad-sizes->level
 			  (aabb2-max-x (game-state:terrain-aabb-2d (world:main-state world)))
-			  +quad-tree-leaf-size+)))
+			  +quad-tree-leaf-size+))
+	 (channel (lparallel:make-channel))
+	 (cache-channels-count  0))
     (loop for aabb in (labyrinths-aabb map) do
 	 (terrain-chunk:nclip-with-aabb whole
 					(map 'vector
@@ -322,13 +359,23 @@
     (loop for x from 0.0 below (aabb2-max-x (entity:aabb-2d whole)) by +quad-tree-leaf-size+ do
     	 (loop for z from 0.0 below (aabb2-max-y (entity:aabb-2d whole))
     	    by +quad-tree-leaf-size+ do
-    	      (let ((chunk (terrain-chunk:clip-with-aabb whole
-    							 (vec4:vec4 x z
-    								    (d+ x +quad-tree-leaf-size+)
-    								    (d+ z +quad-tree-leaf-size+))
-    							 :clip-if-inside nil)))
-    		(pickable-mesh:populate-lookup-triangle-matrix chunk)
-    		(push-entity world chunk))))))
+	      (let ((chunk-cache-key (make-terrain-chunk-cache-key world z x)))
+		(incf cache-channels-count)
+		(if (resource-cache:cache-miss* chunk-cache-key)
+		    (lparallel:submit-task channel
+					   'build-and-cache-terrain-chunk
+					   x
+					   z
+					   whole
+					   chunk-cache-key)
+		      (lparallel:submit-task channel
+					     'revive-terrain-chunk
+					     whole
+					     chunk-cache-key)))))
+    (loop for i from cache-channels-count above 0 do
+	 (let ((chunk (lparallel:receive-result channel)))
+	   (prepare-for-rendering chunk)
+	   (push-entity world chunk)))))
 
 (defun load-level (world game-state compiled-shaders file)
   (let* ((actual-file (res:get-resource-file file +maps-resource+

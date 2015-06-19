@@ -48,6 +48,9 @@
 (defun init-pick-overlay-value ()
   (make-fresh-array 0 (num:desired 0.0) 'desired-type nil))
 
+(defun init-pick-overlay-value* (size)
+  (make-fresh-array size (num:desired 0.0) 'desired-type nil))
+
 (defun init-highligthed-tiles-coords ()
   (make-fresh-array 0 nil 'uivec2 nil))
 
@@ -81,9 +84,7 @@
 (defmethod marshal:class-persistant-slots ((object pickable-mesh))
   (append '(lookup-tile-triangle
 	    highligthed-tiles-coords
-	    pick-overlay-values
-	    renderer-data-count-pick-overlay
-	    renderer-data-pick-overlay)
+	    pick-overlay-values)
 	  (call-next-method)))
 
 (defmethod clone-into :after ((from pickable-mesh) (to pickable-mesh))

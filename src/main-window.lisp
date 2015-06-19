@@ -256,7 +256,6 @@
 	  (when (string= text "l")
 	    (incf (elt (entity:pos (world:camera (world object))) 0) -1.0))
 	  (when (string-equal text "u")
-	    (misc:dbg "~a" (elt (entity:pos (world:camera (world object))) 1))
 	    (incf (elt (entity:pos (world:camera (world object))) 1) 1.0))
 	  (when (string-equal text "d")
 	    (incf (elt (entity:pos (world:camera (world object))) 1) -1.0))

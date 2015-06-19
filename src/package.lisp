@@ -1747,6 +1747,7 @@
    :triangles
    :material-params
    :vertices
+   :edges
    :texture-coord
    :normals
    :tangents
@@ -1915,7 +1916,9 @@
    :lookup-tile-triangle->dbg-matrix
    :vbo-pick-weights-handle
    :cost-coord->lookup-tile
-   :lookup-tile-coord->cost))
+   :lookup-tile-coord->cost
+   :init-pick-overlay-value
+   :init-pick-overlay-value*))
 
 (defpackage :building-floor-mesh
   (:use :cl
@@ -2245,6 +2248,8 @@
 	:level-config
 	:random-labyrinth
 	:random-terrain
+	:pickable-mesh
+	:terrain-chunk
 	:game-state
 	:world)
   (:import-from :sb-cga :vec :copy-vec :alloc-vec :vec+ :vec- :vec/)
