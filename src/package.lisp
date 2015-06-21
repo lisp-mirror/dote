@@ -1647,13 +1647,100 @@
 
 ;; engine
 
+(defpackage :basic-interaction-parameters
+  (:use :cl
+	:alexandria
+	:constants
+	:config
+	:interfaces
+	:identificable)
+  (:export
+   :+decay-by-use:+
+   :+decay-by-turns:+
+   :+nil-equiv-bag:+
+   :+effect-when-used:+
+   :+effect-when-worn:+
+   :+effect-when-consumed:+
+   :+can-talk:+
+   :+can-ask-for-help:+
+   :+can-be-opened:+
+   :+can-attack:+
+   :+can-be-attacked:+
+   :+can-be-destroyed:+
+   :+can-be-burned:+
+   :+can-heal:+
+   :+can-be-heal:+
+   :+can-poison:+
+   :+can-be-poisoned:+
+   :+can-be-drunk:+
+   :+can-be-eaten:+
+   :+can-be-weared-arm:+
+   :+can-be-weared-head:+
+   :+can-be-weared-neck:+
+   :+can-be-weared-feet:+
+   :+can-cut:+
+   :+can-smash:+
+   :+can-pierce:+
+   :+decay:+
+   :+effects:+
+   :+strength:+
+   :+stamina:+
+   :+dexterity:+
+   :+agility:+
+   :+smartness:+
+   :+empaty:+
+   :+weight:+
+   :+damage-point:+
+   :+movement-point:+
+   :+magic-point:+
+   :+dodge-chance:+
+   :+melee-attack-chance:+
+   :+range-attack-chance:+
+   :+melee-attack-damage:+
+   :+range-attack-damage:+
+   :+edge-weapons-chance-bonus:+
+   :+edge-weapons-damage-bonus:+
+   :+impact-weapons-chance-bonus:+
+   :+impact-weapons-damage-bonus:+
+   :+pole-weapons-chance-bonus:+
+   :+pole-weapons-damage-bonus:+
+   :+unlock-chance:+
+   :+deactivate-trap-chance:+
+   :+reply-attack-chance:+
+   :+ambush-attack-chance:+
+   :+spell-chance:+
+   :+attack-spell-chance:+
+   :+healing-effects:+
+   :+heal-poison:+
+   :+heal-berserk:+
+   :+heal-faint:+
+   :+heal-terror:+
+   :+cause-poison:+
+   :+cause-berserk:+
+   :+cause-faint:+
+   :+cause-terror:+
+   :+immune-poison:+
+   :+immune-berserk:+
+   :+immune-faint:+
+   :+immune-terror:+
+   :+magic-effect:+
+   :define-interaction
+   :define-decay
+   :define-effects
+   :define-healing-effects
+   :define-healing-effect
+   :define-magic-effect))
+
 (defpackage :entity
   (:use :cl
+	:alexandria
 	:constants
+	:config
 	:sb-cga
 	:sb-cga-utils
 	:interfaces
 	:identificable)
+  (:shadowing-import-from :sb-cga :rotate)
   (:export
    :entity
    :modified
@@ -1946,6 +2033,21 @@
    :building-floor-mesh
    :setup-texture-coord-scaling
    :floor-tile))
+
+(defpackage :game-event
+  (:use
+   :cl
+   :alexandria
+   :misc
+   :num)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :end-turn
+   :end-turn-members
+   :register-for-end-turn
+   :unregister-for-end-turn
+   :get-on-end-turn
+   :propagate-end-turn))
 
 ;; UI
 
