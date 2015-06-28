@@ -137,3 +137,8 @@
   nil)
 
 (defgeneric from-sexp (object sexp))
+
+(defgeneric description-for-humans (object))
+
+(defmethod description-for-humans ((object t))
+  (if object " " nil))

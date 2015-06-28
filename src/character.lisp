@@ -16,9 +16,77 @@
 
 (in-package :player-character)
 
-(alexandria:define-constant +unknown-ability-bonus+  -5 :test #'=)
+(alexandria:define-constant +unknown-ability-bonus+  -5                                 :test #'=)
 
-(alexandria:define-constant +starting-exp-points+    10 :test #'=)
+(alexandria:define-constant +starting-exp-points+    10                                 :test #'=)
+
+(alexandria:define-constant +first-name+                   :first-name                  :test #'eq)
+
+(alexandria:define-constant +last-name+                    :last-name                   :test #'eq)
+
+(alexandria:define-constant +portrait+                     :portrait                    :test #'eq)
+
+(alexandria:define-constant +strength+                     :strength                    :test #'eq)
+
+(alexandria:define-constant +stamina+                      :stamina                     :test #'eq)
+
+(alexandria:define-constant +dexterity+                    :dexterity                   :test #'eq)
+
+(alexandria:define-constant +agility+                      :agility                     :test #'eq)
+
+(alexandria:define-constant +smartness+                    :smartness                   :test #'eq)
+
+(alexandria:define-constant +empaty+                       :empaty                      :test #'eq)
+
+(alexandria:define-constant +weight+                       :weight                      :test #'eq)
+
+(alexandria:define-constant +damage-points+                :damage-points               :test #'eq)
+
+(alexandria:define-constant +movement-points+              :movement-points             :test #'eq)
+
+(alexandria:define-constant +magic-points+                 :magic-points                :test #'eq)
+
+(alexandria:define-constant +dodge-chance+                 :dodge-chance                :test #'eq)
+
+(alexandria:define-constant +melee-attack-chance+          :melee-attack-chance         :test #'eq)
+
+(alexandria:define-constant +range-attack-chance+          :range-attack-chance         :test #'eq)
+
+(alexandria:define-constant +melee-attack-damage+          :melee-attack-damage         :test #'eq)
+
+(alexandria:define-constant +range-attack-damage+          :range-attack-damage         :test #'eq)
+
+(alexandria:define-constant +edge-weapons-chance-bonus+    :edge-weapons-chance-bonus   :test #'eq)
+
+(alexandria:define-constant +edge-weapons-damage-bonus+    :edge-weapons-damage-bonus   :test #'eq)
+
+(alexandria:define-constant +impact-weapons-chance-bonus+  :impact-weapons-chance-bonus :test #'eq)
+
+(alexandria:define-constant +impact-weapons-damage-bonus+  :impact-weapons-damage-bonus :test #'eq)
+
+(alexandria:define-constant +pole-weapons-chance-bonus+    :pole-weapons-chance-bonus   :test #'eq)
+
+(alexandria:define-constant +pole-weapons-damage-bonus+    :pole-weapons-damage-bonus   :test #'eq)
+
+(alexandria:define-constant +unlock-chance+                :unlock-chance               :test #'eq)
+
+(alexandria:define-constant +deactivate-trap-chance+       :deactivate-trap-chance      :test #'eq)
+
+(alexandria:define-constant +reply-attack-chance+          :reply-attack-chance         :test #'eq)
+
+(alexandria:define-constant +ambush-attack-chance+         :ambush-attack-chance        :test #'eq)
+
+(alexandria:define-constant +spell-chance+                 :spell-chance                :test #'eq)
+
+(alexandria:define-constant +attack-spell-chance+          :attack-spell-chance         :test #'eq)
+
+(alexandria:define-constant +status+                       :status                      :test #'eq)
+
+(alexandria:define-constant +race+                         :race                        :test #'eq)
+
+(alexandria:define-constant +level+                        :level                       :test #'eq)
+
+(alexandria:define-constant +exp-points+                   :exp-points                  :test #'eq)
 
 (defparameter *standard-capital-characteristic* 200)
 
@@ -73,20 +141,20 @@
     :initform 35
     :accessor weight
     :type integer)
-   (damage-point
-    :initarg :damage-point
+   (damage-points
+    :initarg :damage-points
     :initform 0
-    :accessor damage-point
+    :accessor damage-points
     :type integer)
-   (movement-point
-    :initarg :movement-point
+   (movement-points
+    :initarg :movement-points
     :initform 0
-    :accessor movement-point
+    :accessor movement-points
     :type integer)
-   (magic-point
-    :initarg :magic-point
+   (magic-points
+    :initarg :magic-points
     :initform 0
-    :accessor magic-point
+    :accessor magic-points
     :type integer)
    (dodge-chance
     :initarg :dodge-chance
@@ -173,7 +241,7 @@
     :initform 0
     :accessor attack-spell-chance
     :type integer)
-   (status 
+   (status
     :initarg :status
     :initform :normal
     :accessor status)
@@ -188,12 +256,16 @@
    (exp-points
     :initarg :exp-points
     :initform 0
-    :accessor exp-points)))
+    :accessor exp-points)
+   (basic-interaction-params
+    :initform nil
+    :initarg  :basic-interaction-params
+    :accessor basic-interaction-params)))
 
 (defmethod print-object ((object player-character) stream)
   (print-unreadable-object (object stream :type t :identity t)
     (format stream
-	    "~%strength: ~a ~%stamina: ~a ~%dexterity: ~a ~%agility: ~a ~%smartness: ~a ~%empaty: ~a ~%weight: ~a ~%damage-point: ~a ~%movement-point: ~a ~%magic-point: ~a ~%dodge-chance: ~a ~%melee-attack-chance: ~a ~%range-attack-chance: ~a ~%melee-attack-damage: ~a ~%range-attack-damage: ~a ~%edge-weapons-chance-bonus: ~a ~%edge-weapons-damage-bonus: ~a ~%impact-weapons-chance-bonus: ~a ~%impact-weapons-damage-bonus: ~a ~%pole-weapons-chance-bonus: ~a ~%pole-weapons-damage-bonus: ~a ~%unlock-chance: ~a ~%deactivate-trap-chance: ~a ~%reply-attack-chance: ~a ~%ambush-attack-chance: ~a ~%spell-chance: ~a ~%attack-spell-chance: ~a ~%status: ~a  ~%race: ~a ~%level: ~a ~%exp-points: ~a"
+	    "~%strength: ~a ~%stamina: ~a ~%dexterity: ~a ~%agility: ~a ~%smartness: ~a ~%empaty: ~a ~%weight: ~a ~%damage-points: ~a ~%movement-points: ~a ~%magic-points: ~a ~%dodge-chance: ~a ~%melee-attack-chance: ~a ~%range-attack-chance: ~a ~%melee-attack-damage: ~a ~%range-attack-damage: ~a ~%edge-weapons-chance-bonus: ~a ~%edge-weapons-damage-bonus: ~a ~%impact-weapons-chance-bonus: ~a ~%impact-weapons-damage-bonus: ~a ~%pole-weapons-chance-bonus: ~a ~%pole-weapons-damage-bonus: ~a ~%unlock-chance: ~a ~%deactivate-trap-chance: ~a ~%reply-attack-chance: ~a ~%ambush-attack-chance: ~a ~%spell-chance: ~a ~%attack-spell-chance: ~a ~%status: ~a  ~%race: ~a ~%level: ~a ~%exp-points: ~a~%interaction ~a"
 	    (strength object)
 	    (stamina object)
 	    (dexterity object)
@@ -201,9 +273,9 @@
 	    (smartness object)
 	    (empaty object)
 	    (weight object)
-	    (damage-point object)
-	    (movement-point object)
-	    (magic-point object)
+	    (damage-points object)
+	    (movement-points object)
+	    (magic-points object)
 	    (dodge-chance object)
 	    (melee-attack-chance object)
 	    (range-attack-chance object)
@@ -221,10 +293,11 @@
 	    (ambush-attack-chance object)
 	    (spell-chance object)
 	    (attack-spell-chance object)
-	    (status object) 
+	    (status object)
 	    (race object)
 	    (level object)
-	    (exp-points object))))
+	    (exp-points object)
+	    (basic-interaction-params object))))
 
 (defmethod marshal:class-persistant-slots ((object player-character))
   (append  '(first-name
@@ -237,9 +310,9 @@
 	     smartness
 	     empaty
 	     weight
-	     damage-point
-	     movement-point
-	     magic-point
+	     damage-points
+	     movement-points
+	     magic-points
 	     dodge-chance
 	     melee-attack-chance
 	     range-attack-chance
@@ -257,10 +330,11 @@
 	     ambush-attack-chance
 	     spell-chance
 	     attack-spell-chance
-	     status 
+	     status
 	     race
 	     level
-	     exp-points)
+	     exp-points
+	     basic-interaction-params)
 	   (call-next-method)))
 
 (defmethod serialize ((object player-character))
@@ -278,12 +352,20 @@
 
 (defgeneric random-fill-slots (object capital characteristics))
 
+(defgeneric portrait-texture-resource (object))
+
+(defgeneric lookup-basic-interaction (object key))
+
+(defgeneric import-interaction-from-definition (object file))
+
+(defgeneric object-keycode (object))
+
 (defmethod random-fill-slots ((object player-character) capital characteristics)
   (loop for charact in characteristics do
        (when (> capital 0)
 	 (let ((random-value (+ (caadr charact)
 				(if (/= 0 (cadadr charact))
-				    (num:lcg-next-in-range 
+				    (num:lcg-next-in-range
 				     (- (cadadr charact)) (cadadr charact))
 				    0))))
 	   (if (< random-value capital)
@@ -294,11 +376,14 @@
 		 (incf (slot-value object (car charact)) capital)
 		 (setf capital 0))))))
   capital)
-  
+
+(defmethod portrait-texture-resource ((object t))
+  (res:get-resource-file object +default-gui-inventory-items+))
+
 (defmacro gen-make-player (class)
   (alexandria:with-gensyms (char rest-capital)
-    `(defun ,(alexandria:format-symbol t "~@:(make-~a~)" class) 
-	 (capital race 
+    `(defun ,(alexandria:format-symbol t "~@:(make-~a~)" class)
+	 (capital race
 	  &optional (charact nil) (slots '((strength (50 10))
 					   (stamina  (40 10))
 					   (dexterity (5 3))
@@ -308,9 +393,9 @@
 					   (weight    (25 10)))))
        (let* ((,char (or charact (make-instance 'player-character)))
 	      (,rest-capital (random-fill-slots ,char capital slots)))
-	 (setf (damage-point ,char)   (truncate (* (stamina ,char) 0.5))
-	       (movement-point ,char) (truncate (* (agility ,char) 0.5))
-	       (magic-point ,char) (truncate (/ (alexandria:lerp 0.1
+	 (setf (damage-points ,char)   (truncate (* (stamina ,char) 0.5))
+	       (movement-points ,char) (truncate (* (agility ,char) 0.5))
+	       (magic-points ,char) (truncate (/ (alexandria:lerp 0.1
 								 (alexandria:lerp 0.5
 										  (smartness ,char)
 										  (empaty ,char))
@@ -326,17 +411,17 @@
 	       (unlock-chance ,char) (truncate (/ (alexandria:lerp 0.9
 								   (agility ,char)
 								   (dexterity ,char))
-						  
+
 						  10))
 	       (deactivate-trap-chance ,char) (truncate
-					       (/ (alexandria:lerp 0.8 
+					       (/ (alexandria:lerp 0.8
 								   (agility ,char)
 								   (dexterity ,char))
 						  10))
 	       (reply-attack-chance ,char) (truncate (/ (agility ,char) 5))
 	       (ambush-attack-chance ,char) (truncate
 					     (/ (alexandria:lerp 0.9
-								 (agility ,char) 
+								 (agility ,char)
 								 (strength ,char))
 						10))
 	       (spell-chance ,char) (truncate (/ (alexandria:lerp 0.9
@@ -352,7 +437,7 @@
 	     (,(alexandria:format-symbol t "~@:(make-~a~)" class) ,rest-capital race ,char slots)
 	     (values ,char ,rest-capital))))))
 
-(gen-make-player player) 
+(gen-make-player player)
 
 (defun make-warrior (race)
   (make-player *standard-capital-characteristic* race nil '((strength (50 10))
@@ -400,3 +485,392 @@
 									  (weight    (56 20))))))
     (incf (deactivate-trap-chance player) 3)
     player))
+
+;;;; interaction
+
+(defmethod lookup-basic-interaction ((object player-character) key)
+  (cdr (assoc key (basic-interaction-params object))))
+
+(defmacro gen-interaction-predicate ((name) &body body)
+  (let ((name-fn (format-symbol t "~:@(~a-p~)" name)))
+    `(progn
+       (defgeneric ,name-fn (object))
+       (defmethod  ,name-fn ((object player-character))
+	 (progn ,@body)))))
+
+(defmacro gen-trivial-interaction-path (name &rest vars)
+  (let ((name-fn (format-symbol t "~:@(~a~)" name)))
+    `(progn
+       (defgeneric ,name-fn (object))
+       (defmethod  ,name-fn ((object player-character))
+	 (let ((path (misc:build-assocs-chain ,(reverse vars) (basic-interaction-params object))))
+	    path)))))
+
+(gen-trivial-interaction-path get-strength                    +effects+ +strength+)
+
+(gen-trivial-interaction-path get-stamina                     +effects+ +stamina+)
+
+(gen-trivial-interaction-path get-dexterity                   +effects+ +dexterity+)
+
+(gen-trivial-interaction-path get-agility                     +effects+ +agility+)
+
+(gen-trivial-interaction-path get-smartness                   +effects+ +smartness+)
+
+(gen-trivial-interaction-path get-empaty                      +effects+ +empaty+)
+
+(gen-trivial-interaction-path get-weight                      +effects+ +weight+)
+
+(gen-trivial-interaction-path get-damage-points               +effects+ +damage-points+)
+
+(gen-trivial-interaction-path get-movement-points             +effects+ +movement-point+)
+
+(gen-trivial-interaction-path get-magic-points                +effects+ +magic-point+)
+
+(gen-trivial-interaction-path get-dodge-chance                +effects+ +dodge-chance+)
+
+(gen-trivial-interaction-path get-melee-attack-chance         +effects+ +melee-attack-chance+)
+
+(gen-trivial-interaction-path get-range-attack-chance         +effects+ +range-attack-chance+)
+
+(gen-trivial-interaction-path get-melee-attack-damage         +effects+ +melee-attack-damage+)
+
+(gen-trivial-interaction-path get-range-attack-damage         +effects+ +range-attack-damage+)
+
+(gen-trivial-interaction-path get-edge-weapons-chance-bonus   +effects+ +edge-weapons-chance-bonus+)
+
+(gen-trivial-interaction-path get-edge-weapons-damage-bonus   +effects+ +edge-weapons-damage-bonus+)
+
+(gen-trivial-interaction-path get-impact-weapons-chance-bonus +effects+
+                                                              +impact-weapons-chance-bonus+)
+
+(gen-trivial-interaction-path get-impact-weapons-damage-bonus +effects+
+                                                              +impact-weapons-damage-bonus+)
+
+(gen-trivial-interaction-path get-pole-weapons-chance-bonus   +effects+ +pole-weapons-chance-bonus+)
+
+(gen-trivial-interaction-path get-pole-weapons-damage-bonus   +effects+ +pole-weapons-damage-bonus+)
+
+(gen-trivial-interaction-path get-unlock-chance               +effects+ +unlock-chance+)
+
+(gen-trivial-interaction-path get-deactivate-trap-chance      +effects+ +deactivate-trap-chance+)
+
+(gen-trivial-interaction-path get-reply-attack-chance         +effects+ +reply-attack-chance+)
+
+(gen-trivial-interaction-path get-ambush-attack-chance        +effects+ +ambush-attack-chance+)
+
+(gen-trivial-interaction-path get-spell-chance                +effects+ +spell-chance+)
+
+(gen-trivial-interaction-path get-attack-spell-chance         +effects+ +attack-spell-chance+)
+
+(gen-trivial-interaction-path get-heal-poison                 +healing-effects+ +heal-poison+)
+
+(gen-trivial-interaction-path get-heal-berserk                +healing-effects+ +heal-berserk+)
+
+(gen-trivial-interaction-path get-heal-faint                  +healing-effects+ +heal-faint+)
+
+(gen-trivial-interaction-path get-heal-terror                 +healing-effects+ +heal-terror+)
+
+(gen-trivial-interaction-path get-cause-poison                +healing-effects+ +cause-poison+)
+
+(gen-trivial-interaction-path get-cause-berserk               +healing-effects+ +cause-berserk+)
+
+(gen-trivial-interaction-path get-cause-faint                 +healing-effects+ +cause-faint+)
+
+(gen-trivial-interaction-path get-cause-terror                +healing-effects+ +cause-terror+)
+
+(gen-trivial-interaction-path get-immune-poison               +healing-effects+ +immune-poison+)
+
+(gen-trivial-interaction-path get-immune-berserk              +healing-effects+ +immune-berserk+)
+
+(gen-trivial-interaction-path get-immune-faint                +healing-effects+ +immune-faint+)
+
+(gen-trivial-interaction-path get-immune-terror               +healing-effects+ +immune-terror+)
+
+(gen-trivial-interaction-path get-magic-effect                +magic-effect+)
+
+(misc:gen-trivial-plist-predicates player-character
+				   (lambda (v k) (lookup-basic-interaction v k))
+				   +can-talk+
+				   +can-be-opened+
+				   +can-open+
+				   +can-attack+
+				   +can-attack+
+				   +can-be-destroyed+
+				   +can-be-burned+
+				   +can-heal+
+				   +can-be-heal+
+				   +can-poison+
+				   +can-be-poisoned+
+				   +can-be-drunk+
+				   +can-be-eaten+
+				   +can-be-weared-arm+
+				   +can-be-weared-head+
+				   +can-be-weared-neck+
+				   +can-be-weared-feet+
+				   +can-cut+
+				   +can-smash+
+				   +can-pierce+
+				   +can-launch-bolt+
+				   +can-launch-arrow+
+				   +mounted-on-pole+
+				   +decay+
+				   +effects+
+				   +healing-effects+
+				   +magic-effect+)
+
+(misc:gen-trivial-plist-gets player-character
+			     (lambda (v k) (lookup-basic-interaction v k))
+			     fetch
+			     +can-open+
+			     +can-be-opened+
+			     +can-poison+)
+
+(gen-interaction-predicate (be-consumed)
+  (or (lookup-basic-interaction object +can-be-drunk+)
+      (lookup-basic-interaction object +can-be-eaten+)))
+
+(gen-interaction-predicate (weapon)
+  (or (lookup-basic-interaction object +can-cut+)
+      (lookup-basic-interaction object +can-smash+)
+      (lookup-basic-interaction object +can-pierce+)))
+
+(gen-interaction-predicate (con-be-worn)
+  (or (lookup-basic-interaction object +can-be-weared-feet+)
+      (lookup-basic-interaction object +can-be-weared-arm+)
+      (lookup-basic-interaction object +can-be-weared-neck+)
+      (lookup-basic-interaction object +can-be-weared-head+)))
+
+(defmethod object-keycode ((object player-character))
+  (or (and (lookup-basic-interaction object +can-be-opened+)
+	   (stringp (lookup-basic-interaction object +can-be-opened+))
+	   (lookup-basic-interaction object +can-be-opened+))
+      (and (lookup-basic-interaction object +can-open+)
+	   (stringp (lookup-basic-interaction object +can-open+))
+	   (lookup-basic-interaction object +can-open+))))
+
+(defmethod import-interaction-from-definition ((object player-character) file)
+  (with-interaction-parameters (parameters file)
+    (setf (basic-interaction-params object) parameters)))
+
+(defmethod description-for-humans ((object player-character))
+  (strcat
+   (format nil (_ "~:[~;Edge weapon ~]~:[~;Impact weapon ~]~:[~;Range weapon ~]~:[~;Range weapon ~]")
+	   (can-cut-p   object)
+	   (can-smash-p object)
+	   (can-launch-bolt-p object)
+	   (can-launch-arrow-p object))
+   (format nil (_ "~@[, ~a strength~]")  (description-for-humans (get-strength object)))
+   (format nil (_ "~@[, ~a stamina~]")   (description-for-humans (get-stamina object)))
+   (format nil (_ "~@[, ~a dexterity~]") (description-for-humans (get-dexterity object)))
+   (format nil (_ "~@[, ~a agility~]")   (description-for-humans (get-agility object)))
+   (format nil (_ "~@[, ~a smartness~]") (description-for-humans (get-smartness object)))
+   (format nil (_ "~@[, ~a empaty~]")    (description-for-humans (get-empaty object)))
+   (format nil (_ "~@[, ~a weight~]")    (description-for-humans (get-weight object)))
+   (format nil (_ "~@[, ~a damage points~]") (description-for-humans (get-damage-points object)))
+   (format nil (_ "~@[, ~a movement points~]") (description-for-humans
+					       (get-movement-points object)))
+   (format nil (_ "~@[, ~a magic points~]") (description-for-humans (get-magic-points object)))
+   (format nil (_ "~@[, ~a dodge chance~]") (description-for-humans (get-dodge-chance object)))
+
+   (format nil (_ "~@[, ~a melee attack chance~]") (description-for-humans
+						   (get-melee-attack-chance object)))
+   (format nil (_ "~@[, ~a range attack chance~]") (description-for-humans
+						   (get-range-attack-chance object)))
+   (format nil (_ "~@[, ~a melee attack damage~]") (description-for-humans
+						   (get-melee-attack-damage object)))
+   (format nil (_ "~@[, ~a range attack damage~]") (description-for-humans
+						   (get-range-attack-damage object)))
+   (format nil (_ "~@[, ~a edge weapons chance bonus~]") (description-for-humans
+							 (get-edge-weapons-chance-bonus object)))
+   (format nil (_ "~@[, ~a edge weapons damage bonus~]") (description-for-humans
+							  (get-edge-weapons-damage-bonus object)))
+   (format nil (_ "~@[, ~a impact weapons chance bonus~]") (description-for-humans
+							    (get-impact-weapons-chance-bonus object)))
+   (format nil (_ "~@[, ~a impact weapons damage bonus~]") (description-for-humans
+							    (get-impact-weapons-damage-bonus object)))
+   (format nil (_ "~@[, ~a pole weapons chance bonus~]") (description-for-humans
+							  (get-pole-weapons-chance-bonus object)))
+   (format nil (_ "~@[, ~a pole weapons damage bonus~]") (description-for-humans
+							  (get-pole-weapons-damage-bonus object)))
+   (format nil (_ "~@[, ~a unlock chance~]") (description-for-humans (get-unlock-chance object)))
+   (format nil (_ "~@[, ~a deactivate traps chance~]") (description-for-humans
+							(get-deactivate-trap-chance object)))
+   (format nil (_ "~@[, ~a reply attack chance~]") (description-for-humans
+						    (get-reply-attack-chance object)))
+   (format nil (_ "~@[, ~a ambush attack chance~]") (description-for-humans
+						     (get-ambush-attack-chance object)))
+   (format nil (_ "~@[, ~a spell chance~]") (description-for-humans
+					     (get-spell-chance object)))
+   (format nil (_ "~@[, ~a attack spell chance~]") (description-for-humans
+						    (get-attack-spell-chance object)))
+   (format nil (_ "~@[, ~a heal poison condition~]") (description-for-humans
+						      (get-heal-poison object)))
+   (format nil (_ "~@[, ~a heal berserk condition~]") (description-for-humans
+						       (get-heal-berserk object)))
+   (format nil (_ "~@[, ~a heal faint condition~]")  (description-for-humans
+						      (get-heal-faint object)))
+   (format nil (_ "~@[, ~a heal terror condition~]")  (description-for-humans
+						       (get-heal-terror object)))
+   (format nil (_ "~@[, makes immune from poison (~a)~]") (description-for-humans
+							(get-immune-poison object)))
+   (format nil (_ "~@[, makes immune from terror (~a)~]") (description-for-humans
+							(get-immune-terror object)))
+   (format nil (_ "~@[, makes immune from berserk (~a)~]") (description-for-humans
+							 (get-immune-berserk object)))
+   (format nil (_ "~@[, makes immune from faint (~a)~]") (description-for-humans
+						       (get-immune-berserk object)))
+   (format nil (_ "~@[, ~a heals faint condition~]")  (description-for-humans
+						      (get-heal-faint object)))
+   (format nil (_ "~@[, ~a heals terror condition~]")  (description-for-humans
+						       (get-heal-terror object)))
+   (format nil (_ "~@[, launchs ~a~]")  (description-for-humans (get-magic-effect object)))))
+
+;; character definition
+
+(defparameter *character-parameters* nil)
+
+(defmacro define-character (&rest parameters)
+  (let ((params (misc:build-plist parameters)))
+    `(setf *character-parameters*
+	   (list ,@(loop for i in params collect
+			`(cons ,(car i) ,(if (consp (cdr i))
+					     (cadr i)
+					     (cdr i))))))))
+
+(defmacro with-character-parameters ((params file) &body body)
+  `(let* ((*character-parameters* nil))
+     (load ,file)
+     (let ((,params *character-parameters*))
+       ,@body)))
+
+(misc:gen-trivial-plist-gets t
+			     (lambda (l k) (cdr (assoc k l)))
+			     fetch
+			     +first-name+
+			     +last-name+
+			     +portrait+
+			     +strength+
+			     +stamina+
+			     +dexterity+
+			     +agility+
+			     +smartness+
+			     +empaty+
+			     +weight+
+			     +damage-points+
+			     +movement-points+
+			     +magic-points+
+			     +dodge-chance+
+			     +melee-attack-chance+
+			     +range-attack-chance+
+			     +melee-attack-damage+
+			     +range-attack-damage+
+			     +edge-weapons-chance-bonus+
+			     +edge-weapons-damage-bonus+
+			     +impact-weapons-chance-bonus+
+			     +impact-weapons-damage-bonus+
+			     +pole-weapons-chance-bonus+
+			     +pole-weapons-damage-bonus+
+			     +unlock-chance+
+			     +deactivate-trap-chance+
+			     +reply-attack-chance+
+			     +ambush-attack-chance+
+			     +spell-chance+
+			     +attack-spell-chance+
+			     +status+
+			     +race+
+			     +level+
+			     +exp-points+)
+
+(defun randomize-a-bit (val &key (displacement 0.1))
+  (if (numberp val)
+      (floor (num:gaussian-probability (* displacement val) val))
+      val))
+
+(defun load-randomize-character (file)
+  (with-character-parameters (params file)
+    (let ((results (make-instance 'player-character
+				  :first-name                  (randomize-a-bit
+								(fetch-first-name params))
+				  :last-name                   (randomize-a-bit
+								(fetch-last-name params))
+				  :portrait                    (texture:get-texture
+								(portrait-texture-resource
+								 (fetch-portrait params)))
+				  :strength                    (randomize-a-bit
+								(fetch-strength params))
+				  :stamina                     (randomize-a-bit
+								(fetch-stamina params))
+				  :dexterity                   (randomize-a-bit
+								(fetch-dexterity params))
+				  :agility                     (randomize-a-bit
+								(fetch-agility params))
+				  :smartness                   (randomize-a-bit
+								(fetch-smartness params))
+				  :empaty                      (randomize-a-bit
+								(fetch-empaty params))
+				  :weight                      (randomize-a-bit
+								(fetch-weight params))
+				  :damage-points               (randomize-a-bit
+								(fetch-damage-points params))
+				  :movement-points             (randomize-a-bit
+								(fetch-movement-points params))
+				  :magic-points                (randomize-a-bit
+								(fetch-magic-points params))
+				  :dodge-chance                (randomize-a-bit
+								(fetch-dodge-chance params))
+				  :melee-attack-chance         (randomize-a-bit
+								(fetch-melee-attack-chance params))
+				  :range-attack-chance         (randomize-a-bit
+								(fetch-range-attack-chance params))
+				  :melee-attack-damage         (randomize-a-bit
+								(fetch-melee-attack-damage params))
+				  :range-attack-damage         (randomize-a-bit
+								(fetch-range-attack-damage params))
+				  :edge-weapons-chance-bonus   (randomize-a-bit
+								(fetch-edge-weapons-chance-bonus
+								 params))
+				  :edge-weapons-damage-bonus   (randomize-a-bit
+								(fetch-edge-weapons-damage-bonus
+								 params))
+				  :impact-weapons-chance-bonus (randomize-a-bit
+								(fetch-impact-weapons-chance-bonus
+								 params))
+				  :impact-weapons-damage-bonus (randomize-a-bit
+								(fetch-impact-weapons-damage-bonus
+								 params))
+				  :pole-weapons-chance-bonus   (randomize-a-bit
+								(fetch-pole-weapons-chance-bonus
+								 params))
+				  :pole-weapons-damage-bonus   (randomize-a-bit
+								(fetch-pole-weapons-damage-bonus
+								 params))
+				  :unlock-chance               (randomize-a-bit
+								(fetch-unlock-chance params))
+				  :deactivate-trap-chance      (randomize-a-bit
+								(fetch-deactivate-trap-chance
+								 params))
+				  :reply-attack-chance         (randomize-a-bit
+								(fetch-reply-attack-chance params))
+				  :ambush-attack-chance        (randomize-a-bit
+								(fetch-ambush-attack-chance params))
+				  :spell-chance                (randomize-a-bit
+								(fetch-spell-chance params))
+				  :attack-spell-chance         (randomize-a-bit
+								(fetch-attack-spell-chance params))
+				  :status                      (randomize-a-bit
+								(fetch-status params))
+				  :race                        (randomize-a-bit
+								(fetch-race params))
+				  :level                       (randomize-a-bit
+								(fetch-level params))
+				  :exp-points                  (randomize-a-bit
+								(fetch-exp-points params)))))
+      results)))
+
+(defun tt ()
+  (let ((character (load-randomize-character "~/lisp/dote/doc/internals/character-reference/reference/character.lisp")))
+    (import-interaction-from-definition character
+					"~/lisp/dote/doc/internals/character-reference/reference/interaction.lisp")
+;    (get-strength character)))
+
+    (description-for-humans character)))

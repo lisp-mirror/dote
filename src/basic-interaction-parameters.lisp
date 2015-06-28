@@ -4,9 +4,17 @@
 
 (define-constant +decay-by-turns+              :turns                       :test #'eql)
 
-(define-constant +nil-equiv-bag+               '(:none :false :nil)         :test #'equalp)
-
 (define-constant +effect-when-used+            :when-used                   :test #'eql)
+
+(define-constant +effect-when-worn+            :when-worn                   :test #'eql)
+
+(define-constant +effect-when-consumed+        :when-consumed               :test #'eql)
+
+(define-constant +poison-effect-faint+         :faint                       :test #'eql)
+
+(define-constant +poison-effect-terror+        :terror                      :test #'eql)
+
+(define-constant +poison-effect-berserk+       :berserk                     :test #'eql)
 
 (define-constant +effect-when-worn+            :when-worn                   :test #'eql)
 
@@ -17,6 +25,8 @@
 (define-constant +can-ask-for-help+            :can-ask-for-help            :test #'eq)
 
 (define-constant +can-be-opened+               :can-be-opened               :test #'eq)
+
+(define-constant +can-open+                    :can-open                    :test #'eq)
 
 (define-constant +can-attack+                  :can-attack                  :test #'eq)
 
@@ -51,6 +61,12 @@
 (define-constant +can-smash+                   :can-smash                   :test #'eq)
 
 (define-constant +can-pierce+                  :can-pierce                  :test #'eq)
+
+(define-constant +can-launch-bolt+              :can-lauch-bolt              :test #'eq)
+
+(define-constant +can-launch-arrow+             :can-lauch-arrow             :test #'eq)
+
+(define-constant +mounted-on-pole+             :mounted-on-pole             :test #'eq)
 
 (define-constant +decay+                       :decay                       :test #'eq)
 
@@ -138,6 +154,9 @@
 
 (define-constant +magic-effect+                :magic-effect                :test #'eq)
 
+(defun effect-unlimited-p (val)
+  (not (numberp val)))
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
 
   (defun valid-keyword-p (probe &rest availables)
@@ -178,25 +197,10 @@
   (defmethod make-load-form ((object decay-parameters) &optional environment)
     (make-load-form-saving-slots object
 				 :slot-names '(when-decay points leaving-message decay-fn)
-				 :environment environment))
-
-  (defun %build-plist (params)
-    (let ((keywords (mapcar #'make-keyword
-			    (loop for i from 0 below (length params) when (oddp (1+ i))
-			       collect (elt params i))))
-	  (vals (mapcar #'(lambda (a)
-			    (typecase a
-			      (symbol (let ((key (make-keyword a)))
-					(and (not (find key +nil-equiv-bag+ :test #'eq))
-					     key)))
-			      (cons   (list a))
-			      (otherwise a)))
-			(loop for i from 0 below (length params) when (evenp (1+ i))
-			   collect (elt params i)))))
-      (mapcar #'(lambda (a b) (cons a b)) keywords vals))))
+				 :environment environment)))
 
 (defmacro define-decay (params)
-  (let* ((parameters (%build-plist params))
+  (let* ((parameters (misc:build-plist params))
 	 (points     (cdr (assoc :points   parameters)))
 	 (when-decay (cdr (assoc :duration parameters)))
 	 (message    (cdr (assoc :message  parameters))))
@@ -239,11 +243,18 @@
     (defmethod make-load-form ((object effect-parameters) &optional environment)
       (make-load-form-saving-slots object
 				   :slot-names '(trigger duration modifier)
-				   :environment environment)))
+				   :environment environment))
+
+    (defmethod description-for-humans ((object effect-parameters))
+      (format nil "~@d (~a)" (modifier object) (if (effect-unlimited-p (duration object))
+						   (_ "unlimited")
+						   (format nil
+							   (_ "~d turns")
+							   (duration object))))))
 
 (defmacro define-effect (params)
-  (let* ((parameters  (%build-plist params))
-	 (trigger (cdr (assoc :trigger parameters)))
+  (let* ((parameters  (misc:build-plist params))
+	 (trigger     (cdr (assoc :trigger parameters)))
 	 (modifier    (cdr (assoc :modifier    parameters)))
 	 (duration    (cdr (assoc :duration    parameters))))
     (when (null trigger)
@@ -251,7 +262,7 @@
     (when (null modifier)
       (warn (_ "Interation: No modifier specified for effect, using 0.")))
     (when (null duration)
-      (warn (_ "Interation: No duration specified for effect, using 1000000.")))
+      (warn (_ "Interation: No duration specified for effect, using :unlimited.")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
 				+effect-when-consumed+))
       (error (format nil (_ "Invalid trigger ~a, expected ~a")
@@ -259,11 +270,11 @@
 				   +effect-when-consumed+))))
     (make-instance 'effect-parameters
 		   :trigger  (or trigger  +effect-when-used+)
-		   :duration (or duration 1000000)
+		   :duration (or duration :unlimited)
 		   :modifier (or modifier 0))))
 
-(defmacro define-effects (parameters)
-  (let ((params (%build-plist parameters)))
+(defmacro define-effects (&rest parameters)
+  (let ((params (misc:build-plist parameters)))
     `(list ,@(loop for i in params collect
 		  `(cons ,(car i) ,(if (consp (cdr i))
 				       (cadr i)
@@ -289,10 +300,15 @@
     (defmethod make-load-form ((object healing-effect-parameters) &optional environment)
       (make-load-form-saving-slots object
 				   :slot-names '(trigger duration)
-				   :environment environment)))
+				   :environment environment))
+
+    (defmethod description-for-humans ((object healing-effect-parameters))
+      (format nil "~a" (if (effect-unlimited-p (duration object))
+			   (_ "unlimited")
+			   (format nil (_ "~d turns") (duration object))))))
 
 (defmacro define-healing-effect (params)
-  (let* ((parameters  (%build-plist params))
+  (let* ((parameters  (misc:build-plist params))
 	 (trigger (cdr (assoc :trigger parameters)))
 	 (duration    (cdr (assoc :duration    parameters))))
     (when (null trigger)
@@ -308,13 +324,12 @@
 		   :trigger  (or trigger  +effect-when-used+)
 		   :duration (or duration 1000000))))
 
-(defmacro define-healing-effects (parameters)
-  (let ((params (%build-plist parameters)))
+(defmacro define-healing-effects (&rest parameters)
+  (let ((params (misc:build-plist parameters)))
     `(list ,@(loop for i in params collect
 		  `(cons ,(car i) ,(if (consp (cdr i))
 				       (cadr i)
 				       (cdr i)))))))
-
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass magic-effect-parameters ()
@@ -336,17 +351,70 @@
     (defmethod make-load-form ((object magic-effect-parameters) &optional environment)
       (make-load-form-saving-slots object
 				   :slot-names '(trigger spell-id)
-				   :environment environment)))
+				   :environment environment))
+
+    (defmethod description-for-humans ((object magic-effect-parameters))
+      (format nil "~a" (spell-id object))))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defclass poison-effect-parameters ()
+    ((points-per-turn
+      :initform :points-per-turn
+      :initarg  :points-per-turn
+      :accessor  points-per-turn)
+     (health-condition
+      :initform nil
+      :initarg  :health-condition
+      :accessor health-condition)))
+
+    (defmethod print-object ((object poison-effect-parameters) stream)
+      (print-unreadable-object (object stream :type t :identity t)
+	(format stream "points? ~a condition ~a" (points-per-turn object) (health-condition object))))
+
+    (defmethod make-load-form ((object poison-effect-parameters) &optional environment)
+      (make-load-form-saving-slots object
+				   :slot-names '(points-per-turn health-condition)
+				   :environment environment))
+
+    (defmethod description-for-humans ((object poison-effect-parameters))
+      (format nil (_ "poison enemy ~a ~a")
+	      (if (and (points-per-turn object)
+		       (> (points-per-turn object) 0))
+		  (format nil (_ "(~a damage per turn)") (points-per-turn object))
+		  "")
+	      (if (health-condition object)
+		  (format nil (_ "generate ~a") (health-condition object))
+		  ""))))
+
+(defmacro define-poison-effect (params)
+  (let* ((parameters (misc:build-plist params))
+	 (points     (cdr (assoc :points parameters)))
+	 (health-condition  (cdr (assoc :condition parameters))))
+    (when (null points)
+      (warn (_ "Interation: No points specified for poison effect, using \"-1\".")))
+    (when (null health-condition)
+      (warn (_ "Interation: No condition for poison effect, using \"null\".")))
+    (when (not (numberp points))
+      (error (format nil (_ "Invalid points ~a, expected a number") points)))
+    (when (and (not (null health-condition))
+	       (not (valid-keyword-p health-condition
+				     +poison-effect-faint+
+				     +poison-effect-terror+
+				     +poison-effect-berserk+)))
+      (error (format nil (_ "Invalid condition ~a, expected ~a") health-condition
+		     (list +poison-effect-faint+ +poison-effect-terror+ +poison-effect-berserk+))))
+    (make-instance 'poison-effect-parameters
+		   :points-per-turn  points
+		   :health-condition health-condition)))
 
 (defmacro define-magic-effect (params)
-  (let* ((parameters (%build-plist params))
+  (let* ((parameters (misc:build-plist params))
 	 (trigger    (cdr (assoc :trigger parameters)))
 	 (spell-id   (cdr (assoc :spell-id parameters))))
     (when (null trigger)
       (warn (_ "Interation: No activation trigger specified for magic effect, using \":use.\"")))
     (when (null spell-id)
-      (warn (_ "Interation: No spel for magic effect, using \":heal-1.\"")))
-
+      (warn (_ "Interation: No spell for magic effect, using \":heal-1.\"")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
 				+effect-when-consumed+))
       (error (format nil (_ "Invalid trigger ~a, expected ~a")
@@ -356,9 +424,21 @@
 		   :trigger  (or trigger  +effect-when-used+)
 		   :spell-id  (or spell-id :heal-1))))
 
-(defmacro define-interaction (parameters)
-  (let ((params (%build-plist parameters)))
-    `(list ,@(loop for i in params collect
-		  `(cons ,(car i) ,(if (consp (cdr i))
-				       (cadr i)
-				       (cdr i)))))))
+(defparameter *interaction-parameters* nil)
+
+(defmacro define-character (&rest params)
+  `(setf *interaction-parameters* (list ,@params)))
+
+(defmacro define-interaction (&rest parameters)
+  (let ((params (misc:build-plist parameters)))
+    `(setf *interaction-parameters*
+	   (list ,@(loop for i in params collect
+			`(cons ,(car i) ,(if (consp (cdr i))
+					     (cadr i)
+					     (cdr i))))))))
+
+(defmacro with-interaction-parameters ((params file) &body body)
+  `(let* ((*interaction-parameters* nil))
+     (load ,file)
+     (let ((,params *interaction-parameters*))
+       ,@body)))

@@ -117,6 +117,60 @@
 	  (append (list (replace-e! (first expr) num))
 		  (replace-e! (rest expr) num)))))
 
+(alexandria:define-constant +nil-equiv-bag+ '(:none :false :nil) :test #'equalp)
+
+(defun build-plist (params)
+  (let ((keywords (mapcar #'alexandria:make-keyword
+			  (loop for i from 0 below (length params) when (oddp (1+ i))
+			     collect (elt params i))))
+	(vals (mapcar #'(lambda (a)
+			  (typecase a
+			    (symbol (let ((key (alexandria:make-keyword a)))
+				      (and (not (find key +nil-equiv-bag+ :test #'eq))
+					   key)))
+			    (cons   (list a))
+			    (otherwise a)))
+		      (loop for i from 0 below (length params) when (evenp (1+ i))
+			 collect (elt params i)))))
+    (mapcar #'(lambda (a b) (cons a b)) keywords vals)))
+
+
+(defmacro build-assocs-chain (path start)
+  (if (null path)
+      start
+      `(cdr (assoc ,(first path) (build-assocs-chain ,(rest path) ,start)))))
+
+(defmacro gen-trivial-plist-predicate (name class var get-fn)
+  (let ((name-fn (alexandria:format-symbol t "~:@(~a-p~)" name)))
+    `(progn
+       (defgeneric ,name-fn (object))
+       (defmethod  ,name-fn ((object ,class))
+	 (funcall ,get-fn object ,var)))))
+
+(defmacro gen-trivial-plist-predicates (class get-fn &rest vars)
+  `(progn
+     ,@(loop for v in vars collect
+	    `(gen-trivial-plist-predicate ,(alexandria:symbolicate (string-trim "+" v))
+					  ,class
+					  ,v
+					  (function ,get-fn)))))
+
+(defmacro gen-trivial-plist-get (function-name-prefix name class var get-fn)
+  (let ((name-fn (alexandria:format-symbol t "~:@(~a-~a~)" function-name-prefix name)))
+    `(progn
+       (defgeneric ,name-fn (object))
+       (defmethod  ,name-fn ((object ,class))
+	 (funcall ,get-fn object ,var)))))
+
+(defmacro gen-trivial-plist-gets (class get-fn function-name-prefix &rest vars)
+  `(progn
+     ,@(loop for v in vars collect
+	    `(gen-trivial-plist-get ,function-name-prefix
+				    ,(alexandria:symbolicate (string-trim "+" v))
+				    ,class
+				    ,v
+				    (function ,get-fn)))))
+
 ;; misc
 
 (defun not-null-p (a)

@@ -60,9 +60,3 @@
 	  (call-next-method)))
 
 (defgeneric aabb-2d (object))
-
-(defclass interactive-entity (entity)
-  ((decay-object
-    :initform nil
-    :initarg  :decay-object
-    :accessor decay-object)))

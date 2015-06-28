@@ -55,11 +55,11 @@
   (typecase n
     (symbol (string-downcase (symbol-name n)))
     (otherwise (format nil "~a" n))))
-  
+
 (defun construct-resource-path (resource p)
   (typecase resource
     (cons
-     (join-with-srings* +virtual-fs-dir-separator+ 
+     (join-with-srings* +virtual-fs-dir-separator+
 			(join-with-srings (mapcar #'%normalize-resource-name resource)
 					  +virtual-fs-dir-separator+)
 			p))
@@ -72,7 +72,7 @@
   ((resource
     :initarg :resource
     :reader  resource))
-  (:report (lambda (condition stream) 
+  (:report (lambda (condition stream)
 	     (format stream "Resource file not found: resource ~s path ~s"
 		     (resource condition) (file-error-pathname condition)))))
 
@@ -80,17 +80,17 @@
   ((resource
     :initarg :resource
     :reader  resource))
-  (:report (lambda (condition stream) 
+  (:report (lambda (condition stream)
 	     (format stream "Resource not writable: resource ~s path ~s"
 		     (resource condition) (file-error-pathname condition)))))
 
-(defun get-resource-file (p resource &key (if-does-not-exists :error))
-  (let ((home-path   (find-in-home-datadir   (construct-resource-path resource p)))
-	(shared-path (find-in-shared-datadir (construct-resource-path resource p))))
+(defun get-resource-file (path resource &key (if-does-not-exists :error))
+  (let ((home-path   (find-in-home-datadir   (construct-resource-path resource path)))
+	(shared-path (find-in-shared-datadir (construct-resource-path resource path))))
     (cond
       ((eq if-does-not-exists :error)
        (or (or home-path shared-path)
-	   (error 'resource-not-found-error :pathname p :resource resource)))
+	   (error 'resource-not-found-error :pathname path :resource resource)))
       ((eq if-does-not-exists :return-writable)
        (cond
 	 ((and home-path
@@ -100,4 +100,4 @@
 	       (file-can-write-p shared-path))
 	  shared-path)
 	 (t
-	  (error 'resource-not-writable-error :pathname p :resource resource)))))))
+	  (error 'resource-not-writable-error :pathname path :resource resource)))))))

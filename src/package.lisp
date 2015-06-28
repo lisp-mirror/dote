@@ -159,6 +159,13 @@
    :defmethod-inline-function
    :nest-expressions
    :replace-e!
+   :+nil-equiv-bag+
+   :build-plist
+   :build-assocs-chain
+   :gen-trivial-plist-predicates
+   :gen-trivial-plist-predicate
+   :gen-trivial-plist-get
+   :gen-trivial-plist-gets
    :coord-map->chunk
    :coord-terrain->chunk
    :coord-chunk->costs
@@ -409,7 +416,8 @@
    :from-sexp
    :serialize
    :serialize-to-stream
-   :deserialize))
+   :deserialize
+   :description-for-humans))
 
 (defpackage :ivec2
   (:use :cl
@@ -1647,90 +1655,6 @@
 
 ;; engine
 
-(defpackage :basic-interaction-parameters
-  (:use :cl
-	:alexandria
-	:constants
-	:config
-	:interfaces
-	:identificable)
-  (:export
-   :+decay-by-use:+
-   :+decay-by-turns:+
-   :+nil-equiv-bag:+
-   :+effect-when-used:+
-   :+effect-when-worn:+
-   :+effect-when-consumed:+
-   :+can-talk:+
-   :+can-ask-for-help:+
-   :+can-be-opened:+
-   :+can-attack:+
-   :+can-be-attacked:+
-   :+can-be-destroyed:+
-   :+can-be-burned:+
-   :+can-heal:+
-   :+can-be-heal:+
-   :+can-poison:+
-   :+can-be-poisoned:+
-   :+can-be-drunk:+
-   :+can-be-eaten:+
-   :+can-be-weared-arm:+
-   :+can-be-weared-head:+
-   :+can-be-weared-neck:+
-   :+can-be-weared-feet:+
-   :+can-cut:+
-   :+can-smash:+
-   :+can-pierce:+
-   :+decay:+
-   :+effects:+
-   :+strength:+
-   :+stamina:+
-   :+dexterity:+
-   :+agility:+
-   :+smartness:+
-   :+empaty:+
-   :+weight:+
-   :+damage-point:+
-   :+movement-point:+
-   :+magic-point:+
-   :+dodge-chance:+
-   :+melee-attack-chance:+
-   :+range-attack-chance:+
-   :+melee-attack-damage:+
-   :+range-attack-damage:+
-   :+edge-weapons-chance-bonus:+
-   :+edge-weapons-damage-bonus:+
-   :+impact-weapons-chance-bonus:+
-   :+impact-weapons-damage-bonus:+
-   :+pole-weapons-chance-bonus:+
-   :+pole-weapons-damage-bonus:+
-   :+unlock-chance:+
-   :+deactivate-trap-chance:+
-   :+reply-attack-chance:+
-   :+ambush-attack-chance:+
-   :+spell-chance:+
-   :+attack-spell-chance:+
-   :+healing-effects:+
-   :+heal-poison:+
-   :+heal-berserk:+
-   :+heal-faint:+
-   :+heal-terror:+
-   :+cause-poison:+
-   :+cause-berserk:+
-   :+cause-faint:+
-   :+cause-terror:+
-   :+immune-poison:+
-   :+immune-berserk:+
-   :+immune-faint:+
-   :+immune-terror:+
-   :+magic-effect:+
-   :define-interaction
-   :define-decay
-   :define-effects
-   :define-healing-effects
-   :define-healing-effect
-   :define-magic-effect))
-
 (defpackage :entity
   (:use :cl
 	:alexandria
@@ -2397,12 +2321,106 @@
    :memorize
    :recall))
 
-(defpackage :player-character
+(defpackage :basic-interaction-parameters
   (:use :cl
+	:alexandria
 	:constants
-	:num-utils
+	:config
 	:interfaces
 	:identificable)
+  (:export
+   :+decay-by-use+
+   :+decay-by-turns+
+   :+effect-when-used+
+   :+effect-when-worn+
+   :+effect-when-consumed+
+   :+can-talk+
+   :+can-ask-for-help+
+   :+can-be-opened+
+   :+can-open+
+   :+can-attack+
+   :+can-be-attacked+
+   :+can-be-destroyed+
+   :+can-be-burned+
+   :+can-heal+
+   :+can-be-heal+
+   :+can-poison+
+   :+can-be-poisoned+
+   :+can-be-drunk+
+   :+can-be-eaten+
+   :+can-be-weared-arm+
+   :+can-be-weared-head+
+   :+can-be-weared-neck+
+   :+can-be-weared-feet+
+   :+can-cut+
+   :+can-smash+
+   :+can-pierce+
+   :+can-launch-bolt+
+   :+can-launch-arrow+
+   :+mounted-on-pole+
+   :+decay+
+   :+effects+
+   :+strength+
+   :+stamina+
+   :+dexterity+
+   :+agility+
+   :+smartness+
+   :+empaty+
+   :+weight+
+   :+damage-point+
+   :+movement-point+
+   :+magic-point+
+   :+dodge-chance+
+   :+melee-attack-chance+
+   :+range-attack-chance+
+   :+melee-attack-damage+
+   :+range-attack-damage+
+   :+edge-weapons-chance-bonus+
+   :+edge-weapons-damage-bonus+
+   :+impact-weapons-chance-bonus+
+   :+impact-weapons-damage-bonus+
+   :+pole-weapons-chance-bonus+
+   :+pole-weapons-damage-bonus+
+   :+unlock-chance+
+   :+deactivate-trap-chance+
+   :+reply-attack-chance+
+   :+ambush-attack-chance+
+   :+spell-chance+
+   :+attack-spell-chance+
+   :+healing-effects+
+   :+heal-poison+
+   :+heal-berserk+
+   :+heal-faint+
+   :+heal-terror+
+   :+cause-poison+
+   :+cause-berserk+
+   :+cause-faint+
+   :+cause-terror+
+   :+immune-poison+
+   :+immune-berserk+
+   :+immune-faint+
+   :+immune-terror+
+   :+magic-effect+
+   :define-interaction
+   :define-decay
+   :define-effect
+   :define-effects
+   :define-healing-effects
+   :define-healing-effect
+   :define-magic-effect
+   :define-poison-effect
+   :with-interaction-parameters))
+
+(defpackage :player-character
+  (:use :cl
+	:alexandria
+	:constants
+	:config
+	:num-utils
+	:text-utils
+	:interfaces
+	:identificable
+	:basic-interaction-parameters)
   (:export
    :+unknown-ability-bonus+
    :+starting-exp-points+
@@ -2417,9 +2435,9 @@
    :smartness
    :empaty
    :weight
-   :damage-point
-   :movement-point
-   :magic-point
+   :damage-points
+   :movement-points
+   :magic-points
    :dodge-chance
    :melee-attack-chance
    :range-attack-chance
@@ -2445,7 +2463,30 @@
    :make-wizard
    :make-healer
    :make-archer
-   :make-ranger))
+   :make-ranger
+   :can-talk-p
+   :can-be-opened-p
+   :can-attack-p
+   :can-attack-p
+   :can-be-destroyed-p
+   :can-be-burned-p
+   :can-heal-p
+   :can-be-heal-p
+   :can-be-drunk-p
+   :can-be-eaten-p
+   :can-be-weared-arm-p
+   :can-be-weared-head-p
+   :can-be-weared-neck-p
+   :can-be-weared-feet-p
+   :can-cut-p
+   :can-smash-p
+   :can-launch-bolt-p
+   :can-launch-arrow-p
+   :mounted-on-pole-p
+   :decay-p
+   :effects-p
+   :healing-effects-p
+   :magic-effect-p))
 
 (defpackage :main-window
   (:use :cl

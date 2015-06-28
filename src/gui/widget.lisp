@@ -347,7 +347,7 @@
 	 (aabb2 (vec4 (elt (aabb-p1 aabb) 0) (elt (aabb-p1 aabb) 1)
 		      (elt (aabb-p2 aabb) 0) (elt (aabb-p2 aabb) 1))))
     (2d-utils:inside-aabb2-p aabb2 x y)))
-  
+
 (defmethod label-width ((object widget))
   (d* (d (length (label object))) (label-font-size object)))
 
@@ -713,7 +713,7 @@
       (do-children-mesh (c object)
 	(render c renderer)))))
 
-(defclass text-field (button) ()) 
+(defclass text-field (button) ())
 
 (defmethod initialize-instance :after ((object text-field) &key &allow-other-keys)
   (with-accessors ((width width) (height height)
@@ -916,7 +916,7 @@
 	(declare (desired-type line-count))
 	(loop
 	   for c across (the simple-string (elt line 0))
-	   for xf single-float from  0.0 by label-font-size do  
+	   for xf single-float from  0.0 by label-font-size do
 	   (let* ((mesh  (get-char-mesh label-font c))
 		  (shell (if mesh
 			     (fill-shell-from-mesh mesh 'font-mesh-shell)
@@ -989,7 +989,7 @@
 (defgeneric (setf fill-level) (value object))
 
 (defmethod (setf fill-level) (value (object h-bar))
-  (with-accessors ((actual-bar actual-bar)) object  
+  (with-accessors ((actual-bar actual-bar)) object
     (with-slots (fill-level) object
       (setf fill-level (alexandria:clamp value 0.0 1.0))
       (setf (scaling actual-bar) (sb-cga:vec fill-level 1.0 1.0)))))
@@ -1003,7 +1003,7 @@
 		   (label-shells label-shells)) object
     (declare (desired-type label-font-size))
     (with-slots (label) object
-      (declare (simple-string label))  
+      (declare (simple-string label))
       (setf label new-label)
       (loop for c across label do
 	   (let* ((mesh  (get-char-mesh label-font c))
@@ -1106,7 +1106,7 @@
  			    (width object))))
      (when *child-flip-y*
        (setf (y child) (flip-y object child)))))
-       
+
 (defmethod (setf label) (new-label (object window))
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (simple-string new-label))
@@ -1184,7 +1184,7 @@
     (d+ (d- (d* scale h-frame)
 	    (d* saved-height (d/ h-frame (height object))))
 	(d* (bottom-frame-offset *reference-sizes*) (height (frame object))))))
-	
+
 (defmethod on-mouse-pressed ((object window) event)
   (if (and (shown object)
 	   (mouse-over object (x-event event) (y-event event)))
@@ -1511,13 +1511,13 @@
 
 (defun remove-file-slot-button-by-label (chooser)
   (setf (children chooser)
-	(remove-if #'(lambda (c) (and (typep c 'button) 
+	(remove-if #'(lambda (c) (and (typep c 'button)
 				      (find (label c) (all-files chooser) :test #'string=)))
 		   (children chooser))))
 
 (defun remove-dir-slot-button-by-label (chooser)
   (setf (children chooser)
-	(remove-if #'(lambda (c) (and (typep c 'button) 
+	(remove-if #'(lambda (c) (and (typep c 'button)
 				      (find (label c) (all-dirs chooser) :test #'string=)))
 		   (children chooser))))
 
@@ -1591,7 +1591,7 @@
   (with-parent-widget (win) button
     (with-accessors ((current-dir current-dir) (input-path input-path)) win
       (setf (label input-path) (strcat current-dir (label button))))))
-    
+
 (defun make-file-chooser (&optional (ok-callback #'hide-parent-cb))
   (let ((win (make-instance 'file-chooser
 			    :x (d- (d/ (d *window-w*) 2.0)
@@ -1603,7 +1603,7 @@
 			    :label  (_ "Choose file"))))
     (setf (callback (b-ok win)) ok-callback)
     win))
-   
+
 (defun rel->abs (s)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (desired-type s))
@@ -1770,7 +1770,7 @@
     :accessor b-next-turn)
    (b-spell
     :initform (make-square-button (d* 3.0 *square-button-size*)
-				      
+
 				  0.0
 				  +magic-staff-overlay-texture-name+
 				  nil ;; TODO callback
@@ -2116,7 +2116,7 @@
 			     :height +input-text-h+
 			     :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
 			     :y (d* 1.8 +portrait-size+)
-			     :prefix (_ "Damage point: ")
+			     :prefix (_ "Damage points: ")
 			     :label "")
     :initarg :lb-damage-pt
     :accessor lb-damage-pt)
@@ -2141,7 +2141,7 @@
 			     :height +input-text-h+
 			     :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
 			     :y (d+ (d* 1.8 +portrait-size+) +input-text-h+)
-			     :prefix (_ "Movement point: ")
+			     :prefix (_ "Movement points: ")
 			     :label "")
     :initarg :lb-movement-pt
     :accessor lb-movement-pt)
@@ -2166,7 +2166,7 @@
 			     :height +input-text-h+
 			     :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
 			     :y (d+ (d* 1.8 +portrait-size+) (d* 2.0 +input-text-h+))
-			     :prefix (_ "Magic point: ")
+			     :prefix (_ "Magic points: ")
 			     :label "")
     :initarg :lb-magic-pt
     :accessor lb-magic-pt)
@@ -2510,7 +2510,7 @@
 				nil)
     :initarg :b-dec-deactivate-trap-ch
     :accessor b-dec-deactivate-trap-ch)
-   (lb-reply-attack-ch 
+   (lb-reply-attack-ch
      :initform (make-instance 'simple-label-prefixed
 			      :width  (d* 2.0 +input-text-w+)
 			      :height +input-text-h+
@@ -2518,7 +2518,7 @@
 			      :y (d+ (d* 1.8 +portrait-size+) (d* 16.0 +input-text-h+))
 			      :prefix (_ "Reply to attack chance: ")
 			      :label "")
-     :initarg  :lb-reply-attack-ch 
+     :initarg  :lb-reply-attack-ch
      :accessor lb-reply-attack-ch)
    (b-inc-reply-attack-ch
     :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
@@ -2535,7 +2535,7 @@
 				nil)
     :initarg :b-dec-reply-attack-ch
     :accessor b-dec-reply-attack-ch)
-   (lb-ambush-attack-ch 
+   (lb-ambush-attack-ch
      :initform (make-instance 'simple-label-prefixed
 			      :width  (d* 2.0 +input-text-w+)
 			      :height +input-text-h+
@@ -2543,7 +2543,7 @@
 			      :y (d+ (d* 1.8 +portrait-size+) (d* 17.0 +input-text-h+))
 			      :prefix (_ "Ambush attack chance: ")
 			      :label "")
-     :initarg  :lb-ambush-attack-ch 
+     :initarg  :lb-ambush-attack-ch
      :accessor lb-ambush-attack-ch)
    (b-inc-ambush-attack-ch
     :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
@@ -2560,7 +2560,7 @@
 				nil)
     :initarg :b-dec-ambush-attack-ch
     :accessor b-dec-ambush-attack-ch)
-   (lb-spell-ch 
+   (lb-spell-ch
      :initform (make-instance 'simple-label-prefixed
 			      :width  (d* 2.0 +input-text-w+)
 			      :height +input-text-h+
@@ -2568,7 +2568,7 @@
 			      :y (d+ (d* 1.8 +portrait-size+) (d* 18.0 +input-text-h+))
 			      :prefix (_ "Spell chance: ")
 			      :label "")
-     :initarg  :lb-spell-ch 
+     :initarg  :lb-spell-ch
      :accessor lb-spell-ch)
    (b-inc-spell-ch
     :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
@@ -2585,7 +2585,7 @@
 				nil)
     :initarg :b-dec-spell-ch
     :accessor b-dec-spell-ch)
-   (lb-attack-spell-ch 
+   (lb-attack-spell-ch
      :initform (make-instance 'simple-label-prefixed
 			      :width  (d* 2.0 +input-text-w+)
 			      :height +input-text-h+
@@ -2593,7 +2593,7 @@
 			      :y (d+ (d* 1.8 +portrait-size+) (d* 19.0 +input-text-h+))
 			      :prefix (_ "Attack spell chance: ")
 			      :label "")
-     :initarg  :lb-attack-spell-ch 
+     :initarg  :lb-attack-spell-ch
      :accessor lb-attack-spell-ch)
    (b-inc-attack-spell-ch
     :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
@@ -2610,7 +2610,7 @@
 				nil)
     :initarg :b-dec-attack-spell-ch
     :accessor b-dec-attack-spell-ch)
-   (lb-level 
+   (lb-level
      :initform (make-instance 'simple-label-prefixed
 			      :width  (d* 2.0 +input-text-w+)
 			      :height +input-text-h+
@@ -2618,9 +2618,9 @@
 			      :y (d+ (d* 1.8 +portrait-size+) (d* 20.0 +input-text-h+))
 			      :prefix (_ "Level: ")
 			      :label "")
-     :initarg  :lb-level 
+     :initarg  :lb-level
      :accessor lb-level)
-   (lb-exp-point
+   (lb-exp-points
      :initform (make-instance 'simple-label-prefixed
 			      :width  (d* 2.0 +input-text-w+)
 			      :height +input-text-h+
@@ -2628,8 +2628,8 @@
 			      :y (d+ (d* 1.8 +portrait-size+) (d* 21.0 +input-text-h+))
 			      :prefix (_ "Experience points: ")
 			      :label "")
-     :initarg  :lb-exp-point
-     :accessor lb-exp-point)
+     :initarg  :lb-exp-points
+     :accessor lb-exp-points)
    (input-name
     :initform (make-instance 'text-field
 			     :width  +input-text-w+
@@ -2820,15 +2820,15 @@
 		   (b-inc-attack-spell-ch b-inc-attack-spell-ch)
 		   (b-dec-attack-spell-ch b-dec-attack-spell-ch)
 		   (lb-level lb-level)
-		   (lb-exp-point lb-exp-point)
+		   (lb-exp-points lb-exp-points)
 		   (input-name input-name)
 		   (input-last-name input-last-name)
-		   (lb-strength lb-strength)  
-		   (lb-stamina lb-stamina)   
-		   (lb-dexterity lb-dexterity) 
-		   (lb-agility lb-agility)   
-		   (lb-smartness lb-smartness) 
-		   (lb-empaty lb-empaty)    
+		   (lb-strength lb-strength)
+		   (lb-stamina lb-stamina)
+		   (lb-dexterity lb-dexterity)
+		   (lb-agility lb-agility)
+		   (lb-smartness lb-smartness)
+		   (lb-empaty lb-empaty)
 		   (lb-weight lb-weight)) object
     (let ((group-class (make-check-group* checkb-warrior
 					  checkb-wizard
@@ -2923,18 +2923,18 @@
     (add-child object b-inc-attack-spell-ch)
     (add-child object b-dec-attack-spell-ch)
     (add-child object lb-level)
-    (add-child object lb-exp-point)
+    (add-child object lb-exp-points)
     ;; third column
     (add-child object input-name)
     (add-child object input-last-name)
     ;; fourth column
-    (add-child object lb-strength)  
-    (add-child object lb-stamina)   
-    (add-child object lb-dexterity) 
-    (add-child object lb-agility)   
-    (add-child object lb-smartness) 
-    (add-child object lb-empaty)    
-    (add-child object lb-weight)))    
+    (add-child object lb-strength)
+    (add-child object lb-stamina)
+    (add-child object lb-dexterity)
+    (add-child object lb-agility)
+    (add-child object lb-smartness)
+    (add-child object lb-empaty)
+    (add-child object lb-weight)))
 
 (defun setup-player-character (window &key (from-player nil))
   (setf (player window)
@@ -2964,7 +2964,7 @@
 	(texture     (get-texture +portrait-unknown-texture-name+)))
     (setf (pixmap:data texture) (pixmap:data new-portrait))
     (pixmap:sync-data-to-bits texture)
-    (update-for-rendering texture))) 
+    (update-for-rendering texture)))
 
 (defmacro %add-callback-to-pgen-buttons (b-inc b-dec player slot widget-capital widget-dest
 					 &optional (scale-plus 1.0) (scale-minus 1.0))
@@ -2985,7 +2985,7 @@
     `(let* ((,act-widget ,widget)
 	    (,file-cb  (lambda (w e)
 			 (declare (ignore e))
-			 (let ((,fchooser-window (parent w))) 
+			 (let ((,fchooser-window (parent w)))
 			   ,@body
 			   (hide ,fchooser-window)
 			   (remove-child (find-root-widget ,act-widget)
@@ -3004,7 +3004,7 @@
 				     (fetch-file-chooser-path fchooser-window))))
 	(%setup-character win :new-player new-player))))
   t)
-  
+
 (defun save-cb (button event)
   (declare (ignore event))
   (with-parent-widget (win) button
@@ -3093,7 +3093,7 @@
 		   (b-inc-attack-spell-ch b-inc-attack-spell-ch)
 		   (b-dec-attack-spell-ch b-dec-attack-spell-ch)
 		   (lb-level lb-level)
-		   (lb-exp-point lb-exp-point)
+		   (lb-exp-points lb-exp-points)
 		   (player player)) win
     (setup-player-character win :from-player new-player)
     (when (not new-player)
@@ -3117,111 +3117,111 @@
     (setf (label lb-empaty)    (format nil "~,2f" (player-character:empaty player)))
     (setf (label lb-weight)    (format nil "~,2f" (player-character:weight player)))
     (setf (label lb-damage-pt)           (format nil "~,2f"
-						 (player-character:damage-point player)))
+						 (player-character:damage-points player)))
     (%add-callback-to-pgen-buttons b-inc-damage-pt b-dec-damage-pt
-				   player 'player-character:damage-point
-				   lb-exp-point lb-damage-pt 0.1 1.0)
+				   player 'player-character:damage-points
+				   lb-exp-points lb-damage-pt 0.1 1.0)
     (setf (label lb-movement-pt)	   (format nil "~,2f"
-						   (player-character:movement-point player)))
+						   (player-character:movement-points player)))
     (%add-callback-to-pgen-buttons b-inc-movement-pt b-dec-movement-pt
-				   player 'player-character:movement-point
-				   lb-exp-point lb-movement-pt 0.5 1.0)
-    
+				   player 'player-character:movement-points
+				   lb-exp-points lb-movement-pt 0.5 1.0)
+
     (setf (label lb-magic-pt)		    (format nil "~,2f"
-						    (player-character:magic-point player)))
+						    (player-character:magic-points player)))
     (%add-callback-to-pgen-buttons b-inc-magic-pt b-dec-magic-pt
-				   player 'player-character:magic-point
-				   lb-exp-point lb-magic-pt 0.5 1.0)
+				   player 'player-character:magic-points
+				   lb-exp-points lb-magic-pt 0.5 1.0)
     (setf (label lb-dodge-ch)		    (format nil "~,2f"
 						    (player-character:dodge-chance player)))
     (%add-callback-to-pgen-buttons b-inc-dodge-ch b-dec-dodge-ch
 				   player 'player-character:dodge-chance
-				   lb-exp-point lb-dodge-ch 0.5 1.0)
+				   lb-exp-points lb-dodge-ch 0.5 1.0)
     (setf (label lb-melee-atk-ch)	    (format nil "~,2f"
 						    (player-character:melee-attack-chance player)))
     (%add-callback-to-pgen-buttons b-inc-melee-atk-ch b-dec-melee-atk-ch
 				   player 'player-character:melee-attack-chance
-				   lb-exp-point lb-melee-atk-ch)
+				   lb-exp-points lb-melee-atk-ch)
     (setf (label lb-range-atk-ch)	    (format nil "~,2f"
 						    (player-character:range-attack-chance player)))
     (%add-callback-to-pgen-buttons b-inc-range-atk-ch b-dec-range-atk-ch
 				   player 'player-character:range-attack-chance
-				   lb-exp-point lb-range-atk-ch 0.5 1.0)
+				   lb-exp-points lb-range-atk-ch 0.5 1.0)
     (setf (label lb-melee-atk-dmg)	    (format nil "~,2f"
 						    (player-character:melee-attack-damage player)))
     (%add-callback-to-pgen-buttons b-inc-melee-atk-dmg b-dec-melee-atk-dmg
 				   player 'player-character:melee-attack-damage
-				   lb-exp-point lb-melee-atk-dmg 0.25 1.0)
+				   lb-exp-points lb-melee-atk-dmg 0.25 1.0)
     (setf (label lb-range-atk-dmg)	    (format nil "~,2f"
 						    (player-character:range-attack-damage player)))
     (%add-callback-to-pgen-buttons b-inc-range-atk-dmg b-dec-range-atk-dmg
 				   player 'player-character:range-attack-damage
-				   lb-exp-point lb-range-atk-dmg 0.25 1.0)
+				   lb-exp-points lb-range-atk-dmg 0.25 1.0)
     (setf (label lb-edge-wpn-ch-bonus)    (format nil "~,2f"
 						  (player-character:edge-weapons-chance-bonus player)))
     (%add-callback-to-pgen-buttons b-inc-edge-wpn-ch-bonus b-dec-edge-wpn-ch-bonus
 				   player 'player-character:edge-weapons-chance-bonus
-				   lb-exp-point lb-edge-wpn-ch-bonus 0.25 1.0)
+				   lb-exp-points lb-edge-wpn-ch-bonus 0.25 1.0)
     (setf (label lb-edge-wpn-dmg-bonus)   (format nil "~,2f"
-						  (player-character:edge-weapons-damage-bonus player)))      
+						  (player-character:edge-weapons-damage-bonus player)))
     (%add-callback-to-pgen-buttons b-inc-edge-wpn-dmg-bonus b-dec-edge-wpn-dmg-bonus
 				   player 'player-character:edge-weapons-damage-bonus
-				   lb-exp-point lb-edge-wpn-dmg-bonus 0.25 1.0)
+				   lb-exp-points lb-edge-wpn-dmg-bonus 0.25 1.0)
     (setf (label lb-impact-wpn-ch-bonus)  (format nil "~,2f"
 						  (player-character:impact-weapons-chance-bonus player)))
     (%add-callback-to-pgen-buttons b-inc-impact-wpn-ch-bonus b-dec-impact-wpn-ch-bonus
 				   player 'player-character:impact-weapons-chance-bonus
-				   lb-exp-point lb-impact-wpn-ch-bonus 0.25 1.0)
+				   lb-exp-points lb-impact-wpn-ch-bonus 0.25 1.0)
     (setf (label lb-impact-wpn-dmg-bonus) (format nil "~,2f"
 						  (player-character:impact-weapons-damage-bonus player)))
     (%add-callback-to-pgen-buttons b-inc-impact-wpn-dmg-bonus b-dec-impact-wpn-dmg-bonus
 				   player 'player-character:impact-weapons-damage-bonus
-				   lb-exp-point lb-impact-wpn-dmg-bonus 0.25 1.0)
+				   lb-exp-points lb-impact-wpn-dmg-bonus 0.25 1.0)
     (setf (label lb-pole-wpn-ch-bonus)    (format nil "~,2f"
 						  (player-character:pole-weapons-chance-bonus player)))
     (%add-callback-to-pgen-buttons b-inc-pole-wpn-ch-bonus b-dec-pole-wpn-ch-bonus
 				   player 'player-character:pole-weapons-chance-bonus
-				   lb-exp-point lb-pole-wpn-ch-bonus 0.25 1.0)
+				   lb-exp-points lb-pole-wpn-ch-bonus 0.25 1.0)
     (setf (label lb-pole-wpn-dmg-bonus)   (format nil "~,2f"
 						  (player-character:pole-weapons-damage-bonus player)))
     (%add-callback-to-pgen-buttons b-inc-pole-wpn-dmg-bonus b-dec-pole-wpn-dmg-bonus
 				   player 'player-character:pole-weapons-damage-bonus
-				   lb-exp-point lb-pole-wpn-dmg-bonus 0.25 1.0)
+				   lb-exp-points lb-pole-wpn-dmg-bonus 0.25 1.0)
 
     (setf (label lb-unlock-ch)	    (format nil "~,2f"
 					    (player-character:unlock-chance player)))
     (%add-callback-to-pgen-buttons b-inc-unlock-ch b-dec-unlock-ch
 				   player 'player-character:unlock-chance
-				   lb-exp-point lb-unlock-ch 0.5 1.0)
+				   lb-exp-points lb-unlock-ch 0.5 1.0)
     (setf (label lb-deactivate-trap-ch)   (format nil "~,2f"
 						  (player-character:deactivate-trap-chance player)))
     (%add-callback-to-pgen-buttons b-inc-deactivate-trap-ch b-dec-deactivate-trap-ch
 				   player 'player-character:deactivate-trap-chance
-				   lb-exp-point lb-deactivate-trap-ch 0.5 1.0)
+				   lb-exp-points lb-deactivate-trap-ch 0.5 1.0)
 
     (setf (label lb-reply-attack-ch)	    (format nil "~,2f"
 						    (player-character:reply-attack-chance player)))
     (%add-callback-to-pgen-buttons b-inc-reply-attack-ch b-dec-reply-attack-ch
 				   player 'player-character:reply-attack-chance
-				   lb-exp-point lb-reply-attack-ch 0.33 1.0)
+				   lb-exp-points lb-reply-attack-ch 0.33 1.0)
     (setf (label lb-ambush-attack-ch)	    (format nil "~,2f"
 						    (player-character:ambush-attack-chance player)))
     (%add-callback-to-pgen-buttons b-inc-ambush-attack-ch b-dec-ambush-attack-ch
 				   player 'player-character:ambush-attack-chance
-				   lb-exp-point lb-ambush-attack-ch 0.33 1.0)
+				   lb-exp-points lb-ambush-attack-ch 0.33 1.0)
     (setf (label lb-spell-ch)	    (format nil "~,2f"
 					    (player-character:spell-chance player)))
     (%add-callback-to-pgen-buttons b-inc-spell-ch b-dec-spell-ch
 				   player 'player-character:spell-chance
-				   lb-exp-point lb-spell-ch 0.25 1.0)
+				   lb-exp-points lb-spell-ch 0.25 1.0)
     (setf (label lb-attack-spell-ch)  (format nil "~,2f"
 					      (player-character:attack-spell-chance player)))
     (%add-callback-to-pgen-buttons b-inc-attack-spell-ch b-dec-attack-spell-ch
 				   player 'player-character:attack-spell-chance
-				   lb-exp-point lb-attack-spell-ch 0.25 1.0)
+				   lb-exp-points lb-attack-spell-ch 0.25 1.0)
     (setf (label lb-level)	    (format nil "~d"
 					    (player-character:level player)))
-    (setf (label lb-exp-point)	    (format nil "~d" (player-character:exp-points player)))
+    (setf (label lb-exp-points)	    (format nil "~d" (player-character:exp-points player)))
     t))
 
 
