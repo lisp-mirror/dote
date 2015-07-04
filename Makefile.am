@@ -77,7 +77,6 @@ data/models/furnitures/crate/model.obj \
 data/models/furnitures/crate/model.mtl \
 data/models/furnitures/chair/texture.tga \
 data/models/furnitures/chair/model.obj \
-data/models/furnitures/chair/chair.jpg \
 data/models/furnitures/chair/model.mtl \
 data/models/furnitures/barrel-water/texture.tga \
 data/models/furnitures/barrel-water/model.obj \
