@@ -171,6 +171,26 @@
 				    ,v
 				    (function ,get-fn)))))
 
+;; plist
+
+(defun recursive-assoc (path start)
+  (if (null path)
+      start
+      (recursive-assoc (rest path) (cdr (assoc (first path) start)))))
+
+(defun recursive-assoc-just-before (path start)
+  (if (= (length path) 1)
+      start
+      (recursive-assoc-just-before (rest path) (cdr (assoc (first path) start)))))
+
+(defun n-setf-path-value (db path new-value)
+  (let* ((ptr (recursive-assoc-just-before path db))
+	 (last-key (alexandria:last-elt path))
+	 (last-cons (assoc last-key ptr)))
+    (if last-cons
+	(values (setf (cdr last-cons) new-value) t)
+	(values nil nil))))
+
 ;; misc
 
 (defun not-null-p (a)

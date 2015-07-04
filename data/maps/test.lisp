@@ -132,25 +132,26 @@
 
   generate map
   ;;with size                        (random (tiny small medium large))
-  with size                        (random (small))
-  with mountain-rate               (random (0.1 0.2))
+  with size                         (random (tiny))
+  with mountain-rate                (random (0.1 0.2))
   ;; from load "radial-mountain-function.lisp"
-  with mountain-z-height-function  radial-mountain-z-height-function
-  with mountain-w-function         random-terrain:default-mountain-size-function
-  with mountain-h-function         random-terrain:default-mountain-size-function
-  with mountain-sigma-w-function   random-terrain:default-mountain-sigma-function
-  with mountain-sigma-h-function   random-terrain:default-mountain-sigma-function
-  with lake-rate                   (0.05)
-  with lake-size-function          random-terrain:default-lake-size-function
-  with labyrinth-rate              (random (0.05 0.1))
-  with labyrinth-size-function     random-terrain:default-labyrinth-size-function
-  with labyrinth-sigma-w-function  random-terrain:default-labyrinth-sigma-w-function
-  with labyrinth-sigma-h-function  random-terrain:default-labyrinth-sigma-h-function
-  with labyrinth-door-function     random-terrain:default-labyrinth-door-function
-  with labyrinth-win-function      random-terrain:default-labyrinth-win-function
-  with soil-decal-threshold        (0.8)
-  with trees-rate                  (0.05)
-  with trees-sparseness            (0.7)
+  with mountain-z-height-function   radial-mountain-z-height-function
+  with mountain-w-function          random-terrain:default-mountain-size-function
+  with mountain-h-function          random-terrain:default-mountain-size-function
+  with mountain-sigma-w-function    random-terrain:default-mountain-sigma-function
+  with mountain-sigma-h-function    random-terrain:default-mountain-sigma-function
+  with lake-rate                    (0.05)
+  with lake-size-function           random-terrain:default-lake-size-function
+  with labyrinth-rate               (random (0.05 0.1))
+  with labyrinth-size-function      random-terrain:default-labyrinth-size-function
+  with labyrinth-sigma-w-function   random-terrain:default-labyrinth-sigma-w-function
+  with labyrinth-sigma-h-function   random-terrain:default-labyrinth-sigma-h-function
+  with labyrinth-door-function      random-terrain:default-labyrinth-door-function
+  with labyrinth-win-function       random-terrain:default-labyrinth-win-function
+  with labyrinth-furniture-function random-terrain:default-labyrinth-furniture-function
+  with soil-decal-threshold         (0.8)
+  with trees-rate                   (0.05)
+  with trees-sparseness             (0.7)
 
   generate tree                  from script "general/dead-tree.lsys"
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
@@ -163,10 +164,23 @@
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
   ;; again, only obj file format
-  generate furniture             from file   "fountain/model.obj"
+  generate magic-furniture       from file   "fountain/model.obj"
   with normalmap-parameters      (ka .2 kd 1.0 ks 1.0 roughness 0.0 shininess 10.0)
 
-  generate furniture             from file   "chest/model.obj"
+  generate magic-furniture       from file   "bookholder/model.obj"
+  with normalmap-parameters      (ka .2 kd 1.0 ks 1.0 roughness 0.0 shininess 10.0)
+
+  generate container             from file   "chest/model.obj"
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
+
+  generate furniture             from file   "armchair/armchair.obj"
+  with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
+
+  generate furniture             from file   "chair/model.obj"
+  with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
+
+  generate furniture             from file   "barrel/barrel.obj"
+  with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
+
 
 )

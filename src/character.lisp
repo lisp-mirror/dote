@@ -499,7 +499,7 @@
 	 (progn ,@body)))))
 
 (defmacro gen-trivial-interaction-path (name &rest vars)
-  (let ((name-fn (format-symbol t "~:@(~a~)" name)))
+  (let ((name-fn (format-symbol t "~:@(interaction-~a~)" name)))
     `(progn
        (defgeneric ,name-fn (object))
        (defmethod  ,name-fn ((object player-character))
@@ -659,71 +659,72 @@
 	   (can-smash-p object)
 	   (can-launch-bolt-p object)
 	   (can-launch-arrow-p object))
-   (format nil (_ "~@[, ~a strength~]")  (description-for-humans (get-strength object)))
-   (format nil (_ "~@[, ~a stamina~]")   (description-for-humans (get-stamina object)))
-   (format nil (_ "~@[, ~a dexterity~]") (description-for-humans (get-dexterity object)))
-   (format nil (_ "~@[, ~a agility~]")   (description-for-humans (get-agility object)))
-   (format nil (_ "~@[, ~a smartness~]") (description-for-humans (get-smartness object)))
-   (format nil (_ "~@[, ~a empaty~]")    (description-for-humans (get-empaty object)))
-   (format nil (_ "~@[, ~a weight~]")    (description-for-humans (get-weight object)))
-   (format nil (_ "~@[, ~a damage points~]") (description-for-humans (get-damage-points object)))
+   (format nil (_ "~@[, ~a strength~]")  (description-for-humans (interaction-get-strength object)))
+   (format nil (_ "~@[, ~a stamina~]")   (description-for-humans (interaction-get-stamina object)))
+   (format nil (_ "~@[, ~a dexterity~]") (description-for-humans (interaction-get-dexterity object)))
+   (format nil (_ "~@[, ~a agility~]")   (description-for-humans (interaction-get-agility object)))
+   (format nil (_ "~@[, ~a smartness~]") (description-for-humans (interaction-get-smartness object)))
+   (format nil (_ "~@[, ~a empaty~]")    (description-for-humans (interaction-get-empaty object)))
+   (format nil (_ "~@[, ~a weight~]")    (description-for-humans (interaction-get-weight object)))
+   (format nil (_ "~@[, ~a damage points~]") (description-for-humans (interaction-get-damage-points object)))
    (format nil (_ "~@[, ~a movement points~]") (description-for-humans
-					       (get-movement-points object)))
-   (format nil (_ "~@[, ~a magic points~]") (description-for-humans (get-magic-points object)))
-   (format nil (_ "~@[, ~a dodge chance~]") (description-for-humans (get-dodge-chance object)))
+					       (interaction-get-movement-points object)))
+   (format nil (_ "~@[, ~a magic points~]") (description-for-humans (interaction-get-magic-points object)))
+   (format nil (_ "~@[, ~a dodge chance~]") (description-for-humans (interaction-get-dodge-chance object)))
 
    (format nil (_ "~@[, ~a melee attack chance~]") (description-for-humans
-						   (get-melee-attack-chance object)))
+						   (interaction-get-melee-attack-chance object)))
    (format nil (_ "~@[, ~a range attack chance~]") (description-for-humans
-						   (get-range-attack-chance object)))
+						   (interaction-get-range-attack-chance object)))
    (format nil (_ "~@[, ~a melee attack damage~]") (description-for-humans
-						   (get-melee-attack-damage object)))
+						   (interaction-get-melee-attack-damage object)))
    (format nil (_ "~@[, ~a range attack damage~]") (description-for-humans
-						   (get-range-attack-damage object)))
+						   (interaction-get-range-attack-damage object)))
    (format nil (_ "~@[, ~a edge weapons chance bonus~]") (description-for-humans
-							 (get-edge-weapons-chance-bonus object)))
+							 (interaction-get-edge-weapons-chance-bonus object)))
    (format nil (_ "~@[, ~a edge weapons damage bonus~]") (description-for-humans
-							  (get-edge-weapons-damage-bonus object)))
+							  (interaction-get-edge-weapons-damage-bonus object)))
    (format nil (_ "~@[, ~a impact weapons chance bonus~]") (description-for-humans
-							    (get-impact-weapons-chance-bonus object)))
+							    (interaction-get-impact-weapons-chance-bonus object)))
    (format nil (_ "~@[, ~a impact weapons damage bonus~]") (description-for-humans
-							    (get-impact-weapons-damage-bonus object)))
+							    (interaction-get-impact-weapons-damage-bonus object)))
    (format nil (_ "~@[, ~a pole weapons chance bonus~]") (description-for-humans
-							  (get-pole-weapons-chance-bonus object)))
+							  (interaction-get-pole-weapons-chance-bonus object)))
    (format nil (_ "~@[, ~a pole weapons damage bonus~]") (description-for-humans
-							  (get-pole-weapons-damage-bonus object)))
-   (format nil (_ "~@[, ~a unlock chance~]") (description-for-humans (get-unlock-chance object)))
+							  (interaction-get-pole-weapons-damage-bonus object)))
+   (format nil (_ "~@[, ~a unlock chance~]") (description-for-humans (interaction-get-unlock-chance object)))
    (format nil (_ "~@[, ~a deactivate traps chance~]") (description-for-humans
-							(get-deactivate-trap-chance object)))
+							(interaction-get-deactivate-trap-chance object)))
    (format nil (_ "~@[, ~a reply attack chance~]") (description-for-humans
-						    (get-reply-attack-chance object)))
+						    (interaction-get-reply-attack-chance object)))
    (format nil (_ "~@[, ~a ambush attack chance~]") (description-for-humans
-						     (get-ambush-attack-chance object)))
+						     (interaction-get-ambush-attack-chance object)))
    (format nil (_ "~@[, ~a spell chance~]") (description-for-humans
-					     (get-spell-chance object)))
+					     (interaction-get-spell-chance object)))
    (format nil (_ "~@[, ~a attack spell chance~]") (description-for-humans
-						    (get-attack-spell-chance object)))
+						    (interaction-get-attack-spell-chance object)))
    (format nil (_ "~@[, ~a heal poison condition~]") (description-for-humans
-						      (get-heal-poison object)))
+						      (interaction-get-heal-poison object)))
    (format nil (_ "~@[, ~a heal berserk condition~]") (description-for-humans
-						       (get-heal-berserk object)))
+						       (interaction-get-heal-berserk object)))
    (format nil (_ "~@[, ~a heal faint condition~]")  (description-for-humans
-						      (get-heal-faint object)))
+						      (interaction-get-heal-faint object)))
    (format nil (_ "~@[, ~a heal terror condition~]")  (description-for-humans
-						       (get-heal-terror object)))
+						       (interaction-get-heal-terror object)))
    (format nil (_ "~@[, makes immune from poison (~a)~]") (description-for-humans
-							(get-immune-poison object)))
+							(interaction-get-immune-poison object)))
    (format nil (_ "~@[, makes immune from terror (~a)~]") (description-for-humans
-							(get-immune-terror object)))
+							(interaction-get-immune-terror object)))
    (format nil (_ "~@[, makes immune from berserk (~a)~]") (description-for-humans
-							 (get-immune-berserk object)))
+							 (interaction-get-immune-berserk object)))
    (format nil (_ "~@[, makes immune from faint (~a)~]") (description-for-humans
-						       (get-immune-berserk object)))
+						       (interaction-get-immune-berserk object)))
    (format nil (_ "~@[, ~a heals faint condition~]")  (description-for-humans
-						      (get-heal-faint object)))
+						      (interaction-get-heal-faint object)))
    (format nil (_ "~@[, ~a heals terror condition~]")  (description-for-humans
-						       (get-heal-terror object)))
-   (format nil (_ "~@[, launchs ~a~]")  (description-for-humans (get-magic-effect object)))))
+						       (interaction-get-heal-terror object)))
+   (format nil (_ "~@[, launchs ~a~]")  (description-for-humans (interaction-get-magic-effect
+								 object)))))
 
 ;; character definition
 
@@ -867,10 +868,493 @@
 								(fetch-exp-points params)))))
       results)))
 
-(defun tt ()
-  (let ((character (load-randomize-character "~/lisp/dote/doc/internals/character-reference/reference/character.lisp")))
-    (import-interaction-from-definition character
-					"~/lisp/dote/doc/internals/character-reference/reference/interaction.lisp")
-;    (get-strength character)))
 
-    (description-for-humans character)))
+(defun conflict-all-effects ()
+  (list (list :effects :strength)
+	(list :effects :stamina)
+	(list :effects :dexterity)
+	(list :effects :agility)
+	(list :effects :smartness)
+	(list :effects :empaty)
+	(list :effects :weight)
+	(list :effects :damage-points)
+	(list :effects :movement-points)
+	(list :effects :magic-points)
+	(list :effects :dodge-chance)
+	(list :effects :melee-attack-chance)
+	(list :effects :range-attack-chance)
+	(list :effects :melee-attack-damage)
+	(list :effects :range-attack-damage)
+	(list :effects :edge-weapons-chance-bonus)
+	(list :effects :edge-weapons-damage-bonus)
+	(list :effects :impact-weapons-chance-bonus)
+	(list :effects :impact-weapons-damage-bonus)
+	(list :effects :pole-weapons-chance-bonus)
+	(list :effects :pole-weapons-damage-bonus)
+	(list :effects :unlock-chance)
+	(list :effects :deactivate-trap-chance)
+	(list :effects :reply-attack-chance)
+	(list :effects :ambush-attack-chance)
+	(list :effects :spell-chance)
+	(list :effects :attack-spell-chance)
+	(list :healing-effects :heal-poison)
+	(list :healing-effects :heal-berserk)
+	(list :healing-effects :heal-faint)
+	(list :healing-effects :heal-terror)
+	(list :healing-effects :cause-poison)
+	(list :healing-effects :cause-berserk)
+	(list :healing-effects :cause-faint)
+	(list :healing-effects :cause-terror)
+	(list :healing-effects :immune-poison)
+	(list :healing-effects :immune-berser)
+	(list :healing-effects :immune-faint)
+	(list :healing-effects :immune-terror)
+	:magic-effect))
+
+(defun %trivial-conflict-list (to-be-removed)
+  (remove to-be-removed '(:can-talk
+			  :can-ask-for-help
+			  :can-be-opened
+			  :can-open
+			  :can-attack
+			  :can-be-attacked
+			  :can-be-destroyed
+			  :can-be-burned
+			  :can-heal
+			  :can-be-heal
+			  :can-poison
+			  :can-be-poisoned
+			  :can-be-drunk
+			  :can-be-eaten
+			  :can-be-weared-arm
+			  :can-be-weared-head
+			  :can-be-weared-neck
+			  :can-be-weared-feet
+			  :can-cut
+			  :can-smash
+			  :can-pierce
+			  :can-launch-bolt
+			  :can-launch-arrow
+			  :mounted-on-pole)))
+
+(defparameter *relations* `((:path (:can-talk)
+				   :conflicts ,(append (list
+							:can-open
+							:can-be-opened
+							:can-be-drunk
+							:can-be-eaten
+							:can-be-weared-arm
+							:can-be-weared-head
+							:can-be-weared-neck
+							:can-be-weared-feet
+							:can-cut
+							:can-smash
+							:can-pierce
+							:can-launch-bolt
+							:can-launch-arrow
+							:mounted-on-pole)
+						       (conflict-all-effects)))
+			    (:path (:can-open)
+				   :conflicts ,(append (list
+							:can-talk
+							:can-be-opened
+							:can-attack
+							:can-be-attacked
+							:can-be-destroyed
+							:can-be-burned
+							:can-heal
+							:can-be-heal
+							:can-poison
+							:can-be-poisoned
+							:can-be-drunk
+							:can-be-eaten
+							:can-be-weared-arm
+							:can-be-weared-head
+							:can-be-weared-neck
+							:can-be-weared-feet
+							:can-cut
+							:can-smash
+							:can-pierce
+							:can-launch-bolt
+							:can-launch-arrow
+							:mounted-on-pole
+							(conflict-all-effects))))
+			    (:path (:can-be-opened)
+				   :conflicts ,(append (list
+							:can-talk
+							:can-open
+							:can-attack
+							:can-be-attacked
+							:can-be-destroyed
+							:can-be-burned
+							:can-heal
+							:can-be-heal
+							:can-poison
+							:can-be-poisoned
+							:can-be-drunk
+							:can-be-eaten
+							:can-be-weared-arm
+							:can-be-weared-head
+							:can-be-weared-neck
+							:can-be-weared-feet
+							:can-cut
+							:can-smash
+							:can-pierce
+							:can-launch-bolt
+							:can-launch-arrow
+							:mounted-on-pole
+							(conflict-all-effects))))
+			    (:path (:can-attack)
+				   :conflicts ,(append (list
+							:can-open
+							:can-be-opened
+							:can-be-drunk
+							:can-be-eaten
+							:can-be-weared-arm
+							:can-be-weared-head
+							:can-be-weared-neck
+							:can-be-weared-feet
+							:can-cut
+							:can-smash
+							:can-pierce
+							:can-launch-bolt
+							:can-launch-arrow
+							:mounted-on-pole)
+						       (conflict-all-effects)))
+			    (:path (:can-be-attacked)
+				   :conflicts ,(append (list
+							:can-open
+							:can-be-opened
+							:can-be-drunk
+							:can-be-eaten
+							:can-be-weared-arm
+							:can-be-weared-head
+							:can-be-weared-neck
+							:can-be-weared-feet
+							:can-cut
+							:can-smash
+							:can-pierce
+							:can-launch-bolt
+							:can-launch-arrow
+							:mounted-on-pole)
+						       (conflict-all-effects)))
+			    (:path (:can-be-destroyed)
+				   :conflicts ,(append (list
+							:can-open
+							:can-be-opened
+							:can-be-drunk
+							:can-be-eaten
+							:can-be-weared-arm
+							:can-be-weared-head
+							:can-be-weared-neck
+							:can-be-weared-feet
+							:can-cut
+							:can-smash
+							:can-pierce
+							:can-launch-bolt
+							:can-launch-arrow
+							:mounted-on-pole)
+						       (conflict-all-effects)))
+			    (:path (:can-be-burned)
+				   :conflicts ,(append (list
+							:can-open
+							:can-be-opened
+							:can-be-drunk
+							:can-be-eaten
+							:can-be-weared-arm
+							:can-be-weared-head
+							:can-be-weared-neck
+							:can-be-weared-feet
+							:can-cut
+							:can-smash
+							:can-pierce
+							:can-launch-bolt
+							:can-launch-arrow
+							:mounted-on-pole)
+						       (conflict-all-effects)))
+			    (:path (:can-heal)
+				   :conflicts ,(append (list
+							:can-open
+							:can-be-opened
+							:can-be-drunk
+							:can-be-eaten
+							:can-be-weared-arm
+							:can-be-weared-head
+							:can-be-weared-neck
+							:can-be-weared-feet
+							:can-cut
+							:can-smash
+							:can-pierce
+							:can-launch-bolt
+							:can-launch-arrow
+							:mounted-on-pole)
+						       (conflict-all-effects)))
+			    (:path (:can-be-heal)
+				   :conflicts ,(append (list
+							:can-open
+							:can-be-opened
+							:can-be-drunk
+							:can-be-eaten
+							:can-be-weared-arm
+							:can-be-weared-head
+							:can-be-weared-neck
+							:can-be-weared-feet
+							:can-cut
+							:can-smash
+							:can-pierce
+							:can-launch-bolt
+							:can-launch-arrow
+							:mounted-on-pole)
+						       (conflict-all-effects)))
+			    (:path (:can-poison)
+				   :conflicts ,(append (list
+							:can-open
+							:can-be-opened
+							:can-be-drunk
+							:can-be-eaten
+							:can-be-weared-arm
+							:can-be-weared-head
+							:can-be-weared-neck
+							:can-be-weared-feet
+							:can-cut
+							:can-smash
+							:can-pierce
+							:can-launch-bolt
+							:can-launch-arrow
+							:mounted-on-pole)
+						       (conflict-all-effects)))
+			    (:path (:can-be-poisoned)
+				   :conflicts ,(append (list
+							:can-open
+							:can-be-opened
+							:can-be-drunk
+							:can-be-eaten
+							:can-be-weared-arm
+							:can-be-weared-head
+							:can-be-weared-neck
+							:can-be-weared-feet
+							:can-cut
+							:can-smash
+							:can-pierce
+							:can-launch-bolt
+							:can-launch-arrow
+							:mounted-on-pole)
+						       (conflict-all-effects)))
+			    (:path (:can-be-drunk)
+				   :conflicts (:can-talk
+					       :can-ask-for-help
+					       :can-be-opened
+					       :can-open
+					       :can-attack
+					       :can-be-attacked
+					       :can-be-destroyed
+					       :can-be-burned
+					       :can-heal
+					       :can-be-heal
+					       :can-poison
+					       :can-be-poisoned
+					       :can-be-eaten
+					       :can-be-weared-arm
+					       :can-be-weared-head
+					       :can-be-weared-neck
+					       :can-be-weared-feet
+					       :can-cut
+					       :can-smash
+					       :can-pierce
+					       :can-launch-bolt
+					       :can-launch-arrow
+					       :mounted-on-pole))
+			    (:path (:can-be-eaten)
+				   :conflicts (:can-talk
+					       :can-ask-for-help
+					       :can-be-opened
+					       :can-open
+					       :can-attack
+					       :can-be-attacked
+					       :can-be-destroyed
+					       :can-be-burned
+					       :can-heal
+					       :can-be-heal
+					       :can-poison
+					       :can-be-poisoned
+					       :can-be-drunk
+					       :can-be-weared-arm
+					       :can-be-weared-head
+					       :can-be-weared-neck
+					       :can-be-weared-feet
+					       :can-cut
+					       :can-smash
+					       :can-pierce
+					       :can-launch-bolt
+					       :can-launch-arrow
+					       :mounted-on-pole))
+			    (:path     (:can-cut)
+				       :conflicts (:can-smash
+						   :can-pierce
+						   :can-launch-bolt
+						   :can-launch-arrow
+						   :mounted-on-pole
+						   :can-talk
+						   :can-be-opened
+						   :can-open
+						   :can-attack
+						   :can-be-attacked
+						   :can-be-destroyed
+						   :can-be-burned
+						   :can-heal
+						   :can-be-heal
+						   :can-poison
+						   :can-be-poisoned
+						   :can-be-drunk
+						   :can-be-eaten))
+			    (:path     (:can-smash)
+				       :conflicts (:can-cut
+						   :can-pierce
+						   :can-launch-bolt
+						   :can-launch-arrow
+						   :mounted-on-pole
+						   :can-talk
+						   :can-be-opened
+						   :can-open
+						   :can-attack
+						   :can-be-attacked
+						   :can-be-destroyed
+						   :can-be-burned
+						   :can-heal
+						   :can-be-heal
+						   :can-poison
+						   :can-be-poisoned
+						   :can-be-drunk
+						   :can-be-eaten))
+			    (:path     (:can-pierce)
+				       :conflicts (:can-cut
+						   :can-smash
+						   :can-launch-bolt
+						   :can-launch-arrow
+						   :mounted-on-pole
+						   :can-talk
+						   :can-be-opened
+						   :can-open
+						   :can-attack
+						   :can-be-attacked
+						   :can-be-destroyed
+						   :can-be-burned
+						   :can-heal
+						   :can-be-heal
+						   :can-poison
+						   :can-be-poisoned
+						   :can-be-drunk
+						   :can-be-eaten))
+			    (:path     (:can-pierce)
+				       :conflicts (:can-cut
+						   :can-smash
+						   :can-launch-bolt
+						   :can-launch-arrow
+						   :mounted-on-pole
+						   :can-talk
+						   :can-be-opened
+						   :can-open
+						   :can-attack
+						   :can-be-attacked
+						   :can-be-destroyed
+						   :can-be-burned
+						   :can-heal
+						   :can-be-heal
+						   :can-poison
+						   :can-be-poisoned
+						   :can-be-drunk
+						   :can-be-eaten))
+			    (:path     (:can-launch-bolt)
+				       :conflicts (:can-cut
+						   :can-pierce
+						   :can-smash
+						   :can-launch-arrow
+						   :mounted-on-pole
+						   :can-talk
+						   :can-be-opened
+						   :can-open
+						   :can-attack
+						   :can-be-attacked
+						   :can-be-destroyed
+						   :can-be-burned
+						   :can-heal
+						   :can-be-heal
+						   :can-poison
+						   :can-be-poisoned
+						   :can-be-drunk
+						   :can-be-eaten))
+			    (:path     (:can-launch-arrow)
+				       :conflicts (:can-cut
+						   :can-pierce
+						   :can-smash
+						   :can-launch-bolt
+						   :mounted-on-pole
+						   :can-talk
+						   :can-be-opened
+						   :can-open
+						   :can-attack
+						   :can-be-attacked
+						   :can-be-destroyed
+						   :can-be-burned
+						   :can-heal
+						   :can-be-heal
+						   :can-poison
+						   :can-be-poisoned
+						   :can-be-drunk
+						   :can-be-eaten))
+			    (:path     (:mounted-on-pole)
+				       :conflicts (:can-cut
+						   :can-pierce
+						   :can-smash
+						   :can-launch-arrow
+						   :can-launch-bolt
+						   :can-talk
+						   :can-be-opened
+						   :can-open
+						   :can-attack
+						   :can-be-attacked
+						   :can-be-destroyed
+						   :can-be-burned
+						   :can-heal
+						   :can-be-heal
+						   :can-poison
+						   :can-be-poisoned
+						   :can-be-drunk
+						   :can-be-eaten))
+			    (:path     (:can-be-weared-arm)
+				       :conflicts ,(%trivial-conflict-list :can-be-weared-arm))
+			    (:path     (:can-be-weared-head)
+				       :conflicts ,(%trivial-conflict-list :can-be-weared-head))
+			    (:path     (:can-be-weared-neck)
+				       :conflicts ,(%trivial-conflict-list :can-be-weared-neck))
+			    (:path     (:can-be-weared-feet)
+				       :conflicts ,(%trivial-conflict-list :can-be-weared-feet))))
+
+(defun listify (a)
+  (if (listp a) a (list a)))
+
+(defun get-path (path relations)
+  (find (listify path)
+	relations
+	:test #'equalp :key #'(lambda (a) (getf a :path))))
+
+(defun get-conflict-elements (item)
+  (getf item :conflicts))
+
+(defun conflictp (interactions item)
+  (let* ((potential-conflicts (get-conflict-elements item))
+	 (item-set-p (misc:recursive-assoc (listify (getf item :path))  interactions))
+	 (conflict (misc:remove-if-null (mapcar #'(lambda (path)
+						    (if (misc:recursive-assoc (listify path)
+									      interactions)
+							path
+							nil))
+						potential-conflicts))))
+    (when (and item-set-p conflict)
+      (warn (format nil "~a conflict with ~a" (getf item :path) conflict)))
+    (and item-set-p conflict)))
+
+(defun validate-interaction-file (file)
+  (with-interaction-parameters (params file)
+    (find-if #'(lambda (a) (not (null a))) (loop for i in *relations* collect
+						(conflictp params i)))))

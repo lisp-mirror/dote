@@ -48,6 +48,7 @@
    :+gravity+
    :+maximum-map-size+
    :+minimium-map-size+
+   :+maximum-level-difficult+
    :+quad-tree-leaf-size+
    :+zero-height+
    :+min-height+
@@ -162,6 +163,9 @@
    :+nil-equiv-bag+
    :build-plist
    :build-assocs-chain
+   :recursive-assoc
+   :recursive-assoc-just-before
+   :n-setf-path-value
    :gen-trivial-plist-predicates
    :gen-trivial-plist-predicate
    :gen-trivial-plist-get
@@ -1318,6 +1322,8 @@
 	:2d-utils
 	:ivec4)
   (:export
+   :w
+   :h
    :door-n-p
    :door-s-p
    :door-e-p
@@ -1374,6 +1380,7 @@
    :default-labyrinth-sigma-h-function
    :default-labyrinth-door-function
    :default-labyrinth-win-function
+   :default-labyrinth-furniture-function
    :get-cost-insecure
    :get-cost))
 
@@ -1598,6 +1605,8 @@
    :*ceiling*
    :*floor*
    :*furnitures*
+   :*containers-furnitures*
+   :*magic-furnitures*
    :*window*
    :*door-n*
    :*door-s*
@@ -1626,6 +1635,8 @@
    :+wall-type+
    :+tree-type+
    :+furniture-type+
+   :+magic-furniture-type+
+   :+container-type+
    :+npc-type+
    :+pc-type+
    :+floor-type+
@@ -1641,6 +1652,7 @@
    :celestial-body-position
    :movement-costs
    :map-state
+   :level-difficult
    :map-cache-dir
    :light-color
    :setup-game-hour
@@ -2160,6 +2172,8 @@
    :ceiling-bag
    :floor-bag
    :furnitures-bag
+   :containers-bag
+   :magic-furnitures-bag
    :windows-bag
    :gui
    :render-for-reflection
@@ -2486,7 +2500,47 @@
    :decay-p
    :effects-p
    :healing-effects-p
-   :magic-effect-p))
+   :magic-effect-p
+   :interaction-get-strength
+   :interaction-get-stamina
+   :interaction-get-dexterity
+   :interaction-get-agility
+   :interaction-get-smartness
+   :interaction-get-empaty
+   :interaction-get-weight
+   :interaction-get-damage-points
+   :interaction-get-movement-points
+   :interaction-get-magic-points
+   :interaction-get-dodge-chance
+   :interaction-get-melee-attack-chance
+   :interaction-get-range-attack-chance
+   :interaction-get-melee-attack-damage
+   :interaction-get-range-attack-damage
+   :interaction-get-edge-weapons-chance-bonus
+   :interaction-get-edge-weapons-damage-bonus
+   :interaction-get-impact-weapons-chance-bonus
+   :interaction-get-impact-weapons-damage-bonus
+   :interaction-get-pole-weapons-chance-bonus
+   :interaction-get-pole-weapons-damage-bonus
+   :interaction-get-unlock-chance
+   :interaction-get-deactivate-trap-chance
+   :interaction-get-reply-attack-chance
+   :interaction-get-ambush-attack-chance
+   :interaction-get-spell-chance
+   :interaction-get-attack-spell-chance
+   :interaction-get-heal-poison
+   :interaction-get-heal-berserk
+   :interaction-get-heal-faint
+   :interaction-get-heal-terror
+   :interaction-get-cause-poison
+   :interaction-get-cause-berserk
+   :interaction-get-cause-faint
+   :interaction-get-cause-terror
+   :interaction-get-immune-poison
+   :interaction-get-immune-berserk
+   :interaction-get-immune-faint
+   :interaction-get-immune-terror
+   :interaction-get-magic-effect))
 
 (defpackage :main-window
   (:use :cl

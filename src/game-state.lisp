@@ -88,7 +88,10 @@
 	  door-n door-s
 	  door-w door-e
 	  wall tree
-	  furniture npc pc)
+	  furniture
+	  magic-furniture
+	  container
+	  npc pc)
 
 (defclass map-state-element (identificable)
   ((entity-id
@@ -138,6 +141,10 @@
     :accessor map-state
     :initarg  :map-state
     :initform nil)
+   (level-difficult
+    :accessor level-difficult
+    :initarg  :level-difficult
+    :initform 1)
    (map-cache-dir
     :accessor map-cache-dir
     :initarg  :map-cache-dir

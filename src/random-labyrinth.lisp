@@ -53,15 +53,15 @@
     `(defun ,fn-name (c)
        (or ,@(loop for i in colors collect `(equalp c ,i))))))
 
-(gen-invalicable-p +border-color+   
-		   +door-color-n+   
-		   +door-color-s+   
-		   +door-color-e+   
-		   +door-color-w+   
-		   +window-color-n+ 
-		   +window-color-s+ 
-		   +window-color-e+ 
-		   +window-color-w+ 
+(gen-invalicable-p +border-color+
+		   +door-color-n+
+		   +door-color-s+
+		   +door-color-e+
+		   +door-color-w+
+		   +window-color-n+
+		   +window-color-s+
+		   +window-color-e+
+		   +window-color-w+
 		   +furniture-color+)
 
 (defun wallp (c)
@@ -184,7 +184,7 @@
     :initarg :id
     :initform *ids*
     :accessor id)
-   (parent 
+   (parent
     :initarg :parent
     :initform nil
     :accessor parent)
@@ -238,7 +238,7 @@
 (defmethod marshal:class-persistant-slots ((object lab-room))
   (append '(gen-params
 	    id
-	    parent 
+	    parent
 	    x
 	    y
 	    width
@@ -270,7 +270,7 @@
 	      (furnitures object)
 	      (color object))
       (format stream "children~%********~%~{~a~%~}**********~%" (mapcar #'id (children object))))))
-  
+
 (defmethod initialize-instance :after ((object lab-room) &key &allow-other-keys)
   (with-accessors ((x x) (y y) (w w) (h h) (shared-matrix shared-matrix)) object
     (when shared-matrix
@@ -322,7 +322,7 @@
 (defgeneric scale (object scale-factor))
 
 (defgeneric fill-scale-gap (object))
-  
+
 (defgeneric scale-doors (object scale-factor))
 
 (defgeneric substitute-door (object old new))
@@ -429,7 +429,7 @@
   (labels ((act-setf (obj)
 	     (with-slots (gen-params) obj
 	       (setf gen-params params))))
-    
+
     (dfs object #'act-setf)))
 
 (defmethod call-random ((object lab-room) limit)
@@ -442,7 +442,7 @@
   (matrix:height (shared-matrix object)))
 
 (defmethod debug-door->mat ((object lab-room) door &key (draw-door-to-nowhere t))
-  (with-accessors ((matrix shared-matrix) 
+  (with-accessors ((matrix shared-matrix)
 		   (color color) (pixel-scale pixel-scale)) object
     (let* ((max-color (max-color (get-root object)))
 	   (door-color (list (first max-color) 0 0))
@@ -497,7 +497,7 @@
      (:w ,(alexandria:format-symbol t "~:@(+~a-color-w+~)" element))))
 
 (defmethod door->mat ((object lab-room) door &key (draw-door-to-nowhere t))
-  (with-accessors ((matrix shared-matrix) 
+  (with-accessors ((matrix shared-matrix)
 		   (color color) (pixel-scale pixel-scale)) object
     (let* ((side (get-door-direction door))
 	   (x (round (get-door-x door)))
@@ -508,37 +508,37 @@
       (when (or draw-door-to-nowhere
 		(not (door-to-nowhere object door)))
 	(matrix:matrix-rect matrix x y door-w door-h door-color)))))
-		     
+
 (defmethod debug-doors->mat ((object lab-room) &key (draw-door-to-nowhere t))
-  (with-accessors ((x x) (y y) (w w) (h h) (matrix shared-matrix) 
+  (with-accessors ((x x) (y y) (w w) (h h) (matrix shared-matrix)
 		   (color color) (pixel-scale pixel-scale)
 		   (children children)) object
-    (dfs (get-root object) 
-	 #'(lambda (obj) 
-	     (mapc #'(lambda (door) (debug-door->mat obj door 
+    (dfs (get-root object)
+	 #'(lambda (obj)
+	     (mapc #'(lambda (door) (debug-door->mat obj door
 					       :draw-door-to-nowhere draw-door-to-nowhere))
 		   (doors obj))))))
 
 (defmethod doors->mat ((object lab-room) &key (draw-door-to-nowhere t))
-  (with-accessors ((x x) (y y) (w w) (h h) (matrix shared-matrix) 
+  (with-accessors ((x x) (y y) (w w) (h h) (matrix shared-matrix)
 		   (color color) (pixel-scale pixel-scale)
 		   (children children)) object
-    (dfs (get-root object) 
-	 #'(lambda (obj) 
-	     (mapc #'(lambda (door) 
-		       (door->mat obj door 
+    (dfs (get-root object)
+	 #'(lambda (obj)
+	     (mapc #'(lambda (door)
+		       (door->mat obj door
 				  :draw-door-to-nowhere draw-door-to-nowhere))
 		   (doors obj))))))
-  
+
 (defmethod windows->mat ((object lab-room))
-  (with-accessors ((x x) (y y) (w w) (h h) (matrix shared-matrix) 
+  (with-accessors ((x x) (y y) (w w) (h h) (matrix shared-matrix)
 		   (color color) (pixel-scale pixel-scale)
 		   (children children)) object
-    (dfs (get-root object) 
-	 #'(lambda (obj) 
+    (dfs (get-root object)
+	 #'(lambda (obj)
 	     (mapc #'(lambda (win) (window->mat obj win))
 		   (windows obj))))))
-  
+
 
 (defmethod window->mat ((object lab-room) win)
   (with-accessors ((matrix shared-matrix)) object
@@ -550,11 +550,11 @@
       (matrix:matrix-rect matrix x y w h window-color))))
 
 (defmethod furnitures->mat ((object lab-room))
-  (with-accessors ((x x) (y y) (w w) (h h) (matrix shared-matrix) 
+  (with-accessors ((x x) (y y) (w w) (h h) (matrix shared-matrix)
 		   (color color) (pixel-scale pixel-scale)
 		   (children children)) object
-    (dfs (get-root object) 
-	 #'(lambda (obj) 
+    (dfs (get-root object)
+	 #'(lambda (obj)
 	     (mapc #'(lambda (win) (furniture->mat obj win))
 		   (furnitures obj))))))
 
@@ -566,7 +566,7 @@
 	   (h 1))
       (matrix:matrix-rect matrix x y w h +furniture-color+))))
 
-(defmethod debug-room->mat ((object lab-room) 
+(defmethod debug-room->mat ((object lab-room)
 		      &key (draw-door nil) (draw-door-to-nowhere nil)
 		      (draw-border nil)
 		      (draw-seed nil)
@@ -576,10 +576,10 @@
 		     (draw-border nil)
 		     (draw-seed nil))
 	       (with-accessors ((id id)
-				(x x) (y y) (w w) (h h) (matrix shared-matrix) 
+				(x x) (y y) (w w) (h h) (matrix shared-matrix)
 				(color color) (pixel-scale pixel-scale)
 				(children children)) object
-		 
+
 		 (let* ((max-color (max-color (get-root object)))
 			(act-color (if (and draw-seed (root-p object))
 				       (list (first max-color) 0 (first max-color))
@@ -590,7 +590,7 @@
 					  (floor (/ pixel-scale 8)))))
 		   (loop for r from 0 below w do
 			(loop for c from 0 below h do
-			     (setf (matrix:matrix-elt matrix (floor (+ y c)) 
+			     (setf (matrix:matrix-elt matrix (floor (+ y c))
 						    (floor (+ x r)))
 				   act-color)))
 		   (when draw-border
@@ -609,13 +609,13 @@
 		   (windows->mat object)
 		   (furnitures->mat object)))))
       (dfs object #'(lambda (r) (paint r
-				       :draw-door draw-door 
+				       :draw-door draw-door
 				       :draw-door-to-nowhere draw-door-to-nowhere
-				       :draw-border draw-border 
+				       :draw-border draw-border
 				       :draw-seed draw-seed)))
       (shared-matrix object)))
 
-(defmethod room->mat ((object lab-room) 
+(defmethod room->mat ((object lab-room)
 		      &key (draw-door nil) (draw-door-to-nowhere nil)
 		      (draw-border nil)
 		      (draw-seed nil)
@@ -625,7 +625,7 @@
 		     (draw-border nil)
 		     (draw-seed nil))
 	       (with-accessors ((id id)
-				(x x) (y y) (w w) (h h) (matrix shared-matrix) 
+				(x x) (y y) (w w) (h h) (matrix shared-matrix)
 				(children children)) object
 		 (let ((act-color (if (and draw-seed (root-p object))
 				      +seed-color+
@@ -636,13 +636,13 @@
 						      (floor (+ x r)))
 				   act-color)))
 		   (when draw-border
-		      (matrix:matrix-hline matrix (floor x) (floor y) (floor w) 
+		      (matrix:matrix-hline matrix (floor x) (floor y) (floor w)
 					   +border-color+)
-		      (matrix:matrix-hline matrix (floor x) (floor (+ h y)) (floor w) 
+		      (matrix:matrix-hline matrix (floor x) (floor (+ h y)) (floor w)
 					   +border-color+)
-		      (matrix:matrix-vline matrix (floor x) (floor y) (floor h) 
+		      (matrix:matrix-vline matrix (floor x) (floor y) (floor h)
 					   +border-color+)
-		      (matrix:matrix-vline matrix (floor (+ x w)) (floor y) (floor h) 
+		      (matrix:matrix-vline matrix (floor (+ x w)) (floor y) (floor h)
 					   +border-color+))
 		   (when draw-id
 		     (draw-string matrix (round (- (+ x (/ w 2)) (/ +font-w+ 2)))
@@ -653,22 +653,22 @@
 		   (windows->mat object)
 		   (furnitures->mat object)))))
       (dfs object #'(lambda (r) (paint r
-				       :draw-door draw-door 
+				       :draw-door draw-door
 				       :draw-door-to-nowhere draw-door-to-nowhere
-				       :draw-border draw-border 
+				       :draw-border draw-border
 				       :draw-seed draw-seed)))
       (shared-matrix object)))
 
 (defmethod room->dot ((object lab-room))
   (let ((graph `(:graph nil)))
     (dfs object #'(lambda (r)
-		    (setf graph (append graph 
+		    (setf graph (append graph
 					`((:node ((:id ,(format nil "~a" (id r)))
-						  (:label 
+						  (:label
 						   ,(format nil "~a" (id r))))))))))
     (dfs object #'(lambda (r)
 		    (mapcar #'(lambda (child)
-				(setf graph (append graph 
+				(setf graph (append graph
 						    `((:edge ((:from ,(format nil "~a" (id r)))
 							      (:to ,(format nil "~a"
 									    (id child)))))))))
@@ -712,7 +712,7 @@
 (defmethod size-limit ((object lab-room) &optional (x (x object)) (y (y object)))
   (if (and (null (parent object))
 	   (= 0 (w object)))
-      (values x  (- (map-w object) x +min-room-size+) 
+      (values x  (- (map-w object) x +min-room-size+)
   	      y  (- (map-h object) y +min-room-size+))
       (let ((root (get-root object))
 	    (aabb (ivec4 x y x y))
@@ -728,7 +728,7 @@
 	  ;; ybottom
 	  (expand-if-possible root aabb (elt can-expand 3) :w))
 	(let ((rect (iaabb2->irect2 aabb)))
-	  (values (elt rect 0) (elt rect 1) 
+	  (values (elt rect 0) (elt rect 1)
 		  (elt rect 2) (elt rect 3))))))
 
 (defmethod door-to-nowhere ((object lab-room) door)
@@ -745,7 +745,7 @@
 
 (defmethod set-doorside-offset ((object lab-room))
   (with-accessors ((doors doors)) object
-    (mapcar #'(lambda (d) 
+    (mapcar #'(lambda (d)
 		(ecase (elt d 2)
 		  (:n
 		   (list (elt d 0) (1- (elt d 1)) (elt d 2) (elt d 3)))
@@ -761,10 +761,10 @@
 
 (defmethod grow-on-south ((object lab-room) door)
   (with-accessors ((matrix shared-matrix)) object
-    (multiple-value-bind (xtop ytop wrect hrect) 
+    (multiple-value-bind (xtop ytop wrect hrect)
 	(size-limit object (elt door 0) (elt door 1))
       (let* ((color-scheme (get-param-gen object color-scheme))
-	       (child-color 
+	       (child-color
 		(if (eq color-scheme :flat)
 		    +white+
 		    (mapcar #'1+ (color object))))
@@ -778,14 +778,14 @@
 			     (elt door 0) (elt door 1)))
 	     (aabb (irect2->iaabb2 rand-sub-rect))
 	     (rect rand-sub-rect)
-	     (exceed (- (+ (elt rect 0) (elt rect 2)) 
+	     (exceed (- (+ (elt rect 0) (elt rect 2))
 			(+ (elt rect-fill 0) (elt rect-fill 2)))))
 	(when (and (> (round (elt rect-fill 2)) 1)
 		   (> (round (elt rect-fill 3) 1)))
-	  (let ((child (make-instance 'lab-room 
+	  (let ((child (make-instance 'lab-room
 				      :gen-params (gen-params object)
-				      :shared-matrix matrix 
-				      :parent object 
+				      :shared-matrix matrix
+				      :parent object
 				      :color child-color
 				      :id (1+ *ids*))))
 	    (incf *ids*)
@@ -819,13 +819,13 @@
 	 (declare (ignorable ,root))
 	 (unwind-protect
 	      (progn
-		,@(loop for i from 1 upto angle by 1 collect 
+		,@(loop for i from 1 upto angle by 1 collect
 		       `(progn
 			  (rotate ,root :90)
 			  (dfs ,root #'(lambda (r) (rotate-doors r :90)))
 			  (rotate-matrix ,object :90))) ;; matrix is shared
 		,@body)
-	   ,@(loop for i from 1 upto angle by 1 collect 
+	   ,@(loop for i from 1 upto angle by 1 collect
 		  `(progn
 		     (rotate ,root :-90)
 		     (dfs ,root #'(lambda (r) (rotate-doors r :-90)))
@@ -838,7 +838,7 @@
 		 (if (eq ,side (elt door 2))
 		     (let ((,d (add-offset-to-door door)))
 		       (cond
-			 ((outside-map ,object (subseq ,d 0 2)) 
+			 ((outside-map ,object (subseq ,d 0 2))
 			  nil) ; do nothing
 			 ((inside-room (get-root ,object) (subseq ,d 0 2))
 			  (let ((,child (inside-room (get-root ,object) (subseq ,d 0 2))))
@@ -861,7 +861,7 @@
 (defun grow-step (&optional (params nil))
   (labels ((bound-doors (object side)
 	     (setf (doors object)
-		   (mapcar #'(lambda(d) 
+		   (mapcar #'(lambda(d)
 			       ;; (format t "dump door cerco side ~a ~a~%" side d)
 			       ;; (format t "trovato ~a va da qualche parte? ~a~%" d
 			       ;; 	       (not (door-to-nowhere object d)))
@@ -884,7 +884,7 @@
 	  (push object *bfs-visited*)
 	  (grow-rotate object :s -90) ; west side
 	  (bound-doors object :w)
-	  (grow-rotate object :s 0)   ; south side 
+	  (grow-rotate object :s 0)   ; south side
 	  (bound-doors object :s)
 	  (grow-rotate object :s 90)  ; east side
 	  (bound-doors object :e)
@@ -893,13 +893,20 @@
 	  (mapc #'add-doors (children object))
 	  (clear-mat (get-root object))
 	  (room->mat (get-root object)))
-	(add-furnitures object)
-	(add-windows object))))))
+	;(add-furnitures object)
+	;(add-windows object)
+	object)))))
+
+(defun grow-step-furniture (room)
+  (add-furnitures room))
+
+(defun grow-step-windows (room)
+  (add-windows room))
 
 (defun grow-single-door (&optional (params nil))
   (labels ((bound-doors (object side)
 	     (setf (doors object)
-		   (mapcar #'(lambda(d) 
+		   (mapcar #'(lambda(d)
 			       (list (elt d 0) (elt d 1) (elt d 2)
 				     (if (or
 					  (door-to-nowhere object d)
@@ -921,17 +928,18 @@
 	(clear-mat (get-root object))
 	(room->mat (get-root object)))))))
 
-(defun update-params (object name func)
-  (macrolet ((gen-cases (name params func &rest cases)
-	       `(ecase ,name
-		  ,@(loop for n in cases collect
-			 `(,(alexandria:make-keyword n)
-			    (setf (,n ,params) (funcall ,func *generation-count*)))))))
-    
+(defmacro %gen-update-params-cases (name params func room-fn-args &rest cases)
+  `(ecase ,name
+     ,@(loop for n in cases collect
+	    `(,(alexandria:make-keyword n)
+	       (setf (,n ,params) (funcall ,func *generation-count* ,room-fn-args))))))
+
+
+(defun update-params (object name func room-fn-args)
     (let ((params (gen-params (get-root object))))
-      (gen-cases name params func 
-		 sigmaw sigmah max-door-num max-windows-num max-furnitures-num)
-      (setf (gen-params (get-root object)) params))))
+      (%gen-update-params-cases name params func room-fn-args
+				sigmaw sigmah max-door-num max-windows-num max-furnitures-num)
+      (setf (gen-params (get-root object)) params)))
 
 (defun add-offset-to-door (door)
   (ecase (elt door 2)
@@ -956,7 +964,7 @@
 
 (defun child-has-same-pos-door-p (door child)
   (let* ((direction (elt door 2))
-	 (child-door-guessed (cond 
+	 (child-door-guessed (cond
 				((eq direction :n)
 				 (list (elt door 0) (1- (elt door 1)) :s))
 				((eq direction :s)
@@ -965,8 +973,8 @@
 				 (list (1+ (elt door 0)) (elt door 1) :w))
 				((eq direction :w)
 				 (list (1- (elt door 0)) (elt door 1) :e)))))
-    (find-if #'(lambda (d) 
-		 (and 
+    (find-if #'(lambda (d)
+		 (and
 		  (eq (elt d 2) (third child-door-guessed))
 		  (or
 		   (and (= (elt d 0) (elt door 0))
@@ -974,7 +982,7 @@
 		   (and (= (elt d 0) (elt child-door-guessed 0))
 			(= (elt d 1) (elt child-door-guessed 1))))))
 	     (doors child))))
-     
+
 (defmethod setf-doorside ((object lab-room) coords)
   (let ((actual-doors (remove-if
 		       #'(lambda (d)
@@ -986,9 +994,9 @@
 			     res))
 		       coords)))
     (setf (doors object) (remove-duplicates (append (doors object) actual-doors)
-					    :test #'(lambda (a b) 
-						      (and (= (elt a 0) (elt b 0)) 
-							   (= (elt a 1) (elt b 1)) 
+					    :test #'(lambda (a b)
+						      (and (= (elt a 0) (elt b 0))
+							   (= (elt a 1) (elt b 1))
 							   (eq (elt a 2) (elt b 2))))))))
 
 (defmethod add-doors ((object lab-room))
@@ -1001,7 +1009,7 @@
 
 (defmethod neighbour-element-p ((object lab-room) x y what)
   (labels ((find-stuff (coords where)
-	     (find (num-utils:round-all coords) where 
+	     (find (num-utils:round-all coords) where
 		   :test #'(lambda (a b) (equalp (num-utils:round-all a)
 						 (num-utils:round-all b))))))
     (let ((res nil))
@@ -1030,8 +1038,8 @@
 			&optional
 			  (max-number (num:lcg-next-upto (get-param-gen object max-windows-num)))
 			  (max-recursion 5000))
-  (with-accessors ((x x) (y y) (w w) (h h) (doors doors) (windows windows)) object 
-    (if (and 
+  (with-accessors ((x x) (y y) (w w) (h h) (doors doors) (windows windows)) object
+    (if (and
 	     (> max-number 0)
 	     (> max-recursion 0))
 	(let* ((win-y (round (+ y (* (rand01) h))))
@@ -1054,13 +1062,13 @@
 		(push (reverse new-window) windows)
 		(add-windows object (1- max-number) (1- max-recursion))))))))
 
-(defmethod add-furnitures ((object lab-room) 
+(defmethod add-furnitures ((object lab-room)
 			   &optional (max-number
 				      (if (> (get-param-gen object max-furnitures-num) 0)
 					  (num:lcg-next-upto (get-param-gen object max-furnitures-num))
 					  0))
 			   (max-recursion 5000))
-  (with-accessors ((x x) (y y) (w w) (h h) (furnitures furnitures)) object 
+  (with-accessors ((x x) (y y) (w w) (h h) (furnitures furnitures)) object
     (if (and
 	 (> max-number 0)
 	 (> max-recursion 0))
@@ -1089,36 +1097,36 @@
 	   (elt coord 2) (elt coord 3)))))
 
 (defmethod add-door-size ((object lab-room) maxnum &key side)
-  (labels ((door-rand-num (max) 
+  (labels ((door-rand-num (max)
 	     (num:lcg-next-upto (1+ max))))
     (with-accessors ((x x) (y y) (w w) (h h) (matrix shared-matrix)) object
       (let ((max-doors-along-x-axe (1- w))
 	    (max-doors-along-y-axe (1- h)))
       (ecase side
 	(:n
-	 (let* ((act-doornum (door-rand-num (if (>= max-doors-along-x-axe maxnum) 
+	 (let* ((act-doornum (door-rand-num (if (>= max-doors-along-x-axe maxnum)
 						maxnum max-doors-along-x-axe)))
 		(coord (add-door-coord (1+ x) (+ x w) act-doornum)))
 	   (loop for i in coord collect (list i y :n :free))))
 	(:s
-	 (let* ((act-doornum (door-rand-num (if (>= max-doors-along-x-axe maxnum) 
+	 (let* ((act-doornum (door-rand-num (if (>= max-doors-along-x-axe maxnum)
 						maxnum max-doors-along-x-axe)))
 		(coord (add-door-coord (1+ x) (+ x w) act-doornum)))
 	   (loop for i in coord collect (list i (+ y h) :s :free))))
 	(:e
-	 (let* ((act-doornum (door-rand-num (if (>= max-doors-along-y-axe maxnum) 
+	 (let* ((act-doornum (door-rand-num (if (>= max-doors-along-y-axe maxnum)
 						maxnum max-doors-along-y-axe)))
 		(coord (add-door-coord (1+ y) (+ y h) act-doornum)))
 	   (loop for i in coord collect (list (+ x w) i :e :free))))
 	(:w
-	 (let* ((act-doornum (door-rand-num (if (>= max-doors-along-y-axe maxnum) 
+	 (let* ((act-doornum (door-rand-num (if (>= max-doors-along-y-axe maxnum)
 						maxnum max-doors-along-y-axe)))
 		(coord (add-door-coord (1+ y) (+ y h) act-doornum)))
 	   (loop for i in coord collect (list x i :w :free)))))))))
-  
+
 (defmethod clean-unused-doors ((object lab-room) &key (purge-blind-doors nil))
-  (dfs object #'(lambda (obj) (setf (doors obj) 
-				    (remove-if #'(lambda (d) 
+  (dfs object #'(lambda (obj) (setf (doors obj)
+				    (remove-if #'(lambda (d)
 						   (if purge-blind-doors
 						       (eq (elt d 3) :free)
 						       (and
@@ -1127,9 +1135,9 @@
 					       (doors obj))))))
 
 (defmethod clean-furniture-near-door ((object lab-room))
-  (dfs object #'(lambda (obj) 
-		  (setf (furnitures obj) 
-			(remove-if #'(lambda (f) 
+  (dfs object #'(lambda (obj)
+		  (setf (furnitures obj)
+			(remove-if #'(lambda (f)
 				       (neighbour-element-p obj (elt f 0) (elt f 1) :doors))
 				   (furnitures obj))))))
 
@@ -1151,15 +1159,15 @@
        :sw)
       (t
        nil))))
-    
+
 (defmethod corner-element-p ((object lab-room) element element-type)
   (let ((res nil)
-	(x (ecase element-type 
+	(x (ecase element-type
 	     (:door
 	      (get-door-x element))
 	     (:window
 	      (get-window-x element))))
-	(y (ecase element-type 
+	(y (ecase element-type
 	     (:door
 	      (get-door-y element))
 	     (:window
@@ -1169,7 +1177,7 @@
 	     (when (corner-position-p obj x y)
 	       (setf res t))))
     res))
-      
+
 (defmethod clean-border-doors ((object lab-room))
     (dfs object
 	 #'(lambda (room)
@@ -1179,9 +1187,9 @@
 			 (let ((door+1 (slide-coord-along-border d +1))
 			       (door-1 (slide-coord-along-border d -1)))
 			   (delete-door room d)
-			   (if (and 
+			   (if (and
 				(not (door-go-to-border-child-p door+1 c))
-				(not (neighbour-element-p room 
+				(not (neighbour-element-p room
 							  (elt door+1 0)
 							  (elt door+1 1) :doors))
 				(inside-room room (add-offset-to-door door+1))
@@ -1201,7 +1209,7 @@
 							    (elt door-1 1))))
 
 				   (push door-1 (doors room))
-				   (progn 
+				   (progn
 				     (remove-link-to-child room c)
 				     (remove-link-to-child c room)))))))))))
 
@@ -1209,11 +1217,11 @@
   (dfs object
        #'(lambda (room)
 	   (loop for c in (children room) do
-		(loop for w in (windows room) do		       
+		(loop for w in (windows room) do
 		     (when (neighbour-element-p c (elt w 0) (elt w 1) :doors)
-		       (setf (windows room) 
-			     (remove-if 
-			      #'(lambda (window) 
+		       (setf (windows room)
+			     (remove-if
+			      #'(lambda (window)
 				  (equalp (num-utils:round-all (get-door-coordinates window))
 					  (num-utils:round-all (get-door-coordinates w))))
 			      (windows room)))))))))
@@ -1232,7 +1240,7 @@
 
 (defmethod remove-link-to-child ((object lab-room) (child number))
   (setf (children object)
-	(remove-if #'(lambda (c) 
+	(remove-if #'(lambda (c)
 		       (if (= (id c) child)
 			   (progn
 			     ;;(misc:dbg "remove ~a from ~a" (id c) (id object))
@@ -1245,7 +1253,7 @@
 
 (defmethod aabb ((object lab-room))
   (with-accessors ((x x) (y y) (w w) (h h)) object
-    (ivec4 x y 
+    (ivec4 x y
 	  (if (epsilon= 0 w)
 	      x
 	      (+ x w))
@@ -1273,22 +1281,22 @@
 	      ,@fun-body))
      ,@body))
 
- 
+
 (defmethod aabb-overlap-p ((object lab-room) aabb)
   (let ((res nil))
     (labels ((act-aabb-overlap-p (obj)
 	       (let ((aabb-obj (aabb obj)))
-		 (when (aabb-chained-p (num-utils:round-all aabb) 
+		 (when (aabb-chained-p (num-utils:round-all aabb)
 				       (num-utils:round-all aabb-obj))
 		   (setf res t)))))
       (dfs object #'act-aabb-overlap-p)
       res)))
- 
+
 (defmethod any-overlap-p ((object lab-room))
   (let ((aabb (aabb object)))
     (labels ((dfs-overlap ()
 		 (dfs (get-root object)
-		      #'(lambda (obj aabb) 
+		      #'(lambda (obj aabb)
 			  (when (and (not (eq obj object))
 				     (aabb-chained-p (aabb obj) aabb)))
 			  t)
@@ -1302,7 +1310,7 @@
 		(when (not (member object blacks :test #'eq))
 		  (push object blacks)
 		  (apply function (append (list object) args))
-		  (mapcar #'(lambda (obj) 
+		  (mapcar #'(lambda (obj)
 			      (apply #'actual-dfs obj function args))
 			  (children object)))))
       (apply #'actual-dfs object function args))))
@@ -1378,14 +1386,14 @@
 
 (defmethod fit-matrix-to-rooms ((object lab-room))
   (let* ((aabb (whole-aabb (get-root object)))
-	 (new-matrix (matrix:gen-matrix-frame (+ 1 (elt aabb 2)) 
+	 (new-matrix (matrix:gen-matrix-frame (+ 1 (elt aabb 2))
 					      (+ 1 (elt aabb 3)))))
     (setf (shared-matrix (get-root object)) new-matrix)))
 
 (defmethod scale ((object lab-room) scale-factor)
   (labels ((bound-non-corner-door (object door)
 	     (if (eq (get-door-state door) :outside)
-		 (let ((inside-child (inside-room object 
+		 (let ((inside-child (inside-room object
 						  (add-offset-to-door door))))
 		   (if inside-child
 		       (progn
@@ -1400,10 +1408,10 @@
 	   (rearrange-corner-door (object door)
 	     (if (and
 		    (not (corner-element-p object door :door))
-		    (not (neighbour-element-p object 
+		    (not (neighbour-element-p object
 					      (get-door-x door)
 					      (get-door-y door) :doors)))
-		 (let ((inside-child (inside-room object 
+		 (let ((inside-child (inside-room object
 						  (add-offset-to-door door))))
 		   (if inside-child
 		       (progn
@@ -1415,7 +1423,7 @@
 			     :bound))
 		       door))
 		 nil)))
-    (dfs object 
+    (dfs object
 	 #'(lambda (obj)
 	     (setf (x obj) (* (x obj) scale-factor)
 		   (y obj) (* (y obj) scale-factor)
@@ -1443,7 +1451,7 @@
 
 (defmethod fill-scale-gap ((object lab-room))
   (dfs object
-       #'(lambda (obj) 
+       #'(lambda (obj)
 	   (extend-x obj)
 	   (extend-y obj)
 	   (setf (doors obj)
@@ -1464,7 +1472,7 @@
 				      (+ (pixel-scale obj) (get-door-y door))
 				      :w
 				      (get-door-state door)))
-			       
+
 			       (:n
 				(list (+ (pixel-scale obj) (get-door-x door))
 				      (get-door-y door)
@@ -1501,7 +1509,7 @@
 			    (+ dy (elt coord 1)))
 		      (subseq coord 2)))
 	  coords))
-  
+
 (defun get-door-coordinates (door)
   (subseq door 0 2))
 
@@ -1536,7 +1544,7 @@
   (setf (furnitures object) (translate-coords (furnitures object) dx dy)))
 
 (defmethod translate ((object lab-room) dx dy)
-  (dfs object 
+  (dfs object
        #'(lambda (obj)
 	   (setf (x obj) (+ (x obj) dx)
 		 (y obj) (+ (y obj) dy))
@@ -1567,7 +1575,7 @@
 			     (+ (elt pivot 1) (elt rotated 1)))))
 	  (push (list retlas (matrix:matrix-elt mat j i)) vals)
 	  (setf aabb (expand-iaabb2 aabb retlas)))))
-    
+
     ;(format t "vals ~a% aabb ~a~%" vals aabb)
     (mapcar #'(lambda (v)
 		(setf (matrix:matrix-elt res
@@ -1585,12 +1593,12 @@
 	  (door-shift-fun  (ecase angle
 			     (:90
 			      #'(lambda (d)
-				  (nth 
-				   (mod (1+ (position d +door-clockwise+)) 
+				  (nth
+				   (mod (1+ (position d +door-clockwise+))
 					(length +door-clockwise+))
 				   +door-clockwise+)))
 			     (:-90
-			      #'(lambda (d) 
+			      #'(lambda (d)
 				  (let ((pos (1- (position d +door-clockwise+))))
 				    (if (< pos 0)
 					(car (last +door-clockwise+))
@@ -1634,7 +1642,7 @@
 
 (defmethod occupied-rate ((object lab-room))
   (with-accessors ((matrix shared-matrix)) object
-   (let ((occupied (loop 
+   (let ((occupied (loop
 		      for i across (matrix:data matrix)
 			when (not (null i))
 		      count i))
@@ -1642,7 +1650,7 @@
      (/ occupied total))))
 
 (defmacro with-restore-map ((map) &body body)
-  `(unwind-protect 
+  `(unwind-protect
 	(progn ,@body)
      (clear-mat ,map)
      (room->mat ,map)))
@@ -1676,7 +1684,7 @@
       (when (null (matrix:matrix-elt (shared-matrix object) y x))
 	(setf (matrix:matrix-elt (shared-matrix object) y x) +black+)))
     (with-restore-map (object)
-      (format stream (pixmap:matrix->ppm* (shared-matrix object) 
+      (format stream (pixmap:matrix->ppm* (shared-matrix object)
 					  (first (max-color (get-root object))))))))
 
 (defmethod dump-dot ((object lab-room) file)
@@ -1686,16 +1694,19 @@
     (s-dot:render-s-dot file "ps" (room->dot object))))
 
 (defun generate (size &key (scale-fact 1)
-			(func-sigma-w #'(lambda (x) (+ 10 x)))
-			(func-sigma-h #'(lambda (x) (+ 10 x)))
-			(func-door #'(lambda (x) (if (< x 1) 3 4)))
-			(func-win  #'(lambda (x) (1+ x)))
-			(root (make-instance 'lab-room 
+			(func-sigma-w   #'(lambda (x a) (declare (ignore a)) (+ 10 x)))
+			(func-sigma-h   #'(lambda (x a) (declare (ignore a)) (+ 10 x)))
+			(func-door      #'(lambda (x a) (declare (ignore a)) (if (< x 1) 3 4)))
+			(func-win       #'(lambda (x a) (declare (ignore a)) (if (< x 1) 3 4)))
+			(func-furniture #'(lambda (x a) (declare (ignore a)) (if (< x 1) 3 4)))
+			(root (make-instance 'lab-room
 					     :shared-matrix (matrix:gen-matrix-frame size size))))
   (let* ((*queue* nil)
 	 (*generation-count* 0)
 	 (*ids* 0)
 	 (*bfs-visited* '()))
+    (and func-sigma-h   (update-params (get-root root) :sigmah func-sigma-h nil))
+    (and func-sigma-w   (update-params (get-root root) :sigmaw func-sigma-w nil))
     (push root *queue*)
     (add-doors root)
     (room->mat root)
@@ -1704,11 +1715,17 @@
      	       (< *generation-count* +max-generation+)
      	       (<= (occupied-rate (get-root root))
 		   (get-param-gen (get-root root) max-occupied-rate)))))
-      (and func-sigma-h (update-params (get-root root) :sigmah func-sigma-h))
-      (and func-sigma-w (update-params (get-root root) :sigmaw func-sigma-w))
-      (and func-door (update-params (get-root root) :max-door-num func-door))
-      (and func-win (update-params (get-root root) :max-windows-num func-win))
-      (grow-step))
+      (let ((room (grow-step)))
+	(and func-sigma-h   (update-params (get-root root) :sigmah func-sigma-h room))
+	(and func-sigma-w   (update-params (get-root root) :sigmaw func-sigma-w room))
+	(and func-door      (update-params (get-root root) :max-door-num func-door room))
+	(and func-win       (update-params (get-root root) :max-windows-num func-win room))
+	(and func-furniture (update-params (get-root root)
+					   :max-furnitures-num
+					   func-furniture room))
+	(when room
+	  (grow-step-windows room)
+	  (grow-step-furniture room))))
     (clean-unused-doors root :purge-blind-doors nil)
     (clean-border-doors root)
     (clean-superimposed-windows-doors root)
@@ -1732,4 +1749,3 @@
     (clear-mat res)
     (room->mat res)
     res))
-

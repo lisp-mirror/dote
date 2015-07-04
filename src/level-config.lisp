@@ -147,6 +147,10 @@
 
 (defparameter *furnitures* '())
 
+(defparameter *containers-furnitures* '())
+
+(defparameter *magic-furnitures* '())
+
 (defun gen-normalmap-if-needed (diffuse-texture)
   (let ((roughness (texture:n-roughness diffuse-texture)))
     (if (not (epsilon= roughness 0.0))
@@ -274,21 +278,23 @@
      (setf *floor* mesh)))
 
 (defun clean-global-wars ()
-  (setf *map*         nil
-	*trees*      '()
-	*furnitures* '()
-	*wall*       nil
-	*window*     nil
-	*door-n*     nil
-	*door-s*     nil
-	*door-e*     nil
-	*door-w*     nil
-	*floor*      nil)
+  (setf *map*                   nil
+	*trees*                 '()
+	*furnitures*            '()
+	*containers-furnitures* '()
+	*magic-furnitures*      '()
+	*wall*                  nil
+	*window*                nil
+	*door-n*                nil
+	*door-s*                nil
+	*door-e*                nil
+	*door-w*                nil
+	*floor*                 nil)
   (tg:gc :full t))
 
 (defmacro define-level (&body body)
   (ensure-cache-running
-    ;; clean a bit and free the memory associed with global variables
+    ;; clean a bit and free the memory associated with global variables
     (clean-global-wars)
     (need-keyword ((first body) :set)
       (need-keyword ((second body) :seed)
@@ -376,6 +382,10 @@
 	     (setf offset (generate-tree-w-cache (subseq body 1))))
 	    (:furniture
 	     (setf offset (generate-furniture (subseq body 1))))
+	    (:container
+	     (setf offset (generate-container (subseq body 1))))
+	    (:magic-furniture
+	     (setf offset (generate-magic-furniture (subseq body 1))))
 	    (otherwise
 	     (gen-simple-texture-generator  (alexandria:make-keyword (second body))
 					    offset
@@ -674,6 +684,9 @@
 		 (labyrinth-win-function
 		  (or (cdr (assoc 'labyrinth-win-function fns))
 		      #'random-terrain:default-labyrinth-win-function))
+		 (labyrinth-furniture-function
+		  (or (cdr (assoc ' labyrinth-furniture-function fns))
+		      #'random-terrain:default-labyrinth-furniture-function))
 		 (soil-decal-threshold (or (cdr (assoc 'soil-decal-threshold fns))
 					   '(0.8)))
 		 (trees-rate  (or (cdr (assoc 'trees-rate fns))
@@ -700,6 +713,7 @@
 			    :labyrinth-sigma-h-function (funcall labyrinth-sigma-h-function)
 			    :labyrinth-door-function    (funcall labyrinth-door-function)
 			    :labyrinth-win-function     (funcall labyrinth-win-function)
+			    :labyrinth-furn-function    (funcall labyrinth-furniture-function)
 			    :soil-threshold             (elt soil-decal-threshold 0)
 			    :trees-rate                 (elt trees-rate 0)
 			    :trees-sparseness           (elt trees-sparseness 0)))
@@ -770,7 +784,25 @@
 				   (fourth body)
 				   (elt body 6))))
 	(push mesh *furnitures*))
-      (err "Furniture mesh: file-not-supported: ~a" (fourth body)))
+      (err "Furniture mesh: file not supported: ~a" (fourth body)))
+  8)
+
+(defun generate-container (body)
+  (if (filesystem-utils:has-extension (fourth body) +obj-mesh-file-extension+)
+      (let* ((mesh  (load-obj-mesh constants:+furnitures-resource+
+				   (fourth body)
+				   (elt body 6))))
+	(push mesh *containers-furnitures*))
+      (err "Container furniture mesh: file not supported: ~a" (fourth body)))
+  8)
+
+(defun generate-magic-furniture (body)
+  (if (filesystem-utils:has-extension (fourth body) +obj-mesh-file-extension+)
+      (let* ((mesh  (load-obj-mesh constants:+furnitures-resource+
+				   (fourth body)
+				   (elt body 6))))
+	(push mesh *magic-furnitures*))
+      (err "Magic furniture mesh: file not supported: ~a" (fourth body)))
   8)
 
 (defun load-obj-mesh (resource file material)

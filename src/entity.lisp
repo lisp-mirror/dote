@@ -27,7 +27,7 @@
    (dir
     :accessor dir
     :initarg :dir
-    :initform (vec 1.0 0.0 0.0))
+    :initform +x-axe+)
    (scaling
     :accessor scaling
     :initarg :scaling

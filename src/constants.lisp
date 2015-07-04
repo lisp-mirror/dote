@@ -32,6 +32,8 @@
 
 (define-constant +minimium-map-size+                 32.0                     :test #'=)
 
+(define-constant +maximum-level-difficult+           10.0                     :test #'=)
+
 (define-constant +quad-tree-leaf-size+               64.0                     :test #'=)
 
 (define-constant +zero-height+                       10.0                     :test '=)

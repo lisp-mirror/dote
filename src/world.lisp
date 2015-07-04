@@ -116,6 +116,14 @@
     :accessor furnitures-bag
     :initarg  :furnitures-bag
     :initform nil)
+   (containers-bag
+    :accessor containers-bag
+    :initarg  :containers-bag
+    :initform nil)
+   (magic-furnitures-bag
+    :accessor magic-furnitures-bag
+    :initarg  :magic-furnitures-bag
+    :initform nil)
    (windows-bag
     :accessor windows-bag
     :initarg  :windows-bag
@@ -196,6 +204,10 @@
   (setf (doors-bag object) nil)
   (map nil #'destroy (furnitures-bag object))
   (setf (furnitures-bag object) nil)
+  (map nil #'destroy (containers-bag object))
+  (setf (containers-bag object) nil)
+  (map nil #'destroy (magic-furnitures-bag object))
+  (setf (magic-furnitures-bag object) nil)
   (destroy (windows-bag object))
   (setf (windows-bag object) nil)
   (destroy (gui object))

@@ -99,20 +99,43 @@
 			  (identificable:id door-shell))
     (world:push-entity world door-shell)))
 
-(defun setup-furnitures (world min-x min-y x y)
-  (when (furnitures-bag world)
-    (let* ((choosen             (random-elt (furnitures-bag world)))
-	   (shell               (mesh:fill-shell-from-mesh choosen))
-	   (mesh-x              (d+ (d* +terrain-chunk-size-scale+ min-x)
-				    (coord-map->chunk (d (+ x min-x)))))
-	   (mesh-y              (d+ (d* +terrain-chunk-size-scale+ min-y)
-				    (coord-map->chunk (d (+ y min-y))))))
+(defun calculate-furnitures-shares (level)
+  (let* ((normal-share    (d+ 0.66 (d* (d- (d level) 1.0) 0.01)))
+	 (all-rest        (d- 1.0 normal-share))
+	 (weight          (dlerp (d/ (d level) +maximum-level-difficult+) 0.0 0.1))
+	 (magic-share     (d+ (d* (d- 0.33 weight) all-rest)))
+	 (container-share (d+ (d* (d+ 0.67 weight) all-rest))))
+    (list (cons normal-share    +furniture-type+)
+	  (cons magic-share     +magic-furniture-type+)
+	  (cons container-share +container-type+))))
+
+(defun setup-furnitures (world min-x min-y x y freq)
+  (when (and (furnitures-bag       world)
+	     (containers-bag       world)
+	     (magic-furnitures-bag world))
+    (let* ((dice-roll (random-select-by-frequency freq :key #'car :sort nil :normalize nil))
+	   (type-of-furniture (cdr dice-roll))
+	   (choosen          (if (eq type-of-furniture +furniture-type+)
+				 (random-elt (furnitures-bag world))
+				 (if (eq type-of-furniture +magic-furniture-type+)
+				     (random-elt (magic-furnitures-bag world))
+				     (random-elt (containers-bag world)))))
+	   (shell            (mesh:fill-shell-from-mesh choosen))
+	   (mesh-x           (d+ (d* +terrain-chunk-size-scale+ min-x)
+				 (coord-map->chunk (d (+ x min-x)))))
+	   (mesh-y           (d+ (d* +terrain-chunk-size-scale+ min-y)
+				 (coord-map->chunk (d (+ y min-y))))))
       (setf (compiled-shaders shell)               (compiled-shaders world)
-            (entity:pos shell)	                   (vec mesh-x +zero-height+ mesh-y))
+            (entity:pos shell)	                   (vec mesh-x +zero-height+ mesh-y)
+	    (entity:dir shell)                     (random-elt
+						    #((vec  1.0 0.0  0.0)
+						      (vec  0.0 0.0  1.0)
+						      (vec -1.0 0.0  0.0)
+						      (vec  0.0 0.0 -1.0))))
       (setup-map-state-tile world
 			    (truncate (+ x (coord-layer->map-state min-x)))
 			    (truncate (+ y (coord-layer->map-state min-y)))
-			    +furniture-type+
+			    type-of-furniture
 			    (identificable:id shell))
       ;; TODO
       ;; add character
@@ -196,7 +219,11 @@
 	      ((door-w-p (matrix-elt bmp y x))
 	       (setup-door world :door-w min-x min-y x y))
 	      ((furniturep (matrix-elt bmp y x))
-	       (setup-furnitures world min-x min-y x y)))))))
+	       (setup-furnitures world min-x min-y x y
+				 (sort (calculate-furnitures-shares (game-state:level-difficult
+								     (world:main-state world)))
+				       #'<
+				       :key #'car))))))))
 
 (defun setup-single-floor (world aabb)
   (let* ((rect            (aabb2->rect2 aabb))
@@ -317,7 +344,6 @@
     (setf (mesh:vertices  chunk) (mesh:vertices revived))
     (setf (pick-overlay-values chunk) (pick-overlay-values whole))
     (mesh:reset-aabb chunk)
-    (misc:dbg "cache ~a ~a" (mesh:aabb chunk) (length (mesh:triangles chunk)))
     chunk))
 
 (defun build-and-cache-terrain-chunk (x z whole cache-key)
@@ -398,13 +424,15 @@
 						       :door-s *door-s*
 						       :door-e *door-e*
 						       :door-w *door-w*))
-      (setf (floor-bag world)      *floor*)
-      (setf (furnitures-bag world) *furnitures*)
-      (setup-terrain  world *map*)
-      (setup-floor    world *map*)
-      (setup-ceiling  world *map*)
-      (setup-walls    world *map*)
-      (setup-trees    world *map*)
-      (setup-water    world *map*)
-      ;; free memory associed with *map*, *wall* etc.
+      (setf (floor-bag            world) *floor*)
+      (setf (furnitures-bag       world) *furnitures*)
+      (setf (containers-bag       world) *containers-furnitures*)
+      (setf (magic-furnitures-bag world) *magic-furnitures*)
+      (setup-terrain              world  *map*)
+      (setup-floor                world  *map*)
+      (setup-ceiling              world  *map*)
+      (setup-walls                world  *map*)
+      (setup-trees                world  *map*)
+      (setup-water                world  *map*)
+      ;; free memory associated with *map*, *wall* etc.
       (clean-global-wars))))

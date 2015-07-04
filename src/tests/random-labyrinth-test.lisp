@@ -20,11 +20,12 @@
 
 (defun test-gen (size &key (random-seed 3589552221) (debug nil) (scale-fact 1))
   (num:with-lcg-seed (random-seed)
-    (let* ((func-sigma #'(lambda (x) (+ 10 x)))
-	   (func-door #'(lambda (x) (if (< x 1) 3 4)))
-	   (func-win #'(lambda (x) (1+ x)))
-	   (root (generate size :scale-fact scale-fact :func-sigma-w func-sigma 
-			   :func-sigma-h func-sigma :func-door func-door :func-win func-win)))
+    (let* ((func-sigma #'(lambda (x a) (declare (ignorable a)) (+ 10 x)))
+	   (func-door #'(lambda (x a) (declare (ignorable a)) (if (< x 1) 3 4)))
+	   (func-win #'(lambda (x a) (declare (ignorable a)) (1+ x)))
+	   (root (generate size :scale-fact scale-fact :func-sigma-w func-sigma
+			   :func-sigma-h func-sigma :func-door func-door :func-win func-win
+			   :func-furniture func-door)))
       (random-labyrinth::clear-mat root)
       (random-labyrinth::room->mat root)
       (let ((tmp-ppm (concatenate 'string (test-dir) "tmp/lab.ppm"))
@@ -35,7 +36,7 @@
 	(random-labyrinth::dump-dot root tmp-ps)
 	(values tmp-ppm tmp-ps)))))
 
-(alexandria:define-constant +labyrinths-dir+ 
+(alexandria:define-constant +labyrinths-dir+
     (concatenate 'string (test-dir) "data/labyrinths/")
   :test #'string=)
 
@@ -45,11 +46,11 @@
 	  (test-gen 60 :random-seed 3589552221 :debug t :scale-fact 5)
 	(let ((test (and
 		     (= (fs:file-hash tmp-ppm)
-			(fs:file-hash (concatenate 'string 
+			(fs:file-hash (concatenate 'string
 						   +labyrinths-dir+
 						   "lab-60-t-5-3589552221.ppm")))
 		     (= (fs:file-hash tmp-ps)
-			(fs:file-hash (concatenate 'string 
+			(fs:file-hash (concatenate 'string
 						   +labyrinths-dir+
 						   "lab-60-t-5-3589552221.ps"))))))
 	  (when test

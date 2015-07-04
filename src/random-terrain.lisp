@@ -52,11 +52,11 @@
     :initform nil
     :initarg :texture-weights
     :accessor texture-weights)
-   (mountains-aabb 
+   (mountains-aabb
     :initform '()
     :initarg :mountains-aabb
     :accessor mountains-aabb)
-   (lakes-aabb 
+   (lakes-aabb
     :initform '()
     :initarg :lakes-aabb
     :accessor lakes-aabb)
@@ -64,7 +64,7 @@
     :initform '()
     :initarg :labyrinths-aabb
     :accessor labyrinths-aabb)
-   (labyrinths 
+   (labyrinths
     :initform '()
     :initarg :labyrinths
     :accessor labyrinths)
@@ -81,10 +81,10 @@
   (append '(matrix
 	    cost-matrix
 	    texture-weights
-	    mountains-aabb 
-	    lakes-aabb 
-	    labyrinths-aabb 
-	    labyrinths 
+	    mountains-aabb
+	    lakes-aabb
+	    labyrinths-aabb
+	    labyrinths
 	    roads
 	    trees)
 	  (call-next-method)))
@@ -110,8 +110,8 @@
 (defgeneric seed-mountain (object x y w h &optional max-height sigma-w sigma-h increment
 				  cache-size))
 
-(defgeneric make-valley (object x y mass mass-increment 
-				&key velocity can-get-stuck 
+(defgeneric make-valley (object x y mass mass-increment
+				&key velocity can-get-stuck
 				minimum-height circular-depression
 				max-points-count
 				erosion-can-branch
@@ -138,7 +138,7 @@
 (defgeneric get-road-path (object graph x y x1 y1))
 
 (defgeneric make-mountains (object &key rate
-				   mountain-z-height-function 
+				   mountain-z-height-function
 				   mountain-w-function
 				   mountain-h-function
 				   mountain-sigma-w-function
@@ -153,7 +153,7 @@
 
 (defgeneric make-road-serial (object &key howmany))
 
-(defgeneric make-labyrinths (object &key sigma-w-fn sigma-h-fn door-fn win-fn))
+(defgeneric make-labyrinths (object &key sigma-w-fn sigma-h-fn door-fn win-fn furn-fn))
 
 (defgeneric make-trees (object rate sparseness &optional maximum-iteration))
 
@@ -166,12 +166,13 @@
 			mountain-sigma-h-function
 			lake-rate
 			lake-size-function
-			labyrinth-rate 
+			labyrinth-rate
 			labyrinth-size-function
-			labyrinth-sigma-w-function 
-			labyrinth-sigma-h-function 
-			labyrinth-door-function 
+			labyrinth-sigma-w-function
+			labyrinth-sigma-h-function
+			labyrinth-door-function
 			labyrinth-win-function
+			labyrinth-furn-function
 			soil-threshold
 			road-count
 			trees-rate
@@ -200,7 +201,7 @@
   (find-if #'(lambda (aabb) (2d-utils:inside-aabb2-p aabb x y)) (all-aabb object)))
 
 (defmethod overlap-any-aabb ((object random-terrain) aabb)
-  (find-if #'(lambda (aabb1) 
+  (find-if #'(lambda (aabb1)
 	       (2d-utils:aabb2-intersect-p aabb1 aabb))
 	   (all-aabb object)))
 
@@ -220,8 +221,8 @@
 
 (gen-cumulative-size-elements labyrinth)
 
-(defun generate-particle (height 
-			  &key (depress nil) (min-height +min-height+) 
+(defun generate-particle (height
+			  &key (depress nil) (min-height +min-height+)
 			  (a (- (/ 1 height)))
 			  (c height))
   (let* ((size (round (abs (sqrt (- ( / c a))))))
@@ -229,15 +230,15 @@
 	 (center (list (/ (1- (matrix:width matrix)) 2)
 		       (/ (1- (matrix:height matrix)) 2))))
     (matrix:loop-matrix (matrix x y)
-      (let* ((radius (2d-utils:2d-vector-magn 
+      (let* ((radius (2d-utils:2d-vector-magn
 		      (2d-utils:2d-vector-diff (list x y)
 					       center)))
 	     (noise (noise:gen-fbm (num:desired (* (/ x (* 2.0 size)) 20.5))
 				    (num:desired (* (/ y (* 2.0 size)) 20.5))
-				    6 1.0 1.0 0.5 2.0 
+				    6 1.0 1.0 0.5 2.0
 				    :normalize t :range-0->1 nil))
 	     (z (+ (* 3.0 noise)
-		   (* a (expt radius 2)) 
+		   (* a (expt radius 2))
 		   c))
 	     (increment-z (if depress (- z) z)))
 	(when (> z min-height)
@@ -247,7 +248,7 @@
 (defparameter *lookup-particles* (make-hash-table :test #'equalp))
 
 (defparameter *lookup-particles-depress* (make-hash-table :test #'equalp))
-  
+
 (defmacro populate-lookup-particle (start end hashtable depress random-seed)
   `(num:with-lcg-seed (,random-seed)
      ,@(loop for i from start to end collect
@@ -264,8 +265,8 @@
 (defun size-of-particle-from-height (height)
   (* 2 height))
 
-(defun deposit-particle (matrix x-center y-center height 
-			 &key (depress nil) (min-height +min-height+) 
+(defun deposit-particle (matrix x-center y-center height
+			 &key (depress nil) (min-height +min-height+)
 			 (a (- (/ 1 height)))
 			 (c height))
   (let* ((actual-hashtable (if depress *lookup-particles-depress* *lookup-particles*))
@@ -278,21 +279,21 @@
 	 (aabb         (trasl-aabb2  (vec4:vec4 0.0 0.0 (desired size) (desired size))
 				     (- x-center size) (- y-center size)))
 	 (min-acceptable-height (max (- (matrix:matrix-elt matrix y-center x-center)
-					(matrix:matrix-elt matrix 
+					(matrix:matrix-elt matrix
 							   (/ (matrix:width new-particle) 2)
 							   (/ (matrix:height new-particle) 2)))
 				     min-height)))
     (matrix:pmatrix-blit new-particle
 			 matrix (- x-center size) (- y-center size)
 			 :transparent-value +min-height+
-			 :function-blend 
+			 :function-blend
 			 (if depress
-			     #'(lambda (src dest) 
+			     #'(lambda (src dest)
 				 (if (> (+ src dest) min-acceptable-height)
 				     (+ src dest)
 				     dest))
-			     #'(lambda (src dest) 
-				 (alexandria:clamp (+ src dest) 
+			     #'(lambda (src dest)
+				 (alexandria:clamp (+ src dest)
 						   min-height +maximum-mountain-height+))))
     aabb))
 
@@ -327,12 +328,12 @@
 	(let* ((coords
 		(progn
 		  (when (not cache)
-		    (setf cache 
-			  (mapcar #'(lambda (a) 
-				      (2d-utils:2d-vector-translate a 
+		    (setf cache
+			  (mapcar #'(lambda (a)
+				      (2d-utils:2d-vector-translate a
 								    (+ x (/ w 2))
 								    (+ y (/ h 2))))
-				  (mountain-gaussian-probability sigma-w sigma-h 
+				  (mountain-gaussian-probability sigma-w sigma-h
 								 cache-size))
 			  cache-size (max +min-cache-size+ (round (* cache-size 3/4)))))
 		  (get-from-cache)))
@@ -361,20 +362,20 @@
       (%dump-w/o-clamp object file)))
 
 (defun %dump-w/o-clamp (map file)
-  (with-open-file (stream file 
-			  :direction :output 
+  (with-open-file (stream file
+			  :direction :output
 			  :if-exists :supersede
 			  :if-does-not-exist :create)
-    (format stream (pixmap:matrix->pgm 
-		    (matrix:map-matrix (random-terrain::matrix map) #'round)
+    (format stream (pixmap:matrix->pgm
+		    (matrix:map-matrix (matrix map) #'round)
 		    "" +maximum-mountain-height+))))
 
 (defun %dump-w-clamp (map file clamp-values)
-  (with-open-file (stream file 
-			  :direction :output 
+  (with-open-file (stream file
+			  :direction :output
 			  :if-exists :supersede
 			  :if-does-not-exist :create)
-    (format stream (pixmap:matrix->pgm 
+    (format stream (pixmap:matrix->pgm
 		    (matrix:map-matrix (matrix map)
 				       #'(lambda (a) (alexandria:clamp (round a)
 								       (elt clamp-values 0)
@@ -382,10 +383,10 @@
 		    "" +maximum-mountain-height+))))
 
 (defclass trajectory-erosion ()
-  ((x 
+  ((x
     :initarg :x
     :accessor x)
-   (y 
+   (y
     :initarg :y
     :accessor y)
    (depress
@@ -398,25 +399,25 @@
 (defmethod print-object ((object trajectory-erosion) stream)
   (format stream "~a ~a ~a ~%" (x object) (y object) (depress object)))
 
-(defun erosion (matrix x y aabb &optional 
-				  (velocity (list .5 .0001)) 
-				  (mass 5) 
-				  (mass-increment #'(lambda (x y) 
+(defun erosion (matrix x y aabb &optional
+				  (velocity (list .5 .0001))
+				  (mass 5)
+				  (mass-increment #'(lambda (x y)
 						      (declare (ignore x))
 						      y))
 				  (friction-coefficient 0)
-				  (max-iteration 100) 
-				  (dt 1e-1) 
-				  (displacement-tolerance 0) 
-				  (depress-probability 1) 
-				  (positions '()) 
+				  (max-iteration 100)
+				  (dt 1e-1)
+				  (displacement-tolerance 0)
+				  (depress-probability 1)
+				  (positions '())
 				  (saved-max-iter max-iteration))
   (let ((pos-x (floor x))
 	(pos-y (floor y)))
     (matrix:with-check-matrix-borders-then-else (matrix pos-x pos-y)
       (if (and (> max-iteration 0)
 	       (inside-aabb2-p aabb x y))
-	  (let* ((neighbour (remove-if #'(lambda (coord) (or 
+	  (let* ((neighbour (remove-if #'(lambda (coord) (or
 							  (or (null (elt coord 0))
 							      (null (elt coord 1)))
 							  (null coord)
@@ -425,16 +426,16 @@
 							  (< (elt coord 1) 0)
 							  (> (elt coord 1) (matrix:height matrix))))
 				       (matrix:gen-4-neighbour-counterclockwise pos-x pos-y)))
-		 (gradients (mapcar #'(lambda (n) (- (or (matrix:matrix-elt matrix 
-									    (elt n 1) 
+		 (gradients (mapcar #'(lambda (n) (- (or (matrix:matrix-elt matrix
+									    (elt n 1)
 									    (elt n 0))
 							 0)
-						     
-						     (or 
+
+						     (or
 						      (matrix:matrix-elt matrix pos-y pos-x) 0)))
 				    neighbour))
-		 (accelerations (mapcar #'(lambda (grad) 
-					    (* (+ (- (* +gravity+ (atan grad))) 
+		 (accelerations (mapcar #'(lambda (grad)
+					    (* (+ (- (* +gravity+ (atan grad)))
 						  (* friction-coefficient mass +gravity+))
 					       dt))
 					gradients))
@@ -446,13 +447,13 @@
 	    (let* ((new-x (+ x (* velo-x dt)))
 		   (new-y (+ y (* velo-y dt)))
 		   (height-depress mass))
-	      (erosion matrix new-x new-y aabb (list velo-x velo-y) 
+	      (erosion matrix new-x new-y aabb (list velo-x velo-y)
 		       (+ mass (funcall mass-increment new-x new-y))
 		       mass-increment
 		       friction-coefficient
 		       (1- max-iteration)
-		       dt displacement-tolerance depress-probability 
-		       (append positions (list 
+		       dt displacement-tolerance depress-probability
+		       (append positions (list
 					  (make-instance 'trajectory-erosion
 							 :x new-x
 							 :y new-y
@@ -462,7 +463,7 @@
 	  (values max-iteration positions velocity mass))
       (values max-iteration positions velocity mass))))
 
-(defmethod erode-mountain ((object random-terrain) 
+(defmethod erode-mountain ((object random-terrain)
 			   &key (minimum-blocking-height +zero-height+)
 			   (circular-depression t)
 			   (erosion-redraw t)
@@ -473,7 +474,7 @@
 	    (center (2d-utils:center-aabb2 aabb))
 	    (max-dimension (max (elt rect 2) (elt rect 3)))
 	    (max-dimension/2 (/ max-dimension 2))
-	    (starting-erosion-aabb (2d-utils:random-sub-aabb aabb 1 1 
+	    (starting-erosion-aabb (2d-utils:random-sub-aabb aabb 1 1
 							     #'(lambda (s) (* 0.15 s))))
 	    (starting-erosion-rect (2d-utils:aabb2->rect2 starting-erosion-aabb))
 	    (erosion-starts (if (< (/ max-dimension 10) 8)
@@ -483,7 +484,7 @@
 			       (alexandria:clamp erosion-starts 1 2)
 			       1))
 	    (start-mass (if (> max-dimension 50) 2 1))
-	    (big-erosion-start (cond 
+	    (big-erosion-start (cond
 	     			 ((< max-dimension 50)
 	     			  0.1)
 	     			 ((> 150 max-dimension 50)
@@ -492,7 +493,7 @@
 	     			  2)))
 	    (big-erosion-a (if (> max-dimension 30) 0.0007 0.001))
 	    (mass-increment #'(lambda (x y)
-				(let ((dist (2d-utils:2d-vector-magn 
+				(let ((dist (2d-utils:2d-vector-magn
 					     (2d-utils:2d-vector-diff center (list x y)))))
 				  (cond
 				    ((< dist (* 0.1 max-dimension))
@@ -500,12 +501,12 @@
 				    ((> dist (* big-erosion-start max-dimension/2))
 				     (* big-erosion-a dist ))
 				    (t
-				     (* 0.0001 dist)))))))  
-       (setf starting-erosion-aabb (2d-utils:trasl-aabb2 
+				     (* 0.0001 dist)))))))
+       (setf starting-erosion-aabb (2d-utils:trasl-aabb2
 				    starting-erosion-aabb
 				    (- (elt center 0) (/ (elt starting-erosion-rect 2) 2))
 				    (- (elt center 1) (/ (elt starting-erosion-rect 3) 2))))
-       (loop 
+       (loop
 	  for i from 0 below erosion-starts
 	  for alpha from 0 below +2pi+ by (/ +2pi+ erosion-starts) do
 	    (let* ((actual-alpha (+ alpha (num:lcg-next-upto (/ pi 4))))
@@ -515,18 +516,18 @@
 				 (sin actual-alpha))))
 		   (initial-velocity (2d-utils:2d-vector-scale
 				       (2d-utils:2d-vector-normalize pos) 3))
-				      
+
 		   (start (2d-utils:2d-vector-sum center pos))
 		   (start-x (elt start 0))
 		   (start-y (elt start 1)))
-	      (loop for i from 0 below erosion-count do	   
+	      (loop for i from 0 below erosion-count do
 		   (make-valley object start-x start-y start-mass mass-increment
 				:velocity initial-velocity
 				:minimum-height minimum-blocking-height
 				:circular-depression circular-depression
 				:erosion-can-branch erosion-can-branch)))))));23
 
-(defmethod make-valley ((object random-terrain) x y mass mass-increment 
+(defmethod make-valley ((object random-terrain) x y mass mass-increment
 			&key (velocity (list 0 0)) (can-get-stuck nil)
 			(minimum-height +zero-height+)
 			(circular-depression t)
@@ -537,7 +538,7 @@
   (with-accessors ((matrix matrix)) object
     (multiple-value-bind (max-iteration trajectory velocity mass)
 	(erosion
-	 (matrix object) 
+	 (matrix object)
 	 x y
 	 (aabb object)
 	 velocity mass mass-increment
@@ -551,7 +552,7 @@
 				   (depress-chance depress-chance)) (elt position 0)
 		    (matrix:with-check-matrix-borders ((matrix object) (round x) (round y))
 		      (when (and (= 0 (num:lcg-next-upto depress-chance))
-				 (> (matrix:matrix-elt matrix (round y) (round x)) 
+				 (> (matrix:matrix-elt matrix (round y) (round x))
 				    minimum-height))
 			(if circular-depression
 			    (deposit-particle (matrix object)
@@ -571,12 +572,12 @@
 				 (diff (2d-utils:2d-vector-rotate
 					(2d-utils:2d-vector-diff vec2 vec1)
 					(deg->rad angle)))
-				 (branch-start (2d-utils:2d-vector-sum 
-						(2d-utils:2d-vector-scale 
-						 (2d-utils:2d-vector-normalize diff) 
+				 (branch-start (2d-utils:2d-vector-sum
+						(2d-utils:2d-vector-scale
+						 (2d-utils:2d-vector-normalize diff)
 						 (* 2 depress))
 						(list x y))))
-			    (make-valley object 
+			    (make-valley object
 					 (elt branch-start 0)
 					 (elt branch-start 1)
 					 2
@@ -593,20 +594,20 @@
 					 :velocity (2d-utils:2d-vector-scale diff 4))))))))
 	      trajectory)
 	(values velocity mass)))))
-  
+
 (defmethod aabb ((object random-terrain))
-   (let ((res (vec4 (1+ +maximum-map-size+) 
+   (let ((res (vec4 (1+ +maximum-map-size+)
 		    (1+ +maximum-map-size+)
 		    -1.0 -1.0)))
-     (matrix:nmap-matrix-xy (matrix object) 
+     (matrix:nmap-matrix-xy (matrix object)
 			   #'(lambda (x y el)
 			       (when (> el +zero-height+)
-				 (setf res 
-				       (2d-utils:expand-aabb2 res 
-							     (list (num:desired x) 
+				 (setf res
+				       (2d-utils:expand-aabb2 res
+							     (list (num:desired x)
 								   (num:desired y)))))))
      res))
-    
+
 (defmacro with-aabb ((aabb) object &body body)
   `(let ((,aabb (aabb ,object)))
      ,@body))
@@ -629,53 +630,53 @@
 	      (> height +z-erosion-threshold+))
       (erode-mountain object :erosion-redraw t))
     (when (> height +z-erosion-threshold+)
-      (erode-mountain object 
-       		      :circular-depression t 
-       		      :erosion-redraw nil 
+      (erode-mountain object
+       		      :circular-depression t
+       		      :erosion-redraw nil
        		      :erosion-can-branch t))
     ;; TODO this need to be fixed
     (setf matrix (matrix:map-matrix matrix #'num:desired))
     ;; rotate a random-angle
     (with-aabb (aabb) object
       (let* ((center (2d-utils:center-aabb2 aabb)))
-	(setf matrix 
-	      (matrix:rotate-matrix matrix 
+	(setf matrix
+	      (matrix:rotate-matrix matrix
 				    (num:lcg-next-upto 361)
 				    :rounding-fn nil
 				    :fill-value +zero-height+ :pivot center))))
     (when fit-to-aabb
       (with-rect (rect) object
-	(let ((mountain-fit-matrix 
+	(let ((mountain-fit-matrix
 	       (matrix:submatrix matrix (floor (elt rect 0)) (floor (elt rect 1))
 				 (floor (elt rect 2)) (floor (elt rect 3)))))
 	  (setf matrix mountain-fit-matrix))))
     matrix))
 
 (define-condition overlap-error (error)
-  ((mountain-aabb 
+  ((mountain-aabb
     :initarg :aabb1
     :reader aabb1)
    (aabb
     :initarg :aabb2
     :reader aabb2))
-  (:report (lambda (condition stream) 
+  (:report (lambda (condition stream)
 	     (format stream "~a overlap with ~a" (aabb1 condition)
 		     (aabb2 condition))))
   (:documentation "Error when elements overlaps"))
 
 (define-condition mountain-invalid-position-error (error)
-  ((coord 
+  ((coord
     :initarg :coord
     :reader coord))
-   (:report (lambda (condition stream) 
+   (:report (lambda (condition stream)
 	     (format stream "mountain position ~{~a ~} invalid" (coord condition))))
    (:documentation "Error when mountain's position is invalid"))
 
 (define-condition out-of-map-error (error)
-  ((aabb 
+  ((aabb
     :initarg :aabb
     :reader aabb))
-   (:report (lambda (condition stream) 
+   (:report (lambda (condition stream)
 	      (format stream "element with aabb ~a out of map" (aabb condition))))
    (:documentation "Error when an element go beyond the map limits"))
 
@@ -683,14 +684,14 @@
   (alexandria:with-gensyms (overlapped)
     `(let ((,overlapped (overlap-any-aabb ,map (list ,x ,y (+ ,x ,w) (+ ,y ,h)))))
        (when ,overlapped
-	 (error 'overlap-error 
+	 (error 'overlap-error
 		:aabb1 (list ,x ,y (+ ,x ,w)  (+ ,y ,h))
 		:aabb2 ,overlapped)))))
 
-(defmethod grow-mountain ((object random-terrain) x y w h height sigma-w sigma-h 
+(defmethod grow-mountain ((object random-terrain) x y w h height sigma-w sigma-h
 			  &key (fast-reject t))
   (with-accessors ((matrix matrix)) object
-    (let* ((mountain (make-instance 'random-terrain::random-terrain
+    (let* ((mountain (make-instance 'random-terrain
 				    :matrix (gen-empty-terrain (* 2 (max w h)) ;width object))
 							       (* 2 (max w h)))))) ;height object))))))
       (restart-case
@@ -703,10 +704,10 @@
 		     (< y 0)
 		     (> (+ x w) (width matrix))
 		     (> (+ y h) (height matrix)))
-		(error 'out-of-map-error :aabb 
+		(error 'out-of-map-error :aabb
 		       (list x y (+ x w) (+ y h))))
 	      (check-overlap object x y w h))
-	    (generate-mountain mountain 
+	    (generate-mountain mountain
 			       (round (- (/ (width (matrix mountain)) 2) (/ w 2)))
 			       (round (- (/ (height (matrix mountain)) 2) (/ h 2)))
 			       w h height sigma-w sigma-h)
@@ -723,11 +724,11 @@
 		(error 'out-of-map-error :aabb aabb-mountain-world-space))
 	      (let ((overlapped (overlap-any-aabb object aabb-mountain-world-space)))
 		(if overlapped
-		    (error 'overlap-error 
+		    (error 'overlap-error
 			   :aabb1 aabb-mountain-world-space
 			   :aabb2 overlapped)
 		    (progn
-		      (matrix:pmatrix-blit (matrix mountain) matrix x y 
+		      (matrix:pmatrix-blit (matrix mountain) matrix x y
 						       :transparent-value +zero-height+)
 		      (push aabb-mountain-world-space (mountains-aabb object)))))
 	      aabb-mountain-world-space))
@@ -736,16 +737,16 @@
 		 (aabb-mountain-world-space (list (+ x (elt aabb 0)) (+ y (elt aabb 1))
 						  (+ x (elt aabb 2)) (+ y (elt aabb 3)))))
 
-	    (matrix:pmatrix-blit (matrix mountain) matrix x y 
+	    (matrix:pmatrix-blit (matrix mountain) matrix x y
 					     :transparent-value +zero-height+)
 	    aabb-mountain-world-space))
 	(use-value (v) v)))))
 
 (define-condition invalid-position-error (error)
-  ((coord 
+  ((coord
     :initarg :coord
     :reader coord))
-   (:report (lambda (condition stream) 
+   (:report (lambda (condition stream)
 	     (format stream "position ~{~a ~} invalid" (coord condition))))
    (:documentation "Error when position is invalid"))
 
@@ -778,13 +779,13 @@
 		 (< y 1)
 		 (> (+ x w) (1- (width matrix)))
 		 (> (+ y h) (1- (height matrix))))
-	    (error 'out-of-map-error :aabb 
+	    (error 'out-of-map-error :aabb
 		   (list x y (+ x w) (+ y h))))
-	  (let ((aabb-labyrinth (2d-utils:rect2->aabb2 
+	  (let ((aabb-labyrinth (2d-utils:rect2->aabb2
 				 (mapcar #'num:desired (list x y w h)))))
 	    (push aabb-labyrinth (labyrinths-aabb object))))
       (use-value (v) v))))
-      
+
 (defmethod grow-road ((object random-terrain) (graph graph:tile-based-graph) x y x1 y1)
   (get-road-path object graph x y x1 y1))
 
@@ -810,9 +811,9 @@
 	     (end (list x1 y1))
 	     (path (mapcar #'(lambda (id)
 			       (graph:node-id->node graph id))
-			   (graph:graph->path 
-			    (graph:astar-search graph 
-						(graph:node->node-id graph start) 
+			   (graph:graph->path
+			    (graph:astar-search graph
+						(graph:node->node-id graph start)
 						(graph:node->node-id graph end)
 						:heuristic-cost-function (heuristic-fn))
 			    (graph:node->node-id graph end)))))
@@ -832,7 +833,7 @@
 	    (error 'invalid-position-error :coord (list x y))
 	    (matrix:with-check-matrix-borders (matrix x y)
 	      (let ((aabb   (matrix:good-aabb-start))
-		    (pixels (matrix:flood-fill matrix x y :max-iteration area 
+		    (pixels (matrix:flood-fill matrix x y :max-iteration area
 				     :tolerance 0
 				     :randomize-growth randomize-growth
 				     :position-acceptable-p-fn #'lake-particle-inside-limits-p)))
@@ -843,7 +844,7 @@
 			       (setf (matrix:matrix-elt matrix (elt pix 1) (elt pix 0))
 				     +lake-height+)
 			       (let ((aabb-part (deposit-particle matrix (elt pix 0) (elt pix 1)
-								  z 
+								  z
 								  :depress t
 								  :min-height +min-height+)))
 				 (setf aabb (union-aabb2 aabb aabb-part)))))
@@ -862,7 +863,7 @@
        minimum-z maximum-z)))
 
 (defun default-mountain-z-height-function ()
-  (%default-mountain-z-height-function +maximum-mountain-height+ 
+  (%default-mountain-z-height-function +maximum-mountain-height+
 				       0
 				       +minimum-mountain-height+
 				       +maximum-mountain-height+))
@@ -900,34 +901,52 @@
 (defun default-labyrinth-size-function ()
   (%default-labyrinth-size-function 0.5 0.05))
 
+(defmacro if-not-null-room (room &body body)
+  `(cond
+     (,room
+	,(first body))
+     (t
+      ,(second body))))
+
 (defun default-labyrinth-sigma-w-function ()
-  #'(lambda (x) (+ 10 x)))
+  #'(lambda (x a) (declare (ignore a)) (+ 10 x)))
 
 (defun default-labyrinth-sigma-h-function ()
-  #'(lambda (x) (+ 10 x)))
+  #'(lambda (x a) (declare (ignore a)) (+ 10 x)))
 
 (defun default-labyrinth-door-function ()
-  #'(lambda (x) (if (< x 1) 3 4)))
+  #'(lambda (x a) (declare (ignore a)) (if (< x 1) 3 4)))
 
 (defun default-labyrinth-win-function ()
-  #'(lambda (x) (if (< x 1) 3 4)))
+  #'(lambda (x a) (declare (ignore a)) (if (< x 1) 3 4)))
+
+(defun default-labyrinth-furniture-function ()
+  #'(lambda (x a)
+      (if-not-null-room a
+	(let ((area (d (* (random-labyrinth:w a) (random-labyrinth:h a)))))
+	  (truncate (num:dlerp (num:smoothstep-interpolate 0.0 80.0 area) 0.0 20.0)))
+	(if (< x 1) 3 4))))
 
 (defmethod make-map ((object random-terrain)
-		     &key 
+		     &key
 		       (mountain-rate 0.2)
 		       (mountain-z-height-function (default-mountain-z-height-function))
 		       (mountain-w-function (default-mountain-size-function))
 		       (mountain-h-function (default-mountain-size-function))
 		       (mountain-sigma-w-function (default-mountain-sigma-function))
 		       (mountain-sigma-h-function (default-mountain-sigma-function))
-		       (lake-rate 0.05) 
+		       (lake-rate 0.05)
 		       (lake-size-function (default-lake-size-function))
-		       (labyrinth-rate 0.1) 
+		       (labyrinth-rate 0.1)
 		       (labyrinth-size-function (default-labyrinth-size-function))
-		       (labyrinth-sigma-w-function #'(lambda (x) (+ 10 x)))
-		       (labyrinth-sigma-h-function #'(lambda (x) (+ 10 x)))
-		       (labyrinth-door-function #'(lambda (x) (if (< x 1) 3 4)))
-		       (labyrinth-win-function #'(lambda (x) (if (< x 1) 3 4)))
+		       (labyrinth-sigma-w-function #'(lambda (x a) (declare (ignore a)) (+ 10 x)))
+		       (labyrinth-sigma-h-function #'(lambda (x a) (declare (ignore a)) (+ 10 x)))
+		       (labyrinth-door-function #'(lambda (x  a) (declare (ignore a))
+							  (if (< x 1) 3 4)))
+		       (labyrinth-win-function #'(lambda (x a) (declare (ignore a))
+							  (if (< x 1) 3 4)))
+		       (labyrinth-furn-function #'(lambda (x a) (declare (ignore a))
+							  (if (< x 1) 3 4)))
 		       (soil-threshold    0.8)
 		       (road-count (round (* 30 labyrinth-rate)))
 		       (trees-rate 0.05)
@@ -955,6 +974,7 @@
   (make-trees object trees-rate trees-sparseness)
   (make-labyrinths object :win-fn labyrinth-win-function
 		   :door-fn labyrinth-door-function
+		   :furn-fn labyrinth-furn-function
 		   :sigma-h-fn labyrinth-sigma-h-function
 		   :sigma-w-fn labyrinth-sigma-w-function)
   (build-texture-weights object soil-threshold)
@@ -962,7 +982,7 @@
   (when +debug-mode+
     (pixmap:save-pixmap (texture-weights object)
 			(fs:file-in-package "layers.tga"))
-    (random-terrain::dump object (fs:file-in-package "height.pgm"))
+    (dump object (fs:file-in-package "height.pgm"))
     (with-open-file (stream
 		     (fs:file-in-package "costs.pgm")
 		     :direction :output
@@ -973,27 +993,30 @@
 
 (alexandria:define-constant +min-size-lab-start-generation+ 5 :test #'=)
 
-(defun %make-lab (size sigma-w-fn sigma-h-fn door-fn win-fn &optional (generation 0))
-  (if (and (< generation 100) 
+(defun %make-lab (size sigma-w-fn sigma-h-fn door-fn win-fn furn-fn &optional (generation 0))
+  (if (and (< generation 100)
 	   (> size +min-size-lab-start-generation+))
       (let ((lab (random-labyrinth:generate size
 					    :scale-fact 2
 					    :func-sigma-w sigma-w-fn
 					    :func-sigma-w sigma-h-fn
 					    :func-door door-fn
-					    :func-win win-fn)))
+					    :func-win win-fn
+					    :func-furniture furn-fn)))
 	(if (< (random-labyrinth:occupied-rate lab) 0.8)
-	    (%make-lab size sigma-w-fn sigma-h-fn door-fn win-fn (+ generation 1))
+	    (%make-lab size sigma-w-fn sigma-h-fn door-fn win-fn furn-fn (+ generation 1))
 	    lab))
       nil))
 
-(defmethod make-labyrinths ((object random-terrain) 
-			     &key (sigma-w-fn #'(lambda (x) (+ 10 x)))
-				  (sigma-h-fn #'(lambda (x) (* 2 x)))
-			       (door-fn #'(lambda (x) (if (< x 1) 3 4)))
-			       (win-fn #'(lambda (x) (if (< x 1) 3 4))))
+(defmethod make-labyrinths ((object random-terrain)
+			    &key
+			      (sigma-w-fn #'(lambda (x a) (declare (ignore a)) (+ 10 x)))
+			      (sigma-h-fn #'(lambda (x a) (declare (ignore a)) (* 2 x)))
+			      (door-fn #'(lambda (x a) (declare (ignore a)) (if (< x 1) 3 4)))
+			      (win-fn #'(lambda (x a) (declare (ignore a)) (if (< x 1) 3 4)))
+			      (furn-fn #'(lambda (x a) (declare (ignore a)) (if (< x 1) 3 4))))
   (setf (labyrinths object)
-	(loop for rectangles in (map 'list #'2d-utils:aabb2->rect2 (labyrinths-aabb object)) 
+	(loop for rectangles in (map 'list #'2d-utils:aabb2->rect2 (labyrinths-aabb object))
 	   collect
 	     (let* ((raw-size (* +terrain-chunk-tile-size+
 				 (if (= (mod (elt rectangles 2) 2) 0) ; unfortunately
@@ -1018,7 +1041,7 @@
 		 ((<= size +min-size-lab-start-generation+)
 		  (random-labyrinth:gen-simple-room (truncate raw-size)))
 		 (t
-		  (%make-lab size sigma-w-fn sigma-h-fn door-fn win-fn))))))
+		  (%make-lab size sigma-w-fn sigma-h-fn door-fn win-fn furn-fn))))))
   ;; mark invalid aabb-labyrinth
   (assert (= (length (labyrinths object)) (length (labyrinths-aabb object))))
   (loop for i from 0 below (length (labyrinths-aabb object)) do
@@ -1049,7 +1072,7 @@
 				 :draw-door-to-nowhere t :draw-id nil)))
   (loop for i in (labyrinths object) do (random-labyrinth:clean-and-redraw-mat i)))
 
-(defmethod make-mountains ((object random-terrain) 
+(defmethod make-mountains ((object random-terrain)
 			   &key (rate 0.2)
 			     (mountain-z-height-function (default-mountain-z-height-function))
 			     (mountain-w-function (default-mountain-size-function))
@@ -1096,8 +1119,8 @@
 			    (use-value nil))))
 	  (grow-mountain object x y w h z sigma-w sigma-h))))))
 
-(defmethod make-lakes ((object random-terrain) &key 
-		       (rate 0.2) 
+(defmethod make-lakes ((object random-terrain) &key
+		       (rate 0.2)
 		       (maximum-iteration 100000)
 		       (size-function (default-lake-size-function)))
   (let* ((w-map (width  (matrix object)))
@@ -1118,9 +1141,9 @@
 			    (use-value nil))))
 	  (grow-lake object x y area))))))
 
-(defmethod make-labyrinth-space ((object random-terrain) 
-				 &key 
-				   (rate 0.01) 
+(defmethod make-labyrinth-space ((object random-terrain)
+				 &key
+				   (rate 0.01)
 				   (maximum-iteration 100000000)
 				   (size-function (default-lake-size-function)))
   (let* ((w-map (width (matrix object)))
@@ -1149,7 +1172,7 @@
   (let ((matrix-terrain (matrix terrain)))
     (loop for lab in  (labyrinths-aabb terrain) do
 	 (let ((rect (2d-utils:aabb2->rect2 lab)))
-	   (matrix:matrix-rect matrix-terrain 
+	   (matrix:matrix-rect matrix-terrain
 			       (truncate (elt rect 0))
 			       (truncate (elt rect 1))
 			       (truncate (+ 0 (elt rect 2)))
@@ -1170,7 +1193,7 @@
 			     (labyrinths-aabb object))))
 	     (start-x (+ (1- (elt rect-start 0)) (num:lcg-next-upto (1+ (elt rect-start 2)))))
 	     (start-y (if (or (num:epsilon= start-x (1- (elt rect-start 0)))
-			      (num:epsilon= start-x (+ (elt rect-start 0) 
+			      (num:epsilon= start-x (+ (elt rect-start 0)
 						       (elt rect-start 2))))
 			  ;; if we are on the left or right extremes
 			  (+ (elt rect-start 1) (num:lcg-next-upto (elt rect-start 3)))
@@ -1183,7 +1206,7 @@
 			(+ (1- (elt rect-end 1)) (* (num:lcg-next-in-range 0 2)
 						      (1+ (elt rect-end 3)))))))
 	(when (not (equalp rect-start rect-end))
-	  (push (list (round start-x) 
+	  (push (list (round start-x)
 		      (round start-y)
 		      (round end-x)
 		      (round end-y))
@@ -1193,7 +1216,7 @@
 	    (let* ((lparallel:*kernel* (lparallel:make-kernel (os-utils:cpu-number)))
 		   (channel (lparallel:make-channel)))
 	      (dolist (path paths)
-		   (lparallel:submit-task 
+		   (lparallel:submit-task
 		    channel
 		    (let ((cost-plus-heuristic (rb-tree:make-root-rb-node nil 'black)))
 		      #'(lambda ()
@@ -1206,9 +1229,9 @@
 							(if (> el +zero-height+)
 							    (* el +costs-scale-mountain+)
 							    el)))))
-				 (graph-costs (make-instance 'graph:tile-based-graph 
+				 (graph-costs (make-instance 'graph:tile-based-graph
 							     :matrix matrix-costs)))
-			    (get-road-path object graph-costs 
+			    (get-road-path object graph-costs
 					   (elt path 0)
 					   (elt path 1)
 					   (elt path 2)
@@ -1242,7 +1265,7 @@
 			       (labyrinths-aabb object))))
 	       (start-x (+ (1- (elt rect-start 0)) (num:lcg-next-upto (1+ (elt rect-start 2)))))
 	       (start-y (if (or (num:epsilon= start-x (1- (elt rect-start 0)))
-				(num:epsilon= start-x (+ (elt rect-start 0) 
+				(num:epsilon= start-x (+ (elt rect-start 0)
 							 (elt rect-start 2))))
 			    ;; if we are on the left or right extremes
 			    (+ (elt rect-start 1) (num:lcg-next-upto (elt rect-start 3)))
@@ -1341,10 +1364,10 @@
 				     (truncate (2d-utils:aabb2-max-y lab)))
 	   (setf (elt (matrix:matrix-elt res y x) pixmap:+green-channel+) #xff)))
     (let ((soil (pixmap:with-random-perlin-gradient-offset
-		    (pixmap:with-draw-normalizated-coord-square 
-			(x y (matrix:height res) pixmap 4 
+		    (pixmap:with-draw-normalizated-coord-square
+			(x y (matrix:height res) pixmap 4
 			   :bindings (noise:*perlin-gradient-random-offset*))
-		      (let ((noise (num:d/ (num:d+ 1.0 (noise:perlin-2d (num:d/ x 0.1) 
+		      (let ((noise (num:d/ (num:d+ 1.0 (noise:perlin-2d (num:d/ x 0.1)
 									(num:d/ y 0.1)))
 				       2.0)))
 			(if (< noise soil-threshold)
@@ -1352,7 +1375,7 @@
 			    (vec4:vec4 0.0 0.0 noise 0.0)))))))
       (matrix:ploop-matrix (res x y)
 	(setf (elt (matrix:matrix-elt res y x) pixmap:+blue-channel+)
-	      (truncate (elt (matrix:sample@ soil 
+	      (truncate (elt (matrix:sample@ soil
 					     (num:d/ (num:desired y)
 						     (num:desired (matrix:height res)))
 					     (num:d/ (num:desired x)
@@ -1388,7 +1411,7 @@
 	     (mud-channel    pixmap:+blue-channel+))
 	;;raw-terrain cost
 	(loop-matrix (res x y)
-	   (setf (matrix-elt res y x) 
+	   (setf (matrix-elt res y x)
 		 (let ((px (matrix-elt heights y x)))
 		   (cond
 		      ((epsilon= px +zero-height+) ;; flat terrain
@@ -1453,29 +1476,33 @@
 (defun test-make-map-10 (w h)
     (dotimes (count 10)
       (num:with-lcg-seed (count)
-	(let ((map (make-instance 'random-terrain::random-terrain 
+	(let ((map (make-instance 'random-terrain
 				  :matrix (gen-empty-terrain w h))))
-	  (make-map map) 
-	  (random-terrain::dump map (format nil
-					    (fs:file-in-package "height-~a.pgm")
-					    count))))))
+	  (make-map map)
+	  (dump map (format nil
+			    (fs:file-in-package "height-~a.pgm")
+			    count))))))
 
 (defun test-make-map (w h &optional (seed 2))
-  (num:with-lcg-seed (seed)
-    (let ((map (make-instance 'random-terrain::random-terrain 
-			      :matrix (gen-empty-terrain w h))))
-      (make-map map)
-      (random-terrain::dump map (fs:file-in-package "height.pgm"))
-      (pixmap:save-pixmap (texture-weights map)
-			  (fs:file-in-package "layers.tga"))
-      ;;dump
-      (setf (data (cost-matrix map))
-	    (map 'vector #'(lambda (a) (alexandria:clamp (round a) 0 255))
-			      (data (cost-matrix map))))
-      (with-open-file (stream
-		       (fs:file-in-package "costs.pgm")
-		       :direction :output
-		       :if-exists :supersede :if-does-not-exist :create)
-	(format stream "~a" (pixmap:matrix->pgm (map-matrix (cost-matrix map) #'round) ""
-						(truncate +invalicable-element-cost+))))))
-  t)
+  (let* ((*workers-number* (if (> (os-utils:cpu-number) 1)
+			       (os-utils:cpu-number)
+			       1))
+	 (lparallel:*kernel* (lparallel:make-kernel *workers-number*)))
+    (num:with-lcg-seed (seed)
+      (let ((map (make-instance 'random-terrain
+				:matrix (gen-empty-terrain w h))))
+	(make-map map)
+	(dump map (fs:file-in-package "height.pgm"))
+	(pixmap:save-pixmap (texture-weights map)
+			    (fs:file-in-package "layers.tga"))
+	;;dump
+	(setf (data (cost-matrix map))
+	      (map 'vector #'(lambda (a) (alexandria:clamp (round a) 0 255))
+		   (data (cost-matrix map))))
+	(with-open-file (stream
+			 (fs:file-in-package "costs.pgm")
+			 :direction :output
+			 :if-exists :supersede :if-does-not-exist :create)
+	  (format stream "~a" (pixmap:matrix->pgm (map-matrix (cost-matrix map) #'round) ""
+						  (truncate +invalicable-element-cost+))))))
+    t))

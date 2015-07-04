@@ -319,19 +319,19 @@
   (and (<= (- b epsilon) a (+ b epsilon))))
 
 (defun smoothstep (x)
-  (declare (optimize (debug 3) (safety 0) (speed 3)))
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
   (d* (dexpt x (desired 2)) (d- (desired 3) (d* (desired 2) x))))
 
 (defun sinstep (x)
-  (declare (optimize (debug 3) (safety 0) (speed 3)))
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
   (dsin (d* x +pi/2+)))
 
 (defun cosstep (x)
-  (declare (optimize (debug 3) (safety 0) (speed 3)))
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
   (d/ (d- 1.0 (dcos (d* x +pi+))) 2.0))
 
 (defun sin-interpolate (a b step)
-  (declare (optimize (debug 3) (safety 0) (speed 3)))
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
   (d+ (d* a (dsin (d- step 1.0))) (d* b (dsin step))))
 
 (defmacro gen-step (name interpolator-fun)
