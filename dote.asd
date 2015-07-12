@@ -86,6 +86,7 @@
 	       (:file "game-state")
 	       (:file "basic-interaction-parameters")
 	       (:file "character")
+	       (:file "random-weapon")
 	       (:file "entity")
 	       (:file "camera")
 	       (:file "mesh")
