@@ -92,7 +92,7 @@
 	 (cache-name (alexandria:format-symbol t "~:@(cache~)")))
     `(let ((,cache-name (make-hash-table :test (quote ,test))))
        (defun ,function-name (,@arg) ,(if declaration
-					  declaration
+				  declaration
 					  `(declare (optimize (speed 0) (safety 3) (debug 3))))
 
 	 (and ,clear-cache (setf ,cache-name (make-hash-table :test (quote ,test))))
@@ -189,6 +189,14 @@
 	 (last-cons (assoc last-key ptr)))
     (if last-cons
 	(values (setf (cdr last-cons) new-value) t)
+	(values nil nil))))
+
+(defun plist-path-value (db path)
+  (let* ((ptr (recursive-assoc-just-before path db))
+	 (last-key (alexandria:last-elt path))
+	 (last-cons (assoc last-key ptr)))
+    (if last-cons
+	(values (cdr last-cons) t)
 	(values nil nil))))
 
 ;; misc

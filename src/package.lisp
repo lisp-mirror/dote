@@ -75,6 +75,7 @@
    :+obj-mesh-file-extension+
    :+trees-resource+
    :+names-resource+
+   :+weapons-names-resource+
    :+avatar-portrait-resource+
    :+maps-resource+
    :+shaders-resource+
@@ -85,7 +86,12 @@
    :+fonts-resource+
    :+gui-resource+
    :+default-gui-inventory-items+
-   :+default-gui-resource+))
+   :+default-gui-resource+
+   :+default-character-weapons+
+   :+default-character-containers+
+   :+default-character-potions+
+   :+default-character-food+
+   :+default-character-misc+))
 
 (defpackage :profiling
   (:use :cl)
@@ -166,6 +172,7 @@
    :recursive-assoc
    :recursive-assoc-just-before
    :n-setf-path-value
+   :plist-path-value
    :gen-trivial-plist-predicates
    :gen-trivial-plist-predicate
    :gen-trivial-plist-get
@@ -353,7 +360,8 @@
 	:text-utils)
   (:nicknames :res)
   (:export
-   :get-resource-file))
+   :get-resource-file
+   :get-resource-files))
 
 (defpackage :resource-cache
   (:use :cl
@@ -1392,6 +1400,7 @@
 	:parser)
   (:export
    :load-db
+   :load-db*
    :generate))
 
 (defpackage :avatar-portrait
@@ -2342,6 +2351,7 @@
 	:config
 	:interfaces
 	:identificable)
+  (:nicknames :interaction)
   (:export
    :+decay-by-use+
    :+decay-by-turns+
@@ -2414,7 +2424,16 @@
    :+immune-berserk+
    :+immune-faint+
    :+immune-terror+
-   :+magic-effect+
+   :+magic-effects+
+   :decay-parameters
+   :effect-parameters
+   :modifier
+   :trigger
+   :duration
+   :healing-effect-parameters
+   :magic-effect-parameters
+   :poison-effect-parameters
+   :points-per-turn
    :define-interaction
    :define-decay
    :define-effect
@@ -2431,10 +2450,12 @@
 	:constants
 	:config
 	:num-utils
+	:misc-utils
 	:text-utils
 	:interfaces
 	:identificable
 	:basic-interaction-parameters)
+  (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :+unknown-ability-bonus+
    :+starting-exp-points+

@@ -241,6 +241,16 @@
 
   Released under [[https://en.wikipedia.org/wiki/Wikipedia:Text_of_Creative_Commons_Attribution-ShareAlike_3.0_Unported_License][CC-by-SA]]
 
+- data/names/weapons/*
+  based on the output got from:
+  http://www.seventhsanctum.com/generate.php?Genname=newweapon
+
+  according to:
+  http://www.seventhsanctum.com/about.php
+
+  the output is placed under public domain
+
+
 - data/names/names.lisp
   is based on [[totro's][http://www.dwheeler.com/totro.html]]
   output released under GPLv3 ol later

@@ -30,12 +30,12 @@
 ;; wovels :=  [aeiou]+
 ;; consonants := [bcdfghlmnpqrstvwxyz ']+
 
-(defclass parsed-word (parsed-file) 
+(defclass parsed-word (parsed-file)
   ((tokens
     :initarg :tokens
     :initform '()
     :accessor tokens)
-   (the-method 
+   (the-method
     :initarg :the-method
     :initform :wovels-consonants
     :accessor the-method)))
@@ -83,11 +83,11 @@
 	    (setf (alexandria:last-elt (tokens *file*))
 		  (append (list +starter+)
 			  (alexandria:last-elt (tokens *file*))))
-	    
-	    (setf (tokens *file*) 
-		  (reverse 
-		   (mapcar #'(lambda (a) 
-			       (reduce #'(lambda (c d) (concatenate 'string c d)) a)) 
+
+	    (setf (tokens *file*)
+		  (reverse
+		   (mapcar #'(lambda (a)
+			       (reduce #'(lambda (c d) (concatenate 'string c d)) a))
 			   (tokens *file*)))))))))
 
 (defun parse-w-c (&optional (count 0))
@@ -108,15 +108,15 @@
 	    (setf (alexandria:last-elt (tokens *file*))
 		  (append (list +starter+)
 			  (alexandria:last-elt (tokens *file*))))
-	    
-	    (setf (tokens *file*) 
-		  (reverse 
-		   (mapcar #'(lambda (a) 
-			       (reduce #'(lambda (c d) (concatenate 'string c d)) a)) 
+
+	    (setf (tokens *file*)
+		  (reverse
+		   (mapcar #'(lambda (a)
+			       (reduce #'(lambda (c d) (concatenate 'string c d)) a))
 			   (tokens *file*)))))))))
 
 (defun parse-word ()
-  (ecase (the-method *file*) 
+  (ecase (the-method *file*)
     (:wovels-consonants-wovels
       (parse-w-c-w))
     (:wovels-consonants
@@ -130,7 +130,7 @@
    (values (tokens *file*) *parsing-errors*)))
 
 (defun find-tree-with-token (token)
-  (find-if #'(lambda (tree) (traverse-find-if-tree tree token :test #'string= 
+  (find-if #'(lambda (tree) (traverse-find-if-tree tree token :test #'string=
 						   :key #'(lambda (v) (elt v 0))))
 	   *db*))
 
@@ -138,7 +138,7 @@
   (find-if #'(lambda (tree) (find-first-token tree token)) *db*))
 
 (defun find-token (tree token)
-  (traverse-find-if-tree tree token :test #'string= 
+  (traverse-find-if-tree tree token :test #'string=
 			 :key #'(lambda (v) (elt v 0))))
 
 (defun find-first-token (tree token)
@@ -161,7 +161,7 @@
 	  (if (find-token tree token)
 	      (update-frequency tree token) ;; update freq
 	      (progn
-		(traverse-nadd-child tree parent 
+		(traverse-nadd-child tree parent
 				     (initialize-node token)
 				     :test #'string=
 				     :key #'(lambda (v) (elt v 0)))
@@ -170,12 +170,12 @@
 
 (defun initialize-node (token &optional (freq 1.0))
   (vector token freq))
-      
+
 (defun initialize-tree (token)
   (push (list (initialize-node token 1.0)) *db*))
 
 (defun update-frequency (tree token)
-  (traverse-napply-tree #'(lambda (node) 
+  (traverse-napply-tree #'(lambda (node)
 			    (if (string= (elt node 0) token)
 				(vector (elt node 0) (1+ (elt node 1)))
 				node))
@@ -185,9 +185,9 @@
  (alexandria:first-elt (alexandria:first-elt tree)))
 
 (defun generate-tokens (&optional (start nil))
-  (let* ((all-starts (remove-if 
-		      #'(lambda (tree) 
-			  (not (string= (string (alexandria:first-elt 
+  (let* ((all-starts (remove-if
+		      #'(lambda (tree)
+			  (not (string= (string (alexandria:first-elt
 					    (get-root-string tree)))
 					+starter+)))
 		      *db*))
@@ -229,6 +229,11 @@
 
 (defun load-db (path)
   (let ((actual-path (res:get-resource-file path +names-resource+)))
+    (with-open-file (stream actual-path :direction :input :if-does-not-exist :error)
+      (setf *db* (read stream)))))
+
+(defun load-db* (resource path)
+  (let ((actual-path (res:get-resource-file path resource)))
     (with-open-file (stream actual-path :direction :input :if-does-not-exist :error)
       (setf *db* (read stream)))))
 

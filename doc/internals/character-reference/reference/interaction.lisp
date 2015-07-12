@@ -9,7 +9,7 @@
     can-be-burned       true
     can-heal            false
     can-be-heal         false
-    can-poison          (define-poison-effect (points 10 condition berserk))
+    can-poison          false
     can-be-poisoned     false
     can-be-drunk        false
     can-be-eaten        false
@@ -61,16 +61,16 @@
     healing-effects
     (define-healing-effects
 	heal-poison              (define-healing-effect
-				     (duration unlimited trigger when-used))
+				     (duration unlimited trigger when-used chance 0.1))
       heal-berserk               none
       heal-faint                   none
       heal-terror                  none
-      cause-poison                 none
+      cause-poison                 (define-poison-effect (points 10 condition berserk))
       cause-berserk                none
       cause-faint                  none
       cause-terror                 none
       immune-poison                (define-healing-effect
-				       (duration unlimited trigger when-used))
+				       (duration unlimited trigger when-used chance 0.1))
       immune-berserk               none
       immune-faint                 none
       immune-terror                none)

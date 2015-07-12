@@ -92,7 +92,7 @@
 	       (:file "wall-mesh-shell")
 	       (:file "pickable-mesh")
 	       (:file "building-floor-mesh")
-	       (:file "game-event")
+	       (:file "game-events")
 	       (:module gui
 			:components ((:file "gui-events")
 				     (:file "gui")

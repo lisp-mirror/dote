@@ -22,7 +22,7 @@
 
 (defun uchar-length (leading-byte)
   (let ((ones (do* ((ct 7 (1- ct))
-		    (bit (ldb (byte 1 ct) leading-byte) 
+		    (bit (ldb (byte 1 ct) leading-byte)
 			 (ldb (byte 1 ct) leading-byte))
 		    (ones-ct 0))
 		   ((= bit 0) ones-ct)
@@ -32,16 +32,16 @@
        1)
       ((= ones 1)
        0)
-      (t 
+      (t
        ones))))
 
 (defun utf8-encoded-p (file)
-  (with-open-file (stream file :direction :input 
-			  :if-does-not-exist :error 
+  (with-open-file (stream file :direction :input
+			  :if-does-not-exist :error
 			  ::element-type '(unsigned-byte 8))
     (let* ((leading-byte (read-byte stream))
 	   (leading-byte-length (uchar-length leading-byte)))
-      (cond 
+      (cond
 	((= leading-byte-length 0)
 	 nil)
 	((> leading-byte-length 6)
@@ -105,7 +105,7 @@
       (list " ")
       (let  ((text  (split-words text))
 	     (chars-per-line (round chars-per-line)))
-	
+
 	(labels ((spaces-pos-per-line (line) (floor (/ (length line) 2)))
 		 (wline<= (l) (<= l  chars-per-line))
 		 (line-length (line)
@@ -132,7 +132,7 @@
 		   (cond
 		     ((= (spaces-pos-per-line line) 0)
 		      (copy-list line))
-		     
+
 		     ((= spaces-left 0)
 		      (copy-list line))
 		     ((= spaces-left (spaces-pos-per-line line))
@@ -141,7 +141,7 @@
 		      (loop for i in (get-spacepos line spaces-left) do
 			   (setf (nth i line) (concatenate 'string (nth i line) (string " "))))
 		      (copy-list line))
-		     
+
 		     ((> spaces-left (spaces-pos-per-line line))
 		      (justify-line
 		       (increment-each-space line)
@@ -156,5 +156,5 @@
 					    nil
 					    (subseq text (1+ (floor (/ (length line) 2)))))))
 			(setf text rest-text)
-			
+
 			(push (justify-line line) res)))))))))

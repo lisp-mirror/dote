@@ -16,10 +16,6 @@
 
 (define-constant +poison-effect-berserk+       :berserk                     :test #'eql)
 
-(define-constant +effect-when-worn+            :when-worn                   :test #'eql)
-
-(define-constant +effect-when-consumed+        :when-consumed               :test #'eql)
-
 (define-constant +can-talk+                    :can-talk                    :test #'eq)
 
 (define-constant +can-ask-for-help+            :can-ask-for-help            :test #'eq)
@@ -152,7 +148,7 @@
 
 (define-constant +immune-terror+               :immune-terror               :test #'eq)
 
-(define-constant +magic-effect+                :magic-effect                :test #'eq)
+(define-constant +magic-effects+               :magic-effect                :test #'eq)
 
 (defun effect-unlimited-p (val)
   (not (numberp val)))
@@ -289,13 +285,18 @@
      (duration
       :initform 1000000
       :initarg  :duration
-      :accessor duration)))
+      :accessor duration)
+     (chance
+      :initform 0.0
+      :initarg  :chance
+      :accessor chance)))
 
     (defmethod print-object ((object healing-effect-parameters) stream)
       (print-unreadable-object (object stream :type t :identity t)
-	(format stream "when? ~a duration ~a"
-		(trigger object)
-		(duration    object))))
+	(format stream "when? ~a duration ~a chance ~a"
+		(trigger  object)
+		(duration object)
+		(chance   object))))
 
     (defmethod make-load-form ((object healing-effect-parameters) &optional environment)
       (make-load-form-saving-slots object
@@ -303,16 +304,21 @@
 				   :environment environment))
 
     (defmethod description-for-humans ((object healing-effect-parameters))
-      (format nil "~a" (if (effect-unlimited-p (duration object))
-			   (_ "unlimited")
-			   (format nil (_ "~d turns") (duration object))))))
+      (format nil "~a chance: ~a%"
+	      (if (effect-unlimited-p (duration object))
+		  (_ "unlimited")
+		  (format nil (_ "~d turns") (duration object)))
+	      (* 100 (chance object)))))
 
 (defmacro define-healing-effect (params)
-  (let* ((parameters  (misc:build-plist params))
-	 (trigger (cdr (assoc :trigger parameters)))
-	 (duration    (cdr (assoc :duration    parameters))))
+  (let* ((parameters (misc:build-plist params))
+	 (trigger    (cdr (assoc :trigger  parameters)))
+	 (duration   (cdr (assoc :duration parameters)))
+	 (chance     (cdr (assoc :chance   parameters))))
     (when (null trigger)
       (warn (_ "Interation: No activation trigger specified for healing effect, using \":use.\"")))
+    (when (null chance)
+      (warn (_ "Interation: No chance specified for healing effect, using 0")))
     (when (null duration)
       (warn (_ "Interation: No duration specified for effect, using 1000000.")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
@@ -322,7 +328,8 @@
 				   +effect-when-consumed+))))
     (make-instance 'healing-effect-parameters
 		   :trigger  (or trigger  +effect-when-used+)
-		   :duration (or duration 1000000))))
+		   :duration (or duration 1000000)
+		   :chance   (or chance  0))))
 
 (defmacro define-healing-effects (&rest parameters)
   (let ((params (misc:build-plist parameters)))
@@ -361,19 +368,15 @@
     ((points-per-turn
       :initform :points-per-turn
       :initarg  :points-per-turn
-      :accessor  points-per-turn)
-     (health-condition
-      :initform nil
-      :initarg  :health-condition
-      :accessor health-condition)))
+      :accessor  points-per-turn)))
 
     (defmethod print-object ((object poison-effect-parameters) stream)
       (print-unreadable-object (object stream :type t :identity t)
-	(format stream "points? ~a condition ~a" (points-per-turn object) (health-condition object))))
+	(format stream "points? ~a" (points-per-turn object))))
 
     (defmethod make-load-form ((object poison-effect-parameters) &optional environment)
       (make-load-form-saving-slots object
-				   :slot-names '(points-per-turn health-condition)
+				   :slot-names '(points-per-turn)
 				   :environment environment))
 
     (defmethod description-for-humans ((object poison-effect-parameters))
@@ -381,31 +384,17 @@
 	      (if (and (points-per-turn object)
 		       (> (points-per-turn object) 0))
 		  (format nil (_ "(~a damage per turn)") (points-per-turn object))
-		  "")
-	      (if (health-condition object)
-		  (format nil (_ "generate ~a") (health-condition object))
 		  ""))))
 
 (defmacro define-poison-effect (params)
   (let* ((parameters (misc:build-plist params))
-	 (points     (cdr (assoc :points parameters)))
-	 (health-condition  (cdr (assoc :condition parameters))))
+	 (points     (cdr (assoc :points parameters))))
     (when (null points)
       (warn (_ "Interation: No points specified for poison effect, using \"-1\".")))
-    (when (null health-condition)
-      (warn (_ "Interation: No condition for poison effect, using \"null\".")))
     (when (not (numberp points))
       (error (format nil (_ "Invalid points ~a, expected a number") points)))
-    (when (and (not (null health-condition))
-	       (not (valid-keyword-p health-condition
-				     +poison-effect-faint+
-				     +poison-effect-terror+
-				     +poison-effect-berserk+)))
-      (error (format nil (_ "Invalid condition ~a, expected ~a") health-condition
-		     (list +poison-effect-faint+ +poison-effect-terror+ +poison-effect-berserk+))))
     (make-instance 'poison-effect-parameters
-		   :points-per-turn  points
-		   :health-condition health-condition)))
+		   :points-per-turn  points)))
 
 (defmacro define-magic-effect (params)
   (let* ((parameters (misc:build-plist params))
