@@ -1823,17 +1823,17 @@
 			     :color :green)
     :initarg  :bar-mp
     :accessor bar-mp)
-   (bar-hp
+   (bar-dmg
     :initform (make-instance 'widget:h-bar
 			     :height (d/ *square-button-size* 8.0)
 			     :width  (d+ *square-button-size* *small-square-button-size*)
 			     :x (d* *small-square-button-size* 11.0)
 			     :y (d* 2.0 (d/ *square-button-size* 8.0))
-			     :label "HP: "
+			     :label "DMG: "
 			     :color :red
 			    :fill-level 0.5)
-    :initarg  :bar-hp
-    :accessor bar-hp)
+    :initarg  :bar-dmg
+    :accessor bar-dmg)
    (bar-sp
     :initform (make-instance 'widget:h-bar
 			     :height (d/ *square-button-size* 8.0)
@@ -1858,7 +1858,7 @@
 			     :justified nil)
     :initarg  :text-mp
     :accessor text-mp)
-   (text-hp
+   (text-dmg
     :initform (make-instance 'widget:static-text
 			     :height (d/ *square-button-size* 6.0)
 			     :width  *small-square-button-size*
@@ -1869,8 +1869,8 @@
 			     :font-size 10.0
 			     :label "22"
 			     :justified nil)
-    :initarg  :text-hp
-    :accessor text-hp)
+    :initarg  :text-dmg
+    :accessor text-dmg)
    (text-sp
     :initform (make-instance 'widget:static-text
 			     :height (d/ *square-button-size* 6.0)
@@ -1917,10 +1917,10 @@
   (add-child object (b-open        object))
   (add-child object (b-close       object))
   (add-child object (bar-mp        object))
-  (add-child object (bar-hp        object))
+  (add-child object (bar-dmg       object))
   (add-child object (bar-sp        object))
   (add-child object (text-mp       object))
-  (add-child object (text-hp       object))
+  (add-child object (text-dmg      object))
   (add-child object (text-sp       object))
   (add-child object (b-zoom        object))
   (add-child object (b-unzoom      object))

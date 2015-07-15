@@ -321,12 +321,7 @@
 		    (setf (s-wrap-mode  bg) :clamp-to-border)
 		    (setf (t-wrap-mode  bg) :clamp-to-border)
 		    (setf (border-color bg) §c00000000))
-		   inventory-slot.tga
-		   (p-blue01.tga
-		    +default-gui-inventory-items+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000)))
+		   inventory-slot.tga)
 
 (gen-simple-bg-setup frame
 		     +frame-texture-name+

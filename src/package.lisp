@@ -2405,6 +2405,8 @@
    :+impact-weapons-damage-bonus+
    :+pole-weapons-chance-bonus+
    :+pole-weapons-damage-bonus+
+   :+range-weapons-chance-bonus+
+   :+range-weapons-damage-bonus+
    :+unlock-chance+
    :+deactivate-trap-chance+
    :+reply-attack-chance+
@@ -2412,6 +2414,7 @@
    :+spell-chance+
    :+attack-spell-chance+
    :+healing-effects+
+   :+heal-damage-points+
    :+heal-poison+
    :+heal-berserk+
    :+heal-faint+
@@ -2433,6 +2436,7 @@
    :healing-effect-parameters
    :magic-effect-parameters
    :poison-effect-parameters
+   :heal-damage-points-effect-parameters
    :points-per-turn
    :define-interaction
    :define-decay

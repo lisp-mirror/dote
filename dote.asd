@@ -87,6 +87,7 @@
 	       (:file "basic-interaction-parameters")
 	       (:file "character")
 	       (:file "random-weapon")
+	       (:file "random-potion")
 	       (:file "entity")
 	       (:file "camera")
 	       (:file "mesh")

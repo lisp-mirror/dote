@@ -48,7 +48,6 @@
 (define-constant +chance-healing-fx-mean+   #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
   :test #'equalp)
 
-
 (define-constant +magic-fx-sigma+            #(1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0)
   :test #'equalp)
 
@@ -131,7 +130,7 @@
     (clamp (truncate (gaussian-probability sigma mean))
 	   +minimum-weapon-level+ +maximum-weapon-level+)))
 
-(defun number-of-effects (weapon-level)
+(defun weapon-number-of-effects (weapon-level)
   (let ((max (round (num:dlerp (num:smoothstep-interpolate 0.0
 							   10.0
 							   (d (1- weapon-level)))
@@ -166,7 +165,7 @@
     (with-interaction-parameters (template interaction-file)
       (let* ((weapon-level       (calculate-weapon-level map-level))
 	     (weapon-decay       (calculate-weapon-decay-points weapon-level))
-	     (effects-no         (number-of-effects weapon-level))
+	     (effects-no         (weapon-number-of-effects weapon-level))
 	     (healing-effect-no  (number-of-healing-effects weapon-level effects-no)))
 	(cond
 	  ((plist-path-value template (list +can-cut+))
@@ -203,22 +202,7 @@
 	  (dbg "2~%~a ~%~% ~a" template char-template)
 	  weapon-character)))))
 
-(defun %get-effects-shuffled (l num)
-  (subseq (shuffle l) 0 num))
-
-(defun %get-normal-fx-shuffled (db num)
-  (let ((all (plist-path-value db (list +effects+))))
-    (%get-effects-shuffled (mapcar #'car (remove-if #'(lambda (a) (null (cdr a))) all)) num)))
-
-(defun %get-healing-fx-shuffled (db num)
-  (let ((all (plist-path-value db (list +healing-effects+))))
-    (%get-effects-shuffled (mapcar #'car (remove-if #'(lambda (a) (null (cdr a))) all)) num)))
-
-(defun %get-magic-fx-shuffled (db num)
-  (and (> num 0)
-       (plist-path-value db (list +magic-effects+))))
-
-(defun set-weapon-effect (effect-path weapon-level interaction)
+(defun weapon-set-weapon-effect (effect-path weapon-level interaction)
   (let ((effect-object (make-instance 'effect-parameters
 				      :modifier (calculate-weapon-modifier weapon-level)
 				      :trigger  +effect-when-worn+
@@ -244,9 +228,9 @@
 (defun calculate-healing-fx-params-chance (weapon-level)
   (multiple-value-bind (sigma mean)
       (healing-fx-params-chance (1- weapon-level))
-    (max +minimum-chance-healing-fx+ (gaussian-probability sigma mean))))
+    (max +minimum-chance-healing-fx+ (dabs (gaussian-probability sigma mean)))))
 
-(defun set-healing-effect (effect-path weapon-level interaction)
+(defun weapon-set-healing-effect (effect-path weapon-level interaction)
   (let ((effect-object (make-instance 'healing-effect-parameters
 				      :trigger  +effect-when-worn+
 				       ;; effect lasting forever  for
@@ -256,7 +240,7 @@
 				      :chance (calculate-healing-fx-params-chance weapon-level))))
     (n-setf-path-value interaction effect-path effect-object)))
 
-(defun set-poison-effect (effect-path weapon-level interaction)
+(defun weapon-set-poison-effect (effect-path weapon-level interaction)
   (let ((effect-object (make-instance 'poison-effect-parameters
 				      :points-per-turn (calculate-weapon-modifier weapon-level))))
     (n-setf-path-value interaction effect-path effect-object)))
@@ -273,7 +257,7 @@
 (defun random-spell-by-level (spell-level)
   (and spell-level :fireball-1)) ;; TODO
 
-(defun set-magic-effect (weapon-level interaction)
+(defun weapon-set-magic-effect (weapon-level interaction)
   (let* ((spell-level (calculate-magic-fx-level weapon-level))
 	 (spell-id    (random-spell-by-level spell-level))
 	 (effect-object (make-instance 'magic-effect-parameters
@@ -294,21 +278,23 @@
 		       (list +decay+)
 		       (calculate-weapon-decay weapon-level character weapon-decay-points))
     (loop for i in effects do
-	 (set-weapon-effect (list +effects+ i) weapon-level interaction))
+	 (weapon-set-weapon-effect (list +effects+ i) weapon-level interaction))
     (loop for i in healing-effects do
 	 (cond
+	   ((eq i +heal-damage-points+)
+	    nil)
 	   ((eq i +cause-poison+)
-	    (set-poison-effect (list +healing-effects+ i) weapon-level interaction))
+	    (weapon-set-poison-effect (list +healing-effects+ i) weapon-level interaction))
 	   (t
-	    (set-healing-effect (list +healing-effects+ i) weapon-level interaction))))))
+	    (weapon-set-healing-effect (list +healing-effects+ i) weapon-level interaction))))))
 
 (defun generate-sword (interaction character weapon-level)
   (declare (ignore character))
   (let ((sum-effects (sum-effects-mod interaction (list +effects+))))
     (when (or (plist-path-value interaction (list +magic-effects+))
-	      (and (> weapon-level 5)
+	      (and (> weapon-level  5)
 		   (< sum-effects -10)))
-      (set-magic-effect weapon-level interaction))))
+      (weapon-set-magic-effect weapon-level interaction))))
 
 (defun generate-spear (interaction character weapon-level)
   (declare (ignore character))
@@ -316,7 +302,7 @@
     (when (or (plist-path-value interaction (list +magic-effects+))
 	      (and (> weapon-level 5)
 		   (< sum-effects -10)))
-      (set-magic-effect weapon-level interaction))))
+      (weapon-set-magic-effect weapon-level interaction))))
 
 (defun generate-mace (interaction character weapon-level)
   (declare (ignore character))
@@ -324,7 +310,7 @@
     (when (or (plist-path-value interaction (list +magic-effects+))
 	      (and (> weapon-level 5)
 		   (< sum-effects -10)))
-      (set-magic-effect weapon-level interaction))))
+      (weapon-set-magic-effect weapon-level interaction))))
 
 (defun generate-staff (interaction character weapon-level)
   (declare (ignore character))
@@ -332,7 +318,7 @@
     (when (or (plist-path-value interaction (list +magic-effects+))
 	      (and (> weapon-level 2)
 		   (< sum-effects  0)))
-      (set-magic-effect weapon-level interaction))))
+      (weapon-set-magic-effect weapon-level interaction))))
 
 (defun generate-bow (interaction character weapon-level)
   (declare (ignore character))
@@ -340,7 +326,7 @@
     (when (or (plist-path-value interaction (list +magic-effects+))
 	      (and (> weapon-level 5)
 		   (< sum-effects -10)))
-      (set-magic-effect weapon-level interaction))))
+      (weapon-set-magic-effect weapon-level interaction))))
 
 (defun generate-crossbow (interaction character weapon-level)
   (declare (ignore character))
@@ -348,7 +334,7 @@
     (when (or (plist-path-value interaction (list +magic-effects+))
 	      (and (> weapon-level 5)
 		   (< sum-effects -10)))
-      (set-magic-effect weapon-level interaction))))
+      (weapon-set-magic-effect weapon-level interaction))))
 
 (defun remove-generate-symbols (db)
   (if (null db)

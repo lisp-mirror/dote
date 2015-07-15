@@ -10,7 +10,6 @@ config.status
 config.sub
 configure
 costs.pgm
-data/characters/
 data/trees/s.lsys
 dote
 install-sh

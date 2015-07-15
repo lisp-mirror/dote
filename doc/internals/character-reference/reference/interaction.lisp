@@ -27,7 +27,8 @@
     (define-decay (points 10 duration turns message  "tree disappeared"))
     effects
     (define-effects
-	strength                   (define-effect
+      ;;;;;;;;;;;;;;;; artifact
+      strength                   (define-effect
 				       (modifier 1 duration unlimited trigger when-used))
       stamina                      (define-effect
 				       (modifier 2 duration unlimited trigger when-consumed))
@@ -46,12 +47,15 @@
       range-attack-chance          none
       melee-attack-damage          none
       range-attack-damage          none
+      ;;;;;;;;;;;;;;;;;;
       edge-weapons-chance-bonus    none
       edge-weapons-damage-bonus    none
       impact-weapons-chance-bonus  none
       impact-weapons-damage-bonus  none
       pole-weapons-chance-bonus    none
       pole-weapons-damage-bonus    none
+      range-weapons-chance-bonus    none
+      range-weapons-damage-bonus    none
       unlock-chance                none
       deactivate-trap-chance       none
       reply-attack-chance          none
@@ -60,12 +64,16 @@
       attack-spell-chance          none)
     healing-effects
     (define-healing-effects
-	heal-poison              (define-healing-effect
-				     (duration unlimited trigger when-used chance 0.1))
+	heal-damage-points         (define-heal-dmg-effect
+				       (duration unlimited trigger when-used chance 0.1))
+      heal-poison              (define-healing-effect
+				   (duration unlimited trigger when-used chance 0.2))
       heal-berserk               none
       heal-faint                   none
       heal-terror                  none
-      cause-poison                 (define-poison-effect (points 10 condition berserk))
+      cause-poison                 (define-poison-effect (points -10 trigger when-used
+								 condition berserk
+								 chance 0.3))
       cause-berserk                none
       cause-faint                  none
       cause-terror                 none

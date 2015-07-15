@@ -110,6 +110,10 @@
 
 (define-constant +pole-weapons-damage-bonus+   :pole-weapons-damage-bonus   :test #'eq)
 
+(define-constant +range-weapons-chance-bonus+  :range-weapons-chance-bonus  :test #'eq)
+
+(define-constant +range-weapons-damage-bonus+  :range-weapons-damage-bonus  :test #'eq)
+
 (define-constant +unlock-chance+               :unlock-chance               :test #'eq)
 
 (define-constant +deactivate-trap-chance+      :deactivate-trap-chance      :test #'eq)
@@ -121,6 +125,8 @@
 (define-constant +spell-chance+                :spell-chance                :test #'eq)
 
 (define-constant +attack-spell-chance+         :attack-spell-chance         :test #'eq)
+
+(define-constant +heal-damage-points+          :heal-damage-points          :test #'eq)
 
 (define-constant +healing-effects+             :healing-effects             :test #'eq)
 
@@ -276,8 +282,23 @@
 				       (cadr i)
 				       (cdr i)))))))
 
+(defun chance->chance-for-human (c)
+  (* 100 c))
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defclass healing-effect-parameters ()
+  (defclass parameters-with-chance ()
+    ((chance
+      :initform 0.0
+      :initarg  :chance
+      :accessor chance)))
+
+  (defmethod make-load-form ((object parameters-with-chance) &optional environment)
+      (make-load-form-saving-slots object
+				   :slot-names '(chance)
+				   :environment environment)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defclass healing-effect-parameters (parameters-with-chance)
     ((trigger
       :initform :use
       :initarg  :trigger
@@ -285,11 +306,7 @@
      (duration
       :initform 1000000
       :initarg  :duration
-      :accessor duration)
-     (chance
-      :initform 0.0
-      :initarg  :chance
-      :accessor chance)))
+      :accessor duration)))
 
     (defmethod print-object ((object healing-effect-parameters) stream)
       (print-unreadable-object (object stream :type t :identity t)
@@ -308,7 +325,7 @@
 	      (if (effect-unlimited-p (duration object))
 		  (_ "unlimited")
 		  (format nil (_ "~d turns") (duration object)))
-	      (* 100 (chance object)))))
+	      (chance->chance-for-human (chance object)))))
 
 (defmacro define-healing-effect (params)
   (let* ((parameters (misc:build-plist params))
@@ -329,7 +346,7 @@
     (make-instance 'healing-effect-parameters
 		   :trigger  (or trigger  +effect-when-used+)
 		   :duration (or duration 1000000)
-		   :chance   (or chance  0))))
+		   :chance   (or chance  0.0))))
 
 (defmacro define-healing-effects (&rest parameters)
   (let ((params (misc:build-plist parameters)))
@@ -364,37 +381,109 @@
       (format nil "~a" (spell-id object))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defclass poison-effect-parameters ()
+  (defclass poison-effect-parameters (parameters-with-chance)
     ((points-per-turn
       :initform :points-per-turn
       :initarg  :points-per-turn
-      :accessor  points-per-turn)))
+      :accessor  points-per-turn)
+     (trigger
+      :initform :use
+      :initarg  :trigger
+      :accessor trigger)))
 
     (defmethod print-object ((object poison-effect-parameters) stream)
       (print-unreadable-object (object stream :type t :identity t)
-	(format stream "points? ~a" (points-per-turn object))))
+	(format stream "when? ~a points? ~a chance? ~a"
+		(trigger object)
+		(points-per-turn object)
+		(chance object))))
 
     (defmethod make-load-form ((object poison-effect-parameters) &optional environment)
       (make-load-form-saving-slots object
-				   :slot-names '(points-per-turn)
+				   :slot-names '(points-per-turn trigger)
 				   :environment environment))
 
     (defmethod description-for-humans ((object poison-effect-parameters))
-      (format nil (_ "poison enemy ~a ~a")
+      (format nil (_ "poison enemy ~a chance ~a")
 	      (if (and (points-per-turn object)
 		       (> (points-per-turn object) 0))
 		  (format nil (_ "(~a damage per turn)") (points-per-turn object))
-		  ""))))
+		  "")
+	      (chance->chance-for-human (chance object)))))
 
 (defmacro define-poison-effect (params)
   (let* ((parameters (misc:build-plist params))
-	 (points     (cdr (assoc :points parameters))))
+	 (points     (cdr (assoc :points  parameters)))
+	 (trigger    (cdr (assoc :trigger parameters)))
+	 (chance     (cdr (assoc :chance  parameters))))
     (when (null points)
       (warn (_ "Interation: No points specified for poison effect, using \"-1\".")))
+    (when (null trigger)
+      (warn (_ "Interation: No activation trigger specified for poison effect, using \":use.\"")))
+    (when (null chance)
+      (warn (_ "Interation: No chance specified for healing effect, using 0")))
+    (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
+				+effect-when-consumed+))
+      (error (format nil (_ "Invalid trigger ~a, expected ~a")
+		     trigger (list +effect-when-worn+ +effect-when-used+
+				   +effect-when-consumed+))))
     (when (not (numberp points))
       (error (format nil (_ "Invalid points ~a, expected a number") points)))
     (make-instance 'poison-effect-parameters
-		   :points-per-turn  points)))
+		   :points-per-turn  points
+		   :trigger (or trigger  +effect-when-used+)
+		   :chance  (or chance 0.0))))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defclass heal-damage-points-effect-parameters (parameters-with-chance)
+    ((points
+      :initform -10
+      :initarg  :points
+      :accessor  points)
+     (trigger
+      :initform :use
+      :initarg  :trigger
+      :accessor trigger)))
+
+    (defmethod print-object ((object heal-damage-points-effect-parameters) stream)
+      (print-unreadable-object (object stream :type t :identity t)
+	(format stream "when? ~a points? ~a chance ~a"
+		(trigger object)
+		(points  object)
+		(chance->chance-for-human (chance object)))))
+
+    (defmethod make-load-form ((object heal-damage-points-effect-parameters) &optional environment)
+      (make-load-form-saving-slots object
+				   :slot-names '(points trigger)
+				   :environment environment))
+
+    (defmethod description-for-humans ((object heal-damage-points-effect-parameters))
+      (format nil (_ "heal ~a DMG")
+	      (or (points object)
+		  0))))
+
+(defmacro define-heal-dmg-effect (params)
+  (let* ((parameters (misc:build-plist params))
+	 (points     (cdr (assoc :points parameters)))
+	 (trigger    (cdr (assoc :trigger  parameters)))
+	 (chance     (cdr (assoc :chance  parameters))))
+    (when (null points)
+      (warn (_ "Interation: No points specified for healing effect, using \"1\".")))
+    (when (null trigger)
+      (warn (_ "Interation: No activation trigger specified for healing effect, using \":use.\"")))
+    (when (null chance)
+      (warn (_ "Interation: No chance specified for healing effect, using 0")))
+    (when (not (numberp points))
+      (error (format nil (_ "Invalid points ~a, expected a number") points)))
+    (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
+				+effect-when-consumed+))
+      (error (format nil (_ "Invalid trigger ~a, expected ~a")
+		     trigger (list +effect-when-worn+ +effect-when-used+
+				   +effect-when-consumed+))))
+    (make-instance 'heal-damage-points-effect-parameters
+		   :points-per-turn  points
+		   :trigger  (or trigger +effect-when-used+)
+		   :chance   (or chance  0.0))))
 
 (defmacro define-magic-effect (params)
   (let* ((parameters (misc:build-plist params))

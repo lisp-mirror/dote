@@ -379,7 +379,6 @@
 		 (setf capital 0))))))
   capital)
 
-
 (defmacro gen-make-player (class)
   (alexandria:with-gensyms (char rest-capital)
     `(defun ,(alexandria:format-symbol t "~@:(make-~a~)" class)
@@ -1396,3 +1395,21 @@
   (with-interaction-parameters (params file)
     (find-if #'(lambda (a) (not (null a)))
 	     (loop for i in *relations* collect (conflictp params i)))))
+
+(defun %get-effects-shuffled (l num)
+  (subseq (shuffle l) 0
+	  (if (< num (length l))
+	      num
+	      (length l))))
+
+(defun %get-normal-fx-shuffled (db num)
+  (let ((all (plist-path-value db (list +effects+))))
+    (%get-effects-shuffled (mapcar #'car (remove-if #'(lambda (a) (null (cdr a))) all)) num)))
+
+(defun %get-healing-fx-shuffled (db num)
+  (let ((all (plist-path-value db (list +healing-effects+))))
+    (%get-effects-shuffled (mapcar #'car (remove-if #'(lambda (a) (null (cdr a))) all)) num)))
+
+(defun %get-magic-fx-shuffled (db num)
+  (and (> num 0)
+       (plist-path-value db (list +magic-effects+))))
