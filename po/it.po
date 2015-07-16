@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dote 0.0.1\n"
 "Report-Msgid-Bugs-To: cage@katamail.com\n"
-"POT-Creation-Date: 2015-07-16 18:05+0200\n"
-"PO-Revision-Date: 2015-07-16 18:26+0200\n"
+"POT-Creation-Date: 2015-07-16 18:35+0200\n"
+"PO-Revision-Date: 2015-07-16 18:35+0200\n"
 "Last-Translator: cage <cage@katamail.com>\n"
 "Language-Team: Italian\n"
 "Language: it\n"
@@ -216,6 +216,20 @@ msgstr "~@[, ~a causa berserk~]"
 #, lisp-format
 msgid "~@[, launchs ~a~]"
 msgstr "~@[, lancia ~a~]"
+
+#: src/random-weapon.lisp:107
+#, lisp-format
+msgid "~a broken"
+msgstr "~a rotta"
+
+#: src/random-weapon.lisp:199
+msgid "Unknown weapon type"
+msgstr "Tipo di arma sconosciuta"
+
+#: src/random-fountain.lisp:131
+#, lisp-format
+msgid "~a exhausted"
+msgstr "~a esaurita"
 
 #: src/gui/widget.lisp:1603
 msgid "Choose file"

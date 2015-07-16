@@ -74,6 +74,10 @@ src/profiling.lisp
 src/quad-tree.lisp
 src/quaternion.lisp
 src/queue.lisp
+src/random-potion.lisp
+src/random-terrain.lisp
+src/random-weapon.lisp
+src/random-fountain.lisp
 # GUI
 src/gui/gui-events.lisp
 src/gui/gui.lisp
