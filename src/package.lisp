@@ -2456,6 +2456,7 @@
 	:num-utils
 	:misc-utils
 	:text-utils
+	:mtree-utils
 	:interfaces
 	:identificable
 	:basic-interaction-parameters)

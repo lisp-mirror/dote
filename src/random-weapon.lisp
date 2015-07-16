@@ -48,10 +48,10 @@
 (define-constant +chance-healing-fx-mean+   #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
   :test #'equalp)
 
-(define-constant +magic-fx-sigma+            #(1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0)
+(define-constant +magic-fx-sigma+           #(2.0 2.0 2.0 2.0 2.0 2.0 2.0 2.0 2.0 2.0)
   :test #'equalp)
 
-(define-constant +magic-fx-mean+             #(0.0 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0)
+(define-constant +magic-fx-mean+            #(22.0 21.0 20.0 19.0 18.0 17.0 16.0 15.0 14.0 13.0)
   :test #'equalp)
 
 (define-constant +minimum-magic-fx-level+                1.0        :test #'=)
@@ -104,7 +104,7 @@
 (defun calculate-weapon-decay (object-level character decay-points)
   (make-instance 'decay-parameters
 		 :leaving-message (format nil
-					  "~a broken"
+					  (_ "~a broken")
 					  (plist-path-value character (list +description+)))
 		 :points decay-points
 		 :when-decay (if (and (> object-level (/ +maximum-weapon-level+ 2))
@@ -199,10 +199,9 @@
 	   (error (_ "Unknown weapon type"))))
 	(let ((weapon-character (params->character char-template)))
 	  (setf (basic-interaction-params weapon-character) template)
-	  (dbg "2~%~a ~%~% ~a" template char-template)
 	  weapon-character)))))
 
-(defun weapon-set-weapon-effect (effect-path weapon-level interaction)
+(defun weapon-set-effect (effect-path weapon-level interaction)
   (let ((effect-object (make-instance 'effect-parameters
 				      :modifier (calculate-weapon-modifier weapon-level)
 				      :trigger  +effect-when-worn+
@@ -278,7 +277,7 @@
 		       (list +decay+)
 		       (calculate-weapon-decay weapon-level character weapon-decay-points))
     (loop for i in effects do
-	 (weapon-set-weapon-effect (list +effects+ i) weapon-level interaction))
+	 (weapon-set-effect (list +effects+ i) weapon-level interaction))
     (loop for i in healing-effects do
 	 (cond
 	   ((eq i +heal-damage-points+)

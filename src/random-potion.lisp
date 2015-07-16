@@ -90,10 +90,16 @@
 
 (defun potion-set-healing-effect (effect-path potion-level interaction)
   (let ((effect-object (make-instance 'healing-effect-parameters
-				      :trigger  +effect-when-worn+
+				      :trigger  +effect-when-used+
 				      :duration  (calculate-potion-modifier potion-level)
 				      :chance (calculate-healing-fx-params-chance potion-level))))
     (n-setf-path-value interaction effect-path effect-object)))
+
+(defun potion-set-poison-effect (effect-path potion-level interaction)
+  (let ((effect-object (make-instance 'poison-effect-parameters
+				      :points-per-turn (calculate-potion-modifier potion-level))))
+    (n-setf-path-value interaction effect-path effect-object)))
+
 
 (defun generate-potion (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
@@ -107,14 +113,13 @@
 	       ((eq i +heal-damage-points+)
 		(potion-set-healing-hp-effect (list +healing-effects+ i) potion-level template))
 	       ((eq i +cause-poison+)
-		(set-poison-effect (list +healing-effects+ i) potion-level template))
+		(potion-set-poison-effect (list +healing-effects+ i) potion-level template))
 	       (t
 		(potion-set-healing-effect (list +healing-effects+ i) potion-level template))))
 	(setf template (remove-generate-symbols template))
 	(potion-fill-character-plist +potion-type-name+ char-template template potion-level)
 	(let ((potion-character (params->character char-template)))
 	  (setf (basic-interaction-params potion-character) template)
-	  (dbg "2~%~a ~%~% ~a" template char-template)
 	  potion-character)))))
 
 (defun potion-filename-effects-string (interaction)

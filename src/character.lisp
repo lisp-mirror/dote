@@ -92,7 +92,7 @@
 
 (defparameter *standard-capital-characteristic* 200)
 
-(defclass player-character (identificable)
+(defclass player-character (identificable m-tree)
   ((first-name
     :initform ""
     :initarg :first-name
@@ -654,11 +654,13 @@
 
 (defmethod description-for-humans ((object player-character))
   (strcat
-   (format nil (_ "~:[~;Edge weapon ~]~:[~;Impact weapon ~]~:[~;Range weapon ~]~:[~;Range weapon ~]")
+   (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]")
 	   (can-cut-p   object)
 	   (can-smash-p object)
 	   (can-launch-bolt-p object)
-	   (can-launch-arrow-p object))
+	   (can-launch-arrow-p object)
+	   (string= (first-name object) +fountain-type-name+)
+	   (string= (first-name object) +potion-file-record-sep+))
    (format nil (_ "~@[, ~a strength~]")  (description-for-humans (interaction-get-strength object)))
    (format nil (_ "~@[, ~a stamina~]")   (description-for-humans (interaction-get-stamina object)))
    (format nil (_ "~@[, ~a dexterity~]") (description-for-humans (interaction-get-dexterity object)))
@@ -703,13 +705,13 @@
 					     (interaction-get-spell-chance object)))
    (format nil (_ "~@[, ~a attack spell chance~]") (description-for-humans
 						    (interaction-get-attack-spell-chance object)))
-   (format nil (_ "~@[, ~a heal poison condition~]") (description-for-humans
+   (format nil (_ "~@[, ~a heals poison condition~]") (description-for-humans
 						      (interaction-get-heal-poison object)))
-   (format nil (_ "~@[, ~a heal berserk condition~]") (description-for-humans
+   (format nil (_ "~@[, ~a heals berserk condition~]") (description-for-humans
 						       (interaction-get-heal-berserk object)))
-   (format nil (_ "~@[, ~a heal faint condition~]")  (description-for-humans
+   (format nil (_ "~@[, ~a heals faint condition~]")  (description-for-humans
 						      (interaction-get-heal-faint object)))
-   (format nil (_ "~@[, ~a heal terror condition~]")  (description-for-humans
+   (format nil (_ "~@[, ~a heals terror condition~]")  (description-for-humans
 						       (interaction-get-heal-terror object)))
    (format nil (_ "~@[, makes immune from poison (~a)~]") (description-for-humans
 							(interaction-get-immune-poison object)))
@@ -719,10 +721,12 @@
 							 (interaction-get-immune-berserk object)))
    (format nil (_ "~@[, makes immune from faint (~a)~]") (description-for-humans
 						       (interaction-get-immune-berserk object)))
-   (format nil (_ "~@[, ~a heals faint condition~]")  (description-for-humans
-						      (interaction-get-heal-faint object)))
-   (format nil (_ "~@[, ~a heals terror condition~]")  (description-for-humans
-						       (interaction-get-heal-terror object)))
+   (format nil (_ "~@[, ~a cause faint condition~]")  (description-for-humans
+						      (interaction-get-cause-faint object)))
+   (format nil (_ "~@[, ~a cause terror condition~]")  (description-for-humans
+							(interaction-get-cause-terror object)))
+   (format nil (_ "~@[, ~a cause berserk condition~]")  (description-for-humans
+							 (interaction-get-cause-berserk object)))
    (format nil (_ "~@[, launchs ~a~]")  (description-for-humans (interaction-get-magic-effect
 								 object)))))
 
@@ -792,7 +796,8 @@
 		    'player-character
 		    :first-name                  (fetch-first-name                    params)
 		    :last-name                   (fetch-last-name                     params)
-		    :portrait                    (texture:get-texture (fetch-portrait params))
+		    :portrait                    (and (fetch-portrait params)
+						      (texture:get-texture (fetch-portrait params)))
 		    :strength                    (fetch-strength                      params)
 		    :stamina                     (fetch-stamina                       params)
 		    :dexterity                   (fetch-dexterity                     params)
