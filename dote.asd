@@ -89,6 +89,8 @@
 	       (:file "random-weapon")
 	       (:file "random-potion")
 	       (:file "random-fountain")
+	       (:file "random-key")
+	       (:file "random-container")
 	       (:file "entity")
 	       (:file "camera")
 	       (:file "mesh")

@@ -1,26 +1,30 @@
 (in-package :basic-interaction-parameters)
 
-(define-constant +decay-by-use+                :use                         :test #'eql)
+(define-constant +decay-by-use+                :use                         :test #'eq)
 
-(define-constant +decay-by-turns+              :turns                       :test #'eql)
+(define-constant +decay-by-turns+              :turns                       :test #'eq)
 
-(define-constant +effect-when-used+            :when-used                   :test #'eql)
+(define-constant +effect-when-used+            :when-used                   :test #'eq)
 
-(define-constant +effect-when-worn+            :when-worn                   :test #'eql)
+(define-constant +effect-when-worn+            :when-worn                   :test #'eq)
 
-(define-constant +effect-when-consumed+        :when-consumed               :test #'eql)
+(define-constant +effect-until-picked+         :until-picked                :test #'eq)
 
-(define-constant +poison-effect-faint+         :faint                       :test #'eql)
+(define-constant +effect-when-consumed+        :when-consumed               :test #'eq)
 
-(define-constant +poison-effect-terror+        :terror                      :test #'eql)
+(define-constant +poison-effect-faint+         :faint                       :test #'eq)
 
-(define-constant +poison-effect-berserk+       :berserk                     :test #'eql)
+(define-constant +poison-effect-terror+        :terror                      :test #'eq)
+
+(define-constant +poison-effect-berserk+       :berserk                     :test #'eq)
 
 (define-constant +can-talk+                    :can-talk                    :test #'eq)
 
 (define-constant +can-ask-for-help+            :can-ask-for-help            :test #'eq)
 
 (define-constant +can-be-opened+               :can-be-opened               :test #'eq)
+
+(define-constant +can-be-picked+               :can-be-picked               :test #'eq)
 
 (define-constant +can-open+                    :can-open                    :test #'eq)
 
@@ -58,9 +62,9 @@
 
 (define-constant +can-pierce+                  :can-pierce                  :test #'eq)
 
-(define-constant +can-launch-bolt+              :can-lauch-bolt              :test #'eq)
+(define-constant +can-launch-bolt+             :can-lauch-bolt              :test #'eq)
 
-(define-constant +can-launch-arrow+             :can-lauch-arrow             :test #'eq)
+(define-constant +can-launch-arrow+            :can-lauch-arrow             :test #'eq)
 
 (define-constant +mounted-on-pole+             :mounted-on-pole             :test #'eq)
 
@@ -129,6 +133,10 @@
 (define-constant +heal-damage-points+          :heal-damage-points          :test #'eq)
 
 (define-constant +healing-effects+             :healing-effects             :test #'eq)
+
+(define-constant +target-self+                 :self                        :test #'eq)
+
+(define-constant +target-other+                :other                       :test #'eq)
 
 (define-constant +heal-poison+                 :heal-poison                 :test #'eq)
 
@@ -266,10 +274,10 @@
     (when (null duration)
       (warn (_ "Interation: No duration specified for effect, using :unlimited.")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
-				+effect-when-consumed+))
+				+effect-when-consumed+ +effect-until-picked+))
       (error (format nil (_ "Invalid trigger ~a, expected ~a")
 		     trigger (list +effect-when-worn+ +effect-when-used+
-				   +effect-when-consumed+))))
+				   +effect-when-consumed+ +effect-until-picked+))))
     (make-instance 'effect-parameters
 		   :trigger  (or trigger  +effect-when-used+)
 		   :duration (or duration :unlimited)
@@ -306,47 +314,57 @@
      (duration
       :initform 1000000
       :initarg  :duration
-      :accessor duration)))
+      :accessor duration)
+     (target
+      :initform +target-self+
+      :initarg  :target
+      :accessor target)))
 
     (defmethod print-object ((object healing-effect-parameters) stream)
       (print-unreadable-object (object stream :type t :identity t)
-	(format stream "when? ~a duration ~a chance ~a"
+	(format stream "when? ~a duration ~a chance ~a target ~a"
 		(trigger  object)
 		(duration object)
-		(chance   object))))
+		(chance   object)
+		(target object))))
 
     (defmethod make-load-form ((object healing-effect-parameters) &optional environment)
       (make-load-form-saving-slots object
-				   :slot-names '(trigger duration)
+				   :slot-names '(trigger duration target)
 				   :environment environment))
 
     (defmethod description-for-humans ((object healing-effect-parameters))
-      (format nil "~a chance: ~a%"
+      (format nil "~a chance: ~a% target ~a"
 	      (if (effect-unlimited-p (duration object))
 		  (_ "unlimited")
 		  (format nil (_ "~d turns") (duration object)))
-	      (chance->chance-for-human (chance object)))))
+	      (chance->chance-for-human (chance object))
+	      (target object))))
 
 (defmacro define-healing-effect (params)
   (let* ((parameters (misc:build-plist params))
 	 (trigger    (cdr (assoc :trigger  parameters)))
 	 (duration   (cdr (assoc :duration parameters)))
-	 (chance     (cdr (assoc :chance   parameters))))
+	 (chance     (cdr (assoc :chance   parameters)))
+	 (target     (cdr (assoc :target   parameters))))
     (when (null trigger)
       (warn (_ "Interation: No activation trigger specified for healing effect, using \":use.\"")))
     (when (null chance)
       (warn (_ "Interation: No chance specified for healing effect, using 0")))
     (when (null duration)
       (warn (_ "Interation: No duration specified for effect, using 1000000.")))
+    (when (null target)
+      (warn (_ "Interation: No target specified for effect, using self.")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
-				+effect-when-consumed+))
+				+effect-when-consumed+ +effect-until-picked+))
       (error (format nil (_ "Invalid trigger ~a, expected ~a")
 		     trigger (list +effect-when-worn+ +effect-when-used+
-				   +effect-when-consumed+))))
+				   +effect-when-consumed+ +effect-until-picked+))))
     (make-instance 'healing-effect-parameters
 		   :trigger  (or trigger  +effect-when-used+)
 		   :duration (or duration 1000000)
-		   :chance   (or chance  0.0))))
+		   :chance   (or chance  0.0)
+		   :target   (or target  +target-self+))))
 
 (defmacro define-healing-effects (&rest parameters)
   (let ((params (misc:build-plist parameters)))
@@ -423,10 +441,10 @@
     (when (null chance)
       (warn (_ "Interation: No chance specified for healing effect, using 0")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
-				+effect-when-consumed+))
+				+effect-when-consumed+ +effect-until-picked+))
       (error (format nil (_ "Invalid trigger ~a, expected ~a")
 		     trigger (list +effect-when-worn+ +effect-when-used+
-				   +effect-when-consumed+))))
+				   +effect-when-consumed+ +effect-until-picked+))))
     (when (not (numberp points))
       (error (format nil (_ "Invalid points ~a, expected a number") points)))
     (make-instance 'poison-effect-parameters
@@ -443,47 +461,58 @@
      (trigger
       :initform :use
       :initarg  :trigger
-      :accessor trigger)))
+      :accessor trigger)
+     (target
+      :initform +target-self+
+      :initarg  :target
+      :accessor target)))
 
     (defmethod print-object ((object heal-damage-points-effect-parameters) stream)
       (print-unreadable-object (object stream :type t :identity t)
-	(format stream "when? ~a points? ~a chance ~a"
+	(format stream "when? ~a points? ~a chance ~a target ~a"
 		(trigger object)
 		(points  object)
-		(chance->chance-for-human (chance object)))))
+		(chance->chance-for-human (chance object))
+		(target  object))))
+
 
     (defmethod make-load-form ((object heal-damage-points-effect-parameters) &optional environment)
       (make-load-form-saving-slots object
-				   :slot-names '(points trigger)
+				   :slot-names '(points trigger target)
 				   :environment environment))
 
     (defmethod description-for-humans ((object heal-damage-points-effect-parameters))
-      (format nil (_ "heal ~a DMG")
+      (format nil (_ "heal ~a DMG, target ~a")
 	      (or (points object)
-		  0))))
+		  0)
+	      (target object))))
 
 (defmacro define-heal-dmg-effect (params)
   (let* ((parameters (misc:build-plist params))
 	 (points     (cdr (assoc :points parameters)))
 	 (trigger    (cdr (assoc :trigger  parameters)))
-	 (chance     (cdr (assoc :chance  parameters))))
+	 (chance     (cdr (assoc :chance  parameters)))
+	 (target     (cdr (assoc :target  parameters))))
     (when (null points)
       (warn (_ "Interation: No points specified for healing effect, using \"1\".")))
     (when (null trigger)
       (warn (_ "Interation: No activation trigger specified for healing effect, using \":use.\"")))
     (when (null chance)
       (warn (_ "Interation: No chance specified for healing effect, using 0")))
+    (when (null target)
+      (warn (_ "Interation: No target specified for effect, using self.")))
     (when (not (numberp points))
       (error (format nil (_ "Invalid points ~a, expected a number") points)))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
-				+effect-when-consumed+))
+				+effect-when-consumed+ +effect-until-picked+))
       (error (format nil (_ "Invalid trigger ~a, expected ~a")
 		     trigger (list +effect-when-worn+ +effect-when-used+
-				   +effect-when-consumed+))))
+				   +effect-when-consumed+ +effect-until-picked+))))
     (make-instance 'heal-damage-points-effect-parameters
 		   :points-per-turn  points
 		   :trigger  (or trigger +effect-when-used+)
-		   :chance   (or chance  0.0))))
+		   :chance   (or chance  0.0)
+		   :target   (or target +target-self+))))
 
 (defmacro define-magic-effect (params)
   (let* ((parameters (misc:build-plist params))
@@ -494,10 +523,10 @@
     (when (null spell-id)
       (warn (_ "Interation: No spell for magic effect, using \":heal-1.\"")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
-				+effect-when-consumed+))
+				+effect-when-consumed+ +effect-until-picked+))
       (error (format nil (_ "Invalid trigger ~a, expected ~a")
 		     trigger (list +effect-when-worn+ +effect-when-used+
-				   +effect-when-consumed+))))
+				   +effect-when-consumed+ +effect-until-picked+))))
     (make-instance 'magic-effect-parameters
 		   :trigger  (or trigger  +effect-when-used+)
 		   :spell-id  (or spell-id :heal-1))))

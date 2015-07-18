@@ -17,6 +17,7 @@
     can-be-weared-head  false
     can-be-weared-neck  false
     can-be-weared-feet  false
+    can-be-picked       false
     can-cut             true
     can-smash           false
     can-pierce          false
@@ -64,21 +65,34 @@
       attack-spell-chance          none)
     healing-effects
     (define-healing-effects
-	heal-damage-points         (define-heal-dmg-effect
-				       (duration unlimited trigger when-used chance 0.1))
-      heal-poison              (define-healing-effect
-				   (duration unlimited trigger when-used chance 0.2))
-      heal-berserk               none
+      heal-damage-points           (define-heal-dmg-effect (duration unlimited
+				                            trigger when-used
+							    chance 0.1
+						            target other))
+      heal-poison                  (define-healing-effect  (duration unlimited
+							    trigger  when-used
+							    chance   0.2
+							    target   self))
+      heal-berserk                 none
       heal-faint                   none
       heal-terror                  none
-      cause-poison                 (define-poison-effect (points -10 trigger when-used
-								 condition berserk
-								 chance 0.3))
+      cause-poison                 (define-poison-effect (points -10
+							  trigger when-used
+							  condition berserk
+							  chance 0.3))
       cause-berserk                none
       cause-faint                  none
       cause-terror                 none
-      immune-poison                (define-healing-effect
-				       (duration unlimited trigger when-used chance 0.1))
+      immune-poison                (define-healing-effect (duration unlimited
+							   trigger when-used
+							   chance 0.1)) ;; if
+									;; no
+									;; target
+									;; is
+									;; given
+									;; 'self'
+									;; is
+									;; assumed
       immune-berserk               none
       immune-faint                 none
       immune-terror                none)

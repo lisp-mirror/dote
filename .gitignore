@@ -29,8 +29,8 @@ po/it.gmo
 po/it/
 po/remove-potcdate.sed
 
-*.pgm
-*.ppm
-*.tga
+/*.pgm
+/*.ppm
+/*.tga
 
 src/config.lisp

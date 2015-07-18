@@ -1,4 +1,5 @@
 (define-interaction
+    can-be-picked       true
     can-talk            none
     can-ask-for-help    none
     can-be-opened       none

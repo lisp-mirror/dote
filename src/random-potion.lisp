@@ -46,10 +46,10 @@
 (define-constant +potion-level-mean+     #(1.2 1.5 1.8 2.1 2.4 2.9 3.1 3.3 3.4 3.6)
   :test #'equalp)
 
-(define-constant +modifier-potion-sigma+ #(1.0 2.0 3.0 4.0 5.0 6.0 6.5 7 7.5 8)
+(define-constant +potion-modifier-sigma+ #(1.0 2.0 3.0 4.0 5.0 6.0 6.5 7 7.5 8)
   :test #'equalp)
 
-(define-constant +modifier-potion-mean+  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
+(define-constant +potion-modifier-mean+  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
   :test #'equalp)
 
 (define-constant +chance-healing-fx-sigma+  #(.08 .1 .12 .18 .22 .23 .24 .25 .26 .28)
@@ -67,8 +67,8 @@
 	  (elt +potion-level-mean+  map-level)))
 
 (defun potion-modifier-params (potion-level)
-  (values (elt +modifier-potion-sigma+ potion-level)
-	  (elt +modifier-potion-mean+  potion-level)))
+  (values (elt +potion-modifier-sigma+ potion-level)
+	  (elt +potion-modifier-mean+  potion-level)))
 
 (defun calculate-potion-modifier (potion-level)
   (multiple-value-bind (sigma mean)
@@ -81,18 +81,20 @@
     (clamp (truncate (gaussian-probability sigma mean))
 	   +minimum-potion-level+ +maximum-potion-level+)))
 
-(defun potion-set-healing-hp-effect (path potion-level interaction)
+(defun potion-set-healing-dmg-effect (path potion-level interaction)
   (let ((effect-object (make-instance 'heal-damage-points-effect-parameters
 				      :trigger +effect-when-used+
 				      :points  (calculate-potion-modifier potion-level)
-				      :chance  (calculate-healing-fx-params-chance potion-level))))
+				      :chance  (calculate-healing-fx-params-chance potion-level)
+				      :target  +target-self+)))
     (n-setf-path-value interaction path effect-object)))
 
 (defun potion-set-healing-effect (effect-path potion-level interaction)
   (let ((effect-object (make-instance 'healing-effect-parameters
 				      :trigger  +effect-when-used+
 				      :duration  (calculate-potion-modifier potion-level)
-				      :chance (calculate-healing-fx-params-chance potion-level))))
+				      :chance (calculate-healing-fx-params-chance potion-level)
+				      :target  +target-self+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun potion-set-poison-effect (effect-path potion-level interaction)
@@ -111,7 +113,7 @@
 	(loop for i in healing-effects do
 	     (cond
 	       ((eq i +heal-damage-points+)
-		(potion-set-healing-hp-effect (list +healing-effects+ i) potion-level template))
+		(potion-set-healing-dmg-effect (list +healing-effects+ i) potion-level template))
 	       ((eq i +cause-poison+)
 		(potion-set-poison-effect (list +healing-effects+ i) potion-level template))
 	       (t

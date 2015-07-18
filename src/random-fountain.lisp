@@ -54,10 +54,10 @@
 (define-constant +fountain-level-mean+     #(1.2 1.5 1.8 2.1 2.4 2.9 3.1 3.3 3.4 3.6)
   :test #'equalp)
 
-(define-constant +modifier-fountain-sigma+ #(1.0 2.0 3.0 4.0 5.0 6.0 6.5 7 7.5 8)
+(define-constant +fountain-modifier-sigma+ #(1.0 2.0 3.0 4.0 5.0 6.0 6.5 7 7.5 8)
   :test #'equalp)
 
-(define-constant +modifier-fountain-mean+  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
+(define-constant +fountain-modifier-mean+  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
   :test #'equalp)
 
 (define-constant +chance-healing-fx-sigma+  #(.08 .1 .12 .18 .22 .23 .24 .25 .26 .28)
@@ -75,8 +75,8 @@
 	  (elt +fountain-level-mean+  map-level)))
 
 (defun fountain-modifier-params (fountain-level)
-  (values (elt +modifier-fountain-sigma+ fountain-level)
-	  (elt +modifier-fountain-mean+  fountain-level)))
+  (values (elt +fountain-modifier-sigma+ fountain-level)
+	  (elt +fountain-modifier-mean+  fountain-level)))
 
 (defun calculate-fountain-modifier (fountain-level)
   (multiple-value-bind (sigma mean)
@@ -89,12 +89,13 @@
     (clamp (truncate (gaussian-probability sigma mean))
 	   +minimum-fountain-level+ +maximum-fountain-level+)))
 
-(defun fountain-set-healing-hp-effect (path fountain-level interaction)
+(defun fountain-set-healing-dmg-effect (path fountain-level interaction)
   (let ((effect-object (make-instance 'heal-damage-points-effect-parameters
 				      :trigger +effect-when-used+
 				      :points  (calculate-fountain-modifier fountain-level)
 				      :chance  (calculate-healing-fx-params-chance
-						fountain-level))))
+						fountain-level)
+				      :target  +target-self+)))
     (n-setf-path-value interaction path effect-object)))
 
 (defun fountain-set-healing-effect (effect-path fountain-level interaction)
@@ -102,7 +103,8 @@
 				      :trigger  +effect-when-used+
 				      :duration  (calculate-fountain-modifier fountain-level)
 				      :chance (calculate-healing-fx-params-chance
-					       fountain-level))))
+					       fountain-level)
+				       :target  +target-self+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun fountain-set-poison-effect (effect-path fountain-level interaction)
@@ -151,7 +153,7 @@
 	(loop for i in healing-effects do
 	     (cond
 	       ((eq i +heal-damage-points+)
-		(fountain-set-healing-hp-effect (list +healing-effects+ i)
+		(fountain-set-healing-dmg-effect (list +healing-effects+ i)
 						fountain-level template))
 	       ((eq i +cause-poison+)
 		(fountain-set-poison-effect (list +healing-effects+ i) fountain-level template))

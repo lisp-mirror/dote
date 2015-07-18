@@ -602,6 +602,7 @@
 				   +can-be-poisoned+
 				   +can-be-drunk+
 				   +can-be-eaten+
+				   +can-be-picked+
 				   +can-be-weared-arm+
 				   +can-be-weared-head+
 				   +can-be-weared-neck+
@@ -627,6 +628,14 @@
 (gen-interaction-predicate (be-consumed)
   (or (lookup-basic-interaction object +can-be-drunk+)
       (lookup-basic-interaction object +can-be-eaten+)))
+
+(gen-interaction-predicate (potion)
+  (and (lookup-basic-interaction object +can-be-picked+)
+       (lookup-basic-interaction object +can-be-drunk+)))
+
+(gen-interaction-predicate (fountain)
+  (and (not (lookup-basic-interaction object +can-be-picked+))
+       (lookup-basic-interaction object +can-be-drunk+)))
 
 (gen-interaction-predicate (weapon)
   (or (lookup-basic-interaction object +can-cut+)
@@ -659,8 +668,8 @@
 	   (can-smash-p object)
 	   (can-launch-bolt-p object)
 	   (can-launch-arrow-p object)
-	   (string= (first-name object) +fountain-type-name+)
-	   (string= (first-name object) +potion-file-record-sep+))
+	   (fountain-p object)
+	   (potion-p   object))
    (format nil (_ "~@[, ~a strength~]")  (description-for-humans (interaction-get-strength object)))
    (format nil (_ "~@[, ~a stamina~]")   (description-for-humans (interaction-get-stamina object)))
    (format nil (_ "~@[, ~a dexterity~]") (description-for-humans (interaction-get-dexterity object)))

@@ -2358,6 +2358,7 @@
    :+effect-when-used+
    :+effect-when-worn+
    :+effect-when-consumed+
+   :+effect-until-picked+
    :+can-talk+
    :+can-ask-for-help+
    :+can-be-opened+
@@ -2372,6 +2373,7 @@
    :+can-be-poisoned+
    :+can-be-drunk+
    :+can-be-eaten+
+   :+can-be-picked+
    :+can-be-weared-arm+
    :+can-be-weared-head+
    :+can-be-weared-neck+
@@ -2414,6 +2416,8 @@
    :+spell-chance+
    :+attack-spell-chance+
    :+healing-effects+
+   :+target-self+
+   :+target-other+
    :+heal-damage-points+
    :+heal-poison+
    :+heal-berserk+

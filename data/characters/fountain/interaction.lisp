@@ -1,4 +1,6 @@
 (define-interaction
+    can-be-drunk                   true
+    can-be-picked                  false
     decay                          generate
     effects
     (define-effects

@@ -30,10 +30,10 @@
 (define-constant +decay-weapon-mean+     #(30.0 28.0 26.0 24.0 12.0 10.0 9.0 8.0 4.0 0.0)
   :test #'equalp)
 
-(define-constant +modifier-weapon-sigma+ #(1.0 2.0 3.0 4.0 5.0 6.0 6.5 7 7.5 8)
+(define-constant +weapon-modifier-sigma+ #(1.0 2.0 3.0 4.0 5.0 6.0 6.5 7 7.5 8)
   :test #'equalp)
 
-(define-constant +modifier-weapon-mean+  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
+(define-constant +weapon-modifier-mean+  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
   :test #'equalp)
 
 (define-constant +duration-healing-fx-sigma+  #(1.0 2.0 3.0 4.0 5.0 6.0 6.5 7 7.5 8)
@@ -92,6 +92,8 @@
 
 (define-constant +mace-or-stuff-chance+                  3          :test #'=)
 
+(define-constant +weapon-healing-target-self-chance+     3          :test #'=)
+
 (defun weapon-decay-params (weapon-level)
   (values (elt +decay-weapon-sigma+ weapon-level)
 	  (elt +decay-weapon-mean+  weapon-level)))
@@ -116,8 +118,8 @@
 	  (elt +weapon-level-mean+  map-level)))
 
 (defun weapon-modifier-params (weapon-level)
-  (values (elt +modifier-weapon-sigma+ weapon-level)
-	  (elt +modifier-weapon-mean+  weapon-level)))
+  (values (elt +weapon-modifier-sigma+ weapon-level)
+	  (elt +weapon-modifier-mean+  weapon-level)))
 
 (defun calculate-weapon-modifier (weapon-level)
   (multiple-value-bind (sigma mean)
@@ -229,6 +231,11 @@
       (healing-fx-params-chance (1- weapon-level))
     (max +minimum-chance-healing-fx+ (dabs (gaussian-probability sigma mean)))))
 
+(defun weapon-healing-target ()
+  (if (= (lcg-next-upto +weapon-healing-target-self-chance+) 0)
+      +target-other+
+      +target-self+))
+
 (defun weapon-set-healing-effect (effect-path weapon-level interaction)
   (let ((effect-object (make-instance 'healing-effect-parameters
 				      :trigger  +effect-when-worn+
@@ -236,7 +243,8 @@
 				       ;; weapons,  they   will  broke
 				       ;; anyway.
 				      :duration  :unlimited
-				      :chance (calculate-healing-fx-params-chance weapon-level))))
+				      :chance (calculate-healing-fx-params-chance weapon-level)
+				      :target (weapon-healing-target))))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun weapon-set-poison-effect (effect-path weapon-level interaction)
