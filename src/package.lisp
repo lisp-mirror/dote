@@ -77,6 +77,7 @@
    :+names-resource+
    :+weapons-names-resource+
    :+shields-names-resource+
+   :+armors-names-resource+
    :+avatar-portrait-resource+
    :+maps-resource+
    :+shaders-resource+

@@ -171,6 +171,7 @@
 	     (healing-effect-no  (number-of-healing-effects weapon-level effects-no)))
 	(cond
 	  ((plist-path-value template (list +can-cut+))
+	   (n-setf-path-value char-template (list +description+) +sword-type-name+)
 	   (generate-weapon-common template char-template weapon-level weapon-decay
 			           effects-no healing-effect-no)
 	   (setf template (remove-generate-symbols template))
@@ -180,23 +181,30 @@
 			           effects-no healing-effect-no)
 	   (setf template (remove-generate-symbols template))
 	   (if (= (lcg-next-upto (truncate (+ +mace-or-staff-chance+ (* 0.3 weapon-level)))) 0)
-	       (fill-staff-plists char-template template weapon-level)
-	       (fill-mace-plists char-template template weapon-level)))
-	  ((plist-path-value template (list +can-pierce+))
+	       (progn
+		 (n-setf-path-value char-template (list +description+) +staff-type-name+)
+		 (fill-staff-plists char-template template weapon-level))
+	       (progn
+		 (n-setf-path-value char-template (list +description+) +mace-or-staff-chance+)
+		 (fill-mace-plists char-template template weapon-level))))
+	  ((plist-path-value template (list +mounted-on-pole+))
+	   (n-setf-path-value char-template (list +description+) +spear-type-name+)
 	   (generate-weapon-common template char-template weapon-level weapon-decay
 			           effects-no healing-effect-no)
 	   (setf template (remove-generate-symbols template))
 	   (fill-spear-plists char-template template weapon-level))
   	  ((plist-path-value template (list +can-launch-bolt+))
+	   (n-setf-path-value char-template (list +description+) +crossbow-type-name+)
 	   (generate-weapon-common template char-template weapon-level weapon-decay
 			           effects-no healing-effect-no)
 	   (setf template (remove-generate-symbols template))
 	   (fill-crossbow-plists char-template template weapon-level))
 	  ((plist-path-value template (list +can-launch-arrow+))
+	   (n-setf-path-value char-template (list +description+) +bow-type-name+)
 	   (generate-weapon-common template char-template weapon-level weapon-decay
 			           effects-no healing-effect-no)
 	   (setf template (remove-generate-symbols template))
-	   (fill-crossbow-plists char-template template weapon-level))
+	   (fill-bow-plists char-template template weapon-level))
 	  (t
 	   (error (_ "Unknown weapon type"))))
 	(let ((weapon-character (params->character char-template)))

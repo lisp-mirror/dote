@@ -21,10 +21,10 @@
     can-be-held-in-hand true
     can-cut             false
     can-smash           false
-    can-pierce          true
+    can-pierce          false
     can-launch-bolt     false
     can-launch-arrow    false
-    mounted-on-pole     false
+    mounted-on-pole     true
     decay               generate
     effects
     (define-effects

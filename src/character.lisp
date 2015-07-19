@@ -103,6 +103,11 @@
     :initarg :last-name
     :accessor last-name
     :type string)
+   (description
+    :initform ""
+    :initarg :description
+    :accessor description
+    :type string)
    (portrait
     :initform nil
     :initarg :portrait
@@ -267,7 +272,8 @@
 (defmethod print-object ((object player-character) stream)
   (print-unreadable-object (object stream :type t :identity t)
     (format stream
-	    "name ~a ~a~%strength: ~a ~%stamina: ~a ~%dexterity: ~a ~%agility: ~a ~%smartness: ~a ~%empaty: ~a ~%weight: ~a ~%damage-points: ~a ~%movement-points: ~a ~%magic-points: ~a ~%dodge-chance: ~a ~%melee-attack-chance: ~a ~%range-attack-chance: ~a ~%melee-attack-damage: ~a ~%range-attack-damage: ~a ~%edge-weapons-chance-bonus: ~a ~%edge-weapons-damage-bonus: ~a ~%impact-weapons-chance-bonus: ~a ~%impact-weapons-damage-bonus: ~a ~%pole-weapons-chance-bonus: ~a ~%pole-weapons-damage-bonus: ~a ~%unlock-chance: ~a ~%deactivate-trap-chance: ~a ~%reply-attack-chance: ~a ~%ambush-attack-chance: ~a ~%spell-chance: ~a ~%attack-spell-chance: ~a ~%status: ~a  ~%race: ~a ~%level: ~a ~%exp-points: ~a~%interaction ~a"
+	    "description ~a name ~a ~a~%strength: ~a ~%stamina: ~a ~%dexterity: ~a ~%agility: ~a ~%smartness: ~a ~%empaty: ~a ~%weight: ~a ~%damage-points: ~a ~%movement-points: ~a ~%magic-points: ~a ~%dodge-chance: ~a ~%melee-attack-chance: ~a ~%range-attack-chance: ~a ~%melee-attack-damage: ~a ~%range-attack-damage: ~a ~%edge-weapons-chance-bonus: ~a ~%edge-weapons-damage-bonus: ~a ~%impact-weapons-chance-bonus: ~a ~%impact-weapons-damage-bonus: ~a ~%pole-weapons-chance-bonus: ~a ~%pole-weapons-damage-bonus: ~a ~%unlock-chance: ~a ~%deactivate-trap-chance: ~a ~%reply-attack-chance: ~a ~%ambush-attack-chance: ~a ~%spell-chance: ~a ~%attack-spell-chance: ~a ~%status: ~a  ~%race: ~a ~%level: ~a ~%exp-points: ~a~%interaction ~a"
+	    (description                 object)
 	    (first-name                  object)
 	    (last-name                   object)
 	    (strength                    object)
@@ -306,6 +312,7 @@
 (defmethod marshal:class-persistant-slots ((object player-character))
   (append  '(first-name
 	     last-name
+	     description
 	     portrait
 	     strength
 	     stamina
@@ -760,6 +767,7 @@
 (gen-trivial-plist-gets t
 			(lambda (l k) (cdr (assoc k l)))
 			fetch
+			+description+
 			+first-name+
 			+last-name+
 			+portrait+
@@ -802,7 +810,8 @@
 
 (defun params->character (params)
   (let ((results (make-instance
-		    'player-character
+		  'player-character
+		    :description                 (fetch-description                   params)
 		    :first-name                  (fetch-first-name                    params)
 		    :last-name                   (fetch-last-name                     params)
 		    :portrait                    (and (fetch-portrait params)

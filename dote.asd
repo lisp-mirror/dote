@@ -92,6 +92,7 @@
 	       (:file "random-key")
 	       (:file "random-container")
 	       (:file "random-shield")
+	       (:file "random-armor")
 	       (:file "entity")
 	       (:file "camera")
 	       (:file "mesh")

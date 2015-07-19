@@ -146,6 +146,7 @@
 	     (healing-effects-no    (number-of-healing-effects fountain-level 0))
 	     (fountain-decay-points (calculate-fountain-decay-points fountain-level))
 	     (healing-effects       (%get-healing-fx-shuffled template healing-effects-no)))
+	(n-setf-path-value char-template (list +description+) +fountain-type-name+)
 	(n-setf-path-value template
 			   (list +decay+)
 			   (calculate-fountain-decay fountain-level char-template
