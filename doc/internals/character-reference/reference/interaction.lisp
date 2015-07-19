@@ -1,9 +1,10 @@
 (define-interaction
     can-talk            true
     can-ask-for-help    "Help!"
-    can-be-opened       false  ; or string code, number [0.0-1.0]
+    can-be-opened       false  ; or string code
     can-open            "1234" ; or false
     can-attack          false
+    can-intercept-attacks false
     can-be-attacked     true
     can-be-destroyed    true
     can-be-burned       true
@@ -13,11 +14,14 @@
     can-be-poisoned     false
     can-be-drunk        false
     can-be-eaten        false
-    can-be-weared-arm   false
-    can-be-weared-head  false
-    can-be-weared-neck  false
-    can-be-weared-feet  false
-    can-be-picked       false
+    can-be-worn-arm   false
+    can-be-worn-head  false
+    can-be-worn-neck  false
+    can-be-worn-feet    false
+    can-be-worn-body    false
+    can-be-worn-hand    false
+    can-be-held-in-hand false
+    can-be-picked        false
     can-cut             true
     can-smash           false
     can-pierce          false
@@ -34,7 +38,7 @@
       stamina                      (define-effect
 				       (modifier 2 duration unlimited trigger when-consumed))
       dexterity                     (define-effect
-					(modifier -4 duration until-worn trigger when-worn))
+					(modifier -4 duration until-worn trigger until-held))
       agility                       (define-effect
 					(modifier -4 duration unlimited trigger when-used))
       smartness                    none

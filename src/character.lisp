@@ -603,10 +603,10 @@
 				   +can-be-drunk+
 				   +can-be-eaten+
 				   +can-be-picked+
-				   +can-be-weared-arm+
-				   +can-be-weared-head+
-				   +can-be-weared-neck+
-				   +can-be-weared-feet+
+				   +can-be-worn-arm+
+				   +can-be-worn-head+
+				   +can-be-worn-neck+
+				   +can-be-worn-feet+
 				   +can-cut+
 				   +can-smash+
 				   +can-pierce+
@@ -643,10 +643,10 @@
       (lookup-basic-interaction object +can-pierce+)))
 
 (gen-interaction-predicate (con-be-worn)
-  (or (lookup-basic-interaction object +can-be-weared-feet+)
-      (lookup-basic-interaction object +can-be-weared-arm+)
-      (lookup-basic-interaction object +can-be-weared-neck+)
-      (lookup-basic-interaction object +can-be-weared-head+)))
+  (or (lookup-basic-interaction object +can-be-worn-feet+)
+      (lookup-basic-interaction object +can-be-worn-arm+)
+      (lookup-basic-interaction object +can-be-worn-neck+)
+      (lookup-basic-interaction object +can-be-worn-head+)))
 
 (defmethod object-keycode ((object player-character))
   (or (and (lookup-basic-interaction object +can-be-opened+)
@@ -977,10 +977,13 @@
 			  :can-be-poisoned
 			  :can-be-drunk
 			  :can-be-eaten
-			  :can-be-weared-arm
-			  :can-be-weared-head
-			  :can-be-weared-neck
-			  :can-be-weared-feet
+			  :can-be-worn-arm
+			  :can-be-worn-head
+			  :can-be-worn-neck
+			  :can-be-worn-feet
+			  :can-be-worn-body
+			  :can-be-worn-hand
+			  :can-be-held-in-hand
 			  :can-cut
 			  :can-smash
 			  :can-pierce
@@ -988,16 +991,20 @@
 			  :can-launch-arrow
 			  :mounted-on-pole)))
 
-(defparameter *relations* `((:path (:can-talk)
+(defparameter *relations* `((:path (:can-be-worn-hand)
+				   :conflicts  (:can-be-held-in-hand))
+			    (:path (:can-be-held-in-hand)
+				   :conflicts (list :can-be-worn-hand))
+			    (:path (:can-talk)
 				   :conflicts ,(append (list
 							:can-open
 							:can-be-opened
 							:can-be-drunk
 							:can-be-eaten
-							:can-be-weared-arm
-							:can-be-weared-head
-							:can-be-weared-neck
-							:can-be-weared-feet
+							:can-be-worn-arm
+							:can-be-worn-head
+							:can-be-worn-neck
+							:can-be-worn-feet
 							:can-cut
 							:can-smash
 							:can-pierce
@@ -1019,10 +1026,10 @@
 							:can-be-poisoned
 							:can-be-drunk
 							:can-be-eaten
-							:can-be-weared-arm
-							:can-be-weared-head
-							:can-be-weared-neck
-							:can-be-weared-feet
+							:can-be-worn-arm
+							:can-be-worn-head
+							:can-be-worn-neck
+							:can-be-worn-feet
 							:can-cut
 							:can-smash
 							:can-pierce
@@ -1044,10 +1051,10 @@
 							:can-be-poisoned
 							:can-be-drunk
 							:can-be-eaten
-							:can-be-weared-arm
-							:can-be-weared-head
-							:can-be-weared-neck
-							:can-be-weared-feet
+							:can-be-worn-arm
+							:can-be-worn-head
+							:can-be-worn-neck
+							:can-be-worn-feet
 							:can-cut
 							:can-smash
 							:can-pierce
@@ -1061,10 +1068,10 @@
 							:can-be-opened
 							:can-be-drunk
 							:can-be-eaten
-							:can-be-weared-arm
-							:can-be-weared-head
-							:can-be-weared-neck
-							:can-be-weared-feet
+							:can-be-worn-arm
+							:can-be-worn-head
+							:can-be-worn-neck
+							:can-be-worn-feet
 							:can-cut
 							:can-smash
 							:can-pierce
@@ -1078,10 +1085,10 @@
 							:can-be-opened
 							:can-be-drunk
 							:can-be-eaten
-							:can-be-weared-arm
-							:can-be-weared-head
-							:can-be-weared-neck
-							:can-be-weared-feet
+							:can-be-worn-arm
+							:can-be-worn-head
+							:can-be-worn-neck
+							:can-be-worn-feet
 							:can-cut
 							:can-smash
 							:can-pierce
@@ -1095,10 +1102,10 @@
 							:can-be-opened
 							:can-be-drunk
 							:can-be-eaten
-							:can-be-weared-arm
-							:can-be-weared-head
-							:can-be-weared-neck
-							:can-be-weared-feet
+							:can-be-worn-arm
+							:can-be-worn-head
+							:can-be-worn-neck
+							:can-be-worn-feet
 							:can-cut
 							:can-smash
 							:can-pierce
@@ -1112,10 +1119,10 @@
 							:can-be-opened
 							:can-be-drunk
 							:can-be-eaten
-							:can-be-weared-arm
-							:can-be-weared-head
-							:can-be-weared-neck
-							:can-be-weared-feet
+							:can-be-worn-arm
+							:can-be-worn-head
+							:can-be-worn-neck
+							:can-be-worn-feet
 							:can-cut
 							:can-smash
 							:can-pierce
@@ -1129,10 +1136,10 @@
 							:can-be-opened
 							:can-be-drunk
 							:can-be-eaten
-							:can-be-weared-arm
-							:can-be-weared-head
-							:can-be-weared-neck
-							:can-be-weared-feet
+							:can-be-worn-arm
+							:can-be-worn-head
+							:can-be-worn-neck
+							:can-be-worn-feet
 							:can-cut
 							:can-smash
 							:can-pierce
@@ -1146,10 +1153,10 @@
 							:can-be-opened
 							:can-be-drunk
 							:can-be-eaten
-							:can-be-weared-arm
-							:can-be-weared-head
-							:can-be-weared-neck
-							:can-be-weared-feet
+							:can-be-worn-arm
+							:can-be-worn-head
+							:can-be-worn-neck
+							:can-be-worn-feet
 							:can-cut
 							:can-smash
 							:can-pierce
@@ -1163,10 +1170,10 @@
 							:can-be-opened
 							:can-be-drunk
 							:can-be-eaten
-							:can-be-weared-arm
-							:can-be-weared-head
-							:can-be-weared-neck
-							:can-be-weared-feet
+							:can-be-worn-arm
+							:can-be-worn-head
+							:can-be-worn-neck
+							:can-be-worn-feet
 							:can-cut
 							:can-smash
 							:can-pierce
@@ -1180,10 +1187,10 @@
 							:can-be-opened
 							:can-be-drunk
 							:can-be-eaten
-							:can-be-weared-arm
-							:can-be-weared-head
-							:can-be-weared-neck
-							:can-be-weared-feet
+							:can-be-worn-arm
+							:can-be-worn-head
+							:can-be-worn-neck
+							:can-be-worn-feet
 							:can-cut
 							:can-smash
 							:can-pierce
@@ -1205,10 +1212,10 @@
 					       :can-poison
 					       :can-be-poisoned
 					       :can-be-eaten
-					       :can-be-weared-arm
-					       :can-be-weared-head
-					       :can-be-weared-neck
-					       :can-be-weared-feet
+					       :can-be-worn-arm
+					       :can-be-worn-head
+					       :can-be-worn-neck
+					       :can-be-worn-feet
 					       :can-cut
 					       :can-smash
 					       :can-pierce
@@ -1229,10 +1236,10 @@
 					       :can-poison
 					       :can-be-poisoned
 					       :can-be-drunk
-					       :can-be-weared-arm
-					       :can-be-weared-head
-					       :can-be-weared-neck
-					       :can-be-weared-feet
+					       :can-be-worn-arm
+					       :can-be-worn-head
+					       :can-be-worn-neck
+					       :can-be-worn-feet
 					       :can-cut
 					       :can-smash
 					       :can-pierce
@@ -1372,14 +1379,14 @@
 						   :can-be-poisoned
 						   :can-be-drunk
 						   :can-be-eaten))
-			    (:path     (:can-be-weared-arm)
-				       :conflicts ,(%trivial-conflict-list :can-be-weared-arm))
-			    (:path     (:can-be-weared-head)
-				       :conflicts ,(%trivial-conflict-list :can-be-weared-head))
-			    (:path     (:can-be-weared-neck)
-				       :conflicts ,(%trivial-conflict-list :can-be-weared-neck))
-			    (:path     (:can-be-weared-feet)
-				       :conflicts ,(%trivial-conflict-list :can-be-weared-feet))))
+			    (:path     (:can-be-worn-arm)
+				       :conflicts ,(%trivial-conflict-list :can-be-worn-arm))
+			    (:path     (:can-be-worn-head)
+				       :conflicts ,(%trivial-conflict-list :can-be-worn-head))
+			    (:path     (:can-be-worn-neck)
+				       :conflicts ,(%trivial-conflict-list :can-be-worn-neck))
+			    (:path     (:can-be-worn-feet)
+				       :conflicts ,(%trivial-conflict-list :can-be-worn-feet))))
 
 (defun listify (a)
   (if (listp a) a (list a)))
@@ -1391,6 +1398,9 @@
 
 (defun get-conflict-elements (item)
   (getf item :conflicts))
+
+(defun get-depend-elements (item)
+  (getf item :depends-on))
 
 (defun conflictp (interactions item)
   (let* ((potential-conflicts (get-conflict-elements item))
@@ -1405,10 +1415,26 @@
       (error (format nil "~a conflict with ~a" (getf item :path) conflict)))
     (and item-set-p conflict)))
 
+(defun depends-on-p (interactions item)
+  (let* ((potential-dependencies (get-depend-elements item))
+	 (item-set-p (recursive-assoc (listify (getf item :path))  interactions))
+	 (dependencies  (remove-if-null (mapcar #'(lambda (path)
+						    (misc:dbg "path ~a" path)
+						    (if (not (recursive-assoc (listify path)
+									      interactions))
+							path
+							nil))
+						potential-dependencies))))
+    (when (and (not item-set-p) dependencies)
+      (error (format nil "~a depend on ~a" (getf item :path) dependencies)))
+    (and item-set-p dependencies)))
+
 (defun validate-interaction-file (file)
   (with-interaction-parameters (params file)
-    (find-if #'(lambda (a) (not (null a)))
-	     (loop for i in *relations* collect (conflictp params i)))))
+    (values (find-if #'(lambda (a) (not (null a)))
+		     (loop for i in *relations* collect (conflictp params i)))
+	    (find-if #'(lambda (a) (not (null a)))
+		     (loop for i in *relations* collect (depends-on-p params i))))))
 
 (defun %get-effects-shuffled (l num)
   (subseq (shuffle l) 0
@@ -1427,3 +1453,17 @@
 (defun %get-magic-fx-shuffled (db num)
   (and (> num 0)
        (plist-path-value db (list +magic-effects+))))
+
+(defun remove-generate-symbols (db)
+  (if (null db)
+      nil
+      (append
+       (loop for i in db collect
+	    (cons (car i)
+		  (cond
+		    ((eq :generate (cdr i))
+		     nil)
+		    ((listp (cdr i))
+		     (remove-generate-symbols (cdr i)))
+		    (t
+		     (cdr i))))))))

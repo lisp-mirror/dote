@@ -76,6 +76,7 @@
    :+trees-resource+
    :+names-resource+
    :+weapons-names-resource+
+   :+shields-names-resource+
    :+avatar-portrait-resource+
    :+maps-resource+
    :+shaders-resource+
@@ -2359,6 +2360,7 @@
    :+effect-when-worn+
    :+effect-when-consumed+
    :+effect-until-picked+
+   :+effect-until-held+
    :+can-talk+
    :+can-ask-for-help+
    :+can-be-opened+
@@ -2374,10 +2376,13 @@
    :+can-be-drunk+
    :+can-be-eaten+
    :+can-be-picked+
-   :+can-be-weared-arm+
-   :+can-be-weared-head+
-   :+can-be-weared-neck+
-   :+can-be-weared-feet+
+   :+can-be-worn-arm+
+   :+can-be-worn-head+
+   :+can-be-worn-neck+
+   :+can-be-worn-feet+
+   :+can-be-worn-body+
+   :+can-be-worn-hand+
+   :+can-be-held-in-hand+
    :+can-cut+
    :+can-smash+
    :+can-pierce+
@@ -2518,10 +2523,10 @@
    :can-be-heal-p
    :can-be-drunk-p
    :can-be-eaten-p
-   :can-be-weared-arm-p
-   :can-be-weared-head-p
-   :can-be-weared-neck-p
-   :can-be-weared-feet-p
+   :can-be-worn-arm-p
+   :can-be-worn-head-p
+   :can-be-worn-neck-p
+   :can-be-worn-feet-p
    :can-cut-p
    :can-smash-p
    :can-launch-bolt-p

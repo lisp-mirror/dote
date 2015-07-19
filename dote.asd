@@ -91,6 +91,7 @@
 	       (:file "random-fountain")
 	       (:file "random-key")
 	       (:file "random-container")
+	       (:file "random-shield")
 	       (:file "entity")
 	       (:file "camera")
 	       (:file "mesh")

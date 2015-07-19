@@ -1,6 +1,7 @@
 (define-interaction
     can-be-picked       true
     can-open            generate
+    can-be-held-in-hand true
     decay               none
     effects             (define-effects)
     healing-effects     (define-healing-effects

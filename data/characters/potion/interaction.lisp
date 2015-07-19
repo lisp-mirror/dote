@@ -1,6 +1,7 @@
 (define-interaction
     can-be-drunk                   true
     can-be-picked                  true
+    can-be-held-in-hand            false
     decay                  (define-decay (points 1 duration use message "Potion used"))
     effects
     (define-effects

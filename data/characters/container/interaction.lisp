@@ -14,10 +14,10 @@
     can-be-poisoned     none
     can-be-drunk        false
     can-be-eaten        none
-    can-be-weared-arm   none
-    can-be-weared-head  none
-    can-be-weared-neck  none
-    can-be-weared-feet  none
+    can-be-worn-arm     none
+    can-be-worn-head    none
+    can-be-worn-neck    none
+    can-be-worn-feet    none
     can-cut             none
     can-smash           none
     can-pierce          none

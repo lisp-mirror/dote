@@ -30,16 +30,6 @@
 
 (define-constant +maximum-chance-container-healing-effects+ 4.0        :test #'=)
 
-(define-constant +re-healing+                               "p-heal"   :test #'string=)
-
-(define-constant +berserk+                                  "berserk"  :test #'string=)
-
-(define-constant +faint+                                    "faint"    :test #'string=)
-
-(define-constant +terror+                                   "terror"   :test #'string=)
-
-(define-constant +poison+                                   "poison"   :test #'string=)
-
 (define-constant +container-level-sigma+    #(1 1.2 1.8 1.9 2.0 2.2 2.3 2.5 2.7 3.0)
   :test #'equalp)
 

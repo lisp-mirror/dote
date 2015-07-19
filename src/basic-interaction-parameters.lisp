@@ -8,6 +8,8 @@
 
 (define-constant +effect-when-worn+            :when-worn                   :test #'eq)
 
+(define-constant +effect-until-held+           :until-held                  :test #'eq)
+
 (define-constant +effect-until-picked+         :until-picked                :test #'eq)
 
 (define-constant +effect-when-consumed+        :when-consumed               :test #'eq)
@@ -48,13 +50,19 @@
 
 (define-constant +can-be-eaten+                :can-be-eaten                :test #'eq)
 
-(define-constant +can-be-weared-arm+           :can-be-weared-arm           :test #'eq)
+(define-constant +can-be-worn-arm+             :can-be-worn-arm             :test #'eq)
 
-(define-constant +can-be-weared-head+          :can-be-weared-head          :test #'eq)
+(define-constant +can-be-worn-head+            :can-be-worn-head            :test #'eq)
 
-(define-constant +can-be-weared-neck+          :can-be-weared-neck          :test #'eq)
+(define-constant +can-be-worn-neck+            :can-be-worn-neck            :test #'eq)
 
-(define-constant +can-be-weared-feet+          :can-be-weared-feet          :test #'eq)
+(define-constant +can-be-worn-feet+            :can-be-worn-feet            :test #'eq)
+
+(define-constant +can-be-worn-body+            :can-be-worn-body            :test #'eq)
+
+(define-constant +can-be-worn-hand+            :can-be-worn-hand            :test #'eq)
+
+(define-constant +can-be-held-in-hand+         :can-be-held-in-hand         :test #'eq)
 
 (define-constant +can-cut+                     :can-cut                     :test #'eq)
 
@@ -274,10 +282,12 @@
     (when (null duration)
       (warn (_ "Interation: No duration specified for effect, using :unlimited.")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
-				+effect-when-consumed+ +effect-until-picked+))
+				+effect-when-consumed+
+				+effect-until-picked+ +effect-until-held+))
       (error (format nil (_ "Invalid trigger ~a, expected ~a")
 		     trigger (list +effect-when-worn+ +effect-when-used+
-				   +effect-when-consumed+ +effect-until-picked+))))
+				   +effect-when-consumed+ +effect-until-picked+
+				   +effect-until-held+))))
     (make-instance 'effect-parameters
 		   :trigger  (or trigger  +effect-when-used+)
 		   :duration (or duration :unlimited)
@@ -356,10 +366,12 @@
     (when (null target)
       (warn (_ "Interation: No target specified for effect, using self.")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
-				+effect-when-consumed+ +effect-until-picked+))
+				+effect-when-consumed+ +effect-until-picked+
+				+effect-until-held+))
       (error (format nil (_ "Invalid trigger ~a, expected ~a")
 		     trigger (list +effect-when-worn+ +effect-when-used+
-				   +effect-when-consumed+ +effect-until-picked+))))
+				   +effect-when-consumed+ +effect-until-picked+
+				   +effect-until-held+))))
     (make-instance 'healing-effect-parameters
 		   :trigger  (or trigger  +effect-when-used+)
 		   :duration (or duration 1000000)
@@ -441,15 +453,17 @@
     (when (null chance)
       (warn (_ "Interation: No chance specified for healing effect, using 0")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
-				+effect-when-consumed+ +effect-until-picked+))
+				+effect-when-consumed+ +effect-until-picked+
+				+effect-until-held+))
       (error (format nil (_ "Invalid trigger ~a, expected ~a")
 		     trigger (list +effect-when-worn+ +effect-when-used+
-				   +effect-when-consumed+ +effect-until-picked+))))
+				   +effect-when-consumed+ +effect-until-picked+
+				   +effect-until-held+))))
     (when (not (numberp points))
       (error (format nil (_ "Invalid points ~a, expected a number") points)))
     (make-instance 'poison-effect-parameters
 		   :points-per-turn  points
-		   :trigger (or trigger  +effect-when-used+)
+		   :trigger (or trigger +effect-when-used+)
 		   :chance  (or chance 0.0))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -503,11 +517,9 @@
       (warn (_ "Interation: No target specified for effect, using self.")))
     (when (not (numberp points))
       (error (format nil (_ "Invalid points ~a, expected a number") points)))
-    (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
-				+effect-when-consumed+ +effect-until-picked+))
+    (when (not (valid-keyword-p trigger +effect-when-used+ +effect-when-consumed+))
       (error (format nil (_ "Invalid trigger ~a, expected ~a")
-		     trigger (list +effect-when-worn+ +effect-when-used+
-				   +effect-when-consumed+ +effect-until-picked+))))
+		     trigger (list +effect-when-used+ +effect-when-consumed+))))
     (make-instance 'heal-damage-points-effect-parameters
 		   :points-per-turn  points
 		   :trigger  (or trigger +effect-when-used+)
@@ -523,10 +535,12 @@
     (when (null spell-id)
       (warn (_ "Interation: No spell for magic effect, using \":heal-1.\"")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
-				+effect-when-consumed+ +effect-until-picked+))
+				+effect-when-consumed+ +effect-until-picked+
+				+effect-until-held+))
       (error (format nil (_ "Invalid trigger ~a, expected ~a")
 		     trigger (list +effect-when-worn+ +effect-when-used+
-				   +effect-when-consumed+ +effect-until-picked+))))
+				   +effect-when-consumed+ +effect-until-picked+
+				   +effect-until-held+))))
     (make-instance 'magic-effect-parameters
 		   :trigger  (or trigger  +effect-when-used+)
 		   :spell-id  (or spell-id :heal-1))))

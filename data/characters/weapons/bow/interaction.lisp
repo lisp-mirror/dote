@@ -1,27 +1,28 @@
 (define-interaction
     can-be-picked       true
-    can-talk            none
-    can-ask-for-help    none
-    can-be-opened       none
-    can-open            none
-    can-attack          none
-    can-be-attacked     none
-    can-be-destroyed    none
-    can-be-burned       none
-    can-heal            none
-    can-be-heal         none
-    can-poison          none
-    can-be-poisoned     none
-    can-be-drunk        none
-    can-be-eaten        none
-    can-be-weared-arm   none
-    can-be-weared-head  none
-    can-be-weared-neck  none
-    can-be-weared-feet  none
-    can-cut             none
-    can-smash           none
-    can-pierce          none
-    can-launch-bolt     none
+    can-talk            false
+    can-ask-for-help    false
+    can-be-opened       false
+    can-open            false
+    can-attack          false
+    can-be-attacked     false
+    can-be-destroyed    false
+    can-be-burned       false
+    can-heal            false
+    can-be-heal         false
+    can-poison          false
+    can-be-poisoned     false
+    can-be-drunk        false
+    can-be-eaten        false
+    can-be-worn-arm     false
+    can-be-worn-head    false
+    can-be-worn-neck    false
+    can-be-worn-feet    false
+    can-be-held-in-hand true
+    can-cut             false
+    can-smash           false
+    can-pierce          false
+    can-launch-bolt     false
     can-launch-arrow    true
     mounted-on-pole     none
     decay               generate

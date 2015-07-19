@@ -90,7 +90,7 @@
 
 (define-constant +crossbow-type-name+                    "crossbow" :test #'string=)
 
-(define-constant +mace-or-stuff-chance+                  3          :test #'=)
+(define-constant +mace-or-staff-chance+                  3          :test #'=)
 
 (define-constant +weapon-healing-target-self-chance+     3          :test #'=)
 
@@ -179,7 +179,7 @@
 	   (generate-weapon-common template char-template weapon-level weapon-decay
 			           effects-no healing-effect-no)
 	   (setf template (remove-generate-symbols template))
-	   (if (= (lcg-next-upto (truncate (+ +mace-or-stuff-chance+ (* 0.3 weapon-level)))) 0)
+	   (if (= (lcg-next-upto (truncate (+ +mace-or-staff-chance+ (* 0.3 weapon-level)))) 0)
 	       (fill-staff-plists char-template template weapon-level)
 	       (fill-mace-plists char-template template weapon-level)))
 	  ((plist-path-value template (list +can-pierce+))
@@ -206,7 +206,7 @@
 (defun weapon-set-effect (effect-path weapon-level interaction)
   (let ((effect-object (make-instance 'effect-parameters
 				      :modifier (calculate-weapon-modifier weapon-level)
-				      :trigger  +effect-when-worn+
+				      :trigger  +effect-until-held+
 				       ;; effect lasting forever  for
 				       ;; weapons,  they   will  broke
 				       ;; anyway.
@@ -238,7 +238,7 @@
 
 (defun weapon-set-healing-effect (effect-path weapon-level interaction)
   (let ((effect-object (make-instance 'healing-effect-parameters
-				      :trigger  +effect-when-worn+
+				      :trigger  +effect-until-held+
 				       ;; effect lasting forever  for
 				       ;; weapons,  they   will  broke
 				       ;; anyway.
@@ -269,7 +269,7 @@
 	 (spell-id    (random-spell-by-level spell-level))
 	 (effect-object (make-instance 'magic-effect-parameters
 				       :spell-id spell-id
-				       :trigger  :use)))
+				       :trigger  +effect-until-held+)))
     (n-setf-path-value interaction (list +magic-effects+) effect-object)))
 
 (defun sum-effects-mod (interactions path)
@@ -342,20 +342,6 @@
 	      (and (> weapon-level 5)
 		   (< sum-effects -10)))
       (weapon-set-magic-effect weapon-level interaction))))
-
-(defun remove-generate-symbols (db)
-  (if (null db)
-      nil
-      (append
-       (loop for i in db collect
-	    (cons (car i)
-		  (cond
-		    ((eq :generate (cdr i))
-		     nil)
-		    ((listp (cdr i))
-		     (remove-generate-symbols (cdr i)))
-		    (t
-		     (cdr i))))))))
 
 (defun weapon-filename-effects-string (interaction)
   (cond
