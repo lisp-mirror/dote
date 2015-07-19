@@ -93,6 +93,7 @@
 	       (:file "random-container")
 	       (:file "random-shield")
 	       (:file "random-armor")
+	       (:file "random-shoes")
 	       (:file "entity")
 	       (:file "camera")
 	       (:file "mesh")

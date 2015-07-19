@@ -292,7 +292,7 @@
 	  +armor-file-record-sep+
 	  (format nil "~2,'0d" armor-level)))
 
-(defun build-file-names-db (armor-name-type armor-level)
+(defun armor-build-file-names-db (armor-name-type armor-level)
   (strcat armor-name-type
 	  +armor-file-record-sep+
 	  (format nil "~2,'0d" armor-level)
@@ -300,7 +300,7 @@
 
 (defun armor-fill-character-plist (character interaction armor-level)
   (let* ((regex          (regexp-file-portrait interaction +armor-type-name+ armor-level))
-	 (names-filename (build-file-names-db +armor-type-name+ armor-level))
+	 (names-filename (armor-build-file-names-db +armor-type-name+ armor-level))
 	 (portrait-file  (random-elt (remove-if #'(lambda (a) (not (cl-ppcre:scan regex a)))
 						(res:get-resource-files
 						 +default-gui-inventory-items+)

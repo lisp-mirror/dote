@@ -34,6 +34,8 @@
 
 (define-constant +can-be-attacked+             :can-be-attacked             :test #'eq)
 
+(define-constant +can-intercept-attacks+       :can-be-attacked             :test #'eq)
+
 (define-constant +can-be-destroyed+            :can-be-destroyed            :test #'eq)
 
 (define-constant +can-be-burned+               :can-be-burned               :test #'eq)

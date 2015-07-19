@@ -385,7 +385,7 @@
 	  +weapon-file-record-sep+
 	  (format nil "~2,'0d" weapon-level)))
 
-(defun build-file-names-db (weapon-name-type weapon-level)
+(defun weapon-build-file-names-db (weapon-name-type weapon-level)
   (strcat weapon-name-type
 	  +weapon-file-record-sep+
 	  (format nil "~2,'0d" weapon-level)
@@ -393,7 +393,7 @@
 
 (defun fill-character-plist (weapon-name-type character interaction weapon-level)
   (let* ((regex          (regexp-file-portrait interaction weapon-name-type weapon-level))
-	 (names-filename (build-file-names-db weapon-name-type weapon-level))
+	 (names-filename (weapon-build-file-names-db weapon-name-type weapon-level))
 	 (portrait-file  (random-elt (remove-if #'(lambda (a) (not (cl-ppcre:scan regex a)))
 						(res:get-resource-files
 						 +default-gui-inventory-items+)

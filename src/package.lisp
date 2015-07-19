@@ -2368,6 +2368,7 @@
    :+can-open+
    :+can-attack+
    :+can-be-attacked+
+   :+can-intercept-attacks+
    :+can-be-destroyed+
    :+can-be-burned+
    :+can-heal+

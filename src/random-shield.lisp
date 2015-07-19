@@ -292,7 +292,7 @@
 	  +shield-file-record-sep+
 	  (format nil "~2,'0d" shield-level)))
 
-(defun build-file-names-db (shield-name-type shield-level)
+(defun shield-build-file-names-db (shield-name-type shield-level)
   (strcat shield-name-type
 	  +shield-file-record-sep+
 	  (format nil "~2,'0d" shield-level)
@@ -300,7 +300,7 @@
 
 (defun shield-fill-character-plist (character interaction shield-level)
   (let* ((regex          (regexp-file-portrait interaction +shield-type-name+ shield-level))
-	 (names-filename (build-file-names-db +shield-type-name+ shield-level))
+	 (names-filename (shield-build-file-names-db +shield-type-name+ shield-level))
 	 (portrait-file  (random-elt (remove-if #'(lambda (a) (not (cl-ppcre:scan regex a)))
 						(res:get-resource-files
 						 +default-gui-inventory-items+)

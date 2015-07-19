@@ -1,29 +1,29 @@
 (define-interaction
     can-be-picked       false
-    can-talk            none
-    can-ask-for-help    none
+    can-talk            false
+    can-ask-for-help    false
     can-be-opened       generate
-    can-open            none
-    can-attack          none
+    can-open            false
+    can-attack          false
     can-be-attacked     true
     can-be-destroyed    true
     can-be-burned       true
-    can-heal            none
-    can-be-heal         none
-    can-poison          none
-    can-be-poisoned     none
+    can-heal            false
+    can-be-heal         false
+    can-poison          false
+    can-be-poisoned     false
     can-be-drunk        false
-    can-be-eaten        none
-    can-be-worn-arm     none
-    can-be-worn-head    none
-    can-be-worn-neck    none
-    can-be-worn-feet    none
-    can-cut             none
-    can-smash           none
-    can-pierce          none
-    can-launch-bolt     none
-    can-launch-arrow    none
-    mounted-on-pole     none
+    can-be-eaten        false
+    can-be-worn-arm     false
+    can-be-worn-head    false
+    can-be-worn-neck    false
+    can-be-worn-feet    false
+    can-cut             false
+    can-smash           false
+    can-pierce          false
+    can-launch-bolt     false
+    can-launch-arrow    false
+    mounted-on-pole     false
     decay               none
     effects             (define-effects)
     healing-effects     (define-healing-effects

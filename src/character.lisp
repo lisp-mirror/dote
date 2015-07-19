@@ -649,11 +649,34 @@
       (lookup-basic-interaction object +can-smash+)
       (lookup-basic-interaction object +can-pierce+)))
 
+(gen-interaction-predicate (armor)
+  (and (lookup-basic-interaction object +can-intercept-attacks+)
+       (lookup-basic-interaction object +can-be-worn-body+)
+       (not (lookup-basic-interaction object +can-be-held-in-hand+))))
+
+(gen-interaction-predicate (container)
+  (and (not (lookup-basic-interaction object +can-be-picked+))
+       (lookup-basic-interaction object +can-be-opened+)))
+
+(gen-interaction-predicate (key)
+  (and (lookup-basic-interaction object +can-be-picked+)
+       (lookup-basic-interaction object +can-open+)))
+
+(gen-interaction-predicate (shield)
+  (and (lookup-basic-interaction object +can-intercept-attacks+)
+       (not (lookup-basic-interaction object +can-be-worn-body+))
+       (lookup-basic-interaction object +can-be-held-in-hand+)))
+
+(gen-interaction-predicate (shoes)
+  (lookup-basic-interaction object +can-be-worn-feet+))
+
 (gen-interaction-predicate (con-be-worn)
   (or (lookup-basic-interaction object +can-be-worn-feet+)
       (lookup-basic-interaction object +can-be-worn-arm+)
       (lookup-basic-interaction object +can-be-worn-neck+)
-      (lookup-basic-interaction object +can-be-worn-head+)))
+      (lookup-basic-interaction object +can-be-worn-head+)
+      (lookup-basic-interaction object +can-be-worn-body+)
+      (lookup-basic-interaction object +can-be-worn-hand+)))
 
 (defmethod object-keycode ((object player-character))
   (or (and (lookup-basic-interaction object +can-be-opened+)
