@@ -549,9 +549,6 @@
 
 (defparameter *interaction-parameters* nil)
 
-(defmacro define-character (&rest params)
-  `(setf *interaction-parameters* (list ,@params)))
-
 (defmacro define-interaction (&rest parameters)
   (let ((params (misc:build-plist parameters)))
     `(setf *interaction-parameters*

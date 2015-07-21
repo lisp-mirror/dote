@@ -2457,6 +2457,8 @@
    :define-healing-effect
    :define-magic-effect
    :define-poison-effect
+   :define-character
+   :define-interaction
    :with-interaction-parameters))
 
 (defpackage :player-character
@@ -2475,6 +2477,41 @@
   (:export
    :+unknown-ability-bonus+
    :+starting-exp-points+
+   :+first-name+
+   :+last-name+
+   :+description+
+   :+portrait+
+   :+strength+
+   :+stamina+
+   :+dexterity+
+   :+agility+
+   :+smartness+
+   :+empaty+
+   :+weight+
+   :+damage-points+
+   :+movement-points+
+   :+magic-points+
+   :+dodge-chance+
+   :+melee-attack-chance+
+   :+range-attack-chance+
+   :+melee-attack-damage+
+   :+range-attack-damage+
+   :+edge-weapons-chance-bonus+
+   :+edge-weapons-damage-bonus+
+   :+impact-weapons-chance-bonus+
+   :+impact-weapons-damage-bonus+
+   :+pole-weapons-chance-bonus+
+   :+pole-weapons-damage-bonus+
+   :+unlock-chance+
+   :+deactivate-trap-chance+
+   :+reply-attack-chance+
+   :+ambush-attack-chance+
+   :+spell-chance+
+   :+attack-spell-chance+
+   :+status+
+   :+race+
+   :+level+
+   :+exp-points+
    :player-character
    :portrait
    :first-name
@@ -2510,6 +2547,7 @@
    :race
    :level
    :exp-points
+   :basic-interaction-params
    :make-warrior
    :make-wizard
    :make-healer
@@ -2577,7 +2615,152 @@
    :interaction-get-immune-berserk
    :interaction-get-immune-faint
    :interaction-get-immune-terror
-   :interaction-get-magic-effect))
+   :interaction-get-magic-effect
+   :validate-interaction-file
+   :%get-effects-shuffled
+   :%get-normal-fx-shuffled
+   :%get-healing-fx-shuffled
+   :%get-magic-fx-shuffled
+   :remove-generate-symbols
+   :with-character-parameters
+   :sum-effects-mod
+   :params->character))
+
+(defpackage :random-armor
+  (:use :cl
+	:alexandria
+	:constants
+	:config
+	:num-utils
+	:misc-utils
+	:text-utils
+	:mtree-utils
+	:interfaces
+	:identificable
+	:basic-interaction-parameters
+	:player-character)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :generate-armor))
+
+(defpackage :random-key
+  (:use :cl
+	:alexandria
+	:constants
+	:config
+	:num-utils
+	:misc-utils
+	:text-utils
+	:mtree-utils
+	:interfaces
+	:identificable
+	:basic-interaction-parameters
+	:player-character)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :generate-key))
+
+(defpackage :random-container
+  (:use :cl
+	:alexandria
+	:constants
+	:config
+	:num-utils
+	:misc-utils
+	:text-utils
+	:mtree-utils
+	:interfaces
+	:identificable
+	:basic-interaction-parameters
+	:player-character)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :generate-container))
+
+(defpackage :random-potion
+  (:use :cl
+	:alexandria
+	:constants
+	:config
+	:num-utils
+	:misc-utils
+	:text-utils
+	:mtree-utils
+	:interfaces
+	:identificable
+	:basic-interaction-parameters
+	:player-character)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :generate-potion))
+
+(defpackage :random-shield
+  (:use :cl
+	:alexandria
+	:constants
+	:config
+	:num-utils
+	:misc-utils
+	:text-utils
+	:mtree-utils
+	:interfaces
+	:identificable
+	:basic-interaction-parameters
+	:player-character)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :generate-shield))
+
+(defpackage :random-shoes
+  (:use :cl
+	:alexandria
+	:constants
+	:config
+	:num-utils
+	:misc-utils
+	:text-utils
+	:mtree-utils
+	:interfaces
+	:identificable
+	:basic-interaction-parameters
+	:player-character)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :generate-shoes))
+
+(defpackage :random-weapon
+  (:use :cl
+	:alexandria
+	:constants
+	:config
+	:num-utils
+	:misc-utils
+	:text-utils
+	:mtree-utils
+	:interfaces
+	:identificable
+	:basic-interaction-parameters
+	:player-character)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :generate-weapon))
+
+(defpackage :random-fountain
+  (:use :cl
+	:alexandria
+	:constants
+	:config
+	:num-utils
+	:misc-utils
+	:text-utils
+	:mtree-utils
+	:interfaces
+	:identificable
+	:basic-interaction-parameters
+	:player-character)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :generate-fountain))
 
 (defpackage :main-window
   (:use :cl

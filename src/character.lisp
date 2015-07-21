@@ -1499,3 +1499,8 @@
 		     (remove-generate-symbols (cdr i)))
 		    (t
 		     (cdr i))))))))
+
+(defun sum-effects-mod (interactions path)
+  (reduce #'+ (mapcar #'(lambda (a) (if (typep (cdr a) 'effect-parameters) (modifier (cdr a)) 0.0))
+		      (plist-path-value interactions path))
+	  :initial-value 0.0))

@@ -14,32 +14,34 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(in-package :player-character)
+(in-package :random-container)
 
-(define-constant +container-file-record-sep+               "-"         :test #'string=)
+(define-constant +file-record-sep+               "-"         :test #'string=)
 
-(define-constant +container-type-name+                     "container" :test #'string=)
+(define-constant +type-name+                     "container" :test #'string=)
 
-(define-constant +minimum-container-level+                  1          :test #'=)
+(define-constant +minimum-level+                  1          :test #'=)
 
-(define-constant +maximum-container-level+                  10         :test #'=)
+(define-constant +maximum-level+                  10         :test #'=)
 
-(define-constant +minimum-container-modifier+               1.0        :test #'=)
+(define-constant +minimum-modifier+               1.0        :test #'=)
 
-(define-constant +minimum-chance-container-healing-effects+ 2.0        :test #'=)
+(define-constant +minimum-num-healing-effects+ 2.0        :test #'=)
 
-(define-constant +maximum-chance-container-healing-effects+ 4.0        :test #'=)
+(define-constant +maximum-num-healing-effects+ 4.0        :test #'=)
 
-(define-constant +container-level-sigma+    #(1 1.2 1.8 1.9 2.0 2.2 2.3 2.5 2.7 3.0)
+(define-constant +minimum-chance-healing-fx+   0.05       :test #'=)
+
+(define-constant +level-sigma+    #(1 1.2 1.8 1.9 2.0 2.2 2.3 2.5 2.7 3.0)
   :test #'equalp)
 
-(define-constant +container-level-mean+     #(1.2 1.5 1.8 2.1 2.4 2.9 3.1 3.3 3.4 3.6)
+(define-constant +level-mean+     #(1.2 1.5 1.8 2.1 2.4 2.9 3.1 3.3 3.4 3.6)
   :test #'equalp)
 
-(define-constant +container-modifier-sigma+ #(1.0 2.0 3.0 4.0 5.0 6.0 6.5 7 7.5 8)
+(define-constant +modifier-sigma+ #(1.0 2.0 3.0 4.0 5.0 6.0 6.5 7 7.5 8)
   :test #'equalp)
 
-(define-constant +container-modifier-mean+  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
+(define-constant +modifier-mean+  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
   :test #'equalp)
 
 (define-constant +chance-healing-fx-sigma+  #(.08 .1 .12 .18 .22 .23 .24 .25 .26 .28)
@@ -52,61 +54,72 @@
 
 (define-constant +maximum-container-level+                 10          :test #'=)
 
-(defun container-level-params (map-level)
-  (values (elt +container-level-sigma+ map-level)
-	  (elt +container-level-mean+  map-level)))
+(defun level-params (map-level)
+  (values (elt +level-sigma+ map-level)
+	  (elt +level-mean+  map-level)))
 
-(defun container-modifier-params (container-level)
-  (values (elt +container-modifier-sigma+ container-level)
-	  (elt +container-modifier-mean+  container-level)))
+(defun modifier-params (container-level)
+  (values (elt +modifier-sigma+ container-level)
+	  (elt +modifier-mean+  container-level)))
 
-(defun container-locked-params (container-level)
-  (values (elt (reverse +container-level-sigma+) container-level)
-	  (elt (reverse +container-level-mean+)  container-level)))
+(defun locked-params (container-level)
+  (values (elt (reverse +level-sigma+) container-level)
+	  (elt (reverse +level-mean+)  container-level)))
 
-(defun calculate-container-locked-chance (container-level)
+(defun calculate-locked-chance (container-level)
   (multiple-value-bind (sigma mean)
-      (container-locked-params (1- container-level))
+      (locked-params (1- container-level))
     (round (max 2.0 (gaussian-probability sigma mean)))))
 
 (defun calculate-container-modifier (container-level)
   (multiple-value-bind (sigma mean)
-      (container-modifier-params (1- container-level))
+      (modifier-params (1- container-level))
     (abs (gaussian-probability sigma mean))))
 
 (defun calculate-container-level (map-level)
   (multiple-value-bind (sigma mean)
-      (container-level-params (1- map-level))
+      (level-params (1- map-level))
     (clamp (truncate (gaussian-probability sigma mean))
-	   +minimum-container-level+ +maximum-container-level+)))
+	   +minimum-level+ +maximum-level+)))
 
-(defun container-number-of-healing-effects (container-level)
+
+(defun healing-fx-params-chance (container-level)
+  (values (elt +chance-healing-fx-sigma+ container-level)
+	  (elt +chance-healing-fx-mean+  container-level)))
+
+(defun calculate-healing-fx-params-chance (container-level)
+  (multiple-value-bind (sigma mean)
+      (healing-fx-params-chance (1- container-level))
+    (max +minimum-chance-healing-fx+ (dabs (gaussian-probability sigma mean)))))
+
+(defun number-of-healing-effects (container-level number-of-normal-effects)
   (let ((max (round (- (num:dlerp (num:smoothstep-interpolate 0.0
-							   20.0
+							   10.0
 							   (d (1- container-level)))
-				  +minimum-chance-container-healing-effects+
-				  +maximum-chance-container-healing-effects+)
-		       1))))
+				  +minimum-num-healing-effects+
+				  +maximum-num-healing-effects+)
+		       number-of-normal-effects))))
     (if (<= max 0)
 	0
 	(lcg-next-upto (max 0.0 max)))))
 
-(defun container-set-healing-effect (effect-path container-level interaction)
+(defun set-healing-effect (effect-path container-level interaction)
   (let ((effect-object (make-instance 'healing-effect-parameters
 				      :trigger  +effect-when-used+
 				      :duration  (calculate-container-modifier container-level)
-				      :chance (calculate-healing-fx-params-chance container-level))))
+				      :chance (calculate-healing-fx-params-chance
+					       container-level))))
     (n-setf-path-value interaction effect-path effect-object)))
 
-(defun container-set-poison-effect (effect-path container-level interaction)
+(defun set-poison-effect (effect-path container-level interaction)
   (let ((effect-object (make-instance 'poison-effect-parameters
 				      :points-per-turn (calculate-container-modifier container-level))))
     (n-setf-path-value interaction effect-path effect-object)))
 
-(defun container-fill-character-plist (character)
+(defun fill-character-plist (character)
   (n-setf-path-value character (list +portrait+)  nil)
   (n-setf-path-value character (list +last-name+) "")
-  (n-setf-path-value character (list +first-name+) +container-type-name+))
+  (n-setf-path-value character (list +first-name+) +type-name+))
 
 (defun generate-keycode ()
   (subseq (shuffle "1234567890") 0 8))
@@ -126,15 +139,15 @@
 	     (cond
 	       ((eq i +heal-damage-points+) nil)
 	       ((eq i +cause-poison+)
-		(container-set-poison-effect (list +healing-effects+ i) container-level template))
+		(set-poison-effect (list +healing-effects+ i) container-level template))
 	       (t
-		(container-set-healing-effect (list +healing-effects+ i)
+		(set-healing-effect (list +healing-effects+ i)
 					      container-level template))))
 	(setf template (remove-generate-symbols template))
-	(container-fill-character-plist char-template)
-	(when (= (lcg-next-upto (calculate-container-locked-chance container-level)) 0)
+	(fill-character-plist char-template)
+	(when (= (lcg-next-upto (calculate-locked-chance container-level)) 0)
 	  (let ((keycode (generate-keycode)))
-	    (push (generate-key key-interaction-file key-character-file map-level keycode)
+	    (push (random-key:generate-key key-interaction-file key-character-file map-level keycode)
 		  keychain)
 	    (n-setf-path-value template (list +can-open+) keycode)))
 	(let ((container-character (params->character char-template)))
