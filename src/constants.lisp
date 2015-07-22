@@ -92,7 +92,9 @@
 
 (define-constant +shields-names-resource+   '("names" "shields")               :test #'equalp)
 
-(define-constant +armors-names-resource+   '("names" "armors")                :test #'equalp)
+(define-constant +armors-names-resource+    '("names" "armors")                :test #'equalp)
+
+(define-constant +elms-names-resource+      '("names" "elms")                  :test #'equalp)
 
 (define-constant +avatar-portrait-resource+ '("img" "avatar-portrait")         :test #'equalp)
 
