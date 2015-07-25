@@ -79,6 +79,7 @@
    :+shields-names-resource+
    :+armors-names-resource+
    :+elms-names-resource+
+   :+rings-names-resource+
    :+avatar-portrait-resource+
    :+maps-resource+
    :+shaders-resource+
@@ -2779,6 +2780,23 @@
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :generate-elm))
+
+(defpackage :random-ring
+  (:use :cl
+	:alexandria
+	:constants
+	:config
+	:num-utils
+	:misc-utils
+	:text-utils
+	:mtree-utils
+	:interfaces
+	:identificable
+	:basic-interaction-parameters
+	:player-character)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :generate-ring))
 
 (defpackage :main-window
   (:use :cl

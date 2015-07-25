@@ -43,7 +43,7 @@
 (define-constant +level-sigma+    #(1 1.2 1.8 1.9 2.0 2.2 2.3 2.5 2.7 3.0)
   :test #'equalp)
 
-(define-constant +level-mean+     #(1.2 1.5 1.8 2.1 2.4 2.9 3.1 3.3 3.4 3.6)
+(define-constant +level-mean+     #(1.2 1.5 1.8 2.1 2.4 2.9 3.1 3.8 4.8 6.0)
   :test #'equalp)
 
 (define-constant +modifier-sigma+ #(1.0 2.0 3.0 4.0 5.0 6.0 6.5 7 7.5 8)
@@ -103,7 +103,6 @@
   (multiple-value-bind (sigma mean)
       (healing-fx-params-chance (1- armor-level))
     (max +minimum-chance-healing-fx+ (dabs (gaussian-probability sigma mean)))))
-
 
 (defun set-healing-dmg-effect (path potion-level interaction)
   (let ((effect-object (make-instance 'heal-damage-points-effect-parameters

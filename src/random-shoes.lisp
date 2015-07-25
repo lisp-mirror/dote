@@ -21,7 +21,7 @@
 (define-constant +level-sigma+    #(1 1.2 1.8 1.9 2.0 2.2 2.3 2.5 2.7 3.0)
   :test #'equalp)
 
-(define-constant +level-mean+     #(1.2 1.5 1.8 2.1 2.4 2.9 3.1 3.3 3.4 3.6)
+(define-constant +level-mean+     #(1.2 1.5 1.8 2.1 2.4 2.9 3.1 3.8 4.8 6.0)
   :test #'equalp)
 
 (define-constant +decay-sigma+    #(56.0 48.0 40.0 36.0 36.0 24.0 22.0 20.0 30.0 35.0)
@@ -75,10 +75,11 @@
   (values (elt +modifier-sigma+ shoes-level)
 	  (elt +modifier-mean+  shoes-level)))
 
-(defun calculate-modifier (shoes-level)
+(defun calculate-modifier (weapon-level)
   (multiple-value-bind (sigma mean)
-      (modifier-params (1- shoes-level))
-    (gaussian-probability sigma mean)))
+      (modifier-params (1- weapon-level))
+    (d- (gaussian-probability sigma mean)
+	(gaussian-probability (d/ sigma 4.0) (- weapon-level)))))
 
 (defun calculate-level (map-level)
   (multiple-value-bind (sigma mean)

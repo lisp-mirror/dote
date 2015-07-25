@@ -21,7 +21,7 @@
 (define-constant +level-sigma+    #(1 1.2 1.8 1.9 2.0 2.2 2.3 2.5 2.7 3.0)
   :test #'equalp)
 
-(define-constant +level-mean+     #(1.2 1.5 1.8 2.1 2.4 2.9 3.1 3.3 3.4 3.6)
+(define-constant +level-mean+     #(1.2 1.5 1.8 2.1 2.4 2.9 3.1 3.8 4.8 6.0)
   :test #'equalp)
 
 (define-constant +decay-sigma+    #(56.0 48.0 40.0 36.0 36.0 24.0 22.0 20.0 30.0 35.0)
@@ -30,13 +30,13 @@
 (define-constant +decay-mean+     #(30.0 28.0 26.0 24.0 12.0 10.0 9.0 8.0 4.0 0.0)
   :test #'equalp)
 
-(define-constant +modifier-sigma+ #(1.0 2.0 3.0 4.0 5.0 6.0 6.5 7 7.5 8)
+(define-constant +modifier-sigma+ #(1.0 2.0 3.0 4.0 5.0 6.0 6.5 7.0 7.5 8.0)
   :test #'equalp)
 
 (define-constant +modifier-mean+  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
   :test #'equalp)
 
-(define-constant +duration-healing-fx-sigma+  #(1.0 2.0 3.0 4.0 5.0 6.0 6.5 7 7.5 8)
+(define-constant +duration-healing-fx-sigma+  #(1.0 2.0 3.0 4.0 5.0 6.0 6.5 7.0 7.5 8.0)
   :test #'equalp)
 
 (define-constant +duration-healing-fx-mean+  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
@@ -120,7 +120,8 @@
 (defun calculate-modifier (weapon-level)
   (multiple-value-bind (sigma mean)
       (modifier-params (1- weapon-level))
-    (gaussian-probability sigma mean)))
+    (d- (gaussian-probability sigma mean)
+	(gaussian-probability (d/ sigma 4.0) (- weapon-level)))))
 
 (defun calculate-level (map-level)
   (multiple-value-bind (sigma mean)
@@ -234,15 +235,14 @@
       +target-self+))
 
 (defun set-healing-effect (effect-path weapon-level interaction)
-  (let ((effect-object (make-instance 'healing-effect-parameters
-				      :trigger  +effect-until-held+
-				       ;; effect lasting forever  for
-				       ;; weapons,  they   will  broke
-				       ;; anyway.
-				      :duration  :unlimited
-				      :chance (calculate-healing-fx-params-chance
-					       weapon-level)
-				      :target (healing-target))))
+  (let* ((target (healing-target))
+	 (effect-object (make-instance 'healing-effect-parameters
+				       :trigger  +effect-until-held+
+				       :duration  (if (eq target +target-self+)
+						      :unlimited
+						      (max 1 (- +maximum-level+ weapon-level)))
+				       :chance (calculate-healing-fx-params-chance weapon-level)
+				       :target  target)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun set-poison-effect (effect-path weapon-level interaction)

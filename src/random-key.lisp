@@ -47,7 +47,7 @@
 (define-constant +level-sigma+         #(1 1.2 1.8 1.9 2.0 2.2 2.3 2.5 2.7 3.0)
   :test #'equalp)
 
-(define-constant +level-mean+          #(1.2 1.5 1.8 2.1 2.4 2.9 3.1 3.3 3.4 3.6)
+(define-constant +level-mean+          #(1.2 1.5 1.8 2.1 2.4 2.9 3.1 3.8 4.8 6.0)
   :test #'equalp)
 
 (define-constant +modifier-sigma+      #(1.0 2.0 3.0 4.0 5.0 6.0 6.5 7 7.5 8)
@@ -93,15 +93,17 @@
 (defun calculate-modifier (key-level)
   (multiple-value-bind (sigma mean)
       (modifier-params (1- key-level))
-    (gaussian-probability sigma mean)))
+    (d- (gaussian-probability sigma mean)
+	(gaussian-probability (d/ sigma 4.0) (- key-level)))))
 
-(defun healing-fx-params-duration (weapon-level)
-  (values (elt +duration-healing-fx-sigma+ weapon-level)
-	  (elt +duration-healing-fx-mean+  weapon-level)))
 
-(defun calculate-healing-fx-params-duration (weapon-level)
+(defun healing-fx-params-duration (key-level)
+  (values (elt +duration-healing-fx-sigma+ key-level)
+	  (elt +duration-healing-fx-mean+  key-level)))
+
+(defun calculate-healing-fx-params-duration (key-level)
   (multiple-value-bind (sigma mean)
-      (healing-fx-params-duration (1- weapon-level))
+      (healing-fx-params-duration (1- key-level))
     (truncate (max +minimum-duration-healing-fx+ (gaussian-probability sigma mean)))))
 
 (defun healing-fx-params-chance (armor-level)
@@ -129,10 +131,10 @@
 				      :target  +target-self+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
-(defun number-of-healing-effects (weapon-level number-of-normal-effects)
+(defun number-of-healing-effects (key-level number-of-normal-effects)
   (let ((max (round (- (num:dlerp (num:smoothstep-interpolate 0.0
 							   10.0
-							   (d (1- weapon-level)))
+							   (d (1- key-level)))
 				  +minimum-num-healing-effects+
 				  +maximum-num-healing-effects+)
 		       number-of-normal-effects))))

@@ -1,9 +1,8 @@
 (define-interaction
-    can-intercept-attacks true
-    can-be-worn-hand      false
+    can-intercept-attacks false
+    can-be-worn-hand      true
     can-be-picked         true
     can-be-held-in-hand   false
-    can-be-worn-head      true
     decay                 generate
     effects
     (define-effects
@@ -22,18 +21,18 @@
       range-attack-chance        none
       melee-attack-damage        none
       range-attack-damage        none
-      edge-weapons-chance-bonus    none
-      edge-weapons-damage-bonus    none
-      impact-weapons-chance-bonus  none
-      impact-weapons-damage-bonus  none
-      pole-weapons-chance-bonus    none
-      pole-weapons-damage-bonus    none
-      range-weapons-chance-bonus   none
-      range-weapons-damage-bonus   none
-      unlock-chance                none
-      deactivate-trap-chance       none
-      reply-attack-chance          none
-      ambush-attack-chance         none
+      edge-weapons-chance-bonus    generate
+      edge-weapons-damage-bonus    generate
+      impact-weapons-chance-bonus  generate
+      impact-weapons-damage-bonus  generate
+      pole-weapons-chance-bonus    generate
+      pole-weapons-damage-bonus    generate
+      range-weapons-chance-bonus   generate
+      range-weapons-damage-bonus   generate
+      unlock-chance                generate
+      deactivate-trap-chance       generate
+      reply-attack-chance          generate
+      ambush-attack-chance         generate
       spell-chance                 none
       attack-spell-chance          none)
     healing-effects
@@ -41,4 +40,4 @@
       immune-berserk               generate
       immune-faint                 generate
       immune-terror                generate)
-    magic-effect                   none)
+    magic-effect                   generate)

@@ -95,6 +95,7 @@
 	       (:file "random-armor")
 	       (:file "random-shoes")
 	       (:file "random-elm")
+	       (:file "random-ring")
 	       (:file "entity")
 	       (:file "camera")
 	       (:file "mesh")

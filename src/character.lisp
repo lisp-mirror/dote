@@ -670,6 +670,12 @@
 (gen-interaction-predicate (shoes)
   (lookup-basic-interaction object +can-be-worn-feet+))
 
+(gen-interaction-predicate (elm)
+  (lookup-basic-interaction object +can-be-worn-head+))
+
+(gen-interaction-predicate (ring)
+  (lookup-basic-interaction object +can-be-worn-hand+))
+
 (gen-interaction-predicate (con-be-worn)
   (or (lookup-basic-interaction object +can-be-worn-feet+)
       (lookup-basic-interaction object +can-be-worn-arm+)
@@ -1024,9 +1030,11 @@
 			  :mounted-on-pole)))
 
 (defparameter *relations* `((:path (:can-be-worn-hand)
-				   :conflicts  (:can-be-held-in-hand))
+				   :conflicts  (:can-be-held-in-hand)
+				   :depends-on (:can-be-picked))
 			    (:path (:can-be-held-in-hand)
-				   :conflicts (list :can-be-worn-hand))
+				   :conflicts  (:can-be-worn-hand)
+				   :depends-on (:can-be-picked))
 			    (:path (:can-talk)
 				   :conflicts ,(append (list
 							:can-open

@@ -96,6 +96,8 @@
 
 (define-constant +elms-names-resource+      '("names" "elms")                  :test #'equalp)
 
+(define-constant +rings-names-resource+     '("names" "rings")                  :test #'equalp)
+
 (define-constant +avatar-portrait-resource+ '("img" "avatar-portrait")         :test #'equalp)
 
 (define-constant +maps-resource+        "maps"                                 :test #'string=)

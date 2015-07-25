@@ -35,7 +35,7 @@
 (define-constant +level-sigma+    #(1 1.2 1.8 1.9 2.0 2.2 2.3 2.5 2.7 3.0)
   :test #'equalp)
 
-(define-constant +level-mean+     #(1.2 1.5 1.8 2.1 2.4 2.9 3.1 3.3 3.4 3.6)
+(define-constant +level-mean+     #(1.2 1.5 1.8 2.1 2.4 2.9 3.1 3.8 4.8 6.0)
   :test #'equalp)
 
 (define-constant +modifier-sigma+ #(1.0 2.0 3.0 4.0 5.0 6.0 6.5 7 7.5 8)
@@ -107,8 +107,8 @@
   (let ((effect-object (make-instance 'healing-effect-parameters
 				      :trigger  +effect-when-used+
 				      :duration  (calculate-container-modifier container-level)
-				      :chance (calculate-healing-fx-params-chance
-					       container-level))))
+				      :chance (calculate-healing-fx-params-chance container-level)
+				      :target +target-self+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun set-poison-effect (effect-path container-level interaction)
