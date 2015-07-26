@@ -384,6 +384,10 @@
       (dexp (d- (d/ (dexpt (d- x mu) (desired 2))
 		    (d* (desired 2) (dexpt sigma (desired 2))))))))
 
+(defun enzyme-kinetics (max k x)
+  (declare (optimize (debug 3) (safety 0) (speed 3)))
+  (d/ (d* max x) (d+ k x)))
+
 (defun gaussian-function (amplitude sigma mean)
   #'(lambda (x)
       (* amplitude (exp (- (/ (expt (- x mean) 2) (* 2 (expt sigma 2))))))))
@@ -395,7 +399,6 @@
 (defun zig-zag-line (x m freq amp)
   (declare (optimize (debug 3) (safety 0) (speed 3)))
   (d* (d+ (d* m x) (dsin (d* freq x))) amp))
-
 
 (defun almost-identity (x m n)
   (declare (optimize (debug 3) (safety 0) (speed 3)))
@@ -430,7 +433,6 @@
   (declare (optimize (debug 0) (safety 0) (speed 1)))
   (declare (desired-type x k))
   (dexpt (d* 4.0 x (d- 1.0 x)) k))
-
 
 (defun ellipse3d (a b step)
   (declare (optimize (debug 0) (safety 0) (speed 3)))

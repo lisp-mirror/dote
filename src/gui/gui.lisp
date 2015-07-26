@@ -28,23 +28,23 @@
 
 (alexandria:define-constant +static-text-delim+ "§" :test #'string=)
 
-(defparameter *cancel-lbl* (identity "Cancel"))
+(defparameter *cancel-lbl* (_ "Cancel"))
 
-(defparameter *apply-lbl*  (identity "Apply"))
+(defparameter *apply-lbl*  (_ "Apply"))
 
-(defparameter *ok-lbl*     (identity "Ok"))
+(defparameter *ok-lbl*     (_ "Ok"))
 
-(defparameter *no-lbl*     (identity "No"))
+(defparameter *no-lbl*     (_ "No"))
 
-(defparameter *yes-lbl*    (identity "Yes"))
+(defparameter *yes-lbl*    (_ "Yes"))
 
-(defparameter *close-lbl*  (identity "Close"))
+(defparameter *close-lbl*  (_ "Close"))
 
-(defparameter *open-lbl*   (identity "Open"))
+(defparameter *open-lbl*   (_ "Open"))
 
-(defparameter *load-lbl*   (identity "Load"))
+(defparameter *load-lbl*   (_ "Load"))
 
-(defparameter *save-lbl*   (identity "Save"))
+(defparameter *save-lbl*   (_ "Save"))
 
 (defun join-lines-for-static-text (lines)
   (join-with-srings lines +static-text-delim+))
@@ -221,6 +221,9 @@
 		   check-button.tga
 		   square-button.tga
 		   square-button-pressed.tga
+		   inventory-slot.tga
+		   inventory-slot-selected.tga
+		   transparent.tga
 		   (plus-overlay.tga
 		    +default-gui-resource+
 		    (setf (s-wrap-mode  bg) :clamp-to-border)
@@ -321,7 +324,16 @@
 		    (setf (s-wrap-mode  bg) :clamp-to-border)
 		    (setf (t-wrap-mode  bg) :clamp-to-border)
 		    (setf (border-color bg) §c00000000))
-		   inventory-slot.tga)
+		   (chest-opened.tga
+		    +default-gui-resource+
+		    (setf (s-wrap-mode  bg) :clamp-to-border)
+		    (setf (t-wrap-mode  bg) :clamp-to-border)
+		    (setf (border-color bg) §c00000000))
+		   (chest-closed.tga
+		    +default-gui-resource+
+		    (setf (s-wrap-mode  bg) :clamp-to-border)
+		    (setf (t-wrap-mode  bg) :clamp-to-border)
+		    (setf (border-color bg) §c00000000)))
 
 (gen-simple-bg-setup frame
 		     +frame-texture-name+
@@ -402,6 +414,9 @@
   (setup-bg-button-pressed)
   (setup-bg-square-button)
   (setup-bg-square-button-pressed)
+  (setup-bg-inventory-slot)
+  (setup-bg-inventory-slot-selected)
+  (setup-bg-transparent)
   (setup-bg-blue-h-bar)
   (setup-bg-red-h-bar)
   (setup-bg-green-h-bar)
@@ -435,4 +450,6 @@
   (setup-bg-open-overlay)
   (setup-bg-close-overlay)
   (setup-bg-zoom-overlay)
-  (setup-bg-unzoom-overlay))
+  (setup-bg-unzoom-overlay)
+  (setup-bg-chest-closed)
+  (setup-bg-chest-opened))

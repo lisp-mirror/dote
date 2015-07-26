@@ -249,9 +249,10 @@
 				 :x 0.0 :y 0.0
 				 :width  (num:d *window-w*)
 				 :height (num:d *window-h*)))
-	 (player-character (widget:make-player-generator)))
+	 ;;(player-character (widget:make-player-generator))
+	 (inventory-test   (widget:make-inventory-window nil)))
     (add-child (gui object) toolbar)
-    (add-child (gui object) player-character)))
+    (add-child (gui object) inventory-test)))
 
 (defmethod calculate ((object world) dt)
   (incf (current-time (main-state object)) dt)

@@ -255,6 +255,7 @@
    :exp-step
    :cubic-pulse
    :parabola
+   :enzyme-kinetics
    ;; typed-ops.lisp
    :desired-type
    :desired
@@ -2044,6 +2045,11 @@
    :+text-field-overlay-texture-name+
    :+square-button-texture-name+
    :+square-button-pressed-texture-name+
+   :+inventory-slot-selected-texture-name+
+   :+inventory-slot-texture-name+
+   :+chest-closed-texture-name+
+   :+chest-opened-texture-name+
+   :+transparent-texture-name+
    :+blue-h-bar+
    :+red-h-bar+
    :+green-h-bar+
@@ -2148,7 +2154,9 @@
    :b-save
    :b-load
    :player-generator
-   :make-player-generator))
+   :make-player-generator
+   :inventory-window
+   :make-inventory-window))
 
 (defpackage :world
   (:use :cl
@@ -2549,6 +2557,7 @@
    :race
    :level
    :exp-points
+   :inventory-slot-pages-number
    :basic-interaction-params
    :make-warrior
    :make-wizard

@@ -16,9 +16,13 @@
 
 (in-package :player-character)
 
-(alexandria:define-constant +unknown-ability-bonus+  -5                                 :test #'=)
+(alexandria:define-constant +unknown-ability-bonus+             -5                      :test #'=)
 
-(alexandria:define-constant +starting-exp-points+    10                                 :test #'=)
+(alexandria:define-constant +starting-exp-points+               10                      :test #'=)
+
+(alexandria:define-constant +max-inventory-slots-page+           3.0                    :test #'=)
+
+(alexandria:define-constant +weight-for-half-capacity-inventory+ 20.0                   :test #'=)
 
 (alexandria:define-constant +first-name+                   :first-name                  :test #'eq)
 
@@ -363,6 +367,8 @@
 
 (defgeneric random-fill-slots (object capital characteristics))
 
+(defgeneric inventory-slot-pages-number (object))
+
 (defgeneric lookup-basic-interaction (object key))
 
 (defgeneric import-interaction-from-definition (object file))
@@ -385,6 +391,11 @@
 		 (incf (slot-value object (car charact)) capital)
 		 (setf capital 0))))))
   capital)
+
+(defmethod inventory-slot-pages-number ((object player-character))
+  (ceiling (enzyme-kinetics +max-inventory-slots-page+
+			    +weight-for-half-capacity-inventory+
+			    (d (weight object)))))
 
 (defmacro gen-make-player (class)
   (alexandria:with-gensyms (char rest-capital)
@@ -491,6 +502,7 @@
 									  (weight    (56 20))))))
     (incf (deactivate-trap-chance player) 3)
     player))
+
 
 ;;;; interaction
 

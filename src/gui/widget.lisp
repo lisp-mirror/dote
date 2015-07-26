@@ -28,6 +28,8 @@
 
 (alexandria:define-constant +input-text-h+ 12.8 :test #'=)
 
+(alexandria:define-constant +slots-per-page-side-size+ 4 :test #'=)
+
 (defparameter *square-button-size* (d/ (d *window-w*) 10.0))
 
 (defparameter *small-square-button-size* (d/ (d *window-w*) 20.0))
@@ -35,6 +37,10 @@
 (defparameter *file-chooser-w* (d/ (d *window-w*) 3.0))
 
 (defparameter *file-chooser-h* (d/ (d *window-h*) 3.0))
+
+(defparameter *inventory-window-w* (d/ (d *window-w*) 3.0))
+
+(defparameter *inventory-window-h* (d/ (d *window-h*) 2.0))
 
 (defparameter *child-flip-y* t)
 
@@ -196,7 +202,35 @@
    (button-label-max-size
     :initform 8.0
     :initarg  :button-label-max-size
-    :accessor button-label-max-size)))
+    :accessor button-label-max-size)
+   (checkbutton-h
+    :initform 8.0
+    :initarg  :checkbutton-h
+    :accessor checkbutton-h)
+   (input-text-w
+    :initform 128.0
+    :initarg  :input-text-w
+    :accessor input-text-w)
+   (input-text-h
+    :initform 12.0
+    :initarg  :input-text-h
+    :accessor input-text-h)
+   (spacing
+    :initform 2.0
+    :initarg  :spacing
+    :accessor spacing)
+   (square-button-size
+    :initform (d/ (d *window-w*) 10.0)
+    :initarg  :square-button-size
+    :accessor square-button-size)
+   (small-square-button-size
+    :initform (d/ (d *window-w*) 20.0)
+    :initarg  :small-square-button-size
+    :accessor small-square-button-size)
+   (tiny-square-button-size
+    :initform (d/ (d *window-w*) 30.0)
+    :initarg  :tiny-square-button-size
+    :accessor tiny-square-button-size)))
 
 (defmethod initialize-instance :after ((object reference-sizes)
 				       &key &allow-other-keys)
@@ -528,7 +562,7 @@
   (declare (ignore object event))
   nil)
 
-(defclass check-button (naked-button)
+(defclass toggle-button (naked-button)
   ((button-state
     :initform nil
     :initarg  :button-state
@@ -538,24 +572,13 @@
     :initarg  :group
     :accessor   group)))
 
-(defmethod initialize-instance :after ((object check-button) &key
-							       (color :green)
-							       &allow-other-keys)
-  (with-accessors ((width width) (height height)
-		   (label-font-size label-font-size)) object
-    (case color
-      (:green
-       (setf (texture-object  object) (get-texture +check-button-texture-name+))
-       (setf (texture-pressed object) (get-texture +check-button-checked-green+))
-       (setf (texture-overlay object) (get-texture +check-button-overlay+))
-       (setf (current-texture object) (texture-object object))))
-    (setf (current-texture object) (texture-object object))))
+(defmethod initialize-instance :after ((object toggle-button) &key &allow-other-keys))
 
 (defgeneric (setf button-state) (new-state object))
 
 (defgeneric flip-state (object))
 
-(defmethod (setf button-state) (new-state (object check-button))
+(defmethod (setf button-state) (new-state (object toggle-button))
   (with-slots (button-state) object
     (with-accessors ((current-texture current-texture)
 		     (texture-pressed texture-pressed)
@@ -565,17 +588,16 @@
 				  texture-pressed
 				  texture-object)))))
 
-(defmethod flip-state ((object check-button))
+(defmethod flip-state ((object toggle-button))
   (with-slots (button-state) object
-    (with-accessors ((current-texture current-texture)
-		     (group group)) object
-    (setf (button-state object) (not button-state))
-    (map nil #'(lambda (a)
-		 (when (/= (id a) (id object))
-		   (setf (button-state a) (not (button-state object)))))
-	 group))))
+    (with-accessors ((group group)) object
+      (setf (button-state object) (not button-state))
+      (map nil #'(lambda (a)
+		   (when (/= (id a) (id object))
+		     (setf (button-state a) (not (button-state object)))))
+	   group))))
 
-(defmethod on-mouse-pressed ((object check-button) event)
+(defmethod on-mouse-pressed ((object toggle-button) event)
   (if (mouse-over object (x-event event) (y-event event))
       (progn
 	(flip-state object)
@@ -584,8 +606,33 @@
 	t)
       nil))
 
-(defmethod on-mouse-released ((object check-button) event)
+(defmethod on-mouse-released ((object toggle-button) event)
   nil)
+
+(defclass check-button (toggle-button) ())
+
+(defmethod initialize-instance :after ((object check-button) &key
+							       (theme :green)
+							       &allow-other-keys)
+  (with-accessors ((width width) (height height)
+		   (label-font-size label-font-size)) object
+    (case theme
+      (:green
+       (setf (texture-object  object) (get-texture +check-button-texture-name+))
+       (setf (texture-pressed object) (get-texture +check-button-checked-green+))
+       (setf (texture-overlay object) (get-texture +check-button-overlay+))
+       (setf (current-texture object) (texture-object object))))
+    (setf (current-texture object) (texture-object object))))
+
+(defmethod flip-state ((object check-button))
+  (with-slots (button-state) object
+    (with-accessors ((group group)) object
+      (when (not (button-state object))
+	(setf (button-state object) t)
+	(map nil #'(lambda (a)
+		     (when (/= (id a) (id object))
+		       (setf (button-state a) nil)))
+	     group)))))
 
 (defclass signalling-light (check-button) ())
 
@@ -3231,3 +3278,141 @@
 		 :width  (d/ (d *window-w*) 2.0)
 		 :height (d/ (d *window-h*) 2.0)
 		 :label  (_ "Generate character")))
+
+(defclass inventory-slot-button (signalling-light)
+  ((contained-id
+    :initform nil
+    :initarg  :contained-id
+    :accessor contained-id)))
+
+(defun y-just-under-slot-page ()
+  (d+ (d* (d +slots-per-page-side-size+)
+	  (small-square-button-size *reference-sizes*))
+      (spacing                      *reference-sizes*)))
+
+(defun make-inventory-slot-button (x y)
+  (make-instance 'check-button
+		 :theme           nil
+		 :x               x
+		 :y               y
+		 :width           (small-square-button-size *reference-sizes*)
+		 :height          (small-square-button-size *reference-sizes*)
+		 :texture-object  (get-texture +inventory-slot-texture-name+)
+		 :texture-pressed (get-texture +inventory-slot-selected-texture-name+)
+		 :texture-overlay (get-texture +plus-overlay-texture-name+)
+		 :contained-id    nil
+		 :callback        nil))
+
+(defun show/hide-chest-slots-cb (w e)
+  (declare (ignore e))
+  (let* ((parent (parent w))
+	 (ch-0   (chest-slot-0 parent))
+	 (ch-1   (chest-slot-1 parent))
+	 (ch-2   (chest-slot-2 parent)))
+    (if (button-state w)
+	(progn
+	  (show ch-0)
+	  (show ch-1)
+	  (show ch-2))
+	(progn
+	  (hide ch-0)
+	  (hide ch-1)
+	  (hide ch-2)))))
+
+(defclass inventory-window (window)
+  ((owner
+   :initform nil
+   :initarg  :owner
+   :accessor owner)
+   (slots-pages
+   :initform '()
+   :initarg  :slots-pages
+   :accessor slots-pages)
+   (chest-slot-0
+    :initform (make-inventory-slot-button (small-square-button-size *reference-sizes*)
+					  (y-just-under-slot-page))
+    :initarg  :chest-slot-0
+    :accessor chest-slot-0)
+   (chest-slot-1
+    :initform (make-inventory-slot-button (d* 2.0 (small-square-button-size *reference-sizes*))
+					  (y-just-under-slot-page))
+    :initarg  :chest-slot-1
+    :accessor chest-slot-1)
+   (chest-slot-2
+    :initform (make-inventory-slot-button (d* 3.0 (small-square-button-size *reference-sizes*))
+					  (y-just-under-slot-page))
+    :initarg  :chest-slot-2
+    :accessor chest-slot-2)
+   (current-slot-page
+    :initform nil
+    :initarg  :current-slot-page
+    :accessor current-slot-page)
+   (img-chest
+    :initform (make-instance 'toggle-button
+			     :width  (small-square-button-size *reference-sizes*)
+			     :height (small-square-button-size *reference-sizes*)
+			     :x      0.0
+			     :y      (y-just-under-slot-page)
+			     :texture-object  (get-texture +chest-closed-texture-name+)
+			     :texture-pressed (get-texture +chest-opened-texture-name+)
+			     :texture-overlay (get-texture +transparent-texture-name+)
+			     :callback        #'show/hide-chest-slots-cb
+			     :button-status   nil)
+    :initarg  :img-chest
+    :accessor img-chest)
+   (b-close
+    :initform (make-instance 'naked-button
+			     :x 0.0
+			     :y (d- *inventory-window-h*
+				    (tiny-square-button-size *reference-sizes*))
+			     :width  (tiny-square-button-size *reference-sizes*)
+			     :height (tiny-square-button-size *reference-sizes*)
+			     :texture-object  (get-texture +square-button-texture-name+)
+			     :texture-pressed (get-texture +square-button-pressed-texture-name+)
+			     :texture-overlay (get-texture +button-cancel-texture-name+)
+			     :callback        #'hide-parent-cb)
+    :initarg  :b-close
+    :accessor b-close)))
+
+(defmethod initialize-instance :after ((object inventory-window) &key &allow-other-keys)
+  (with-accessors ((slots-pages slots-pages) (current-slot-page current-slot-page)
+		   (owner owner) (b-close b-close) (img-chest img-chest)
+		   (chest-slot-0 chest-slot-0) (chest-slot-1 chest-slot-1)
+		   (chest-slot-2 chest-slot-2))
+      object
+    (let ((page-count (if owner
+			  (player-character:inventory-slot-pages-number owner)
+			  1)))
+      (setf slots-pages
+	    (loop repeat page-count collect
+		 (let ((page '())
+		       (button-size (small-square-button-size *reference-sizes*)))
+		   (loop for i from 0 below +slots-per-page-side-size+ do
+			(loop for j from 0 below  +slots-per-page-side-size+ do
+			     (let ((button (make-inventory-slot-button (* i button-size)
+								       (* j button-size))))
+			       (push button page))))
+		   page)))
+      (setf current-slot-page (elt slots-pages 0))
+      (let ((group-class (make-check-group (alexandria:flatten slots-pages))))
+	(loop for i in (alexandria:flatten slots-pages) do
+	     (setf (group i) group-class)))
+      (loop for slot in current-slot-page do
+	   (add-child object slot))
+      (add-child object chest-slot-0)
+      (add-child object chest-slot-1)
+      (add-child object chest-slot-2)
+      (hide chest-slot-0)
+      (hide chest-slot-1)
+      (hide chest-slot-2)
+      (add-child object img-chest)
+      (add-child object b-close))))
+
+(defun make-inventory-window (character)
+  (make-instance 'inventory-window
+		 :owner character
+		 :x 0.0
+		 :y 200.0
+		 :width  (d/ (d *window-w*) 2.0)
+		 :height (d/ (d *window-h*) 2.0)
+		 :label  (_ "Inventory")))

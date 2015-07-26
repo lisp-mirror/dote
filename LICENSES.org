@@ -228,6 +228,17 @@
   GNU General Public License 2.0 (see UFO Alien invasion sources
   [[http://ufoai.org/wiki/News][http://ufoai.org/wiki/News]])
 
+- data/models/models/column/*
+  data/models/models/carpet/*
+
+  This work  is licensed  under the  Creative Commons  Attribution 4.0
+  License.  To view a copy of this license, visit
+  http://creativecommons.org/licenses/by/4.0/  or   send  a   letter  to
+  Creative  Commons,  444  Castro  Street,  Suite  900,  Mountain  View,
+  California, 94041, USA.
+
+  © 2015 Jana Ochse, 2D-Retroperspectives, www.2d-retroperspectives.org
+
 - data/names/surnames.lisp
   is based on the output got from:
   http://www.seventhsanctum.com/generate.php?Genname=fantasynameex
