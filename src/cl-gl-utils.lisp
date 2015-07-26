@@ -82,7 +82,7 @@
 (defun prepare-framebuffer-for-rendering  (framebuffer depthbuffer texture w h)
   (gl:bind-framebuffer :framebuffer framebuffer)
   (gl:bind-texture  :texture-2d texture)
-  (gl:tex-image-2d  :texture-2d 0 :rgba w h 0 :rgba :unsigned-byte (misc:make-null-pointer))  
+  (gl:tex-image-2d  :texture-2d 0 :rgba w h 0 :rgba :unsigned-byte (misc:make-null-pointer))
   ;; depth
   (gl:bind-renderbuffer :renderbuffer depthbuffer)
   (gl:renderbuffer-storage :renderbuffer :depth-component w h)
@@ -96,7 +96,7 @@
   (gl:bind-framebuffer :framebuffer framebuffer)
   (gl:viewport 0.0 0.0 w h)
   (gl:clear :color-buffer :depth-buffer))
-  
+
 (defun render-to-texture (framebuffer depthbuffer texture w h fn)
   (prepare-framebuffer-for-rendering framebuffer depthbuffer texture w h)
   ;; draw
@@ -122,7 +122,7 @@
     (pixmap:save-pixmap pixmap file)
     (gl:bind-framebuffer :framebuffer 0)
     (gl:bind-texture :texture-2d 0)))
-    
+
 (defmacro with-render-to-file ((file w h) &body body)
   (alexandria:with-gensyms (texture framebuffers depthbuffers framebuffer depthbuffer)
     `(let* ((,framebuffers (gl:gen-framebuffers 1))

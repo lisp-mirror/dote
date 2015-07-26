@@ -1876,7 +1876,7 @@
 			     :width  (d+ *square-button-size* *small-square-button-size*)
 			     :x (d* *small-square-button-size* 11.0)
 			     :y (d* 2.0 (d/ *square-button-size* 8.0))
-			     :label "DMG: "
+			     :label "DMG:"
 			     :color :red
 			    :fill-level 0.5)
     :initarg  :bar-dmg
@@ -3394,11 +3394,15 @@
 			       (push button page))))
 		   page)))
       (setf current-slot-page (elt slots-pages 0))
-      (let ((group-class (make-check-group (alexandria:flatten slots-pages))))
+      (let ((group-slots (make-check-group (alexandria:flatten slots-pages))))
 	(loop for i in (alexandria:flatten slots-pages) do
-	     (setf (group i) group-class)))
+	     (setf (group i) group-slots)))
       (loop for slot in current-slot-page do
 	   (add-child object slot))
+      (let ((group-chest (make-check-group* chest-slot-0 chest-slot-1 chest-slot-2)))
+	(setf (group chest-slot-0) group-chest
+	      (group chest-slot-1) group-chest
+	      (group chest-slot-2) group-chest))
       (add-child object chest-slot-0)
       (add-child object chest-slot-1)
       (add-child object chest-slot-2)

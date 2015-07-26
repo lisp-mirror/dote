@@ -115,27 +115,27 @@
 
 (alexandria:define-constant +texture-tag-snow-terrain+     "snow-terrain"  :test #'string= )
 
-(alexandria:define-constant +texture-tag-soil-terrain-level-1+ 
+(alexandria:define-constant +texture-tag-soil-terrain-level-1+
     "soil-level-1" :test #'string= )
 
-(alexandria:define-constant +texture-tag-soil-terrain-level-2+ 
+(alexandria:define-constant +texture-tag-soil-terrain-level-2+
     "soil-level-2" :test #'string= )
 
-(alexandria:define-constant +texture-tag-soil-terrain-level-3+ 
+(alexandria:define-constant +texture-tag-soil-terrain-level-3+
     "soil-level-3" :test #'string= )
 
 (alexandria:define-constant +mipmap-base-level+ 0 :test #'=)
 
 (alexandria:define-constant +mipmap-max-level+  4 :test #'=)
 
-(alexandria:define-constant +id-handle-invalid+  -1 :test #'=) 
+(alexandria:define-constant +id-handle-invalid+  -1 :test #'=)
 
 (defparameter *texture-factory-db* '())
 
 (defun clean-db ()
   (map 'nil #'destroy *texture-factory-db*)
   (setf *texture-factory-db* nil))
-  
+
 (defun free-memory (texture-handle)
   (when (/= texture-handle +id-handle-invalid+)
     (gl:delete-textures (list texture-handle))))
@@ -169,7 +169,7 @@
     :initform nil
     :initarg :use-mipmap
     :accessor use-mipmap)
-   (tags 
+   (tags
     :initform (misc:make-array-frame 0 "" 'string nil)
     :initarg :tags
     :accessor tags)
@@ -183,7 +183,7 @@
     :accessor prepared-for-rendering)))
 
 (defmethod print-object ((object texture) stream)
-  (format stream "texture (~aX~a) handle ~a filename ~a tags ~s normalmap ~a" 
+  (format stream "texture (~aX~a) handle ~a filename ~a tags ~s normalmap ~a"
 	  (width object) (height object)
 	  (handle object) (filename object) (tags object)
 	  (normalmap-params object)))
@@ -237,7 +237,7 @@
 					(tile-divisions (floor (/ (width object) 15)))
 					(mean 8)
 					(sigma 2)
-					(max 10) 
+					(max 10)
 					(average-size 5))
   (declare (ignore size tile-divisions mean sigma max average-size))
   (pixmap:sync-data-to-bits object)
@@ -258,7 +258,7 @@
 (defgeneric setup-finalizer (object))
 
 (defmethod gen-name-and-inject-in-database ((object pixmap))
-  (let ((texture (make-instance 'texture 
+  (let ((texture (make-instance 'texture
 				:data   (alexandria:copy-array (data object))
 				:depth  4
 				:width  (width object)
@@ -290,14 +290,14 @@
 	nil)))
 
 (defmethod get-texture ((handle number))
-  (let ((found 
+  (let ((found
 	 (find-if #'(lambda (texture) (= (handle texture) handle)) *texture-factory-db*)))
     (or found
 	(allocate-empty-texture))))
 
 (defmethod get-texture ((handle string))
-  (let ((found 
-	 (find-if #'(lambda (texture) (string= (filename texture) handle)) 
+  (let ((found
+	 (find-if #'(lambda (texture) (string= (filename texture) handle))
 		  *texture-factory-db*)))
     (or found
 	(allocate-texture handle))))
@@ -308,6 +308,11 @@
 		     (not (find tag (tags texture) :test #'string=))))
 	     *texture-factory-db*))
 
+(defun not-empty-bits-or-null-pointer (bits)
+  (if (misc:vector-empty-p bits)
+      (misc:make-null-pointer)
+      bits))
+
 (defmethod prepare-for-rendering ((object texture))
   (with-accessors ((handle handle) (bits bits) (w width) (h height)
 		   (interpolation-type interpolation-type)
@@ -317,19 +322,19 @@
 		   (prepared-for-rendering prepared-for-rendering))object
     (if (initializedp object)
 	(update-for-rendering object)
-	(progn
+	(let ((actual-bits (not-empty-bits-or-null-pointer bits)))
 	  (if use-mipmap
 	      (progn
 		(gl:bind-texture :texture-2d handle)
 		(gl:tex-parameter :texture-2d :texture-base-level +mipmap-base-level+)
 		(gl:tex-parameter :texture-2d :texture-max-level  +mipmap-max-level+)
-		(gl:tex-image-2d :texture-2d 0 :rgba w h 0 :rgba :unsigned-byte bits)
+		(gl:tex-image-2d :texture-2d 0 :rgba w h 0 :rgba :unsigned-byte actual-bits)
 		(gl:generate-mipmap :texture-2d)
 		(gl:tex-parameter :texture-2d :texture-min-filter :linear-mipmap-linear)
 		(gl:tex-parameter :texture-2d :texture-mag-filter interpolation-type))
 	      (progn
 		(setup-texture-parameters object)
-		(gl:tex-image-2d :texture-2d 0 :rgba w h 0 :rgba :unsigned-byte bits)))
+		(gl:tex-image-2d :texture-2d 0 :rgba w h 0 :rgba :unsigned-byte actual-bits)))
 	  (setf prepared-for-rendering t)))))
 
 (defmethod update-for-rendering ((object texture))
@@ -338,18 +343,19 @@
 		   (s-wrap-mode s-wrap-mode) (t-wrap-mode t-wrap-mode)
 		   (border-color border-color)
 		   (use-mipmap use-mipmap)) object
-    (if use-mipmap
-	(progn
-	  (gl:bind-texture :texture-2d handle)
-	  (gl:tex-parameter :texture-2d :texture-base-level +mipmap-base-level+)
-	  (gl:tex-parameter :texture-2d :texture-max-level  +mipmap-max-level+)
-	  (gl:tex-sub-image-2d :texture-2d 0 0 0 w h :rgba :unsigned-byte bits)
-	  (gl:generate-mipmap :texture-2d)
-	  (gl:tex-parameter :texture-2d :texture-min-filter :linear-mipmap-linear)
-	  (gl:tex-parameter :texture-2d :texture-mag-filter interpolation-type))
-      (progn
-	(setup-texture-parameters object)
-	(gl:tex-sub-image-2d :texture-2d 0 0 0 w h :rgba :unsigned-byte bits)))))
+    (let ((actual-bits (not-empty-bits-or-null-pointer bits)))
+      (if use-mipmap
+	  (progn
+	    (gl:bind-texture :texture-2d handle)
+	    (gl:tex-parameter :texture-2d :texture-base-level +mipmap-base-level+)
+	    (gl:tex-parameter :texture-2d :texture-max-level  +mipmap-max-level+)
+	    (gl:tex-sub-image-2d :texture-2d 0 0 0 w h :rgba :unsigned-byte actual-bits)
+	    (gl:generate-mipmap :texture-2d)
+	    (gl:tex-parameter :texture-2d :texture-min-filter :linear-mipmap-linear)
+	    (gl:tex-parameter :texture-2d :texture-mag-filter interpolation-type))
+	  (progn
+	    (setup-texture-parameters object)
+	    (gl:tex-sub-image-2d :texture-2d 0 0 0 w h :rgba :unsigned-byte actual-bits))))))
 
 (defmethod setup-texture-parameters ((object texture))
   (with-accessors ((handle handle)
@@ -360,7 +366,7 @@
     (gl:bind-texture :texture-2d handle)
     (gl:tex-parameter :texture-2d :texture-min-filter interpolation-type)
     (gl:tex-parameter :texture-2d :texture-mag-filter interpolation-type)
-    (gl:tex-parameter :texture-2d :texture-wrap-s s-wrap-mode) 
+    (gl:tex-parameter :texture-2d :texture-wrap-s s-wrap-mode)
     (gl:tex-parameter :texture-2d :texture-wrap-t t-wrap-mode)
     (gl:tex-parameter :texture-2d :texture-border-color border-color)))
 
@@ -406,7 +412,7 @@
 	  (push new-texture *texture-factory-db*)
 	  handle)
       nil)))
-	
+
 (defun allocate-texture (file)
   (let ((handle (allocate-empty-texture))
 	(texture (first *texture-factory-db*)))
@@ -421,4 +427,3 @@
 		(values texture nil))))
 	(values nil (list
 		     (format nil "Can not create texture handle from file ~a" file))))))
-	  
