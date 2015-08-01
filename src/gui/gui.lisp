@@ -224,6 +224,26 @@
 		   inventory-slot.tga
 		   inventory-slot-selected.tga
 		   transparent.tga
+		   (up-arrow-overlay.tga
+		    +default-gui-resource+
+		    (setf (s-wrap-mode  bg) :clamp-to-border)
+		    (setf (t-wrap-mode  bg) :clamp-to-border)
+		    (setf (border-color bg) §c00000000))
+		   (down-arrow-overlay.tga
+		    +default-gui-resource+
+		    (setf (s-wrap-mode  bg) :clamp-to-border)
+		    (setf (t-wrap-mode  bg) :clamp-to-border)
+		    (setf (border-color bg) §c00000000))
+		   (wear-overlay.tga
+		    +default-gui-resource+
+		    (setf (s-wrap-mode  bg) :clamp-to-border)
+		    (setf (t-wrap-mode  bg) :clamp-to-border)
+		    (setf (border-color bg) §c00000000))
+		   (use-overlay.tga
+		    +default-gui-resource+
+		    (setf (s-wrap-mode  bg) :clamp-to-border)
+		    (setf (t-wrap-mode  bg) :clamp-to-border)
+		    (setf (border-color bg) §c00000000))
 		   (plus-overlay.tga
 		    +default-gui-resource+
 		    (setf (s-wrap-mode  bg) :clamp-to-border)
@@ -240,6 +260,16 @@
 		    (setf (t-wrap-mode  bg) :clamp-to-border)
 		    (setf (border-color bg) §c00000000))
 		   (down-overlay.tga
+		    +default-gui-resource+
+		    (setf (s-wrap-mode  bg) :clamp-to-border)
+		    (setf (t-wrap-mode  bg) :clamp-to-border)
+		    (setf (border-color bg) §c00000000))
+		   (left-overlay.tga
+		    +default-gui-resource+
+		    (setf (s-wrap-mode  bg) :clamp-to-border)
+		    (setf (t-wrap-mode  bg) :clamp-to-border)
+		    (setf (border-color bg) §c00000000))
+		   (right-overlay.tga
 		    +default-gui-resource+
 		    (setf (s-wrap-mode  bg) :clamp-to-border)
 		    (setf (t-wrap-mode  bg) :clamp-to-border)
@@ -427,10 +457,16 @@
   (setup-bg-text-field-focused)
   (setup-bg-text-field-overlay)
   (setup-bg-save-overlay)
+  (setup-bg-up-arrow-overlay)
+  (setup-bg-down-arrow-overlay)
+  (setup-bg-wear-overlay)
+  (setup-bg-use-overlay)
   (setup-bg-plus-overlay)
   (setup-bg-minus-overlay)
   (setup-bg-up-overlay)
   (setup-bg-down-overlay)
+  (setup-bg-left-overlay)
+  (setup-bg-right-overlay)
   (setup-bg-load-overlay)
   (setup-bg-quit-overlay)
   (setup-bg-next-overlay)

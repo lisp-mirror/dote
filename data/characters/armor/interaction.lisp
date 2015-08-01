@@ -1,3 +1,5 @@
+(in-package :random-armor)
+
 (define-interaction
     can-intercept-attacks true
     can-be-worn-body      true

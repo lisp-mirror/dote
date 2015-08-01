@@ -268,6 +268,10 @@
     :initarg :exp-points
     :initform 0
     :accessor exp-points)
+   (inventory
+    :initarg :inventory
+    :initform '()
+    :accessor inventory)
    (basic-interaction-params
     :initform nil
     :initarg  :basic-interaction-params
@@ -276,7 +280,7 @@
 (defmethod print-object ((object player-character) stream)
   (print-unreadable-object (object stream :type t :identity t)
     (format stream
-	    "description ~a name ~a ~a~%strength: ~a ~%stamina: ~a ~%dexterity: ~a ~%agility: ~a ~%smartness: ~a ~%empaty: ~a ~%weight: ~a ~%damage-points: ~a ~%movement-points: ~a ~%magic-points: ~a ~%dodge-chance: ~a ~%melee-attack-chance: ~a ~%range-attack-chance: ~a ~%melee-attack-damage: ~a ~%range-attack-damage: ~a ~%edge-weapons-chance-bonus: ~a ~%edge-weapons-damage-bonus: ~a ~%impact-weapons-chance-bonus: ~a ~%impact-weapons-damage-bonus: ~a ~%pole-weapons-chance-bonus: ~a ~%pole-weapons-damage-bonus: ~a ~%unlock-chance: ~a ~%deactivate-trap-chance: ~a ~%reply-attack-chance: ~a ~%ambush-attack-chance: ~a ~%spell-chance: ~a ~%attack-spell-chance: ~a ~%status: ~a  ~%race: ~a ~%level: ~a ~%exp-points: ~a~%interaction ~a"
+	    "description ~a name ~a ~a~%strength: ~a ~%stamina: ~a ~%dexterity: ~a ~%agility: ~a ~%smartness: ~a ~%empaty: ~a ~%weight: ~a ~%damage-points: ~a ~%movement-points: ~a ~%magic-points: ~a ~%dodge-chance: ~a ~%melee-attack-chance: ~a ~%range-attack-chance: ~a ~%melee-attack-damage: ~a ~%range-attack-damage: ~a ~%edge-weapons-chance-bonus: ~a ~%edge-weapons-damage-bonus: ~a ~%impact-weapons-chance-bonus: ~a ~%impact-weapons-damage-bonus: ~a ~%pole-weapons-chance-bonus: ~a ~%pole-weapons-damage-bonus: ~a ~%unlock-chance: ~a ~%deactivate-trap-chance: ~a ~%reply-attack-chance: ~a ~%ambush-attack-chance: ~a ~%spell-chance: ~a ~%attack-spell-chance: ~a ~%status: ~a  ~%race: ~a ~%level: ~a ~%exp-points: ~a~%interaction ~a inventory ~a"
 	    (description                 object)
 	    (first-name                  object)
 	    (last-name                   object)
@@ -311,7 +315,8 @@
 	    (race                        object)
 	    (level                       object)
 	    (exp-points                  object)
-	    (basic-interaction-params    object))))
+	    (basic-interaction-params    object)
+	    (mapcar #'description-for-humans (inventory object)))))
 
 (defmethod marshal:class-persistant-slots ((object player-character))
   (append  '(first-name
@@ -888,7 +893,11 @@
 		    :race                        (fetch-race                          params)
 		    :level                       (fetch-level                         params)
 		    :exp-points                  (fetch-exp-points                    params))))
-	  results))
+    (setf (texture:s-wrap-mode (portrait results)) :clamp-to-border)
+    (setf (texture:t-wrap-mode (portrait results)) :clamp-to-border)
+    (setf (texture:border-color (portrait results)) §c00000000)
+    (texture:prepare-for-rendering (portrait results))
+    results))
 
 (defun load-randomize-character (file)
   (with-character-parameters (params file)
@@ -1471,7 +1480,6 @@
   (let* ((potential-dependencies (get-depend-elements item))
 	 (item-set-p (recursive-assoc (listify (getf item :path))  interactions))
 	 (dependencies  (remove-if-null (mapcar #'(lambda (path)
-						    (misc:dbg "path ~a" path)
 						    (if (not (recursive-assoc (listify path)
 									      interactions))
 							path

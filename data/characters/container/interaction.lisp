@@ -1,3 +1,5 @@
+(in-package :random-container)
+
 (define-interaction
     can-be-picked       false
     can-talk            false

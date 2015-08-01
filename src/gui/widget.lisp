@@ -269,6 +269,10 @@
     :initform t
     :initarg  :shown
     :accessor shown)
+   (last-window-added-to
+    :initform nil
+    :initarg  :last-window-added-to
+    :accessor last-window-added-to)
    (focus
     :initform nil
     :initarg  :focus
@@ -1147,12 +1151,18 @@
 
 (defmethod add-child :after ((object window) child
  			     &optional (child-pos (length (children object))))
-   (when (> child-pos 2) ;; skip the titlebar , the button and the close-button
-     (setf (x child) (d+ (x child)
- 			(d* (left-frame-offset *reference-sizes*)
- 			    (width object))))
-     (when *child-flip-y*
-       (setf (y child) (flip-y object child)))))
+  (with-accessors ((width width)) object
+    (with-accessors ((x-child x) (y-child y)
+		     (last-window-added-to last-window-added-to)) child
+      (when (not (and last-window-added-to
+		      (eq  object last-window-added-to)))
+	(setf last-window-added-to object)
+	(when (> child-pos 2) ;; skip the titlebar , the button and the close-button
+	  (setf x-child (d+ x-child
+			    (d* (left-frame-offset *reference-sizes*)
+				(width object))))
+	  (when *child-flip-y*
+	    (setf y-child (flip-y object child))))))))
 
 (defmethod (setf label) (new-label (object window))
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -3279,29 +3289,30 @@
 		 :height (d/ (d *window-h*) 2.0)
 		 :label  (_ "Generate character")))
 
-(defclass inventory-slot-button (signalling-light)
-  ((contained-id
+(defclass inventory-slot-button (check-button)
+  ((contained-entity
     :initform nil
-    :initarg  :contained-id
-    :accessor contained-id)))
+    :initarg  :contained-entity
+    :accessor contained-entity)))
 
 (defun y-just-under-slot-page ()
   (d+ (d* (d +slots-per-page-side-size+)
 	  (small-square-button-size *reference-sizes*))
+      (small-square-button-size *reference-sizes*)
       (spacing                      *reference-sizes*)))
 
 (defun make-inventory-slot-button (x y)
-  (make-instance 'check-button
-		 :theme           nil
-		 :x               x
-		 :y               y
-		 :width           (small-square-button-size *reference-sizes*)
-		 :height          (small-square-button-size *reference-sizes*)
-		 :texture-object  (get-texture +inventory-slot-texture-name+)
-		 :texture-pressed (get-texture +inventory-slot-selected-texture-name+)
-		 :texture-overlay (get-texture +plus-overlay-texture-name+)
-		 :contained-id    nil
-		 :callback        nil))
+  (make-instance 'inventory-slot-button
+		 :theme            nil
+		 :x                x
+		 :y                y
+		 :width            (small-square-button-size *reference-sizes*)
+		 :height           (small-square-button-size *reference-sizes*)
+		 :texture-object   (get-texture +inventory-slot-texture-name+)
+		 :texture-pressed  (get-texture +inventory-slot-selected-texture-name+)
+		 :texture-overlay  (get-texture +plus-overlay-texture-name+)
+		 :contained-entity nil
+		 :callback         nil))
 
 (defun show/hide-chest-slots-cb (w e)
   (declare (ignore e))
@@ -3319,6 +3330,42 @@
 	  (hide ch-1)
 	  (hide ch-2)))))
 
+(defun remove-inventory-page (window)
+  (let ((current-slots-page (current-slots-page window)))
+    (setf (children window)
+	  (remove-if #'(lambda (c)
+			 (find-if #'(lambda (s) (= (id s) (id c))) current-slots-page))
+		     (children window)))))
+
+(defun next-slot-page-cb (w e)
+  (declare (ignore e))
+  (let* ((window             (parent w))
+	 (slots              (slots-pages window))
+	 (pages-count        (length (slots-pages window)))
+	 (page-no            (current-slots-page-number window))
+	 (next-page-no       (mod (1+ page-no) pages-count)))
+    (remove-inventory-page window)
+    (setf (current-slots-page window) (elt slots next-page-no))
+    (map nil #'(lambda (s) (setf (compiled-shaders s) (compiled-shaders window)))
+	 (current-slots-page window))
+    (map nil #'(lambda (s) (add-child window s)) (current-slots-page window))
+    (update-page-counts window next-page-no)))
+
+(defun prev-slot-page-cb (w e)
+  (declare (ignore e))
+  (let* ((window       (parent w))
+	 (slots        (slots-pages window))
+	 (page-no      (current-slots-page-number window))
+	 (next-page-no (if (< (1- page-no) 0)
+			   (1- (length (slots-pages window)))
+			   (1- page-no))))
+    (remove-inventory-page window)
+    (setf (current-slots-page window) (elt slots next-page-no))
+    (map nil #'(lambda (s) (setf (compiled-shaders s) (compiled-shaders window)))
+	 (current-slots-page window))
+    (map nil #'(lambda (s) (add-child window s)) (current-slots-page window))
+    (update-page-counts window next-page-no)))
+
 (defclass inventory-window (window)
   ((owner
    :initform nil
@@ -3328,6 +3375,41 @@
    :initform '()
    :initarg  :slots-pages
    :accessor slots-pages)
+   (b-next-page
+    :initform (make-instance 'naked-button
+			     :x               (d* 3.0 (small-square-button-size *reference-sizes*))
+			     :y               0.0
+			     :width           (small-square-button-size *reference-sizes*)
+			     :height          (small-square-button-size *reference-sizes*)
+			     :texture-object  (get-texture +button-texture-name+)
+			     :texture-pressed (get-texture +button-pressed-texture-name+)
+			     :texture-overlay (get-texture +right-overlay-texture-name+)
+			     :callback        #'next-slot-page-cb)
+    :initarg  :b-next-page
+    :accessor b-next-page)
+   (b-prev-page
+    :initform (make-instance 'naked-button
+			     :x               0.0
+			     :y               0.0
+			     :width           (small-square-button-size *reference-sizes*)
+			     :height          (small-square-button-size *reference-sizes*)
+			     :texture-object  (get-texture +button-texture-name+)
+			     :texture-pressed (get-texture +button-pressed-texture-name+)
+			     :texture-overlay (get-texture +left-overlay-texture-name+)
+			     :callback         #'prev-slot-page-cb)
+
+    :accessor b-prev-page)
+   (lb-page-count
+    :initform (make-instance 'simple-label-prefixed
+			     :width  (d* 1.9 (small-square-button-size *reference-sizes*))
+			     :height (input-text-h *reference-sizes*)
+			     :x      (small-square-button-size *reference-sizes*)
+			     :y      (d- (d/ (small-square-button-size *reference-sizes*) 2.0)
+					 (d/ (input-text-h *reference-sizes*)))
+			     :prefix (_ "Page ")
+			     :label "")
+    :initarg  :lb-page-count
+    :accessor lb-page-count)
    (chest-slot-0
     :initform (make-inventory-slot-button (small-square-button-size *reference-sizes*)
 					  (y-just-under-slot-page))
@@ -3343,10 +3425,14 @@
 					  (y-just-under-slot-page))
     :initarg  :chest-slot-2
     :accessor chest-slot-2)
-   (current-slot-page
+   (current-slots-page
     :initform nil
-    :initarg  :current-slot-page
-    :accessor current-slot-page)
+    :initarg  :current-slots-page
+    :accessor current-slots-page)
+   (current-slots-page-number
+    :initform  0
+    :initarg  :current-slots-page-number
+    :accessor current-slots-page-number)
    (img-chest
     :initform (make-instance 'toggle-button
 			     :width  (small-square-button-size *reference-sizes*)
@@ -3360,6 +3446,65 @@
 			     :button-status   nil)
     :initarg  :img-chest
     :accessor img-chest)
+   (b-use
+    :initform (make-instance 'naked-button
+			     :x               (d* (d +slots-per-page-side-size+)
+						  (small-square-button-size *reference-sizes*))
+			     :y               (small-square-button-size *reference-sizes*)
+			     :width           (small-square-button-size *reference-sizes*)
+			     :height          (small-square-button-size *reference-sizes*)
+			     :texture-object  (get-texture +button-texture-name+)
+			     :texture-pressed (get-texture +button-pressed-texture-name+)
+			     :texture-overlay (get-texture +use-overlay-texture-name+)
+			     :contained-id    nil
+			     :callback        nil) ; TODO
+    :initarg :b-use
+    :accessor b-use)
+   (b-wear
+    :initform (make-instance 'naked-button
+			     :x               (d* (d +slots-per-page-side-size+)
+						  (small-square-button-size *reference-sizes*))
+			     :y               (d* 2.0
+						  (small-square-button-size *reference-sizes*))
+			     :width           (small-square-button-size *reference-sizes*)
+			     :height          (small-square-button-size *reference-sizes*)
+			     :texture-object  (get-texture +button-texture-name+)
+			     :texture-pressed (get-texture +button-pressed-texture-name+)
+			     :texture-overlay (get-texture +wear-overlay-texture-name+)
+			     :contained-id    nil
+			     :callback        nil) ; TODO
+    :initarg :b-wear
+    :accessor b-wear)
+   (b-pick
+    :initform (make-instance 'naked-button
+			     :x               (d* (d +slots-per-page-side-size+)
+						  (small-square-button-size *reference-sizes*))
+			     :y               (d* 3.0
+						  (small-square-button-size *reference-sizes*))
+			     :width           (small-square-button-size *reference-sizes*)
+			     :height          (small-square-button-size *reference-sizes*)
+			     :texture-object  (get-texture +button-texture-name+)
+			     :texture-pressed (get-texture +button-pressed-texture-name+)
+			     :texture-overlay (get-texture +up-arrow-overlay-texture-name+)
+			     :contained-id    nil
+			     :callback        nil) ; TODO
+    :initarg :b-pick
+    :accessor b-pick)
+   (b-dismiss
+    :initform (make-instance 'naked-button
+			     :x               (d* (d +slots-per-page-side-size+)
+						  (small-square-button-size *reference-sizes*))
+			     :y               (d* 4.0
+						  (small-square-button-size *reference-sizes*))
+			     :width           (small-square-button-size *reference-sizes*)
+			     :height          (small-square-button-size *reference-sizes*)
+			     :texture-object  (get-texture +button-texture-name+)
+			     :texture-pressed (get-texture +button-pressed-texture-name+)
+			     :texture-overlay (get-texture +down-arrow-overlay-texture-name+)
+			     :contained-id    nil
+			     :callback        nil) ; TODO
+    :initarg :b-dismiss
+    :accessor b-dismiss)
    (b-close
     :initform (make-instance 'naked-button
 			     :x 0.0
@@ -3375,42 +3520,97 @@
     :accessor b-close)))
 
 (defmethod initialize-instance :after ((object inventory-window) &key &allow-other-keys)
-  (with-accessors ((slots-pages slots-pages) (current-slot-page current-slot-page)
-		   (owner owner) (b-close b-close) (img-chest img-chest)
+  (with-accessors ((slots-pages slots-pages) (current-slots-page current-slots-page)
+		   (owner owner) (b-close b-close) (b-use b-use)
+		   (b-wear b-wear) (b-pick b-pick) (b-dismiss b-dismiss)
+		   (img-chest img-chest) (b-next-page b-next-page)
+		   (current-slots-page-number current-slots-page-number)
+		   (b-prev-page b-prev-page) (lb-page-count lb-page-count)
 		   (chest-slot-0 chest-slot-0) (chest-slot-1 chest-slot-1)
 		   (chest-slot-2 chest-slot-2))
       object
     (let ((page-count (if owner
 			  (player-character:inventory-slot-pages-number owner)
-			  1)))
+			  1))
+	  (starting-y (small-square-button-size *reference-sizes*)))
       (setf slots-pages
 	    (loop repeat page-count collect
 		 (let ((page '())
 		       (button-size (small-square-button-size *reference-sizes*)))
 		   (loop for i from 0 below +slots-per-page-side-size+ do
 			(loop for j from 0 below  +slots-per-page-side-size+ do
-			     (let ((button (make-inventory-slot-button (* i button-size)
-								       (* j button-size))))
+			     (let* ((button (make-inventory-slot-button (* i button-size)
+									(d+ starting-y
+									    (* j button-size)))))
 			       (push button page))))
-		   page)))
-      (setf current-slot-page (elt slots-pages 0))
+		   (reverse page))))
+      (setf current-slots-page (elt slots-pages 0))
       (let ((group-slots (make-check-group (alexandria:flatten slots-pages))))
 	(loop for i in (alexandria:flatten slots-pages) do
 	     (setf (group i) group-slots)))
-      (loop for slot in current-slot-page do
+      (loop for slot in current-slots-page do
 	   (add-child object slot))
       (let ((group-chest (make-check-group* chest-slot-0 chest-slot-1 chest-slot-2)))
 	(setf (group chest-slot-0) group-chest
 	      (group chest-slot-1) group-chest
 	      (group chest-slot-2) group-chest))
+      (add-child object b-prev-page)
+      (add-child object b-next-page)
+      (add-child object lb-page-count)
       (add-child object chest-slot-0)
       (add-child object chest-slot-1)
       (add-child object chest-slot-2)
       (hide chest-slot-0)
       (hide chest-slot-1)
       (hide chest-slot-2)
+      (add-child object b-use)
+      (add-child object b-wear)
+      (add-child object b-pick)
+      (add-child object b-dismiss)
       (add-child object img-chest)
-      (add-child object b-close))))
+      (add-child object b-close)
+      (update-page-counts object current-slots-page-number)
+      (add-inventory-objects object))))
+
+(defgeneric get-selected-chest-item (object))
+
+(defgeneric get-selected-item (object))
+
+(defgeneric update-page-counts (object pos))
+
+(defgeneric add-inventory-objects (object))
+
+(defmethod get-selected-chest-item ((object inventory-window))
+  (or (and (chest-slot-0 object) (contained-entity (chest-slot-0 object)))
+      (and (chest-slot-1 object) (contained-entity (chest-slot-1 object)))
+      (and (chest-slot-2 object) (contained-entity (chest-slot-2 object)))))
+
+(defmethod get-selected-item ((object inventory-window))
+  (with-accessors ((current-slots-page current-slots-page)) object
+    (let ((found (find-if #'(lambda (a) (contained-entity a)) current-slots-page)))
+      (contained-entity found))))
+
+(defmethod update-page-counts ((object inventory-window) pos)
+  (with-accessors ((lb-page-count lb-page-count)
+		   (slots-pages slots-pages)
+		   (current-slots-page-number current-slots-page-number)) object
+    (setf current-slots-page-number pos)
+    (setf (label lb-page-count)
+	  (format nil (_ "~a of ~a") (1+ current-slots-page-number) (length slots-pages)))))
+
+(defmethod add-inventory-objects ((object inventory-window))
+  (with-accessors ((slots-pages slots-pages) (owner owner)
+		   (chest-slot-0 chest-slot-0) (chest-slot-1 chest-slot-1)
+		   (chest-slot-2 chest-slot-2)) object
+    (when owner
+      (assert (<= (length (player-character:inventory owner))
+		  (length (alexandria:flatten slots-pages))))
+      (loop
+	 for slot in (alexandria:flatten slots-pages)
+	 for obj  in (player-character:inventory owner) do
+	   (setf (contained-entity slot) obj
+		 (texture-overlay  slot) (player-character:portrait obj))))))
+
 
 (defun make-inventory-window (character)
   (make-instance 'inventory-window

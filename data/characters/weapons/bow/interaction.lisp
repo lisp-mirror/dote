@@ -1,3 +1,5 @@
+(in-package :random-weapon)
+
 (define-interaction
     can-be-picked       true
     can-talk            false

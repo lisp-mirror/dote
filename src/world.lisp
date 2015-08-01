@@ -245,14 +245,25 @@
 (defmethod initialize-instance :after ((object world) &key &allow-other-keys)
   (setf (camera object) (make-instance 'camera :pos (vec 0.0 0.0 1.0)))
   ;; gui
-  (let* ((toolbar (make-instance 'widget:main-toolbar
+
+  (let ((char (player-character:make-warrior :human)))
+    (setf (player-character:inventory char)
+	  (list (random-ring:generate-ring
+		 (fs:file-in-package "data/characters/ring/interaction.lisp")
+		 (fs:file-in-package "data/characters/ring/character.lisp")
+		 10)
+		(random-weapon:generate-weapon
+		 (fs:file-in-package "data/characters/weapons/sword/interaction.lisp")
+		 (fs:file-in-package "data/characters/weapons/sword/character.lisp")
+		 10)))
+    (let* ((toolbar (make-instance 'widget:main-toolbar
 				 :x 0.0 :y 0.0
 				 :width  (num:d *window-w*)
 				 :height (num:d *window-h*)))
 	 ;;(player-character (widget:make-player-generator))
-	 (inventory-test   (widget:make-inventory-window nil)))
+	 (inventory-test   (widget:make-inventory-window char)))
     (add-child (gui object) toolbar)
-    (add-child (gui object) inventory-test)))
+    (add-child (gui object) inventory-test))))
 
 (defmethod calculate ((object world) dt)
   (incf (current-time (main-state object)) dt)

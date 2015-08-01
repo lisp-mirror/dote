@@ -1,3 +1,5 @@
+(in-package :random-shoes)
+
 (define-interaction
     can-be-worn-feet       true
     can-be-picked          true

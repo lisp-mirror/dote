@@ -2058,6 +2058,12 @@
    :+check-button-overlay+
    :+save-overlay-texture-name+
    :+load-overlay-texture-name+
+   :+up-arrow-overlay-texture-name+
+   :+down-arrow-overlay-texture-name+
+   :+left-overlay-texture-name+
+   :+right-overlay-texture-name+
+   :+wear-overlay-texture-name+
+   :+use-overlay-texture-name+
    :+plus-overlay-texture-name+
    :+minus-overlay-texture-name+
    :+up-overlay-texture-name+
@@ -2557,6 +2563,7 @@
    :race
    :level
    :exp-points
+   :inventory
    :inventory-slot-pages-number
    :basic-interaction-params
    :make-warrior

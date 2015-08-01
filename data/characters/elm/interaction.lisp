@@ -1,3 +1,5 @@
+(in-package :random-elm)
+
 (define-interaction
     can-intercept-attacks true
     can-be-worn-hand      false

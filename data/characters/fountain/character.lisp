@@ -1,3 +1,5 @@
+(in-package :player-character)
+
 (define-character
     description generate
     first-name generate

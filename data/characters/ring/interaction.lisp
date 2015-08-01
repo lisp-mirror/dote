@@ -1,3 +1,5 @@
+(in-package :random-ring)
+
 (define-interaction
     can-intercept-attacks false
     can-be-worn-hand      true

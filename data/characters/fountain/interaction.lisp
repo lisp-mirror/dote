@@ -1,3 +1,5 @@
+(in-package :random-fountain)
+
 (define-interaction
     can-be-drunk                   true
     can-be-picked                  false

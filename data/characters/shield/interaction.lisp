@@ -1,3 +1,5 @@
+(in-package :random-shield)
+
 (define-interaction
     can-intercept-attacks true
     can-be-worn-hand      false

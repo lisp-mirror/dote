@@ -1,3 +1,5 @@
+(in-package :random-key)
+
 (define-interaction
     can-be-picked       true
     can-open            generate
