@@ -245,8 +245,25 @@
 (defmethod initialize-instance :after ((object world) &key &allow-other-keys)
   (setf (camera object) (make-instance 'camera :pos (vec 0.0 0.0 1.0)))
   ;; gui
-
-  (let ((char (player-character:make-warrior :human)))
+  (let ((char  (player-character:make-warrior :human))
+	(chest (random-container:generate-container
+		(fs:file-in-package "data/characters/container/interaction.lisp")
+		(fs:file-in-package "data/characters/container/character.lisp")
+		10
+		(fs:file-in-package "data/characters/key/interaction.lisp")
+		(fs:file-in-package "data/characters/key/character.lisp")))
+	(obj1   (random-shoes:generate-shoes
+		 (fs:file-in-package "data/characters/shoes/interaction.lisp")
+		 (fs:file-in-package "data/characters/shoes/character.lisp")
+		 10))
+	(obj2   (random-elm:generate-elm
+		 (fs:file-in-package "data/characters/elm/interaction.lisp")
+		 (fs:file-in-package "data/characters/elm/character.lisp")
+		 10))
+	(obj3   (random-potion:generate-potion
+		 (fs:file-in-package "data/characters/potion/interaction.lisp")
+		 (fs:file-in-package "data/characters/potion/character.lisp")
+		 10)))
     (setf (player-character:inventory char)
 	  (list (random-ring:generate-ring
 		 (fs:file-in-package "data/characters/ring/interaction.lisp")
@@ -256,12 +273,15 @@
 		 (fs:file-in-package "data/characters/weapons/sword/interaction.lisp")
 		 (fs:file-in-package "data/characters/weapons/sword/character.lisp")
 		 10)))
+    (add-child chest obj1)
+    (add-child chest obj2)
+    (add-child chest obj3)
     (let* ((toolbar (make-instance 'widget:main-toolbar
 				 :x 0.0 :y 0.0
 				 :width  (num:d *window-w*)
 				 :height (num:d *window-h*)))
 	 ;;(player-character (widget:make-player-generator))
-	 (inventory-test   (widget:make-inventory-window char)))
+	 (inventory-test   (widget:make-inventory-window char chest)))
     (add-child (gui object) toolbar)
     (add-child (gui object) inventory-test))))
 

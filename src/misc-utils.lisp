@@ -469,6 +469,9 @@
 (defun remove-if-null (a)
   (remove-if #'null a))
 
+(defun remove-if-not-null (a)
+  (remove-if #'(lambda (i) (not (null i))) a))
+
 ;; iterations
 
 (defmacro do-while (declaration return-form &body body)

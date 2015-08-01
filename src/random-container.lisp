@@ -152,5 +152,4 @@
 	    (n-setf-path-value template (list +can-open+) keycode)))
 	(let ((container-character (params->character char-template)))
 	  (setf (basic-interaction-params container-character) template)
-	  container-character))))
-  keychain)
+	  (values container-character keychain))))))

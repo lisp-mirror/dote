@@ -893,10 +893,11 @@
 		    :race                        (fetch-race                          params)
 		    :level                       (fetch-level                         params)
 		    :exp-points                  (fetch-exp-points                    params))))
-    (setf (texture:s-wrap-mode (portrait results)) :clamp-to-border)
-    (setf (texture:t-wrap-mode (portrait results)) :clamp-to-border)
-    (setf (texture:border-color (portrait results)) §c00000000)
-    (texture:prepare-for-rendering (portrait results))
+    (when (portrait results)
+      (setf (texture:s-wrap-mode (portrait results)) :clamp-to-border)
+      (setf (texture:t-wrap-mode (portrait results)) :clamp-to-border)
+      (setf (texture:border-color (portrait results)) §c00000000)
+      (texture:prepare-for-rendering (portrait results)))
     results))
 
 (defun load-randomize-character (file)
@@ -979,47 +980,54 @@
 								(fetch-exp-points params)))))
       results)))
 
-(defun conflict-all-effects ()
-  (list (list :effects :strength)
-	(list :effects :stamina)
-	(list :effects :dexterity)
-	(list :effects :agility)
-	(list :effects :smartness)
-	(list :effects :empaty)
-	(list :effects :weight)
-	(list :effects :damage-points)
-	(list :effects :movement-points)
-	(list :effects :magic-points)
-	(list :effects :dodge-chance)
-	(list :effects :melee-attack-chance)
-	(list :effects :range-attack-chance)
-	(list :effects :melee-attack-damage)
-	(list :effects :range-attack-damage)
-	(list :effects :edge-weapons-chance-bonus)
-	(list :effects :edge-weapons-damage-bonus)
-	(list :effects :impact-weapons-chance-bonus)
-	(list :effects :impact-weapons-damage-bonus)
-	(list :effects :pole-weapons-chance-bonus)
-	(list :effects :pole-weapons-damage-bonus)
-	(list :effects :unlock-chance)
-	(list :effects :deactivate-trap-chance)
-	(list :effects :reply-attack-chance)
-	(list :effects :ambush-attack-chance)
-	(list :effects :spell-chance)
-	(list :effects :attack-spell-chance)
-	(list :healing-effects :heal-poison)
-	(list :healing-effects :heal-berserk)
-	(list :healing-effects :heal-faint)
-	(list :healing-effects :heal-terror)
-	(list :healing-effects :cause-poison)
-	(list :healing-effects :cause-berserk)
-	(list :healing-effects :cause-faint)
-	(list :healing-effects :cause-terror)
-	(list :healing-effects :immune-poison)
-	(list :healing-effects :immune-berser)
-	(list :healing-effects :immune-faint)
-	(list :healing-effects :immune-terror)
-	:magic-effect))
+(alexandria:define-constant +all-effects+
+    (list (list :effects :strength)
+	  (list :effects :stamina)
+	  (list :effects :dexterity)
+	  (list :effects :agility)
+	  (list :effects :smartness)
+	  (list :effects :empaty)
+	  (list :effects :weight)
+	  (list :effects :damage-points)
+	  (list :effects :movement-points)
+	  (list :effects :magic-points)
+	  (list :effects :dodge-chance)
+	  (list :effects :melee-attack-chance)
+	  (list :effects :range-attack-chance)
+	  (list :effects :melee-attack-damage)
+	  (list :effects :range-attack-damage)
+	  (list :effects :edge-weapons-chance-bonus)
+	  (list :effects :edge-weapons-damage-bonus)
+	  (list :effects :impact-weapons-chance-bonus)
+	  (list :effects :impact-weapons-damage-bonus)
+	  (list :effects :pole-weapons-chance-bonus)
+	  (list :effects :pole-weapons-damage-bonus)
+	  (list :effects :unlock-chance)
+	  (list :effects :deactivate-trap-chance)
+	  (list :effects :reply-attack-chance)
+	  (list :effects :ambush-attack-chance)
+	  (list :effects :spell-chance)
+	  (list :effects :attack-spell-chance)
+	  (list :healing-effects :heal-poison)
+	  (list :healing-effects :heal-berserk)
+	  (list :healing-effects :heal-faint)
+	  (list :healing-effects :heal-terror)
+	  (list :healing-effects :cause-poison)
+	  (list :healing-effects :cause-berserk)
+	  (list :healing-effects :cause-faint)
+	  (list :healing-effects :cause-terror)
+	  (list :healing-effects :immune-poison)
+	  (list :healing-effects :immune-berser)
+	  (list :healing-effects :immune-faint)
+	  (list :healing-effects :immune-terror)
+	  :magic-effect)
+  :test #'equalp)
+
+(defun conflict-all-effects-except (&rest to-be-removed)
+  (reduce #'intersection
+	  (mapcar #'(lambda (r) (remove r +all-effects+ :test #'equalp))
+		  to-be-removed)
+	  :initial-value +all-effects+))
 
 (defun %trivial-conflict-list (to-be-removed)
   (remove to-be-removed '(:can-talk
@@ -1072,7 +1080,7 @@
 							:can-launch-bolt
 							:can-launch-arrow
 							:mounted-on-pole)
-						       (conflict-all-effects)))
+						       (conflict-all-effects-except)))
 			    (:path (:can-open)
 				   :conflicts ,(append (list
 							:can-talk
@@ -1097,15 +1105,12 @@
 							:can-launch-bolt
 							:can-launch-arrow
 							:mounted-on-pole
-							(conflict-all-effects))))
+							(conflict-all-effects-except))))
 			    (:path (:can-be-opened)
 				   :conflicts ,(append (list
 							:can-talk
 							:can-open
 							:can-attack
-							:can-be-attacked
-							:can-be-destroyed
-							:can-be-burned
 							:can-heal
 							:can-be-heal
 							:can-poison
@@ -1122,7 +1127,7 @@
 							:can-launch-bolt
 							:can-launch-arrow
 							:mounted-on-pole
-							(conflict-all-effects))))
+							(conflict-all-effects-except))))
 			    (:path (:can-attack)
 				   :conflicts ,(append (list
 							:can-open
@@ -1139,7 +1144,7 @@
 							:can-launch-bolt
 							:can-launch-arrow
 							:mounted-on-pole)
-						       (conflict-all-effects)))
+						       (conflict-all-effects-except)))
 			    (:path (:can-be-attacked)
 				   :conflicts ,(append (list
 							:can-open
@@ -1156,11 +1161,10 @@
 							:can-launch-bolt
 							:can-launch-arrow
 							:mounted-on-pole)
-						       (conflict-all-effects)))
+						       (conflict-all-effects-except)))
 			    (:path (:can-be-destroyed)
 				   :conflicts ,(append (list
 							:can-open
-							:can-be-opened
 							:can-be-drunk
 							:can-be-eaten
 							:can-be-worn-arm
@@ -1173,11 +1177,18 @@
 							:can-launch-bolt
 							:can-launch-arrow
 							:mounted-on-pole)
-						       (conflict-all-effects)))
+						       (conflict-all-effects-except
+							'(:healing-effects :heal-poison)
+							'(:healing-effects :heal-berserk)
+							'(:healing-effects :heal-faint)
+							'(:healing-effects :heal-terror)
+							'(:healing-effects :cause-poison)
+							'(:healing-effects :cause-berserk)
+							'(:healing-effects :cause-faint)
+							'(:healing-effects :cause-terror))))
 			    (:path (:can-be-burned)
 				   :conflicts ,(append (list
 							:can-open
-							:can-be-opened
 							:can-be-drunk
 							:can-be-eaten
 							:can-be-worn-arm
@@ -1190,7 +1201,15 @@
 							:can-launch-bolt
 							:can-launch-arrow
 							:mounted-on-pole)
-						       (conflict-all-effects)))
+						       (conflict-all-effects-except
+							'(:healing-effects :heal-poison)
+							'(:healing-effects :heal-berserk)
+							'(:healing-effects :heal-faint)
+							'(:healing-effects :heal-terror)
+							'(:healing-effects :cause-poison)
+							'(:healing-effects :cause-berserk)
+							'(:healing-effects :cause-faint)
+							'(:healing-effects :cause-terror))))
 			    (:path (:can-heal)
 				   :conflicts ,(append (list
 							:can-open
@@ -1207,7 +1226,7 @@
 							:can-launch-bolt
 							:can-launch-arrow
 							:mounted-on-pole)
-						       (conflict-all-effects)))
+						       (conflict-all-effects-except)))
 			    (:path (:can-be-heal)
 				   :conflicts ,(append (list
 							:can-open
@@ -1224,7 +1243,7 @@
 							:can-launch-bolt
 							:can-launch-arrow
 							:mounted-on-pole)
-						       (conflict-all-effects)))
+						       (conflict-all-effects-except)))
 			    (:path (:can-poison)
 				   :conflicts ,(append (list
 							:can-open
@@ -1241,7 +1260,7 @@
 							:can-launch-bolt
 							:can-launch-arrow
 							:mounted-on-pole)
-						       (conflict-all-effects)))
+						       (conflict-all-effects-except)))
 			    (:path (:can-be-poisoned)
 				   :conflicts ,(append (list
 							:can-open
@@ -1258,7 +1277,7 @@
 							:can-launch-bolt
 							:can-launch-arrow
 							:mounted-on-pole)
-						       (conflict-all-effects)))
+						       (conflict-all-effects-except)))
 			    (:path (:can-be-drunk)
 				   :conflicts (:can-talk
 					       :can-ask-for-help
@@ -1463,15 +1482,19 @@
 (defun get-depend-elements (item)
   (getf item :depends-on))
 
+(defun item-set-p (path interaction)
+  (let ((val (recursive-assoc (listify path) interaction)))
+    (and val
+	 (not (find val +nil-equiv-bag+)))))
+
 (defun conflictp (interactions item)
   (let* ((potential-conflicts (get-conflict-elements item))
 	 (item-set-p (recursive-assoc (listify (getf item :path))  interactions))
 	 (conflict (remove-if-null (mapcar #'(lambda (path)
-						    (if (recursive-assoc (listify path)
-									      interactions)
-							path
-							nil))
-						potential-conflicts))))
+					       (if (item-set-p path interactions)
+						   path
+						   nil))
+					   potential-conflicts))))
     (when (and item-set-p conflict)
       (error (format nil "~a conflict with ~a" (getf item :path) conflict)))
     (and item-set-p conflict)))
@@ -1480,12 +1503,12 @@
   (let* ((potential-dependencies (get-depend-elements item))
 	 (item-set-p (recursive-assoc (listify (getf item :path))  interactions))
 	 (dependencies  (remove-if-null (mapcar #'(lambda (path)
-						    (if (not (recursive-assoc (listify path)
-									      interactions))
-							path
-							nil))
-						potential-dependencies))))
-    (when (and (not item-set-p) dependencies)
+							(if (not (item-set-p path interactions))
+							    path
+							    nil))
+						    potential-dependencies))))
+
+    (when (and item-set-p dependencies)
       (error (format nil "~a depend on ~a" (getf item :path) dependencies)))
     (and item-set-p dependencies)))
 

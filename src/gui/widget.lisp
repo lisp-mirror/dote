@@ -3310,7 +3310,7 @@
 		 :height           (small-square-button-size *reference-sizes*)
 		 :texture-object   (get-texture +inventory-slot-texture-name+)
 		 :texture-pressed  (get-texture +inventory-slot-selected-texture-name+)
-		 :texture-overlay  (get-texture +plus-overlay-texture-name+)
+		 :texture-overlay  (get-texture +transparent-texture-name+)
 		 :contained-entity nil
 		 :callback         nil))
 
@@ -3336,6 +3336,27 @@
 	  (remove-if #'(lambda (c)
 			 (find-if #'(lambda (s) (= (id s) (id c))) current-slots-page))
 		     (children window)))))
+
+(defun add-containded-item (slot item)
+  (setf (texture-overlay  slot) (player-character:portrait item)
+	(contained-entity slot) item))
+
+(defun remove-containded-item (slot)
+  (setf (texture-overlay  slot) (get-texture +transparent-texture-name+)
+	(contained-entity slot) nil))
+
+(defun pick-item-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (win) w
+    (multiple-value-bind (chest-slot item)
+	(get-selected-chest-item win)
+      (when (and chest-slot item)
+	(let ((available-slot (find-if #'(lambda (s) (null (contained-entity s)))
+				       (alexandria:flatten (slots-pages win)))))
+	  (when available-slot
+	    (add-containded-item     available-slot item)
+	    (remove-containded-item  chest-slot)
+	    (remove-child (chest win) item :test #'= :key #'id)))))))
 
 (defun next-slot-page-cb (w e)
   (declare (ignore e))
@@ -3410,6 +3431,10 @@
 			     :label "")
     :initarg  :lb-page-count
     :accessor lb-page-count)
+   (chest
+    :initform nil
+    :initarg  :chest
+    :accessor chest)
    (chest-slot-0
     :initform (make-inventory-slot-button (small-square-button-size *reference-sizes*)
 					  (y-just-under-slot-page))
@@ -3456,7 +3481,6 @@
 			     :texture-object  (get-texture +button-texture-name+)
 			     :texture-pressed (get-texture +button-pressed-texture-name+)
 			     :texture-overlay (get-texture +use-overlay-texture-name+)
-			     :contained-id    nil
 			     :callback        nil) ; TODO
     :initarg :b-use
     :accessor b-use)
@@ -3471,7 +3495,6 @@
 			     :texture-object  (get-texture +button-texture-name+)
 			     :texture-pressed (get-texture +button-pressed-texture-name+)
 			     :texture-overlay (get-texture +wear-overlay-texture-name+)
-			     :contained-id    nil
 			     :callback        nil) ; TODO
     :initarg :b-wear
     :accessor b-wear)
@@ -3486,8 +3509,7 @@
 			     :texture-object  (get-texture +button-texture-name+)
 			     :texture-pressed (get-texture +button-pressed-texture-name+)
 			     :texture-overlay (get-texture +up-arrow-overlay-texture-name+)
-			     :contained-id    nil
-			     :callback        nil) ; TODO
+			     :callback        #'pick-item-cb)
     :initarg :b-pick
     :accessor b-pick)
    (b-dismiss
@@ -3501,7 +3523,6 @@
 			     :texture-object  (get-texture +button-texture-name+)
 			     :texture-pressed (get-texture +button-pressed-texture-name+)
 			     :texture-overlay (get-texture +down-arrow-overlay-texture-name+)
-			     :contained-id    nil
 			     :callback        nil) ; TODO
     :initarg :b-dismiss
     :accessor b-dismiss)
@@ -3581,14 +3602,25 @@
 (defgeneric add-inventory-objects (object))
 
 (defmethod get-selected-chest-item ((object inventory-window))
-  (or (and (chest-slot-0 object) (contained-entity (chest-slot-0 object)))
-      (and (chest-slot-1 object) (contained-entity (chest-slot-1 object)))
-      (and (chest-slot-2 object) (contained-entity (chest-slot-2 object)))))
+  (let ((selected  (or (and (chest-slot-0 object)
+			    (button-state (chest-slot-0 object))
+			    (contained-entity (chest-slot-0 object))
+			    (chest-slot-0 object))
+		       (and (chest-slot-1 object)
+			    (button-state (chest-slot-1 object))
+			    (contained-entity (chest-slot-1 object))
+			    (chest-slot-1 object))
+		       (and (chest-slot-2 object)
+			    (button-state (chest-slot-2 object))
+			    (contained-entity (chest-slot-2 object))
+			    (chest-slot-2 object)))))
+    (and selected
+	 (values selected (contained-entity selected)))))
 
 (defmethod get-selected-item ((object inventory-window))
   (with-accessors ((current-slots-page current-slots-page)) object
     (let ((found (find-if #'(lambda (a) (contained-entity a)) current-slots-page)))
-      (contained-entity found))))
+      (values found (contained-entity found)))))
 
 (defmethod update-page-counts ((object inventory-window) pos)
   (with-accessors ((lb-page-count lb-page-count)
@@ -3599,7 +3631,7 @@
 	  (format nil (_ "~a of ~a") (1+ current-slots-page-number) (length slots-pages)))))
 
 (defmethod add-inventory-objects ((object inventory-window))
-  (with-accessors ((slots-pages slots-pages) (owner owner)
+  (with-accessors ((slots-pages slots-pages) (owner owner) (chest chest)
 		   (chest-slot-0 chest-slot-0) (chest-slot-1 chest-slot-1)
 		   (chest-slot-2 chest-slot-2)) object
     (when owner
@@ -3609,14 +3641,32 @@
 	 for slot in (alexandria:flatten slots-pages)
 	 for obj  in (player-character:inventory owner) do
 	   (setf (contained-entity slot) obj
-		 (texture-overlay  slot) (player-character:portrait obj))))))
+		 (texture-overlay  slot) (player-character:portrait obj))))
+    ;; display stuff inside the chest, if any
+    (when chest
+      (assert (or (null (children chest))
+		  (<= (length (children chest)) 3)))
+      (loop for i from 0 below (length (children chest)) do
+	   (cond
+	     ((= i 0)
+	      (setf (contained-entity chest-slot-0) (elt (children chest) i))
+	      (setf (texture-overlay  chest-slot-0)
+		    (player-character:portrait (elt (children chest) i))))
+	     ((= i 1)
+	      (setf (contained-entity chest-slot-1) (elt (children chest) i))
+	      (setf (texture-overlay  chest-slot-1)
+		    (player-character:portrait (elt (children chest) i))))
+	     ((= i 2)
+	      (setf (contained-entity chest-slot-2) (elt (children chest) i))
+	      (setf (texture-overlay  chest-slot-2)
+		    (player-character:portrait (elt (children chest) i)))))))))
 
-
-(defun make-inventory-window (character)
+(defun make-inventory-window (character &optional (chest nil))
   (make-instance 'inventory-window
-		 :owner character
-		 :x 0.0
-		 :y 200.0
+		 :owner  character
+		 :chest  chest
+		 :x      0.0
+		 :y      200.0
 		 :width  (d/ (d *window-w*) 2.0)
 		 :height (d/ (d *window-h*) 2.0)
 		 :label  (_ "Inventory")))

@@ -7,7 +7,7 @@
     can-be-opened       generate
     can-open            false
     can-attack          false
-    can-be-attacked     true
+    can-be-attacked     false
     can-be-destroyed    true
     can-be-burned       true
     can-heal            false
@@ -37,4 +37,4 @@
 			  cause-berserk              generate
 			  cause-faint                generate
 			  cause-terror               generate)
-    magic-effect        (define-magic-effect)
+    magic-effect        none)

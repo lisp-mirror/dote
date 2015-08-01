@@ -138,6 +138,7 @@
    :safe-delete@
    :remove-compact-remap-sequence
    :remove-if-null
+   :remove-if-not-null
    :do-while
    :do-while*
    :not-null-p
