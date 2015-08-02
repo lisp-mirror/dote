@@ -3345,18 +3345,43 @@
   (setf (texture-overlay  slot) (get-texture +transparent-texture-name+)
 	(contained-entity slot) nil))
 
+(defun empty-slot-p (slot)
+  (null (contained-entity slot)))
+
 (defun pick-item-cb (w e)
   (declare (ignore e))
   (with-parent-widget (win) w
     (multiple-value-bind (chest-slot item)
 	(get-selected-chest-item win)
       (when (and chest-slot item)
-	(let ((available-slot (find-if #'(lambda (s) (null (contained-entity s)))
+	(let ((available-slot (find-if #'(lambda (s) (empty-slot-p s))
 				       (alexandria:flatten (slots-pages win)))))
 	  (when available-slot
 	    (add-containded-item     available-slot item)
 	    (remove-containded-item  chest-slot)
 	    (remove-child (chest win) item :test #'= :key #'id)))))))
+
+(defun dismiss-item-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (win) w
+    (with-accessors ((chest-slot-0 chest-slot-0) (chest-slot-1 chest-slot-1)
+		     (chest-slot-2 chest-slot-2) (owner owner)) win
+      (multiple-value-bind (slot item)
+	  (get-selected-item win)
+	(let ((available-chest-slot (cond
+				      ((empty-slot-p chest-slot-0)
+				       chest-slot-0)
+				      ((empty-slot-p chest-slot-1)
+				       chest-slot-1)
+				      ((empty-slot-p chest-slot-2)
+				       chest-slot-2)
+				      (t nil))))
+	  (when available-chest-slot
+	    (add-containded-item     available-chest-slot item)
+	    (remove-containded-item  slot)
+	    (setf (player-character:inventory owner)
+		  (remove-if #'(lambda (a) (= (id item) a))
+			     (player-character:inventory owner) :key #'id))))))))
 
 (defun next-slot-page-cb (w e)
   (declare (ignore e))
@@ -3523,7 +3548,7 @@
 			     :texture-object  (get-texture +button-texture-name+)
 			     :texture-pressed (get-texture +button-pressed-texture-name+)
 			     :texture-overlay (get-texture +down-arrow-overlay-texture-name+)
-			     :callback        nil) ; TODO
+			     :callback        #'dismiss-item-cb)
     :initarg :b-dismiss
     :accessor b-dismiss)
    (b-close
@@ -3619,8 +3644,11 @@
 
 (defmethod get-selected-item ((object inventory-window))
   (with-accessors ((current-slots-page current-slots-page)) object
-    (let ((found (find-if #'(lambda (a) (contained-entity a)) current-slots-page)))
-      (values found (contained-entity found)))))
+    (let ((found (find-if #'(lambda (a) (and (button-state     a)
+					     (contained-entity a)))
+			  current-slots-page)))
+      (when found
+	(values found (contained-entity found))))))
 
 (defmethod update-page-counts ((object inventory-window) pos)
   (with-accessors ((lb-page-count lb-page-count)
