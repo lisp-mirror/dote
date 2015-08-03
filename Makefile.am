@@ -1506,6 +1506,7 @@ data/gui/default/inventory/w-throw003.tga               \
 data/gui/default/inventory/w-throw004.tga               \
 data/gui/default/inventory/w-throw05.tga                \
 # GUI
+data/gui/default/silhouette.tga                          \
 data/gui/default/attack-long-range-imprecise-overlay.tga \
 data/gui/default/attack-long-range-overlay.tga           \
 data/gui/default/attack-short-range-overlay.tga          \

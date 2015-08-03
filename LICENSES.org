@@ -363,6 +363,14 @@
   https://creativecommons.org/licenses/by/3.0/
   Downloaded from: http://game-icons.net/
 
+- data/gui/default/silhouette.tga
+  according to:
+  http://game-icons.net/lorc/originals/inner-self.html
+  © 2015 Lorc released under Creative Commons
+  Attribution 3.0 Unported (CC BY 3.0) License
+  https://creativecommons.org/licenses/by/3.0/
+
+
 - data/gui/default/default/fantasy-tileset.png
   data/gui/default/magic-staff-overlay.tga
   data/gui/default/attack-long-range-overlay.tga

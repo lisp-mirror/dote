@@ -2082,6 +2082,7 @@
    :+coma-texture-name+
    :+terror-texture-name+
    :+portrait-unknown-texture-name+
+   :+silhouette-texture-name+
    :+poison-texture-name+
    :+conversation-overlay-texture-name+
    :+attack-short-range-overlay-texture-name+

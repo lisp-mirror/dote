@@ -224,6 +224,7 @@
 		   inventory-slot.tga
 		   inventory-slot-selected.tga
 		   transparent.tga
+		   silhouette.tga
 		   (up-arrow-overlay.tga
 		    +default-gui-resource+
 		    (setf (s-wrap-mode  bg) :clamp-to-border)
@@ -356,6 +357,7 @@
 		    (setf (border-color bg) §c00000000))
 		   (chest-opened.tga
 		    +default-gui-resource+
+		    (setf (interpolation-type bg) :linear)
 		    (setf (s-wrap-mode  bg) :clamp-to-border)
 		    (setf (t-wrap-mode  bg) :clamp-to-border)
 		    (setf (border-color bg) §c00000000))
@@ -447,6 +449,7 @@
   (setup-bg-inventory-slot)
   (setup-bg-inventory-slot-selected)
   (setup-bg-transparent)
+  (setup-bg-silhouette)
   (setup-bg-blue-h-bar)
   (setup-bg-red-h-bar)
   (setup-bg-green-h-bar)
