@@ -129,3 +129,5 @@
 (define-constant +default-character-food+       '("characters" "food")         :test #'equalp)
 
 (define-constant +default-character-misc+       '("characters" "misc")         :test #'equalp)
+
+(define-constant +gui-static-text-delim+        "§"                            :test #'string=)

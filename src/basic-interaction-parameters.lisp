@@ -266,11 +266,14 @@
 				   :environment environment))
 
     (defmethod description-for-humans ((object effect-parameters))
-      (format nil "~@d (~a)" (modifier object) (if (effect-unlimited-p (duration object))
-						   (_ "unlimited")
-						   (format nil
-							   (_ "~d turns")
-							   (duration object))))))
+      (format nil "(~a) ~,1f"
+	      (if (effect-unlimited-p (duration object))
+				  (_ "unlimited")
+				  (format nil
+					  (_ "~d turns")
+					  (duration object)))
+	       (modifier object))))
+
 
 (defmacro define-effect (params)
   (let* ((parameters  (misc:build-plist params))
@@ -346,7 +349,7 @@
 				   :environment environment))
 
     (defmethod description-for-humans ((object healing-effect-parameters))
-      (format nil "~a chance: ~a% target ~a"
+      (format nil (_ "~a chance: ~,1f% target ~a")
 	      (if (effect-unlimited-p (duration object))
 		  (_ "unlimited")
 		  (format nil (_ "~d turns") (duration object)))
@@ -436,10 +439,10 @@
 				   :environment environment))
 
     (defmethod description-for-humans ((object poison-effect-parameters))
-      (format nil (_ "poison enemy ~a chance ~a")
+      (format nil (_ "poison enemy ~a chance ~,1f")
 	      (if (and (points-per-turn object)
 		       (> (points-per-turn object) 0))
-		  (format nil (_ "(~a damage per turn)") (points-per-turn object))
+		  (format nil (_ "(~,1f damage per turn)") (points-per-turn object))
 		  "")
 	      (chance->chance-for-human (chance object)))))
 
@@ -498,7 +501,7 @@
 				   :environment environment))
 
     (defmethod description-for-humans ((object heal-damage-points-effect-parameters))
-      (format nil (_ "heal ~a DMG, target ~a")
+      (format nil (_ "heal ~,1f DMG, target ~a")
 	      (or (points object)
 		  0)
 	      (target object))))

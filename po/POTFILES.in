@@ -74,10 +74,19 @@ src/profiling.lisp
 src/quad-tree.lisp
 src/quaternion.lisp
 src/queue.lisp
-src/random-potion.lisp
 src/random-terrain.lisp
+src/random-labyrinth.lisp
+src/random-armor.lisp
+src/random-container.lisp
+src/random-elm.lisp
+src/random-key.lisp
+src/random-names.lisp
+src/random-potion.lisp
+src/random-ring.lisp
+src/random-shield.lisp
+src/random-shoes.lisp
 src/random-weapon.lisp
-src/random-fountain.lisp
+src/basic-interaction-parameters.lisp
 # GUI
 src/gui/gui-events.lisp
 src/gui/gui.lisp

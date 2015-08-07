@@ -278,9 +278,15 @@
     :initarg  :focus
     :accessor focus)))
 
+(defgeneric flip-y (object child))
+
 (defgeneric width (object))
 
 (defgeneric height (object))
+
+(defmethod flip-y ((object widget) (child widget))
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (d- (height object) (d+ (y child) (height child))))
 
 (defmethod width ((object widget))
   (with-slots (width) object
@@ -358,8 +364,6 @@
 
 (defgeneric label-width (object))
 
-(defgeneric flip-y (object child))
-
 (defgeneric on-mouse-pressed (object event))
 
 (defgeneric on-mouse-released (object event))
@@ -388,10 +392,6 @@
 
 (defmethod label-width ((object widget))
   (d* (d (length (label object))) (label-font-size object)))
-
-(defmethod flip-y ((object widget) (child widget))
-  (declare (optimize (debug 0) (safety 0) (speed 3)))
-  (d- (height object) (d+ (y child) (height child))))
 
 (defmethod on-mouse-pressed ((object widget) event)
   (top-down-visit object #'(lambda (a) (when (widgetp a) (setf (focus a) nil))))
@@ -936,29 +936,32 @@
       (setf (label object) label))))
 
 (defmethod (setf label) (new-label (object static-text))
-  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (declare (optimize (debug 3) (speed 0) (safety 3)))
   (declare (simple-string new-label))
   (with-accessors ((label-font-size label-font-size)
 		   (label-font label-font)
 		   (height height)
 		   (width width)
 		   (children children)
-		   (justified justified)
-		   (y y)) object
+		   (justified justified)) object
     (declare (desired-type width height label-font-size))
+    (remove-all-children object)
     (let* ((char-width     (ftruncate (d/ width label-font-size)))
-	   (lines          (reverse (alexandria:flatten
+	   (lines          (reverse (or
+				     (alexandria:flatten
 				     (map 'list #'(lambda (a)
 						    (if justified
 							(justify-monospaced-text a char-width)
 							a))
-					  (cl-ppcre:split +static-text-delim+ new-label)))))
-	   (raw-height     (d* label-font-size (d (length lines))))
-	   (scaling-height (d/ height raw-height))
-	   (actual-height      (if (d< raw-height height)
+					  (cl-ppcre:split +gui-static-text-delim+ new-label)))
+				     '(""))))
+	   (wanted-height      (d* label-font-size (d (length lines))))
+	   (scaling-height     (d/ height wanted-height))
+	   (actual-height-font (if (d< wanted-height height)
 				   label-font-size
-				   (d/ (d* raw-height scaling-height) (d (length lines)))))
-	   (actual-text-height (d- height (d* actual-height (d (length lines))))))
+				   (d/ (d* wanted-height scaling-height) (d (length lines)))))
+	   (actual-height      (d- (d height)
+				   (d* actual-height-font (d (length lines))))))
       (declare (list lines))
       (do ((line-count (d 0.0) (d+ line-count 1.0))
 	   (line       lines   (rest line)))
@@ -973,22 +976,12 @@
 			     (fill-shell-from-mesh mesh 'font-mesh-shell)
 			     nil)))
 	     (when shell
-	       (setf (scaling shell) (sb-cga:vec label-font-size actual-height 0.0))
-	       (setf (pos     shell) (sb-cga:vec xf (d+ (d* line-count actual-height)
-							actual-text-height)
+	       (setf (scaling shell) (sb-cga:vec label-font-size actual-height-font 0.0))
+	       (setf (pos     shell) (sb-cga:vec xf
+						 (d+ (d* line-count actual-height-font)
+						     actual-height)
 						 0.0))
-	       (add-child object shell))))))
-    ;; set sizes
-    (let* ((aabb (aabb object))
-	   (p1   (aabb-p1 aabb))
-	   (p2   (aabb-p2 aabb))
-	   (aabb2 (vec4 (elt p1 0) (elt p1 1)
-			(elt p2 0) (elt p2 1)))
-	   (rect  (aabb2->rect2 aabb2)))
-      (declare (sb-cga:vec p1 p2))
-      (declare (vec4 aabb2 rect))
-      (setf width  (elt rect 2)
-	    height (elt rect 3)))))
+	       (add-child object shell))))))))
 
 (defmethod label-width ((object static-text))
   (width object))
@@ -1037,14 +1030,6 @@
   (do-children-mesh (c object)
     (render c renderer)))
 
-(defgeneric (setf fill-level) (value object))
-
-(defmethod (setf fill-level) (value (object h-bar))
-  (with-accessors ((actual-bar actual-bar)) object
-    (with-slots (fill-level) object
-      (setf fill-level (alexandria:clamp value 0.0 1.0))
-      (setf (scaling actual-bar) (sb-cga:vec fill-level 1.0 1.0)))))
-
 (defmethod setup-label ((object h-bar) new-label)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (simple-string new-label))
@@ -1082,6 +1067,14 @@
 	 (setf (scaling l) (sb-cga:vec label-font-size height 0.0))
 	 (setf (pos l)     (sb-cga:vec xf 0.0 0.0)))))
 
+(defgeneric (setf fill-level) (value object))
+
+(defmethod (setf fill-level) (value (object h-bar))
+  (with-accessors ((actual-bar actual-bar)) object
+    (with-slots (fill-level) object
+      (setf fill-level (alexandria:clamp value 0.0 1.0))
+      (setf (scaling actual-bar) (sb-cga:vec fill-level 1.0 1.0)))))
+
 (defclass window (widget)
   ((top-bar
     :initform (make-instance 'widget)
@@ -1101,8 +1094,6 @@
     :accessor dragging-mode)))
 
 (defparameter *topbar-h* 30.0)
-
-(defparameter *frame-relative-offseth* 30.0)
 
 (defmethod initialize-instance :after ((object window) &key &allow-other-keys)
   (with-slots (label) object
@@ -1230,17 +1221,14 @@
 
 (defmethod flip-y ((object window) (child widget))
   (declare (optimize (debug 3) (speed 0) (safety 3)))
-  (let* ((scale    (d/ (d- (height object)
-			   (y child))
-		     (height object)))
-	  (h-frame (d- (height (frame object))
-		       (d* (top-frame-offset *reference-sizes*) (height (frame object)))
-		       (d* (bottom-frame-offset *reference-sizes*) (height (frame object)))))
+  (let* ((h-frame (d- (height (frame object))
+		      (d* (top-frame-offset *reference-sizes*) (height (frame object)))))
+	 (scale   (d/ (d- h-frame (y child))
+		      h-frame))
 	 (saved-height (height child)))
-    (setf (scaling child) (sb-cga:vec 1.0 (d/ h-frame (height object))  0.0))
-    (d+ (d- (d* scale h-frame)
-	    (d* saved-height (d/ h-frame (height object))))
-	(d* (bottom-frame-offset *reference-sizes*) (height (frame object))))))
+    (max (d- (d* scale h-frame)
+	     saved-height)
+	 (d* (bottom-frame-offset *reference-sizes*) (height (frame object))))))
 
 (defmethod on-mouse-pressed ((object window) event)
   (if (and (shown object)
@@ -3301,7 +3289,7 @@
       (small-square-button-size *reference-sizes*)
       (spacing                      *reference-sizes*)))
 
-(defun make-inventory-slot-button (x y)
+(defun make-inventory-slot-button (x y &key (callback nil))
   (make-instance 'inventory-slot-button
 		 :theme            nil
 		 :x                x
@@ -3312,7 +3300,7 @@
 		 :texture-pressed  (get-texture +inventory-slot-selected-texture-name+)
 		 :texture-overlay  (get-texture +transparent-texture-name+)
 		 :contained-entity nil
-		 :callback         nil))
+		 :callback         callback))
 
 (defun show/hide-chest-slots-cb (w e)
   (declare (ignore e))
@@ -3347,6 +3335,13 @@
 
 (defun empty-slot-p (slot)
   (null (contained-entity slot)))
+
+(defun inventory-update-description-cb (widget e)
+  (declare (ignore e))
+  (with-parent-widget (win) widget
+    (when (contained-entity widget)
+      (setf (label (text-description win))
+	    (description-for-humans (contained-entity widget))))))
 
 (defun pick-item-cb (w e)
   (declare (ignore e))
@@ -3462,17 +3457,20 @@
     :accessor chest)
    (chest-slot-0
     :initform (make-inventory-slot-button (small-square-button-size *reference-sizes*)
-					  (y-just-under-slot-page))
+					  (y-just-under-slot-page)
+					  :callback #'inventory-update-description-cb)
     :initarg  :chest-slot-0
     :accessor chest-slot-0)
    (chest-slot-1
     :initform (make-inventory-slot-button (d* 2.0 (small-square-button-size *reference-sizes*))
-					  (y-just-under-slot-page))
+					  (y-just-under-slot-page)
+					  :callback #'inventory-update-description-cb)
     :initarg  :chest-slot-1
     :accessor chest-slot-1)
    (chest-slot-2
     :initform (make-inventory-slot-button (d* 3.0 (small-square-button-size *reference-sizes*))
-					  (y-just-under-slot-page))
+					  (y-just-under-slot-page)
+					  :callback #'inventory-update-description-cb)
     :initarg  :chest-slot-2
     :accessor chest-slot-2)
    (current-slots-page
@@ -3483,7 +3481,7 @@
     :initform  0
     :initarg  :current-slots-page-number
     :accessor current-slots-page-number)
-   (img-chest
+   (b-chest
     :initform (make-instance 'toggle-button
 			     :width  (small-square-button-size *reference-sizes*)
 			     :height (small-square-button-size *reference-sizes*)
@@ -3494,8 +3492,21 @@
 			     :texture-overlay (get-texture +transparent-texture-name+)
 			     :callback        #'show/hide-chest-slots-cb
 			     :button-status   nil)
-    :initarg  :img-chest
-    :accessor img-chest)
+    :initarg  :b-chest
+    :accessor b-chest)
+   (text-description
+    :initform (make-instance 'widget:static-text
+			     :height (d* 2.0
+					 (small-square-button-size *reference-sizes*))
+			     :width  (d/ (inventory-window-width) 2.0)
+			     :x      0.0
+			     :y      (d+ (y-just-under-slot-page)
+					 (small-square-button-size *reference-sizes*))
+			     :font-size (d* 0.1 *square-button-size*)
+			     :label ""
+			     :justified t)
+    :initarg  :text-description
+    :accessor text-description)
    (b-use
     :initform (make-instance 'naked-button
 			     :x               (d* (d +slots-per-page-side-size+)
@@ -3551,30 +3562,85 @@
 			     :callback        #'dismiss-item-cb)
     :initarg :b-dismiss
     :accessor b-dismiss)
-   (b-close
-    :initform (make-instance 'naked-button
-			     :x 0.0
-			     :y (d- *inventory-window-h*
-				    (tiny-square-button-size *reference-sizes*))
-			     :width  (tiny-square-button-size *reference-sizes*)
-			     :height (tiny-square-button-size *reference-sizes*)
-			     :texture-object  (get-texture +square-button-texture-name+)
-			     :texture-pressed (get-texture +square-button-pressed-texture-name+)
-			     :texture-overlay (get-texture +button-cancel-texture-name+)
-			     :callback        #'hide-parent-cb)
-    :initarg  :b-close
-    :accessor b-close)))
+   (img-silhouette
+    :initform (make-instance 'signalling-light
+			     :x             (d- (d* 0.66 (inventory-window-width))
+						(d/ (inventory-silhouette-w) 2.0))
+			     :y             (small-square-button-size *reference-sizes*)
+			     :width         (inventory-silhouette-w)
+			     :height        (inventory-silhouette-h)
+			     :texture-name  +silhouette-texture-name+
+			     :button-status t)
+    :initarg  :img-silhouette
+    :accessor img-silhouette)
+   (elm-slot
+    :initform (make-inventory-slot-button (d- (d* 0.66 (inventory-window-width))
+					      (d/ (small-square-button-size *reference-sizes*)
+						  2.0))
+					  (d/ (small-square-button-size *reference-sizes*)
+					      2.0)
+
+					  :callback nil) ; TODO
+    :initarg  :elm-slot
+    :accessor elm-slot)
+   (shoes-slot
+    :initform (make-inventory-slot-button (d- (d* 0.66 (inventory-window-width))
+					      (d/ (small-square-button-size *reference-sizes*)
+						  2.0))
+					  (inventory-window-height)
+
+					  :callback nil) ; TODO
+    :initarg  :shoes-slot
+    :accessor shoes-slot)
+   (armor-slot
+    :initform (make-inventory-slot-button (d- (d* 0.66 (inventory-window-width))
+					      (d/ (small-square-button-size *reference-sizes*)
+						  2.0))
+					  (d- (d/ (inventory-window-height) 2.0)
+					      (d* 1.5
+						  (small-square-button-size *reference-sizes*)))
+					  :callback nil) ; TODO
+    :initarg  :armor-slot
+    :accessor armor-slot)
+    (left-hand-slot
+    :initform (make-inventory-slot-button (d- (d* 0.66 (inventory-window-width))
+					      (d* 2.0
+						  (small-square-button-size *reference-sizes*)))
+					  (d/ (inventory-window-height) 2.0)
+					  :callback nil) ; TODO
+    :initarg  :left-hand-slot
+    :accessor left-hand-slot)
+   (right-hand-slot
+    :initform (make-inventory-slot-button (d+ (d* 0.66 (inventory-window-width))
+					      (small-square-button-size *reference-sizes*))
+					  (d/ (inventory-window-height) 2.0)
+					  :callback nil) ; TODO
+    :initarg  :right-hand-slot
+    :accessor right-hand-slot)
+   (ring-slot
+    :initform (make-inventory-slot-button (d+ (d* 0.66 (inventory-window-width))
+					      (small-square-button-size *reference-sizes*))
+					  (d- (d/ (inventory-window-height) 2.0)
+					      (small-square-button-size *reference-sizes*)
+					      (spacing *reference-sizes*))
+					  :callback nil) ; TODO
+    :initarg  :ring-slot
+    :accessor ring-slot)))
 
 (defmethod initialize-instance :after ((object inventory-window) &key &allow-other-keys)
   (with-accessors ((slots-pages slots-pages) (current-slots-page current-slots-page)
-		   (owner owner) (b-close b-close) (b-use b-use)
+		   (owner owner)
+		   (b-use b-use) (text-description text-description)
 		   (b-wear b-wear) (b-pick b-pick) (b-dismiss b-dismiss)
-		   (img-chest img-chest) (b-next-page b-next-page)
+		   (b-chest b-chest) (b-next-page b-next-page)
 		   (current-slots-page-number current-slots-page-number)
 		   (b-prev-page b-prev-page) (lb-page-count lb-page-count)
 		   (chest-slot-0 chest-slot-0) (chest-slot-1 chest-slot-1)
-		   (chest-slot-2 chest-slot-2))
-      object
+		   (chest-slot-2 chest-slot-2)
+		   (img-silhouette img-silhouette)
+		   (elm-slot elm-slot) (shoes-slot shoes-slot)
+		   (armor-slot armor-slot) (left-hand-slot left-hand-slot)
+		   (right-hand-slot right-hand-slot) (ring-slot ring-slot))  object
     (let ((page-count (if owner
 			  (player-character:inventory-slot-pages-number owner)
 			  1))
@@ -3587,7 +3653,8 @@
 			(loop for j from 0 below  +slots-per-page-side-size+ do
 			     (let* ((button (make-inventory-slot-button (* i button-size)
 									(d+ starting-y
-									    (* j button-size)))))
+									    (* j button-size))
+									:callback #'inventory-update-description-cb)))
 			       (push button page))))
 		   (reverse page))))
       (setf current-slots-page (elt slots-pages 0))
@@ -3613,8 +3680,15 @@
       (add-child object b-wear)
       (add-child object b-pick)
       (add-child object b-dismiss)
-      (add-child object img-chest)
-      (add-child object b-close)
+      (add-child object b-chest)
+      (add-child object text-description)
+      (add-child object img-silhouette)
+      (add-child object elm-slot)
+      (add-child object shoes-slot)
+      (add-child object armor-slot)
+      (add-child object left-hand-slot)
+      (add-child object right-hand-slot)
+      (add-child object ring-slot)
       (update-page-counts object current-slots-page-number)
       (add-inventory-objects object))))
 
@@ -3689,12 +3763,28 @@
 	      (setf (texture-overlay  chest-slot-2)
 		    (player-character:portrait (elt (children chest) i)))))))))
 
+(defun inventory-window-width ()
+  (d+ (d* 13.0 (small-square-button-size *reference-sizes*))
+      (d* 2.0
+	  (left-frame-offset *reference-sizes*)
+	  (d* 5.0 (small-square-button-size *reference-sizes*)))))
+
+(defun inventory-silhouette-w ()
+  (d* 0.25 (inventory-window-width)))
+
+(defun inventory-silhouette-h ()
+  (d- (inventory-window-height)
+      (d* 3.0 (small-square-button-size *reference-sizes*))))
+
+(defun inventory-window-height ()
+    (d+ (d* 10.0 (small-square-button-size *reference-sizes*))))
+
 (defun make-inventory-window (character &optional (chest nil))
   (make-instance 'inventory-window
 		 :owner  character
 		 :chest  chest
 		 :x      0.0
 		 :y      200.0
-		 :width  (d/ (d *window-w*) 2.0)
-		 :height (d/ (d *window-h*) 2.0)
+		 :width  (inventory-window-width)
+		 :height (inventory-window-height)
 		 :label  (_ "Inventory")))

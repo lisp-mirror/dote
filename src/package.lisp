@@ -95,7 +95,8 @@
    :+default-character-containers+
    :+default-character-potions+
    :+default-character-food+
-   :+default-character-misc+))
+   :+default-character-misc+
+   :+gui-static-text-delim+))
 
 (defpackage :profiling
   (:use :cl)
@@ -2091,7 +2092,6 @@
    :+magic-staff-overlay-texture-name+
    :+default-font+
    :+default-font-handle+
-   :+static-text-delim+
    :join-lines-for-static-text
    :join-lines-for-static-text*
    :gui-printable-p

@@ -26,8 +26,6 @@
 
 (alexandria:define-constant +default-font-handle+ 0 :test #'=)
 
-(alexandria:define-constant +static-text-delim+ "§" :test #'string=)
-
 (defparameter *cancel-lbl* (_ "Cancel"))
 
 (defparameter *apply-lbl*  (_ "Apply"))
@@ -47,10 +45,10 @@
 (defparameter *save-lbl*   (_ "Save"))
 
 (defun join-lines-for-static-text (lines)
-  (join-with-srings lines +static-text-delim+))
+  (join-with-srings lines +gui-static-text-delim+))
 
 (defun join-lines-for-static-text* (&rest lines)
-  (join-with-srings lines +static-text-delim+))
+  (join-with-srings lines +gui-static-text-delim+))
 
 (defun get-font (handle)
   (gethash handle *fonts-db*))
