@@ -2084,6 +2084,8 @@
    :+terror-texture-name+
    :+portrait-unknown-texture-name+
    :+silhouette-texture-name+
+   :+bag-texture-name+
+   :+add-to-bag-texture-name+
    :+poison-texture-name+
    :+conversation-overlay-texture-name+
    :+attack-short-range-overlay-texture-name+
@@ -2565,6 +2567,12 @@
    :race
    :level
    :exp-points
+   :elm
+   :shoes
+   :armor
+   :left-hand
+   :right-hand
+   :ring
    :inventory
    :inventory-slot-pages-number
    :basic-interaction-params
@@ -2592,10 +2600,22 @@
    :can-launch-bolt-p
    :can-launch-arrow-p
    :mounted-on-pole-p
-   :decay-p
-   :effects-p
+   :decayp
+   :effectsp
    :healing-effects-p
    :magic-effect-p
+   :be-consumed-p
+   :potionp
+   :fountainp
+   :weaponp
+   :armorp
+   :containerp
+   :keyp
+   :shieldp
+   :shoesp
+   :elmp
+   :ringp
+   :can-be-worn-p
    :interaction-get-strength
    :interaction-get-stamina
    :interaction-get-dexterity

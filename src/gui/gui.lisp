@@ -26,24 +26,6 @@
 
 (alexandria:define-constant +default-font-handle+ 0 :test #'=)
 
-(defparameter *cancel-lbl* (_ "Cancel"))
-
-(defparameter *apply-lbl*  (_ "Apply"))
-
-(defparameter *ok-lbl*     (_ "Ok"))
-
-(defparameter *no-lbl*     (_ "No"))
-
-(defparameter *yes-lbl*    (_ "Yes"))
-
-(defparameter *close-lbl*  (_ "Close"))
-
-(defparameter *open-lbl*   (_ "Open"))
-
-(defparameter *load-lbl*   (_ "Load"))
-
-(defparameter *save-lbl*   (_ "Save"))
-
 (defun join-lines-for-static-text (lines)
   (join-with-srings lines +gui-static-text-delim+))
 
@@ -223,6 +205,16 @@
 		   inventory-slot-selected.tga
 		   transparent.tga
 		   silhouette.tga
+		   (bag.tga
+		    +default-gui-resource+
+		    (setf (s-wrap-mode  bg) :clamp-to-border)
+		    (setf (t-wrap-mode  bg) :clamp-to-border)
+		    (setf (border-color bg) §c00000000))
+		   (add-to-bag.tga
+		    +default-gui-resource+
+		    (setf (s-wrap-mode  bg) :clamp-to-border)
+		    (setf (t-wrap-mode  bg) :clamp-to-border)
+		    (setf (border-color bg) §c00000000))
 		   (up-arrow-overlay.tga
 		    +default-gui-resource+
 		    (setf (s-wrap-mode  bg) :clamp-to-border)
@@ -448,6 +440,8 @@
   (setup-bg-inventory-slot-selected)
   (setup-bg-transparent)
   (setup-bg-silhouette)
+  (setup-bg-bag)
+  (setup-bg-add-to-bag)
   (setup-bg-blue-h-bar)
   (setup-bg-red-h-bar)
   (setup-bg-green-h-bar)

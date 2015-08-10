@@ -488,12 +488,11 @@
 
     (defmethod print-object ((object heal-damage-points-effect-parameters) stream)
       (print-unreadable-object (object stream :type t :identity t)
-	(format stream "when? ~a points? ~a chance ~a target ~a"
+	(format stream "when? ~a points? ~a chance ~,1f% target ~a"
 		(trigger object)
 		(points  object)
 		(chance->chance-for-human (chance object))
 		(target  object))))
-
 
     (defmethod make-load-form ((object heal-damage-points-effect-parameters) &optional environment)
       (make-load-form-saving-slots object

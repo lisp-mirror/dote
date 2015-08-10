@@ -268,6 +268,30 @@
     :initarg :exp-points
     :initform 0
     :accessor exp-points)
+   (elm
+    :initarg :elm
+    :initform nil
+    :accessor wlm)
+   (shoes
+    :initarg :shoes
+    :initform nil
+    :accessor shoes)
+   (armor
+    :initarg :armor
+    :initform nil
+    :accessor armor)
+   (left-hand
+    :initarg :left-hand
+    :initform nil
+    :accessor left-hand)
+   (right-hand
+    :initarg :right-hand
+    :initform nil
+    :accessor right-hand)
+   (ring
+    :initarg :ring
+    :initform nil
+    :accessor ring)
    (inventory
     :initarg :inventory
     :initform '()
@@ -515,9 +539,14 @@
   (cdr (assoc key (basic-interaction-params object))))
 
 (defmacro gen-interaction-predicate ((name) &body body)
-  (let ((name-fn (format-symbol t "~:@(~a-p~)" name)))
+  (let ((name-fn (format-symbol t
+				(if (> (count "-" (symbol-name name) :test #'string=) 0)
+				    "~:@(~a-p~)"
+				    "~:@(~ap~)")
+				name)))
     `(progn
        (defgeneric ,name-fn (object))
+       (defmethod  ,name-fn ((object t)) nil)
        (defmethod  ,name-fn ((object player-character))
 	 (progn ,@body)))))
 
@@ -693,7 +722,7 @@
 (gen-interaction-predicate (ring)
   (lookup-basic-interaction object +can-be-worn-hand+))
 
-(gen-interaction-predicate (con-be-worn)
+(gen-interaction-predicate (can-be-worn)
   (or (lookup-basic-interaction object +can-be-worn-feet+)
       (lookup-basic-interaction object +can-be-worn-arm+)
       (lookup-basic-interaction object +can-be-worn-neck+)
@@ -716,17 +745,19 @@
 
 (defmethod description-for-humans ((object player-character))
   (strcat
-   (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~]~a")
+   (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~] ~a ~a~a")
 	   (can-cut-p   object)
 	   (can-smash-p object)
 	   (can-launch-bolt-p object)
 	   (can-launch-arrow-p object)
-	   (fountain-p object)
-	   (potion-p   object)
-	   (elm-p      object)
-	   (armor-p    object)
-	   (ring-p     object)
-	   (shoes-p    object)
+	   (fountainp object)
+	   (potionp   object)
+	   (elmp      object)
+	   (armorp    object)
+	   (ringp     object)
+	   (shoesp    object)
+	   (first-name object)
+	   (last-name  object)
 	   +gui-static-text-delim+)
    (format nil (_ "~@[- ~a strength~a~]")
 	   (description-for-humans

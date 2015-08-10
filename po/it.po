@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dote 0.0.1\n"
 "Report-Msgid-Bugs-To: cage@katamail.com\n"
-"POT-Creation-Date: 2015-08-05 20:26+0200\n"
-"PO-Revision-Date: 2015-08-06 19:17+0200\n"
+"POT-Creation-Date: 2015-08-09 18:31+0200\n"
+"PO-Revision-Date: 2015-08-09 18:33+0200\n"
 "Last-Translator: cage <cage@katamail.com>\n"
 "Language-Team: Italian\n"
 "Language: it\n"
@@ -17,202 +17,206 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/character.lisp:719
+#: src/character.lisp:748
 #, lisp-format
-msgid "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~]~a"
-msgstr "~:[~;Arma da taglio~]~:[~;Arma ad impatto~]~:[~;Arma da lancio~]~:[~;Arma da lancio~]~:[~;Fontana~]~:[~;Pozione~]~:[~;Elmo~]~:[~;Armatura~]~:[~;Anello~]~:[~;Scarpe~]~a"
+msgid ""
+"~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~] "
+"~a ~a~a"
+msgstr ""
+"~:[~;Arma da taglio~]~:[~;Arma ad impatto~]~:[~;Arma da lancio~]~:[~;Arma da lancio~]~:[~;Fontana~]~:[~;Pozione~]~:[~;Elmo~]~:[~;Armatura~]~:[~;Anello~]~:[~;Scarpe~]~a "
+"~a~a"
 
-#: src/character.lisp:731
+#: src/character.lisp:762
 #, lisp-format
 msgid "~@[- ~a strength~a~]"
 msgstr "~@[- ~a forza~a~]"
 
-#: src/character.lisp:735
+#: src/character.lisp:766
 #, lisp-format
 msgid "~@[, ~a stamina~a~]"
 msgstr "~@[, ~a resistenza~a~]"
 
-#: src/character.lisp:738
+#: src/character.lisp:769
 #, lisp-format
 msgid "~@[- ~a dexterity~a~]"
 msgstr "~@[- ~a abilita'~a~]"
 
-#: src/character.lisp:741
+#: src/character.lisp:772
 #, lisp-format
 msgid "~@[- ~a agility~a~]"
 msgstr "~@[- ~a agilita'~a~]"
 
-#: src/character.lisp:744
+#: src/character.lisp:775
 #, lisp-format
 msgid "~@[- ~a smartness~a~]"
 msgstr "~@[- ~a intelligenza~a~]"
 
-#: src/character.lisp:747
+#: src/character.lisp:778
 #, lisp-format
 msgid "~@[- ~a empaty~a~]"
 msgstr "~@[- ~a empatia~a~]"
 
-#: src/character.lisp:750
+#: src/character.lisp:781
 #, lisp-format
 msgid "~@[- ~a weight~a~]"
 msgstr "~@[- ~a peso~a~]"
 
-#: src/character.lisp:753
+#: src/character.lisp:784
 #, lisp-format
 msgid "~@[- ~a damage points~a~]"
 msgstr "~@[- ~a punti danno~a~]"
 
-#: src/character.lisp:756
+#: src/character.lisp:787
 #, lisp-format
 msgid "~@[- ~a movement points~a~]"
 msgstr "~@[- ~a punti movimento~a~]"
 
-#: src/character.lisp:759
+#: src/character.lisp:790
 #, lisp-format
 msgid "~@[- ~a magic points~a~]"
 msgstr "~@[- ~a punti magici~a~]"
 
-#: src/character.lisp:762
+#: src/character.lisp:793
 #, lisp-format
 msgid "~@[- ~a dodge chance~a~]"
 msgstr "~@[- ~a probabilita' di schivare~a~]"
 
-#: src/character.lisp:765
+#: src/character.lisp:796
 #, lisp-format
 msgid "~@[- ~a melee attack chance~a~]"
 msgstr "~@[- ~a probabilita' negli attacchi corpo a corpo~a~]"
 
-#: src/character.lisp:768
+#: src/character.lisp:799
 #, lisp-format
 msgid "~@[- ~a range attack chance~a~]"
 msgstr "~@[- ~a probabilita' negli attacchi a distanza~a~]"
 
-#: src/character.lisp:771
+#: src/character.lisp:802
 #, lisp-format
 msgid "~@[- ~a melee attack damage~a~]"
 msgstr "~@[- ~a danno negli attacchi corpo a corpo~a~]"
 
-#: src/character.lisp:774
+#: src/character.lisp:805
 #, lisp-format
 msgid "~@[- ~a range attack damage~a~]"
 msgstr "~@[- ~a danno negli attacchi a distanza~a~]"
 
-#: src/character.lisp:777
+#: src/character.lisp:808
 #, lisp-format
 msgid "~@[- ~a edge weapons chance bonus~a~]"
 msgstr "~@[- ~a bonus probabilita' attacchi con armi da taglio~a~]"
 
-#: src/character.lisp:780
+#: src/character.lisp:811
 #, lisp-format
 msgid "~@[- ~a edge weapons damage bonus~a~]"
 msgstr "~@[- ~a bonus danno attacchi con armi da taglio~a~]"
 
-#: src/character.lisp:783
+#: src/character.lisp:814
 #, lisp-format
 msgid "~@[- ~a impact weapons chance bonus~a~]"
 msgstr "~@[- ~a bonus probabilita' attacchi con armi ad imapatto~a~]"
 
-#: src/character.lisp:786
+#: src/character.lisp:817
 #, lisp-format
 msgid "~@[- ~a impact weapons damage bonus~a~]"
 msgstr "~@[- ~a bonus danno attacchi con armi ad impatto~a~]"
 
-#: src/character.lisp:789
+#: src/character.lisp:820
 #, lisp-format
 msgid "~@[- ~a pole weapons chance bonus~a~]"
 msgstr "~@[- ~a bonus probabilita' attacchi con lance~a~]"
 
-#: src/character.lisp:792
+#: src/character.lisp:823
 #, lisp-format
 msgid "~@[- ~a pole weapons damage bonus~a~]"
 msgstr "~@[- ~a bonus danno attacchi con lance~a~]"
 
-#: src/character.lisp:795
+#: src/character.lisp:826
 #, lisp-format
 msgid "~@[- ~a unlock chance~a~]"
 msgstr "~@[- ~a probabilita' scassinamento~a~]"
 
-#: src/character.lisp:798
+#: src/character.lisp:829
 #, lisp-format
 msgid "~@[- ~a deactivate traps chance~a~]"
 msgstr "~@[- ~a probabilita' disattiva trappole~a~]"
 
-#: src/character.lisp:801
+#: src/character.lisp:832
 #, lisp-format
 msgid "~@[- ~a reply attack chance~a~]"
 msgstr "~@[- ~a probabilita' contrattacco~a~]"
 
-#: src/character.lisp:804
+#: src/character.lisp:835
 #, lisp-format
 msgid "~@[- ~a ambush attack chance~a~]"
 msgstr "~@[- ~a probabilita' attacco di sorpresa~a~]"
 
-#: src/character.lisp:807
+#: src/character.lisp:838
 #, lisp-format
 msgid "~@[- ~a spell chance~a~]"
 msgstr "~@[- ~a probabilita' lancio incantesimi~a~]"
 
-#: src/character.lisp:810
+#: src/character.lisp:841
 #, lisp-format
 msgid "~@[- ~a attack spell chance~a~]"
 msgstr "~@[- ~a probabilita' lancio incantesimi di attacco~a~]"
 
-#: src/character.lisp:813
+#: src/character.lisp:844
 #, lisp-format
 msgid "~@[- ~a heals poison condition~a~]"
 msgstr "~@[- ~a cura avvelenamento~a~]"
 
-#: src/character.lisp:816
+#: src/character.lisp:847
 #, lisp-format
 msgid "~@[- ~a heals berserk condition~a~]"
 msgstr "~@[- ~a cura berserk~a~]"
 
-#: src/character.lisp:819
+#: src/character.lisp:850
 #, lisp-format
 msgid "~@[- ~a heals faint condition~a~]"
 msgstr "~@[- ~a cura svenimento~a~]"
 
-#: src/character.lisp:822
+#: src/character.lisp:853
 #, lisp-format
 msgid "~@[- ~a heals terror condition~a~]"
 msgstr "~@[- ~a cura terrore~a~]"
 
-#: src/character.lisp:825
+#: src/character.lisp:856
 #, lisp-format
 msgid "~@[- makes immune from poison (~a)~a~]"
 msgstr "~@[- immune al veleno (~a)~a~]"
 
-#: src/character.lisp:828
+#: src/character.lisp:859
 #, lisp-format
 msgid "~@[- makes immune from terror (~a)~a~]"
 msgstr "~@[- immune al terrore (~a)~a~]"
 
-#: src/character.lisp:831
+#: src/character.lisp:862
 #, lisp-format
 msgid "~@[- makes immune from berserk (~a)~a~]"
 msgstr "~@[- immune  berserk (~a)~a~]"
 
-#: src/character.lisp:834
+#: src/character.lisp:865
 #, lisp-format
 msgid "~@[- makes immune from faint (~a)~a~]"
 msgstr "~@[- immune allo svenimento (~a)~a~]"
 
-#: src/character.lisp:837
+#: src/character.lisp:868
 #, lisp-format
 msgid "~@[- ~a cause faint condition~a~]"
 msgstr "~@[- ~a causa svenimento~a~]"
 
-#: src/character.lisp:840
+#: src/character.lisp:871
 #, lisp-format
 msgid "~@[- ~a cause terror condition~a~]"
 msgstr "~@[- ~a causa terrore~a~]"
 
-#: src/character.lisp:843
+#: src/character.lisp:874
 #, lisp-format
 msgid "~@[- ~a cause berserk condition~a~]"
 msgstr "~@[- ~a causa berserk~a~]"
 
-#: src/character.lisp:846
+#: src/character.lisp:877
 #, lisp-format
 msgid "~@[- launchs ~a~a~]"
 msgstr "~@[- lancia ~a~a~]"
@@ -274,8 +278,8 @@ msgstr "Interazione: nessuna durata specificata per l'effetto, uso :unlimited."
 #: src/basic-interaction-parameters.lisp:292
 #: src/basic-interaction-parameters.lisp:376
 #: src/basic-interaction-parameters.lisp:463
-#: src/basic-interaction-parameters.lisp:526
-#: src/basic-interaction-parameters.lisp:545
+#: src/basic-interaction-parameters.lisp:525
+#: src/basic-interaction-parameters.lisp:544
 #, lisp-format
 msgid "Invalid trigger ~a, expected ~a"
 msgstr "Innesco non valido ~a, atteso ~a"
@@ -286,7 +290,7 @@ msgid "~a chance: ~,1f% target ~a"
 msgstr "~a probabilita': ~,1f% obiettivo ~a"
 
 #: src/basic-interaction-parameters.lisp:366
-#: src/basic-interaction-parameters.lisp:518
+#: src/basic-interaction-parameters.lisp:517
 msgid ""
 "Interation: No activation trigger specified for healing effect, using \":use."
 "\""
@@ -295,7 +299,7 @@ msgstr ""
 
 #: src/basic-interaction-parameters.lisp:368
 #: src/basic-interaction-parameters.lisp:459
-#: src/basic-interaction-parameters.lisp:520
+#: src/basic-interaction-parameters.lisp:519
 msgid "Interation: No chance specified for healing effect, using 0"
 msgstr ""
 "Interazione: nessuna probabilita' specificata per effetti sulla salute, uso "
@@ -306,7 +310,7 @@ msgid "Interation: No duration specified for effect, using 1000000."
 msgstr "Interazione: nessuna durata specificata fer l'effetto, uso 1000000."
 
 #: src/basic-interaction-parameters.lisp:372
-#: src/basic-interaction-parameters.lisp:522
+#: src/basic-interaction-parameters.lisp:521
 msgid "Interation: No target specified for effect, using self."
 msgstr "Interazione: nessun obiettivo specificato per l'effetto uso :self."
 
@@ -332,248 +336,224 @@ msgid ""
 msgstr "Interazione: nessun innesco specificato per l'avvelenamento, uso :use."
 
 #: src/basic-interaction-parameters.lisp:468
-#: src/basic-interaction-parameters.lisp:524
+#: src/basic-interaction-parameters.lisp:523
 #, lisp-format
 msgid "Invalid points ~a, expected a number"
 msgstr "Punti non validi ~a, era atteso un numero"
 
-#: src/basic-interaction-parameters.lisp:504
+#: src/basic-interaction-parameters.lisp:503
 #, lisp-format
 msgid "heal ~,1f DMG, target ~a"
 msgstr "cura ~,1f DMG, obiettivo ~a"
 
-#: src/basic-interaction-parameters.lisp:516
+#: src/basic-interaction-parameters.lisp:515
 msgid "Interation: No points specified for healing effect, using \"1\"."
 msgstr ""
 "Interazione: punti non specificati per gli effetti sulla salute, uso 1."
 
-#: src/basic-interaction-parameters.lisp:539
+#: src/basic-interaction-parameters.lisp:538
 msgid ""
 "Interation: No activation trigger specified for magic effect, using \":use.\""
 msgstr ""
 "Interazione: nessun innesco specificato per gli effetti magici, uso :use."
 
-#: src/basic-interaction-parameters.lisp:541
+#: src/basic-interaction-parameters.lisp:540
 msgid "Interation: No spell for magic effect, using \":heal-1.\""
 msgstr "Interazione: nessun incantesimo specificato, uso \":heal-1\""
 
-#: src/gui/gui.lisp:29
-msgid "Cancel"
-msgstr "Annulla"
-
-#: src/gui/gui.lisp:31
-msgid "Apply"
-msgstr "Applica"
-
-#: src/gui/gui.lisp:33
-msgid "Ok"
-msgstr "Ok"
-
-#: src/gui/gui.lisp:35
-msgid "No"
-msgstr "No"
-
-#: src/gui/gui.lisp:37
-msgid "Yes"
-msgstr "Si'"
-
-#: src/gui/gui.lisp:39
-msgid "Close"
-msgstr "Chiudi"
-
-#: src/gui/gui.lisp:41
-msgid "Open"
-msgstr "Apri"
-
-#: src/gui/gui.lisp:43 src/gui/widget.lisp:2164
-msgid "Load"
-msgstr "Carica"
-
-#: src/gui/gui.lisp:45 src/gui/widget.lisp:2152
-msgid "Save"
-msgstr "Salva"
-
-#: src/gui/widget.lisp:1668
+#: src/gui/widget.lisp:1648
 msgid "Choose file"
 msgstr "Scegli un file"
 
-#: src/gui/widget.lisp:2037
+#: src/gui/widget.lisp:2017
 msgid "Class"
 msgstr "Classe"
 
-#: src/gui/widget.lisp:2050
+#: src/gui/widget.lisp:2030
 msgid "Warrior "
 msgstr "Guerriero "
 
-#: src/gui/widget.lisp:2061
+#: src/gui/widget.lisp:2041
 msgid "Wizard "
 msgstr "Mago "
 
-#: src/gui/widget.lisp:2072
+#: src/gui/widget.lisp:2052
 msgid "Healer "
 msgstr "Guaritore "
 
-#: src/gui/widget.lisp:2083
+#: src/gui/widget.lisp:2063
 msgid "Archer "
 msgstr "Arciere "
 
-#: src/gui/widget.lisp:2094
+#: src/gui/widget.lisp:2074
 msgid "Ranger "
 msgstr "Ranger "
 
-#: src/gui/widget.lisp:2100
+#: src/gui/widget.lisp:2080
 msgid "Gender"
 msgstr "Genere"
 
-#: src/gui/widget.lisp:2115
+#: src/gui/widget.lisp:2095
 msgid "Male "
 msgstr "Maschile "
 
-#: src/gui/widget.lisp:2126
+#: src/gui/widget.lisp:2106
 msgid "Female "
 msgstr "Femminile "
 
-#: src/gui/widget.lisp:2139
+#: src/gui/widget.lisp:2119
 msgid "Generate new"
 msgstr "Genera nuovo"
 
-#: src/gui/widget.lisp:2184
+#: src/gui/widget.lisp:2132
+msgid "Save"
+msgstr "Salva"
+
+#: src/gui/widget.lisp:2144
+msgid "Load"
+msgstr "Carica"
+
+#: src/gui/widget.lisp:2164
 msgid "Damage points: "
 msgstr "Punti danno: "
 
-#: src/gui/widget.lisp:2209
+#: src/gui/widget.lisp:2189
 msgid "Movement points: "
 msgstr "Punti Movimento: "
 
-#: src/gui/widget.lisp:2234
+#: src/gui/widget.lisp:2214
 msgid "Magic points: "
 msgstr "Punti movimento: "
 
-#: src/gui/widget.lisp:2259
+#: src/gui/widget.lisp:2239
 msgid "Dodge chance: "
 msgstr "Probabilita' di schivare: "
 
-#: src/gui/widget.lisp:2284
+#: src/gui/widget.lisp:2264
 msgid "Short range attack chance: "
 msgstr "Attacchi a corto raggio: "
 
-#: src/gui/widget.lisp:2309
+#: src/gui/widget.lisp:2289
 msgid "Long range attack chance: "
 msgstr "Attacchi a lungo raggio: "
 
-#: src/gui/widget.lisp:2334
+#: src/gui/widget.lisp:2314
 msgid "Short Range attack damage: "
 msgstr "Danno con attacchi a corto raggio: "
 
-#: src/gui/widget.lisp:2359
+#: src/gui/widget.lisp:2339
 msgid "Long Range attack damage: "
 msgstr "Danni con attacchi a lungo raggio:"
 
-#: src/gui/widget.lisp:2384
+#: src/gui/widget.lisp:2364
 msgid "Edge weapon chance bonus: "
 msgstr "Bonus probabilita' attacchi armi da taglio: "
 
-#: src/gui/widget.lisp:2409
+#: src/gui/widget.lisp:2389
 msgid "Edge weapon damage bonus: "
 msgstr "Bonus danni armi da taglio: "
 
-#: src/gui/widget.lisp:2434
+#: src/gui/widget.lisp:2414
 msgid "Impact weapon chance bonus: "
 msgstr "Bonus probabilita' attacchi armi ad impatto: "
 
-#: src/gui/widget.lisp:2459
+#: src/gui/widget.lisp:2439
 msgid "Impact weapon damage bonus: "
 msgstr "Bonus attacchi armi ad impatto: "
 
-#: src/gui/widget.lisp:2484
+#: src/gui/widget.lisp:2464
 msgid "Pole weapon chance bonus: "
 msgstr "Bonus probabilita' lance: "
 
-#: src/gui/widget.lisp:2509
+#: src/gui/widget.lisp:2489
 msgid "Pole weapon damage bonus: "
 msgstr "Bonus danni attacchi con lance: "
 
-#: src/gui/widget.lisp:2534
+#: src/gui/widget.lisp:2514
 msgid "Unlock chance: "
 msgstr "Probabilita' scassinamento serrature: "
 
-#: src/gui/widget.lisp:2559
+#: src/gui/widget.lisp:2539
 msgid "Deactivate trap chance: "
 msgstr "Probabilita' disattiva trappole: "
 
-#: src/gui/widget.lisp:2584
+#: src/gui/widget.lisp:2564
 msgid "Reply to attack chance: "
 msgstr "Probabilita contrattacco: "
 
-#: src/gui/widget.lisp:2609
+#: src/gui/widget.lisp:2589
 msgid "Ambush attack chance: "
 msgstr "Probabilita' attacco di sorpresa: "
 
-#: src/gui/widget.lisp:2634
+#: src/gui/widget.lisp:2614
 msgid "Spell chance: "
 msgstr "Probabilita' incantesimo: "
 
-#: src/gui/widget.lisp:2659
+#: src/gui/widget.lisp:2639
 msgid "Attack spell chance: "
 msgstr "Probabilita incantesimo d'attacco: "
 
-#: src/gui/widget.lisp:2684
+#: src/gui/widget.lisp:2664
 msgid "Level: "
 msgstr "Livello: "
 
-#: src/gui/widget.lisp:2694
+#: src/gui/widget.lisp:2674
 msgid "Experience points: "
 msgstr "Punti esperienza: "
 
-#: src/gui/widget.lisp:2706
+#: src/gui/widget.lisp:2686
 msgid "Name"
 msgstr "Nome"
 
-#: src/gui/widget.lisp:2717
+#: src/gui/widget.lisp:2697
 msgid "Last name"
 msgstr "Cognome"
 
-#: src/gui/widget.lisp:2729
+#: src/gui/widget.lisp:2709
 msgid "STR: "
 msgstr "STR: "
 
-#: src/gui/widget.lisp:2742
+#: src/gui/widget.lisp:2722
 msgid "ST:  "
 msgstr "ST: "
 
-#: src/gui/widget.lisp:2755
+#: src/gui/widget.lisp:2735
 msgid "DX:  "
 msgstr "DX: "
 
-#: src/gui/widget.lisp:2768
+#: src/gui/widget.lisp:2748
 msgid "AG:  "
 msgstr "AG: "
 
-#: src/gui/widget.lisp:2781
+#: src/gui/widget.lisp:2761
 msgid "SM:  "
 msgstr "SM: "
 
-#: src/gui/widget.lisp:2794
+#: src/gui/widget.lisp:2774
 msgid "EM:  "
 msgstr "EM: "
 
-#: src/gui/widget.lisp:2807
+#: src/gui/widget.lisp:2787
 msgid "WG:  "
 msgstr "WG: "
 
-#: src/gui/widget.lisp:3298
+#: src/gui/widget.lisp:3278
 msgid "Generate character"
 msgstr "Genera personaggio"
 
-#: src/gui/widget.lisp:3470
+#: src/gui/widget.lisp:3584
 msgid "Page "
 msgstr "Pagina "
 
-#: src/gui/widget.lisp:3682
+#: src/gui/widget.lisp:3653
+msgid "sort"
+msgstr "ordina"
+
+#: src/gui/widget.lisp:3936
 #, lisp-format
 msgid "~a of ~a"
 msgstr "~a di ~a"
 
-#: src/gui/widget.lisp:3732
+#: src/gui/widget.lisp:3993
 msgid "Inventory"
 msgstr "Inventario"

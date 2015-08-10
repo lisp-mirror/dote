@@ -154,7 +154,7 @@
 	       (t
 		(set-healing-effect (list +healing-effects+ i) potion-level template))))
 	(setf template (remove-generate-symbols template))
-	(fill-character-plist +type-name+ char-template template potion-level)
+	(fill-character-plist char-template template potion-level)
 	(let ((potion-character (params->character char-template)))
 	  (setf (basic-interaction-params potion-character) template)
 	  potion-character)))))
@@ -195,7 +195,7 @@
 	  (format nil "~2,'0d" potion-level)
 	  ".lisp"))
 
-(defun fill-character-plist (potion-name-type character interaction potion-level)
+(defun fill-character-plist (character interaction potion-level)
   (let* ((regex          (regexp-file-portrait interaction potion-level))
 	 (portrait-file  (random-elt (remove-if #'(lambda (a) (not (cl-ppcre:scan regex a)))
 						(res:get-resource-files
@@ -203,4 +203,4 @@
 						:key #'uiop:native-namestring))))
     (n-setf-path-value character (list +portrait+) (uiop:native-namestring portrait-file))
     (n-setf-path-value character (list +last-name+) "")
-    (n-setf-path-value character (list +first-name+) potion-name-type)))
+    (n-setf-path-value character (list +first-name+) "")))

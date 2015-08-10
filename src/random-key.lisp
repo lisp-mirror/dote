@@ -158,7 +158,7 @@
 		(set-healing-effect (list +healing-effects+ i) key-level template))))
 	(n-setf-path-value template (list +can-open+) keycode)
 	(setf template (remove-generate-symbols template))
-	(fill-character-plist +type-name+ char-template)
+	(fill-character-plist char-template)
 	(let ((key-character (params->character char-template)))
 	  (setf (basic-interaction-params key-character) template)
 	  key-character)))))
@@ -166,7 +166,7 @@
 (defun regexp-file-portrait ()
   (strcat +type-name+ +file-record-sep+))
 
-(defun fill-character-plist (name-type character)
+(defun fill-character-plist (character)
   (let* ((regex          (regexp-file-portrait))
 	 (portrait-file  (random-elt (remove-if #'(lambda (a) (not (cl-ppcre:scan regex a)))
 						(res:get-resource-files
@@ -174,4 +174,4 @@
 						:key #'uiop:native-namestring))))
     (n-setf-path-value character (list +portrait+) (uiop:native-namestring portrait-file))
     (n-setf-path-value character (list +last-name+) "")
-    (n-setf-path-value character (list +first-name+) name-type)))
+    (n-setf-path-value character (list +first-name+) "")))

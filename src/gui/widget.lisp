@@ -3326,8 +3326,14 @@
 		     (children window)))))
 
 (defun add-containded-item (slot item)
-  (setf (texture-overlay  slot) (player-character:portrait item)
-	(contained-entity slot) item))
+  (if item
+      (progn
+	(setf (texture-overlay  slot)
+	      (or (and item
+		       (player-character:portrait item))
+		  (get-texture +transparent-texture-name+)))
+	(setf (contained-entity slot) item))
+      (remove-containded-item slot)))
 
 (defun remove-containded-item (slot)
   (setf (texture-overlay  slot) (get-texture +transparent-texture-name+)
@@ -3351,10 +3357,39 @@
       (when (and chest-slot item)
 	(let ((available-slot (find-if #'(lambda (s) (empty-slot-p s))
 				       (alexandria:flatten (slots-pages win)))))
-	  (when available-slot
+	  (when (and available-slot
+		     chest-slot)
 	    (add-containded-item     available-slot item)
 	    (remove-containded-item  chest-slot)
 	    (remove-child (chest win) item :test #'= :key #'id)))))))
+
+(defun find-available-slot (inventory-win)
+  (find-if #'(lambda (s) (empty-slot-p s))
+	   (alexandria:flatten (slots-pages inventory-win))))
+
+(defun remove-worn-item (slot-from slot-to character character-slot)
+  (when (and (empty-slot-p slot-to)
+	     (not (empty-slot-p slot-from)))
+    (let ((saved (contained-entity slot-from)))
+      (setf (slot-value character character-slot) nil)
+      (add-containded-item slot-from nil)
+      (add-containded-item slot-to   saved))))
+
+(defun remove-worn-item-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (win) w
+    (multiple-value-bind (selected-worn-slot worn-item)
+	(get-selected-worn-item win)
+      (when (and selected-worn-slot
+		 worn-item)
+	(let ((available-slot (find-available-slot win)))
+	  (when available-slot
+	    (let ((c-slot (item->character-slot win worn-item)))
+	      (when c-slot
+		(remove-worn-item selected-worn-slot
+				  available-slot
+				  (owner win)
+				  c-slot)))))))))
 
 (defun dismiss-item-cb (w e)
   (declare (ignore e))
@@ -3371,7 +3406,8 @@
 				      ((empty-slot-p chest-slot-2)
 				       chest-slot-2)
 				      (t nil))))
-	  (when available-chest-slot
+	  (when (and slot
+		     available-chest-slot)
 	    (add-containded-item     available-chest-slot item)
 	    (remove-containded-item  slot)
 	    (setf (player-character:inventory owner)
@@ -3406,6 +3442,104 @@
 	 (current-slots-page window))
     (map nil #'(lambda (s) (add-child window s)) (current-slots-page window))
     (update-page-counts window next-page-no)))
+
+(defun item->character-slot (window item)
+  (with-accessors ((left-hand-slot  left-hand-slot)
+		   (right-hand-slot right-hand-slot)) window
+    (and item
+	 (cond
+	   ((player-character:ringp item)
+	    'player-character:ring)
+	   ((player-character:armorp item)
+	    'player-character:armor)
+	   ((player-character:elmp item)
+	    'player-character:elm)
+	   ((player-character:shoesp item)
+	    'player-character:shoes)
+	   ((or (player-character:weaponp item)
+		(player-character:shieldp item))
+	    (if (empty-slot-p left-hand-slot)
+		'player-character:left-hand
+		'player-character:right-hand))))))
+
+(defun item->window-accessor (window item)
+  (with-accessors ((elm-slot        elm-slot)
+		   (shoes-slot      shoes-slot)
+		   (armor-slot      armor-slot)
+		   (left-hand-slot  left-hand-slot)
+		   (right-hand-slot right-hand-slot)
+		   (ring-slot       ring-slot))      window
+    (and item
+	 (cond
+	   ((player-character:ringp item)
+	    ring-slot)
+	   ((player-character:armorp item)
+	    armor-slot)
+	   ((player-character:elmp item)
+	    elm-slot)
+	   ((player-character:shoesp item)
+	    shoes-slot)
+	   ((or (player-character:weaponp item)
+		(player-character:shieldp item))
+	    (if (empty-slot-p left-hand-slot)
+		left-hand-slot
+		right-hand-slot))))))
+
+(defun swap-worn-item (slot-from slot-to character character-slot)
+  (let ((saved (contained-entity slot-from)))
+    (setf (slot-value character character-slot) (contained-entity slot-from))
+    (add-containded-item slot-from (contained-entity slot-to))
+    (add-containded-item slot-to   saved)))
+
+(defun worn-item (slot-from slot-to character character-slot)
+  (when (and (empty-slot-p slot-to)
+	     (not (empty-slot-p slot-from)))
+    (let ((saved (contained-entity slot-from)))
+      (setf (slot-value character character-slot) (contained-entity slot-from))
+      (add-containded-item slot-from (contained-entity slot-to))
+      (add-containded-item slot-to   saved))))
+
+(defun wear-item-cb (widget e)
+  (declare (ignore e))
+  (with-parent-widget (win) widget
+    (with-accessors ((owner           owner)
+		     (elm-slot        elm-slot)
+		     (shoes-slot      shoes-slot)
+		     (armor-slot      armor-slot)
+		     (left-hand-slot  left-hand-slot)
+		     (right-hand-slot right-hand-slot)
+		     (ring-slot       ring-slot))      win
+      (multiple-value-bind (slot item)
+	  (get-selected-item win)
+	(when item
+	  (let ((c-slot       (item->character-slot  win item))
+		(win-accessor (item->window-accessor win item)))
+	    (when (and c-slot
+		       win-accessor)
+	      (worn-item slot win-accessor owner c-slot))))))))
+
+(defun sort-items (pages)
+  (let ((all (mapcar #'contained-entity (alexandria:flatten pages))))
+    (remove-if-null
+     (nconc
+      (remove-if #'(lambda (a) (not (player-character:weaponp a))) all)
+      (remove-if #'(lambda (a) (not (player-character:shieldp a))) all)
+      (remove-if #'(lambda (a) (not (player-character:elmp a))) all)
+      (remove-if #'(lambda (a) (not (player-character:armorp a))) all)
+      (remove-if #'(lambda (a) (not (player-character:shoesp a))) all)
+      (remove-if #'(lambda (a) (not (player-character:potionp a))) all)
+      (remove-if #'(lambda (a) (not (player-character:keyp a))) all)))))
+
+(defun sort-items-enter-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (win) w
+    (let ((sorted-items (sort-items (slots-pages win))))
+      (map nil
+	   #'(lambda (a) (remove-containded-item a))
+	   (alexandria:flatten (slots-pages win)))
+      (map nil #'(lambda (s i) (add-containded-item s i))
+	   (alexandria:flatten (slots-pages win))
+	   sorted-items))))
 
 (defclass inventory-window (window)
   ((owner
@@ -3498,7 +3632,8 @@
     :initform (make-instance 'widget:static-text
 			     :height (d* 2.0
 					 (small-square-button-size *reference-sizes*))
-			     :width  (d/ (inventory-window-width) 2.0)
+			     :width  (d* 5.0
+					 (small-square-button-size *reference-sizes*))
 			     :x      0.0
 			     :y      (d+ (y-just-under-slot-page)
 					 (small-square-button-size *reference-sizes*))
@@ -3507,6 +3642,17 @@
 			     :justified t)
     :initarg  :text-description
     :accessor text-description)
+   (b-sort
+    :initform (make-instance 'button
+			     :width           (small-square-button-size *reference-sizes*)
+			     :height          (small-square-button-size *reference-sizes*)
+			     :x               (d* (d +slots-per-page-side-size+)
+						  (small-square-button-size *reference-sizes*))
+			     :y      0.0
+			     :callback #'sort-items-enter-cb
+			     :label (_ "sort"))
+    :initarg  b-sort
+    :accessor b-sort)
    (b-use
     :initform (make-instance 'naked-button
 			     :x               (d* (d +slots-per-page-side-size+)
@@ -3531,7 +3677,7 @@
 			     :texture-object  (get-texture +button-texture-name+)
 			     :texture-pressed (get-texture +button-pressed-texture-name+)
 			     :texture-overlay (get-texture +wear-overlay-texture-name+)
-			     :callback        nil) ; TODO
+			     :callback        #'wear-item-cb)
     :initarg :b-wear
     :accessor b-wear)
    (b-pick
@@ -3579,8 +3725,7 @@
 						  2.0))
 					  (d/ (small-square-button-size *reference-sizes*)
 					      2.0)
-
-					  :callback nil) ; TODO
+					  :callback #'inventory-update-description-cb)
     :initarg  :elm-slot
     :accessor elm-slot)
    (shoes-slot
@@ -3588,8 +3733,7 @@
 					      (d/ (small-square-button-size *reference-sizes*)
 						  2.0))
 					  (inventory-window-height)
-
-					  :callback nil) ; TODO
+					  :callback #'inventory-update-description-cb)
     :initarg  :shoes-slot
     :accessor shoes-slot)
    (armor-slot
@@ -3599,22 +3743,22 @@
 					  (d- (d/ (inventory-window-height) 2.0)
 					      (d* 1.5
 						  (small-square-button-size *reference-sizes*)))
-					  :callback nil) ; TODO
+					  :callback #'inventory-update-description-cb)
     :initarg  :armor-slot
     :accessor armor-slot)
-    (left-hand-slot
+    (right-hand-slot
     :initform (make-inventory-slot-button (d- (d* 0.66 (inventory-window-width))
 					      (d* 2.0
 						  (small-square-button-size *reference-sizes*)))
 					  (d/ (inventory-window-height) 2.0)
-					  :callback nil) ; TODO
+					  :callback #'inventory-update-description-cb)
     :initarg  :left-hand-slot
     :accessor left-hand-slot)
-   (right-hand-slot
+   (left-hand-slot
     :initform (make-inventory-slot-button (d+ (d* 0.66 (inventory-window-width))
 					      (small-square-button-size *reference-sizes*))
 					  (d/ (inventory-window-height) 2.0)
-					  :callback nil) ; TODO
+					  :callback #'inventory-update-description-cb)
     :initarg  :right-hand-slot
     :accessor right-hand-slot)
    (ring-slot
@@ -3623,14 +3767,30 @@
 					  (d- (d/ (inventory-window-height) 2.0)
 					      (small-square-button-size *reference-sizes*)
 					      (spacing *reference-sizes*))
-					  :callback nil) ; TODO
+					  :callback #'inventory-update-description-cb)
     :initarg  :ring-slot
-    :accessor ring-slot)))
+    :accessor ring-slot)
+   (b-remove-worn-item
+    :initform (make-instance 'naked-button
+			     :x               (d- (d* 0.66 (inventory-window-width))
+					      (d* 2.0
+						  (small-square-button-size *reference-sizes*)))
+			     :y               (d- (d/ (inventory-window-height) 2.0)
+						  (small-square-button-size *reference-sizes*)
+						  (spacing *reference-sizes*))
+			     :width           (small-square-button-size *reference-sizes*)
+			     :height          (small-square-button-size *reference-sizes*)
+			     :texture-object  (get-texture +button-texture-name+)
+			     :texture-pressed (get-texture +button-pressed-texture-name+)
+			     :texture-overlay (get-texture +add-to-bag-texture-name+)
+			     :callback        #'remove-worn-item-cb)
+    :initarg  :b-remove-worn-item
+    :accessor b-remove-worn-item)))
 
 (defmethod initialize-instance :after ((object inventory-window) &key &allow-other-keys)
   (with-accessors ((slots-pages slots-pages) (current-slots-page current-slots-page)
-		   (owner owner)
-		   (b-use b-use) (text-description text-description)
+		   (owner owner) (b-use b-use) (text-description text-description)
+		   (b-sort b-sort)
 		   (b-wear b-wear) (b-pick b-pick) (b-dismiss b-dismiss)
 		   (b-chest b-chest) (b-next-page b-next-page)
 		   (current-slots-page-number current-slots-page-number)
@@ -3640,7 +3800,8 @@
 		   (img-silhouette img-silhouette)
 		   (elm-slot elm-slot) (shoes-slot shoes-slot)
 		   (armor-slot armor-slot) (left-hand-slot left-hand-slot)
-		   (right-hand-slot right-hand-slot) (ring-slot ring-slot))  object
+		   (right-hand-slot right-hand-slot) (ring-slot ring-slot)
+		   (b-remove-worn-item b-remove-worn-item))             object
     (let ((page-count (if owner
 			  (player-character:inventory-slot-pages-number owner)
 			  1))
@@ -3676,6 +3837,7 @@
       (hide chest-slot-0)
       (hide chest-slot-1)
       (hide chest-slot-2)
+      (add-child object b-sort)
       (add-child object b-use)
       (add-child object b-wear)
       (add-child object b-pick)
@@ -3683,16 +3845,31 @@
       (add-child object b-chest)
       (add-child object text-description)
       (add-child object img-silhouette)
+      (let ((group-worn (make-check-group* elm-slot
+					    shoes-slot
+					    armor-slot
+					    left-hand-slot
+					    right-hand-slot
+					    ring-slot)))
+	(setf (group elm-slot) group-worn)
+	(setf (group shoes-slot) group-worn)
+	(setf (group armor-slot) group-worn)
+	(setf (group left-hand-slot) group-worn)
+	(setf (group right-hand-slot) group-worn)
+	(setf (group ring-slot) group-worn))
       (add-child object elm-slot)
       (add-child object shoes-slot)
       (add-child object armor-slot)
       (add-child object left-hand-slot)
       (add-child object right-hand-slot)
       (add-child object ring-slot)
+      (add-child object b-remove-worn-item)
       (update-page-counts object current-slots-page-number)
       (add-inventory-objects object))))
 
 (defgeneric get-selected-chest-item (object))
+
+(defgeneric get-selected-worn-item  (object))
 
 (defgeneric get-selected-item (object))
 
@@ -3700,21 +3877,31 @@
 
 (defgeneric add-inventory-objects (object))
 
-(defmethod get-selected-chest-item ((object inventory-window))
-  (let ((selected  (or (and (chest-slot-0 object)
-			    (button-state (chest-slot-0 object))
-			    (contained-entity (chest-slot-0 object))
-			    (chest-slot-0 object))
-		       (and (chest-slot-1 object)
-			    (button-state (chest-slot-1 object))
-			    (contained-entity (chest-slot-1 object))
-			    (chest-slot-1 object))
-		       (and (chest-slot-2 object)
-			    (button-state (chest-slot-2 object))
-			    (contained-entity (chest-slot-2 object))
-			    (chest-slot-2 object)))))
-    (and selected
-	 (values selected (contained-entity selected)))))
+(defmacro gen-get-selected-item ((name) &rest slots)
+  (alexandria:with-gensyms (selected)
+    `(defmethod  ,(alexandria:format-symbol t "~@:(get-selected-~a-item~)" name)
+	 ((object inventory-window))
+       (let ((,selected (or
+			 ,@(loop for slot in slots collect
+				`(and (,slot object)
+				      (button-state (,slot object))
+				      (contained-entity (,slot object))
+				      (,slot object))))))
+	 (and ,selected
+	      (values ,selected (contained-entity ,selected)))))))
+
+(gen-get-selected-item (chest)
+		       chest-slot-0
+		       chest-slot-1
+		       chest-slot-2)
+
+(gen-get-selected-item (worn)
+		       elm-slot
+		       armor-slot
+		       shoes-slot
+		       left-hand-slot
+		       right-hand-slot
+		       ring-slot)
 
 (defmethod get-selected-item ((object inventory-window))
   (with-accessors ((current-slots-page current-slots-page)) object
