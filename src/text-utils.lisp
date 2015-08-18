@@ -100,6 +100,16 @@
 (defun wrap-with (s wrapper)
   (strcat wrapper s wrapper))
 
+(defun right-padding (str total-size &key (padding-char #\Space))
+  (strcat str
+	  (make-string (max 0 (- total-size (length str)))
+		       :initial-element padding-char)))
+
+(defun left-padding (str total-size &key (padding-char #\Space))
+  (strcat (make-string (max 0 (- total-size (length str)))
+		       :initial-element padding-char)
+	  str))
+
 (defun justify-monospaced-text (text &optional (chars-per-line 30))
   (if (null (split-words text))
       (list " ")

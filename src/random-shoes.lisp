@@ -111,7 +111,7 @@
 	     (set-effect (list +effects+ i) shoes-level template))
 	(setf template (remove-generate-symbols template))
 	(fill-character-plist char-template shoes-level)
-	(let ((shoes-character (params->character char-template)))
+	(let ((shoes-character (params->np-character char-template)))
 	  (setf (basic-interaction-params shoes-character) template)
 	  shoes-character)))))
 

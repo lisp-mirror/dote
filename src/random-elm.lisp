@@ -158,7 +158,7 @@
 	(n-setf-path-value template (list +magic-effects+) nil) ;; no magic effects
 	(setf template (remove-generate-symbols template))
 	(fill-character-plist char-template template elm-level)
-	(let ((elm-character (params->character char-template)))
+	(let ((elm-character (params->np-character char-template)))
 	  (setf (basic-interaction-params elm-character) template)
 	  elm-character)))))
 

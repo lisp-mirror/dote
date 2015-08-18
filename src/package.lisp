@@ -96,7 +96,8 @@
    :+default-character-potions+
    :+default-character-food+
    :+default-character-misc+
-   :+gui-static-text-delim+))
+   :+gui-static-text-delim+
+   :+standard-float-print-format+))
 
 (defpackage :profiling
   (:use :cl)
@@ -356,6 +357,8 @@
    :strip-withespaces
    :basename
    :wrap-with
+   :right-padding
+   :left-padding
    :justify-monospaced-text))
 
 (defpackage :resources-utils
@@ -1994,12 +1997,22 @@
    :num)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
+   :generic-game-event
+   :game-event-w-destination
+   :game-event-procrastinated
    :end-turn
    :end-turn-members
    :register-for-end-turn
    :unregister-for-end-turn
    :get-on-end-turn
-   :propagate-end-turn))
+   :propagate-end-turn
+   :healing-effect-turn
+   :healing-effect-turn-members
+   :register-for-healing-effect-turn
+   :unregister-for-healing-effect-turn
+   :get-on-healing-effect-turn
+   :propagate-healing-effect-turn
+   :cancel-healing-effect-game-event))
 
 ;; UI
 
@@ -2375,6 +2388,9 @@
 	:identificable)
   (:nicknames :interaction)
   (:export
+   :effect-unlimited-p
+   :healing-effect-cure-p
+   :healing-effect-duration
    :+decay-by-use+
    :+decay-by-turns+
    :+effect-when-used+
@@ -2481,7 +2497,7 @@
    :define-interaction
    :with-interaction-parameters))
 
-(defpackage :player-character
+(defpackage :character
   (:use :cl
 	:alexandria
 	:constants
@@ -2532,6 +2548,7 @@
    :+race+
    :+level+
    :+exp-points+
+   :np-character
    :player-character
    :portrait
    :first-name
@@ -2664,7 +2681,8 @@
    :remove-generate-symbols
    :with-character-parameters
    :sum-effects-mod
-   :params->character))
+   :params->player-character
+   :params->np-character))
 
 (defpackage :random-armor
   (:use :cl
@@ -2678,7 +2696,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
-	:player-character)
+	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :generate-armor))
@@ -2695,7 +2713,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
-	:player-character)
+	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :generate-key))
@@ -2712,7 +2730,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
-	:player-character)
+	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :generate-container))
@@ -2729,7 +2747,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
-	:player-character)
+	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :generate-potion))
@@ -2746,7 +2764,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
-	:player-character)
+	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :generate-shield))
@@ -2763,7 +2781,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
-	:player-character)
+	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :generate-shoes))
@@ -2780,7 +2798,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
-	:player-character)
+	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :generate-weapon))
@@ -2797,7 +2815,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
-	:player-character)
+	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :generate-fountain))
@@ -2814,7 +2832,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
-	:player-character)
+	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :generate-elm))
@@ -2831,7 +2849,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
-	:player-character)
+	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :generate-ring))

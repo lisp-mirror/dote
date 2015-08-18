@@ -174,8 +174,21 @@
 
 (define-constant +magic-effects+               :magic-effect                :test #'eq)
 
+(define-constant +duration-unlimited+          :magic-effect                :test #'eq)
+
 (defun effect-unlimited-p (val)
   (not (numberp val)))
+
+(defun healing-effect-cure-p (val)
+  (or (eq val +heal-terror+)
+      (eq val +heal-poison+)
+      (eq val +heal-berserk+)
+      (eq val +heal-faint+)))
+
+(defun healing-effect-duration (path val)
+  (if (healing-effect-cure-p (last-elt (flatten path)))
+      +duration-unlimited+
+      val))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
 
@@ -266,11 +279,11 @@
 				   :environment environment))
 
     (defmethod description-for-humans ((object effect-parameters))
-      (format nil "(~a) ~,1f"
+      (format nil "~a ~,1f"
 	      (if (effect-unlimited-p (duration object))
-				  (_ "unlimited")
+				  ""
 				  (format nil
-					  (_ "~d turns")
+					  (_ "(~d turns)")
 					  (duration object)))
 	       (modifier object))))
 
@@ -351,7 +364,7 @@
     (defmethod description-for-humans ((object healing-effect-parameters))
       (format nil (_ "~a chance: ~,1f% target ~a")
 	      (if (effect-unlimited-p (duration object))
-		  (_ "unlimited")
+		  ""
 		  (format nil (_ "~d turns") (duration object)))
 	      (chance->chance-for-human (chance object))
 	      (target object))))

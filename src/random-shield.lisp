@@ -171,7 +171,7 @@
 	  (set-magic-effect shield-level template))
 	(setf template (remove-generate-symbols template))
 	(fill-character-plist char-template template shield-level)
-	(let ((shield-character (params->character char-template)))
+	(let ((shield-character (params->np-character char-template)))
 	  (setf (basic-interaction-params shield-character) template)
 	  shield-character)))))
 
@@ -214,7 +214,9 @@
 				       :trigger  +effect-until-held+
 				       :duration (if (eq target +target-self+)
 						     :unlimited
-						     (max 1 (- +maximum-level+ shield-level)))
+						     (healing-effect-duration
+						      effect-path
+						      (max 1 (- +maximum-level+ shield-level))))
 				       :chance (calculate-healing-fx-params-chance
 						shield-level)
 				       :target target)))

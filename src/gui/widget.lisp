@@ -16,17 +16,9 @@
 
 (in-package :widget)
 
-(alexandria:define-constant +texture-unit-overlay+ 1 :test #'=)
+(alexandria:define-constant +texture-unit-overlay+ 1     :test #'=)
 
-(alexandria:define-constant +spacing+ 2.0 :test #'=)
-
-(alexandria:define-constant +portrait-size+ 64.0 :test #'=)
-
-(alexandria:define-constant +checkbutton-h+ 12.0 :test #'=)
-
-(alexandria:define-constant +input-text-w+ 128.0 :test #'=)
-
-(alexandria:define-constant +input-text-h+ 12.8 :test #'=)
+(alexandria:define-constant +portrait-size+ 64.0         :test #'=)
 
 (alexandria:define-constant +slots-per-page-side-size+ 4 :test #'=)
 
@@ -34,13 +26,7 @@
 
 (defparameter *small-square-button-size* (d/ (d *window-w*) 20.0))
 
-(defparameter *file-chooser-w* (d/ (d *window-w*) 3.0))
-
-(defparameter *file-chooser-h* (d/ (d *window-h*) 3.0))
-
-(defparameter *inventory-window-w* (d/ (d *window-w*) 3.0))
-
-(defparameter *inventory-window-h* (d/ (d *window-h*) 2.0))
+(alexandria:define-constant +file-visible-slot+ 5 :test #'=)
 
 (defparameter *child-flip-y* t)
 
@@ -204,7 +190,7 @@
     :initarg  :button-label-max-size
     :accessor button-label-max-size)
    (checkbutton-h
-    :initform 8.0
+    :initform 14.0
     :initarg  :checkbutton-h
     :accessor checkbutton-h)
    (input-text-w
@@ -212,7 +198,7 @@
     :initarg  :input-text-w
     :accessor input-text-w)
    (input-text-h
-    :initform 12.0
+    :initform 14.0
     :initarg  :input-text-h
     :accessor input-text-h)
    (spacing
@@ -278,46 +264,8 @@
     :initarg  :focus
     :accessor focus)))
 
-(defgeneric flip-y (object child))
-
-(defgeneric width (object))
-
-(defgeneric height (object))
-
-(defmethod flip-y ((object widget) (child widget))
-  (declare (optimize (debug 0) (safety 0) (speed 3)))
-  (d- (height object) (d+ (y child) (height child))))
-
-(defmethod width ((object widget))
-  (with-slots (width) object
-    (d* (elt (scaling object) 0) width)))
-
-(defmethod height ((object widget))
-  (with-slots (height) object
-    (d* (elt (scaling object) 1) height)))
-
 (defmethod initialize-instance :after ((object widget) &key (x 0.0) (y 0.0) &allow-other-keys)
   (setf (pos object) (sb-cga:vec x y 0.0)))
-
-(defgeneric x (object))
-
-(defgeneric y (object))
-
-(defgeneric (setf x) (new-value object))
-
-(defgeneric (setf y) (new-value object))
-
-(defmethod x ((object widget))
-  (elt (pos object) 0))
-
-(defmethod y ((object widget))
-  (elt (pos object) 1))
-
-(defmethod (setf x) (new-value (object widget))
-  (setf (elt (pos object) 0) new-value))
-
-(defmethod (setf y) (new-value (object widget))
-  (setf (elt (pos object) 1) new-value))
 
 (defmethod render ((object widget) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -354,6 +302,20 @@
       (do-children-mesh (c object)
 	(render c renderer)))))
 
+(defgeneric flip-y (object child))
+
+(defgeneric width (object))
+
+(defgeneric height (object))
+
+(defgeneric x (object))
+
+(defgeneric y (object))
+
+(defgeneric (setf x) (new-value object))
+
+(defgeneric (setf y) (new-value object))
+
 (defgeneric setup-label (object new-label))
 
 (defgeneric hide (object))
@@ -371,6 +333,30 @@
 (defgeneric on-mouse-dragged (object event))
 
 (defgeneric on-key-pressed (object event))
+
+(defmethod x ((object widget))
+  (elt (pos object) 0))
+
+(defmethod y ((object widget))
+  (elt (pos object) 1))
+
+(defmethod (setf x) (new-value (object widget))
+  (setf (elt (pos object) 0) new-value))
+
+(defmethod (setf y) (new-value (object widget))
+  (setf (elt (pos object) 1) new-value))
+
+(defmethod flip-y ((object widget) (child widget))
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (d- (height object) (d+ (y child) (height child))))
+
+(defmethod width ((object widget))
+  (with-slots (width) object
+    (d* (elt (scaling object) 0) width)))
+
+(defmethod height ((object widget))
+  (with-slots (height) object
+    (d* (elt (scaling object) 1) height)))
 
 (defmethod hide ((object widget))
   (with-accessors ((shown shown)) object
@@ -1221,14 +1207,18 @@
 
 (defmethod flip-y ((object window) (child widget))
   (declare (optimize (debug 3) (speed 0) (safety 3)))
-  (let* ((h-frame (d- (height (frame object))
-		      (d* (top-frame-offset *reference-sizes*) (height (frame object)))))
-	 (scale   (d/ (d- h-frame (y child))
-		      h-frame))
-	 (saved-height (height child)))
-    (max (d- (d* scale h-frame)
-	     saved-height)
-	 (d* (bottom-frame-offset *reference-sizes*) (height (frame object))))))
+  (with-accessors ((parent-h height) (frame frame)) object
+    (with-accessors ((child-y y) (child-h height)) child
+      (let* ((frame-h (d- (height frame)
+			  (d* (top-frame-offset *reference-sizes*) (height (frame object)))))
+	     (scale   (d/ (d- frame-h child-y)
+			  frame-h))
+	     (child-new-y  (d- (d* scale frame-h)
+			       child-h)))
+	(if (< child-y frame-h)
+	    child-new-y
+	    (d+ (d- (d- parent-h child-y) child-h)
+		(d* (bottom-frame-offset *reference-sizes*) (height (frame object)))))))))
 
 (defmethod on-mouse-pressed ((object window) event)
   (if (and (shown object)
@@ -1350,12 +1340,6 @@
 (defun make-check-group* (&rest buttons)
   (make-check-group buttons))
 
-(alexandria:define-constant +file-button-w+ 12.0 :test #'=)
-
-(alexandria:define-constant +file-button-action-size+ 24.0 :test #'=)
-
-(alexandria:define-constant +file-visible-slot+ 5 :test #'=)
-
 (defun fchooser-init-dirs-file-slots ()
   (make-fresh-array 0 t 'button nil))
 
@@ -1363,30 +1347,97 @@
   (make-instance 'naked-button
 		 :x x
 		 :y y
-		 :width  +file-button-action-size+
-		 :height +file-button-action-size+
+		 :width  (fchooser-button-size)
+		 :height (fchooser-button-size)
 		 :texture-object  (get-texture +square-button-texture-name+)
 		 :texture-pressed (get-texture +square-button-pressed-texture-name+)
 		 :texture-overlay (get-texture overlay)
 		 :callback        callback))
 
+(defun file-chooser-w ()
+  (d/ (d *window-w*) 2.0))
+
+(defun file-chooser-h ()
+  (d+
+   (fchooser-input-y)
+   (d* 6.0 (fchooser-input-h))))
+
+(defun fchooser-file-button-h ()
+  (d* (fchooser-button-size) 1.5))
+
+(defun fchooser-file-button-w ()
+  (d/ (file-chooser-w) 2.5))
+
+(defun fchooser-input-y ()
+  (d+
+   (spacing *reference-sizes*)
+   (fchooser-cumulative-file-buttons-h)
+   (fchooser-button-size)))
+
+(defun fchooser-input-w ()
+  (d* (file-chooser-w) 0.8))
+
+(defun fchooser-input-h ()
+  (d* (input-text-h *reference-sizes*) 1.5))
+
+(defun fchooser-cumulative-file-buttons-h ()
+  (d* (d+ 1.0 (d +file-visible-slot+))
+      (fchooser-file-button-h)))
+
+(defun fchooser-button-size ()
+  24.0)
+
+(defun fchooser-ok/close-y ()
+  (d+ (spacing *reference-sizes*)
+      (fchooser-input-y)
+      (fchooser-input-h)))
+
 (defclass file-chooser (window)
   ((b-updir
     :initform (make-instance 'button
-			     :height (d* +file-button-w+ 2.0)
-			     :width  (d/ *file-chooser-w* 2.5)
+			     :height (fchooser-file-button-h)
+			     :width  (fchooser-file-button-w)
 			     :x 0.0
 			     :y 0.0
 			     :callback #'dir-up-cb
 			     :label "..")
     :initarg  :b-updir
     :accessor b-updir)
+   (b-dir-scroll-up
+    :initform (make-file-chooser-square-button +up-overlay-texture-name+
+					       0.0
+					       (fchooser-cumulative-file-buttons-h)
+					       #'dir-scroll-up-cb)
+    :initarg  :b-dir-scroll-up
+    :accessor b-dir-scroll-up)
+   (b-dir-scroll-down
+    :initform (make-file-chooser-square-button +down-overlay-texture-name+
+					       (fchooser-button-size)
+					       (fchooser-cumulative-file-buttons-h)
+					       #'dir-scroll-down-cb)
+    :initarg  :b-dir-scroll-down
+    :accessor b-dir-scroll-down)
+   (b-file-scroll-up
+    :initform (make-file-chooser-square-button +up-overlay-texture-name+
+					       (d/ (file-chooser-w) 2.5)
+					       (fchooser-cumulative-file-buttons-h)
+					       #'file-scroll-up-cb)
+    :initarg  :b-file-scroll-up
+    :accessor b-file-scroll-up)
+   (b-file-scroll-down
+    :initform (make-file-chooser-square-button +down-overlay-texture-name+
+					       (d+ (d/ (file-chooser-w) 2.5)
+						   (fchooser-button-size))
+					       (fchooser-cumulative-file-buttons-h)
+					       #'file-scroll-down-cb)
+    :initarg  :b-file-scroll-down
+    :accessor b-file-scroll-down)
    (b-ok
     :initform (make-instance 'naked-button
 			     :x 0.0
-			     :y (d- *file-chooser-h* 24.0)
-			     :width  24.0
-			     :height 24.0
+			     :y (fchooser-ok/close-y)
+			     :width  (fchooser-button-size)
+			     :height (fchooser-button-size)
 			     :texture-object  (get-texture +square-button-texture-name+)
 			     :texture-pressed (get-texture +square-button-pressed-texture-name+)
 			     :texture-overlay (get-texture +button-ok-texture-name+)
@@ -1395,61 +1446,23 @@
     :accessor b-ok)
    (b-close
     :initform (make-instance 'naked-button
-			     :x 24.0
-			     :y (d- *file-chooser-h* 24.0)
-			     :width  24.0
-			     :height 24.0
+			     :x (fchooser-button-size)
+			     :y (fchooser-ok/close-y)
+			     :width  (fchooser-button-size)
+			     :height (fchooser-button-size)
 			     :texture-object  (get-texture +square-button-texture-name+)
 			     :texture-pressed (get-texture +square-button-pressed-texture-name+)
 			     :texture-overlay (get-texture +button-cancel-texture-name+)
 			     :callback        #'hide-parent-cb)
     :initarg  :b-close
     :accessor b-close)
-   (b-dir-scroll-up
-    :initform (make-file-chooser-square-button +up-overlay-texture-name+
-					       0.0
-					       (d- *file-chooser-h*
-						   (d* 3.0 +file-button-action-size+)
-						   (d* +input-text-h+   1.5))
-					       #'dir-scroll-up-cb)
-    :initarg  :b-dir-scroll-up
-    :accessor b-dir-scroll-up)
-   (b-dir-scroll-down
-    :initform (make-file-chooser-square-button +down-overlay-texture-name+
-					       +file-button-action-size+
-					       (d- *file-chooser-h*
-						   (d* 3.0 +file-button-action-size+)
-						   (d* +input-text-h+   1.5))
-					       #'dir-scroll-down-cb)
-    :initarg  :b-dir-scroll-down
-    :accessor b-dir-scroll-down)
-   (b-file-scroll-up
-    :initform (make-file-chooser-square-button +up-overlay-texture-name+
-					       (d/ *file-chooser-w* 2.5)
-					       (d- *file-chooser-h*
-						   (d* 3.0 +file-button-action-size+)
-						   (d* +input-text-h+   1.5))
-					       #'file-scroll-up-cb)
-    :initarg  :b-file-scroll-up
-    :accessor b-file-scroll-up)
-   (b-file-scroll-down
-    :initform (make-file-chooser-square-button +down-overlay-texture-name+
-					       (d+ (d/ *file-chooser-w* 2.5)
-						   +file-button-action-size+)
-					       (d- *file-chooser-h*
-						   (d* 3.0 +file-button-action-size+)
-						   (d* +input-text-h+   1.5))
-					       #'file-scroll-down-cb)
-    :initarg  :b-file-scroll-down
-    :accessor b-file-scroll-down)
+
    (input-path
     :initform (make-instance 'text-field
-			     :width  (d* *file-chooser-w* 0.8)
-			     :height (d* +input-text-h+   1.5)
-			     :x 0.0
-			     :y (d- *file-chooser-h*
-				    (d* +input-text-h+   1.5)
-				    (d* 2.0 +file-button-action-size+))
+			     :width  (fchooser-input-w)
+			     :height (fchooser-input-h)
+			     :x      0.0
+			     :y      (fchooser-input-y)
 			     :label nil)
     :initarg :input-path
     :accessor input-path)
@@ -1526,10 +1539,10 @@
   (loop
      for i from (from-dir object) below (min (length (all-dirs object))
 					     (f+ (from-dir object) +file-visible-slot+))
-     for y from (d* +file-button-w+ 2.0) by (d* +file-button-w+ 2.0) do
+     for y from (fchooser-file-button-h) by (fchooser-file-button-h) do
        (let ((b-dir (make-instance 'button
-				   :height (d* +file-button-w+ 2.0)
-				   :width  (d/ *file-chooser-w* 2.5)
+				   :height (fchooser-file-button-h)
+				   :width  (fchooser-file-button-w)
 				   :x 0.0
 				   :y y
 				   :callback #'dir-enter-cb
@@ -1542,12 +1555,12 @@
   (loop
      for i from (from-file object) below (min (length (all-files object))
 					      (f+ (from-file object) +file-visible-slot+))
-     for y from (d* +file-button-w+ 2.0) by (d* +file-button-w+ 2.0) do
+     for y from  (fchooser-file-button-h) by (fchooser-file-button-h) do
        (let* ((filename (elt (all-files object) i))
 	      (b-file (make-instance 'button
-				     :height (d* +file-button-w+ 2.0)
-				     :width  (d/ *file-chooser-w* 2.5)
-				     :x (d/ *file-chooser-w* 2.5)
+				     :height (fchooser-file-button-h)
+				     :width  (fchooser-file-button-w)
+				     :x (d/ (file-chooser-w) 2.5)
 				     :y y
 				     :callback #'file-click-cb
 				     :compiled-shaders (compiled-shaders object)
@@ -1640,11 +1653,11 @@
 (defun make-file-chooser (&optional (ok-callback #'hide-parent-cb))
   (let ((win (make-instance 'file-chooser
 			    :x (d- (d/ (d *window-w*) 2.0)
-				   (d/ *file-chooser-w* 2.0))
+				   (d/ (file-chooser-w) 2.0))
 			    :y (d- (d/ (d *window-h*) 2.0)
-				   (d/ *file-chooser-h* 2.0))
-			    :width  *file-chooser-w*
-			    :height *file-chooser-h*
+				   (d/ (file-chooser-h) 2.0))
+			    :width  (file-chooser-w)
+			    :height (file-chooser-h)
 			    :label  (_ "Choose file"))))
     (setf (callback (b-ok win)) ok-callback)
     win))
@@ -1975,8 +1988,8 @@
   (make-instance 'naked-button
 		 :x               x
 		 :y               y
-		 :width           +input-text-h+
-		 :height          +input-text-h+
+		 :width           (pgen-inc/dec-button-size)
+		 :height          (pgen-inc/dec-button-size)
 		 :texture-object  (get-texture +square-button-texture-name+)
 		 :texture-pressed (get-texture +square-button-pressed-texture-name+)
 		 :texture-overlay (get-texture (if plus
@@ -2002,10 +2015,66 @@
 	      (when (and (d>= new-capital 0.0)
 			 (or plus
 			     (d>= new-current 0.0)))
-		(setf (label widget-capital)               (format nil "~,2f" new-capital)
-		      (label widget-destination)           (format nil "~,2f" new-current)
+		(setf (label widget-capital)               (format nil +standard-float-print-format+
+								   new-capital)
+		      (label widget-destination)           (format nil +standard-float-print-format+
+								   new-current)
 		      (slot-value player slot)             new-current
-		      (player-character:exp-points player) new-capital))))))
+		      (character:exp-points player) new-capital))))))
+
+(defun pgen-window-w ()
+  (d* (d *window-w*) 0.75))
+
+(defun pgen-window-h ()
+  (d* (d *window-h*) 0.75))
+
+(defun pgen-chk-button-w ()
+  (d/ (d *window-w*) 9.0))
+
+(defun pgen-chk-button-y (row)
+  (d+ (h2-font-size *reference-sizes*)
+      (d* (d row) (checkbutton-h *reference-sizes*))))
+
+(defun pgen-label-ability-w ()
+  (d* 4.0 (input-text-w *reference-sizes*)))
+
+(defun pgen-label-ability-h ()
+  (input-text-h *reference-sizes*))
+
+(defun pgen-label-ability-x ()
+  (d+ (spacing *reference-sizes*)
+      (pgen-chk-button-w)))
+
+(defun pgen-label-ability-y (row)
+  (d+ (d* 1.8 +portrait-size+)
+      (d* (d row)
+	  (input-text-h *reference-sizes*))))
+
+(defun pgen-inc-button-x ()
+  (d+ (d+ (d* 2.0 (spacing *reference-sizes*))
+	  (pgen-chk-button-w))
+      (pgen-label-ability-w)))
+
+(defun pgen-inc/dec-button-size ()
+  (pgen-label-ability-h))
+
+(defun pgen-dec-button-x ()
+  (d+ (pgen-inc-button-x)
+      (pgen-inc/dec-button-size)))
+
+(defun pgen-inc-button-y (row)
+  (pgen-label-ability-y row))
+
+(defun pgen-characteristics-x ()
+  (d+ (d* 2.0 (spacing *reference-sizes*))
+      +portrait-size+
+      (input-text-w *reference-sizes*)
+      (pgen-chk-button-w)))
+
+(defun pgen-characteristics-y (row)
+  (d* (d row)
+      (d+ (spacing *reference-sizes*)
+	  (input-text-h *reference-sizes*))))
 
 (defclass player-generator (window)
   ((player
@@ -2016,61 +2085,57 @@
     :initform (make-instance 'simple-label
 			     :label     (_ "Class")
 			     :font-size (h1-font-size *reference-sizes*)
-			     :width  (d/ (d *window-w*) 12.0)
+			     :width  (pgen-chk-button-w)
 			     :x         0.0
 			     :y         0.0)
     :initarg  :lb-class
     :accessor lb-class)
    (checkb-warrior
     :initform (make-instance 'labeled-check-button
-			     :height +checkbutton-h+
-			     :width  (d/ (d *window-w*) 12.0)
+			     :height (checkbutton-h *reference-sizes*)
+			     :width  (pgen-chk-button-w)
 			     :x 0.0
-			     :y (h2-font-size *reference-sizes*)
+			     :y (pgen-chk-button-y 0.0)
 			     :label (_ "Warrior ")
 			     :color :green)
     :initarg  :checkb-warrior
     :accessor checkb-warrior)
    (checkb-wizard
     :initform (make-instance 'labeled-check-button
-			     :height +checkbutton-h+
-			     :width  (d/ (d *window-w*) 12.0)
+			     :height (checkbutton-h *reference-sizes*)
+			     :width  (pgen-chk-button-w)
 			     :x 0.0
-			     :y (d+ (h2-font-size *reference-sizes*)
-				    +checkbutton-h+)
+			     :y (pgen-chk-button-y 1.0)
 			     :label (_ "Wizard ")
 			     :color :green)
     :initarg  :checkb-wizard
     :accessor checkb-wizard)
    (checkb-healer
     :initform (make-instance 'labeled-check-button
-			     :height +checkbutton-h+
-			     :width  (d/ (d *window-w*) 12.0)
+			     :height (checkbutton-h *reference-sizes*)
+			     :width  (pgen-chk-button-w)
 			     :x 0.0
-			     :y (d+ (h2-font-size *reference-sizes*)
-				    (d* 2.0 +checkbutton-h+))
+			     :y (pgen-chk-button-y 2.0)
 			     :label (_ "Healer ")
 			     :color :green)
     :initarg  :checkb-healer
     :accessor checkb-healer)
    (checkb-archer
     :initform (make-instance 'labeled-check-button
-			     :height +checkbutton-h+
-			     :width  (d/ (d *window-w*) 12.0)
+			     :height (checkbutton-h *reference-sizes*)
+			     :width  (pgen-chk-button-w)
 			     :x 0.0
-			     :y (d+ (h2-font-size *reference-sizes*)
-				    (d* 3.0 +checkbutton-h+))
+			     :y (pgen-chk-button-y 3.0)
 			     :label (_ "Archer ")
 			     :color :green)
     :initarg  :checkb-archer
     :accessor checkb-archer)
    (checkb-ranger
     :initform (make-instance 'labeled-check-button
-			     :height +checkbutton-h+
-			     :width  (d/ (d *window-w*) 12.0)
+			     :height (checkbutton-h *reference-sizes*)
+			     :width  (pgen-chk-button-w)
 			     :x 0.0
-			     :y (d+ (h2-font-size *reference-sizes*)
-				    (d* 4.0 +checkbutton-h+))
+			     :y (pgen-chk-button-y 4.0)
 			     :label (_ "Ranger ")
 			     :color :green)
     :initarg  :checkb-ranger
@@ -2078,78 +2143,68 @@
    (lb-gender
     :initform (make-instance 'simple-label
 			     :label     (_ "Gender")
-			     :font-size (h1-font-size *reference-sizes*)
-			     :width  (d/ (d *window-w*) 12.0)
-			     :x         0.0
-			     :y         (d+ (h2-font-size *reference-sizes*)
-					    (d* 5.0 +checkbutton-h+)))
+			     :font-size (h2-font-size *reference-sizes*)
+			     :width  (pgen-chk-button-w)
+			     :x      0.0
+			     :y      (pgen-chk-button-y 5.0))
     :initarg  :lb-gender
     :accessor lb-gender)
    (checkb-male
     :initform (make-instance 'labeled-check-button
-			     :height +checkbutton-h+
-			     :width  (d/ (d *window-w*) 12.0)
+			     :height (checkbutton-h *reference-sizes*)
+			     :width  (pgen-chk-button-w)
 			     :x 0.0
-			     :y (d+ (d* 2.0 (h2-font-size *reference-sizes*))
-				    (d* 5.0 +checkbutton-h+))
+			     :y (pgen-chk-button-y 6.0)
 			     :label (_ "Male ")
 			     :color :green)
     :initarg  :checkb-male
     :accessor checkb-male)
    (checkb-female
     :initform (make-instance 'labeled-check-button
-			     :height +checkbutton-h+
-			     :width  (d/ (d *window-w*) 12.0)
+			     :height (checkbutton-h *reference-sizes*)
+			     :width  (pgen-chk-button-w)
 			     :x 0.0
-			     :y (d+ (d* 2.0 (h2-font-size *reference-sizes*))
-				    (d* 6.0 +checkbutton-h+))
+			     :y (pgen-chk-button-y 7.0)
 			     :label (_ "Female ")
 			     :color :green)
     :initarg  :checkb-female
     :accessor checkb-female)
    (b-generate
     :initform (make-instance 'button
-			     :height +checkbutton-h+
-			     :width  (d/ (d *window-w*) 12.0)
+			     :height (checkbutton-h *reference-sizes*)
+			     :width  (pgen-chk-button-w)
 			     :x 0.0
-			     :y (d+ (d* 2.0 (h2-font-size *reference-sizes*))
-				    +spacing+
-				    (d* 7.0 +checkbutton-h+))
+			     :y (pgen-chk-button-y 9.0)
 			     :callback #'generate-cb
 			     :label (_ "Generate new"))
-
     :initarg  :b-generate
     :accessor b-generate)
    (b-save
     :initform (make-instance 'button
-			     :height +checkbutton-h+
-			     :width  (d/ (d *window-w*) 12.0)
+			     :height (checkbutton-h *reference-sizes*)
+			     :width  (pgen-chk-button-w)
 			     :x 0.0
-			     :y (d+ (d* 2.0 (h2-font-size *reference-sizes*))
-				    (d* 2.0 +spacing+)
-				    (d* 8.0 +checkbutton-h+))
+			     :y (d+ (spacing *reference-sizes*)
+				    (pgen-chk-button-y 10.0))
 			     :callback #'save-cb
 			     :label (_ "Save"))
-
     :initarg  :b-save
     :accessor b-save)
    (b-load
     :initform (make-instance 'button
-			     :height +checkbutton-h+
-			     :width  (d/ (d *window-w*) 12.0)
+			     :height (checkbutton-h *reference-sizes*)
+			     :width  (pgen-chk-button-w)
 			     :x 0.0
-			     :y (d+ (d* 2.0 (h2-font-size *reference-sizes*))
-				    (d* 3.0 +spacing+)
-				    (d* 9.0 +checkbutton-h+))
+			     :y (d+ (d* 2.0 (spacing *reference-sizes*))
+				    (pgen-chk-button-y 11.0))
 			     :label (_ "Load"))
-
     :initarg  :b-load
     :accessor b-load)
    (img-portrait
     :initform (make-instance 'signalling-light
 			     :width  +portrait-size+
 			     :height +portrait-size+
-			     :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
+			     :x (pgen-label-ability-x)
 			     :y 0.0
 			     :texture-name +portrait-unknown-texture-name+
 			     :button-status t)
@@ -2157,633 +2212,553 @@
     :accessor img-portrait)
    (lb-damage-pt
     :initform (make-instance 'simple-label-prefixed
-			     :width  (d* 2.0 +input-text-w+)
-			     :height +input-text-h+
-			     :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			     :y (d* 1.8 +portrait-size+)
+			     :width  (pgen-label-ability-w)
+			     :height (pgen-label-ability-h)
+			     :x (pgen-label-ability-x)
+			     :y (pgen-label-ability-y 0.0)
 			     :prefix (_ "Damage points: ")
 			     :label "")
     :initarg :lb-damage-pt
     :accessor lb-damage-pt)
    (b-inc-damage-pt
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d* 1.8 +portrait-size+)
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 0.0)
 				t)
     :initarg :b-inc-damage-pt
     :accessor b-inc-damage-pt)
    (b-dec-damage-pt
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d* 1.8 +portrait-size+)
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 0.0)
 				nil)
     :initarg :b-dec-damage-pt
     :accessor b-dec-damage-pt)
    (lb-movement-pt
     :initform (make-instance 'simple-label-prefixed
-			     :width  (d* 2.0 +input-text-w+)
-			     :height +input-text-h+
-			     :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			     :y (d+ (d* 1.8 +portrait-size+) +input-text-h+)
+			     :width  (pgen-label-ability-w)
+			     :height (pgen-label-ability-h)
+			     :x (pgen-label-ability-x)
+			     :y (pgen-label-ability-y 1.0)
 			     :prefix (_ "Movement points: ")
 			     :label "")
     :initarg :lb-movement-pt
     :accessor lb-movement-pt)
    (b-inc-movement-pt
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d+ (d* 1.8 +portrait-size+) +input-text-h+)
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 1.0)
 				t)
     :initarg :b-inc-movement-pt
     :accessor b-inc-movement-pt)
    (b-dec-movement-pt
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d+ (d* 1.8 +portrait-size+) +input-text-h+)
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 1.0)
 				nil)
     :initarg :b-dec-movement-pt
     :accessor b-dec-movement-pt)
    (lb-magic-pt
     :initform (make-instance 'simple-label-prefixed
-			     :width  (d* 2.0 +input-text-w+)
-			     :height +input-text-h+
-			     :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			     :y (d+ (d* 1.8 +portrait-size+) (d* 2.0 +input-text-h+))
+			     :width  (pgen-label-ability-w)
+			     :height (pgen-label-ability-h)
+			     :x (pgen-label-ability-x)
+			     :y (pgen-label-ability-y 2.0)
 			     :prefix (_ "Magic points: ")
 			     :label "")
     :initarg :lb-magic-pt
     :accessor lb-magic-pt)
    (b-inc-magic-pt
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d+ (d* 1.8 +portrait-size+) (d* 2.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 2.0)
 				t)
     :initarg :b-inc-magic-pt
     :accessor b-inc-magic-pt)
    (b-dec-magic-pt
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d+ (d* 1.8 +portrait-size+) (d* 2.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 2.0)
 				nil)
     :initarg :b-dec-magic-pt
     :accessor b-dec-magic-pt)
    (lb-dodge-ch
     :initform (make-instance 'simple-label-prefixed
-			     :width  (d* 2.0 +input-text-w+)
-			     :height +input-text-h+
-			     :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			     :y (d+ (d* 1.8 +portrait-size+) (d* 3.0 +input-text-h+))
+			     :width  (pgen-label-ability-w)
+			     :height (pgen-label-ability-h)
+			     :x (pgen-label-ability-x)
+			     :y (pgen-label-ability-y 3.0)
 			     :prefix (_ "Dodge chance: ")
 			     :label "")
     :initarg :lb-dodge-ch
     :accessor lb-dodge-ch)
    (b-inc-dodge-ch
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d+ (d* 1.8 +portrait-size+) (d* 3.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 3.0)
 				t)
     :initarg :b-inc-dodge-ch
     :accessor b-inc-dodge-ch)
    (b-dec-dodge-ch
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d+ (d* 1.8 +portrait-size+) (d* 3.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 3.0)
 				nil)
     :initarg :b-dec-dodge-ch
     :accessor b-dec-dodge-ch)
    (lb-melee-atk-ch
      :initform (make-instance 'simple-label-prefixed
-			      :width  (d* 2.0 +input-text-w+)
-			      :height +input-text-h+
-			      :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			      :y (d+ (d* 1.8 +portrait-size+) (d* 4.0 +input-text-h+))
+			      :width  (pgen-label-ability-w)
+			      :height (pgen-label-ability-h)
+			      :x (pgen-label-ability-x)
+			      :y (pgen-label-ability-y 4.0)
 			      :prefix (_ "Short range attack chance: ")
 			      :label "")
      :initarg  :lb-melee-atk-ch
      :accessor lb-melee-atk-ch)
    (b-inc-melee-atk-ch
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d+ (d* 1.8 +portrait-size+) (d* 4.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 4.0)
 				t)
     :initarg :b-inc-melee-atk-ch
     :accessor b-inc-melee-atk-ch)
    (b-dec-melee-atk-ch
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d+ (d* 1.8 +portrait-size+) (d* 4.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 4.0)
 				nil)
     :initarg :b-dec-melee-atk-ch
     :accessor b-dec-melee-atk-ch)
    (lb-range-atk-ch
      :initform (make-instance 'simple-label-prefixed
-			      :width  (d* 2.0 +input-text-w+)
-			      :height +input-text-h+
-			      :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			      :y (d+ (d* 1.8 +portrait-size+) (d* 5.0 +input-text-h+))
+			      :width  (pgen-label-ability-w)
+			      :height (pgen-label-ability-h)
+			      :x (pgen-label-ability-x)
+			      :y (pgen-label-ability-y 5.0)
 			      :prefix (_ "Long range attack chance: ")
 			      :label "")
      :initarg  :lb-range-atk-ch
      :accessor lb-range-atk-ch)
    (b-inc-range-atk-ch
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d+ (d* 1.8 +portrait-size+) (d* 5.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 5.0)
 				t)
     :initarg :b-inc-range-atk-ch
     :accessor b-inc-range-atk-ch)
    (b-dec-range-atk-ch
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d+ (d* 1.8 +portrait-size+) (d* 5.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 5.0)
 				nil)
     :initarg :b-dec-range-atk-ch
     :accessor b-dec-range-atk-ch)
    (lb-melee-atk-dmg
      :initform (make-instance 'simple-label-prefixed
-			      :width  (d* 2.0 +input-text-w+)
-			      :height +input-text-h+
-			      :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			      :y (d+ (d* 1.8 +portrait-size+) (d* 6.0 +input-text-h+))
+			      :width  (pgen-label-ability-w)
+			      :height (pgen-label-ability-h)
+			      :x (pgen-label-ability-x)
+			      :y (pgen-label-ability-y 6.0)
 			      :prefix (_ "Short Range attack damage: ")
 			      :label "")
      :initarg  :lb-melee-atk-dmg
      :accessor lb-melee-atk-dmg)
    (b-inc-melee-atk-dmg
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d+ (d* 1.8 +portrait-size+) (d* 6.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 6.0)
 				t)
     :initarg :b-inc-melee-atk-dmg
     :accessor b-inc-melee-atk-dmg)
    (b-dec-melee-atk-dmg
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d+ (d* 1.8 +portrait-size+) (d* 6.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 6.0)
 				nil)
     :initarg :b-dec-melee-atk-dmg
     :accessor b-dec-melee-atk-dmg)
    (lb-range-atk-dmg
      :initform (make-instance 'simple-label-prefixed
-			      :width  (d* 2.0 +input-text-w+)
-			      :height +input-text-h+
-			      :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			      :y (d+ (d* 1.8 +portrait-size+) (d* 7.0 +input-text-h+))
+			      :width  (pgen-label-ability-w)
+			      :height (pgen-label-ability-h)
+			      :x (pgen-label-ability-x)
+			      :y (pgen-label-ability-y 7.0)
 			      :prefix (_ "Long Range attack damage: ")
 			      :label "")
      :initarg  :lb-range-atk-dmg
      :accessor lb-range-atk-dmg)
    (b-inc-range-atk-dmg
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d+ (d* 1.8 +portrait-size+) (d* 7.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 7.0)
 				t)
     :initarg :b-inc-range-atk-dmg
     :accessor b-inc-range-atk-dmg)
    (b-dec-range-atk-dmg
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d+ (d* 1.8 +portrait-size+) (d* 7.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 7.0)
 				nil)
     :initarg :b-dec-range-atk-dmg
     :accessor b-dec-range-atk-dmg)
    (lb-edge-wpn-ch-bonus
      :initform (make-instance 'simple-label-prefixed
-			      :width  (d* 2.0 +input-text-w+)
-			      :height +input-text-h+
-			      :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			      :y (d+ (d* 1.8 +portrait-size+) (d* 8.0 +input-text-h+))
+			      :width  (pgen-label-ability-w)
+			      :height (pgen-label-ability-h)
+			      :x (pgen-label-ability-x)
+			      :y (pgen-label-ability-y 8.0)
 			      :prefix (_ "Edge weapon chance bonus: ")
 			      :label "")
      :initarg  :lb-edge-wpn-ch-bonus
      :accessor lb-edge-wpn-ch-bonus)
    (b-inc-edge-wpn-ch-bonus
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d+ (d* 1.8 +portrait-size+) (d* 8.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 8.0)
 				t)
     :initarg :b-inc-edge-wpn-ch-bonus
     :accessor b-inc-edge-wpn-ch-bonus)
    (b-dec-edge-wpn-ch-bonus
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d+ (d* 1.8 +portrait-size+) (d* 8.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 8.0)
 				nil)
     :initarg :b-dec-edge-wpn-ch-bonus
     :accessor b-dec-edge-wpn-ch-bonus)
    (lb-edge-wpn-dmg-bonus
      :initform (make-instance 'simple-label-prefixed
-			      :width  (d* 2.0 +input-text-w+)
-			      :height +input-text-h+
-			      :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			      :y (d+ (d* 1.8 +portrait-size+) (d* 9.0 +input-text-h+))
+			      :width  (pgen-label-ability-w)
+			      :height (pgen-label-ability-h)
+			      :x (pgen-label-ability-x)
+			      :y (pgen-label-ability-y 9.0)
 			      :prefix (_ "Edge weapon damage bonus: ")
 			      :label "")
      :initarg  :lb-edge-wpn-dmg-bonus
      :accessor lb-edge-wpn-dmg-bonus)
    (b-inc-edge-wpn-dmg-bonus
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d+ (d* 1.8 +portrait-size+) (d* 9.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 9.0)
 				t)
     :initarg :b-inc-edge-wpn-dmg-bonus
     :accessor b-inc-edge-wpn-dmg-bonus)
    (b-dec-edge-wpn-dmg-bonus
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d+ (d* 1.8 +portrait-size+) (d* 9.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 9.0)
 				nil)
     :initarg :b-dec-edge-wpn-dmg-bonus
     :accessor b-dec-edge-wpn-dmg-bonus)
    (lb-impact-wpn-ch-bonus
      :initform (make-instance 'simple-label-prefixed
-			      :width  (d* 2.0 +input-text-w+)
-			      :height +input-text-h+
-			      :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			      :y (d+ (d* 1.8 +portrait-size+) (d* 10.0 +input-text-h+))
+			      :width  (pgen-label-ability-w)
+			      :height (pgen-label-ability-h)
+			      :x (pgen-label-ability-x)
+			      :y (pgen-label-ability-y 10.0)
 			      :prefix (_ "Impact weapon chance bonus: ")
 			      :label "")
      :initarg  :lb-impact-wpn-ch-bonus
      :accessor lb-impact-wpn-ch-bonus)
    (b-inc-impact-wpn-ch-bonus
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d+ (d* 1.8 +portrait-size+) (d* 10.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 10.0)
 				t)
     :initarg :b-inc-impact-wpn-ch-bonus
     :accessor b-inc-impact-wpn-ch-bonus)
    (b-dec-impact-wpn-ch-bonus
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d+ (d* 1.8 +portrait-size+) (d* 10.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 10.0)
 				nil)
     :initarg :b-dec-impact-wpn-ch-bonus
     :accessor b-dec-impact-wpn-ch-bonus)
    (lb-impact-wpn-dmg-bonus
      :initform (make-instance 'simple-label-prefixed
-			      :width  (d* 2.0 +input-text-w+)
-			      :height +input-text-h+
-			      :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			      :y (d+ (d* 1.8 +portrait-size+) (d* 11.0 +input-text-h+))
+			      :width  (pgen-label-ability-w)
+			      :height (pgen-label-ability-h)
+			      :x (pgen-label-ability-x)
+			      :y (pgen-label-ability-y 11.0)
 			      :prefix (_ "Impact weapon damage bonus: ")
 			      :label "")
      :initarg  :lb-impact-wpn-dmg-bonus
      :accessor lb-impact-wpn-dmg-bonus)
    (b-inc-impact-wpn-dmg-bonus
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d+ (d* 1.8 +portrait-size+) (d* 11.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 11.0)
 				t)
     :initarg :b-inc-impact-wpn-dmg-bonus
     :accessor b-inc-impact-wpn-dmg-bonus)
    (b-dec-impact-wpn-dmg-bonus
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d+ (d* 1.8 +portrait-size+) (d* 11.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 11.0)
 				nil)
     :initarg :b-dec-impact-wpn-dmg-bonus
     :accessor b-dec-impact-wpn-dmg-bonus)
    (lb-pole-wpn-ch-bonus
      :initform (make-instance 'simple-label-prefixed
-			      :width  (d* 2.0 +input-text-w+)
-			      :height +input-text-h+
-			      :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			      :y (d+ (d* 1.8 +portrait-size+) (d* 12.0 +input-text-h+))
+			      :width  (pgen-label-ability-w)
+			      :height (pgen-label-ability-h)
+			      :x (pgen-label-ability-x)
+			      :y (pgen-label-ability-y 12.0)
 			      :prefix (_ "Pole weapon chance bonus: ")
 			      :label "")
      :initarg  :lb-pole-wpn-ch-bonus
      :accessor lb-pole-wpn-ch-bonus)
    (b-inc-pole-wpn-ch-bonus
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d+ (d* 1.8 +portrait-size+) (d* 12.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 12.0)
 				t)
     :initarg :b-inc-pole-wpn-ch-bonus
     :accessor b-inc-pole-wpn-ch-bonus)
    (b-dec-pole-wpn-ch-bonus
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d+ (d* 1.8 +portrait-size+) (d* 12.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 12.0)
 				nil)
     :initarg :b-dec-pole-wpn-ch-bonus
     :accessor b-dec-pole-wpn-ch-bonus)
    (lb-pole-wpn-dmg-bonus
      :initform (make-instance 'simple-label-prefixed
-			      :width  (d* 2.0 +input-text-w+)
-			      :height +input-text-h+
-			      :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			      :y (d+ (d* 1.8 +portrait-size+) (d* 13.0 +input-text-h+))
+			      :width  (pgen-label-ability-w)
+			      :height (pgen-label-ability-h)
+			      :x (pgen-label-ability-x)
+			      :y (pgen-label-ability-y 13.0)
 			      :prefix (_ "Pole weapon damage bonus: ")
 			      :label "")
      :initarg  :lb-pole-wpn-dmg-bonus
      :accessor lb-pole-wpn-dmg-bonus)
    (b-inc-pole-wpn-dmg-bonus
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d+ (d* 1.8 +portrait-size+) (d* 13.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 13.0)
 				t)
     :initarg :b-inc-pole-wpn-dmg-bonus
     :accessor b-inc-pole-wpn-dmg-bonus)
    (b-dec-pole-wpn-dmg-bonus
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d+ (d* 1.8 +portrait-size+) (d* 13.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 13.0)
 				nil)
     :initarg :b-dec-pole-wpn-dmg-bonus
     :accessor b-dec-pole-wpn-dmg-bonus)
    (lb-unlock-ch
      :initform (make-instance 'simple-label-prefixed
-			      :width  (d* 2.0 +input-text-w+)
-			      :height +input-text-h+
-			      :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			      :y (d+ (d* 1.8 +portrait-size+) (d* 14.0 +input-text-h+))
+			      :width  (pgen-label-ability-w)
+			      :height (pgen-label-ability-h)
+			      :x (pgen-label-ability-x)
+			      :y (pgen-label-ability-y 14.0)
 			      :prefix (_ "Unlock chance: ")
 			      :label "")
      :initarg  :lb-unlock-ch
      :accessor lb-unlock-ch)
    (b-inc-unlock-ch
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d+ (d* 1.8 +portrait-size+) (d* 14.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 14.0)
 				t)
     :initarg :b-inc-unlock-ch
     :accessor b-inc-unlock-ch)
    (b-dec-unlock-ch
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d+ (d* 1.8 +portrait-size+) (d* 14.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 14.0)
 				nil)
     :initarg :b-dec-unlock-ch
     :accessor b-dec-unlock-ch)
    (lb-deactivate-trap-ch
      :initform (make-instance 'simple-label-prefixed
-			      :width  (d* 2.0 +input-text-w+)
-			      :height +input-text-h+
-			      :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			      :y (d+ (d* 1.8 +portrait-size+) (d* 15.0 +input-text-h+))
+			      :width  (pgen-label-ability-w)
+			      :height (pgen-label-ability-h)
+			      :x (pgen-label-ability-x)
+			      :y (pgen-label-ability-y 15.0)
 			      :prefix (_ "Deactivate trap chance: ")
 			      :label "")
      :initarg  :lb-deactivate-trap-ch
      :accessor lb-deactivate-trap-ch)
    (b-inc-deactivate-trap-ch
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d+ (d* 1.8 +portrait-size+) (d* 15.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 15.0)
 				t)
     :initarg :b-inc-deactivate-trap-ch
     :accessor b-inc-deactivate-trap-ch)
    (b-dec-deactivate-trap-ch
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d+ (d* 1.8 +portrait-size+) (d* 15.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 15.0)
 				nil)
     :initarg :b-dec-deactivate-trap-ch
     :accessor b-dec-deactivate-trap-ch)
    (lb-reply-attack-ch
      :initform (make-instance 'simple-label-prefixed
-			      :width  (d* 2.0 +input-text-w+)
-			      :height +input-text-h+
-			      :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			      :y (d+ (d* 1.8 +portrait-size+) (d* 16.0 +input-text-h+))
+			      :width  (pgen-label-ability-w)
+			      :height (pgen-label-ability-h)
+			      :x (pgen-label-ability-x)
+			      :y (pgen-label-ability-y 16.0)
 			      :prefix (_ "Reply to attack chance: ")
 			      :label "")
      :initarg  :lb-reply-attack-ch
      :accessor lb-reply-attack-ch)
    (b-inc-reply-attack-ch
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d+ (d* 1.8 +portrait-size+) (d* 16.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 16.0)
 				t)
     :initarg :b-inc-reply-attack-ch
     :accessor b-inc-reply-attack-ch)
    (b-dec-reply-attack-ch
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d+ (d* 1.8 +portrait-size+) (d* 16.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 16.0)
 				nil)
     :initarg :b-dec-reply-attack-ch
     :accessor b-dec-reply-attack-ch)
    (lb-ambush-attack-ch
      :initform (make-instance 'simple-label-prefixed
-			      :width  (d* 2.0 +input-text-w+)
-			      :height +input-text-h+
-			      :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			      :y (d+ (d* 1.8 +portrait-size+) (d* 17.0 +input-text-h+))
+			      :width  (pgen-label-ability-w)
+			      :height (pgen-label-ability-h)
+			      :x (pgen-label-ability-x)
+			      :y (pgen-label-ability-y 17.0)
 			      :prefix (_ "Ambush attack chance: ")
 			      :label "")
      :initarg  :lb-ambush-attack-ch
      :accessor lb-ambush-attack-ch)
    (b-inc-ambush-attack-ch
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d+ (d* 1.8 +portrait-size+) (d* 17.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 17.0)
 				t)
     :initarg :b-inc-ambush-attack-ch
     :accessor b-inc-ambush-attack-ch)
    (b-dec-ambush-attack-ch
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d+ (d* 1.8 +portrait-size+) (d* 17.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 17.0)
 				nil)
     :initarg :b-dec-ambush-attack-ch
     :accessor b-dec-ambush-attack-ch)
    (lb-spell-ch
      :initform (make-instance 'simple-label-prefixed
-			      :width  (d* 2.0 +input-text-w+)
-			      :height +input-text-h+
-			      :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			      :y (d+ (d* 1.8 +portrait-size+) (d* 18.0 +input-text-h+))
+			      :width  (pgen-label-ability-w)
+			      :height (pgen-label-ability-h)
+			      :x (pgen-label-ability-x)
+			      :y (pgen-label-ability-y 18.0)
 			      :prefix (_ "Spell chance: ")
 			      :label "")
      :initarg  :lb-spell-ch
      :accessor lb-spell-ch)
    (b-inc-spell-ch
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d+ (d* 1.8 +portrait-size+) (d* 18.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 18.0)
 				t)
     :initarg :b-inc-spell-ch
     :accessor b-inc-spell-ch)
    (b-dec-spell-ch
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d+ (d* 1.8 +portrait-size+) (d* 18.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 18.0)
 				nil)
     :initarg :b-dec-spell-ch
     :accessor b-dec-spell-ch)
    (lb-attack-spell-ch
      :initform (make-instance 'simple-label-prefixed
-			      :width  (d* 2.0 +input-text-w+)
-			      :height +input-text-h+
-			      :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			      :y (d+ (d* 1.8 +portrait-size+) (d* 19.0 +input-text-h+))
+			      :width  (pgen-label-ability-w)
+			      :height (pgen-label-ability-h)
+			      :x (pgen-label-ability-x)
+			      :y (pgen-label-ability-y 19.0)
 			      :prefix (_ "Attack spell chance: ")
 			      :label "")
      :initarg  :lb-attack-spell-ch
      :accessor lb-attack-spell-ch)
    (b-inc-attack-spell-ch
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+))
-				(d+ (d* 1.8 +portrait-size+) (d* 19.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-inc-button-x)
+				(pgen-inc-button-y 19.0)
 				t)
     :initarg :b-inc-attack-spell-ch
     :accessor b-inc-attack-spell-ch)
    (b-dec-attack-spell-ch
-    :initform (make-pgen-button (d+ (d+ (d* 2.0 +spacing+) (d/ (d *window-w*) 12.0))
-				    (d* 2.0 +input-text-w+)
-				    +input-text-h+)
-				(d+ (d* 1.8 +portrait-size+) (d* 19.0 +input-text-h+))
+    :initform (make-pgen-button (pgen-dec-button-x)
+				(pgen-inc-button-y 19.0)
 				nil)
     :initarg :b-dec-attack-spell-ch
     :accessor b-dec-attack-spell-ch)
    (lb-level
      :initform (make-instance 'simple-label-prefixed
-			      :width  (d* 2.0 +input-text-w+)
-			      :height +input-text-h+
-			      :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			      :y (d+ (d* 1.8 +portrait-size+) (d* 20.0 +input-text-h+))
+			      :width  (pgen-label-ability-w)
+			      :height (pgen-label-ability-h)
+			      :x (pgen-label-ability-x)
+			      :y (pgen-label-ability-y 20.0)
 			      :prefix (_ "Level: ")
 			      :label "")
      :initarg  :lb-level
      :accessor lb-level)
    (lb-exp-points
      :initform (make-instance 'simple-label-prefixed
-			      :width  (d* 2.0 +input-text-w+)
-			      :height +input-text-h+
-			      :x (d+ +spacing+ (d/ (d *window-w*) 12.0))
-			      :y (d+ (d* 1.8 +portrait-size+) (d* 21.0 +input-text-h+))
+			      :width  (pgen-label-ability-w)
+			      :height (input-text-h *reference-sizes*)
+			      :x (pgen-label-ability-x)
+			      :y (pgen-label-ability-y 21.0)
 			      :prefix (_ "Experience points: ")
 			      :label "")
      :initarg  :lb-exp-points
      :accessor lb-exp-points)
    (input-name
     :initform (make-instance 'text-field
-			     :width  +input-text-w+
-			     :height +input-text-h+
-			     :x (d+ (d* 2.0 +spacing+)
+			     :width  (input-text-w *reference-sizes*)
+			     :height (input-text-h *reference-sizes*)
+			     :x (d+ (d* 2.0 (spacing *reference-sizes*))
 				    +portrait-size+
-				    (d/ (d *window-w*) 12.0))
+				    (pgen-chk-button-w))
 			     :y 0.0
 			     :label (_ "Name"))
     :initarg :input-name
     :accessor input-name)
    (input-last-name
     :initform (make-instance 'text-field
-			     :width  +input-text-w+
-			     :height +input-text-h+
-			     :x (d+ (d* 2.0 +spacing+)
+			     :width  (input-text-w *reference-sizes*)
+			     :height (input-text-h *reference-sizes*)
+			     :x (d+ (d* 2.0 (spacing *reference-sizes*))
 				    +portrait-size+
-				    (d/ (d *window-w*) 12.0))
-			     :y (d+ +spacing+ +input-text-h+)
+				    (pgen-chk-button-w))
+			     :y (d+ (spacing *reference-sizes*)
+				    (input-text-h *reference-sizes*))
 			     :label (_ "Last name"))
     :initarg :input-last-name
     :accessor input-last-name)
    (lb-strength
     :initform (make-instance 'simple-label-prefixed
-			     :width  +input-text-w+
-			     :height +input-text-h+
-			     :x (d+ (d* 2.0 +spacing+)
-				    +portrait-size+
-				    +input-text-w+
-				    (d/ (d *window-w*) 12.0))
-			     :y 0.0
+			     :width  (input-text-w *reference-sizes*)
+			     :height (input-text-h *reference-sizes*)
+			     :x (pgen-characteristics-x)
+			     :y (pgen-characteristics-y 0.0)
 			     :prefix (_ "STR: ")
 			     :label "")
     :initarg  :lb-strength
     :accessor lb-strength)
    (lb-stamina
     :initform (make-instance 'simple-label-prefixed
-			     :width  +input-text-w+
-			     :height +input-text-h+
-			     :x (d+ (d* 2.0 +spacing+)
-				    +portrait-size+
-				    +input-text-w+
-				    (d/ (d *window-w*) 12.0))
-			     :y +input-text-h+
+			     :width  (input-text-w *reference-sizes*)
+			     :height (input-text-h *reference-sizes*)
+			     :x (pgen-characteristics-x)
+			     :y (pgen-characteristics-y 1.0)
 			     :prefix (_ "ST:  ")
 			     :label "")
     :initarg  :lb-stamina
     :accessor lb-stamina)
    (lb-dexterity
     :initform (make-instance 'simple-label-prefixed
-			     :width  +input-text-w+
-			     :height +input-text-h+
-			     :x (d+ (d* 2.0 +spacing+)
-				    +portrait-size+
-				    +input-text-w+
-				    (d/ (d *window-w*) 12.0))
-			     :y (d* 2.0 (d+ +spacing+ +input-text-h+))
+			     :width  (input-text-w *reference-sizes*)
+			     :height (input-text-h *reference-sizes*)
+			     :x (pgen-characteristics-x)
+			     :y (pgen-characteristics-y 2.0)
 			     :prefix (_ "DX:  ")
 			     :label "")
     :initarg  :lb-dexterity
     :accessor lb-dexterity)
    (lb-agility
     :initform (make-instance 'simple-label-prefixed
-			     :width  +input-text-w+
-			     :height +input-text-h+
-			     :x (d+ (d* 2.0 +spacing+)
-				    +portrait-size+
-				    +input-text-w+
-				    (d/ (d *window-w*) 12.0))
-			     :y (d* 3.0 (d+ +spacing+ +input-text-h+))
+			     :width  (input-text-w *reference-sizes*)
+			     :height (input-text-h *reference-sizes*)
+			     :x (pgen-characteristics-x)
+			     :y (pgen-characteristics-y 3.0)
 			     :prefix (_ "AG:  ")
 			     :label "")
     :initarg  :lb-agility
     :accessor lb-agility)
    (lb-smartness
     :initform (make-instance 'simple-label-prefixed
-			     :width  +input-text-w+
-			     :height +input-text-h+
-			     :x (d+ (d* 2.0 +spacing+)
-				    +portrait-size+
-				    +input-text-w+
-				    (d/ (d *window-w*) 12.0))
-			     :y (d* 4.0 (d+ +spacing+ +input-text-h+))
+			     :width  (input-text-w *reference-sizes*)
+			     :height (input-text-h *reference-sizes*)
+			     :x (pgen-characteristics-x)
+			     :y (pgen-characteristics-y 4.0)
 			     :prefix (_ "SM:  ")
 			     :label "")
     :initarg  :lb-smartness
     :accessor lb-smartness)
    (lb-empaty
     :initform (make-instance 'simple-label-prefixed
-			     :width  +input-text-w+
-			     :height +input-text-h+
-			     :x (d+ (d* 2.0 +spacing+)
-				    +portrait-size+
-				    +input-text-w+
-				    (d/ (d *window-w*) 12.0))
-			     :y (d* 5.0 (d+ +spacing+ +input-text-h+))
+			     :width  (input-text-w *reference-sizes*)
+			     :height (input-text-h *reference-sizes*)
+			     :x (pgen-characteristics-x)
+			     :y (pgen-characteristics-y 5.0)
 			     :prefix (_ "EM:  ")
 			     :label "")
     :initarg  :lb-empaty
     :accessor lb-empaty)
    (lb-weight
     :initform (make-instance 'simple-label-prefixed
-			     :width  +input-text-w+
-			     :height +input-text-h+
-			     :x (d+ (d* 2.0 +spacing+)
-				    +portrait-size+
-				    +input-text-w+
-				    (d/ (d *window-w*) 12.0))
-			     :y (d* 6.0 (d+ +spacing+ +input-text-h+))
+			     :width  (input-text-w *reference-sizes*)
+			     :height (input-text-h *reference-sizes*)
+			     :x (pgen-characteristics-x)
+			     :y (pgen-characteristics-y 6.0)
 			     :prefix (_ "WG:  ")
 			     :label "")
     :initarg  :lb-weight
@@ -2986,21 +2961,21 @@
 	(or from-player
 	    (cond
 	      ((button-state (checkb-warrior window))
-	       (player-character:make-warrior :human))
+	       (character:make-warrior :human))
 	      ((button-state (checkb-wizard window))
-	       (player-character:make-wizard :human))
+	       (character:make-wizard :human))
 	      ((button-state (checkb-healer window))
-	       (player-character:make-healer :human))
+	       (character:make-healer :human))
 	      ((button-state (checkb-archer window))
-	       (player-character:make-archer :human))
+	       (character:make-archer :human))
 	      ((button-state (checkb-ranger window))
-	       (player-character:make-ranger :human))
+	       (character:make-ranger :human))
 	      (t
-	       (player-character:make-warrior :human))))))
+	       (character:make-warrior :human))))))
 
 (defun setup-portrait (window &key (from-player nil))
   (let ((new-portrait (if from-player
-			  (player-character:portrait from-player)
+			  (character:portrait from-player)
 			  (cond
 			    ((button-state (checkb-male window))
 			     (avatar-portrait:build-avatar "m"))
@@ -3045,7 +3020,7 @@
   (declare (ignore event))
   (with-parent-widget (win) button
     (with-file-chooser (button fchooser-window)
-      (let ((new-player (deserialize (make-instance 'player-character:player-character)
+      (let ((new-player (deserialize (make-instance 'character:player-character)
 				     (fetch-file-chooser-path fchooser-window))))
 	(%setup-character win :new-player new-player))))
   t)
@@ -3056,15 +3031,62 @@
     (with-accessors ((input-name input-name) (input-last-name input-last-name)
 		     (portrait portrait) (player player)) win
       (with-file-chooser (button fchooser-window)
-	(setf (player-character:first-name player) (label input-name)
-	      (player-character:last-name  player) (label input-last-name))
-	(setf (player-character:portrait   player)
+	(setf (character:first-name player) (label input-name)
+	      (character:last-name  player) (label input-last-name))
+	(setf (character:portrait   player)
 	      (clone (get-texture +portrait-unknown-texture-name+)))
 	(with-open-file (stream (fetch-file-chooser-path fchooser-window)
 				:direction :output :if-exists :supersede
 				:if-does-not-exist :create)
 	  (format stream "~a" (serialize player))))))
   t)
+
+(defun %find-max-lenght-ability-prefix (win)
+  (with-accessors ((lb-damage-pt lb-damage-pt)
+		   (lb-movement-pt lb-movement-pt)
+		   (lb-magic-pt lb-magic-pt)
+		   (lb-dodge-ch lb-dodge-ch)
+		   (lb-melee-atk-ch lb-melee-atk-ch)
+		   (lb-range-atk-ch lb-range-atk-ch)
+		   (lb-melee-atk-dmg lb-melee-atk-dmg)
+		   (lb-range-atk-dmg lb-range-atk-dmg)
+		   (lb-edge-wpn-ch-bonus lb-edge-wpn-ch-bonus)
+		   (lb-edge-wpn-dmg-bonus lb-edge-wpn-dmg-bonus)
+		   (lb-impact-wpn-ch-bonus lb-impact-wpn-ch-bonus)
+		   (lb-impact-wpn-dmg-bonus lb-impact-wpn-dmg-bonus)
+		   (lb-pole-wpn-ch-bonus lb-pole-wpn-ch-bonus)
+		   (lb-pole-wpn-dmg-bonus lb-pole-wpn-dmg-bonus)
+		   (lb-unlock-ch lb-unlock-ch)
+		   (lb-deactivate-trap-ch lb-deactivate-trap-ch)
+		   (lb-reply-attack-ch lb-reply-attack-ch)
+		   (lb-ambush-attack-ch lb-ambush-attack-ch)
+		   (lb-spell-ch lb-spell-ch )
+		   (lb-attack-spell-ch lb-attack-spell-ch)
+		   (lb-level lb-level)
+		   (lb-exp-points lb-exp-points)) win
+    (let ((all-labels (list lb-damage-pt
+			    lb-movement-pt
+			    lb-magic-pt
+			    lb-dodge-ch
+			    lb-melee-atk-ch
+			    lb-range-atk-ch
+			    lb-melee-atk-dmg
+			    lb-range-atk-dmg
+			    lb-edge-wpn-ch-bonus
+			    lb-edge-wpn-dmg-bonus
+			    lb-impact-wpn-ch-bonus
+			    lb-impact-wpn-dmg-bonus
+			    lb-pole-wpn-ch-bonus
+			    lb-pole-wpn-dmg-bonus
+			    lb-unlock-ch
+			    lb-deactivate-trap-ch
+			    lb-reply-attack-ch
+			    lb-ambush-attack-ch
+			    lb-spell-ch lb-spell-ch
+			    lb-attack-spell-ch
+			    lb-level lb-level
+			    lb-exp-points lb-exp-points)))
+      (find-max (mapcar #'(lambda (a) (length (prefix a))) all-labels)))))
 
 (defun %setup-character (win &key (new-player nil))
   (with-accessors ((input-name input-name)
@@ -3144,137 +3166,159 @@
     (when (not new-player)
       (random-names:load-db +random-first-names-filename+))
     (setf (label input-name) (if new-player
-				 (player-character:first-name new-player)
+				 (character:first-name new-player)
 				 (random-names:generate)))
     (when (not new-player)
       (random-names:load-db +random-last-names-filename+))
     (setf (label input-last-name) (if new-player
-				      (player-character:last-name new-player)
+				      (character:last-name new-player)
 				      (random-names:generate)))
     (when (not new-player)
-      (setf (player-character:exp-points player) player-character:+starting-exp-points+))
+      (setf (character:exp-points player) character:+starting-exp-points+))
     (setup-portrait win :from-player new-player)
-    (setf (label lb-strength)  (format nil "~,2f" (player-character:strength player)))
-    (setf (label lb-stamina)   (format nil "~,2f" (player-character:stamina player)))
-    (setf (label lb-dexterity) (format nil "~,2f" (player-character:dexterity player)))
-    (setf (label lb-agility)   (format nil "~,2f" (player-character:agility player)))
-    (setf (label lb-smartness) (format nil "~,2f" (player-character:smartness player)))
-    (setf (label lb-empaty)    (format nil "~,2f" (player-character:empaty player)))
-    (setf (label lb-weight)    (format nil "~,2f" (player-character:weight player)))
-    (setf (label lb-damage-pt)           (format nil "~,2f"
-						 (player-character:damage-points player)))
-    (%add-callback-to-pgen-buttons b-inc-damage-pt b-dec-damage-pt
-				   player 'player-character:damage-points
-				   lb-exp-points lb-damage-pt 0.1 1.0)
-    (setf (label lb-movement-pt)	   (format nil "~,2f"
-						   (player-character:movement-points player)))
-    (%add-callback-to-pgen-buttons b-inc-movement-pt b-dec-movement-pt
-				   player 'player-character:movement-points
-				   lb-exp-points lb-movement-pt 0.5 1.0)
-
-    (setf (label lb-magic-pt)		    (format nil "~,2f"
-						    (player-character:magic-points player)))
-    (%add-callback-to-pgen-buttons b-inc-magic-pt b-dec-magic-pt
-				   player 'player-character:magic-points
-				   lb-exp-points lb-magic-pt 0.5 1.0)
-    (setf (label lb-dodge-ch)		    (format nil "~,2f"
-						    (player-character:dodge-chance player)))
-    (%add-callback-to-pgen-buttons b-inc-dodge-ch b-dec-dodge-ch
-				   player 'player-character:dodge-chance
-				   lb-exp-points lb-dodge-ch 0.5 1.0)
-    (setf (label lb-melee-atk-ch)	    (format nil "~,2f"
-						    (player-character:melee-attack-chance player)))
-    (%add-callback-to-pgen-buttons b-inc-melee-atk-ch b-dec-melee-atk-ch
-				   player 'player-character:melee-attack-chance
-				   lb-exp-points lb-melee-atk-ch)
-    (setf (label lb-range-atk-ch)	    (format nil "~,2f"
-						    (player-character:range-attack-chance player)))
-    (%add-callback-to-pgen-buttons b-inc-range-atk-ch b-dec-range-atk-ch
-				   player 'player-character:range-attack-chance
-				   lb-exp-points lb-range-atk-ch 0.5 1.0)
-    (setf (label lb-melee-atk-dmg)	    (format nil "~,2f"
-						    (player-character:melee-attack-damage player)))
-    (%add-callback-to-pgen-buttons b-inc-melee-atk-dmg b-dec-melee-atk-dmg
-				   player 'player-character:melee-attack-damage
-				   lb-exp-points lb-melee-atk-dmg 0.25 1.0)
-    (setf (label lb-range-atk-dmg)	    (format nil "~,2f"
-						    (player-character:range-attack-damage player)))
-    (%add-callback-to-pgen-buttons b-inc-range-atk-dmg b-dec-range-atk-dmg
-				   player 'player-character:range-attack-damage
+    (setf (label lb-strength)  (format nil +standard-float-print-format+ (character:strength player)))
+    (setf (label lb-stamina)   (format nil +standard-float-print-format+ (character:stamina player)))
+    (setf (label lb-dexterity) (format nil +standard-float-print-format+ (character:dexterity player)))
+    (setf (label lb-agility)   (format nil +standard-float-print-format+ (character:agility player)))
+    (setf (label lb-smartness) (format nil +standard-float-print-format+ (character:smartness player)))
+    (setf (label lb-empaty)    (format nil +standard-float-print-format+ (character:empaty player)))
+    (setf (label lb-weight)    (format nil +standard-float-print-format+ (character:weight player)))
+    (let ((max-length-prefix (%find-max-lenght-ability-prefix win)))
+      (setf (prefix lb-damage-pt) (right-padding (prefix lb-damage-pt) max-length-prefix)
+	    (label lb-damage-pt) (format nil +standard-float-print-format+ (character:damage-points player)))
+      (%add-callback-to-pgen-buttons b-inc-damage-pt b-dec-damage-pt
+				     player 'character:damage-points
+				     lb-exp-points lb-damage-pt 0.1 1.0)
+      (setf (prefix lb-movement-pt) (right-padding (prefix lb-movement-pt) max-length-prefix)
+	    (label  lb-movement-pt) (format nil +standard-float-print-format+ (character:movement-points player)))
+      (%add-callback-to-pgen-buttons b-inc-movement-pt b-dec-movement-pt
+				     player 'character:movement-points
+				     lb-exp-points lb-movement-pt 0.5 1.0)
+      (setf (prefix lb-magic-pt) (right-padding (prefix lb-magic-pt) max-length-prefix)
+	    (label  lb-magic-pt) (format nil +standard-float-print-format+ (character:magic-points player)))
+      (%add-callback-to-pgen-buttons b-inc-magic-pt b-dec-magic-pt
+				     player 'character:magic-points
+				     lb-exp-points lb-magic-pt 0.5 1.0)
+      (setf (prefix lb-dodge-ch) (right-padding (prefix lb-dodge-ch) max-length-prefix)
+	    (label  lb-dodge-ch) (format nil +standard-float-print-format+ (character:dodge-chance player)))
+      (%add-callback-to-pgen-buttons b-inc-dodge-ch b-dec-dodge-ch
+				     player 'character:dodge-chance
+				     lb-exp-points lb-dodge-ch 0.5 1.0)
+      (setf (prefix lb-melee-atk-ch) (right-padding (prefix lb-melee-atk-ch) max-length-prefix)
+	    (label  lb-melee-atk-ch) (format nil +standard-float-print-format+ (character:melee-attack-chance player)))
+      (%add-callback-to-pgen-buttons b-inc-melee-atk-ch b-dec-melee-atk-ch
+				     player 'character:melee-attack-chance
+				     lb-exp-points lb-melee-atk-ch)
+      (setf (prefix lb-range-atk-ch) (right-padding (prefix lb-range-atk-ch) max-length-prefix)
+	    (label  lb-range-atk-ch) (format nil +standard-float-print-format+ (character:range-attack-chance player)))
+      (%add-callback-to-pgen-buttons b-inc-range-atk-ch b-dec-range-atk-ch
+				     player 'character:range-attack-chance
+				     lb-exp-points lb-range-atk-ch 0.5 1.0)
+      (setf (prefix lb-melee-atk-dmg) (right-padding (prefix lb-melee-atk-ch) max-length-prefix)
+	    (label  lb-melee-atk-dmg) (format nil +standard-float-print-format+
+					      (character:melee-attack-damage player)))
+      (%add-callback-to-pgen-buttons b-inc-melee-atk-dmg b-dec-melee-atk-dmg
+				     player 'character:melee-attack-damage
+				     lb-exp-points lb-melee-atk-dmg 0.25 1.0)
+      (setf (prefix lb-range-atk-dmg) (right-padding (prefix lb-range-atk-dmg) max-length-prefix)
+	    (label  lb-range-atk-dmg) (format nil +standard-float-print-format+
+					      (character:range-attack-damage player)))
+      (%add-callback-to-pgen-buttons b-inc-range-atk-dmg b-dec-range-atk-dmg
+				     player 'character:range-attack-damage
 				   lb-exp-points lb-range-atk-dmg 0.25 1.0)
-    (setf (label lb-edge-wpn-ch-bonus)    (format nil "~,2f"
-						  (player-character:edge-weapons-chance-bonus player)))
-    (%add-callback-to-pgen-buttons b-inc-edge-wpn-ch-bonus b-dec-edge-wpn-ch-bonus
-				   player 'player-character:edge-weapons-chance-bonus
-				   lb-exp-points lb-edge-wpn-ch-bonus 0.25 1.0)
-    (setf (label lb-edge-wpn-dmg-bonus)   (format nil "~,2f"
-						  (player-character:edge-weapons-damage-bonus player)))
-    (%add-callback-to-pgen-buttons b-inc-edge-wpn-dmg-bonus b-dec-edge-wpn-dmg-bonus
-				   player 'player-character:edge-weapons-damage-bonus
-				   lb-exp-points lb-edge-wpn-dmg-bonus 0.25 1.0)
-    (setf (label lb-impact-wpn-ch-bonus)  (format nil "~,2f"
-						  (player-character:impact-weapons-chance-bonus player)))
-    (%add-callback-to-pgen-buttons b-inc-impact-wpn-ch-bonus b-dec-impact-wpn-ch-bonus
-				   player 'player-character:impact-weapons-chance-bonus
-				   lb-exp-points lb-impact-wpn-ch-bonus 0.25 1.0)
-    (setf (label lb-impact-wpn-dmg-bonus) (format nil "~,2f"
-						  (player-character:impact-weapons-damage-bonus player)))
-    (%add-callback-to-pgen-buttons b-inc-impact-wpn-dmg-bonus b-dec-impact-wpn-dmg-bonus
-				   player 'player-character:impact-weapons-damage-bonus
-				   lb-exp-points lb-impact-wpn-dmg-bonus 0.25 1.0)
-    (setf (label lb-pole-wpn-ch-bonus)    (format nil "~,2f"
-						  (player-character:pole-weapons-chance-bonus player)))
-    (%add-callback-to-pgen-buttons b-inc-pole-wpn-ch-bonus b-dec-pole-wpn-ch-bonus
-				   player 'player-character:pole-weapons-chance-bonus
-				   lb-exp-points lb-pole-wpn-ch-bonus 0.25 1.0)
-    (setf (label lb-pole-wpn-dmg-bonus)   (format nil "~,2f"
-						  (player-character:pole-weapons-damage-bonus player)))
-    (%add-callback-to-pgen-buttons b-inc-pole-wpn-dmg-bonus b-dec-pole-wpn-dmg-bonus
-				   player 'player-character:pole-weapons-damage-bonus
-				   lb-exp-points lb-pole-wpn-dmg-bonus 0.25 1.0)
-
-    (setf (label lb-unlock-ch)	    (format nil "~,2f"
-					    (player-character:unlock-chance player)))
-    (%add-callback-to-pgen-buttons b-inc-unlock-ch b-dec-unlock-ch
-				   player 'player-character:unlock-chance
-				   lb-exp-points lb-unlock-ch 0.5 1.0)
-    (setf (label lb-deactivate-trap-ch)   (format nil "~,2f"
-						  (player-character:deactivate-trap-chance player)))
-    (%add-callback-to-pgen-buttons b-inc-deactivate-trap-ch b-dec-deactivate-trap-ch
-				   player 'player-character:deactivate-trap-chance
-				   lb-exp-points lb-deactivate-trap-ch 0.5 1.0)
-
-    (setf (label lb-reply-attack-ch)	    (format nil "~,2f"
-						    (player-character:reply-attack-chance player)))
-    (%add-callback-to-pgen-buttons b-inc-reply-attack-ch b-dec-reply-attack-ch
-				   player 'player-character:reply-attack-chance
-				   lb-exp-points lb-reply-attack-ch 0.33 1.0)
-    (setf (label lb-ambush-attack-ch)	    (format nil "~,2f"
-						    (player-character:ambush-attack-chance player)))
-    (%add-callback-to-pgen-buttons b-inc-ambush-attack-ch b-dec-ambush-attack-ch
-				   player 'player-character:ambush-attack-chance
-				   lb-exp-points lb-ambush-attack-ch 0.33 1.0)
-    (setf (label lb-spell-ch)	    (format nil "~,2f"
-					    (player-character:spell-chance player)))
-    (%add-callback-to-pgen-buttons b-inc-spell-ch b-dec-spell-ch
-				   player 'player-character:spell-chance
-				   lb-exp-points lb-spell-ch 0.25 1.0)
-    (setf (label lb-attack-spell-ch)  (format nil "~,2f"
-					      (player-character:attack-spell-chance player)))
-    (%add-callback-to-pgen-buttons b-inc-attack-spell-ch b-dec-attack-spell-ch
-				   player 'player-character:attack-spell-chance
-				   lb-exp-points lb-attack-spell-ch 0.25 1.0)
-    (setf (label lb-level)	    (format nil "~d"
-					    (player-character:level player)))
-    (setf (label lb-exp-points)	    (format nil "~d" (player-character:exp-points player)))
-    t))
-
+      (setf (prefix lb-edge-wpn-ch-bonus) (right-padding (prefix lb-edge-wpn-ch-bonus)
+							 max-length-prefix)
+	    (label lb-edge-wpn-ch-bonus) (format nil +standard-float-print-format+
+						 (character:edge-weapons-chance-bonus player)))
+      (%add-callback-to-pgen-buttons b-inc-edge-wpn-ch-bonus b-dec-edge-wpn-ch-bonus
+				     player 'character:edge-weapons-chance-bonus
+				     lb-exp-points lb-edge-wpn-ch-bonus 0.25 1.0)
+      (setf (prefix lb-edge-wpn-dmg-bonus) (right-padding (prefix lb-edge-wpn-dmg-bonus)
+							  max-length-prefix)
+	    (label lb-edge-wpn-dmg-bonus) (format nil +standard-float-print-format+
+						  (character:edge-weapons-damage-bonus player)))
+      (%add-callback-to-pgen-buttons b-inc-edge-wpn-dmg-bonus b-dec-edge-wpn-dmg-bonus
+				     player 'character:edge-weapons-damage-bonus
+				     lb-exp-points lb-edge-wpn-dmg-bonus 0.25 1.0)
+      (setf (prefix lb-impact-wpn-ch-bonus) (right-padding (prefix lb-impact-wpn-ch-bonus)
+							   max-length-prefix)
+	    (label lb-impact-wpn-ch-bonus) (format nil +standard-float-print-format+
+						   (character:impact-weapons-chance-bonus player)))
+      (%add-callback-to-pgen-buttons b-inc-impact-wpn-ch-bonus b-dec-impact-wpn-ch-bonus
+				     player 'character:impact-weapons-chance-bonus
+				     lb-exp-points lb-impact-wpn-ch-bonus 0.25 1.0)
+      (setf (prefix lb-impact-wpn-dmg-bonus) (right-padding (prefix lb-impact-wpn-dmg-bonus)
+							    max-length-prefix)
+	    (label lb-impact-wpn-dmg-bonus) (format nil +standard-float-print-format+
+						    (character:impact-weapons-damage-bonus player)))
+      (%add-callback-to-pgen-buttons b-inc-impact-wpn-dmg-bonus b-dec-impact-wpn-dmg-bonus
+				     player 'character:impact-weapons-damage-bonus
+				     lb-exp-points lb-impact-wpn-dmg-bonus 0.25 1.0)
+      (setf (prefix lb-pole-wpn-ch-bonus) (right-padding (prefix lb-pole-wpn-ch-bonus)
+							 max-length-prefix)
+	    (label lb-pole-wpn-ch-bonus) (format nil +standard-float-print-format+
+						    (character:pole-weapons-chance-bonus player)))
+      (%add-callback-to-pgen-buttons b-inc-pole-wpn-ch-bonus b-dec-pole-wpn-ch-bonus
+				     player 'character:pole-weapons-chance-bonus
+				     lb-exp-points lb-pole-wpn-ch-bonus 0.25 1.0)
+      (setf (prefix lb-pole-wpn-dmg-bonus) (right-padding (prefix lb-pole-wpn-dmg-bonus)
+							  max-length-prefix)
+	    (label lb-pole-wpn-dmg-bonus) (format nil +standard-float-print-format+
+						  (character:pole-weapons-damage-bonus player)))
+      (%add-callback-to-pgen-buttons b-inc-pole-wpn-dmg-bonus b-dec-pole-wpn-dmg-bonus
+				     player 'character:pole-weapons-damage-bonus
+				     lb-exp-points lb-pole-wpn-dmg-bonus 0.25 1.0)
+      (setf (prefix lb-unlock-ch) (right-padding (prefix lb-unlock-ch) max-length-prefix)
+	    (label lb-unlock-ch) (format nil +standard-float-print-format+
+					 (character:unlock-chance player)))
+      (%add-callback-to-pgen-buttons b-inc-unlock-ch b-dec-unlock-ch
+				     player 'character:unlock-chance
+				     lb-exp-points lb-unlock-ch 0.5 1.0)
+      (setf (prefix lb-deactivate-trap-ch) (right-padding (prefix lb-deactivate-trap-ch)
+							  max-length-prefix)
+	    (label lb-deactivate-trap-ch) (format nil +standard-float-print-format+
+						  (character:deactivate-trap-chance player)))
+      (%add-callback-to-pgen-buttons b-inc-deactivate-trap-ch b-dec-deactivate-trap-ch
+				     player 'character:deactivate-trap-chance
+				     lb-exp-points lb-deactivate-trap-ch 0.5 1.0)
+      (setf (prefix lb-reply-attack-ch) (right-padding (prefix lb-reply-attack-ch)
+						       max-length-prefix)
+	    (label lb-reply-attack-ch) (format nil +standard-float-print-format+
+					       (character:reply-attack-chance player)))
+      (%add-callback-to-pgen-buttons b-inc-reply-attack-ch b-dec-reply-attack-ch
+				     player 'character:reply-attack-chance
+				     lb-exp-points lb-reply-attack-ch 0.33 1.0)
+      (setf (prefix lb-ambush-attack-ch) (right-padding (prefix lb-ambush-attack-ch)
+							max-length-prefix)
+	    (label lb-ambush-attack-ch) (format nil +standard-float-print-format+
+						(character:ambush-attack-chance player)))
+      (%add-callback-to-pgen-buttons b-inc-ambush-attack-ch b-dec-ambush-attack-ch
+				     player 'character:ambush-attack-chance
+				     lb-exp-points lb-ambush-attack-ch 0.33 1.0)
+      (setf (prefix lb-spell-ch) (right-padding (prefix lb-spell-ch) max-length-prefix)
+	    (label lb-spell-ch) (format nil +standard-float-print-format+
+					(character:spell-chance player)))
+      (%add-callback-to-pgen-buttons b-inc-spell-ch b-dec-spell-ch
+				     player 'character:spell-chance
+				     lb-exp-points lb-spell-ch 0.25 1.0)
+      (setf (prefix lb-attack-spell-ch) (right-padding (prefix lb-attack-spell-ch)
+						       max-length-prefix)
+	    (label lb-attack-spell-ch) (format nil +standard-float-print-format+
+					       (character:attack-spell-chance player)))
+      (%add-callback-to-pgen-buttons b-inc-attack-spell-ch b-dec-attack-spell-ch
+				     player 'character:attack-spell-chance
+				     lb-exp-points lb-attack-spell-ch 0.25 1.0)
+      (setf (prefix lb-level) (right-padding (prefix lb-level) max-length-prefix)
+	    (label lb-level) (format nil "~d" (character:level player)))
+      (setf (prefix lb-exp-points) (right-padding (prefix lb-exp-points) max-length-prefix)
+	    (label lb-exp-points)  (format nil "~d" (character:exp-points player))))))
 
 (defun make-player-generator ()
   (make-instance 'player-generator
-		 :x 0.0 :y 200.0
-		 :width  (d/ (d *window-w*) 2.0)
-		 :height (d/ (d *window-h*) 2.0)
+		 :x 0.0
+		 :y 200.0
+		 :width  (pgen-window-w)
+		 :height (pgen-window-h)
 		 :label  (_ "Generate character")))
 
 (defclass inventory-slot-button (check-button)
@@ -3330,7 +3374,7 @@
       (progn
 	(setf (texture-overlay  slot)
 	      (or (and item
-		       (player-character:portrait item))
+		       (character:portrait item))
 		  (get-texture +transparent-texture-name+)))
 	(setf (contained-entity slot) item))
       (remove-containded-item slot)))
@@ -3384,7 +3428,7 @@
 		 worn-item)
 	(let ((available-slot (find-available-slot win)))
 	  (when available-slot
-	    (let ((c-slot (item->character-slot win worn-item)))
+	    (let ((c-slot (item->player-character-slot win worn-item)))
 	      (when c-slot
 		(remove-worn-item selected-worn-slot
 				  available-slot
@@ -3410,9 +3454,9 @@
 		     available-chest-slot)
 	    (add-containded-item     available-chest-slot item)
 	    (remove-containded-item  slot)
-	    (setf (player-character:inventory owner)
+	    (setf (character:inventory owner)
 		  (remove-if #'(lambda (a) (= (id item) a))
-			     (player-character:inventory owner) :key #'id))))))))
+			     (character:inventory owner) :key #'id))))))))
 
 (defun next-slot-page-cb (w e)
   (declare (ignore e))
@@ -3443,24 +3487,24 @@
     (map nil #'(lambda (s) (add-child window s)) (current-slots-page window))
     (update-page-counts window next-page-no)))
 
-(defun item->character-slot (window item)
+(defun item->player-character-slot (window item)
   (with-accessors ((left-hand-slot  left-hand-slot)
 		   (right-hand-slot right-hand-slot)) window
     (and item
 	 (cond
-	   ((player-character:ringp item)
-	    'player-character:ring)
-	   ((player-character:armorp item)
-	    'player-character:armor)
-	   ((player-character:elmp item)
-	    'player-character:elm)
-	   ((player-character:shoesp item)
-	    'player-character:shoes)
-	   ((or (player-character:weaponp item)
-		(player-character:shieldp item))
+	   ((character:ringp item)
+	    'character:ring)
+	   ((character:armorp item)
+	    'character:armor)
+	   ((character:elmp item)
+	    'character:elm)
+	   ((character:shoesp item)
+	    'character:shoes)
+	   ((or (character:weaponp item)
+		(character:shieldp item))
 	    (if (empty-slot-p left-hand-slot)
-		'player-character:left-hand
-		'player-character:right-hand))))))
+		'character:left-hand
+		'character:right-hand))))))
 
 (defun item->window-accessor (window item)
   (with-accessors ((elm-slot        elm-slot)
@@ -3471,16 +3515,16 @@
 		   (ring-slot       ring-slot))      window
     (and item
 	 (cond
-	   ((player-character:ringp item)
+	   ((character:ringp item)
 	    ring-slot)
-	   ((player-character:armorp item)
+	   ((character:armorp item)
 	    armor-slot)
-	   ((player-character:elmp item)
+	   ((character:elmp item)
 	    elm-slot)
-	   ((player-character:shoesp item)
+	   ((character:shoesp item)
 	    shoes-slot)
-	   ((or (player-character:weaponp item)
-		(player-character:shieldp item))
+	   ((or (character:weaponp item)
+		(character:shieldp item))
 	    (if (empty-slot-p left-hand-slot)
 		left-hand-slot
 		right-hand-slot))))))
@@ -3512,8 +3556,8 @@
       (multiple-value-bind (slot item)
 	  (get-selected-item win)
 	(when item
-	  (let ((c-slot       (item->character-slot  win item))
-		(win-accessor (item->window-accessor win item)))
+	  (let ((c-slot       (item->player-character-slot win item))
+		(win-accessor (item->window-accessor       win item)))
 	    (when (and c-slot
 		       win-accessor)
 	      (worn-item slot win-accessor owner c-slot))))))))
@@ -3522,13 +3566,13 @@
   (let ((all (mapcar #'contained-entity (alexandria:flatten pages))))
     (remove-if-null
      (nconc
-      (remove-if #'(lambda (a) (not (player-character:weaponp a))) all)
-      (remove-if #'(lambda (a) (not (player-character:shieldp a))) all)
-      (remove-if #'(lambda (a) (not (player-character:elmp a))) all)
-      (remove-if #'(lambda (a) (not (player-character:armorp a))) all)
-      (remove-if #'(lambda (a) (not (player-character:shoesp a))) all)
-      (remove-if #'(lambda (a) (not (player-character:potionp a))) all)
-      (remove-if #'(lambda (a) (not (player-character:keyp a))) all)))))
+      (remove-if #'(lambda (a) (not (character:weaponp a))) all)
+      (remove-if #'(lambda (a) (not (character:shieldp a))) all)
+      (remove-if #'(lambda (a) (not (character:elmp a))) all)
+      (remove-if #'(lambda (a) (not (character:armorp a))) all)
+      (remove-if #'(lambda (a) (not (character:shoesp a))) all)
+      (remove-if #'(lambda (a) (not (character:potionp a))) all)
+      (remove-if #'(lambda (a) (not (character:keyp a))) all)))))
 
 (defun sort-items-enter-cb (w e)
   (declare (ignore e))
@@ -3732,7 +3776,8 @@
     :initform (make-inventory-slot-button (d- (d* 0.66 (inventory-window-width))
 					      (d/ (small-square-button-size *reference-sizes*)
 						  2.0))
-					  (inventory-window-height)
+					  (d- (inventory-window-height)
+					      (small-square-button-size *reference-sizes*))
 					  :callback #'inventory-update-description-cb)
     :initarg  :shoes-slot
     :accessor shoes-slot)
@@ -3803,7 +3848,7 @@
 		   (right-hand-slot right-hand-slot) (ring-slot ring-slot)
 		   (b-remove-worn-item b-remove-worn-item))             object
     (let ((page-count (if owner
-			  (player-character:inventory-slot-pages-number owner)
+			  (character:inventory-slot-pages-number owner)
 			  1))
 	  (starting-y (small-square-button-size *reference-sizes*)))
       (setf slots-pages
@@ -3924,13 +3969,13 @@
 		   (chest-slot-0 chest-slot-0) (chest-slot-1 chest-slot-1)
 		   (chest-slot-2 chest-slot-2)) object
     (when owner
-      (assert (<= (length (player-character:inventory owner))
+      (assert (<= (length (character:inventory owner))
 		  (length (alexandria:flatten slots-pages))))
       (loop
 	 for slot in (alexandria:flatten slots-pages)
-	 for obj  in (player-character:inventory owner) do
+	 for obj  in (character:inventory owner) do
 	   (setf (contained-entity slot) obj
-		 (texture-overlay  slot) (player-character:portrait obj))))
+		 (texture-overlay  slot) (character:portrait obj))))
     ;; display stuff inside the chest, if any
     (when chest
       (assert (or (null (children chest))
@@ -3940,15 +3985,15 @@
 	     ((= i 0)
 	      (setf (contained-entity chest-slot-0) (elt (children chest) i))
 	      (setf (texture-overlay  chest-slot-0)
-		    (player-character:portrait (elt (children chest) i))))
+		    (character:portrait (elt (children chest) i))))
 	     ((= i 1)
 	      (setf (contained-entity chest-slot-1) (elt (children chest) i))
 	      (setf (texture-overlay  chest-slot-1)
-		    (player-character:portrait (elt (children chest) i))))
+		    (character:portrait (elt (children chest) i))))
 	     ((= i 2)
 	      (setf (contained-entity chest-slot-2) (elt (children chest) i))
 	      (setf (texture-overlay  chest-slot-2)
-		    (player-character:portrait (elt (children chest) i)))))))))
+		    (character:portrait (elt (children chest) i)))))))))
 
 (defun inventory-window-width ()
   (d+ (d* 13.0 (small-square-button-size *reference-sizes*))

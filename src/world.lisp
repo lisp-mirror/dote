@@ -245,7 +245,7 @@
 (defmethod initialize-instance :after ((object world) &key &allow-other-keys)
   (setf (camera object) (make-instance 'camera :pos (vec 0.0 0.0 1.0)))
   ;; gui
-  (let ((char  (player-character:make-warrior :human))
+  (let ((char  (character:make-warrior :human))
 	(chest (random-container:generate-container
 		(fs:file-in-package "data/characters/container/interaction.lisp")
 		(fs:file-in-package "data/characters/container/character.lisp")
@@ -264,7 +264,7 @@
 		 (fs:file-in-package "data/characters/potion/interaction.lisp")
 		 (fs:file-in-package "data/characters/potion/character.lisp")
 		 10)))
-    (setf (player-character:inventory char)
+    (setf (character:inventory char)
 	  (list (random-ring:generate-ring
 		 (fs:file-in-package "data/characters/ring/interaction.lisp")
 		 (fs:file-in-package "data/characters/ring/character.lisp")
@@ -280,10 +280,11 @@
 				 :x 0.0 :y 0.0
 				 :width  (num:d *window-w*)
 				 :height (num:d *window-h*)))
-	 ;;(player-character (widget:make-player-generator))
-	 (inventory-test   (widget:make-inventory-window char chest)))
-    (add-child (gui object) toolbar)
-    (add-child (gui object) inventory-test))))
+	   (gen-player-test  (widget:make-player-generator))
+	   (inventory-test   (widget:make-inventory-window char chest)))
+      (add-child (gui object) toolbar)
+      (add-child (gui object) gen-player-test)
+      (add-child (gui object) inventory-test))))
 
 (defmethod calculate ((object world) dt)
   (incf (current-time (main-state object)) dt)

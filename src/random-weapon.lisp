@@ -197,7 +197,7 @@
 	   (fill-bow-plists char-template template weapon-level))
 	  (t
 	   (error (_ "Unknown weapon type"))))
-	(let ((weapon-character (params->character char-template)))
+	(let ((weapon-character (params->np-character char-template)))
 	  (setf (basic-interaction-params weapon-character) template)
 	  weapon-character)))))
 
@@ -238,9 +238,13 @@
   (let* ((target (healing-target))
 	 (effect-object (make-instance 'healing-effect-parameters
 				       :trigger  +effect-until-held+
-				       :duration  (if (eq target +target-self+)
-						      :unlimited
-						      (max 1 (- +maximum-level+ weapon-level)))
+				       :duration (if (eq target +target-self+)
+						     :unlimited
+						     (healing-effect-duration
+						      effect-path
+						      (ceiling (max 1
+								    (- +maximum-level+
+								       weapon-level)))))
 				       :chance (calculate-healing-fx-params-chance weapon-level)
 				       :target  target)))
     (n-setf-path-value interaction effect-path effect-object)))

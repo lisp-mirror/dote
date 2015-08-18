@@ -171,7 +171,7 @@
 	  (set-magic-effect armor-level template))
 	(setf template (remove-generate-symbols template))
 	(fill-character-plist char-template template armor-level)
-	(let ((armor-character (params->character char-template)))
+	(let ((armor-character (params->np-character char-template)))
 	  (setf (basic-interaction-params armor-character) template)
 	  armor-character)))))
 
@@ -214,7 +214,10 @@
 				      :trigger  +effect-when-worn+
 				      :duration (if (eq target +target-self+)
 						    :unlimited
-						    (max 1 (- +maximum-level+ armor-level)))
+						    (healing-effect-duration
+						     effect-path
+						     (ceiling (max 1 (- +maximum-level+
+									armor-level)))))
 				      :chance (calculate-healing-fx-params-chance armor-level)
 				      :target target)))
     (n-setf-path-value interaction effect-path effect-object)))

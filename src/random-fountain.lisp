@@ -116,7 +116,9 @@
 (defun set-healing-effect (effect-path fountain-level interaction)
   (let ((effect-object (make-instance 'healing-effect-parameters
 				      :trigger  +effect-when-used+
-				      :duration  (calculate-modifier fountain-level)
+				      :duration (healing-effect-duration
+						 effect-path
+						 (ceiling (calculate-modifier fountain-level)))
 				      :chance (calculate-healing-fx-params-chance
 					       fountain-level)
 				       :target  +target-self+)))
@@ -187,6 +189,6 @@
 		(set-healing-effect (list +healing-effects+ i) fountain-level template))))
 	(setf template (remove-generate-symbols template))
 	(fill-character-plist char-template)
-	(let ((fountain-character (params->character char-template)))
+	(let ((fountain-character (params->np-character char-template)))
 	  (setf (basic-interaction-params fountain-character) template)
 	  fountain-character)))))

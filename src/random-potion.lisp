@@ -116,7 +116,9 @@
 (defun set-healing-effect (effect-path potion-level interaction)
   (let ((effect-object (make-instance 'healing-effect-parameters
 				      :trigger  +effect-when-used+
-				      :duration  (calculate-modifier potion-level)
+				      :duration  (healing-effect-duration
+						  effect-path
+						  (ceiling (calculate-modifier potion-level)))
 				      :chance (calculate-healing-fx-params-chance
 					       potion-level)
 				      :target  +target-self+)))
@@ -155,7 +157,7 @@
 		(set-healing-effect (list +healing-effects+ i) potion-level template))))
 	(setf template (remove-generate-symbols template))
 	(fill-character-plist char-template template potion-level)
-	(let ((potion-character (params->character char-template)))
+	(let ((potion-character (params->np-character char-template)))
 	  (setf (basic-interaction-params potion-character) template)
 	  potion-character)))))
 

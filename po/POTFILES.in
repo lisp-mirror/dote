@@ -76,6 +76,7 @@ src/quaternion.lisp
 src/queue.lisp
 src/random-terrain.lisp
 src/random-labyrinth.lisp
+src/random-fountain.lisp
 src/random-armor.lisp
 src/random-container.lisp
 src/random-elm.lisp

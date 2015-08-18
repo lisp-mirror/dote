@@ -171,7 +171,7 @@
 	  (set-magic-effect ring-level template))
 	(setf template (remove-generate-symbols template))
 	(fill-character-plist char-template template ring-level)
-	(let ((ring-character (params->character char-template)))
+	(let ((ring-character (params->np-character char-template)))
 	  (setf (basic-interaction-params ring-character) template)
 	  ring-character)))))
 

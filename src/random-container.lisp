@@ -106,7 +106,8 @@
 (defun set-healing-effect (effect-path container-level interaction)
   (let ((effect-object (make-instance 'healing-effect-parameters
 				      :trigger  +effect-when-used+
-				      :duration  (calculate-container-modifier container-level)
+				      :duration  (ceiling
+						  (calculate-container-modifier container-level))
 				      :chance (calculate-healing-fx-params-chance container-level)
 				      :target +target-self+)))
     (n-setf-path-value interaction effect-path effect-object)))
@@ -150,6 +151,6 @@
 	    (push (random-key:generate-key key-interaction-file key-character-file map-level keycode)
 		  keychain)
 	    (n-setf-path-value template (list +can-open+) keycode)))
-	(let ((container-character (params->character char-template)))
+	(let ((container-character (params->np-character char-template)))
 	  (setf (basic-interaction-params container-character) template)
 	  (values container-character keychain))))))

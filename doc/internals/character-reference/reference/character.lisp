@@ -3,34 +3,6 @@
     portrait "w-sword001.tga"
     first-name "a"
     last-name  "b"
-    strength   0
-    stamina    0
-    dexterity  0
-    agility    0
-    smartness  0
-    empaty     0
     weight     100
     damage-points 10
-    movement-points 0
-    magic-points    0
-    dodge-chance   0
-    melee-attack-chance 0
-    range-attack-chance 0
-    melee-attack-damage 0
-    range-attack-damage 0
-    edge-weapons-chance-bonus 0
-    edge-weapons-damage-bonus 0
-    impact-weapons-chance-bonus 0
-    impact-weapons-damage-bonus 0
-    pole-weapons-chance-bonus 0
-    pole-weapons-damage-bonus 0
-    unlock-chance             0
-    deactivate-trap-chance    0
-    reply-attack-chance       0
-    ambush-attack-chance      0
-    spell-chance              0
-    attack-spell-chance       0
-    status                    normal
-    race                      none
-    level                     1
-    exp-points                0)
+    level                     1)

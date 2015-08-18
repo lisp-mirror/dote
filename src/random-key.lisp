@@ -126,7 +126,9 @@
 (defun set-healing-effect (effect-path key-level interaction)
   (let ((effect-object (make-instance 'healing-effect-parameters
 				      :trigger  +effect-when-used+
-				      :duration (healing-fx-params-duration key-level)
+				      :duration (healing-effect-duration
+						 effect-path
+						 (ceiling (healing-fx-params-duration key-level)))
 				      :chance   (calculate-healing-fx-params-chance key-level)
 				      :target  +target-self+)))
     (n-setf-path-value interaction effect-path effect-object)))
@@ -159,7 +161,7 @@
 	(n-setf-path-value template (list +can-open+) keycode)
 	(setf template (remove-generate-symbols template))
 	(fill-character-plist char-template)
-	(let ((key-character (params->character char-template)))
+	(let ((key-character (params->np-character char-template)))
 	  (setf (basic-interaction-params key-character) template)
 	  key-character)))))
 

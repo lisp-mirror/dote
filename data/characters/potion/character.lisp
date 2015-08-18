@@ -1,4 +1,4 @@
-(in-package :player-character)
+(in-package :character)
 
 (define-character
     description generate
