@@ -279,13 +279,14 @@
 				   :environment environment))
 
     (defmethod description-for-humans ((object effect-parameters))
-      (format nil "~a ~,1f"
+      (format nil "~a~a~,1f"
 	      (if (effect-unlimited-p (duration object))
 				  ""
 				  (format nil
 					  (_ "(~d turns)")
 					  (duration object)))
-	       (modifier object))))
+	      +gui-static-text-nbsp+
+	      (modifier object))))
 
 
 (defmacro define-effect (params)
@@ -362,7 +363,8 @@
 				   :environment environment))
 
     (defmethod description-for-humans ((object healing-effect-parameters))
-      (format nil (_ "~a chance: ~,1f% target ~a")
+      (format nil (text-utils:strcat +standard-float-print-format+
+				     (_ " chance: ~,1f% target ~a"))
 	      (if (effect-unlimited-p (duration object))
 		  ""
 		  (format nil (_ "~d turns") (duration object)))

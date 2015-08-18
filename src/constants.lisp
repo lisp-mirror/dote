@@ -132,4 +132,6 @@
 
 (define-constant +gui-static-text-delim+        "§"                            :test #'string=)
 
+(define-constant +gui-static-text-nbsp+         "¬"                            :test #'string=)
+
 (define-constant +standard-float-print-format+  "~,2@f"                        :test #'string=)

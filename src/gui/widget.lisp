@@ -949,6 +949,11 @@
 	   (actual-height      (d- (d height)
 				   (d* actual-height-font (d (length lines))))))
       (declare (list lines))
+      ;; remove non-breakable space symbol with actual space.
+      (setf lines
+	    (mapcar #'(lambda (a)
+			(cl-ppcre:regex-replace-all +gui-static-text-nbsp+ a " "))
+		    lines))
       (do ((line-count (d 0.0) (d+ line-count 1.0))
 	   (line       lines   (rest line)))
 	  ((not line))

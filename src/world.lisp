@@ -272,6 +272,10 @@
 		(random-weapon:generate-weapon
 		 (fs:file-in-package "data/characters/weapons/sword/interaction.lisp")
 		 (fs:file-in-package "data/characters/weapons/sword/character.lisp")
+		 10)
+		(random-armor:generate-armor
+		 (fs:file-in-package "data/characters/armor/interaction.lisp")
+		 (fs:file-in-package "data/characters/armor/character.lisp")
 		 10)))
     (add-child chest obj1)
     (add-child chest obj2)

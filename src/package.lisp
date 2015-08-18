@@ -97,6 +97,7 @@
    :+default-character-food+
    :+default-character-misc+
    :+gui-static-text-delim+
+   :+gui-static-text-nbsp+
    :+standard-float-print-format+))
 
 (defpackage :profiling
