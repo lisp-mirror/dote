@@ -245,25 +245,31 @@
 (defmethod initialize-instance :after ((object world) &key &allow-other-keys)
   (setf (camera object) (make-instance 'camera :pos (vec 0.0 0.0 1.0)))
   ;; gui
-  (let ((char  (character:make-warrior :human))
-	(chest (random-container:generate-container
-		(fs:file-in-package "data/characters/container/interaction.lisp")
-		(fs:file-in-package "data/characters/container/character.lisp")
-		10
-		(fs:file-in-package "data/characters/key/interaction.lisp")
-		(fs:file-in-package "data/characters/key/character.lisp")))
-	(obj1   (random-shoes:generate-shoes
-		 (fs:file-in-package "data/characters/shoes/interaction.lisp")
-		 (fs:file-in-package "data/characters/shoes/character.lisp")
-		 10))
-	(obj2   (random-elm:generate-elm
-		 (fs:file-in-package "data/characters/elm/interaction.lisp")
-		 (fs:file-in-package "data/characters/elm/character.lisp")
-		 10))
-	(obj3   (random-potion:generate-potion
-		 (fs:file-in-package "data/characters/potion/interaction.lisp")
-		 (fs:file-in-package "data/characters/potion/character.lisp")
-		 10)))
+  (let* ((char  (character:make-warrior :human))
+	 (chest (random-container:generate-container
+		 (fs:file-in-package "data/characters/container/interaction.lisp")
+		 (fs:file-in-package "data/characters/container/character.lisp")
+		 10
+		 (fs:file-in-package "data/characters/key/interaction.lisp")
+		 (fs:file-in-package "data/characters/key/character.lisp")))
+	 (obj1   (random-shoes:generate-shoes
+		  (fs:file-in-package "data/characters/shoes/interaction.lisp")
+		  (fs:file-in-package "data/characters/shoes/character.lisp")
+		  10))
+	 (obj2   (random-elm:generate-elm
+		  (fs:file-in-package "data/characters/elm/interaction.lisp")
+		  (fs:file-in-package "data/characters/elm/character.lisp")
+		  10))
+	 (obj3   (random-potion:generate-potion
+		  (fs:file-in-package "data/characters/potion/interaction.lisp")
+		  (fs:file-in-package "data/characters/potion/character.lisp")
+		  10))
+	 (texture-portrait (texture:gen-name-and-inject-in-database
+				     (avatar-portrait:build-avatar "m"))))
+    (texture:prepare-for-rendering texture-portrait)
+    (setf (character:portrait char) texture-portrait)
+    (setf (character:first-name char)  "first"
+	  (character:last-name char)   "last")
     (setf (character:inventory char)
 	  (list (random-ring:generate-ring
 		 (fs:file-in-package "data/characters/ring/interaction.lisp")
@@ -280,15 +286,18 @@
     (add-child chest obj1)
     (add-child chest obj2)
     (add-child chest obj3)
+    (setf (character:portrait char) texture-portrait)
     (let* ((toolbar (make-instance 'widget:main-toolbar
-				 :x 0.0 :y 0.0
-				 :width  (num:d *window-w*)
-				 :height (num:d *window-h*)))
+				   :x 0.0 :y 0.0
+				   :width  (num:d *window-w*)
+				   :height (num:d *window-h*)))
 	   (gen-player-test  (widget:make-player-generator))
+	   (report (widget:make-player-report-win  char))
 	   (inventory-test   (widget:make-inventory-window char chest)))
       (add-child (gui object) toolbar)
       (add-child (gui object) gen-player-test)
-      (add-child (gui object) inventory-test))))
+      (add-child (gui object) inventory-test)
+      (add-child (gui object) report))))
 
 (defmethod calculate ((object world) dt)
   (incf (current-time (main-state object)) dt)

@@ -106,7 +106,8 @@
 	       (:module gui
 			:components ((:file "gui-events")
 				     (:file "gui")
-				     (:file "widget")))
+				     (:file "widget")
+				     (:file "player-report-window")))
 	       (:file "world")
 	       (:file "terrain-chunk")
 	       (:file "md2-mesh-normal-lut")
@@ -140,4 +141,5 @@
 				     (:file "sb-cga-utils-test")
 				     (:file "procedural-texture-test")
 				     (:file "terrain-chunk-test")
-				     (:file "avatar-test")))))
+				     (:file "avatar-test")
+				     (:file "mtree-test")))))

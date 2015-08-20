@@ -42,7 +42,11 @@
       (find-root-widget (parent widget))
       widget))
 
-(defclass font-mesh-shell (triangle-mesh-shell) ())
+(defclass font-mesh-shell (triangle-mesh-shell)
+  ((font-color
+    :initform §cffffffff
+    :initarg  :font-color
+    :accessor font-color)))
 
 (defmethod render ((object font-mesh-shell) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -54,18 +58,20 @@
 		   (view-matrix view-matrix)
 		   (compiled-shaders compiled-shaders)
 		   (triangles triangles)
+		   (font-color font-color)
 		   (material-params material-params)) object
     (declare (texture:texture texture-object))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
+    (declare (vec4 font-color))
     (when (> (length triangles) 0)
       (with-camera-view-matrix (camera-vw-matrix renderer)
 	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	  (use-program compiled-shaders :gui)
+	  (use-program compiled-shaders :gui-fonts)
 	  (gl:active-texture :texture0)
 	  (texture:bind-texture texture-object)
 	  (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
-	  (uniformfv compiled-shaders :ia #(1.0 1.0 1.0))
+	  (uniformfv compiled-shaders :mult-color font-color)
 	  (uniform-matrix compiled-shaders :modelview-matrix 4
 				   (vector (sb-cga:matrix* camera-vw-matrix
 							   (elt view-matrix 0)
@@ -74,6 +80,11 @@
 	  (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
 	  (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
 	  (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))))
+
+(defun fill-font-mesh-shell (mesh &key (color §cffffffff))
+  (let ((shell (fill-shell-from-mesh mesh 'font-mesh-shell)))
+    (setf (font-color shell) color)
+    shell))
 
 (defclass simple-gui-mesh (triangle-mesh) ())
 
@@ -251,6 +262,10 @@
     :initform 10.0
     :initarg  :label-font-size
     :accessor label-font-size)
+   (label-font-color
+    :initform §cffffffff
+    :initarg  :label-font-color
+    :accessor label-font-color)
    (shown
     :initform t
     :initarg  :shown
@@ -380,14 +395,20 @@
   (d* (d (length (label object))) (label-font-size object)))
 
 (defmethod on-mouse-pressed ((object widget) event)
-  (top-down-visit object #'(lambda (a) (when (widgetp a) (setf (focus a) nil))))
-  (loop for w across (children object) do
+  (top-down-visit object #'(lambda (a)
+			     (when (widgetp a)
+			       (setf (focus a) nil))))
+  (do-children-from-end (w object)
        (when (and (widgetp w)
 		  (on-mouse-pressed w event))
       	 (return-from on-mouse-pressed t)))
   nil)
 
 (defmethod on-mouse-released ((object widget) event)
+  (top-down-visit (find-root-widget object)
+		  #'(lambda (a) (when (and (windowp a)
+					   (dragging-mode a))
+				  (setf (dragging-mode a) nil))))
   (loop for w across (children object) do
        (when (and (widgetp w)
 		  (on-mouse-released w event))
@@ -395,7 +416,7 @@
   nil)
 
 (defmethod on-mouse-dragged ((object widget) event)
-  (loop for w across (children object) do
+  (do-children-from-end (w object)
        (when (and (widgetp w)
 		  (on-mouse-dragged w event))
 	 (return-from on-mouse-dragged t)))
@@ -413,6 +434,7 @@
   (declare (simple-string new-label))
   (with-accessors ((label-font label-font)
 		   (label-font-size label-font-size)
+		   (label-font-color label-font-color)
 		   (children children)) widget
     (declare (desired-type label-font-size))
     (with-slots (label) widget
@@ -422,7 +444,7 @@
       (loop for c across label do
 	   (let* ((mesh  (get-char-mesh label-font c))
 		  (shell (if mesh
-			     (fill-shell-from-mesh mesh 'font-mesh-shell)
+			     (fill-font-mesh-shell mesh :color label-font-color)
 			     nil)))
 	     (when shell
 	       (add-child widget shell)))))))
@@ -926,6 +948,7 @@
   (declare (simple-string new-label))
   (with-accessors ((label-font-size label-font-size)
 		   (label-font label-font)
+		   (label-font-color label-font-color)
 		   (height height)
 		   (width width)
 		   (children children)
@@ -964,7 +987,7 @@
 	   for xf single-float from  0.0 by label-font-size do
 	   (let* ((mesh  (get-char-mesh label-font c))
 		  (shell (if mesh
-			     (fill-shell-from-mesh mesh 'font-mesh-shell)
+			     (fill-font-mesh-shell mesh :color label-font-color)
 			     nil)))
 	     (when shell
 	       (setf (scaling shell) (sb-cga:vec label-font-size actual-height-font 0.0))
@@ -1026,6 +1049,7 @@
   (declare (simple-string new-label))
   (with-accessors ((label-font label-font)
 		   (label-font-size label-font-size)
+		   (label-font-color label-font-color)
 		   (children children)
 		   (label-shells label-shells)) object
     (declare (desired-type label-font-size))
@@ -1035,7 +1059,7 @@
       (loop for c across label do
 	   (let* ((mesh  (get-char-mesh label-font c))
 		  (shell (if mesh
-			     (fill-shell-from-mesh mesh 'font-mesh-shell)
+			     (fill-font-mesh-shell mesh :color label-font-color)
 			     nil)))
 	     (when shell
 	       (vector-push-extend shell label-shells)
@@ -1084,7 +1108,8 @@
     :initarg  :dragging-mode
     :accessor dragging-mode)))
 
-(defparameter *topbar-h* 30.0)
+(defun windowp (w)
+  (typep w 'window))
 
 (defmethod initialize-instance :after ((object window) &key &allow-other-keys)
   (with-slots (label) object
@@ -1226,20 +1251,18 @@
 		(d* (bottom-frame-offset *reference-sizes*) (height (frame object)))))))))
 
 (defmethod on-mouse-pressed ((object window) event)
-  (if (and (shown object)
-	   (mouse-over object (x-event event) (y-event event)))
-      (progn
-	(loop for w across (children object) do
-	     (when (and (widgetp w)
-			(on-mouse-pressed w event))
-	       (return-from on-mouse-pressed t)))
-	t)
-      nil))
+  (with-accessors ((dragging-mode dragging-mode)) object
+    (if (and (shown object)
+	     (mouse-over object (x-event event) (y-event event)))
+	(progn
+	  (loop for w across (children object) do
+	       (when (and (widgetp w)
+			  (on-mouse-pressed w event))
+		 (return-from on-mouse-pressed t)))
+	  nil)
+	nil)))
 
 (defmethod on-mouse-released ((object window) event)
-  (with-accessors ((dragging-mode dragging-mode)) object
-    (when dragging-mode
-      (setf dragging-mode nil)))
   (if (and (shown object)
 	   (mouse-over object (x-event event) (y-event event)))
       (progn
@@ -1247,25 +1270,38 @@
 	     (when (and (widgetp w)
 			(on-mouse-released w event))
 	       (return-from on-mouse-released t)))
-	t)
+	nil)
       nil))
+
+(defun other-window-dragging-mode-p (me)
+  (find-child-if (find-root-widget me)
+		 #'(lambda (a) (and
+				(windowp a)
+				(dragging-mode a)
+				(not (= (id a) (id me)))))))
 
 (defmethod on-mouse-dragged ((object window) event)
   (with-accessors ((dragging-mode dragging-mode)) object
-    (if (or dragging-mode
-	    (mouse-over (top-bar object) (x-event event) (y-event event)))
+    (if (and dragging-mode
+	     (not (other-window-dragging-mode-p object)))
 	(progn
 	  (setf (pos object) (sb-cga:vec+ (pos object)
-					  (sb-cga:vec (dx-event event) (dy-event event) 0.0)))
-	  (when (not dragging-mode)
-	    (setf dragging-mode t))
+					  (sb-cga:vec (dx-event event)
+						      (dy-event event)
+						      0.0)))
 	  t)
 	(progn
 	  (loop for w across (children object) do
 	       (when (and (widgetp w)
 			  (on-mouse-dragged w event))
 		 (return-from on-mouse-dragged t)))
-	  nil))))
+	  (if (and
+	       (mouse-over (top-bar object) (x-event event) (y-event event))
+	       (not (other-window-dragging-mode-p object)))
+	      (progn
+		(setf dragging-mode t)
+		t)
+	      nil)))))
 
 (defclass labeled-check-button (widget)
   ((button

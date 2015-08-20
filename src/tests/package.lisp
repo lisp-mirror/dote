@@ -185,7 +185,6 @@
 	  :terrain-chunk)
   (:export :simulated-mesh-test))
 
-
 (defpackage :avatar-test
   (:use :cl
 	:clunit
@@ -194,3 +193,10 @@
 	:pixmap)
   (:shadowing-import-from :pixmap :load)
   (:export :test-blit))
+
+(defpackage :mtree-test
+  (:use :cl
+	:clunit
+	:all-test
+	:mtree)
+  (:export :test-find-odd))

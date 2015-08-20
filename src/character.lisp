@@ -127,6 +127,11 @@
     :initform 0
     :accessor damage-points
     :type integer)
+   (current-damage-points
+    :initarg :current-damage-points
+    :initform 0
+    :accessor current-damage-points
+    :type integer)
    (level
     :initarg :level
     :initform 1
@@ -147,6 +152,7 @@
 	     portrait
 	     weight
 	     damage-points
+	     current-damage-point
 	     level
 	     age
 	     basic-interaction-params)
@@ -470,7 +476,15 @@
 	   (description-for-humans (interaction-get-magic-effect object)))))
 
 (defclass player-character (np-character)
-  ((strength
+  ((gender
+    :initarg :gender
+    :initform :male
+    :accessor gender)
+   (player-class
+    :initarg :player-class
+    :initform nil
+    :accessor player-class)
+   (strength
     :initarg :strength
     :initform 0
     :accessor strength
@@ -505,10 +519,20 @@
     :initform 0
     :accessor movement-points
     :type integer)
+   (current-movement-points
+    :initarg :current-movement-points
+    :initform 0
+    :accessor current-movement-points
+    :type integer)
    (magic-points
     :initarg :magic-points
     :initform 0
     :accessor magic-points
+    :type integer)
+   (current-magic-points
+    :initarg :current-magic-points
+    :initform 0
+    :accessor current-magic-points
     :type integer)
    (dodge-chance
     :initarg :dodge-chance
@@ -639,10 +663,12 @@
 (defmethod print-object ((object player-character) stream)
   (print-unreadable-object (object stream :type t :identity t)
     (format stream
-	    "description ~a name ~a ~a~%strength: ~a ~%stamina: ~a ~%dexterity: ~a ~%agility: ~a ~%smartness: ~a ~%empaty: ~a ~%weight: ~a ~%damage-points: ~a ~%movement-points: ~a ~%magic-points: ~a ~%dodge-chance: ~a ~%melee-attack-chance: ~a ~%range-attack-chance: ~a ~%melee-attack-damage: ~a ~%range-attack-damage: ~a ~%edge-weapons-chance-bonus: ~a ~%edge-weapons-damage-bonus: ~a ~%impact-weapons-chance-bonus: ~a ~%impact-weapons-damage-bonus: ~a ~%pole-weapons-chance-bonus: ~a ~%pole-weapons-damage-bonus: ~a ~%unlock-chance: ~a ~%deactivate-trap-chance: ~a ~%reply-attack-chance: ~a ~%ambush-attack-chance: ~a ~%spell-chance: ~a ~%attack-spell-chance: ~a ~%status: ~a  ~%race: ~a ~%level: ~a ~%exp-points: ~a~%interaction ~a inventory ~a"
+	    "description ~a name ~a ~a~%class: ~a~%gender: ~a~%strength: ~a ~%stamina: ~a ~%dexterity: ~a ~%agility: ~a ~%smartness: ~a ~%empaty: ~a ~%weight: ~a ~%damage-points: ~a ~%movement-points: ~a ~%magic-points: ~a ~%dodge-chance: ~a ~%melee-attack-chance: ~a ~%range-attack-chance: ~a ~%melee-attack-damage: ~a ~%range-attack-damage: ~a ~%edge-weapons-chance-bonus: ~a ~%edge-weapons-damage-bonus: ~a ~%impact-weapons-chance-bonus: ~a ~%impact-weapons-damage-bonus: ~a ~%pole-weapons-chance-bonus: ~a ~%pole-weapons-damage-bonus: ~a ~%unlock-chance: ~a ~%deactivate-trap-chance: ~a ~%reply-attack-chance: ~a ~%ambush-attack-chance: ~a ~%spell-chance: ~a ~%attack-spell-chance: ~a ~%status: ~a  ~%race: ~a ~%level: ~a ~%exp-points: ~a~%interaction ~a inventory ~a"
 	    (description                 object)
 	    (first-name                  object)
 	    (last-name                   object)
+	    (player-class                object)
+	    (gender                      object)
 	    (strength                    object)
 	    (stamina                     object)
 	    (dexterity                   object)
@@ -678,16 +704,19 @@
 	    (mapcar #'description-for-humans (inventory object)))))
 
 (defmethod marshal:class-persistant-slots ((object player-character))
-  (append  '(strength
+  (append  '(player-class
+	     gender
+	     strength
 	     stamina
 	     dexterity
 	     agility
 	     smartness
 	     empaty
 	     weight
-	     damage-points
 	     movement-points
+	     current-movement-points
 	     magic-points
+	     current-magic-points
 	     dodge-chance
 	     melee-attack-chance
 	     range-attack-chance
@@ -727,6 +756,10 @@
 
 (defgeneric inventory-slot-pages-number (object))
 
+(defgeneric player-class->class-description (object))
+
+(defgeneric player-gender->gender-description (object))
+
 (defmethod random-fill-slots ((object player-character) capital characteristics)
   (loop for charact in characteristics do
        (when (> capital 0)
@@ -749,9 +782,31 @@
 			    +weight-for-half-capacity-inventory+
 			    (d (weight object)))))
 
-(defmacro gen-make-player (class)
+(defmethod player-class->class-description ((object player-character))
+  (with-accessors ((player-class player-class)) object
+    (ecase player-class
+      (:warrior
+       (_ "warrior"))
+      (:archer
+       (_ "archer"))
+      (:wizard
+       (_ "wizard"))
+      (:healer
+       (_ "healer"))
+      (:ranger
+       (_ "ranger")))))
+
+(defmethod player-gender->gender-description ((object player-character))
+  (with-accessors ((gender gender)) object
+    (ecase gender
+      (:male
+       (_ "male"))
+      (:female
+       (_ "female")))))
+
+(defmacro gen-make-player (player-class)
   (alexandria:with-gensyms (char rest-capital)
-    `(defun ,(alexandria:format-symbol t "~@:(make-~a~)" class)
+    `(defun ,(alexandria:format-symbol t "~@:(make-~a~)" player-class)
 	 (capital race
 	  &optional (charact nil) (slots '((strength (50 10))
 					   (stamina  (40 10))
@@ -803,46 +858,59 @@
 							3))
 	       (race ,char) race)
 	 (if (> ,rest-capital 0)
-	     (,(alexandria:format-symbol t "~@:(make-~a~)" class) ,rest-capital race ,char slots)
-	     (values ,char ,rest-capital))))))
+	     (,(alexandria:format-symbol t "~@:(make-~a~)" player-class)
+	       ,rest-capital race ,char slots)
+	     (progn
+	       (setf (current-magic-points    ,char) (magic-points ,char)
+		     (current-movement-points ,char) (movement-points ,char)
+		     (current-damage-points    ,char) (damage-points ,char))
+	       (values ,char ,rest-capital)))))))
 
 (gen-make-player player)
 
 (defun make-warrior (race)
-  (make-player *standard-capital-characteristic* race nil '((strength (50 10))
-							    (stamina  (40 10))
-							    (dexterity (5 3))
-							    (agility   (10 3))
-							    (empaty    (2 0))
-							    (smartness (2 0))
-							    (weight    (52 23)))))
+  (let ((player (make-player *standard-capital-characteristic* race nil '((strength (50 10))
+									  (stamina  (40 10))
+									  (dexterity (5 3))
+									  (agility   (10 3))
+									  (empaty    (2 0))
+									  (smartness (2 0))
+									  (weight    (52 23))))))
+    (setf (player-class player) :warrior)
+    player))
 
 (defun make-wizard (race)
-  (make-player *standard-capital-characteristic* race nil '((smartness (40 10))
-							    (agility   (30 10))
-							    (stamina  (20 10))
-							    (strength (10 10))
-							    (dexterity (5 3))
-							    (empaty    (2 0))
-							    (weight    (30 5)))))
+  (let ((player (make-player *standard-capital-characteristic* race nil '((smartness (40 10))
+									  (agility   (30 10))
+									  (stamina  (20 10))
+									  (strength (10 10))
+									  (dexterity (5 3))
+									  (empaty    (2 0))
+									  (weight    (30 5))))))
+    (setf (player-class player) :wizard)
+    player))
 
 (defun make-healer (race)
-  (make-player *standard-capital-characteristic* race nil '((empaty (40 10))
-							    (smartness (20 20))
-							    (agility   (15 10))
-							    (stamina  (10 10))
-							    (strength (10 10))
-							    (dexterity (5 3))
-							    (weight    (42 12)))))
+  (let ((player (make-player *standard-capital-characteristic* race nil '((empaty (40 10))
+									  (smartness (20 20))
+									  (agility   (15 10))
+									  (stamina  (10 10))
+									  (strength (10 10))
+									  (dexterity (5 3))
+									  (weight    (42 12))))))
+    (setf (player-class player) :healer)
+    player))
 
 (defun make-archer (race)
-  (make-player *standard-capital-characteristic* race nil '((dexterity (50 0))
-							    (stamina  (40 10))
-							    (strength (10 10))
-							    (empaty    (1 1))
-							    (agility   (10 3))
-							    (smartness (5 3))
-							    (weight    (30 55)))))
+  (let ((player (make-player *standard-capital-characteristic* race nil '((dexterity (50 0))
+									  (stamina  (40 10))
+									  (strength (10 10))
+									  (empaty    (1 1))
+									  (agility   (10 3))
+									  (smartness (5 3))
+									  (weight    (30 55))))))
+    (setf (player-class player) :archer)
+    player))
 
 (defun make-ranger (race)
   (let ((player (make-player *standard-capital-characteristic* race nil '((agility (60 0))
@@ -853,6 +921,7 @@
 									  (smartness (5 3))
 									  (weight    (56 20))))))
     (incf (deactivate-trap-chance player) 3)
+    (setf (player-class player) :ranger)
     player))
 
 ;; character definition

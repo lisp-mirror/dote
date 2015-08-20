@@ -626,7 +626,7 @@
   (:use
    :interfaces
    :cl)
-  (:nicknames :tree)
+  (:nicknames :mtree)
   (:export
    :traverse-apply-tree
    :traverse-napply-tree
@@ -653,7 +653,11 @@
    :top-down-visit
    :bottom-up-visit
    :remove-all-children
-   :remove-child))
+   :remove-child
+   :do-children
+   :do-children-from-end
+   :find-child
+   :find-child-if))
 
 (defpackage :xmls-utils
   (:use :cl
@@ -2180,7 +2184,9 @@
    :player-generator
    :make-player-generator
    :inventory-window
-   :make-inventory-window))
+   :make-inventory-window
+   :player-report
+   :make-player-report-win))
 
 (defpackage :world
   (:use :cl
@@ -2554,6 +2560,8 @@
    :portrait
    :first-name
    :last-name
+   :gender
+   :player-class
    :strength
    :stamina
    :dexterity
@@ -2562,8 +2570,11 @@
    :empaty
    :weight
    :damage-points
+   :current-damage-points
    :movement-points
+   :current-movement-points
    :magic-points
+   :current-magic-points
    :dodge-chance
    :melee-attack-chance
    :range-attack-chance
@@ -2593,6 +2604,8 @@
    :ring
    :inventory
    :inventory-slot-pages-number
+   :player-gender->gender-description
+   :player-class->class-description
    :basic-interaction-params
    :make-warrior
    :make-wizard

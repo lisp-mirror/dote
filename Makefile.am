@@ -22,7 +22,6 @@ EXTRA_DIST = config.rpath m4/ChangeLog ChangeLog dote.asd NOTES README.org src \
 LICENSES.org COPYING
 
 nobase_dist_pkgdata_DATA = data/scripts/radial-mountain-function.lisp \
-# Names
 data/names/surnames.lisp            \
 data/names/names.lisp               \
 data/names/armors/armor-01.lisp     \
@@ -125,7 +124,6 @@ data/names/weapons/sword-07.lisp    \
 data/names/weapons/sword-08.lisp    \
 data/names/weapons/sword-09.lisp    \
 data/names/weapons/sword-10.lisp    \
-# Models
 data/models/ortnok/body01.md2                       \
 data/models/ortnok/body01.tag                       \
 data/models/ortnok/body-animation.lisp              \
@@ -226,9 +224,7 @@ data/trees/temperate/willow.lsys                    \
 data/trees/temperate/pine/texture.tga               \
 data/trees/temperate/pine/pine.obj                  \
 data/trees/temperate/pine/pine.mtl                  \
-# Maps
 data/maps/test.lisp                                 \
-# Shaders
 data/shaders/mesh-debug.vert                        \
 data/shaders/skydome.vert                           \
 data/shaders/terrain.frag                           \
@@ -258,7 +254,6 @@ data/shaders/water.vert                             \
 data/shaders/wall-decorated.frag                    \
 data/shaders/skydome.frag                           \
 data/shaders/tree.frag                              \
-# Misc images
 data/img/avatar-portrait/avatar_head_f3.tga         \
 data/img/avatar-portrait/avatar_eye_m3.tga          \
 data/img/avatar-portrait/avatar_mouth_m2.tga        \
@@ -406,7 +401,6 @@ data/img/avatar-portrait/avatar_head_m13.tga        \
 data/img/avatar-portrait/avatar_eye_m5.tga          \
 data/img/avatar-portrait/avatar_hair_m16.tga        \
 data/img/avatar-portrait/avatar_mouth_m6.tga        \
-# Inventory
 data/gui/default/inventory/ac-medal01.tga               \
 data/gui/default/inventory/ac-medal02.tga               \
 data/gui/default/inventory/ac-medal03.tga               \
@@ -1505,7 +1499,6 @@ data/gui/default/inventory/w-throw002.tga               \
 data/gui/default/inventory/w-throw003.tga               \
 data/gui/default/inventory/w-throw004.tga               \
 data/gui/default/inventory/w-throw05.tga                \
-# GUI
 data/gui/default/silhouette.tga                          \
 data/gui/default/attack-long-range-imprecise-overlay.tga \
 data/gui/default/attack-long-range-overlay.tga           \
@@ -1563,7 +1556,7 @@ data/gui/default/window-button-pressed.tga               \
 data/gui/default/window-button.tga                       \
 data/gui/default/window.tga                              \
 data/gui/default/window-top-bar.tga                      \
-data/gui/default/zoom-overlay.tga                        \
+data/gui/default/zoom-overlay.tga
 
 CONF_PATH_FILE = src/config.lisp
 

@@ -92,3 +92,4 @@ src/basic-interaction-parameters.lisp
 src/gui/gui-events.lisp
 src/gui/gui.lisp
 src/gui/widget.lisp
+src/gui/player-report-window.lisp

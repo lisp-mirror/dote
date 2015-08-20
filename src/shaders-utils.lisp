@@ -390,6 +390,13 @@ active program (set by sdk2.kit:use-program)."
 		:ia)
      (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
 	       :fragment-shader ,(get-shader-source "gui.frag")))
+    (:gui-fonts
+     (:uniforms :modelview-matrix
+		:proj-matrix
+		:texture-object
+		:mult-color)
+     (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
+	       :fragment-shader ,(get-shader-source "gui-fonts.frag")))
     (:gui-naked-button
      (:uniforms :modelview-matrix
 		:proj-matrix

@@ -18,7 +18,7 @@
 
 ;; tree := nil | node
 ;; node := (list atom node*)
-;; example: '(1 (2) (3 (4) (5))) 
+;; example: '(1 (2) (3 (4) (5)))
 
 (defun traverse-apply-tree (function tree &optional (args nil))
   (append
@@ -37,7 +37,7 @@
      (rplaca tree (apply function (append (list (car tree)) args)))))
 
 (defun traverse-find-if-tree (tree item &key (test #'equal) (key #'identity))
-  (progn 
+  (progn
     (traverse-apply-tree #'(lambda (x) (if (funcall test item (funcall key x))
 					   (return-from traverse-find-if-tree x)
 					   nil))
@@ -61,10 +61,10 @@
        nil)))
 
 (defun traverse-nadd-child (tree node child &key (test #'equal) (key #'identity))
-  (traverse-apply-tree-cdr 
-   #'(lambda (x) (when (funcall test (funcall key (car x)) node) 
-		   (progn 
-		     (rplacd x (append (list (list child)) (cdr x))) 
+  (traverse-apply-tree-cdr
+   #'(lambda (x) (when (funcall test (funcall key (car x)) node)
+		   (progn
+		     (rplacd x (append (list (list child)) (cdr x)))
 		     (rplaca x (car x)))))
    tree)
   tree)
@@ -74,10 +74,10 @@
 
 (defun traverse-ndelete-child (tree node &key (test #'equal) (key #'identity))
   (traverse-apply-tree-cdr
-   #'(lambda (x) (loop 
-		    for i in (cdr x) 
+   #'(lambda (x) (loop
+		    for i in (cdr x)
 		    for ct = 0 then (1+ ct)
-  		    do 
+  		    do
  		      (if (funcall test (funcall key (car i)) node)
 			  (rplacd x (misc-utils:safe-delete@ (cdr x) ct)))))
    tree)
@@ -121,6 +121,8 @@
 
 (defgeneric find-child (object to-find &key compare))
 
+(defgeneric find-child-if (object predicate))
+
 (defgeneric leafp (object))
 
 (defgeneric rootp (object))
@@ -145,15 +147,15 @@
   (declare (ignore other-data))
   (labels ((indent (level &optional (char " ")) (make-list level :initial-element char)))
     (with-accessors ((data data) (children children)) object
-      (let ((data-length (+ 
+      (let ((data-length (+
 			    (do ((parent (parent object) (parent parent))
 				 (data-length 0))
 				((not parent) data-length)
 			      (incf data-length (length (format nil "~a" (data parent)))))
-			    
+
 			    (length (format nil "~a" data)))))
-			    
-	(format stream "~{~a~}~a" (indent (+ level parent-length)) 
+
+	(format stream "~{~a~}~a" (indent (+ level parent-length))
 		data)
 	(if (leafp object)
 	  (format stream "~%")
@@ -161,16 +163,16 @@
 	    (pprint-tree (elt children 0) stream 1)
 	    (map nil #'(lambda (c) (pprint-tree c stream (1+ level) data-length))
 		 (subseq children 1))))))))
-  
+
 (defmethod clone ((object m-tree))
   (make-instance 'm-tree :data (data object) :parent (parent object)
 		 :children (alexandria:copy-array (children object))))
 
-(defmethod add-child ((object m-tree) (child m-tree) 
+(defmethod add-child ((object m-tree) (child m-tree)
 		      &optional (child-pos (length (children object))))
   (with-accessors ((children children)) object
     (setf (parent child) object)
-    (if (and child-pos 
+    (if (and child-pos
 	     (< child-pos (length children))
 	     (>= child-pos 0))
 	(setf children
@@ -191,6 +193,14 @@
 		res)))
     (values object child)))
 
+(defmacro do-children ((child node) &body body)
+  `(loop for ,child across (children ,node) do
+	,@body))
+
+(defmacro do-children-from-end ((child node) &body body)
+  `(loop for ,child across (reverse (children ,node)) do
+	,@body))
+
 (defmethod add-children ((object m-tree) children)
   (loop for i in children do
        (add-child object i)))
@@ -204,11 +214,21 @@
 	object
 	(if (leafp object)
 	    nil
-	    (progn
-	      (find-if-not #'null 
-			   (map 'vector  #'(lambda (c) (find-child c to-find :compare compare))
-				children)))))))
-	    
+	    (find-if-not #'null
+			 (map 'vector #'(lambda (c)
+					  (find-child c to-find :compare compare))
+			      children))))))
+
+(defmethod find-child-if ((object m-tree) predicate)
+  (let ((res '()))
+    (labels ((%find-child-if (object predicate)
+	       (when (funcall predicate object)
+		 (push object res))
+	       (do-children (child object)
+		 (%find-child-if child predicate))))
+      (%find-child-if object predicate)
+      res)))
+
 (defmethod leafp ((object m-tree))
   (= (length (children object)) 0))
 
