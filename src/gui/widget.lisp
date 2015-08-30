@@ -409,10 +409,10 @@
 		  #'(lambda (a) (when (and (windowp a)
 					   (dragging-mode a))
 				  (setf (dragging-mode a) nil))))
-  (loop for w across (children object) do
-       (when (and (widgetp w)
-		  (on-mouse-released w event))
-	 (return-from on-mouse-released t)))
+  (do-children-from-end (w object)
+    (when (and (widgetp w)
+	       (on-mouse-released w event))
+      (return-from on-mouse-released t)))
   nil)
 
 (defmethod on-mouse-dragged ((object widget) event)
@@ -566,7 +566,8 @@
        (setf (current-texture object) (texture-object object))
        (funcall callback object event))
       ((mouse-over object (x-event event) (y-event event))
-       (setf (current-texture object) (texture-object object)))
+       (setf (current-texture object) (texture-object object))
+       nil)
       (t
        nil))))
 
@@ -614,12 +615,12 @@
       (progn
 	(flip-state object)
 	(when (callback object)
-	  (funcall (callback object) object event))
+	    (funcall (callback object) object event))
 	t)
       nil))
 
 (defmethod on-mouse-released ((object toggle-button) event)
-  nil)
+  (mouse-over object (x-event event) (y-event event)))
 
 (defclass check-button (toggle-button) ())
 
@@ -3432,7 +3433,8 @@
   (with-parent-widget (win) widget
     (when (contained-entity widget)
       (setf (label (text-description win))
-	    (description-for-humans (contained-entity widget))))))
+	    (description-for-humans (contained-entity widget))))
+    t))
 
 (defun pick-item-cb (w e)
   (declare (ignore e))
@@ -3613,6 +3615,7 @@
       (remove-if #'(lambda (a) (not (character:armorp a))) all)
       (remove-if #'(lambda (a) (not (character:shoesp a))) all)
       (remove-if #'(lambda (a) (not (character:potionp a))) all)
+      (remove-if #'(lambda (a) (not (character:ringp a))) all)
       (remove-if #'(lambda (a) (not (character:keyp a))) all)))))
 
 (defun sort-items-enter-cb (w e)
@@ -3932,11 +3935,11 @@
       (add-child object text-description)
       (add-child object img-silhouette)
       (let ((group-worn (make-check-group* elm-slot
-					    shoes-slot
-					    armor-slot
-					    left-hand-slot
-					    right-hand-slot
-					    ring-slot)))
+					   shoes-slot
+					   armor-slot
+					   left-hand-slot
+					   right-hand-slot
+					   ring-slot)))
 	(setf (group elm-slot) group-worn)
 	(setf (group shoes-slot) group-worn)
 	(setf (group armor-slot) group-worn)

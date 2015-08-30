@@ -299,7 +299,7 @@
 		  (fs:file-in-package "data/characters/potion/character.lisp")
 		  10))
 	 (texture-portrait (texture:gen-name-and-inject-in-database
-				     (avatar-portrait:build-avatar "m"))))
+			    (avatar-portrait:build-avatar "m"))))
     (texture:prepare-for-rendering texture-portrait)
     (setf (character:portrait char) texture-portrait)
     (setf (character:first-name char)  "first"
