@@ -16,40 +16,52 @@
 
 (in-package :random-labyrinth)
 
-(alexandria:define-constant +white+ '(255 255 255) :test 'equalp)
+(alexandria:define-constant +white+                           '(255 255 255) :test 'equalp)
 
-(alexandria:define-constant +black+ '(0 0 0) :test 'equalp)
+(alexandria:define-constant +black+                           '(0 0 0)       :test 'equalp)
 
-(alexandria:define-constant +seed-color+ '(255 0 255) :test 'equalp)
+(alexandria:define-constant +seed-color+                      '(255 0 255)   :test 'equalp)
 
-(alexandria:define-constant +border-color+ '(0 0 255) :test 'equalp)
+(alexandria:define-constant +border-color+                    '(0 0 255)     :test 'equalp)
 
-(alexandria:define-constant +door-color-n+ '(0 255 0) :test 'equalp)
+(alexandria:define-constant +door-color-n+                    '(0 255 0)     :test 'equalp)
 
-(alexandria:define-constant +door-color-s+ '(1 255 0) :test 'equalp)
+(alexandria:define-constant +door-color-s+                    '(1 255 0)     :test 'equalp)
 
-(alexandria:define-constant +door-color-e+ '(2 255 0) :test 'equalp)
+(alexandria:define-constant +door-color-e+                    '(2 255 0)     :test 'equalp)
 
-(alexandria:define-constant +door-color-w+ '(3 255 0) :test 'equalp)
+(alexandria:define-constant +door-color-w+                    '(3 255 0)     :test 'equalp)
 
-(alexandria:define-constant +window-color-n+ '(0 255 255) :test 'equalp)
+(alexandria:define-constant +window-color-n+                  '(0 255 255)   :test 'equalp)
 
-(alexandria:define-constant +window-color-s+ '(1 255 255) :test 'equalp)
+(alexandria:define-constant +window-color-s+                  '(1 255 255)   :test 'equalp)
 
-(alexandria:define-constant +window-color-e+ '(2 255 255) :test 'equalp)
+(alexandria:define-constant +window-color-e+                  '(2 255 255)   :test 'equalp)
 
-(alexandria:define-constant +window-color-w+ '(3 255 255) :test 'equalp)
+(alexandria:define-constant +window-color-w+                  '(3 255 255)   :test 'equalp)
 
-(alexandria:define-constant +furniture-color+ '(255 0 0) :test 'equalp)
+(alexandria:define-constant +furniture-fountain-color+        '(226 145 145) :test 'equalp)
 
-(alexandria:define-constant +max-generation+ 10000 :test '=)
+(alexandria:define-constant +furniture-pillar-color+          '(153 221 146) :test 'equalp)
 
-(alexandria:define-constant +max-rand+ 10000 :test '=)
+(alexandria:define-constant +furniture-table-color+           '(147 216 185) :test 'equalp)
 
-(alexandria:define-constant +min-room-size+ 1)
+(alexandria:define-constant +furniture-chair-color+           '(148 196 211) :test 'equalp)
+
+(alexandria:define-constant +furniture-walkable-color+        '(148 154 206) :test 'equalp)
+
+(alexandria:define-constant +furniture-wall-decoration-color+ '(255 165 96)  :test 'equalp)
+
+(alexandria:define-constant +furniture-other-color+           '(255 0 255)   :test 'equalp)
+
+(alexandria:define-constant +max-generation+                  10000          :test '=)
+
+(alexandria:define-constant +max-rand+                        10000          :test '=)
+
+(alexandria:define-constant +min-room-size+                   1              :test '=)
 
 (defmacro gen-invalicable-p (&rest colors)
-  (let ((fn-name (alexandria:format-symbol t "INVALICABLEP")))
+  (let ((fn-name (misc:format-fn-symbol t "invalicablep")))
     `(defun ,fn-name (c)
        (or ,@(loop for i in colors collect `(equalp c ,i))))))
 
@@ -62,13 +74,47 @@
 		   +window-color-s+
 		   +window-color-e+
 		   +window-color-w+
-		   +furniture-color+)
+		   +furniture-fountain-color+
+		   +furniture-table-color+
+		   +furniture-chair-color+
+		   +furniture-pillar-color+
+		   +furniture-wall-decoration-color+)
+
+(defun seed-color ()
+  +seed-color+)
+
+(defun floor-color ()
+  +white+)
 
 (defun wallp (c)
   (equalp c +border-color+))
 
 (defun furniturep (c)
-  (equalp c +furniture-color+))
+  (or (equalp +furniture-fountain-color+        c)
+      (equalp +furniture-table-color+           c)
+      (equalp +furniture-chair-color+           c)
+      (equalp +furniture-pillar-color+          c)
+      (equalp +furniture-walkable-color+        c)
+      (equalp +furniture-wall-decoration-color+ c)))
+
+(defmacro gen-type-furniture-predicate (name)
+  (let ((fn-name (misc:format-fn-symbol t "furniture-~a-p" name)))
+    `(defun ,fn-name (c)
+       (equalp c ,(alexandria:format-symbol t "~:@(+furniture-~a-color+~)" name)))))
+
+(gen-type-furniture-predicate fountain)
+
+(gen-type-furniture-predicate table)
+
+(gen-type-furniture-predicate chair)
+
+(gen-type-furniture-predicate walkable)
+
+(gen-type-furniture-predicate wall-decoration)
+
+(gen-type-furniture-predicate pillar)
+
+(gen-type-furniture-predicate other)
 
 (defmacro gen-door-side-p (colors sides)
   `(progn
@@ -128,10 +174,10 @@
     :initarg :max-windows-num
     :initform 5
     :accessor max-windows-num)
-   (max-furnitures-num
-    :initarg :max-furnitures-num
-    :initform 3
-    :accessor max-furnitures-num)
+   (max-furnitures-num-fn
+    :initarg :max-furnitures-num-fn
+    :initform #'(lambda (room) (declare (ignore room)) 0)
+    :accessor max-furnitures-num-fn)
    (random-fun
     :initarg :random-fun
     :initform #'safe-random
@@ -156,7 +202,7 @@
 (defmethod marshal:class-persistant-slots ((object generator-par))
   (append '(max-door-num
 	    max-windows-num
-	    max-furnitures-num
+	    ;;max-furnitures-num-fn
 	    ;;random-fun no we can not dump function...
 	    sigmaw
 	    sigmah
@@ -233,7 +279,11 @@
    (shared-matrix
     :initarg :shared-matrix
     :initform nil
-    :reader shared-matrix)))
+    :reader shared-matrix)
+   (furniture-random-starting-pos-cache
+    :initform '()
+    :initarg :furniture-random-starting-pos-cache
+    :accessor furniture-random-starting-pos-cache)))
 
 (defmethod marshal:class-persistant-slots ((object lab-room))
   (append '(gen-params
@@ -359,6 +409,8 @@
 
 (defgeneric add-windows (object &optional max-number max-recursion))
 
+(defgeneric init-furniture-random-starting-pos-cache (object))
+
 (defgeneric add-furnitures (object &optional max-number max-recursion))
 
 (defgeneric add-door-size (object maxnum &key side))
@@ -383,7 +435,7 @@
 
 (defgeneric get-root (object))
 
-(defgeneric root-p (object))
+(defgeneric rootp (object))
 
 (defgeneric my-child-p (object child-id))
 
@@ -539,7 +591,6 @@
 	     (mapc #'(lambda (win) (window->mat obj win))
 		   (windows obj))))))
 
-
 (defmethod window->mat ((object lab-room) win)
   (with-accessors ((matrix shared-matrix)) object
     (let* ((x (elt win 0))
@@ -555,16 +606,17 @@
 		   (children children)) object
     (dfs (get-root object)
 	 #'(lambda (obj)
-	     (mapc #'(lambda (win) (furniture->mat obj win))
+	     (mapc #'(lambda (f) (furniture->mat obj f))
 		   (furnitures obj))))))
 
-(defmethod furniture->mat ((object lab-room) win)
+(defmethod furniture->mat ((object lab-room) furniture)
   (with-accessors ((matrix shared-matrix)) object
-    (let* ((x (elt win 0))
-	   (y (elt win 1))
-	   (w 1)
-	   (h 1))
-      (matrix:matrix-rect matrix x y w h +furniture-color+))))
+    (let* ((x    (elt furniture 0))
+	   (y    (elt furniture 1))
+	   (type (elt furniture 2))
+	   (w    1)
+	   (h    1))
+      (matrix:matrix-rect matrix x y w h type))))
 
 (defmethod debug-room->mat ((object lab-room)
 		      &key (draw-door nil) (draw-door-to-nowhere nil)
@@ -581,7 +633,7 @@
 				(children children)) object
 
 		 (let* ((max-color (max-color (get-root object)))
-			(act-color (if (and draw-seed (root-p object))
+			(act-color (if (and draw-seed (rootp object))
 				       (list (first max-color) 0 (first max-color))
 				       color))
 			(border-color (list 0 0 (first max-color)))
@@ -627,9 +679,9 @@
 	       (with-accessors ((id id)
 				(x x) (y y) (w w) (h h) (matrix shared-matrix)
 				(children children)) object
-		 (let ((act-color (if (and draw-seed (root-p object))
-				      +seed-color+
-				      +white+)))
+		 (let ((act-color (if (and draw-seed (rootp object))
+				      (seed-color)
+				      (floor-color))))
 		   (loop for r from 0 to w do
 			(loop for c from 0 to h do
 			     (setf (matrix:matrix-elt matrix (floor (+ y c))
@@ -685,8 +737,12 @@
 
 (defmethod clean-and-redraw-mat ((object lab-room))
   (clear-mat object)
-  (room->mat object :draw-door t :draw-door-to-nowhere t
-	     :draw-border t :draw-seed nil :draw-id nil))
+  (room->mat object
+	     :draw-door t
+	     :draw-door-to-nowhere t
+	     :draw-border t
+	     :draw-seed nil
+	     :draw-id nil))
 
 (defmacro expand-if-possible (root aabb flag direction)
   (alexandria:with-gensyms (new-aabb outside)
@@ -766,7 +822,7 @@
       (let* ((color-scheme (get-param-gen object color-scheme))
 	       (child-color
 		(if (eq color-scheme :flat)
-		    +white+
+		    (floor-color)
 		    (mapcar #'1+ (color object))))
 	     (rect-fill (ivec4 xtop ytop wrect hrect))
 	     (aabb-fill (irect2->iaabb2 rect-fill))
@@ -893,15 +949,16 @@
 	  (mapc #'add-doors (children object))
 	  (clear-mat (get-root object))
 	  (room->mat (get-root object)))
-	;(add-furnitures object)
-	;(add-windows object)
 	object)))))
-
-(defun grow-step-furniture (room)
-  (add-furnitures room))
 
 (defun grow-step-windows (room)
   (add-windows room))
+
+(defun grow-furnitures (room)
+  ;; redraw all with borders because furniture routines need it
+  (room->mat (get-root room) :draw-door t :draw-door-to-nowhere t
+	     :draw-border t :draw-seed nil :draw-id nil)
+  (dfs (get-root room) #'add-furnitures))
 
 (defun grow-single-door (&optional (params nil))
   (labels ((bound-doors (object side)
@@ -932,14 +989,16 @@
   `(ecase ,name
      ,@(loop for n in cases collect
 	    `(,(alexandria:make-keyword n)
-	       (setf (,n ,params) (funcall ,func *generation-count* ,room-fn-args))))))
-
+	       (setf (,n ,params) (funcall ,func *generation-count* ,room-fn-args))))
+     (:max-furnitures-num-fn
+      (setf (max-furnitures-num-fn params)
+	    #'(lambda (room) (funcall ,func *generation-count* room))))))
 
 (defun update-params (object name func room-fn-args)
-    (let ((params (gen-params (get-root object))))
-      (%gen-update-params-cases name params func room-fn-args
-				sigmaw sigmah max-door-num max-windows-num max-furnitures-num)
-      (setf (gen-params (get-root object)) params)))
+  (let ((params (gen-params (get-root object))))
+    (%gen-update-params-cases name params func room-fn-args
+			      sigmaw sigmah max-door-num max-windows-num)
+    (setf (gen-params (get-root object)) params)))
 
 (defun add-offset-to-door (door)
   (ecase (elt door 2)
@@ -1024,13 +1083,13 @@
 		       (when (find-stuff i (mapcar #'get-door-coordinates (doors obj)))
 			 (setf res t)))
 		      (:furnitures
-		       (when (find-stuff i (furnitures obj))
+		       (when (find-stuff i (mapcar #'get-furniture-coordinates (furnitures obj)))
 			 (setf res t)))
 		      (:any
 		       (when (or
 			      (find-stuff i (mapcar #'get-window-coordinates (windows obj)))
 			      (find-stuff i (mapcar #'get-door-coordinates (doors obj)))
-			      (find-stuff i (furnitures obj)))
+			      (find-stuff i (mapcar #'get-furniture-coordinates (furnitures obj))))
 			 (setf res t)))))))
       res)))
 
@@ -1062,23 +1121,129 @@
 		(push (reverse new-window) windows)
 		(add-windows object (1- max-number) (1- max-recursion))))))))
 
-(defmethod add-furnitures ((object lab-room)
-			   &optional (max-number
-				      (if (> (get-param-gen object max-furnitures-num) 0)
-					  (num:lcg-next-upto (get-param-gen object max-furnitures-num))
-					  0))
-			   (max-recursion 5000))
-  (with-accessors ((x x) (y y) (w w) (h h) (furnitures furnitures)) object
+(defun template-compatible-element-p (matrix-element template-element)
+  (cond
+    ((eq template-element :wall)
+     (wallp   matrix-element))
+    ((eq template-element :window)
+     (windowp matrix-element))
+    ((eq template-element :door)
+     (doorp   matrix-element))
+    ((eq template-element :empty)
+     (equalp matrix-element (floor-color)))
+    (t
+     (equalp matrix-element (floor-color)))))
+
+(defun pixel->furniture-template (pixel)
+  (let ((element (subseq (coerce pixel 'list) 0 3)))
+    (cond
+      ((wallp element)
+       :wall)
+      ((windowp element)
+       :window)
+      ((doorp element)
+       :door)
+      ((equalp element (floor-color))
+       :empty)
+      (t
+       element))))
+
+(defun template-compatible-p (matrix template x y)
+  (matrix:submatrix= matrix template x y
+		     :test #'(lambda (a b)
+			       (and (= (length a) (length b))
+				    (progn
+				      (loop
+					 for i across a
+					 for j across b do
+					   (if (not (template-compatible-element-p i j))
+					       (return-from template-compatible-p nil)))
+				      t)))))
+
+(defun count-furniture-units (template)
+  (truncate (loop for i across (matrix:data template) sum
+		 (if (and (not (keywordp i))
+			  (not (furniture-other-p i)))
+		     0.5
+		     1.0))))
+
+(defun count-furniture-units-for-sort (template &key (scale-weight 2.8))
+  "Give more weight to generic furnitures"
+  (+ (* scale-weight (count-if #'(lambda (a) (furniture-other-p a)) (matrix:data template)))
+     (count-if #'(lambda (a) (not (keywordp a))) (matrix:data template))))
+
+(defun pixmap->template (pixmap)
+  (matrix:map-matrix pixmap #'(lambda (a) (pixel->furniture-template a))))
+
+(defun pixmap-file->template (file)
+  (pixmap->template (pixmap:slurp-pixmap 'pixmap:tga file)))
+
+(defun all-templates ()
+  (let ((all (remove-if-not #'(lambda (a)
+				(filesystem-utils:has-extension (uiop:native-namestring
+								 (uiop:native-namestring a))
+								"tga"))
+			    (res:get-resource-files +default-furniture-templates+))))
+    (sort (mapcar #'(lambda (a) (pixmap-file->template (uiop:native-namestring a)))
+		  all)
+	  #'(lambda (a b) (> (count-furniture-units-for-sort a)
+			     (count-furniture-units-for-sort b))))))
+
+(defmethod init-furniture-random-starting-pos-cache ((object lab-room))
+  (with-accessors ((x x) (y y) (w w) (h h)
+		   (furniture-random-starting-pos-cache furniture-random-starting-pos-cache)
+		   (shared-matrix shared-matrix)) object
+    (when (null furniture-random-starting-pos-cache)
+      (setf furniture-random-starting-pos-cache
+	    (nconc
+	     (loop for xstart from x to (+ x w) collect
+		  (list xstart y))
+	     (loop for xstart from x to (+ x w) collect
+		  (list xstart (+ y h)))
+	     (loop for ystart from y to (+ y h) collect
+		  (list x ystart))
+	     (loop for ystart from y to (+ y h) collect
+		  (list (+ x w) ystart))
+	     (let ((new-values '()))
+	       (loop for xstart from (1+ x) below (+ x w) by (floor (/ w 4)) do
+		    (loop for ystart from (1+ y) below (+ y h) by (floor (/ h 4)) do
+			 (push (list xstart ystart) new-values)))
+	       new-values))))
+    furniture-random-starting-pos-cache))
+
+(defun actual-funiture-count (room)
+  (max (num:lcg-next-upto (max 1 (funcall (get-param-gen room max-furnitures-num-fn) room)))
+       0))
+
+(defmethod add-furnitures ((object lab-room) &optional
+					       (max-number (actual-funiture-count object))
+					       (max-recursion 1000))
+  (with-accessors ((x x) (y y) (w w) (h h) (furnitures furnitures)
+		   (shared-matrix shared-matrix) (aabb aabb)) object
     (if (and
 	 (> max-number 0)
 	 (> max-recursion 0))
-	(let* ((furn-y (+ (1+ y) (floor (* (rand01) (1- h)))))
-	       (furn-x (+ (1+ x) (floor (* (rand01) (1- w))))))
-	  (if (neighbour-element-p object furn-x furn-y :any)
-	      (add-furnitures object max-number (1- max-recursion))
-	      (progn
-		(push (list furn-x furn-y) furnitures)
-		(add-furnitures object (1- max-number) (1- max-recursion))))))))
+	(let* ((candidates (init-furniture-random-starting-pos-cache object))
+	       (furn-pos (misc:random-elt candidates))
+	       (furn-y (elt furn-pos 1))
+	       (furn-x (elt furn-pos 0)))
+	  (dolist (template (if (evenp max-recursion)
+				(all-templates)
+				(reverse (all-templates))))
+	    (when (template-compatible-p shared-matrix template furn-x furn-y)
+	      (matrix:loop-matrix (template x y)
+		(let ((element (matrix:matrix-elt template y x)))
+		  (when (not (keywordp element))
+		    (push (list (+ furn-x x) (+ furn-y y) element)
+			  furnitures))))
+	      (clean-and-redraw-mat (get-root object))
+	      (decf max-number (count-furniture-units template))
+	      (setf furn-pos (misc:random-elt candidates)
+		    furn-y (elt furn-pos 1)
+		    furn-x (elt furn-pos 0))))
+	  (add-furnitures object
+			  (actual-funiture-count object)
+			  (1- max-recursion))))))
 
 (defun add-door-coord (from to howmany)
   (do ((res '()))
@@ -1231,7 +1396,7 @@
       object
       (get-root (parent object))))
 
-(defmethod root-p ((object lab-room))
+(defmethod rootp ((object lab-room))
   (null (parent object)))
 
 (defmethod my-child-p ((object lab-room) child-id)
@@ -1513,6 +1678,9 @@
 (defun get-door-coordinates (door)
   (subseq door 0 2))
 
+(defun get-furniture-coordinates (furniture)
+  (subseq furniture 0 2))
+
 (defun get-door-x (door)
   (first (get-door-coordinates door)))
 
@@ -1644,7 +1812,7 @@
   (with-accessors ((matrix shared-matrix)) object
    (let ((occupied (loop
 		      for i across (matrix:data matrix)
-			when (not (null i))
+		      when (not (null i))
 		      count i))
 	 (total (* (map-w object) (map-h object))))
      (/ occupied total))))
@@ -1721,31 +1889,36 @@
 	(and func-door      (update-params (get-root root) :max-door-num func-door room))
 	(and func-win       (update-params (get-root root) :max-windows-num func-win room))
 	(and func-furniture (update-params (get-root root)
-					   :max-furnitures-num
+					   :max-furnitures-num-fn
 					   func-furniture room))
 	(when room
-	  (grow-step-windows room)
-	  (grow-step-furniture room))))
+	  (grow-step-windows room))))
     (clean-unused-doors root :purge-blind-doors nil)
     (clean-border-doors root)
     (clean-superimposed-windows-doors root)
     (when (> scale-fact 0)
-      (scale (get-root root) scale-fact)
-      (clean-furniture-near-door root))
+       (scale root scale-fact))
     (clear-mat root)
-    (room->mat root)
+    (grow-furnitures root)
+    (clean-furniture-near-door root)
+    (clear-mat root)
     root))
 
-(defun gen-simple-room (size)
-  (let ((res (make-instance 'lab-room :shared-matrix (matrix:gen-matrix-frame size size))))
-    (setf (x res)          0
-     	  (y res)          0
-     	  (w  res)         (1- size)
-     	  (h res)          (1- size)
-     	  (doors  res)     (list (list (lcg-next-in-range 1 (1- size)) 0 :n :outside))
-     	  (furnitures res) (if (= (mod (lcg-next-upto size) 2) 0)
-     			       (list (list (truncate (/ (1- size) 2)) (truncate (/ (1- size) 2))))
-     			       nil))
-    (clear-mat res)
-    (room->mat res)
+(defun gen-simple-room (size &key (furniture-fn nil))
+
+  (let ((res (make-instance 'lab-room
+			    :x     0
+			    :y     0
+			    :w     (1- size)
+			    :h     (1- size)
+			    :doors (list (list (lcg-next-in-range 1 (1- size))
+					       0
+					       :n
+					       :outside)))))
+    (and furniture-fn
+	 (update-params (get-root res) :max-furnitures-num-fn furniture-fn res))
+    (setf (shared-matrix res) (matrix:gen-matrix-frame size size))
+    (clean-and-redraw-mat res)
+    (grow-furnitures res)
+    (clean-and-redraw-mat res)
     res))

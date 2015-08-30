@@ -129,27 +129,37 @@
 
 (defparameter *building-level* 0)
 
-(defparameter *trees* '())
+(defparameter *trees*                      '())
 
-(defparameter *wall*    nil)
+(defparameter *wall*    	      	   nil)
 
-(defparameter *window*  nil)
+(defparameter *window*  	      	   nil)
 
-(defparameter *door-n*  nil)
+(defparameter *door-n*  	      	   nil)
 
-(defparameter *door-s*  nil)
+(defparameter *door-s*  	      	   nil)
 
-(defparameter *door-e*  nil)
+(defparameter *door-e*  	      	   nil)
 
-(defparameter *door-w*  nil)
+(defparameter *door-w*  	      	   nil)
 
-(defparameter *floor*  nil)
+(defparameter *floor*   	      	   nil)
 
-(defparameter *furnitures* '())
+(defparameter *furnitures*                 '())
 
-(defparameter *containers-furnitures* '())
+(defparameter *containers-furnitures*      '())
 
-(defparameter *magic-furnitures* '())
+(defparameter *magic-furnitures*           '())
+
+(defparameter *pillar-furnitures*          '())
+
+(defparameter *chair-furnitures*           '())
+
+(defparameter *table-furnitures*           '())
+
+(defparameter *walkable-furnitures*        '())
+
+(defparameter *wall-decoration-furnitures* '())
 
 (defun gen-normalmap-if-needed (diffuse-texture)
   (let ((roughness (texture:n-roughness diffuse-texture)))
@@ -278,18 +288,23 @@
      (setf *floor* mesh)))
 
 (defun clean-global-wars ()
-  (setf *map*                   nil
-	*trees*                 '()
-	*furnitures*            '()
-	*containers-furnitures* '()
-	*magic-furnitures*      '()
-	*wall*                  nil
-	*window*                nil
-	*door-n*                nil
-	*door-s*                nil
-	*door-e*                nil
-	*door-w*                nil
-	*floor*                 nil)
+  (setf *map*                        nil
+	*trees*                      '()
+	*furnitures*                 '()
+	*containers-furnitures*      '()
+	*magic-furnitures*           '()
+	*pillar-furnitures*          '()
+	*chair-furnitures*           '()
+	*table-furnitures*           '()
+        *walkable-furnitures*        '()
+        *wall-decoration-furnitures* '()
+	*wall*                       nil
+	*window*                     nil
+	*door-n*                     nil
+	*door-s*                     nil
+	*door-e*                     nil
+	*door-w*                     nil
+	*floor*                      nil)
   (tg:gc :full t))
 
 (defmacro define-level (&body body)
@@ -383,7 +398,17 @@
 	    (:furniture
 	     (setf offset (generate-furniture (subseq body 1))))
 	    (:container
-	     (setf offset (generate-container (subseq body 1))))
+	     (setf offset (generate-container-furniture (subseq body 1))))
+	    (:pillar
+	     (setf offset (generate-pillar-furniture (subseq body 1))))
+	    (:chair
+	     (setf offset (generate-chair-furniture (subseq body 1))))
+	    (:table
+	     (setf offset (generate-table-furniture (subseq body 1))))
+	    (:wall-decoration
+	     (setf offset (generate-wall-decoration-furniture (subseq body 1))))
+	    (:walkable
+	     (setf offset (generate-walkable-furniture (subseq body 1))))
 	    (:magic-furniture
 	     (setf offset (generate-magic-furniture (subseq body 1))))
 	    (otherwise
@@ -778,32 +803,55 @@
 	 (setf offset 5)))
     offset)))
 
-(defun generate-furniture (body)
-  (if (filesystem-utils:has-extension (fourth body) +obj-mesh-file-extension+)
-      (let* ((mesh  (load-obj-mesh constants:+furnitures-resource+
-				   (fourth body)
-				   (elt body 6))))
-	(push mesh *furnitures*))
-      (err "Furniture mesh: file not supported: ~a" (fourth body)))
-  8)
 
-(defun generate-container (body)
-  (if (filesystem-utils:has-extension (fourth body) +obj-mesh-file-extension+)
-      (let* ((mesh  (load-obj-mesh constants:+furnitures-resource+
-				   (fourth body)
-				   (elt body 6))))
-	(push mesh *containers-furnitures*))
-      (err "Container furniture mesh: file not supported: ~a" (fourth body)))
-  8)
+(defmacro %generate-furniture (body bag error-message)
+  (alexandria:with-gensyms (mesh)
+    `(progn
+       (if (filesystem-utils:has-extension (fourth ,body) +obj-mesh-file-extension+)
+	   (let* ((,mesh (load-obj-mesh constants:+furnitures-resource+
+					(fourth ,body)
+					(elt ,body 6))))
+	     (push ,mesh ,bag))
+	   (err ,error-message (fourth ,body)))
+       8)))
+
+(defun generate-furniture (body)
+  (%generate-furniture body *furnitures* "Furniture mesh: file not supported: ~a"))
+
+(defun generate-container-furniture (body)
+  (%generate-furniture body
+		       *containers-furnitures*
+		       "Container furniture mesh: file not supported: ~a"))
 
 (defun generate-magic-furniture (body)
-  (if (filesystem-utils:has-extension (fourth body) +obj-mesh-file-extension+)
-      (let* ((mesh  (load-obj-mesh constants:+furnitures-resource+
-				   (fourth body)
-				   (elt body 6))))
-	(push mesh *magic-furnitures*))
-      (err "Magic furniture mesh: file not supported: ~a" (fourth body)))
-  8)
+  (%generate-furniture body
+		       *magic-furnitures*
+		       "Magic furniture mesh: file not supported: ~a"))
+
+(defun generate-pillar-furniture (body)
+  (%generate-furniture body
+		       *pillar-furnitures*
+		       "Pillar furniture mesh: file not supported: ~a"))
+
+(defun generate-chair-furniture (body)
+  (%generate-furniture body
+		       *chair-furnitures*
+		       "Chair furniture mesh: file not supported: ~a"))
+
+(defun generate-table-furniture (body)
+  (%generate-furniture body
+		       *table-furnitures*
+		       "Table furniture mesh: file not supported: ~a"))
+
+(defun generate-wall-decoration-furniture (body)
+  (%generate-furniture body
+		       *wall-decoration-furnitures*
+		       "Wall furniture mesh: file not supported: ~a"))
+
+(defun generate-walkable-furniture (body)
+  (%generate-furniture body
+		       *walkable-furnitures*
+		       "Walkable furniture mesh: file not supported: ~a"))
 
 (defun load-obj-mesh (resource file material)
   (let* ((normalmap-parameters (plist->normalmap-params

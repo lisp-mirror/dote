@@ -915,43 +915,40 @@
   #'(lambda (x a) (declare (ignore a)) (+ 10 x)))
 
 (defun default-labyrinth-door-function ()
-  #'(lambda (x a) (declare (ignore a)) (if (< x 1) 3 4)))
+  #'(lambda (x a) (declare (ignore x a)) 5))
 
 (defun default-labyrinth-win-function ()
-  #'(lambda (x a) (declare (ignore a)) (if (< x 1) 3 4)))
+  #'(lambda (x a) (declare (ignore x a)) 3))
 
 (defun default-labyrinth-furniture-function ()
   #'(lambda (x a)
       (if-not-null-room a
 	(let ((area (d (* (random-labyrinth:w a) (random-labyrinth:h a)))))
-	  (truncate (num:dlerp (num:smoothstep-interpolate 0.0 80.0 area) 0.0 20.0)))
+	  (truncate (num:dlerp (num:smoothstep-interpolate 0.0 40.0 area) 0.0 40.0)))
 	(if (< x 1) 3 4))))
 
 (defmethod make-map ((object random-terrain)
 		     &key
-		       (mountain-rate 0.2)
+		       (mountain-rate              0.2)
 		       (mountain-z-height-function (default-mountain-z-height-function))
-		       (mountain-w-function (default-mountain-size-function))
-		       (mountain-h-function (default-mountain-size-function))
-		       (mountain-sigma-w-function (default-mountain-sigma-function))
-		       (mountain-sigma-h-function (default-mountain-sigma-function))
-		       (lake-rate 0.05)
-		       (lake-size-function (default-lake-size-function))
-		       (labyrinth-rate 0.1)
-		       (labyrinth-size-function (default-labyrinth-size-function))
-		       (labyrinth-sigma-w-function #'(lambda (x a) (declare (ignore a)) (+ 10 x)))
-		       (labyrinth-sigma-h-function #'(lambda (x a) (declare (ignore a)) (+ 10 x)))
-		       (labyrinth-door-function #'(lambda (x  a) (declare (ignore a))
-							  (if (< x 1) 3 4)))
-		       (labyrinth-win-function #'(lambda (x a) (declare (ignore a))
-							  (if (< x 1) 3 4)))
-		       (labyrinth-furn-function #'(lambda (x a) (declare (ignore a))
-							  (if (< x 1) 3 4)))
-		       (soil-threshold    0.8)
-		       (road-count (round (* 30 labyrinth-rate)))
-		       (trees-rate 0.05)
-		       (trees-sparseness 0.7)
-		       (maximum-iteration 1000))
+		       (mountain-w-function        (default-mountain-size-function))
+		       (mountain-h-function        (default-mountain-size-function))
+		       (mountain-sigma-w-function  (default-mountain-sigma-function))
+		       (mountain-sigma-h-function  (default-mountain-sigma-function))
+		       (lake-rate                  0.05)
+		       (lake-size-function         (default-lake-size-function))
+		       (labyrinth-rate             0.1)
+		       (labyrinth-size-function    (default-labyrinth-size-function))
+		       (labyrinth-sigma-w-function (default-labyrinth-sigma-w-function))
+		       (labyrinth-sigma-h-function (default-labyrinth-sigma-h-function))
+		       (labyrinth-door-function    (default-labyrinth-door-function))
+		       (labyrinth-win-function     (default-labyrinth-win-function))
+		       (labyrinth-furn-function    (default-labyrinth-furniture-function))
+		       (soil-threshold             0.8)
+		       (road-count                 (round (* 30 labyrinth-rate)))
+		       (trees-rate                 0.05)
+		       (trees-sparseness           0.7)
+		       (maximum-iteration          1000))
   (make-mountains object
 		    :rate mountain-rate
 		    :mountain-z-height-function mountain-z-height-function
@@ -972,7 +969,8 @@
 	(make-road object :howmany road-count)
 	(make-road-serial object :howmany road-count))
   (make-trees object trees-rate trees-sparseness)
-  (make-labyrinths object :win-fn labyrinth-win-function
+  (make-labyrinths object
+		   :win-fn labyrinth-win-function
 		   :door-fn labyrinth-door-function
 		   :furn-fn labyrinth-furn-function
 		   :sigma-h-fn labyrinth-sigma-h-function
@@ -993,28 +991,35 @@
 
 (alexandria:define-constant +min-size-lab-start-generation+ 5 :test #'=)
 
-(defun %make-lab (size sigma-w-fn sigma-h-fn door-fn win-fn furn-fn &optional (generation 0))
-  (if (and (< generation 100)
+(defun %make-lab (size fallback-size
+		  sigma-w-fn sigma-h-fn
+		  door-fn win-fn furn-fn &optional (generation 0))
+  (if (and (< generation 10)
 	   (> size +min-size-lab-start-generation+))
       (let ((lab (random-labyrinth:generate size
 					    :scale-fact 2
 					    :func-sigma-w sigma-w-fn
-					    :func-sigma-w sigma-h-fn
+					    :func-sigma-h sigma-h-fn
 					    :func-door door-fn
 					    :func-win win-fn
 					    :func-furniture furn-fn)))
+	(random-labyrinth:clean-and-redraw-mat lab)
 	(if (< (random-labyrinth:occupied-rate lab) 0.8)
-	    (%make-lab size sigma-w-fn sigma-h-fn door-fn win-fn furn-fn (+ generation 1))
+	    (%make-lab size fallback-size sigma-w-fn sigma-h-fn
+		       door-fn win-fn furn-fn (1+ generation))
 	    lab))
-      nil))
+      (random-labyrinth:gen-simple-room fallback-size
+					:furniture-fn #'(lambda (a b)
+							  (declare (ignore a b))
+							  30))))
 
 (defmethod make-labyrinths ((object random-terrain)
 			    &key
 			      (sigma-w-fn #'(lambda (x a) (declare (ignore a)) (+ 10 x)))
 			      (sigma-h-fn #'(lambda (x a) (declare (ignore a)) (* 2 x)))
-			      (door-fn #'(lambda (x a) (declare (ignore a)) (if (< x 1) 3 4)))
-			      (win-fn #'(lambda (x a) (declare (ignore a)) (if (< x 1) 3 4)))
-			      (furn-fn #'(lambda (x a) (declare (ignore a)) (if (< x 1) 3 4))))
+			      (door-fn    #'(lambda (x a) (declare (ignore a)) (if (< x 1) 3 4)))
+			      (win-fn     #'(lambda (x a) (declare (ignore a)) (if (< x 1) 3 4)))
+			      (furn-fn    #'(lambda (x a) (declare (ignore a)) (if (< x 1) 3 4))))
   (setf (labyrinths object)
 	(loop for rectangles in (map 'list #'2d-utils:aabb2->rect2 (labyrinths-aabb object))
 	   collect
@@ -1039,9 +1044,15 @@
 		 ((< raw-size 3)
 		  nil)
 		 ((<= size +min-size-lab-start-generation+)
-		  (random-labyrinth:gen-simple-room (truncate raw-size)))
+		  (random-labyrinth:gen-simple-room (truncate raw-size)
+						    :furniture-fn #'(lambda (a b)
+								      (declare (ignore a b))
+								      30)))
 		 (t
-		  (%make-lab size sigma-w-fn sigma-h-fn door-fn win-fn furn-fn))))))
+		  (%make-lab size (truncate raw-size)
+			     sigma-w-fn sigma-h-fn
+			     door-fn win-fn furn-fn))))))
+
   ;; mark invalid aabb-labyrinth
   (assert (= (length (labyrinths object)) (length (labyrinths-aabb object))))
   (loop for i from 0 below (length (labyrinths-aabb object)) do
@@ -1065,11 +1076,11 @@
     (loop
        for i in (labyrinths object)
        for j from 0 do
-	 (random-labyrinth::clear-mat i)
-	 (random-labyrinth::room->mat i :draw-door t :draw-door-to-nowhere t
-				        :draw-border t :draw-seed nil :draw-id nil)
-	 (random-labyrinth::dump i (fs:file-in-package (format nil "lab~a.ppm" j))
-				 :draw-door-to-nowhere t :draw-id nil)))
+	 (random-labyrinth:clear-mat i)
+	 (random-labyrinth:room->mat i :draw-door t :draw-door-to-nowhere t
+				     :draw-border t :draw-seed nil :draw-id nil)
+	 (random-labyrinth:dump i (fs:file-in-package (format nil "lab~a.ppm" j))
+				:draw-door-to-nowhere t :draw-id nil)))
   (loop for i in (labyrinths object) do (random-labyrinth:clean-and-redraw-mat i)))
 
 (defmethod make-mountains ((object random-terrain)
@@ -1447,9 +1458,9 @@
 		  (let ((pos-x (f+ startx x))
 			(pos-y (f+ starty y)))
 		    (cond
-		      ((random-labyrinth:doorp (matrix-elt matrix y x))
-		       ;; cancel, if necessary, muddy terrain or others modifier
-		       (setf (matrix-elt res pos-y pos-x) +open-terrain-cost+))
+		      ;; ((random-labyrinth:doorp (matrix-elt matrix y x))
+		      ;;  ;; cancel, if necessary, muddy terrain or others modifier
+		      ;;  (setf (matrix-elt res pos-y pos-x) +open-terrain-cost+))
 		      ((random-labyrinth:invalicablep (matrix-elt matrix y x))
 		       (setf (matrix-elt res pos-y pos-x) (if debugp
 							      +invalicable-element-cost-dbg+

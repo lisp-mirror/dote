@@ -190,6 +190,11 @@
   (defgeneric flood-fill (object x y &key
 				       tolerance max-iteration randomize-growth
 				       position-acceptable-p-fn))
+  (defgeneric flood-fill* (object x y &key
+					tolerance-fn
+					max-iteration
+					randomize-growth
+					position-acceptable-p-fn))
 
   (defgeneric apply-kernel (object kernel &key round-fn))
 
@@ -205,8 +210,12 @@
 
   (defgeneric pblit-matrix (src dest x-dst y-dst &key blend-fn))
 
+  (defgeneric blit-matrix (src dest x-dst y-dst &key blend-fn))
+
   (defgeneric pmatrix-blit (source destination x y
-			   &key transparent-value function-blend))
+			    &key transparent-value function-blend))
+
+  (defgeneric submatrix= (object sample x y &key test))
 
   (defmethod matrix-elt ((object matrix) row col)
     (declare (optimize (speed 1) (safety 0) (debug 0)))
@@ -885,6 +894,7 @@ else
 					     (max-iteration 1d10)
 					     (randomize-growth nil)
 					     (position-acceptable-p-fn #'pixel-inside-p))
+  "When evaluated return a list represents a contiguous portion of the matrix"
   (labels ((tolerance-p (px1 px2 tol)
 	     (cond
 	       ((or (arrayp px1) (listp px1))
@@ -922,6 +932,59 @@ else
 		  (setf aabb (2d-utils:expand-aabb2 aabb (mapcar #'desired pixel)))
 		  (incf iteration-ct)
 		  (gen-neighbour-form object queue (first pixel) (second pixel)))))))))))
+
+(defun flood-fill-tolerance-p-fn (tol)
+  #'(lambda (px1 px2)
+      (cond
+	((or (arrayp px1) (listp px1))
+	 (let* ((diff (map 'vector #'- px1 px2))
+		(magn (sqrt
+		       (reduce #'(lambda (a b) (+ a (expt b 2))) diff
+			       :initial-value 0))))
+	   (<= magn tol)))
+	((numberp px1)
+	 (<= (abs (- px1 px2)) tol)))))
+
+(defmethod flood-fill* ((object matrix) x y &key
+					      (tolerance-fn (flood-fill-tolerance-p-fn 0))
+					      (max-iteration 1000000000)
+					      (randomize-growth nil)
+					      (position-acceptable-p-fn #'pixel-inside-p))
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (declare (fixnum max-iteration))
+  (declare (function tolerance-fn position-acceptable-p-fn))
+  (labels ((pop-position (queue randomize)
+	     (declare (list queue))
+	     (and queue
+		 (if randomize
+		     (misc:random-elt queue)
+		     (elt queue (1- (length queue)))))))
+    (let ((queue '()))
+      (when (pixel-inside-p object x y)
+	(let ((pixel-value (matrix-elt object y x)))
+	  (push (list x y) queue)
+	  (do* ((pixel (pop-position queue randomize-growth)
+		       (pop-position queue randomize-growth))
+		(iteration-ct 0)
+		(visited-pixels  '())
+		(affected-pixels '())
+		(aabb (good-aabb-start)))
+	       ((not (and (/= 0 (length queue))
+			  (< iteration-ct max-iteration)))
+		(values affected-pixels aabb))
+	    (when pixel
+	      (setf queue (remove pixel queue :from-end t :test #'equalp))
+	      (when (and (funcall tolerance-fn
+				  (matrix-elt object (second pixel) (first pixel))
+				  pixel-value)
+			 (not (find pixel visited-pixels :test #'equalp)))
+		(push pixel visited-pixels)
+		(when (funcall position-acceptable-p-fn object (elt pixel 0) (elt pixel 1))
+		  (push pixel affected-pixels)
+		  (setf aabb (2d-utils:expand-aabb2 aabb (list (d (the fixnum (elt pixel 0)))
+							       (d (the fixnum (elt pixel 1)))))))
+		(incf iteration-ct)
+		(gen-neighbour-form object queue (first pixel) (second pixel))))))))))
 
 (defun gauss (x y sigma xc yc)
   (declare (optimize (speed 3) (safety 0) (debug 0)))
@@ -1167,6 +1230,24 @@ else
 	  (setf (matrix-elt dest y-dest x-dest)
 		(funcall blend-fn src dest x y x-dest y-dest)))))))
 
+(defmethod blit-matrix ((src matrix) (dest matrix) x-dst y-dst
+			&key (blend-fn
+			      #'(lambda (src dest x-src y-src x-dst y-dst)
+				  (declare (ignore dest x-dst y-dst))
+				  (matrix-elt src y-src x-src))))
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (declare (matrix src dest))
+  (declare (fixnum x-dst y-dst))
+  (declare (function blend-fn))
+  (loop-submatrix (src x y 0 0 (the fixnum (width src)) (the fixnum (height src)))
+    (let ((x-dest (f+ x x-dst))
+	  (y-dest (f+ y y-dst)))
+      (with-check-matrix-borders (dest x-dest y-dest)
+	(with-check-matrix-borders (src x y)
+	  (setf (matrix-elt dest y-dest x-dest)
+		(funcall blend-fn src dest x y x-dest y-dest)))))))
+
+
 (defmethod pmatrix-blit ((source matrix) (destination matrix) x y
 			&key (transparent-value +zero-height+)
 			  (function-blend #'(lambda (src dest) (declare (ignore dest)) src)))
@@ -1177,3 +1258,8 @@ else
   				      (if (equalp transparent-value val-source)
   					  val-dst
   					  (funcall function-blend val-source val-dst))))))
+
+
+(defmethod submatrix= ((object matrix) (sample matrix) x y &key (test #'equalp))
+  (let ((submatrix (submatrix object x y (width sample) (height sample))))
+    (funcall test (data submatrix) (data sample))))

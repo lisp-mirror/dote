@@ -18,18 +18,21 @@
 
 (defsuite random-labyrinth-suite (all-suite))
 
-(defun test-gen (size &key (random-seed 3589552221) (debug nil) (scale-fact 1))
+(defun test-gen (size &key
+			(random-seed 3589552221) (debug nil) (scale-fact 1)
+			(tmp-ppm-filename "tmp/lab.ppm")
+			(tmp-ps-filename "tmp/lab.ps"))
   (num:with-lcg-seed (random-seed)
     (let* ((func-sigma #'(lambda (x a) (declare (ignorable a)) (+ 10 x)))
-	   (func-door #'(lambda (x a) (declare (ignorable a)) (if (< x 1) 3 4)))
+	   (func-door #'(lambda (x a) (declare (ignorable a x)) 5))
 	   (func-win #'(lambda (x a) (declare (ignorable a)) (1+ x)))
 	   (root (generate size :scale-fact scale-fact :func-sigma-w func-sigma
 			   :func-sigma-h func-sigma :func-door func-door :func-win func-win
 			   :func-furniture func-door)))
-      (random-labyrinth::clear-mat root)
-      (random-labyrinth::room->mat root)
-      (let ((tmp-ppm (concatenate 'string (test-dir) "tmp/lab.ppm"))
-	    (tmp-ps (concatenate 'string (test-dir) "tmp/lab.ps")))
+      (clear-mat root)
+      (room->mat root)
+      (let ((tmp-ppm (concatenate 'string (test-dir) tmp-ppm-filename))
+	    (tmp-ps (concatenate 'string (test-dir)  tmp-ps-filename)))
 	(if debug
 	    (random-labyrinth::debug-dump root tmp-ppm :draw-door-to-nowhere t :draw-id t)
 	    (random-labyrinth::dump root tmp-ppm :draw-door-to-nowhere t :draw-id nil))
@@ -40,20 +43,50 @@
     (concatenate 'string (test-dir) "data/labyrinths/")
   :test #'string=)
 
+(deftest generate-labyrinth-dbg-test (random-labyrinth-suite)
+  (with-kernel
+    (assert-true
+	(multiple-value-bind (tmp-ppm tmp-ps)
+	    (test-gen 60
+		      :random-seed 3589552221
+		      :debug t
+		      :scale-fact 5
+		      :tmp-ppm-filename "tmp/lab-dbg.ppm"
+		      :tmp-ps-filename "tmp/lab-dbg.ps")
+	  (let ((test (and
+		       (= (fs:file-hash tmp-ppm)
+			  (fs:file-hash (concatenate 'string
+						     +labyrinths-dir+
+						     "lab-60-t-5-3589552221.ppm")))
+		       (= (fs:file-hash tmp-ps)
+			  (fs:file-hash (concatenate 'string
+						     +labyrinths-dir+
+						     "lab-60-t-5-3589552221.ps"))))))
+	    (when test
+	      (uiop/filesystem:delete-file-if-exists tmp-ppm)
+	      (uiop/filesystem:delete-file-if-exists tmp-ps))
+	    test)))))
+
 (deftest generate-labyrinth-test (random-labyrinth-suite)
-  (assert-true
-      (multiple-value-bind (tmp-ppm tmp-ps)
-	  (test-gen 60 :random-seed 3589552221 :debug t :scale-fact 5)
-	(let ((test (and
-		     (= (fs:file-hash tmp-ppm)
-			(fs:file-hash (concatenate 'string
-						   +labyrinths-dir+
-						   "lab-60-t-5-3589552221.ppm")))
-		     (= (fs:file-hash tmp-ps)
-			(fs:file-hash (concatenate 'string
-						   +labyrinths-dir+
-						   "lab-60-t-5-3589552221.ps"))))))
-	  (when test
-	    (uiop/filesystem:delete-file-if-exists tmp-ppm)
-	    (uiop/filesystem:delete-file-if-exists tmp-ps))
-	  test))))
+  (with-kernel
+    (assert-true
+	(multiple-value-bind (tmp-ppm tmp-ps)
+	    (test-gen 60
+		      :random-seed 3589552221
+		      :debug nil
+		      :scale-fact 2
+		      :tmp-ppm-filename "tmp/lab.ppm"
+		      :tmp-ps-filename "tmp/lab.ps")
+	  (let ((test (and
+		       (= (fs:file-hash tmp-ppm)
+			  (fs:file-hash (concatenate 'string
+						     +labyrinths-dir+
+						     "lab-60-nil-2-3589552221.ppm")))
+		       (= (fs:file-hash tmp-ps)
+			  (fs:file-hash (concatenate 'string
+						     +labyrinths-dir+
+						     "lab-60-nil-2-3589552221.ps"))))))
+	    (when test
+	      (uiop/filesystem:delete-file-if-exists tmp-ppm)
+	      (uiop/filesystem:delete-file-if-exists tmp-ps))
+	    test)))))

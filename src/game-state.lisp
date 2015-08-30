@@ -91,6 +91,11 @@
 	  furniture
 	  magic-furniture
 	  container
+	  pillar
+	  chair
+	  table
+	  walkable
+	  wall-decoration
 	  npc pc)
 
 (defclass map-state-element (identificable)
@@ -105,7 +110,12 @@
    (el-type
     :initform +empty-type+
     :initarg  :el-type
-    :accessor el-type)))
+    :accessor el-type)
+   (occlude
+    :initform t
+    :initarg  :occlude
+    :reader   occludep
+    :writer   (setf occlude))))
 
 (defclass game-state ()
   ((game-hour

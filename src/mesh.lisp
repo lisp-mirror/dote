@@ -1444,7 +1444,13 @@
 
 (defmethod bubbleup-modelmatrix ((object triangle-mesh))
   (let ((res      (matrix* (translate (pos     object))
-			   (scale     (scaling object))))
+			   (scale     (scaling object))
+			   (quat->matrix (quat-rotate-to-vec +entity-forward-direction+
+							     (dir object)
+							     :fallback-axis +y-axe+))
+			   (quat->matrix (quat-rotate-to-vec +entity-up-direction+
+							     (up object)
+							     :fallback-axis +z-axe+))))
 	(par-mesh (parent object)))
     (when par-mesh
       (setf res (matrix* (elt (model-matrix par-mesh) 0) res)))

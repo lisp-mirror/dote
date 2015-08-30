@@ -45,6 +45,7 @@
    :+wall-w+
    :+wall-h-scale+
    :+wall-h+
+   :+wall-decoration-y+
    :+gravity+
    :+maximum-map-size+
    :+minimium-map-size+
@@ -67,6 +68,8 @@
    :+x-axe+
    :+y-axe+
    :+z-axe+
+   :+entity-forward-direction+
+   :+entity-up-direction+
    :+zero-vec+
    :+simple-array-fixnum-type+
    :+id-camera+
@@ -96,6 +99,7 @@
    :+default-character-potions+
    :+default-character-food+
    :+default-character-misc+
+   :+default-furniture-templates+
    :+gui-static-text-delim+
    :+gui-static-text-nbsp+
    :+standard-float-print-format+))
@@ -170,6 +174,7 @@
    :definline
    :defcached
    :defun-inline-function
+   :format-fn-symbol
    :define-compiler-macros
    :defmethod-inline-function
    :nest-expressions
@@ -1059,7 +1064,9 @@
    :matrix-rect
    :pixel-inside-p
    :good-aabb-start
+   :flood-fill-tolerance-p-fn
    :flood-fill
+   :flood-fill*
    :kernel-+
    :kernel-*
    :apply-kernel
@@ -1069,7 +1076,9 @@
    :pgaussian-blur-separated
    :psobel-edge-detection
    :pmatrix-blit
-   :pblit-matrix))
+   :pblit-matrix
+   :blit-matrix
+   :submatrix=))
 
 (defpackage :graph
   (:use :cl
@@ -1353,6 +1362,13 @@
    :door-w-p
    :wallp
    :furniturep
+   :furniture-wall-decoration-p
+   :furniture-walkable-p
+   :furniture-chair-p
+   :furniture-table-p
+   :furniture-fountain-p
+   :furniture-pillar-p
+   :furniture-other-p
    :doorp
    :windowp
    :invalicablep
@@ -1361,6 +1377,10 @@
    :gen-simple-room
    :shared-matrix
    :whole-aabb
+   :clear-mat
+   :room->mat
+   :dump
+   :get-root
    :clean-and-redraw-mat))
 
 (defpackage :random-terrain
@@ -1631,6 +1651,11 @@
    :*furnitures*
    :*containers-furnitures*
    :*magic-furnitures*
+   :*pillar-furnitures*
+   :*chair-furnitures*
+   :*table-furnitures*
+   :*walkable-furnitures*
+   :*wall-decoration-furnitures*
    :*window*
    :*door-n*
    :*door-s*
@@ -1661,6 +1686,11 @@
    :+furniture-type+
    :+magic-furniture-type+
    :+container-type+
+   :+pillar-type+
+   :+chair-type+
+   :+table-type+
+   :+walkable-type+
+   :+wall-decoration-type+
    :+npc-type+
    :+pc-type+
    :+floor-type+
@@ -1668,6 +1698,8 @@
    :map-state-element
    :entity-id
    :el-type
+   :occlude
+   :occludep
    :game-state
    :game-hour
    :game-minutes
@@ -1759,6 +1791,7 @@
 	:num
 	:vec2
 	:vec4
+	:quaternion
 	:uivec
 	:2d-utils
 	:mtree-utils
@@ -2225,6 +2258,11 @@
    :furnitures-bag
    :containers-bag
    :magic-furnitures-bag
+   :pillars-bag
+   :tables-bag
+   :chairs-bag
+   :wall-decorations-bag
+   :walkable-bag
    :windows-bag
    :gui
    :render-for-reflection
@@ -2234,7 +2272,9 @@
    :main-light-color
    :initialize-skydome
    :render-gui
-   :highlight-tile-screenspace))
+   :highlight-tile-screenspace
+   :all-furniture-bags-not-empty-p
+   :all-furnitures-but-pillars-not-empty-p))
 
 (defpackage :terrain-chunk
   (:use :cl
@@ -2343,7 +2383,16 @@
 	:terrain-chunk
 	:game-state
 	:world)
-  (:import-from :sb-cga :vec :copy-vec :alloc-vec :vec+ :vec- :vec/)
+  (:import-from :sb-cga
+		:vec
+		:copy-vec
+		:alloc-vec
+		:vec+
+		:vec-
+		:vec/
+		:translate
+		:translate*
+		:transform-point)
   (:export
    :load-level))
 
@@ -2883,4 +2932,5 @@
 	:shaders-utils
 	:load-level)
   (:export
+   :main
    :fps))

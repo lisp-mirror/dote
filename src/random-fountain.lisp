@@ -22,7 +22,7 @@
 
 (define-constant +minimum-level+            1          :test #'=)
 
-(define-constant +maximum-level+           10          :test #'=)
+(define-constant +maximum-level+            9          :test #'=)
 
 (define-constant +minimum-modifier+         1.0        :test #'=)
 

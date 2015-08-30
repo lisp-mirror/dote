@@ -58,21 +58,21 @@
 
 (define-constant +minimum-duration-healing-fx+           2.0        :test #'=)
 
-(define-constant +minimum-chance-healing-fx+             0.05      :test #'=)
+(define-constant +minimum-chance-healing-fx+             0.05       :test #'=)
 
-(define-constant +minimum-num-healing-fx+             2.0       :test #'=)
+(define-constant +minimum-num-healing-fx+                2.0        :test #'=)
 
-(define-constant +maximum-num-healing-fx+             4.0       :test #'=)
+(define-constant +maximum-num-healing-fx+                4.0        :test #'=)
 
-(define-constant +minimum-decay+                 20.0        :test #'=)
+(define-constant +minimum-decay+                        20.0        :test #'=)
 
-(define-constant +minimum-level+                  1          :test #'=)
+(define-constant +minimum-level+                         1          :test #'=)
 
-(define-constant +maximum-level+                 10          :test #'=)
+(define-constant +maximum-level+                         9          :test #'=)
 
-(define-constant +minimum-chance-effects+         2.0        :test #'=)
+(define-constant +minimum-chance-effects+                2.0        :test #'=)
 
-(define-constant +maximum-chance-effects+         4.0        :test #'=)
+(define-constant +maximum-chance-effects+                4.0        :test #'=)
 
 (define-constant +sword-type-name+                       "sword"    :test #'string=)
 
@@ -88,7 +88,7 @@
 
 (define-constant +mace-or-staff-chance+                  3          :test #'=)
 
-(define-constant +healing-target-self-chance+     3          :test #'=)
+(define-constant +healing-target-self-chance+            3          :test #'=)
 
 (defun decay-params (weapon-level)
   (values (elt +decay-sigma+ weapon-level)

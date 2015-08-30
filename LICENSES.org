@@ -179,6 +179,7 @@
   data/models/furnitures/showcase/*
   data/models/furnitures/stool/*
   data/models/furnitures/table/*
+  data/models/furnitures/torch/*
   data/models/objects/copper-coin/*
   data/models/objects/gold-coin/*
   data/models/objects/silver-coin/*
@@ -230,7 +231,8 @@
 
 - data/models/models/column/*
   data/models/models/carpet/*
-
+  according to the original file
+  found at http://opengameart.org/sites/default/files/2DRP_CCArt_3D_Desert.tar.gz
   This work  is licensed  under the  Creative Commons  Attribution 4.0
   License.  To view a copy of this license, visit
   http://creativecommons.org/licenses/by/4.0/  or   send  a   letter  to
@@ -426,7 +428,6 @@
 
   https://creativecommons.org/licenses/by/4.0/
 
-
 ** Source code
 
 - src/mesh.lisp use codes from cl-opengl
@@ -567,6 +568,36 @@
   CLAIM, DAMAGES OR  OTHER LIABILITY, WHETHER IN AN  ACTION OF CONTRACT,
   TORT OR  OTHERWISE, ARISING  FROM, OUT  OF OR  IN CONNECTION  WITH THE
   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+  and
+
+  https://bitbucket.org/sinbad/ogre/src/9db75e3ba05c/OgreMain/include/OgreVector3.h
+
+  released under:
+
+  This source file is part of OGRE
+  (Object-oriented Graphics Rendering Engine)
+  For the latest info, see http://www.ogre3d.org/
+
+  Copyright (c) 2000-2012 Torus Knot Software Ltd
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  THE SOFTWARE.
 
 - src/shaders-utils.lisp
   uses code from sdl2kit https://github.com/lispgames/sdl2kit/

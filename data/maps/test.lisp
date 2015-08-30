@@ -170,17 +170,26 @@
   generate magic-furniture       from file   "bookholder/model.obj"
   with normalmap-parameters      (ka .2 kd 1.0 ks 1.0 roughness 0.0 shininess 10.0)
 
+  generate furniture             from file   "barrel/barrel.obj"
+  with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
+
+  generate walkable              from file   "carpet/carpet.obj"
+  with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
+
   generate container             from file   "chest/model.obj"
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
-  generate furniture             from file   "armchair/armchair.obj"
+  generate pillar                from file   "column/column.obj"
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
-  generate furniture             from file   "chair/model.obj"
+  generate chair                 from file   "chair/model.obj"
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
-  generate furniture             from file   "barrel/barrel.obj"
+  generate table                 from file   "table/model.obj"
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
+
+  generate wall-decoration       from file   "torch/model.obj"
+  with normalmap-parameters      (ka 0.0 kd 0.64 ks 0.5 roughness 0.0 shininess 256.0)
 
 
 )

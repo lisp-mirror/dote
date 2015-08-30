@@ -34,7 +34,7 @@
   (defun quat (x y z w)
     (vec4 x y z w))
 
-  (defun quat~ (q1 q2) (vec4~ q1 q2)) 
+  (defun quat~ (q1 q2) (vec4~ q1 q2))
 
   (alexandria:define-constant +quat-identity+ (quat 0.0 0.0 0.0 1.0)
     :test #'quat~)
@@ -120,9 +120,9 @@
     (d+ (elt q 3) (elt r 3))))
 
 (defun quat* (q r)
-  (let ((q-v (qv q)) 
+  (let ((q-v (qv q))
 	(q-w (qw q))
-        (r-v (qv r)) 
+        (r-v (qv r))
 	(r-w (qw r)))
     (make-quat-from-vw
      (vec+ (vec+ (cross-product q-v r-v)
@@ -139,7 +139,6 @@
 (defun quat-inverse (q)
   (quat-scale (quat-conjugate q) (d/ 1.0 (sq (vec4-length q)))))
 
-
 (defun quat-rotate-vec (q v)
   "Rotates a vector or point v by quaternion q.
    Calculated Q' = QVQ* where V = <v, 0.0>
@@ -153,22 +152,24 @@
    at the lack of trig functions)
    @return{a matrix that can be used to rotate objects according to
    the quaternion}"
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (declare (quat q))
   (let* ((x (elt q 0))
 	 (y (elt q 1))
 	 (z (elt q 2))
 	 (w (elt q 3))
-	 (m11 (- 1.0 (* 2.0 (+ (sq y) (sq z)))))
-	 (m12 (* 2.0 (+ (* x y) (* w z))))
-	 (m13 (* 2.0 (- (* x z) (* w y))))
-	 (m21 (* 2.0 (- (* x y) (* w z))))
-	 (m22 (- 1.0 (* 2.0 (+ (sq x) (sq z)))))
-	 (m23 (* 2.0 (+ (* y z) (* w x))))
-	 (m31 (* 2.0 (+ (* x z) (* w y))))
-	 (m32 (* 2.0 (- (* y z) (* w x))))
-	 (m33 (- 1.0 (* 2.0 (+ (sq x) (sq y))))))
-    (matrix m11 m12 m13 0.0
-	    m21 m22 m23 0.0
-	    m31 m32 m33 0.0
+	 (m11 (d- 1.0 (d* 2.0 (d+ (sq y) (sq z)))))
+	 (m12 (d* 2.0 (d+ (d* x y) (d* w z))))
+	 (m13 (d* 2.0 (d- (d* x z) (d* w y))))
+	 (m21 (d* 2.0 (d- (d* x y) (d* w z))))
+	 (m22 (d- 1.0 (d* 2.0 (d+ (sq x) (sq z)))))
+	 (m23 (d* 2.0 (d+ (d* y z) (d* w x))))
+	 (m31 (d* 2.0 (d+ (d* x z) (d* w y))))
+	 (m32 (d* 2.0 (d- (d* y z) (d* w x))))
+	 (m33 (d- 1.0 (d* 2.0 (d+ (sq x) (sq y))))))
+    (matrix m11 m21 m31 0.0
+	    m12 m22 m32 0.0
+	    m13 m23 m33 0.0
 	    0.0 0.0 0.0 1.0)))
 
 (defun matrix->quat (mat)
@@ -178,7 +179,7 @@
 	(z-squared-1 (d- (mref mat 2 2) (mref mat 0 0) (mref mat 1 1)))
 	(biggest-idx 0)
 	(biggest w-squared-1))
-    (cond   
+    (cond
       ((d> x-squared-1 biggest)
        (setf biggest     x-squared-1
 	     biggest-idx 1))
@@ -192,42 +193,47 @@
 	   (mult (d/ 0.25 biggest-val)))
       (case biggest-idx
 	(0
-	 (quat (d* (d- (mref mat 1 2) (mref mat 2 1)) mult)
-	       (d* (d- (mref mat 2 0) (mref mat 0 2)) mult)
-	       (d* (d- (mref mat 0 1) (mref mat 1 0)) mult)
+	 (quat (d* (d- (mref mat 2 1) (mref mat 1 2)) mult)
+	       (d* (d- (mref mat 0 2) (mref mat 2 0)) mult)
+	       (d* (d- (mref mat 1 0) (mref mat 0 1)) mult)
 	       biggest-val))
 	(1
 	 (quat biggest-val
-	       (d* (d+ (mref mat 0 1) (mref mat 1 0)) mult)
-	       (d* (d+ (mref mat 2 0) (mref mat 0 2)) mult)
-	       (d* (d- (mref mat 1 2) (mref mat 2 1)) mult)))
+	       (d* (d+ (mref mat 1 0) (mref mat 0 1)) mult)
+	       (d* (d+ (mref mat 0 2) (mref mat 2 0)) mult)
+	       (d* (d- (mref mat 2 1) (mref mat 1 2)) mult)))
 	(2
-	 (quat (d* (d+ (mref mat 0 1) (mref mat 1 0)) mult)
+	 (quat (d* (d+ (mref mat 1 0) (mref mat 0 1)) mult)
 	       biggest-val
-	       (d* (d+ (mref mat 1 2) (mref mat 2 1)) mult)
-	       (d* (d- (mref mat 2 0) (mref mat 0 2)) mult)))
+	       (d* (d+ (mref mat 2 1) (mref mat 1 2)) mult)
+	       (d* (d- (mref mat 0 2) (mref mat 2 0)) mult)))
 	(3
-	 (quat (d* (d+ (mref mat 2 0) (mref mat 0 2)) mult)
-	       (d* (d+ (mref mat 1 2) (mref mat 2 1)) mult)
+	 (quat (d* (d+ (mref mat 0 2) (mref mat 2 0)) mult)
+	       (d* (d+ (mref mat 2 1) (mref mat 1 2)) mult)
 	       biggest-val
-	       (d* (d- (mref mat 0 1) (mref mat 1 0)) mult)))))))
+	       (d* (d- (mref mat 1 0) (mref mat 0 1)) mult)))))))
 
-(defun quat-rotate-to-vec (src-vec dest-vec)
-  "Creates a quaternion that will reorient a vector pointing in
-   src-vec to point in dest-vec"
-  (let* ((ns (normalize src-vec))
-         (nt (normalize dest-vec))
-         (u (cross-product ns nt))
-         (e (dot-product ns nt))
-         (disc (d* 2.0 (d+ 1.0 e))))
-    (when (minusp disc)
-      (format t "ZOMG COMPLEXITY~% src: ~a dest: ~a~% dot: ~a~%"
-              src-vec dest-vec e))
-    (let ((radical (dsqrt disc)))
-      (if (zerop radical)
-          +quat-identity+
-          (make-quat-from-vw (vec* u (/ 1.0 radical))  ; qv
-                             (/ radical 2.0))))))            ; qw
+(defun quat-rotate-to-vec (src-vec dest-vec &key (fallback-axis +y-axe+))
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (let* ((ns   (normalize src-vec))
+         (nt   (normalize dest-vec))
+         (u    (cross-product ns nt))
+         (e    (dot-product   ns nt))
+	 (disc (d* 2.0 (d+ 1.0 e))))
+    (with-epsilon (5e-4)
+      (if (d>= e 1.0)
+	  +quat-identity+
+	  (progn
+	    (when (minusp disc)
+	      (format t "ZOMG COMPLEXITY~% src: ~a dest: ~a~% dot: ~a~%"
+		      src-vec dest-vec e))
+	    (if (epsilon= e -1.0)
+		(axis-rad->quat fallback-axis +pi+)
+		(let* ((radical (dsqrt disc)))
+		  (if (zerop radical)
+		      +quat-identity+
+		      (make-quat-from-vw (vec* u (/ 1.0 radical))  ; qv
+					 (/ radical 2.0))))))))))  ; qw
 
 (alexandria:define-constant +slerp-delta+ 1.0e-3 :test #'=)
 

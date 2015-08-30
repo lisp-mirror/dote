@@ -18,13 +18,13 @@
 
 (defsuite random-terrain-suite (all-suite))
 
-(alexandria:define-constant +terrain-dir+ 
+(alexandria:define-constant +terrain-dir+
     (concatenate 'string (test-dir) "data/terrain/")
   :test #'string=)
 
 (defun test-make-map (w h seed)
   (num:with-lcg-seed (seed)
-    (let ((map (make-instance 'random-terrain 
+    (let ((map (make-instance 'random-terrain
 			      :matrix (gen-empty-terrain w h))))
       (make-map map)
       map)))
@@ -46,4 +46,3 @@
 	  (pixmap:load layers (concatenate 'string  +terrain-dir+ "terrain-256-2-layers.tga"))
 	  (equalp (pixmap:data (texture-weights map))
 		  (matrix:data layers))))))
-

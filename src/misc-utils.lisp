@@ -1,5 +1,5 @@
-;; random map generator
-;; Copyright (C) 2012  cage
+;; dawn of the Era: a tactical game.
+;; Copyright (C) 2015  cage
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -40,6 +40,13 @@
 
 (defun dump-hashtable (table)
   (maphash (lambda (k v) (misc:dbg "~s -> ~s" k v)) table))
+
+;; macro utils
+
+(defmacro format-fn-symbol (package format &rest format-args)
+  `(alexandria:format-symbol ,package ,(concatenate 'string "~:@(" format "~)")
+			     ,@format-args))
+
 
 ;; functions utils
 

@@ -40,13 +40,13 @@
 
 (define-constant +minimum-level+                  1          :test #'=)
 
-(define-constant +maximum-level+                 10          :test #'=)
+(define-constant +maximum-level+                  9          :test #'=)
 
 (define-constant +minimum-chance-effects+         2.0        :test #'=)
 
 (define-constant +maximum-chance-effects+         4.0        :test #'=)
 
-(define-constant +type-name+                      "shoes"   :test #'string=)
+(define-constant +type-name+                      "shoes"    :test #'string=)
 
 (defun decay-params (shoes-level)
   (values (elt +decay-sigma+ shoes-level)

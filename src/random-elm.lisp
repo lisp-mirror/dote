@@ -56,23 +56,23 @@
 
 (define-constant +minimum-chance-healing-fx+             0.05       :test #'=)
 
-(define-constant +minimum-decay+                 20.0        :test #'=)
+(define-constant +minimum-decay+                        20.0        :test #'=)
 
-(define-constant +minimum-level+                  1          :test #'=)
+(define-constant +minimum-level+                         1          :test #'=)
 
-(define-constant +maximum-level+                 10          :test #'=)
+(define-constant +maximum-level+                         9          :test #'=)
 
-(define-constant +minimum-chance-effects+         2.0        :test #'=)
+(define-constant +minimum-chance-effects+                2.0        :test #'=)
 
-(define-constant +maximum-chance-effects+         4.0        :test #'=)
+(define-constant +maximum-chance-effects+                4.0        :test #'=)
 
-(define-constant +minimum-num-healing-effects+ 2.0        :test #'=)
+(define-constant +minimum-num-healing-effects+           2.0        :test #'=)
 
-(define-constant +maximum-num-healing-effects+ 4.0        :test #'=)
+(define-constant +maximum-num-healing-effects+           4.0        :test #'=)
 
-(define-constant +type-name+                      "elm"   :test #'string=)
+(define-constant +type-name+                             "elm"      :test #'string=)
 
-(define-constant +healing-target-self-chance+     3          :test #'=)
+(define-constant +healing-target-self-chance+            3          :test #'=)
 
 (defun decay-params (elm-level)
   (values (elt +decay-sigma+ elm-level)

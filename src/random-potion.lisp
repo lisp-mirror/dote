@@ -16,17 +16,17 @@
 
 (in-package :random-potion)
 
-(define-constant +file-record-sep+ "-" :test #'string=)
+(define-constant +file-record-sep+ "-"                 :test #'string=)
 
-(define-constant +type-name+              "potion"     :test #'string=)
+(define-constant +type-name+               "potion"    :test #'string=)
 
 (define-constant +minimum-level+            1          :test #'=)
 
-(define-constant +maximum-level+           10          :test #'=)
+(define-constant +maximum-level+            9          :test #'=)
 
 (define-constant +minimum-modifier+         1.0        :test #'=)
 
-(define-constant +minimum-chance-effects+   .1         :test #'=)
+(define-constant +minimum-chance-effects+   0.1        :test #'=)
 
 (define-constant +maximum-chance-effects+   1.0        :test #'=)
 

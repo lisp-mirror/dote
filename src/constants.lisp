@@ -24,7 +24,9 @@
 
 (define-constant +wall-h-scale+                       2.5                      :test #'=)
 
-(define-constant +wall-h+     (* +wall-h-scale+ +wall-w+)                      :test #'=)
+(define-constant +wall-h+      (* +wall-h-scale+ +wall-w+)                     :test #'=)
+
+(define-constant +wall-decoration-y+     (* 0.75 +wall-h+)                     :test #'=)
 
 (define-constant +gravity+                            9.81                     :test #'=)
 
@@ -66,13 +68,17 @@
 
 (define-constant +pi+   (coerce cl:pi 'single-float)                           :test '=)
 
-(define-constant +x-axe+ (sb-cga:vec 1.0 0.0 0.0)                              :test #'sb-cga:vec~)
+(define-constant +x-axe+    (sb-cga:vec 1.0 0.0 0.0)                           :test #'sb-cga:vec~)
 
-(define-constant +y-axe+ (sb-cga:vec 0.0 1.0 0.0)                              :test #'sb-cga:vec~)
+(define-constant +y-axe+    (sb-cga:vec 0.0 1.0 0.0)                           :test #'sb-cga:vec~)
 
-(define-constant +z-axe+ (sb-cga:vec 0.0 0.0 1.0)                              :test #'sb-cga:vec~)
+(define-constant +z-axe+    (sb-cga:vec 0.0 0.0 1.0)                           :test #'sb-cga:vec~)
 
 (define-constant +zero-vec+ (sb-cga:vec 0.0 0.0 0.0)                           :test #'sb-cga:vec~)
+
+(define-constant +entity-forward-direction+ (sb-cga:vec 0.0 0.0 1.0)           :test #'sb-cga:vec~)
+
+(define-constant +entity-up-direction+      (sb-cga:vec 0.0 1.0 0.0)           :test #'sb-cga:vec~)
 
 (define-constant +simple-array-fixnum-type+ '(simple-array fixnum)             :test #'equal)
 
@@ -129,6 +135,8 @@
 (define-constant +default-character-food+       '("characters" "food")         :test #'equalp)
 
 (define-constant +default-character-misc+       '("characters" "misc")         :test #'equalp)
+
+(define-constant +default-furniture-templates+  "furniture-templates"          :test #'equalp)
 
 (define-constant +gui-static-text-delim+        "§"                            :test #'string=)
 

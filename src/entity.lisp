@@ -27,7 +27,7 @@
    (dir
     :accessor dir
     :initarg :dir
-    :initform +x-axe+)
+    :initform +entity-forward-direction+)
    (scaling
     :accessor scaling
     :initarg :scaling
@@ -35,7 +35,7 @@
    (up
     :accessor up
     :initarg :up
-    :initform (vec 0.0 1.0 0.0))
+    :initform +entity-up-direction+)
    (state
     :accessor state
     :initarg :state

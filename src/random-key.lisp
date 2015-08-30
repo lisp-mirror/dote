@@ -22,7 +22,7 @@
 
 (define-constant +minimum-key-level+          1               :test #'=)
 
-(define-constant +maximum-key-level+          10              :test #'=)
+(define-constant +maximum-key-level+          9               :test #'=)
 
 (define-constant +minimum-key-modifier+       1.0             :test #'=)
 
@@ -72,10 +72,6 @@
 
 (define-constant +maximum-num-healing-effects+ 4.0        :test #'=)
 
-(define-constant +minimum-key-level+                  1          :test #'=)
-
-(define-constant +maximum-key-level+                 10          :test #'=)
-
 (defun level-params (map-level)
   (values (elt +level-sigma+ map-level)
 	  (elt +level-mean+  map-level)))
@@ -95,7 +91,6 @@
       (modifier-params (1- key-level))
     (d- (gaussian-probability sigma mean)
 	(gaussian-probability (d/ sigma 4.0) (- key-level)))))
-
 
 (defun healing-fx-params-duration (key-level)
   (values (elt +duration-healing-fx-sigma+ key-level)
@@ -149,7 +144,7 @@
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
     (with-interaction-parameters (template interaction-file)
-      (let* ((key-level       (calculate-level map-level))
+      (let* ((key-level          (calculate-level map-level))
 	     (healing-effects-no (number-of-healing-effects key-level 0))
 	     (healing-effects    (%get-healing-fx-shuffled template healing-effects-no)))
 	(loop for i in healing-effects do

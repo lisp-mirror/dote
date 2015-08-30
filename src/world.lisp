@@ -128,6 +128,26 @@
     :accessor windows-bag
     :initarg  :windows-bag
     :initform nil)
+   (pillars-bag
+    :accessor pillars-bag
+    :initarg  :pillars-bag
+    :initform nil)
+   (chairs-bag
+    :accessor chairs-bag
+    :initarg  :chairs-bag
+    :initform nil)
+   (tables-bag
+    :accessor tables-bag
+    :initarg  :tables-bag
+    :initform nil)
+   (wall-decorations-bag
+    :accessor wall-decorations-bag
+    :initarg  :wall-decorations-bag
+    :initform nil)
+   (walkable-bag
+    :accessor walkable-bag
+    :initarg  :walkable-bag
+    :initform nil)
    (gui
     :accessor gui
     :initarg  :gui
@@ -160,6 +180,10 @@
 (defgeneric iterate-quad-tree (object function probe))
 
 (defgeneric iterate-quad-tree-anyway (object function))
+
+(defgeneric all-furniture-bags-not-empty-p  (object))
+
+(defgeneric all-furnitures-but-pillars-not-empty-p (object))
 
 (defmethod iterate-quad-tree ((object world) function probe)
   (quad-tree:iterate-nodes-intersect (entities object)
@@ -208,6 +232,16 @@
   (setf (containers-bag object) nil)
   (map nil #'destroy (magic-furnitures-bag object))
   (setf (magic-furnitures-bag object) nil)
+  (map nil #'destroy (pillars-bag object))
+  (setf (pillars-bag object) nil)
+  (map nil #'destroy (chairs-bag object))
+  (setf (chairs-bag object) nil)
+  (map nil #'destroy (tables-bag object))
+  (setf (tables-bag object) nil)
+  (map nil #'destroy (wall-decorations-bag object))
+  (setf (wall-decorations-bag object) nil)
+  (map nil #'destroy (walkable-bag object))
+  (setf (walkable-bag object) nil)
   (destroy (windows-bag object))
   (setf (windows-bag object) nil)
   (destroy (gui object))
@@ -511,3 +545,14 @@
 
 (defmethod render-gui ((object world))
   (render (gui object) object))
+
+(defmethod all-furniture-bags-not-empty-p ((object world))
+  (and (furnitures-bag       object)
+       (containers-bag       object)
+       (magic-furnitures-bag object)
+       (pillars-bag          object)))
+
+(defmethod all-furnitures-but-pillars-not-empty-p ((object world))
+  (and (furnitures-bag       object)
+       (containers-bag       object)
+       (magic-furnitures-bag object)))

@@ -34,9 +34,13 @@
 (defun set-map-state-id (world x y id)
   (setf (entity-id (matrix-elt (map-state (main-state world)) y x)) id))
 
-(defun setup-map-state-tile (world x y type id)
-  (set-map-state-type world x y type)
-  (set-map-state-id   world x y id))
+(defun set-map-state-occlusion (world x y occlusion-value)
+  (setf (occlude (matrix-elt (map-state (main-state world)) y x)) occlusion-value))
+
+(defun setup-map-state-tile (world x y type id occlusion-value)
+  (set-map-state-type      world x y type)
+  (set-map-state-id        world x y id)
+  (set-map-state-occlusion world x y occlusion-value))
 
 (defun setup-trees (world map)
   (let ((tree-bag-sorted nil))
@@ -60,7 +64,8 @@
 				 (coord-layer->map-state (elt tree-pos 0))
 				 (coord-layer->map-state (elt tree-pos 1))
 				 +tree-type+
-				 (identificable:id tree))
+				 (identificable:id tree)
+				 :occlude)
 	   (world:push-entity world tree)))))
 
 (defun setup-door (world type min-x min-y x y)
@@ -96,7 +101,8 @@
 			  (truncate (+ x (coord-layer->map-state min-x)))
 			  (truncate (+ y (coord-layer->map-state min-y)))
 			  door-type
-			  (identificable:id door-shell))
+			  (identificable:id door-shell)
+			  :occlude)
     (world:push-entity world door-shell)))
 
 (defun calculate-furnitures-shares (level)
@@ -110,9 +116,7 @@
 	  (cons container-share +container-type+))))
 
 (defun setup-furnitures (world min-x min-y x y freq)
-  (when (and (furnitures-bag       world)
-	     (containers-bag       world)
-	     (magic-furnitures-bag world))
+  (when (all-furnitures-but-pillars-not-empty-p world)
     (let* ((dice-roll (random-select-by-frequency freq :key #'car :sort nil :normalize nil))
 	   (type-of-furniture (cdr dice-roll))
 	   (choosen          (if (eq type-of-furniture +furniture-type+)
@@ -128,18 +132,124 @@
       (setf (compiled-shaders shell)               (compiled-shaders world)
             (entity:pos shell)	                   (vec mesh-x +zero-height+ mesh-y)
 	    (entity:dir shell)                     (random-elt
-						    #((vec  1.0 0.0  0.0)
-						      (vec  0.0 0.0  1.0)
-						      (vec -1.0 0.0  0.0)
-						      (vec  0.0 0.0 -1.0))))
+						    (vector (vec  1.0 0.0  0.0)
+							    (vec  0.0 0.0  1.0)
+							    (vec -1.0 0.0  0.0)
+							    (vec  0.0 0.0 -1.0))))
       (setup-map-state-tile world
 			    (truncate (+ x (coord-layer->map-state min-x)))
 			    (truncate (+ y (coord-layer->map-state min-y)))
 			    type-of-furniture
-			    (identificable:id shell))
+			    (identificable:id shell)
+			    nil)
       ;; TODO
       ;; add character
       (world:push-entity world shell))))
+
+(defun %relative-coord-furniture->cood-mat-state (min rel-coord)
+  (truncate (+ (coord-layer->map-state min) rel-coord)))
+
+(defun common-setup-furniture (world bag min-x min-y x y)
+  (let* ((choosen  (random-elt bag))
+	 (shell    (mesh:fill-shell-from-mesh choosen))
+	 (mesh-x   (d+ (d* +terrain-chunk-size-scale+ min-x)
+		       (coord-map->chunk (d (+ x min-x)))))
+	 (mesh-y   (d+ (d* +terrain-chunk-size-scale+ min-y)
+		       (coord-map->chunk (d (+ y min-y))))))
+    (setf (compiled-shaders shell) (compiled-shaders world)
+	  (entity:pos shell)	   (vec mesh-x +zero-height+ mesh-y))
+    ;; TODO
+    ;; add character
+    (world:push-entity world shell)
+    (values shell world)))
+
+(defun setup-pillar (world min-x min-y x y)
+  (when (pillars-bag world)
+    (let ((shell (common-setup-furniture world (pillars-bag world) min-x min-y x y)))
+      (setup-map-state-tile world
+			    (%relative-coord-furniture->cood-mat-state min-x x)
+			    (%relative-coord-furniture->cood-mat-state min-y y)
+			    +pillar-type+
+			    (identificable:id shell)
+			    :occlude))))
+
+(defun setup-walkable (world min-x min-y x y)
+  (when (walkable-bag world)
+    (let ((shell (common-setup-furniture world (walkable-bag world) min-x min-y x y)))
+      (setf (entity:scaling shell) (vec (num:lcg-next-in-range 1.0 3.0)
+					1.0
+					(num:lcg-next-in-range 1.0 3.0)))
+      (setup-map-state-tile world
+			    (%relative-coord-furniture->cood-mat-state min-x x)
+			    (%relative-coord-furniture->cood-mat-state min-y y)
+			    +walkable-type+
+			    (identificable:id shell)
+			    nil)))) ;; does not occlude
+
+(defun state-type (state-matrix x y)
+  (game-state:el-type (matrix-elt state-matrix y x)))
+
+(defun find-next-by-type (world x y type)
+  "Note: no error check is done"
+  (let ((state       (map-state (main-state world)))
+	(all-next-to (matrix:gen-4-neighbour-counterclockwise x y :add-center nil)))
+    (loop for i in all-next-to do
+	 (when (eq (state-type state (elt i 0) (elt i 1)) type)
+	   (return-from find-next-by-type (values i all-next-to))))
+    (values nil all-next-to)))
+
+(defun setup-chair (world min-x min-y x y)
+  (when (chairs-bag world)
+    (let* ((shell      (common-setup-furniture world (chairs-bag world) min-x min-y x y))
+	   (x-world    (%relative-coord-furniture->cood-mat-state min-x x))
+	   (y-world    (%relative-coord-furniture->cood-mat-state min-y y))
+	   (table-near (find-next-by-type world x-world y-world +table-type+)))
+      (when table-near
+	(setf (entity:dir shell) (vec (d (- (elt table-near 0) x-world))
+				      0.0
+				      (d (- (elt table-near 1) y-world)))))
+      (setup-map-state-tile world
+			    x-world
+			    y-world
+			    +chair-type+
+			    (identificable:id shell)
+			    nil))))
+
+(defun setup-table (world min-x min-y x y)
+  (when (tables-bag world)
+    (let ((shell (common-setup-furniture world (tables-bag world) min-x min-y x y)))
+      (setup-map-state-tile world
+			    (%relative-coord-furniture->cood-mat-state min-x x)
+			    (%relative-coord-furniture->cood-mat-state min-y y)
+			    +table-type+
+			    (identificable:id shell)
+			    nil))))
+
+(defun setup-wall-decoration (world min-x min-y x y)
+  (when (wall-decorations-bag world)
+    (let* ((shell     (common-setup-furniture world
+					      (wall-decorations-bag world)
+					      min-x min-y x y))
+	   (x-world   (%relative-coord-furniture->cood-mat-state min-x x))
+	   (y-world   (%relative-coord-furniture->cood-mat-state min-y y))
+	   (wall-near (find-next-by-type world x-world y-world +wall-type+)))
+      (when wall-near
+	(setf (entity:dir shell) (vec (d (- x-world (elt wall-near 0)))
+				      0.0
+				      (d (- y-world (elt wall-near 1)))))
+	(setf (entity:pos shell)
+	      (transform-point (entity:pos shell)
+			       (sb-cga:translate* (d* (d (- (elt wall-near 0) x-world))
+						      (d* 0.5 +terrain-chunk-tile-size+))
+						  +wall-decoration-y+
+						  (d* (d (- (elt wall-near 1) y-world))
+						      (d* 0.5 +terrain-chunk-tile-size+))))))
+      (setup-map-state-tile world
+			    x-world
+			    y-world
+			    +wall-decoration-type+
+			    (identificable:id shell)
+			    nil))))
 
 (defun setup-wall (world bmp min-x min-y x y &key (chance 5))
   (let* ((dice-roll       (lcg-next-upto chance))
@@ -164,7 +274,8 @@
 			  (truncate (+ x (coord-layer->map-state min-x)))
 			  (truncate (+ y (coord-layer->map-state min-y)))
 			  +wall-type+
-			  (identificable:id shell))
+			  (identificable:id shell)
+			  :occlude)
     (when (typep shell 'mesh:wall-mesh-shell)
       (setf (mesh:texture-projector shell)
 	    (random-elt (texture:list-of-texture-by-tag
@@ -190,7 +301,8 @@
 			  (truncate (+ x (coord-layer->map-state min-x)))
 			  (truncate (+ y (coord-layer->map-state min-y)))
 			  +wall-type+
-			  (identificable:id shell))
+			  (identificable:id shell)
+			  nil)
     shell))
 
 (defun setup-walls (world map)
@@ -218,12 +330,27 @@
 	       (setup-door world :door-e min-x min-y x y))
 	      ((door-w-p (matrix-elt bmp y x))
 	       (setup-door world :door-w min-x min-y x y))
-	      ((furniturep (matrix-elt bmp y x))
+	      ((furniture-pillar-p  (matrix-elt bmp y x))
+	       (setup-pillar world min-x min-y x y))
+	      ((furniture-walkable-p  (matrix-elt bmp y x))
+	       (setup-walkable world min-x min-y x y))
+	      ((furniture-table-p  (matrix-elt bmp y x))
+	       (setup-table world min-x min-y x y))
+	      ((furniture-other-p (matrix-elt bmp y x))
 	       (setup-furnitures world min-x min-y x y
 				 (sort (calculate-furnitures-shares (game-state:level-difficult
 								     (world:main-state world)))
 				       #'<
-				       :key #'car))))))))
+				       :key #'car)))))
+	 ;; we  can setup  wall decorations  and chair  only after  we
+	 ;; arranged  the  other furnitures  as  the  first two  do  a
+	 ;; look-up on game state matrix.
+	 (loop-matrix (bmp x y)
+	    (cond
+	      ((furniture-chair-p  (matrix-elt bmp y x))
+	       (setup-chair world min-x min-y x y))
+	      ((furniture-wall-decoration-p  (matrix-elt bmp y x))
+	       (setup-wall-decoration world min-x min-y x y)))))))
 
 (defun setup-single-floor (world aabb)
   (let* ((rect            (aabb2->rect2 aabb))
@@ -260,7 +387,8 @@
 				    (truncate (+ x (coord-layer->map-state min-x)))
 				    (truncate (+ y (coord-layer->map-state min-y)))
 				    +floor-type+
-				    (Identificable:id mesh))))
+				    (Identificable:id mesh)
+				    nil)))
     mesh))
 
 (defun build-ceiling-mesh (w h)
@@ -424,15 +552,20 @@
 						       :door-s *door-s*
 						       :door-e *door-e*
 						       :door-w *door-w*))
-      (setf (floor-bag            world) *floor*)
-      (setf (furnitures-bag       world) *furnitures*)
-      (setf (containers-bag       world) *containers-furnitures*)
-      (setf (magic-furnitures-bag world) *magic-furnitures*)
-      (setup-terrain              world  *map*)
-      (setup-floor                world  *map*)
-      (setup-ceiling              world  *map*)
-      (setup-walls                world  *map*)
-      (setup-trees                world  *map*)
-      (setup-water                world  *map*)
+      (setf (floor-bag             world) *floor*)
+      (setf (furnitures-bag        world) *furnitures*)
+      (setf (containers-bag        world) *containers-furnitures*)
+      (setf (magic-furnitures-bag  world) *magic-furnitures*)
+      (setf (pillars-bag           world) *pillar-furnitures*)
+      (setf (chairs-bag            world) *chair-furnitures*)
+      (setf (tables-bag            world) *table-furnitures*)
+      (setf (wall-decorations-bag  world) *wall-decoration-furnitures*)
+      (setf (walkable-bag          world) *walkable-furnitures*)
+      (setup-terrain               world  *map*)
+      (setup-floor                 world  *map*)
+      ;;(setup-ceiling              world  *map*)
+      (setup-walls                 world  *map*)
+      (setup-trees                 world  *map*)
+      (setup-water                 world  *map*)
       ;; free memory associated with *map*, *wall* etc.
       (clean-global-wars))))

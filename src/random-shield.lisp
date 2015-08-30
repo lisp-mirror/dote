@@ -58,29 +58,29 @@
 (define-constant +magic-fx-mean+     #(22.0 21.0 20.0 19.0 18.0 17.0 16.0 15.0 14.0 13.0)
   :test #'equalp)
 
-(define-constant +minimum-magic-fx-level+                1.0        :test #'=)
+(define-constant +minimum-magic-fx-level+                 1.0        :test #'=)
 
-(define-constant +minimum-duration-healing-fx+           2.0        :test #'=)
+(define-constant +minimum-duration-healing-fx+            2.0        :test #'=)
 
-(define-constant +minimum-chance-healing-fx+             0.05       :test #'=)
+(define-constant +minimum-chance-healing-fx+              0.05       :test #'=)
 
-(define-constant +minimum-decay+                 20.0        :test #'=)
+(define-constant +minimum-decay+                         20.0        :test #'=)
 
-(define-constant +minimum-level+                  1          :test #'=)
+(define-constant +minimum-level+                          1          :test #'=)
 
-(define-constant +maximum-level+                 10          :test #'=)
+(define-constant +maximum-level+                          9          :test #'=)
 
-(define-constant +minimum-chance-effects+         2.0        :test #'=)
+(define-constant +minimum-chance-effects+                 2.0        :test #'=)
 
-(define-constant +maximum-chance-effects+         4.0        :test #'=)
+(define-constant +maximum-chance-effects+                 4.0        :test #'=)
 
-(define-constant +minimum-num-healing-effects+ 2.0        :test #'=)
+(define-constant +minimum-num-healing-effects+            2.0        :test #'=)
 
-(define-constant +maximum-num-healing-effects+ 4.0        :test #'=)
+(define-constant +maximum-num-healing-effects+            4.0        :test #'=)
 
-(define-constant +type-name+                      "shield"   :test #'string=)
+(define-constant +type-name+                              "shield"   :test #'string=)
 
-(define-constant +healing-target-self-chance+     3          :test #'=)
+(define-constant +healing-target-self-chance+             3          :test #'=)
 
 (defun decay-params (shield-level)
   (values (elt +decay-sigma+ shield-level)

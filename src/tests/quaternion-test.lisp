@@ -19,7 +19,7 @@
 (defsuite quaternion-suite (all-suite))
 
 (deftest creation-test (quaternion-suite)
-  (assert-true 
+  (assert-true
       (quat~
        (quat 0.0 1.0 2.0 3.0)
        #(0.0 1.0 2.0 3.0)))
@@ -38,7 +38,7 @@
 
 (deftest mult-test (quaternion-suite)
   (assert-equality #'quat~
-      (quat* (quat 0.060 -0.257 -0.935 0.233) 
+      (quat* (quat 0.060 -0.257 -0.935 0.233)
 	     (quat 0.286 0.347 0.459 -0.752))
       (quat 0.22800002 -0.02083502 0.904389 0.325968)))
 
