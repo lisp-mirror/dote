@@ -1559,6 +1559,11 @@ data/gui/default/window-button.tga                       \
 data/gui/default/window.tga                              \
 data/gui/default/window-top-bar.tga                      \
 data/gui/default/zoom-overlay.tga                        \
+data/gui/default/message-16-error.tga                    \
+data/gui/default/message-16-help.tga                     \
+data/gui/default/message-16-info.tga                     \
+data/gui/default/message-16-ok.tga                       \
+data/gui/default/message-16-warning.tga                  \
 data/furniture-templates/carpet.tga                      \
 data/furniture-templates/corr-e.tga                      \
 data/furniture-templates/corr-n.tga                      \

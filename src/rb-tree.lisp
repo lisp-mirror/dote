@@ -37,18 +37,17 @@
 (defmethod node->string ((object rb-node))
   (if (null (data object))
       ""
-      (format nil "~a (~a)~% [~a] [~a]" 
-	      (data object) 
+      (format nil "~a (~a)~% [~a] [~a]"
+	      (data object)
 	      (color object)
 	      (node->string (left object))
 	      (node->string (right object)))))
 
 (defun make-rb-node (color data left right parent)
   (make-instance 'rb-node :color color :left left :right right :data data :parent parent))
-  
+
 (defun make-rb-leaf (color parent)
   (make-instance 'rb-node :color color :parent parent :left nil :right nil))
-
 
 (defun make-root-rb-node (datum color)
   (let* ((tree (make-rb-node color datum nil nil nil))
@@ -66,12 +65,12 @@
 	       `(make-rb-leaf :black ,new-node))
 	     (make-node (data left right parent)
 	       `(make-rb-node (color node) ,data ,left ,right ,parent)))
-    (with-insert-local-function (make-node make-node make-leaf-node make-leaf 
+    (with-insert-local-function (make-node make-node make-leaf-node make-leaf
 					   left-balance right-balance)
       (let ((balanced (%insert object datum key key-datum compare equal)))
 	(setf (color balanced) :black)
 	balanced))))
-  
+
 (defmacro with-match-tree ((color left data right) tree &body body)
   `(and (eq ,color (color ,tree))
 	(let ((,data (data ,tree)))
@@ -104,8 +103,8 @@
     (with-match-tree (:black (:red (:red a x b) y c) z d) object
       (return-from balance
 	(let ((new-node (make-rb-node :red y
-				   (make-rb-node :black x a b nil) 
-				   (make-rb-node :black z c d nil) 
+				   (make-rb-node :black x a b nil)
+				   (make-rb-node :black z c d nil)
 				   (parent object))))
 	  (setf-parent new-node)
 	  new-node)))
@@ -113,8 +112,8 @@
     (with-match-tree (:black (:red a x (:red b y c)) z d) object
       (return-from balance
 	(let ((new-node (make-rb-node :red y
-				   (make-rb-node :black x a b nil) 
-				   (make-rb-node :black z c d nil) 
+				   (make-rb-node :black x a b nil)
+				   (make-rb-node :black z c d nil)
 				   (parent object))))
 	  (setf-parent new-node)
 	  new-node)))
@@ -122,17 +121,17 @@
     (with-match-tree (:black a x (:red (:red b y c) z d)) object
       (return-from balance
 	(let ((new-node (make-rb-node :red y
-				   (make-rb-node :black x a b nil) 
-				   (make-rb-node :black z c d nil) 
+				   (make-rb-node :black x a b nil)
+				   (make-rb-node :black z c d nil)
 				   (parent object))))
 	  (setf-parent new-node)
 	  new-node)))
 
     (with-match-tree (:black a x (:red b y (:red c z d))) object
       (return-from balance
-	(let ((new-node (make-rb-node :red y 
-				   (make-rb-node :black x a b nil) 
-				   (make-rb-node :black z c d nil) 
+	(let ((new-node (make-rb-node :red y
+				   (make-rb-node :black x a b nil)
+				   (make-rb-node :black z c d nil)
 				   (parent object))))
 	  (setf-parent new-node)
 	  new-node)))
@@ -147,18 +146,18 @@
 		      (parent (right (right ,new-node))) (right ,new-node)
 		      (parent (left (right ,new-node))) (right ,new-node))))
     (with-match-tree (:black (:red (:red a x b) y c) z d) object
-      (return-from left-balance 
-	(let ((new-node (make-rb-node :red y 
-				   (make-rb-node :black x a b nil) 
-				   (make-rb-node :black z c d nil) 
+      (return-from left-balance
+	(let ((new-node (make-rb-node :red y
+				   (make-rb-node :black x a b nil)
+				   (make-rb-node :black z c d nil)
 				   (parent object))))
 	  (setf-parent new-node)
 	  new-node)))
     (with-match-tree (:black (:red a x (:red b y c)) z d) object
-      (return-from left-balance 
-	(let ((new-node (make-rb-node :red y 
-				   (make-rb-node :black x a b nil) 
-				   (make-rb-node :black z c d nil) 
+      (return-from left-balance
+	(let ((new-node (make-rb-node :red y
+				   (make-rb-node :black x a b nil)
+				   (make-rb-node :black z c d nil)
 				   (parent object))))
 	  (setf-parent new-node)
 	  new-node)))
@@ -174,17 +173,17 @@
 		      (parent (left (right ,new-node))) (right ,new-node))))
     (with-match-tree (:black a x (:red (:red b y c) z d)) object
       (return-from right-balance
-	(let ((new-node (make-rb-node :red y 
-				   (make-rb-node :black x a b nil) 
-				   (make-rb-node :black z c d nil) 
+	(let ((new-node (make-rb-node :red y
+				   (make-rb-node :black x a b nil)
+				   (make-rb-node :black z c d nil)
 				   (parent object))))
 	  (setf-parent new-node)
 	  new-node)))
     (with-match-tree (:black a x (:red b y (:red c z d))) object
       (return-from right-balance
-	(let ((new-node (make-rb-node :red y 
-				   (make-rb-node :black x a b nil) 
-				   (make-rb-node :black z c d nil) 
+	(let ((new-node (make-rb-node :red y
+				   (make-rb-node :black x a b nil)
+				   (make-rb-node :black z c d nil)
 				   (parent object))))
 	  (setf-parent new-node)
 	  new-node)))
@@ -194,24 +193,24 @@
   (with-accessors ((color color) (data data) (left left) (right right)) object
     (if (leafp object)
 	(make-rb-leaf color nil)
-	(make-rb-node color (funcall function data) 
-		      (map left function) 
+	(make-rb-node color (funcall function data)
+		      (map left function)
 		   (map right function) nil))))
 
 (defmethod map-node ((object rb-node) function)
   (with-accessors ((color color) (data data) (left left) (right right)) object
     (if (leafp object)
 	(funcall function object (make-rb-leaf color object))
-	(funcall function object (make-rb-node color data 
-					    (map-node left function) 
+	(funcall function object (make-rb-node color data
+					    (map-node left function)
 					    (map-node right function) nil)))))
 
 (defmethod reconstruct-parent ((object rb-node) &optional (parent (parent object)))
   (with-accessors ((color color) (data data) (left left) (right right)) object
     (if (leafp object)
 	(make-rb-leaf color parent)
-	(make-rb-node color data 
-		   (reconstruct-parent left object) 
+	(make-rb-node color data
+		   (reconstruct-parent left object)
 		   (reconstruct-parent right object) parent))))
 
 (defmethod node->dot ((object rb-node))
@@ -222,7 +221,7 @@
 			      (:label ,(format nil "~ap~a" (data object)
 					       (data (parent object))))
 			      (:style "filled")
-			      (:fillcolor ,(cond 
+			      (:fillcolor ,(cond
 					    ((eq (color object) :red)
 					     "#ff0000")
 					    (t
@@ -242,20 +241,20 @@
 			  (:style "filled")
 			  (:fillcolor "#ffffff")))))))
 	   (edges ()
-	     (append 
+	     (append
 	      (if (data (left object))
-		(list `(:edge 
+		(list `(:edge
 			((:from ,(format nil "~a" (data object)))
 			 (:to ,(format nil "~a" (data (left object)))))))
-		(list `(:edge 
+		(list `(:edge
 			((:from ,(format nil "~a" (data object)))
 			 (:to ,(format nil "nil-l~a" (data object)))))))
-		
+
 	      (if (data (right object))
-		(list `(:edge 
+		(list `(:edge
 			((:from ,(format nil "~a" (data object)))
 			 (:to ,(format nil "~a" (data (right object)))))))
-		(list `(:edge 
+		(list `(:edge
 			((:from ,(format nil "~a" (data object)))
 			 (:to ,(format nil "nil-r~a" (data object))))))))))
     (append (nodes) (edges))))

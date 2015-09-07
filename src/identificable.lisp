@@ -39,3 +39,5 @@
   (when *clone-id*
     (setf (id to) (id from)))
   to)
+
+(defgeneric find-entity-by-id (object id))

@@ -523,6 +523,9 @@
   (declare (num:desired-type a))
   (floor (num:d/ a +terrain-chunk-tile-size+)))
 
+(defun coord-layer->map-state (a)
+  (truncate (num:d* (num:desired a) +terrain-chunk-size-scale+)))
+
 (definline coord-chunk->costs (a)
   "convert from terrain chunk to costs matrix"
   (coord-chunk->matrix (num:d a)))

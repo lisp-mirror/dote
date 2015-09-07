@@ -195,6 +195,11 @@
 		   window.tga
 		   button.tga
 		   button-pressed.tga
+		   message-16-error.tga
+		   message-16-help.tga
+		   message-16-info.tga
+		   message-16-ok.tga
+		   message-16-warning.tga
 		   text-field.tga
 		   text-field-focused.tga
 		   text-field-overlay.tga
@@ -434,6 +439,11 @@
   (setup-bg-button-ok)
   (setup-bg-button)
   (setup-bg-button-pressed)
+  (setup-bg-message-16-error)
+  (setup-bg-message-16-help)
+  (setup-bg-message-16-info)
+  (setup-bg-message-16-ok)
+  (setup-bg-message-16-warning)
   (setup-bg-square-button)
   (setup-bg-square-button-pressed)
   (setup-bg-inventory-slot)

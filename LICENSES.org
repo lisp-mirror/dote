@@ -406,6 +406,15 @@
   2015 Henrique Lazarini (a.k.a.: Ails) released under CC0 1.0
   https://creativecommons.org/publicdomain/zero/1.0/
 
+- data/gui/default/message-16-error.tga
+- data/gui/default/message-16-help.tga
+- data/gui/default/message-16-info.tga
+- data/gui/default/message-16-ok.tga
+- data/gui/default/message-16-warning.tga
+  according to http://opengameart.org/content/rough-small-signs-symbol-pack
+  2015 qubodup released under CC0 1.0
+  https://creativecommons.org/publicdomain/zero/1.0/
+
 - src/test/data/avatars/avatar0.tga
   derived from
   Licensed     under    CC-BY-3.0

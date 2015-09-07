@@ -23,30 +23,13 @@
        (let ((water (make-instance 'mesh:water :measures water-aabb)))
 	 (setf (compiled-shaders water) (compiled-shaders world))
 	 (mesh:prepare-for-rendering water)
-	 (world:push-entity world water))))
-
-(defun coord-layer->map-state (a)
-  (truncate (num:d* (num:desired a) +terrain-chunk-size-scale+)))
-
-(defun set-map-state-type (world x y type)
-  (setf (el-type (matrix-elt (map-state (main-state world)) y x)) type))
-
-(defun set-map-state-id (world x y id)
-  (setf (entity-id (matrix-elt (map-state (main-state world)) y x)) id))
-
-(defun set-map-state-occlusion (world x y occlusion-value)
-  (setf (occlude (matrix-elt (map-state (main-state world)) y x)) occlusion-value))
-
-(defun setup-map-state-tile (world x y type id occlusion-value)
-  (set-map-state-type      world x y type)
-  (set-map-state-id        world x y id)
-  (set-map-state-occlusion world x y occlusion-value))
+	 (push-entity world water))))
 
 (defun setup-trees (world map)
   (let ((tree-bag-sorted nil))
     (loop for tree-pos in (random-terrain:trees map) do
 	 (let* ((tree-data (num:random-select-by-frequency
-			    (world:trees-bag world)
+			    (trees-bag world)
 			    :key #'(lambda (a) (/ 1 (length (mesh:triangles a))))
 			    :sort (prog1
 				      (if tree-bag-sorted nil t)
@@ -60,13 +43,7 @@
 		 (vec (coord-terrain->chunk (elt tree-pos 0))
 		      +zero-height+
 		      (coord-terrain->chunk (elt tree-pos 1))))
-	   (setup-map-state-tile world
-				 (coord-layer->map-state (elt tree-pos 0))
-				 (coord-layer->map-state (elt tree-pos 1))
-				 +tree-type+
-				 (identificable:id tree)
-				 :occlude)
-	   (world:push-entity world tree)))))
+	   (push-interactive-entity world tree +tree-type+ :occlude)))))
 
 (defun setup-door (world type min-x min-y x y)
   (let* ((door-type-fn (ecase type
@@ -97,13 +74,7 @@
 	       +zero-height+
 	       (d+ (d* +terrain-chunk-size-scale+ min-y)
 		   (coord-map->chunk (d (+ y min-y))))))
-    (setup-map-state-tile world
-			  (truncate (+ x (coord-layer->map-state min-x)))
-			  (truncate (+ y (coord-layer->map-state min-y)))
-			  door-type
-			  (identificable:id door-shell)
-			  :occlude)
-    (world:push-entity world door-shell)))
+    (push-interactive-entity world door-shell door-type :occlude)))
 
 (defun calculate-furnitures-shares (level)
   (let* ((normal-share    (d+ 0.66 (d* (d- (d level) 1.0) 0.01)))
@@ -136,15 +107,9 @@
 							    (vec  0.0 0.0  1.0)
 							    (vec -1.0 0.0  0.0)
 							    (vec  0.0 0.0 -1.0))))
-      (setup-map-state-tile world
-			    (truncate (+ x (coord-layer->map-state min-x)))
-			    (truncate (+ y (coord-layer->map-state min-y)))
-			    type-of-furniture
-			    (identificable:id shell)
-			    nil)
       ;; TODO
       ;; add character
-      (world:push-entity world shell))))
+      (push-interactive-entity world shell type-of-furniture nil))))
 
 (defun %relative-coord-furniture->cood-mat-state (min rel-coord)
   (truncate (+ (coord-layer->map-state min) rel-coord)))
@@ -160,18 +125,12 @@
 	  (entity:pos shell)	   (vec mesh-x +zero-height+ mesh-y))
     ;; TODO
     ;; add character
-    (world:push-entity world shell)
     (values shell world)))
 
 (defun setup-pillar (world min-x min-y x y)
   (when (pillars-bag world)
     (let ((shell (common-setup-furniture world (pillars-bag world) min-x min-y x y)))
-      (setup-map-state-tile world
-			    (%relative-coord-furniture->cood-mat-state min-x x)
-			    (%relative-coord-furniture->cood-mat-state min-y y)
-			    +pillar-type+
-			    (identificable:id shell)
-			    :occlude))))
+      (push-interactive-entity world shell +pillar-type+ :occlude))))
 
 (defun setup-walkable (world min-x min-y x y)
   (when (walkable-bag world)
@@ -179,12 +138,7 @@
       (setf (entity:scaling shell) (vec (num:lcg-next-in-range 1.0 3.0)
 					1.0
 					(num:lcg-next-in-range 1.0 3.0)))
-      (setup-map-state-tile world
-			    (%relative-coord-furniture->cood-mat-state min-x x)
-			    (%relative-coord-furniture->cood-mat-state min-y y)
-			    +walkable-type+
-			    (identificable:id shell)
-			    nil)))) ;; does not occlude
+      (push-interactive-entity world shell +walkable-type+ nil)))) ;; does not occlude
 
 (defun state-type (state-matrix x y)
   (game-state:el-type (matrix-elt state-matrix y x)))
@@ -208,22 +162,12 @@
 	(setf (entity:dir shell) (vec (d (- (elt table-near 0) x-world))
 				      0.0
 				      (d (- (elt table-near 1) y-world)))))
-      (setup-map-state-tile world
-			    x-world
-			    y-world
-			    +chair-type+
-			    (identificable:id shell)
-			    nil))))
+      (push-interactive-entity world shell +chair-type+ nil))))
 
 (defun setup-table (world min-x min-y x y)
   (when (tables-bag world)
     (let ((shell (common-setup-furniture world (tables-bag world) min-x min-y x y)))
-      (setup-map-state-tile world
-			    (%relative-coord-furniture->cood-mat-state min-x x)
-			    (%relative-coord-furniture->cood-mat-state min-y y)
-			    +table-type+
-			    (identificable:id shell)
-			    nil))))
+      (setup-map-state-entity world shell +table-type+ nil))))
 
 (defun setup-wall-decoration (world min-x min-y x y)
   (when (wall-decorations-bag world)
@@ -244,12 +188,7 @@
 						  +wall-decoration-y+
 						  (d* (d (- (elt wall-near 1) y-world))
 						      (d* 0.5 +terrain-chunk-tile-size+))))))
-      (setup-map-state-tile world
-			    x-world
-			    y-world
-			    +wall-decoration-type+
-			    (identificable:id shell)
-			    nil))))
+      (push-interactive-entity world shell +wall-decoration-type+ nil))))
 
 (defun setup-wall (world bmp min-x min-y x y &key (chance 5))
   (let* ((dice-roll       (lcg-next-upto chance))
@@ -270,12 +209,7 @@
 	       +zero-height+
 	       (d+ (d* +terrain-chunk-size-scale+ min-y)
 		   (coord-map->chunk (d (+ y min-y))))))
-    (setup-map-state-tile world
-			  (truncate (+ x (coord-layer->map-state min-x)))
-			  (truncate (+ y (coord-layer->map-state min-y)))
-			  +wall-type+
-			  (identificable:id shell)
-			  :occlude)
+    (push-interactive-entity world shell +wall-type+ :occlude)
     (when (typep shell 'mesh:wall-mesh-shell)
       (setf (mesh:texture-projector shell)
 	    (random-elt (texture:list-of-texture-by-tag
@@ -297,15 +231,10 @@
 	       +zero-height+
 	       (d+ (d* +terrain-chunk-size-scale+ min-y)
 		   (coord-map->chunk (d (+ y min-y))))))
-    (setup-map-state-tile world
-			  (truncate (+ x (coord-layer->map-state min-x)))
-			  (truncate (+ y (coord-layer->map-state min-y)))
-			  +wall-type+
-			  (identificable:id shell)
-			  nil)
+    (push-interactive-entity world shell +wall-type+ nil)
     shell))
 
-(defun setup-walls (world map)
+(defun setup-labyrinths (world map)
   (loop
      for aabb in (labyrinths-aabb map)
      for bmp  in (mapcar #'(lambda (a)
@@ -317,11 +246,9 @@
 	 (loop-matrix (bmp x y)
 	    (cond
 	      ((wallp (matrix-elt bmp y x))
-	       (let* ((wall-shell (setup-wall world bmp min-x min-y x y)))
-		 (world:push-entity world wall-shell)))
+	       (setup-wall world bmp min-x min-y x y))
 	      ((windowp (matrix-elt bmp y x))
-	       (let* ((window-shell (setup-window world min-x min-y x y)))
-		 (world:push-entity world window-shell)))
+	       (setup-window world min-x min-y x y))
 	      ((door-n-p (matrix-elt bmp y x))
 	       (setup-door world :door-s min-x min-y x y))
 	      ((door-s-p (matrix-elt bmp y x))
@@ -339,7 +266,7 @@
 	      ((furniture-other-p (matrix-elt bmp y x))
 	       (setup-furnitures world min-x min-y x y
 				 (sort (calculate-furnitures-shares (game-state:level-difficult
-								     (world:main-state world)))
+								     (main-state world)))
 				       #'<
 				       :key #'car)))))
 	 ;; we  can setup  wall decorations  and chair  only after  we
@@ -384,11 +311,11 @@
     (loop for x from 0.0 below (d/ w +terrain-chunk-size-scale+) do
 	 (loop for y from 0.0 below (d/ h +terrain-chunk-size-scale+) do
 	      (setup-map-state-tile world
-				    (truncate (+ x (coord-layer->map-state min-x)))
-				    (truncate (+ y (coord-layer->map-state min-y)))
-				    +floor-type+
-				    (Identificable:id mesh)
-				    nil)))
+				     (truncate (+ x (coord-layer->map-state min-x)))
+				     (truncate (+ y (coord-layer->map-state min-y)))
+				     +floor-type+
+				     (Identificable:id mesh)
+				     nil)))
     mesh))
 
 (defun build-ceiling-mesh (w h)
@@ -495,7 +422,7 @@
 							   (compiled-shaders world)
 							   :generate-rendering-data nil))
 	 (quadtree-depth (quad-tree:quad-sizes->level
-			  (aabb2-max-x (game-state:terrain-aabb-2d (world:main-state world)))
+			  (aabb2-max-x (game-state:terrain-aabb-2d (main-state world)))
 			  +quad-tree-leaf-size+))
 	 (channel (lparallel:make-channel))
 	 (cache-channels-count  0))
@@ -508,8 +435,8 @@
 					:regenerate-rendering-data nil
 					:clip-if-inside t))
     (pickable-mesh:populate-lookup-triangle-matrix whole)
-    (setf (quad-tree:aabb (world:entities world)) (entity:aabb-2d whole))
-    (quad-tree:subdivide  (world:entities world)  quadtree-depth)
+    (setf (quad-tree:aabb (entities world)) (entity:aabb-2d whole))
+    (quad-tree:subdivide  (entities world)  quadtree-depth)
     (loop for x from 0.0 below (aabb2-max-x (entity:aabb-2d whole)) by +quad-tree-leaf-size+ do
     	 (loop for z from 0.0 below (aabb2-max-y (entity:aabb-2d whole))
     	    by +quad-tree-leaf-size+ do
@@ -547,7 +474,7 @@
       (setf (trees-bag world)           *trees*)
       (setf (walls-bag world)           *wall*)
       (setf (windows-bag world)         *window*)
-      (setf (doors-bag world)           (make-instance 'world:doors
+      (setf (doors-bag world)           (make-instance 'doors
 						       :door-n *door-n*
 						       :door-s *door-s*
 						       :door-e *door-e*
@@ -564,7 +491,7 @@
       (setup-terrain               world  *map*)
       (setup-floor                 world  *map*)
       ;;(setup-ceiling              world  *map*)
-      (setup-walls                 world  *map*)
+      (setup-labyrinths            world  *map*)
       (setup-trees                 world  *map*)
       (setup-water                 world  *map*)
       ;; free memory associated with *map*, *wall* etc.

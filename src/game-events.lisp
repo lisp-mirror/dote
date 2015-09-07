@@ -1,5 +1,15 @@
 (in-package :game-event)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defparameter *all-events-container* (make-hash-table :test 'equalp))
+
+  (defparameter *events-names-counter* 0)
+
+  (defun fresh-events-container-name ()
+    (prog1
+	*events-names-counter*
+      (incf *events-names-counter*))))
+
 (defclass generic-game-event ()
   ((origin
     :initform nil
@@ -35,27 +45,31 @@
     :accessor trigger-turn)))
 
 (defmacro defevent (name slots)
-  (let* ((event-name       (format        nil "~:@(~a~)" name))
-	 (event-symbol     (format-symbol t   "~a"       event-name))
-	 (param-symbol     (format-symbol t   "~:@(~a-members~)" name))
-	 (on-event-symbol  (format-symbol t   "~:@(get-on-~a~)" name))
-	 (propagate-symbol (format-symbol t   "~:@(propagate-~a~)" name)))
-  `(progn
-     (defclass ,event-symbol (generic-game-event)
-       ,slots)
-     (defparameter ,param-symbol
-       (make-fresh-array 0 nil 'entity:entity))
-     (defun ,(format-symbol t "~:@(register-for-~a~)" name) (el)
-       (vector-push-extend el ,param-symbol))
-     (defun ,(format-symbol t "~:@(unregister-for-~a~)" name) (el)
-       (setf ,param-symbol (remove el ,param-symbol :test #'identificable:id)))
-     (defgeneric ,on-event-symbol (entity))
-     (defun ,propagate-symbol (event)
-       (loop for ent across ,param-symbol do
-	    (when (and (,on-event-symbol ent)
-		       (funcall (,on-event-symbol ent) ent event))
-	      (return-from ,propagate-symbol ent)))
-       nil))))
+  (let* ((event-hash-key    (fresh-events-container-name))
+	 (event-name        (format        nil "~:@(~a~)" name))
+	 (event-symbol      (format-symbol t   "~a"       event-name))
+	 (on-event-symbol   (format-symbol t   "~:@(get-on-~a~)" name))
+	 (propagate-symbol  (format-symbol t   "~:@(propagate-~a~)" name))
+	 (get-vector-symbol (misc:format-fn-symbol t "%get-event-vector-~a" event-hash-key)))
+    `(progn
+       (defmacro ,get-vector-symbol ()
+	 `(gethash ,,(identity event-hash-key) *all-events-container*))
+       (setf (,get-vector-symbol)
+	     (make-fresh-array 0 nil 'entity:entity))
+       (defclass ,event-symbol (generic-game-event)
+	 ,slots)
+       (defun ,(format-symbol t "~:@(register-for-~a~)" name) (el)
+	 (vector-push-extend el (,get-vector-symbol)))
+       (defun ,(format-symbol t "~:@(unregister-for-~a~)" name) (el)
+	 (setf (,get-vector-symbol)
+	       (remove el (,get-vector-symbol) :test #'= :key #'identificable:id)))
+       (defgeneric ,on-event-symbol (entity))
+       (defun ,propagate-symbol (event)
+	 (loop for ent across (,get-vector-symbol) do
+	      (when (and (,on-event-symbol ent)
+			 (funcall (,on-event-symbol ent) ent event))
+		(return-from ,propagate-symbol ent)))
+	 nil))))
 
 (defevent end-turn ())
 

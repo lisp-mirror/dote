@@ -151,6 +151,10 @@
     :accessor map-state
     :initarg  :map-state
     :initform nil)
+   (all-entities
+    :accessor all-entities
+    :initarg  :all-entities
+    :initform (rb-tree:make-root-rb-node nil :red))
    (level-difficult
     :accessor level-difficult
     :initarg  :level-difficult
@@ -183,6 +187,10 @@
 (defgeneric build-movement-path (object start end))
 
 (defgeneric terrain-aabb-2d (object))
+
+(defgeneric terrain-aabb-2d (object))
+
+(defgeneric push-entity  (object entity))
 
 (defmethod  setup-game-hour ((object game-state) hour)
   (with-accessors ((game-hour game-hour)
@@ -243,3 +251,21 @@
 	  0.0
 	  (d* (d (the fixnum (width  map-state))) +terrain-chunk-tile-size+)
 	  (d* (d (the fixnum (height map-state))) +terrain-chunk-tile-size+))))
+
+(defmethod push-entity ((object game-state) entity)
+  (with-accessors ((all-entities all-entities)) object
+    (setf all-entities (bs-tree:insert all-entities
+				       entity
+				       :equal     #'=
+				       :compare   #'<
+				       :key-datum #'id
+				       :key       #'id))))
+
+(defmethod find-entity-by-id ((object game-state) id)
+  (with-accessors ((all-entities all-entities)) object
+    (bs-tree:data (bs-tree:search all-entities
+				  id
+				  :equal     #'=
+				  :compare   #'<
+				  :key-datum #'id
+				  :key       #'id))))

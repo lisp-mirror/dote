@@ -194,6 +194,7 @@
    :coord-terrain->chunk
    :coord-chunk->costs
    :coord-chunk->matrix
+   :coord-layer->map-state
    :make-null-pointer))
 
 (defpackage :base64
@@ -1343,7 +1344,8 @@
    :*clone-id*
    :*entity-id-counter*
    :identificable
-   :id))
+   :id
+   :find-entity-by-id))
 
 ;; procedural content
 
@@ -1708,6 +1710,7 @@
    :celestial-body-position
    :movement-costs
    :map-state
+   :all-entities
    :level-difficult
    :map-cache-dir
    :light-color
@@ -1719,7 +1722,8 @@
    :entity-id-in-pos
    :selected-pc
    :build-movement-path
-   :terrain-aabb-2d))
+   :terrain-aabb-2d
+   :push-entity))
 
 ;; engine
 
@@ -2091,6 +2095,11 @@
    :+button-ok-texture-name+
    :+window-close-button-texture-name+
    :+window-close-button-pressed-texture-name+
+   :+message-16-error-texture-name+
+   :+message-16-help-texture-name+
+   :+message-16-info-texture-name+
+   :+message-16-ok-texture-name+
+   :+message-16-warning-texture-name+
    :+frame-texture-name+
    :+window-top-bar-texture-name+
    :+text-field-texture-name+
@@ -2219,7 +2228,8 @@
    :inventory-window
    :make-inventory-window
    :player-report
-   :make-player-report-win))
+   :make-player-report-win
+   :make-message-box))
 
 (defpackage :world
   (:use :cl
@@ -2274,7 +2284,13 @@
    :render-gui
    :highlight-tile-screenspace
    :all-furniture-bags-not-empty-p
-   :all-furnitures-but-pillars-not-empty-p))
+   :all-furnitures-but-pillars-not-empty-p
+   :push-interactive-entity
+   :set-map-state-type
+   :set-map-state-id
+   :set-map-state-occlusion
+   :setup-map-state-entity
+   :setup-map-state-tile))
 
 (defpackage :terrain-chunk
   (:use :cl

@@ -159,8 +159,6 @@
 
 (defgeneric (setf main-state) (new-state object))
 
-(defgeneric push-entity (object entity))
-
 (defgeneric get-window-size (object))
 
 (defgeneric frustum-intersects-p (object ent))
@@ -184,6 +182,18 @@
 (defgeneric all-furniture-bags-not-empty-p  (object))
 
 (defgeneric all-furnitures-but-pillars-not-empty-p (object))
+
+(defgeneric push-interactive-entity (object entity type occlusion-value))
+
+(defgeneric set-map-state-type (object x y type))
+
+(defgeneric set-map-state-id (object x y id))
+
+(defgeneric set-map-state-occlusion (object x y occlusion-value))
+
+(defgeneric setup-map-state-entity (object entity type occlusion-value))
+
+(defgeneric setup-map-state-tile (object x y type id occlusion-value))
 
 (defmethod iterate-quad-tree ((object world) function probe)
   (quad-tree:iterate-nodes-intersect (entities object)
@@ -322,16 +332,24 @@
     (add-child chest obj3)
     (setf (character:portrait char) texture-portrait)
     (let* ((toolbar (make-instance 'widget:main-toolbar
-				   :x 0.0 :y 0.0
+				   :x 0.0
+				   :y 0.0
 				   :width  (num:d *window-w*)
 				   :height (num:d *window-h*)))
-	   (gen-player-test  (widget:make-player-generator))
-	   (report (widget:make-player-report-win  char))
-	   (inventory-test   (widget:make-inventory-window char chest)))
+	   (gen-player-test (widget:make-player-generator))
+	   (report          (widget:make-player-report-win  char))
+	   (inventory-test  (widget:make-inventory-window char chest))
+	   (message         (widget:make-message-box "Test message"
+						     "test"
+						     :info
+						     (cons (_ "yes") nil)
+						     (cons (_ "no")  nil))))
+
       (add-child (gui object) toolbar)
       (add-child (gui object) gen-player-test)
       (add-child (gui object) inventory-test)
-      (add-child (gui object) report))))
+      (add-child (gui object) report)
+      (add-child (gui object) message))))
 
 (defmethod calculate ((object world) dt)
   (incf (current-time (main-state object)) dt)
@@ -556,3 +574,31 @@
   (and (furnitures-bag       object)
        (containers-bag       object)
        (magic-furnitures-bag object)))
+
+(defmethod push-interactive-entity ((object world) entity type occlusion-value)
+  "Use for any interactive entity (i.e. has a character)"
+  (push-entity             object entity)  ; add to quadtree
+  (push-entity (main-state object) entity) ; add to entity tree of game-state
+  (setup-map-state-entity  object  entity type occlusion-value)) ; add to game-state's matrix
+
+(defmethod set-map-state-type ((object world) x y type)
+  (setf (el-type (matrix:matrix-elt (map-state (main-state object)) y x)) type))
+
+(defmethod set-map-state-id ((object world) x y id)
+  (setf (entity-id (matrix:matrix-elt (map-state (main-state object)) y x)) id))
+
+(defmethod set-map-state-occlusion ((object world) x y occlusion-value)
+  (setf (occlude (matrix:matrix-elt (map-state (main-state object)) y x)) occlusion-value))
+
+(defmethod setup-map-state-entity ((object world) entity type occlusion-value)
+  (with-accessors ((pos pos) (id identificable:id)) entity
+    (let ((x-matrix (misc:coord-chunk->matrix (elt pos 0)))
+	  (y-matrix (misc:coord-chunk->matrix (elt pos 2))))
+      (set-map-state-type      object x-matrix y-matrix type)
+      (set-map-state-id        object x-matrix y-matrix id)
+      (set-map-state-occlusion object x-matrix y-matrix occlusion-value))))
+
+(defmethod setup-map-state-tile ((object world) x y type id occlusion-value)
+  (set-map-state-type      object x y type)
+  (set-map-state-id        object x y id)
+  (set-map-state-occlusion object x y occlusion-value))

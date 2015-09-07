@@ -205,11 +205,11 @@
     :initarg  :checkbutton-h
     :accessor checkbutton-h)
    (input-text-w
-    :initform 128.0
+    :initform (d/ (d *window-w*) 8.0)
     :initarg  :input-text-w
     :accessor input-text-w)
    (input-text-h
-    :initform 14.0
+    :initform (d/ (d *window-h*) 54.857143)
     :initarg  :input-text-h
     :accessor input-text-h)
    (spacing
@@ -944,6 +944,21 @@
     (when label
       (setf (label object) label))))
 
+(defun split-text-lines (text width justify)
+  (reverse (or
+	    (alexandria:flatten
+	     (map 'list #'(lambda (a)
+			    (if justify
+				(justify-monospaced-text a width)
+				a))
+		  (cl-ppcre:split +gui-static-text-delim+ text)))
+	    '(""))))
+
+(defun remove-nbrk-space (lines)
+  (mapcar #'(lambda (a)
+	      (cl-ppcre:regex-replace-all +gui-static-text-nbsp+ a " "))
+	  lines))
+
 (defmethod (setf label) (new-label (object static-text))
   (declare (optimize (debug 3) (speed 0) (safety 3)))
   (declare (simple-string new-label))
@@ -956,15 +971,8 @@
 		   (justified justified)) object
     (declare (desired-type width height label-font-size))
     (remove-all-children object)
-    (let* ((char-width     (ftruncate (d/ width label-font-size)))
-	   (lines          (reverse (or
-				     (alexandria:flatten
-				     (map 'list #'(lambda (a)
-						    (if justified
-							(justify-monospaced-text a char-width)
-							a))
-					  (cl-ppcre:split +gui-static-text-delim+ new-label)))
-				     '(""))))
+    (let* ((char-width (ftruncate (d/ width label-font-size)))
+	   (lines      (remove-nbrk-space (split-text-lines new-label char-width justified)))
 	   (wanted-height      (d* label-font-size (d (length lines))))
 	   (scaling-height     (d/ height wanted-height))
 	   (actual-height-font (if (d< wanted-height height)
@@ -973,11 +981,6 @@
 	   (actual-height      (d- (d height)
 				   (d* actual-height-font (d (length lines))))))
       (declare (list lines))
-      ;; remove non-breakable space symbol with actual space.
-      (setf lines
-	    (mapcar #'(lambda (a)
-			(cl-ppcre:regex-replace-all +gui-static-text-nbsp+ a " "))
-		    lines))
       (do ((line-count (d 0.0) (d+ line-count 1.0))
 	   (line       lines   (rest line)))
 	  ((not line))
@@ -1093,7 +1096,8 @@
 
 (defclass window (widget)
   ((top-bar
-    :initform (make-instance 'widget)
+    :initform (make-instance 'widget
+			     :height (top-bar-h *reference-sizes*))
     :initarg  :top-bar
     :accessor top-bar)
    (frame
@@ -1117,7 +1121,7 @@
     (with-accessors ((width width) (height height)
 		     (top-bar top-bar)
 		     (frame frame)) object
-      (let ((top-bar-h (top-bar-h *reference-sizes*))
+      (let ((top-bar-h (height top-bar))
 	    (title-font-size-scaling (title-font-size-scaling *reference-sizes*))
 	    (button-y-relative (button-y-relative *reference-sizes*))
 	    (button-x-relative (button-x-relative *reference-sizes*))
@@ -1165,7 +1169,7 @@
       (when (not (and last-window-added-to
 		      (eq  object last-window-added-to)))
 	(setf last-window-added-to object)
-	(when (> child-pos 2) ;; skip the titlebar , the button and the close-button
+	(when (> child-pos 2) ;; skip the titlebar , the frame and the close-button
 	  (setf x-child (d+ x-child
 			    (d* (left-frame-offset *reference-sizes*)
 				(width object))))
@@ -4064,3 +4068,201 @@
 		 :width  (inventory-window-width)
 		 :height (inventory-window-height)
 		 :label  (_ "Inventory")))
+
+(defun message-window-w ()
+  (d* 8.0 (small-square-button-size *reference-sizes*)))
+
+(defun message-window-h ()
+  (d* 4.0 (small-square-button-size *reference-sizes*)))
+
+(defun message-window-pictogram-w ()
+  (d* 2.0 (small-square-button-size *reference-sizes*)))
+
+(defun message-window-pictogram-h ()
+  (d* 2.0 (small-square-button-size *reference-sizes*)))
+
+(defun message-window-button-h  ()
+  (tiny-square-button-size *reference-sizes*))
+
+(defun message-window-button-w  ()
+  (d* 2.0 (tiny-square-button-size *reference-sizes*)))
+
+(defun message-window-text-x ()
+  (d+ (message-window-pictogram-w)
+      (spacing *reference-sizes*)))
+
+(defclass message-window (window)
+  ((img-pictogram
+    :initform (make-instance 'signalling-light
+			     :x             0.0
+			     :y             0.0
+			     :width         (message-window-pictogram-w)
+			     :height        (message-window-pictogram-h)
+			     :texture-name  +window-close-button-texture-name+
+			     :button-status t)
+    :initarg  :img-pictogram
+    :accessor img-pictogram)
+   (text-message
+    :initform (make-instance 'widget:static-text
+			     :height    (d* 2.0
+					    (small-square-button-size *reference-sizes*))
+			     :width     (d* 5.0
+					    (small-square-button-size *reference-sizes*))
+			     :x         (message-window-text-x)
+			     :y         0.0
+			     :font-size (h4-font-size *reference-sizes*)
+			     :label     "test test"
+			     :justified t)
+    :initarg  :text-message
+    :accessor text-message)))
+
+(defgeneric accomodate-message (object new-label))
+
+(defgeneric accomodate-message-text (object new-label))
+
+(defgeneric accomodate-message-img (object))
+
+(defun set-texture-pictogram (pictogram texture-name)
+  (when texture-name
+    (setf (texture-object  pictogram) (get-texture texture-name))
+    (setf (texture-pressed pictogram) nil)
+    (setf (texture-overlay pictogram) nil)
+    (setf (current-texture pictogram) (get-texture texture-name))))
+
+(defmethod initialize-instance :after ((object message-window) &key
+								 (message "")
+								 (type :error)
+								 &allow-other-keys)
+  (with-accessors ((img-pictogram img-pictogram)) object
+    (with-accessors ((img-pictogram img-pictogram)
+		     (text-message text-message)
+		     (frame frame)) object
+      (add-child object img-pictogram)
+      (add-child object text-message)
+      (when message
+	(accomodate-message object message))
+      (case type
+	(:error
+	 (set-texture-pictogram img-pictogram +message-16-error-texture-name+))
+	(:warning
+	 (set-texture-pictogram img-pictogram +message-16-warning-texture-name+))
+	(:info
+	 (set-texture-pictogram img-pictogram +message-16-info-texture-name+))
+	(:question
+	 (set-texture-pictogram img-pictogram +message-16-help-texture-name+))
+	(otherwise
+	 (set-texture-pictogram img-pictogram +message-16-help-texture-name+))))))
+
+(defmethod accomodate-message ((object message-window) new-label)
+  (accomodate-message-text object new-label)
+  (accomodate-message-img  object))
+
+(defmethod accomodate-message-text ((object message-window) new-label)
+  (with-accessors ((text-message text-message)
+		   (frame frame)
+		   (top-bar top-bar)
+		   (window-height height)) object
+    (with-accessors ((label-font-size label-font-size)
+		     (label-font label-font)
+		     (label-font-color label-font-color)
+		     (textarea-height height)
+		     (width width)
+		     (children children)
+		     (justified justified)) text-message
+      (remove-all-children text-message)
+      (let* ((char-width    (ftruncate (d/ width label-font-size)))
+	     (lines         (remove-nbrk-space (split-text-lines new-label
+								 char-width
+								 justified)))
+	     (wanted-height (d* label-font-size (d (length lines)))))
+	(declare (list lines))
+	(do ((line-count (d 0.0) (d+ line-count 1.0))
+	     (line       lines   (rest line)))
+	    ((not line))
+	  (declare (list line))
+	  (declare (desired-type line-count))
+	  (loop
+	     for c across (the simple-string (elt line 0))
+	     for xf single-float from  0.0 by label-font-size do
+	       (let* ((mesh  (get-char-mesh label-font c))
+		      (shell (if mesh
+				 (fill-font-mesh-shell mesh :color label-font-color)
+				 nil)))
+		 (when shell
+		   (setf (scaling shell) (sb-cga:vec label-font-size label-font-size 0.0))
+		   (setf (pos     shell) (sb-cga:vec xf
+						     (d* line-count label-font-size)
+
+						     0.0))
+		   (add-child text-message shell)))))
+	(let ((new-frame-h (d+ wanted-height
+			       (spacing *reference-sizes*)
+			       (d* 2.0 (message-window-button-h)))))
+	  (transform-vertices frame (sb-cga:scale* 1.0
+						   (d/ new-frame-h
+						       (height frame))
+						   1.0))
+	  (prepare-for-rendering frame)
+	  (setf (y top-bar)      new-frame-h)
+	  (setf (height frame)   new-frame-h)
+	  (setf window-height    (d+ new-frame-h (height top-bar)))
+	  (setf (y text-message) (d- window-height
+				     (height top-bar)
+				     (d* (top-frame-offset *reference-sizes*)
+					 (height frame))
+				     wanted-height)))))))
+
+(defmethod accomodate-message-img ((object message-window))
+  (with-accessors ((img-pictogram img-pictogram)
+		   (frame frame)
+		   (top-bar top-bar)
+		   (text-message text-message)
+		   (window-height height)) object
+    (let* ((wanted-height-scale (d/ (min (d- (height frame)
+					     (message-window-button-h)
+					     (d* (top-frame-offset *reference-sizes*)
+						 (height frame))
+					     (d* (bottom-frame-offset *reference-sizes*)
+						 (height frame))
+					     (spacing *reference-sizes*))
+					 (d- (message-window-text-x)
+					     (spacing *reference-sizes*)))
+				    (height img-pictogram)))
+	   (wanted-height       (d* wanted-height-scale (height img-pictogram))))
+      (transform-vertices img-pictogram (sb-cga:scale* wanted-height-scale
+						       wanted-height-scale
+						       1.0))
+      (prepare-for-rendering img-pictogram)
+      (setf (height   img-pictogram) wanted-height
+	    (width    img-pictogram) wanted-height
+	    (y        img-pictogram) (d- window-height
+				       (height top-bar)
+				       (d* (top-frame-offset *reference-sizes*)
+				           (height frame))
+				       wanted-height)
+	    (x        img-pictogram)  (d* (left-frame-offset *reference-sizes*)
+					  (width object))))))
+
+(defun make-message-box (text title type &rest buttons-callbacks)
+  "Car of each element of buttons-callbacks is the label, cdr the callback function"
+  (let* ((widget (make-instance 'message-window
+				:type    type
+				:label   title
+				:message text
+				:x       0.0
+				:y       0.0
+				:width   (message-window-w)
+				:height  (message-window-h)))
+	 (button-w (d/ (d* 0.8 (width widget)) (d (length buttons-callbacks)))))
+    (loop
+       for b-cb in buttons-callbacks
+       for x    from 0.0 by button-w do
+	 (add-child widget
+		    (make-instance 'button
+				   :width    button-w
+				   :height   (message-window-button-h)
+				   :x        x
+				   :y        (d- (height widget) (message-window-button-h))
+				   :label    (car b-cb)
+				   :callback (cdr b-cb))))
+    widget))
