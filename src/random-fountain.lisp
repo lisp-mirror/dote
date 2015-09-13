@@ -76,6 +76,19 @@
 
 (define-constant +minimum-chance-healing-fx+  0.05 :test #'=)
 
+(define-constant +minimum-damage-point+       1.0  :test #'=)
+
+(define-constant +maximum-damage-point+     100.0  :test #'=)
+
+(defun randomize-damage-points (character level)
+  (setf (damage-points character)
+	(calculate-randomized-damage-points level
+					    +minimum-level+
+					    +maximum-level+
+					    +minimum-damage-point+
+					    +maximum-damage-point+
+					    (d/ (d level) (d* 5.0 (d +maximum-level+))))))
+
 (defun level-params (map-level)
   (values (elt +level-sigma+ map-level)
 	  (elt +level-mean+  map-level)))
@@ -165,7 +178,16 @@
 	0
 	(lcg-next-upto (max 0.0 max)))))
 
-(defun generate-fountain (interaction-file character-file map-level)
+(defun generate-fountain (map-level)
+  (%generate-fountain (res:get-resource-file +default-interaction-filename+
+					      +default-character-fountain-dir+
+					      :if-does-not-exists :error)
+		       (res:get-resource-file +default-character-filename+
+					      +default-character-fountain-dir+
+					      :if-does-not-exists :error)
+		       map-level))
+
+(defun %generate-fountain (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
     (with-interaction-parameters (template interaction-file)
@@ -191,4 +213,5 @@
 	(fill-character-plist char-template)
 	(let ((fountain-character (params->np-character char-template)))
 	  (setf (basic-interaction-params fountain-character) template)
+	  (randomize-damage-points fountain-character fountain-level)
 	  fountain-character)))))

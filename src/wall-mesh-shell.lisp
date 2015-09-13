@@ -18,7 +18,9 @@
 
 (defclass wall-mesh-shell (triangle-mesh-shell) ())
 
-(defmethod render-phong ((object wall-mesh-shell) renderer)
+(defclass decorated-wall-mesh-shell (triangle-mesh-shell) ())
+
+(defmethod render-phong ((object decorated-wall-mesh-shell) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((vbo vbo)
 		   (vao vao)
@@ -69,7 +71,7 @@
 	(gl:draw-arrays :triangles 0 (* 3 (length triangles))))
 	(render-debug object renderer)))))
 
-(defmethod setup-projective-texture ((object wall-mesh-shell))
+(defmethod setup-projective-texture ((object decorated-wall-mesh-shell))
   (let* ((mesh-center (pos  object))
 	 (aabb        (aabb object))
 	 (y           (d* 0.5 (dabs (elt (vec- (aabb-p2 aabb) (aabb-p1 aabb)) 1))))
@@ -85,3 +87,11 @@
 	 (eye         (transform-point pos (translate* 0.0 0.0 0.001))))
     (setf (projector object) (look@ pos eye +y-axe+))
     pos))
+
+(defmethod on-game-event ((object decorated-wall-mesh-shell) (event game-event:end-turn))
+  (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
+  nil)
+
+(defmethod on-game-event ((object wall-mesh-shell) (event game-event:end-turn))
+  (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
+  nil)

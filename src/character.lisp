@@ -986,6 +986,15 @@
       (floor (num:gaussian-probability (* displacement val) val))
       val))
 
+(defun calculate-randomized-damage-points (level
+					   min-level max-level
+					   min-damage max-damage
+					   displacement)
+  (let ((val (num:dlerp (num:smoothstep-interpolate (d min-level) (d max-level) (d level))
+			min-damage
+			max-damage)))
+    (num:gaussian-probability (d* displacement val) val)))
+
 (defun params->np-character (params)
   (let ((results (make-instance 'np-character
 				:description   (fetch-description                   params)

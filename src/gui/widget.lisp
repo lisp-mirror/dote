@@ -1743,6 +1743,11 @@
 		 :texture-name texture-name
 		 :button-status t))
 
+(defun next-turn-cb (w e)
+  (declare (ignore w e))
+  (game-event:propagate-end-turn (make-instance 'game-event:end-turn))
+  t)
+
 (defclass main-toolbar (widget)
   ;; first row
   ((s-coma
@@ -1869,7 +1874,7 @@
     :initform (make-rect-button   *square-button-size* 0.0
 				  1.0 0.5
 				  +next-turn-overlay-texture-name+
-				  nil)  ;; TODO callback
+				  #'next-turn-cb)
     :initarg :b-next-turn
     :accessor b-next-turn)
    (b-spell

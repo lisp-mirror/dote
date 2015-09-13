@@ -54,6 +54,19 @@
 
 (define-constant +maximum-container-level+                 10          :test #'=)
 
+(define-constant +minimum-damage-point+                   1.0          :test #'=)
+
+(define-constant +maximum-damage-point+                 100.0          :test #'=)
+
+(defun randomize-damage-points (character level)
+  (setf (damage-points character)
+	(calculate-randomized-damage-points level
+					    +minimum-level+
+					    +maximum-level+
+					    +minimum-damage-point+
+					    +maximum-damage-point+
+					    (d/ (d level) (d* 5.0 (d +maximum-level+))))))
+
 (defun level-params (map-level)
   (values (elt +level-sigma+ map-level)
 	  (elt +level-mean+  map-level)))
@@ -125,7 +138,23 @@
 (defun generate-keycode ()
   (subseq (shuffle "1234567890") 0 8))
 
-(defun generate-container (interaction-file character-file map-level
+(defun generate-container (map-level &key (keychain '()))
+  (%generate-container (res:get-resource-file +default-interaction-filename+
+					      +default-character-container-dir+
+					      :if-does-not-exists :error)
+		       (res:get-resource-file +default-character-filename+
+					      +default-character-container-dir+
+					      :if-does-not-exists :error)
+		       map-level
+		       (res:get-resource-file +default-interaction-filename+
+					      +default-character-key-dir+
+					      :if-does-not-exists :error)
+		       (res:get-resource-file +default-character-filename+
+					      +default-character-key-dir+
+					      :if-does-not-exists :error)
+		       :keychain keychain))
+
+(defun %generate-container (interaction-file character-file map-level
 			   key-interaction-file key-character-file
 			   &key
 			     (keychain '()))
@@ -148,9 +177,13 @@
 	(fill-character-plist char-template)
 	(when (= (lcg-next-upto (calculate-locked-chance container-level)) 0)
 	  (let ((keycode (generate-keycode)))
-	    (push (random-key:generate-key key-interaction-file key-character-file map-level keycode)
+	    (push (random-key:generate-key* key-interaction-file
+					    key-character-file
+					    map-level
+					    keycode)
 		  keychain)
 	    (n-setf-path-value template (list +can-open+) keycode)))
 	(let ((container-character (params->np-character char-template)))
 	  (setf (basic-interaction-params container-character) template)
+	  (randomize-damage-points container-character container-level)
 	  (values container-character keychain))))))

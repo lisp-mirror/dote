@@ -82,6 +82,19 @@
 
 (define-constant +healing-target-self-chance+            3          :test #'=)
 
+(define-constant +minimum-damage-point+                   1.0        :test #'=)
+
+(define-constant +maximum-damage-point+                 100.0        :test #'=)
+
+(defun randomize-damage-points (character level)
+  (setf (damage-points character)
+	(calculate-randomized-damage-points level
+					    +minimum-level+
+					    +maximum-level+
+					    +minimum-damage-point+
+					    +maximum-damage-point+
+					    (d/ (d level) (d* 5.0 (d +maximum-level+))))))
+
 (defun decay-params (armor-level)
   (values (elt +decay-sigma+ armor-level)
 	  (elt +decay-mean+  armor-level)))
@@ -140,7 +153,16 @@
 	0
 	(lcg-next-upto (max 0.0 max)))))
 
-(defun generate-armor (interaction-file character-file map-level)
+(defun generate-armor (map-level)
+  (%generate-armor (res:get-resource-file +default-interaction-filename+
+					      +default-character-armor-dir+
+					      :if-does-not-exists :error)
+		   (res:get-resource-file +default-character-filename+
+					      +default-character-armor-dir+
+					      :if-does-not-exists :error)
+		   map-level))
+
+(defun %generate-armor (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
     (with-interaction-parameters (template interaction-file)
@@ -173,6 +195,7 @@
 	(fill-character-plist char-template template armor-level)
 	(let ((armor-character (params->np-character char-template)))
 	  (setf (basic-interaction-params armor-character) template)
+	  (randomize-damage-points armor-character armor-level)
 	  armor-character)))))
 
 (defun set-effect (effect-path armor-level interaction)

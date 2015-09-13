@@ -11,10 +11,10 @@
       (incf *events-names-counter*))))
 
 (defclass generic-game-event ()
-  ((origin
+  ((id-origin
     :initform nil
-    :initarg  :origin
-    :accessor origin)
+    :initarg  :id-origin
+    :accessor id-origin)
    (age
     :initform 0
     :initarg  :age
@@ -33,10 +33,10 @@
     :accessor data)))
 
 (defclass game-event-w-destination (generic-game-event)
-  ((destination
+  ((id-destination
     :initform nil
-    :initarg  :destination
-    :accessor destination)))
+    :initarg  :id-destination
+    :accessor id-destination)))
 
 (defclass game-event-procrastinated (generic-game-event)
   ((trigger-turn
@@ -44,13 +44,19 @@
     :initarg  :trigger-turn
     :accessor trigger-turn)))
 
+(defgeneric on-game-event (object event))
+
+(defmethod on-game-event (object event)
+  nil)
+
 (defmacro defevent (name slots)
   (let* ((event-hash-key    (fresh-events-container-name))
 	 (event-name        (format        nil "~:@(~a~)" name))
 	 (event-symbol      (format-symbol t   "~a"       event-name))
-	 (on-event-symbol   (format-symbol t   "~:@(get-on-~a~)" name))
 	 (propagate-symbol  (format-symbol t   "~:@(propagate-~a~)" name))
-	 (get-vector-symbol (misc:format-fn-symbol t "%get-event-vector-~a" event-hash-key)))
+	 (get-vector-symbol (gensym))
+	 (register-symbol   (format-symbol t "~:@(register-for-~a~)" name))
+	 (unregister-symbol (format-symbol t "~:@(unregister-for-~a~)" name)))
     `(progn
        (defmacro ,get-vector-symbol ()
 	 `(gethash ,,(identity event-hash-key) *all-events-container*))
@@ -58,17 +64,15 @@
 	     (make-fresh-array 0 nil 'entity:entity))
        (defclass ,event-symbol (generic-game-event)
 	 ,slots)
-       (defun ,(format-symbol t "~:@(register-for-~a~)" name) (el)
+       (defun ,register-symbol (el)
 	 (vector-push-extend el (,get-vector-symbol)))
-       (defun ,(format-symbol t "~:@(unregister-for-~a~)" name) (el)
+       (defun ,unregister-symbol (el)
 	 (setf (,get-vector-symbol)
 	       (remove el (,get-vector-symbol) :test #'= :key #'identificable:id)))
-       (defgeneric ,on-event-symbol (entity))
        (defun ,propagate-symbol (event)
 	 (loop for ent across (,get-vector-symbol) do
-	      (when (and (,on-event-symbol ent)
-			 (funcall (,on-event-symbol ent) ent event))
-		(return-from ,propagate-symbol ent)))
+	      (when (on-game-event ent event)
+		(return-from ,propagate-symbol t)))
 	 nil))))
 
 (defevent end-turn ())

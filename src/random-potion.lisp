@@ -64,17 +64,31 @@
 (define-constant +chance-healing-fx-mean+  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
   :test #'equalp)
 
-(define-constant +minimum-duration-healing-fx+           2.0        :test #'=)
+(define-constant +minimum-duration-healing-fx+        2.0  :test #'=)
 
-(define-constant +minimum-num-healing-fx+             2.0           :test #'=)
+(define-constant +minimum-num-healing-fx+             2.0  :test #'=)
 
-(define-constant +maximum-num-healing-fx+             4.0           :test #'=)
+(define-constant +maximum-num-healing-fx+             4.0  :test #'=)
 
-(define-constant +minimum-chance-healing-fx+          0.05          :test #'=)
+(define-constant +minimum-chance-healing-fx+          0.05 :test #'=)
 
-(define-constant +minimum-potion-level+                  1          :test #'=)
+(define-constant +minimum-potion-leve                 1    :test #'=)
 
-(define-constant +maximum-potion-level+                 10          :test #'=)
+(define-constant +maximum-potion-level+              10    :test #'=)
+
+(define-constant +minimum-damage-point+               1.0  :test #'=)
+
+(define-constant +maximum-damage-point+               2.0  :test #'=)
+
+(defun randomize-damage-points (character level)
+  (setf (damage-points character)
+	(calculate-randomized-damage-points level
+					     +minimum-level+
+					     +maximum-level+
+					     +minimum-damage-point+
+					     +maximum-damage-point+
+					     (d/ (d level) (d* 5.0 (d +maximum-level+))))))
+
 
 (defun level-params (map-level)
   (values (elt +level-sigma+ map-level)
@@ -140,7 +154,16 @@
      	0
      	(lcg-next-upto (max 0.0 max)))))
 
-(defun generate-potion (interaction-file character-file map-level)
+(defun generate-potion (map-level)
+  (%generate-potion (res:get-resource-file +default-interaction-filename+
+					   +default-character-potion-dir+
+					   :if-does-not-exists :error)
+		    (res:get-resource-file +default-character-filename+
+					   +default-character-potion-dir+
+					   :if-does-not-exists :error)
+		    map-level))
+
+(defun %generate-potion (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
     (with-interaction-parameters (template interaction-file)
@@ -159,6 +182,7 @@
 	(fill-character-plist char-template template potion-level)
 	(let ((potion-character (params->np-character char-template)))
 	  (setf (basic-interaction-params potion-character) template)
+	  (randomize-damage-points potion-character potion-level)
 	  potion-character)))))
 
 (defun filename-effects-string (interaction)

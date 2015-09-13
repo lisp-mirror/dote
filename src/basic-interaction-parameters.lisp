@@ -364,7 +364,7 @@
 
     (defmethod description-for-humans ((object healing-effect-parameters))
       (format nil (text-utils:strcat +standard-float-print-format+
-				     (_ " chance: ~,1f% target ~a"))
+				     (_ "chance: ~,1f% target ~a"))
 	      (if (effect-unlimited-p (duration object))
 		  ""
 		  (format nil (_ "~d turns") (duration object)))

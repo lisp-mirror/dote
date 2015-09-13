@@ -94,12 +94,29 @@
    :+gui-resource+
    :+default-gui-inventory-items+
    :+default-gui-resource+
-   :+default-character-weapons+
-   :+default-character-containers+
-   :+default-character-potions+
-   :+default-character-food+
-   :+default-character-misc+
-   :+default-furniture-templates+
+   :+default-character-weapon-dir+
+   :+default-character-bow-dir+
+   :+default-character-crossbow+
+   :+default-character-mace+
+   :+default-character-spear+
+   :+default-character-staff+
+   :+default-character-sword+
+   :+default-character-armor-dir+
+   :+default-character-container-dir+
+   :+default-character-elm-dir+
+   :+default-character-fountain-dir+
+   :+default-character-key-dir+
+   :+default-character-elm-dir+
+   :+default-character-potion-dir+
+   :+default-character-ring-dir+
+   :+default-character-shield-dir+
+   :+default-character-shoes-dir+
+   :+default-character-food-dir+
+   :+default-character-misc-dir+
+   :+default-character-inert-obj-dir+
+   :+default-character-filename+
+   :+default-interaction-filename+
+   :+default-furniture-templates-dir+
    :+gui-static-text-delim+
    :+gui-static-text-nbsp+
    :+standard-float-print-format+))
@@ -1723,7 +1740,37 @@
    :selected-pc
    :build-movement-path
    :terrain-aabb-2d
+   :map-level
    :push-entity))
+
+(defpackage :game-event
+  (:use
+   :cl
+   :alexandria
+   :misc
+   :num)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :generic-game-event
+   :id-origin
+   :age
+   :name
+   :priority
+   :data
+   :game-event-w-destination
+   :id-destination
+   :game-event-procrastinated
+   :trigger-turn
+   :on-game-event
+   :end-turn
+   :register-for-end-turn
+   :unregister-for-end-turn
+   :propagate-end-turn
+   :healing-effect-turn
+   :register-for-healing-effect-turn
+   :unregister-for-healing-effect-turn
+   :propagate-healing-effect-turn
+   :cancel-healing-effect-game-event))
 
 ;; engine
 
@@ -1744,6 +1791,7 @@
    :dir
    :scaling
    :up
+   :ghost
    :state
    :aabb-2d))
 
@@ -1806,6 +1854,7 @@
 	:camera
 	:game-state)
   (:shadowing-import-from :graph :matrix)
+  (:import-from           :game-event :on-game-event)
   ;;(:shadowing-import-from :num-utils epsilon=)
   (:export
    :+vbo-count+
@@ -1943,6 +1992,8 @@
    :gen-skydome
    :with-pushed-matrix
    :wall-mesh-shell
+   :window-mesh-shell
+   :decorated-wall-mesh-shell
    :setup-projective-texture))
 
 (defpackage :pickable-mesh
@@ -2030,31 +2081,6 @@
    :building-floor-mesh
    :setup-texture-coord-scaling
    :floor-tile))
-
-(defpackage :game-event
-  (:use
-   :cl
-   :alexandria
-   :misc
-   :num)
-  (:shadowing-import-from :misc :random-elt :shuffle)
-  (:export
-   :generic-game-event
-   :game-event-w-destination
-   :game-event-procrastinated
-   :end-turn
-   :end-turn-members
-   :register-for-end-turn
-   :unregister-for-end-turn
-   :get-on-end-turn
-   :propagate-end-turn
-   :healing-effect-turn
-   :healing-effect-turn-members
-   :register-for-healing-effect-turn
-   :unregister-for-healing-effect-turn
-   :get-on-healing-effect-turn
-   :propagate-healing-effect-turn
-   :cancel-healing-effect-game-event))
 
 ;; UI
 
@@ -2761,6 +2787,7 @@
    :with-character-parameters
    :sum-effects-mod
    :params->player-character
+   :calculate-randomized-damage-points
    :params->np-character))
 
 (defpackage :random-armor
@@ -2795,7 +2822,8 @@
 	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
-   :generate-key))
+   :generate-key
+   :generate-key*))
 
 (defpackage :random-container
   (:use :cl
@@ -2932,6 +2960,24 @@
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :generate-ring))
+
+(defpackage :random-inert-object
+  (:use :cl
+	:alexandria
+	:constants
+	:config
+	:num-utils
+	:misc-utils
+	:text-utils
+	:mtree-utils
+	:interfaces
+	:identificable
+	:basic-interaction-parameters
+	:character)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :generate-inert-object))
+
 
 (defpackage :main-window
   (:use :cl

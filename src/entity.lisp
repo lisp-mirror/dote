@@ -36,11 +36,18 @@
     :accessor up
     :initarg :up
     :initform +entity-up-direction+)
+   (ghost
+    :accessor ghost
+    :initarg :ghost
+    :initform nil
+    :type (or character:np-character character:player-character))
    (state
     :accessor state
     :initarg :state
     :initform nil
     :allocation :class)))
+
+
 
 (defmethod clone-into :after ((from entity) (to entity))
   (setf (modified to) (modified from)

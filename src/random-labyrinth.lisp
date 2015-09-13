@@ -1161,16 +1161,12 @@
 				      t)))))
 
 (defun count-furniture-units (template)
-  (truncate (loop for i across (matrix:data template) sum
-		 (if (and (not (keywordp i))
-			  (not (furniture-other-p i)))
-		     0.5
-		     1.0))))
+  (truncate (* 0.2 (length (matrix:data template)))))
 
-(defun count-furniture-units-for-sort (template &key (scale-weight 2.8))
+(defun count-furniture-units-for-sort (template &key (scale-weight 4.0))
   "Give more weight to generic furnitures"
-  (+ (* scale-weight (count-if #'(lambda (a) (furniture-other-p a)) (matrix:data template)))
-     (count-if #'(lambda (a) (not (keywordp a))) (matrix:data template))))
+  (- (count-if #'(lambda (a) (not (keywordp a))) (matrix:data template))
+     (* scale-weight (count-if #'(lambda (a) (furniture-other-p a)) (matrix:data template)))))
 
 (defun pixmap->template (pixmap)
   (matrix:map-matrix pixmap #'(lambda (a) (pixel->furniture-template a))))
@@ -1183,10 +1179,10 @@
 				(filesystem-utils:has-extension (uiop:native-namestring
 								 (uiop:native-namestring a))
 								"tga"))
-			    (res:get-resource-files +default-furniture-templates+))))
+			    (res:get-resource-files +default-furniture-templates-dir+))))
     (sort (mapcar #'(lambda (a) (pixmap-file->template (uiop:native-namestring a)))
 		  all)
-	  #'(lambda (a b) (> (count-furniture-units-for-sort a)
+	  #'(lambda (a b) (< (count-furniture-units-for-sort a)
 			     (count-furniture-units-for-sort b))))))
 
 (defmethod init-furniture-random-starting-pos-cache ((object lab-room))
@@ -1212,12 +1208,12 @@
     furniture-random-starting-pos-cache))
 
 (defun actual-funiture-count (room)
-  (max (num:lcg-next-upto (max 1 (funcall (get-param-gen room max-furnitures-num-fn) room)))
-       0))
+  (max 1 (funcall (get-param-gen room max-furnitures-num-fn) room)))
+
 
 (defmethod add-furnitures ((object lab-room) &optional
 					       (max-number (actual-funiture-count object))
-					       (max-recursion 1000))
+					       (max-recursion 50))
   (with-accessors ((x x) (y y) (w w) (h h) (furnitures furnitures)
 		   (shared-matrix shared-matrix) (aabb aabb)) object
     (if (and
@@ -1242,7 +1238,7 @@
 		    furn-y (elt furn-pos 1)
 		    furn-x (elt furn-pos 0))))
 	  (add-furnitures object
-			  (actual-funiture-count object)
+			  max-number
 			  (1- max-recursion))))))
 
 (defun add-door-coord (from to howmany)

@@ -2454,6 +2454,10 @@
 (defun fill-shell-from-mesh (mesh &optional (type 'triangle-mesh-shell))
   (fill-mesh-data (make-instance type) mesh))
 
+(defmethod on-game-event ((object triangle-mesh-shell) (event game-event:end-turn))
+  (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
+  nil)
+
 (defclass tree-mesh-shell (triangle-mesh-shell)
   ((start-time
     :initform (d (lcg-next-upto 5))

@@ -74,6 +74,9 @@
 	       +zero-height+
 	       (d+ (d* +terrain-chunk-size-scale+ min-y)
 		   (coord-map->chunk (d (+ y min-y))))))
+    ;; the character
+    (setf (entity:ghost door-shell)
+	  (random-inert-object:generate-inert-object (game-state:map-level (main-state world))))
     (push-interactive-entity world door-shell door-type :occlude)))
 
 (defun calculate-furnitures-shares (level)
@@ -107,8 +110,17 @@
 							    (vec  0.0 0.0  1.0)
 							    (vec -1.0 0.0  0.0)
 							    (vec  0.0 0.0 -1.0))))
-      ;; TODO
-      ;; add character
+      (setf (entity:ghost shell)
+	    (cond
+	      ((eq type-of-furniture +furniture-type+)
+	       (random-inert-object:generate-inert-object
+		(game-state:map-level (main-state world))))
+	      ((eq type-of-furniture +magic-furniture-type+)
+	       (random-fountain:generate-fountain (game-state:map-level (main-state world))))
+	      ((eq type-of-furniture +container-type+)
+	       ;; TODO
+	       ;; add character
+	       )))
       (push-interactive-entity world shell type-of-furniture nil))))
 
 (defun %relative-coord-furniture->cood-mat-state (min rel-coord)
@@ -123,8 +135,8 @@
 		       (coord-map->chunk (d (+ y min-y))))))
     (setf (compiled-shaders shell) (compiled-shaders world)
 	  (entity:pos shell)	   (vec mesh-x +zero-height+ mesh-y))
-    ;; TODO
-    ;; add character
+    (setf (entity:ghost shell)
+	  (random-inert-object:generate-inert-object (game-state:map-level (main-state world))))
     (values shell world)))
 
 (defun setup-pillar (world min-x min-y x y)
@@ -167,7 +179,7 @@
 (defun setup-table (world min-x min-y x y)
   (when (tables-bag world)
     (let ((shell (common-setup-furniture world (tables-bag world) min-x min-y x y)))
-      (setup-map-state-entity world shell +table-type+ nil))))
+      (push-interactive-entity world shell +table-type+ nil))))
 
 (defun setup-wall-decoration (world min-x min-y x y)
   (when (wall-decorations-bag world)
@@ -187,8 +199,8 @@
 						      (d* 0.5 +terrain-chunk-tile-size+))
 						  +wall-decoration-y+
 						  (d* (d (- (elt wall-near 1) y-world))
-						      (d* 0.5 +terrain-chunk-tile-size+))))))
-      (push-interactive-entity world shell +wall-decoration-type+ nil))))
+						      (d* 0.5 +terrain-chunk-tile-size+)))))
+	(push-interactive-entity world shell +wall-decoration-type+ nil)))))
 
 (defun setup-wall (world bmp min-x min-y x y &key (chance 5))
   (let* ((dice-roll       (lcg-next-upto chance))
@@ -200,8 +212,8 @@
 						     (if (and (null (mesh:normal-map mesh))
 							      (= (mod dice-roll chance) 0)
 							      decal-side-free)
-							 'mesh:wall-mesh-shell
-							 'mesh:triangle-mesh-shell))))
+							 'mesh:decorated-wall-mesh-shell
+							 'mesh:wall-mesh-shell))))
     (setf (compiled-shaders shell) (compiled-shaders world))
     (setf (entity:pos shell)
 	  (vec (d+ (d* +terrain-chunk-size-scale+ min-x)
@@ -209,8 +221,11 @@
 	       +zero-height+
 	       (d+ (d* +terrain-chunk-size-scale+ min-y)
 		   (coord-map->chunk (d (+ y min-y))))))
+    (setf (entity:ghost shell)
+	  (random-inert-object:generate-inert-object (game-state:map-level (main-state world))))
+    (game-event:register-for-end-turn shell)
     (push-interactive-entity world shell +wall-type+ :occlude)
-    (when (typep shell 'mesh:wall-mesh-shell)
+    (when (typep shell 'mesh:decorated-wall-mesh-shell)
       (setf (mesh:texture-projector shell)
 	    (random-elt (texture:list-of-texture-by-tag
 			 texture:+texture-tag-int-decal+)))
@@ -223,7 +238,7 @@
 
 (defun setup-window (world min-x min-y x y)
   (let* ((mesh            (windows-bag world))
-	 (shell           (mesh:fill-shell-from-mesh mesh 'mesh:triangle-mesh-shell)))
+	 (shell           (mesh:fill-shell-from-mesh mesh 'mesh:window-mesh-shell)))
     (setf (compiled-shaders shell) (compiled-shaders world))
     (setf (entity:pos shell)
 	  (vec (d+ (d* +terrain-chunk-size-scale+ min-x)
@@ -231,6 +246,9 @@
 	       +zero-height+
 	       (d+ (d* +terrain-chunk-size-scale+ min-y)
 		   (coord-map->chunk (d (+ y min-y))))))
+    (setf (entity:ghost shell)
+	  (random-inert-object:generate-inert-object (game-state:map-level (main-state world))))
+    (game-event:register-for-end-turn shell)
     (push-interactive-entity world shell +wall-type+ nil)
     shell))
 

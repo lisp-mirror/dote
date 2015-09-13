@@ -16,33 +16,29 @@
 
 (in-package :random-key)
 
-(define-constant +file-record-sep+        "-"                 :test #'string=)
+(define-constant +file-record-sep+                       "-"   :test #'string=)
 
-(define-constant +type-name+              "key"               :test #'string=)
+(define-constant +type-name+                             "key" :test #'string=)
 
-(define-constant +minimum-key-level+          1               :test #'=)
+(define-constant +minimum-level+                         1     :test #'=)
 
-(define-constant +maximum-key-level+          9               :test #'=)
+(define-constant +maximum-level+                         9     :test #'=)
 
-(define-constant +minimum-key-modifier+       1.0             :test #'=)
+(define-constant +minimum-modifier+                      1.0   :test #'=)
 
-(define-constant +minimum-chance-key-effects+ 0.1             :test #'=)
+(define-constant +minimum-duration-healing-fx+           2.0   :test #'=)
 
-(define-constant +maximum-chance-key-effects+ 1.0             :test #'=)
+(define-constant +minimum-chance-healing-fx+             0.05  :test #'=)
 
-(define-constant +minimum-duration-healing-fx+           2.0  :test #'=)
+(define-constant +re-healing+                 "p-heal"         :test #'string=)
 
-(define-constant +minimum-chance-healing-fx+             0.05 :test #'=)
+(define-constant +berserk+                    "berserk"        :test #'string=)
 
-(define-constant +re-healing+                 "p-heal"        :test #'string=)
+(define-constant +faint+                      "faint"          :test #'string=)
 
-(define-constant +berserk+                    "berserk"       :test #'string=)
+(define-constant +terror+                     "terror"         :test #'string=)
 
-(define-constant +faint+                      "faint"         :test #'string=)
-
-(define-constant +terror+                     "terror"        :test #'string=)
-
-(define-constant +poison+                     "poison"        :test #'string=)
+(define-constant +poison+                     "poison"         :test #'string=)
 
 (define-constant +level-sigma+         #(1 1.2 1.8 1.9 2.0 2.2 2.3 2.5 2.7 3.0)
   :test #'equalp)
@@ -68,9 +64,23 @@
 (define-constant +chance-healing-fx-mean+  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
   :test #'equalp)
 
-(define-constant +minimum-num-healing-effects+ 2.0        :test #'=)
+(define-constant +minimum-num-healing-effects+            2.0          :test #'=)
 
-(define-constant +maximum-num-healing-effects+ 4.0        :test #'=)
+(define-constant +maximum-num-healing-effects+            4.0          :test #'=)
+
+(define-constant +minimum-damage-point+                   1.0          :test #'=)
+
+(define-constant +maximum-damage-point+                  20.0          :test #'=)
+
+(defun randomize-damage-points (character level)
+  (setf (damage-points character)
+	(calculate-randomized-damage-points level
+					     +minimum-level+
+					     +maximum-level+
+					     +minimum-damage-point+
+					     +maximum-damage-point+
+					     (d/ (d level) (d* 5.0 (d +maximum-level+))))))
+
 
 (defun level-params (map-level)
   (values (elt +level-sigma+ map-level)
@@ -80,7 +90,7 @@
   (multiple-value-bind (sigma mean)
       (level-params (1- map-level))
     (clamp (truncate (gaussian-probability sigma mean))
-	   +minimum-key-level+ +maximum-key-level+)))
+	   +minimum-level+ +maximum-level+)))
 
 (defun modifier-params (key-level)
   (values (elt +modifier-sigma+ key-level)
@@ -139,8 +149,17 @@
 	0
 	(lcg-next-upto (max 0.0 max)))))
 
+(defun generate-key (map-level keycode)
+  (generate-key* (res:get-resource-file +default-interaction-filename+
+					+default-character-key-dir+
+					:if-does-not-exists :error)
+		 (res:get-resource-file +default-character-filename+
+					+default-character-key-dir+
+					:if-does-not-exists :error)
+		 map-level
+		 keycode))
 
-(defun generate-key (interaction-file character-file map-level keycode)
+(defun generate-key* (interaction-file character-file map-level keycode)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
     (with-interaction-parameters (template interaction-file)
@@ -158,6 +177,7 @@
 	(fill-character-plist char-template)
 	(let ((key-character (params->np-character char-template)))
 	  (setf (basic-interaction-params key-character) template)
+	  (randomize-damage-points key-character key-level)
 	  key-character)))))
 
 (defun regexp-file-portrait ()

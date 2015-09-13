@@ -36,17 +36,30 @@
 (define-constant +modifier-mean+  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
   :test #'equalp)
 
-(define-constant +minimum-decay+                 20.0        :test #'=)
+(define-constant +minimum-decay+                 20.0     :test #'=)
 
-(define-constant +minimum-level+                  1          :test #'=)
+(define-constant +minimum-level+                  1       :test #'=)
 
-(define-constant +maximum-level+                  9          :test #'=)
+(define-constant +maximum-level+                  9       :test #'=)
 
-(define-constant +minimum-chance-effects+         2.0        :test #'=)
+(define-constant +minimum-chance-effects+         2.0     :test #'=)
 
-(define-constant +maximum-chance-effects+         4.0        :test #'=)
+(define-constant +maximum-chance-effects+         4.0     :test #'=)
 
-(define-constant +type-name+                      "shoes"    :test #'string=)
+(define-constant +type-name+                      "shoes" :test #'string=)
+
+(define-constant +minimum-damage-point+           1.0     :test #'=)
+
+(define-constant +maximum-damage-point+          50.0     :test #'=)
+
+(defun randomize-damage-points (character level)
+  (setf (damage-points character)
+	(calculate-randomized-damage-points level
+					     +minimum-level+
+					     +maximum-level+
+					     +minimum-damage-point+
+					     +maximum-damage-point+
+					     (d/ (d level) (d* 5.0 (d +maximum-level+))))))
 
 (defun decay-params (shoes-level)
   (values (elt +decay-sigma+ shoes-level)
@@ -95,7 +108,16 @@
 			       +maximum-chance-effects+))))
     (lcg-next-upto max)))
 
-(defun generate-shoes (interaction-file character-file map-level)
+(defun generate-shoes (map-level)
+  (%generate-shoes (res:get-resource-file +default-interaction-filename+
+					      +default-character-shoes-dir+
+					      :if-does-not-exists :error)
+		       (res:get-resource-file +default-character-filename+
+					      +default-character-shoes-dir+
+					      :if-does-not-exists :error)
+		       map-level))
+
+(defun %generate-shoes (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
     (with-interaction-parameters (template interaction-file)
@@ -113,6 +135,7 @@
 	(fill-character-plist char-template shoes-level)
 	(let ((shoes-character (params->np-character char-template)))
 	  (setf (basic-interaction-params shoes-character) template)
+	  (randomize-damage-points shoes-character shoes-level)
 	  shoes-character)))))
 
 (defun set-effect (effect-path shoes-level interaction)

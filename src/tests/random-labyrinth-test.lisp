@@ -25,10 +25,15 @@
   (num:with-lcg-seed (random-seed)
     (let* ((func-sigma #'(lambda (x a) (declare (ignorable a)) (+ 10 x)))
 	   (func-door #'(lambda (x a) (declare (ignorable a x)) 5))
+	   (func-furniture #'(lambda (x a) (declare (ignorable a x)) 50))
 	   (func-win #'(lambda (x a) (declare (ignorable a)) (1+ x)))
-	   (root (generate size :scale-fact scale-fact :func-sigma-w func-sigma
-			   :func-sigma-h func-sigma :func-door func-door :func-win func-win
-			   :func-furniture func-door)))
+	   (root (generate size
+			   :scale-fact scale-fact
+			   :func-sigma-w func-sigma
+			   :func-sigma-h func-sigma
+			   :func-door func-door
+			   :func-win func-win
+			   :func-furniture func-furniture)))
       (clear-mat root)
       (room->mat root)
       (let ((tmp-ppm (concatenate 'string (test-dir) tmp-ppm-filename))

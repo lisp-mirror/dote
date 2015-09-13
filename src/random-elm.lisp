@@ -74,6 +74,19 @@
 
 (define-constant +healing-target-self-chance+            3          :test #'=)
 
+(define-constant +minimum-damage-point+                   1.0          :test #'=)
+
+(define-constant +maximum-damage-point+                 100.0          :test #'=)
+
+(defun randomize-damage-points (character level)
+  (setf (damage-points character)
+	(calculate-randomized-damage-points level
+					    +minimum-level+
+					    +maximum-level+
+					    +minimum-damage-point+
+					    +maximum-damage-point+
+					     (d/ (d level) (d* 5.0 (d +maximum-level+))))))
+
 (defun decay-params (elm-level)
   (values (elt +decay-sigma+ elm-level)
 	  (elt +decay-mean+  elm-level)))
@@ -131,7 +144,16 @@
 	0
 	(lcg-next-upto (max 0.0 max)))))
 
-(defun generate-elm (interaction-file character-file map-level)
+(defun generate-elm (map-level)
+  (%generate-elm (res:get-resource-file +default-interaction-filename+
+					+default-character-elm-dir+
+					:if-does-not-exists :error)
+		 (res:get-resource-file +default-character-filename+
+					+default-character-elm-dir+
+					:if-does-not-exists :error)
+		 map-level))
+
+(defun %generate-elm (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
     (with-interaction-parameters (template interaction-file)
@@ -160,6 +182,7 @@
 	(fill-character-plist char-template template elm-level)
 	(let ((elm-character (params->np-character char-template)))
 	  (setf (basic-interaction-params elm-character) template)
+	  (randomize-damage-points elm-character elm-level)
 	  elm-character)))))
 
 (defun set-effect (effect-path elm-level interaction)

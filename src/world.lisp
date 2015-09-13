@@ -290,24 +290,10 @@
   (setf (camera object) (make-instance 'camera :pos (vec 0.0 0.0 1.0)))
   ;; gui
   (let* ((char  (character:make-warrior :human))
-	 (chest (random-container:generate-container
-		 (fs:file-in-package "data/characters/container/interaction.lisp")
-		 (fs:file-in-package "data/characters/container/character.lisp")
-		 10
-		 (fs:file-in-package "data/characters/key/interaction.lisp")
-		 (fs:file-in-package "data/characters/key/character.lisp")))
-	 (obj1   (random-shoes:generate-shoes
-		  (fs:file-in-package "data/characters/shoes/interaction.lisp")
-		  (fs:file-in-package "data/characters/shoes/character.lisp")
-		  10))
-	 (obj2   (random-elm:generate-elm
-		  (fs:file-in-package "data/characters/elm/interaction.lisp")
-		  (fs:file-in-package "data/characters/elm/character.lisp")
-		  10))
-	 (obj3   (random-potion:generate-potion
-		  (fs:file-in-package "data/characters/potion/interaction.lisp")
-		  (fs:file-in-package "data/characters/potion/character.lisp")
-		  10))
+	 (chest (random-container:generate-container 10))
+	 (obj1   (random-shoes:generate-shoes 10))
+	 (obj2   (random-elm:generate-elm 10))
+	 (obj3   (random-potion:generate-potion 10))
 	 (texture-portrait (texture:gen-name-and-inject-in-database
 			    (avatar-portrait:build-avatar "m"))))
     (texture:prepare-for-rendering texture-portrait)
@@ -315,18 +301,9 @@
     (setf (character:first-name char)  "first"
 	  (character:last-name char)   "last")
     (setf (character:inventory char)
-	  (list (random-ring:generate-ring
-		 (fs:file-in-package "data/characters/ring/interaction.lisp")
-		 (fs:file-in-package "data/characters/ring/character.lisp")
-		 10)
-		(random-weapon:generate-weapon
-		 (fs:file-in-package "data/characters/weapons/sword/interaction.lisp")
-		 (fs:file-in-package "data/characters/weapons/sword/character.lisp")
-		 10)
-		(random-armor:generate-armor
-		 (fs:file-in-package "data/characters/armor/interaction.lisp")
-		 (fs:file-in-package "data/characters/armor/character.lisp")
-		 10)))
+	  (list (random-ring:generate-ring     10)
+		(random-weapon:generate-weapon 10 :sword)
+		(random-armor:generate-armor   10)))
     (add-child chest obj1)
     (add-child chest obj2)
     (add-child chest obj3)
