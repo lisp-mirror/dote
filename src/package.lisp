@@ -119,7 +119,8 @@
    :+default-furniture-templates-dir+
    :+gui-static-text-delim+
    :+gui-static-text-nbsp+
-   :+standard-float-print-format+))
+   :+standard-float-print-format+
+   :+container-capacity+))
 
 (defpackage :profiling
   (:use :cl)
@@ -1715,6 +1716,7 @@
    :+floor-type+
    :+ceiling-type+
    :map-state-element
+   :map-element-empty-p
    :entity-id
    :el-type
    :occlude
@@ -1740,6 +1742,7 @@
    :selected-pc
    :build-movement-path
    :terrain-aabb-2d
+   :find-entity-by-id
    :map-level
    :push-entity))
 
@@ -1994,6 +1997,9 @@
    :wall-mesh-shell
    :window-mesh-shell
    :decorated-wall-mesh-shell
+   :door-mesh-shell
+   :fountain-mesh-shell
+   :container-mesh-shell
    :setup-projective-texture))
 
 (defpackage :pickable-mesh

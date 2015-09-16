@@ -161,8 +161,8 @@
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
     (with-interaction-parameters (template interaction-file)
-      (let* ((container-level        (calculate-container-level map-level))
-	     (healing-effects-no     (number-of-healing-effects container-level 0))
+      (let* ((container-level       (calculate-container-level map-level))
+	     (healing-effects-no    (number-of-healing-effects container-level 0))
 	     (healing-effects       (%get-healing-fx-shuffled template healing-effects-no)))
 	(n-setf-path-value template (list +decay+) nil)
 	(loop for i in healing-effects do
@@ -175,14 +175,20 @@
 					      container-level template))))
 	(setf template (remove-generate-symbols template))
 	(fill-character-plist char-template)
-	(when (= (lcg-next-upto (calculate-locked-chance container-level)) 0)
-	  (let ((keycode (generate-keycode)))
-	    (push (random-key:generate-key* key-interaction-file
-					    key-character-file
-					    map-level
-					    keycode)
-		  keychain)
-	    (n-setf-path-value template (list +can-open+) keycode)))
+	(if (= (lcg-next-upto (calculate-locked-chance container-level)) 0)
+	    (let ((keycode (generate-keycode)))
+	      (push (random-key:generate-key* key-interaction-file
+					      key-character-file
+					      map-level
+					      keycode)
+		    keychain)
+	      (n-setf-path-value template (list +can-be-opened+) keycode)) ; can
+									   ; be
+									   ; opened
+									   ; with
+									   ; appropriate
+									   ; key
+	      (n-setf-path-value template (list +can-be-opened+) t)) ; no key
 	(let ((container-character (params->np-character char-template)))
 	  (setf (basic-interaction-params container-character) template)
 	  (randomize-damage-points container-character container-level)

@@ -96,7 +96,8 @@
 	  table
 	  walkable
 	  wall-decoration
-	  npc pc)
+	  npc
+	  pc)
 
 (defclass map-state-element (identificable)
   ((entity-id
@@ -116,6 +117,14 @@
     :initarg  :occlude
     :reader   occludep
     :writer   (setf occlude))))
+
+(defgeneric map-element-empty-p (object))
+
+(defmethod map-element-empty-p ((object map-state-element))
+  (or (eq (el-type object)
+	  +empty-type+)
+      (eq (el-type object)
+	  +floor-type+)))
 
 (defclass game-state ()
   ((game-hour
@@ -269,8 +278,8 @@
 				  id
 				  :equal     #'=
 				  :compare   #'<
-				  :key-datum #'id
-				  :key       #'id))))
+				  :key       #'id
+				  :key-datum #'identity))))
 
 (defmethod map-level ((object game-state))
   (truncate (/ (+ (level-difficult object)

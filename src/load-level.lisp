@@ -65,7 +65,7 @@
 		      (:door-w
 		       +door-w-type+)))
 	 (door-shell (mesh:fill-shell-from-mesh (funcall door-type-fn (doors-bag world))
-						'mesh:triangle-mesh-shell)))
+						'mesh:door-mesh-shell)))
     (setf (compiled-shaders door-shell) (compiled-shaders world))
     ;; set the mesh
     (setf (entity:pos door-shell)
@@ -89,44 +89,53 @@
 	  (cons magic-share     +magic-furniture-type+)
 	  (cons container-share +container-type+))))
 
-(defun setup-furnitures (world min-x min-y x y freq)
+(defun furniture-type->shell-type (furniture-type)
+  (cond
+    ((eq furniture-type +magic-furniture-type+)
+     'mesh:fountain-mesh-shell)
+    ((eq furniture-type +container-type+)
+     'mesh:container-mesh-shell)
+    (t
+     'mesh:triangle-mesh-shell)))
+
+(defun setup-furnitures (world min-x min-y x y freq keychain)
   (when (all-furnitures-but-pillars-not-empty-p world)
     (let* ((dice-roll (random-select-by-frequency freq :key #'car :sort nil :normalize nil))
-	   (type-of-furniture (cdr dice-roll))
-	   (choosen          (if (eq type-of-furniture +furniture-type+)
+	   (furniture-type (cdr dice-roll))
+	   (choosen          (if (eq furniture-type +furniture-type+)
 				 (random-elt (furnitures-bag world))
-				 (if (eq type-of-furniture +magic-furniture-type+)
+				 (if (eq furniture-type +magic-furniture-type+)
 				     (random-elt (magic-furnitures-bag world))
 				     (random-elt (containers-bag world)))))
-	   (shell            (mesh:fill-shell-from-mesh choosen))
+	   (shell            (mesh:fill-shell-from-mesh choosen
+							(furniture-type->shell-type furniture-type)))
 	   (mesh-x           (d+ (d* +terrain-chunk-size-scale+ min-x)
 				 (coord-map->chunk (d (+ x min-x)))))
 	   (mesh-y           (d+ (d* +terrain-chunk-size-scale+ min-y)
 				 (coord-map->chunk (d (+ y min-y))))))
       (setf (compiled-shaders shell)               (compiled-shaders world)
             (entity:pos shell)	                   (vec mesh-x +zero-height+ mesh-y)
-	    (entity:dir shell)                     (random-elt
-						    (vector (vec  1.0 0.0  0.0)
-							    (vec  0.0 0.0  1.0)
-							    (vec -1.0 0.0  0.0)
-							    (vec  0.0 0.0 -1.0))))
+	    (entity:dir shell)                     (random-elt (vector (vec  1.0 0.0  0.0)
+								       (vec  0.0 0.0  1.0)
+								       (vec -1.0 0.0  0.0)
+								       (vec  0.0 0.0 -1.0))))
       (setf (entity:ghost shell)
 	    (cond
-	      ((eq type-of-furniture +furniture-type+)
+	      ((eq furniture-type +furniture-type+)
 	       (random-inert-object:generate-inert-object
 		(game-state:map-level (main-state world))))
-	      ((eq type-of-furniture +magic-furniture-type+)
+	      ((eq furniture-type +magic-furniture-type+)
 	       (random-fountain:generate-fountain (game-state:map-level (main-state world))))
-	      ((eq type-of-furniture +container-type+)
-	       ;; TODO
-	       ;; add character
-	       )))
-      (push-interactive-entity world shell type-of-furniture nil))))
+	      ((eq furniture-type +container-type+)
+	       (random-container:generate-container (game-state:map-level (main-state world))
+						    :keychain keychain))))
+      (push-interactive-entity world shell furniture-type nil))))
 
 (defun %relative-coord-furniture->cood-mat-state (min rel-coord)
   (truncate (+ (coord-layer->map-state min) rel-coord)))
 
 (defun common-setup-furniture (world bag min-x min-y x y)
+  "Note: will add ghost as well"
   (let* ((choosen  (random-elt bag))
 	 (shell    (mesh:fill-shell-from-mesh choosen))
 	 (mesh-x   (d+ (d* +terrain-chunk-size-scale+ min-x)
@@ -252,50 +261,66 @@
     (push-interactive-entity world shell +wall-type+ nil)
     shell))
 
+(defun count-container-fn (world)
+  #'(lambda (a)
+      (when (not (game-state:map-element-empty-p a))
+	(let ((mesh (game-state:find-entity-by-id (main-state world)
+						  (game-state:entity-id a)))
+	      (type (game-state:el-type a)))
+	  (assert (not (null mesh)))
+	  (and (character:containerp (entity:ghost mesh))
+	       (typep mesh 'mesh:container-mesh-shell)
+	       (eq type +container-type+))))))
+
 (defun setup-labyrinths (world map)
-  (loop
-     for aabb in (labyrinths-aabb map)
-     for bmp  in (mapcar #'(lambda (a)
-			     (clean-and-redraw-mat a)
-			     (shared-matrix        a))
-			 (labyrinths map))             do
-       (let* ((min-x   (iaabb2-min-x aabb))
-	      (min-y   (iaabb2-min-y aabb)))
-	 (loop-matrix (bmp x y)
-	    (cond
-	      ((wallp (matrix-elt bmp y x))
-	       (setup-wall world bmp min-x min-y x y))
-	      ((windowp (matrix-elt bmp y x))
-	       (setup-window world min-x min-y x y))
-	      ((door-n-p (matrix-elt bmp y x))
-	       (setup-door world :door-s min-x min-y x y))
-	      ((door-s-p (matrix-elt bmp y x))
-	       (setup-door world :door-n min-x min-y x y))
-	      ((door-e-p (matrix-elt bmp y x))
-	       (setup-door world :door-e min-x min-y x y))
-	      ((door-w-p (matrix-elt bmp y x))
-	       (setup-door world :door-w min-x min-y x y))
-	      ((furniture-pillar-p  (matrix-elt bmp y x))
-	       (setup-pillar world min-x min-y x y))
-	      ((furniture-walkable-p  (matrix-elt bmp y x))
-	       (setup-walkable world min-x min-y x y))
-	      ((furniture-table-p  (matrix-elt bmp y x))
-	       (setup-table world min-x min-y x y))
-	      ((furniture-other-p (matrix-elt bmp y x))
-	       (setup-furnitures world min-x min-y x y
-				 (sort (calculate-furnitures-shares (game-state:level-difficult
-								     (main-state world)))
-				       #'<
-				       :key #'car)))))
-	 ;; we  can setup  wall decorations  and chair  only after  we
-	 ;; arranged  the  other furnitures  as  the  first two  do  a
-	 ;; look-up on game state matrix.
-	 (loop-matrix (bmp x y)
-	    (cond
-	      ((furniture-chair-p  (matrix-elt bmp y x))
-	       (setup-chair world min-x min-y x y))
-	      ((furniture-wall-decoration-p  (matrix-elt bmp y x))
-	       (setup-wall-decoration world min-x min-y x y)))))))
+  (let ((keychain nil))
+    (loop
+       for aabb in (labyrinths-aabb map)
+       for bmp  in (mapcar #'(lambda (a)
+			       (clean-and-redraw-mat a)
+			       (shared-matrix        a))
+			   (labyrinths map))             do
+	 (let* ((min-x   (iaabb2-min-x aabb))
+		(min-y   (iaabb2-min-y aabb)))
+	   (loop-matrix (bmp x y)
+	      (cond
+		((wallp (matrix-elt bmp y x))
+		 (setup-wall world bmp min-x min-y x y))
+		((windowp (matrix-elt bmp y x))
+		 (setup-window world min-x min-y x y))
+		((door-n-p (matrix-elt bmp y x))
+		 (setup-door world :door-s min-x min-y x y))
+		((door-s-p (matrix-elt bmp y x))
+		 (setup-door world :door-n min-x min-y x y))
+		((door-e-p (matrix-elt bmp y x))
+		 (setup-door world :door-e min-x min-y x y))
+		((door-w-p (matrix-elt bmp y x))
+		 (setup-door world :door-w min-x min-y x y))
+		((furniture-pillar-p  (matrix-elt bmp y x))
+		 (setup-pillar world min-x min-y x y))
+		((furniture-walkable-p  (matrix-elt bmp y x))
+		 (setup-walkable world min-x min-y x y))
+		((furniture-table-p  (matrix-elt bmp y x))
+		 (setup-table world min-x min-y x y))
+		((furniture-other-p (matrix-elt bmp y x))
+		 (setup-furnitures world min-x min-y x y
+				   (sort (calculate-furnitures-shares (game-state:level-difficult
+								       (main-state world)))
+					 #'<
+					 :key #'car)
+				   keychain))))
+	   ;; we  can setup  wall decorations  and chair  only after  we
+	   ;; arranged  the  other furnitures  as  the  first two  do  a
+	   ;; look-up on game state matrix.
+	   (loop-matrix (bmp x y)
+	      (cond
+		((furniture-chair-p  (matrix-elt bmp y x))
+		 (setup-chair world min-x min-y x y))
+		((furniture-wall-decoration-p  (matrix-elt bmp y x))
+		 (setup-wall-decoration world min-x min-y x y))))))
+    (let ((container-count (count-if (count-container-fn world)
+				     (matrix:data (game-state:map-state (main-state world))))))
+      (misc:dbg "container ~a" container-count))))
 
 (defun setup-single-floor (world aabb)
   (let* ((rect            (aabb2->rect2 aabb))

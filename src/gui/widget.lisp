@@ -703,6 +703,9 @@
 (defmethod on-mouse-pressed ((object signalling-light) event)
   nil)
 
+(defmethod on-mouse-released ((object signalling-light) event)
+  nil)
+
 (defclass button (naked-button) ())
 
 (defmethod initialize-instance :after ((object button) &key &allow-other-keys)
@@ -3400,18 +3403,12 @@
 (defun show/hide-chest-slots-cb (w e)
   (declare (ignore e))
   (let* ((parent (parent w))
-	 (ch-0   (chest-slot-0 parent))
-	 (ch-1   (chest-slot-1 parent))
-	 (ch-2   (chest-slot-2 parent)))
+	 (chest-slots (chest-slots parent)))
     (if (button-state w)
-	(progn
-	  (show ch-0)
-	  (show ch-1)
-	  (show ch-2))
-	(progn
-	  (hide ch-0)
-	  (hide ch-1)
-	  (hide ch-2)))))
+	(loop for slot in chest-slots do
+	     (show slot))
+	(loop for slot in chest-slots do
+	     (hide slot)))))
 
 (defun remove-inventory-page (window)
   (let ((current-slots-page (current-slots-page window)))
@@ -3490,21 +3487,17 @@
 (defun dismiss-item-cb (w e)
   (declare (ignore e))
   (with-parent-widget (win) w
-    (with-accessors ((chest-slot-0 chest-slot-0) (chest-slot-1 chest-slot-1)
-		     (chest-slot-2 chest-slot-2) (owner owner)) win
+    (with-accessors ((chest-slots chest-slots) (owner owner)) win
       (multiple-value-bind (slot item)
 	  (get-selected-item win)
-	(let ((available-chest-slot (cond
-				      ((empty-slot-p chest-slot-0)
-				       chest-slot-0)
-				      ((empty-slot-p chest-slot-1)
-				       chest-slot-1)
-				      ((empty-slot-p chest-slot-2)
-				       chest-slot-2)
-				      (t nil))))
+	(let ((available-chest-slot (loop
+				       named inner
+				       for slot in chest-slots do
+					 (when (empty-slot-p slot)
+					   (return-from inner slot)))))
 	  (when (and slot
 		     available-chest-slot)
-	    (add-containded-item     available-chest-slot item)
+	    (add-containded-item available-chest-slot item)
 	    (remove-containded-item  slot)
 	    (setf (character:inventory owner)
 		  (remove-if #'(lambda (a) (= (id item) a))
@@ -3686,24 +3679,13 @@
     :initform nil
     :initarg  :chest
     :accessor chest)
-   (chest-slot-0
-    :initform (make-inventory-slot-button (small-square-button-size *reference-sizes*)
-					  (y-just-under-slot-page)
-					  :callback #'inventory-update-description-cb)
-    :initarg  :chest-slot-0
-    :accessor chest-slot-0)
-   (chest-slot-1
-    :initform (make-inventory-slot-button (d* 2.0 (small-square-button-size *reference-sizes*))
-					  (y-just-under-slot-page)
-					  :callback #'inventory-update-description-cb)
-    :initarg  :chest-slot-1
-    :accessor chest-slot-1)
-   (chest-slot-2
-    :initform (make-inventory-slot-button (d* 3.0 (small-square-button-size *reference-sizes*))
-					  (y-just-under-slot-page)
-					  :callback #'inventory-update-description-cb)
-    :initarg  :chest-slot-2
-    :accessor chest-slot-2)
+   (chest-slots
+    :initform (loop for x from 1.0 to (d +container-capacity+) by 1.0 collect
+		   (make-inventory-slot-button (d* x (small-square-button-size *reference-sizes*))
+					       (y-just-under-slot-page)
+					       :callback #'inventory-update-description-cb))
+    :initarg  :chest-slots
+    :accessor chest-slots)
    (current-slots-page
     :initform nil
     :initarg  :current-slots-page
@@ -3893,8 +3875,7 @@
 		   (b-chest b-chest) (b-next-page b-next-page)
 		   (current-slots-page-number current-slots-page-number)
 		   (b-prev-page b-prev-page) (lb-page-count lb-page-count)
-		   (chest-slot-0 chest-slot-0) (chest-slot-1 chest-slot-1)
-		   (chest-slot-2 chest-slot-2)
+		   (chest-slots chest-slots)
 		   (img-silhouette img-silhouette)
 		   (elm-slot elm-slot) (shoes-slot shoes-slot)
 		   (armor-slot armor-slot) (left-hand-slot left-hand-slot)
@@ -3922,19 +3903,16 @@
 	     (setf (group i) group-slots)))
       (loop for slot in current-slots-page do
 	   (add-child object slot))
-      (let ((group-chest (make-check-group* chest-slot-0 chest-slot-1 chest-slot-2)))
-	(setf (group chest-slot-0) group-chest
-	      (group chest-slot-1) group-chest
-	      (group chest-slot-2) group-chest))
+      (let ((group-chest (make-check-group chest-slots)))
+	(map nil
+	     #'(lambda (a) (setf (group a) group-chest))
+	     chest-slots))
       (add-child object b-prev-page)
       (add-child object b-next-page)
       (add-child object lb-page-count)
-      (add-child object chest-slot-0)
-      (add-child object chest-slot-1)
-      (add-child object chest-slot-2)
-      (hide chest-slot-0)
-      (hide chest-slot-1)
-      (hide chest-slot-2)
+      (loop for slot in chest-slots do
+	   (add-child object slot)
+	   (hide slot))
       (add-child object b-sort)
       (add-child object b-use)
       (add-child object b-wear)
@@ -3988,10 +3966,15 @@
 	 (and ,selected
 	      (values ,selected (contained-entity ,selected)))))))
 
-(gen-get-selected-item (chest)
-		       chest-slot-0
-		       chest-slot-1
-		       chest-slot-2)
+(defmethod get-selected-chest-item ((object inventory-window))
+  (let ((selected (loop
+		     named inner
+		     for slot in (chest-slots object) do
+		       (when (and slot
+				  (button-state slot))
+			 (return-from inner slot)))))
+    (and selected
+         (values selected (contained-entity selected)))))
 
 (gen-get-selected-item (worn)
 		       elm-slot
@@ -4019,8 +4002,7 @@
 
 (defmethod add-inventory-objects ((object inventory-window))
   (with-accessors ((slots-pages slots-pages) (owner owner) (chest chest)
-		   (chest-slot-0 chest-slot-0) (chest-slot-1 chest-slot-1)
-		   (chest-slot-2 chest-slot-2)) object
+		   (chest-slots chest-slots)) object
     (when owner
       (assert (<= (length (character:inventory owner))
 		  (length (alexandria:flatten slots-pages))))
@@ -4034,19 +4016,9 @@
       (assert (or (null (children chest))
 		  (<= (length (children chest)) 3)))
       (loop for i from 0 below (length (children chest)) do
-	   (cond
-	     ((= i 0)
-	      (setf (contained-entity chest-slot-0) (elt (children chest) i))
-	      (setf (texture-overlay  chest-slot-0)
-		    (character:portrait (elt (children chest) i))))
-	     ((= i 1)
-	      (setf (contained-entity chest-slot-1) (elt (children chest) i))
-	      (setf (texture-overlay  chest-slot-1)
-		    (character:portrait (elt (children chest) i))))
-	     ((= i 2)
-	      (setf (contained-entity chest-slot-2) (elt (children chest) i))
-	      (setf (texture-overlay  chest-slot-2)
-		    (character:portrait (elt (children chest) i)))))))))
+	   (setf (contained-entity (elt chest-slots i)) (elt (children chest) i))
+	   (setf (texture-overlay  (elt chest-slots i))
+		 (character:portrait (elt (children chest) i)))))))
 
 (defun inventory-window-width ()
   (d+ (d* 13.0 (small-square-button-size *reference-sizes*))

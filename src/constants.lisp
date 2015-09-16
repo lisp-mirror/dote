@@ -177,3 +177,5 @@
 (define-constant +gui-static-text-nbsp+            "¬"                            :test #'string=)
 
 (define-constant +standard-float-print-format+     "~,2@f"                        :test #'string=)
+
+(define-constant +container-capacity+              3                              :test #'=)

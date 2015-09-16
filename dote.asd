@@ -103,6 +103,9 @@
 	       (:file "mesh")
 	       (:file "wall-mesh-shell")
 	       (:file "window-mesh-shell")
+	       (:file "door-mesh-shell")
+	       (:file "container-mesh-shell")
+	       (:file "fountain-mesh-shell")
 	       (:file "pickable-mesh")
 	       (:file "building-floor-mesh")
 	       (:module gui
