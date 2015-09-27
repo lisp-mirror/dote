@@ -152,7 +152,7 @@
 	     portrait
 	     weight
 	     damage-points
-	     current-damage-point
+	     current-damage-points
 	     level
 	     age
 	     basic-interaction-params)
