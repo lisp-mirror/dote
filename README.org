@@ -1,17 +1,17 @@
 * Introduction
 
-dawn  of the  Era (dote  for  short) will  be a  fantasy, turn  based,
+Dawn  of the  Era (dote  for  short) will  be a  fantasy, turn  based,
 tactical game.
 
 ** Features
 
 - procedural  generation of  levels, terrains,  trees, labyrinths  and
   most of the textures;
+- random game object generation;
 - supported mesh  in obj and MD2  file format, tags supported  for the
   latter;
 - simple caching system for levels;
 - Opengl GUI (work in progress).
- 
 
 * Current status
 
@@ -35,22 +35,22 @@ For example
 "/home/username/lisp/dote/po" :test #'string=)
 
 #+END_SRC
-  
+
 then open  emacs and  slime load  dote and finally,  on the  REPL type
 (main-window::main).
 
 
-** Hardware requisite   
+** Hardware requisite
    - 8 Gb of RAM;
    - Accelerated GPU.
 
 ** Dependency
-   
+
    Of course a Common lisp  compiler is mandatory, the compilation has
-   been  tested  only with  SBCL  version  1.2.4 on  Debian  GNU/Linux
+   been  tested only  with  SBCL version  1.2.15  on Debian  GNU/Linux
    (testing).
 
-   dote depends on the following lisp library:
+   dote depends on the following lisp libraries:
    - uiop (bundled with ASDF3);
    - swank;
    - clunit;
@@ -72,21 +72,24 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
    - sb-cga;
    - cl-opengl;
    - sdl2kit;
-   - s-dot.
+   - s-dot;
+   - kanren-trs.
 
-   Please note that s-dot from  quicklisp will *not* works, you should
-   download              the               version              hosted
-   [[here][https://github.com/cage2/s-dot2]].
+   Please note that s-dot and kanren-trs from  quicklisp will *not* work, you should
+   download              the               versions              hosted below
+   - [[[https://github.com/cage2/s-dot2][https://github.com/cage2/s-dot2]], for s-dot;
+   - [[https://github.com/cage2/cl-kanren-trs][https://github.com/cage2/cl-kanren-trs]],
+     for kanren-trs.
 
    Moreover  you  will  need  a Opengl  implementation  with  hardware
    acceleration.  tested  only  with  Mesa library  with  Intel(R)  HD
    Graphics 2500 GPU.
 
 * Issues
-  
-  I strongly  recomend you to  compile and run  the demo in  a testing
-  environment as it is unstable (i. e. frequently crash), remember also
-  that there is [[NO WARRANTY]].
+
+  I strongly  recommend you to compile  and run the demo  in a testing
+  environment as  it is  unstable (i.  e. frequently  crash), remember
+  also that there is [[NO WARRANTY]].
 
 * BUGS
 
@@ -106,27 +109,26 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
 
 * Contributing
   Any  help  is  appreciated.   Artist,  translators  and  coders  are
-  needed. If you intend to contribute please send a message to 
+  needed. If you intend to contribute please send a message to
   cage at katamail dot com.
-  
 
 * NO WARRANTY
-  
+
   Dawn of the era: a tactical game.
   Copyright (C) 2015  cage
-  
+
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
-  
+
   This program is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
-  
+
   You should have received a copy of the GNU General Public License
-  along with this program.  
+  along with this program.
   If not, see [[http://www.gnu.org/licenses/][http://www.gnu.org/licenses/]].
 
 * Thanks

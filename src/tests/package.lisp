@@ -200,3 +200,11 @@
 	:all-test
 	:mtree)
   (:export :test-find-odd))
+
+(defpackage :kanren-test
+  (:use :cl
+	:clunit
+	:all-test
+	:alexandria
+	:kanren-trs
+	:kanren-utils))

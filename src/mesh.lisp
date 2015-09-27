@@ -790,7 +790,6 @@
  		   (loop for i across (vertex-index tr) collect
  			(find-value-by-index object i)))))))
 
-
 (defmacro gen-recursive-writer (what argname)
   (let ((fn-name (alexandria:format-symbol t "~:@(~a~)" what)))
     `(progn

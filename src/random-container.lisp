@@ -95,7 +95,6 @@
     (clamp (truncate (gaussian-probability sigma mean))
 	   +minimum-level+ +maximum-level+)))
 
-
 (defun healing-fx-params-chance (container-level)
   (values (elt +chance-healing-fx-sigma+ container-level)
 	  (elt +chance-healing-fx-mean+  container-level)))
@@ -138,7 +137,7 @@
 (defun generate-keycode ()
   (subseq (shuffle "1234567890") 0 8))
 
-(defun generate-container (map-level &key (keychain '()))
+(defun generate-container (map-level &key (keychain (misc:make-fresh-array 0 nil t nil)))
   (%generate-container (res:get-resource-file +default-interaction-filename+
 					      +default-character-container-dir+
 					      :if-does-not-exists :error)
@@ -155,9 +154,9 @@
 		       :keychain keychain))
 
 (defun %generate-container (interaction-file character-file map-level
-			   key-interaction-file key-character-file
-			   &key
-			     (keychain '()))
+			    key-interaction-file key-character-file
+			    &key
+			      (keychain (misc:make-fresh-array 0 nil t nil)))
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
     (with-interaction-parameters (template interaction-file)
@@ -177,11 +176,11 @@
 	(fill-character-plist char-template)
 	(if (= (lcg-next-upto (calculate-locked-chance container-level)) 0)
 	    (let ((keycode (generate-keycode)))
-	      (push (random-key:generate-key* key-interaction-file
-					      key-character-file
-					      map-level
-					      keycode)
-		    keychain)
+	      (vector-push-extend (random-key:generate-key* key-interaction-file
+							    key-character-file
+							    map-level
+							    keycode)
+				  keychain)
 	      (n-setf-path-value template (list +can-be-opened+) keycode)) ; can
 									   ; be
 									   ; opened

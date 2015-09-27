@@ -18,6 +18,21 @@
 
 (alexandria:define-constant +terrain-chunk-cache-name+ "terrain-chunk" :test #'string=)
 
+(defparameter *available-objects-generators*
+  (list (list :weapons
+	      (list #'(lambda (map-level) (random-weapon:generate-weapon map-level :bow)))
+	      (list #'(lambda (map-level) (random-weapon:generate-weapon map-level :crossbow)))
+	      (list #'(lambda (map-level) (random-weapon:generate-weapon map-level :mace)))
+	      (list #'(lambda (map-level) (random-weapon:generate-weapon map-level :spear)))
+	      (list #'(lambda (map-level) (random-weapon:generate-weapon map-level :staff)))
+	      (list #'(lambda (map-level) (random-weapon:generate-weapon map-level :sword))))
+	(list #'random-armor:generate-armor)
+	(list #'random-elm:generate-elm)
+	(list #'random-potion:generate-potion)
+	(list #'random-ring:generate-ring)
+	(list #'random-shield:generate-shield)
+	(list #'random-shoes:generate-shoes)))
+
 (defun setup-water (world map)
   (loop for water-aabb in (random-terrain:lakes-aabb map) do
        (let ((water (make-instance 'mesh:water :measures water-aabb)))
@@ -100,25 +115,25 @@
 
 (defun setup-furnitures (world min-x min-y x y freq keychain)
   (when (all-furnitures-but-pillars-not-empty-p world)
-    (let* ((dice-roll (random-select-by-frequency freq :key #'car :sort nil :normalize nil))
+    (let* ((dice-roll      (random-select-by-frequency freq :key #'car :sort nil :normalize nil))
 	   (furniture-type (cdr dice-roll))
-	   (choosen          (if (eq furniture-type +furniture-type+)
+	   (choosen        (if (eq furniture-type +furniture-type+)
 				 (random-elt (furnitures-bag world))
 				 (if (eq furniture-type +magic-furniture-type+)
 				     (random-elt (magic-furnitures-bag world))
 				     (random-elt (containers-bag world)))))
-	   (shell            (mesh:fill-shell-from-mesh choosen
-							(furniture-type->shell-type furniture-type)))
-	   (mesh-x           (d+ (d* +terrain-chunk-size-scale+ min-x)
-				 (coord-map->chunk (d (+ x min-x)))))
-	   (mesh-y           (d+ (d* +terrain-chunk-size-scale+ min-y)
-				 (coord-map->chunk (d (+ y min-y))))))
-      (setf (compiled-shaders shell)               (compiled-shaders world)
-            (entity:pos shell)	                   (vec mesh-x +zero-height+ mesh-y)
-	    (entity:dir shell)                     (random-elt (vector (vec  1.0 0.0  0.0)
-								       (vec  0.0 0.0  1.0)
-								       (vec -1.0 0.0  0.0)
-								       (vec  0.0 0.0 -1.0))))
+	   (shell          (mesh:fill-shell-from-mesh choosen
+						      (furniture-type->shell-type furniture-type)))
+	   (mesh-x         (d+ (d* +terrain-chunk-size-scale+ min-x)
+			       (coord-map->chunk (d (+ x min-x)))))
+	   (mesh-y         (d+ (d* +terrain-chunk-size-scale+ min-y)
+			       (coord-map->chunk (d (+ y min-y))))))
+      (setf (compiled-shaders shell)  (compiled-shaders world)
+            (entity:pos shell)	      (vec mesh-x +zero-height+ mesh-y)
+	    (entity:dir shell)        (random-elt (vector (vec  1.0 0.0  0.0)
+							  (vec  0.0 0.0  1.0)
+							  (vec -1.0 0.0  0.0)
+							  (vec  0.0 0.0 -1.0))))
       (setf (entity:ghost shell)
 	    (cond
 	      ((eq furniture-type +furniture-type+)
@@ -261,7 +276,7 @@
     (push-interactive-entity world shell +wall-type+ nil)
     shell))
 
-(defun count-container-fn (world)
+(defun find-container-fn (world)
   #'(lambda (a)
       (when (not (game-state:map-element-empty-p a))
 	(let ((mesh (game-state:find-entity-by-id (main-state world)
@@ -272,8 +287,197 @@
 	       (typep mesh 'mesh:container-mesh-shell)
 	       (eq type +container-type+))))))
 
+(defun shifto (l out)
+  (fresh (a d new-tail new-list y)
+    (conso   a d l)
+    (conso   a nil new-tail)
+    (appendo d new-tail new-list)
+    (== new-list  out)))
+
+(defun not-compatible-o (keys containers)
+  (conde
+    ((nullo keys)
+     +fail+)
+    ((fresh (a-k a-c)
+       (caro keys   a-k)
+       (caro containers a-c)
+       (project (a-k a-c)
+	 (== (string= (character:object-keycode a-k)
+		      (character:object-keycode (entity:ghost a-c))) t))
+       +succeed+))
+    (else
+     (fresh (d-k d-c)
+       (cdro keys   d-k)
+       (cdro containers d-c)
+       (not-compatible-o d-k d-c)))))
+
+(defun compatible-o (keys containers)
+  (condu
+    ((not-compatible-o keys containers)
+     +fail+)
+    (else
+     +succeed+)))
+
+(defun compatible-first-key-keycode (keys keycode)
+  (and keys
+       (not (string= (character:object-keycode (first keys)) keycode))))
+
+(defun compatible-arrangement-keys (keys containers start out)
+  (conde
+    ((compatible-o keys containers)
+     (== out keys)
+     +succeed+)
+    (else
+     (fresh (x)
+       (shifto keys x)
+       (project (keys)
+	 (== (compatible-first-key-keycode keys start) t))
+       (compatible-arrangement-keys x containers start out)))))
+
+(defun container-distance (a b)
+  (let* ((pos-a (vec2:vec2 (elt (entity:pos a) 0)  (elt (entity:pos a) 2)))
+	 (pos-b (vec2:vec2 (elt (entity:pos b) 0)  (elt (entity:pos b) 2)))
+	 (pos-diff (vec2:vec2- pos-a pos-b)))
+    (vec2:vec2-length pos-diff)))
+
+(defun average-container-distance (keys containers)
+  (let ((distance-sum (loop for container in containers sum
+			   (let ((pos (position-if #'(lambda (a)
+						       (string= (character:object-keycode
+								 (entity:ghost container))
+								(character:object-keycode a)))
+						   keys)))
+			     (container-distance container
+					     (if pos
+						 (elt containers pos)
+						 container))))))
+    (/ distance-sum (length containers))))
+
+(defun incompatible-key (keys container out)
+  (conde
+    ((nullo keys) ;; useless ?
+      +fail+)
+    ((project (keys container)
+       (== (not keys) nil)
+       (== (compatible-first-key-keycode keys
+					 (character:object-keycode (entity:ghost container)))
+	   t)
+       (== out (character:object-keycode (first keys)))))
+    (else
+     (project (keys)
+       (== (not keys) nil))
+     (incompatible-key (rest keys) container out))))
+
+(defun arrange-compatible-keys (container-start containers keys dist)
+  (run 1 (q)
+    (fresh (x y start)
+      (conde
+	((fresh (l)
+	   (== keys `(,l)) ; list has length 1
+	   (conde
+	     ((project (l keys)
+		;; ensure container's keycode is not compatible with key
+		(== (string= (character:object-keycode l)
+			     (character:object-keycode (entity:ghost (first containers)))) t))
+	      (fresh (first cdr second rest)
+		(conso first cdr  containers) ; we need to get the first,
+					      ; the second and all others elements
+		(conso second rest cdr)       ; of the containers
+		(== y `(,second ,first . ,rest)) ; swap first and second element
+		  (== x keys)))
+	       (else                        ; key    is   already
+					    ; compatible with container on
+					    ; the  same   position  in
+					    ; container's list, success.
+		(== y containers)
+		(== x keys)))))
+	  (else
+	   (incompatible-key keys container-start start)
+	   (== y containers)
+	   (project (start)
+	     (compatible-arrangement-keys keys containers (coerce start 'string) x))
+	   (project (x)
+	     (progn
+	       (when +debug-mode+
+		 (misc:dbg "avg dist: ~f~%"  (average-container-distance x containers)))
+	       (== (> (average-container-distance x containers) dist) t)))))
+      (== q `(,x ,y)))))
+
+(defun all-containers-from-map (world)
+  "A list of all containers from element-matrix in world's game-state"
+  (map 'list #'(lambda (a)
+		 (game-state:find-entity-by-id (main-state world)
+					       (game-state:entity-id a)))
+       (remove-if-not (find-container-fn world)
+		      (matrix:data (game-state:map-state
+				    (main-state world))))))
+
+(defun dump-containers (world)
+  (let ((containers (all-containers-from-map world)))
+    (misc:dbg "all containers ~a" (length containers))
+    (loop for container in containers do
+	 (let ((children (mtree:children (entity:ghost container))))
+	   (misc:dbg "container ~a keycode ~a: ~{~a~%~}"
+		     (identificable:id container)
+		     (character:object-keycode (entity:ghost container))
+		     (loop for child across children collect
+			  (description-for-humans child)))))))
+
+(defun rearrange-keys-for-containers (world keychain)
+  (let ((containers (all-containers-from-map world)))
+    (when (not (vector-empty-p keychain)) ;; if keychain is not empty
+					  ;; containers  is  not  null.
+                                          ;; So no need to check the latter.
+      (let ((arranged (loop
+			 named inner
+			 for i from (game-state:map-level (main-state world)) downto 1 do
+			   (let ((results (arrange-compatible-keys (first containers)
+								   containers
+								   (coerce keychain 'list)
+								   0)))
+			     (when (not (null results))
+			       (return-from inner (first results)))))))
+	(destructuring-bind (arranged-keys arranged-containers)
+	    arranged
+	  (let ((container-cancel-keycode
+		 (find-if #'(lambda (a)
+			      (not (null (character:object-keycode (entity:ghost a)))))
+			  containers)))
+	    (when (not (null container-cancel-keycode))
+	      (n-setf-path-value (character:basic-interaction-params
+				  (entity:ghost container-cancel-keycode))
+				 (list basic-interaction-parameters:+can-be-opened+)
+				 t)) ;; can be opened without a key
+	    (loop for i from 0 below (length arranged-keys) do
+		 (mtree:add-child (entity:ghost (elt arranged-containers i))
+				  (elt arranged-keys i))))
+	  (misc:dbg "arranged keys ~a ~% containers ~a"
+		    (map 'list #'(lambda (a)
+				   (format nil "[~a ~a]"
+					   (identificable:id a)
+					   (character:object-keycode a)))
+			 arranged-keys)
+		    (map 'list #'(lambda (a)
+				   (format nil "[~a ~a]"
+					   (identificable:id a)
+					   (character:object-keycode (entity:ghost a))))
+			 arranged-containers)))))))
+
+(defun fill-containers-with-objects (world)
+  (let ((containers (all-containers-from-map world))
+	(map-level  (game-state:map-level (main-state world))))
+    (when (not (null containers))
+      (loop for container in containers do
+	   (let* ((available-slots (- +container-capacity+
+				      (length (mtree:children (entity:ghost container)))))
+		  (objects-count   (lcg-next-upto available-slots)))
+	     (dotimes (i objects-count)
+	       (let ((generator (mtree:random-choose-leaf *available-objects-generators*)))
+		 (mtree:add-child (entity:ghost container)
+				  (funcall generator map-level)))))))))
+
 (defun setup-labyrinths (world map)
-  (let ((keychain nil))
+  (let ((keychain (make-fresh-array 0 nil t nil)))
     (loop
        for aabb in (labyrinths-aabb map)
        for bmp  in (mapcar #'(lambda (a)
@@ -318,9 +522,10 @@
 		 (setup-chair world min-x min-y x y))
 		((furniture-wall-decoration-p  (matrix-elt bmp y x))
 		 (setup-wall-decoration world min-x min-y x y))))))
-    (let ((container-count (count-if (count-container-fn world)
-				     (matrix:data (game-state:map-state (main-state world))))))
-      (misc:dbg "container ~a" container-count))))
+    (rearrange-keys-for-containers    world keychain)
+    (fill-containers-with-objects world)
+    (when +debug-mode+
+      (dump-containers              world))))
 
 (defun setup-single-floor (world aabb)
   (let* ((rect            (aabb2->rect2 aabb))

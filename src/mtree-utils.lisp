@@ -20,6 +20,17 @@
 ;; node := (list atom node*)
 ;; example: '(1 (2) (3 (4) (5)))
 
+(defgeneric leafp (object))
+
+(defmethod  leafp ((object cons))
+  (null (cdr object)))
+
+(defun random-choose-leaf (tree)
+  (if (leafp tree)
+      (car   tree)
+      (let ((children (cdr tree)))
+	(random-choose-leaf (misc:random-elt children)))))
+
 (defun traverse-apply-tree (function tree &optional (args nil))
   (append
    (if (and (consp tree)
@@ -122,8 +133,6 @@
 (defgeneric find-child (object to-find &key compare))
 
 (defgeneric find-child-if (object predicate))
-
-(defgeneric leafp (object))
 
 (defgeneric rootp (object))
 

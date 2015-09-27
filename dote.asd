@@ -24,6 +24,7 @@
 	       :sb-cga
 	       :cl-opengl
 	       :sdl2kit
+	       :kanren-trs
 	       :s-dot)
   :components ((:file "package")
 	       (:file "config")
@@ -63,6 +64,7 @@
 	       (:file "stack")
 	       (:file "matrix")
 	       (:file "graph")
+	       (:file "kanren-utils")
 	       (:file "euler")
 	       (:file "interpolation")
 	       (:file "buffered-input-file")
@@ -147,4 +149,5 @@
 				     (:file "procedural-texture-test")
 				     (:file "terrain-chunk-test")
 				     (:file "avatar-test")
-				     (:file "mtree-test")))))
+				     (:file "mtree-test")
+				     (:file "kanren-test")))))

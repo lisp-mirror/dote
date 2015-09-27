@@ -321,7 +321,6 @@
 						     :info
 						     (cons (_ "yes") nil)
 						     (cons (_ "no")  nil))))
-
       (add-child (gui object) toolbar)
       (add-child (gui object) gen-player-test)
       (add-child (gui object) inventory-test)

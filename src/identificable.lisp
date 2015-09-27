@@ -40,4 +40,7 @@
     (setf (id to) (id from)))
   to)
 
+(defmethod kanren-trs:equivp ((lhs identificable) (rhs identificable))
+  (= (id lhs) (id rhs)))
+
 (defgeneric find-entity-by-id (object id))

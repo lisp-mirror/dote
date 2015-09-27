@@ -652,6 +652,7 @@
    :cl)
   (:nicknames :mtree)
   (:export
+   :random-choose-leaf
    :traverse-apply-tree
    :traverse-napply-tree
    :traverse-find-if-tree
@@ -1123,6 +1124,13 @@
    :add-node
    :node->node-id
    :node-id->node))
+
+(defpackage :kanren-utils
+  (:use :cl
+	:alexandria
+	:kanren-trs)
+  (:export
+   :facts))
 
 (defpackage :euler
   (:use :cl
@@ -2416,6 +2424,7 @@
 
 (defpackage :load-level
   (:use :cl
+	:kanren-trs
 	:config
 	:constants
 	:misc
@@ -2709,6 +2718,7 @@
    :make-healer
    :make-archer
    :make-ranger
+   :object-keycode
    :can-talk-p
    :can-be-opened-p
    :can-attack-p
