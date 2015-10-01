@@ -77,8 +77,8 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
 
    Please note that s-dot and kanren-trs from  quicklisp will *not* work, you should
    download              the               versions              hosted below
-   - [[[https://github.com/cage2/s-dot2][https://github.com/cage2/s-dot2]], for s-dot;
-   - [[https://github.com/cage2/cl-kanren-trs][https://github.com/cage2/cl-kanren-trs]],
+   - [[https://github.com/cage2/s-dot2][https://github.com/cage2/s-dot2]], for s-dot;
+   - [[https://github.com/Inaimathi/cl-kanren-trs][https://github.com/Inaimathi/cl-kanren-trs]],
      for kanren-trs.
 
    Moreover  you  will  need  a Opengl  implementation  with  hardware
