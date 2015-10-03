@@ -229,6 +229,11 @@
   GNU General Public License 2.0 (see UFO Alien invasion sources
   [[http://ufoai.org/wiki/News][http://ufoai.org/wiki/News]])
 
+- data/models/models/ortnok/preview-warrior-male.tga
+  based on works © Lukas "Rastaman" Beyeler;MCR
+  GNU General Public License 2.0 (see UFO Alien invasion sources
+  [[http://ufoai.org/wiki/News][http://ufoai.org/wiki/News]])
+
 - data/models/models/column/*
   data/models/models/carpet/*
   according to the original file
@@ -338,6 +343,7 @@
 
 - data/gui/default/next-turn-overlay.tga
   data/gui/default/portrait-unknown.tga
+  data/gui/default/preview-unknown.tga
   data/gui/default/up-overlay.tga
   data/gui/default/down-overlay.tga
   data/gui/default/left-overlay.tga

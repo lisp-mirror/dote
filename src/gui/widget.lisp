@@ -1322,6 +1322,7 @@
     :accessor text)))
 
 (defmethod initialize-instance :after ((object labeled-check-button) &key
+								       (callback nil)
 								       (color :green)
 								       &allow-other-keys)
   (with-accessors ((button button) (text text)
@@ -1330,6 +1331,7 @@
 		   (label-font-size label-font-size)) object
     (setf button (make-instance 'check-button :width height :height height
 				:color color
+				:callback callback
 				:x (d- width height) :y 0.0))
     (let ((text-font-size (min label-font-size
 			       (d* (label-font-size object)
@@ -1373,7 +1375,7 @@
   (on-mouse-pressed (button object) event))
 
 (defmethod on-mouse-released ((object labeled-check-button) event)
-  nil)
+  (on-mouse-released (button object) event))
 
 (defun make-check-group (buttons)
   (let ((res (make-fresh-array (length buttons) t 'check-button t)))
@@ -1820,13 +1822,13 @@
 
    (text-communication
     :initform (make-instance 'widget:static-text
-			     :height *square-button-size*
-			     :width  (d* *small-square-button-size* 5.0)
-			     :x (d+ (d* *square-button-size* 7.0)
-				    *small-square-button-size*)
-			     :y 0.0
+			     :height    *square-button-size*
+			     :width     (d* *small-square-button-size* 5.0)
+			     :x         (d+ (d* *square-button-size* 7.0)
+					    *small-square-button-size*)
+			     :y         0.0
 			     :font-size (d* 0.1 *square-button-size*)
-			     :label "Elfic sword.§+1 dexterity. Poison enemy (+2 dmg each turn)"
+			     :label     "Elfic sword.§+1 dexterity. Poison enemy (+2 dmg each turn)"
 			     :justified t)
     :initarg  :text-communication
     :accessor text-communication)
@@ -2125,16 +2127,93 @@
       (input-text-w *reference-sizes*)
       (pgen-chk-button-w)))
 
+(defun pgen-preview-x ()
+  (d+ (pgen-characteristics-x)
+      (input-text-w *reference-sizes*)))
+
 (defun pgen-characteristics-y (row)
   (d* (d row)
       (d+ (spacing *reference-sizes*)
 	  (input-text-h *reference-sizes*))))
+
+(defun rotate-preview-cb (button event)
+  (declare (ignore event))
+  (with-parent-widget (win) button
+    (with-accessors ((model-preview-paths model-preview-paths)) win
+      (when model-preview-paths
+	(setf model-preview-paths (alexandria:rotate model-preview-paths 1)))
+      t)))
+
+(defun update-preview-class-cb (type)
+  #'(lambda (button event)
+      (declare (ignore event))
+      (with-parent-widget (check-button) button
+	(with-parent-widget (win) check-button
+	  (with-accessors ((checkb-male checkb-male) (checkb-female checkb-female)
+			   (model-preview-paths model-preview-paths)) win
+	    (setf model-preview-paths
+		  (if (button-state checkb-female)
+		      (previews-path type :female)
+		      (previews-path type :male)))
+	    t)))))
+
+(defun update-preview-gender-cb (gender)
+  #'(lambda (button event)
+      (declare (ignore event))
+      (with-parent-widget (check-button) button
+	(with-parent-widget (win) check-button
+	  (with-accessors ((checkb-warrior checkb-warrior)
+			   (checkb-wizard  checkb-wizard)
+			   (checkb-healer  checkb-healer)
+			   (checkb-archer  checkb-archer)
+			   (checkb-ranger  checkb-ranger)
+			   (model-preview-paths model-preview-paths)) win
+	    (setf model-preview-paths
+		  (cond
+		    ((button-state checkb-warrior)
+		     (previews-path :warrior gender))
+		    ((button-state checkb-wizard)
+		     (previews-path :wizard  gender))
+		    ((button-state checkb-healer)
+		     (previews-path :healer  gender))
+		    ((button-state checkb-archer)
+		     (previews-path :archer  gender))
+		    ((button-state checkb-ranger)
+		     (previews-path :ranger  gender))))
+	    t)))))
+
+(defun previews-path (type gender)
+  (let ((re (text-utils:strcat
+	     (ecase type
+	       (:warrior
+		+model-preview-warrior-re+)
+	       (:archer
+		+model-preview-archer-re+)
+	       (:wizard
+		+model-preview-wizard-re+)
+	       (:healer
+		+model-preview-healer-re+)
+	       (:ranger
+		+model-preview-ranger-re+))
+	     (ecase gender
+	       (:male
+		"-male")
+	       (:female
+		"-female"))
+	     +model-preview-ext-re+)))
+    (filesystem-utils:search-matching-file (resources-utils:get-resource-file +models-resource+
+									      ".")
+					   :name re)))
 
 (defclass player-generator (window)
   ((player
     :initform  nil
     :initarg  :player
     :accessor player)
+   (model-preview-paths
+    :initform  nil
+    :initarg  model-preview-paths
+    :accessor model-preview-paths)
    (lb-class
     :initform (make-instance 'simple-label
 			     :label     (_ "Class")
@@ -2151,6 +2230,7 @@
 			     :x 0.0
 			     :y (pgen-chk-button-y 0.0)
 			     :label (_ "Warrior ")
+			     :callback (update-preview-class-cb :warrior)
 			     :color :green)
     :initarg  :checkb-warrior
     :accessor checkb-warrior)
@@ -2161,6 +2241,7 @@
 			     :x 0.0
 			     :y (pgen-chk-button-y 1.0)
 			     :label (_ "Wizard ")
+			     :callback (update-preview-class-cb :wizard)
 			     :color :green)
     :initarg  :checkb-wizard
     :accessor checkb-wizard)
@@ -2171,6 +2252,7 @@
 			     :x 0.0
 			     :y (pgen-chk-button-y 2.0)
 			     :label (_ "Healer ")
+			     :callback (update-preview-class-cb :healer)
 			     :color :green)
     :initarg  :checkb-healer
     :accessor checkb-healer)
@@ -2181,6 +2263,7 @@
 			     :x 0.0
 			     :y (pgen-chk-button-y 3.0)
 			     :label (_ "Archer ")
+			     :callback (update-preview-class-cb :archer)
 			     :color :green)
     :initarg  :checkb-archer
     :accessor checkb-archer)
@@ -2191,6 +2274,7 @@
 			     :x 0.0
 			     :y (pgen-chk-button-y 4.0)
 			     :label (_ "Ranger ")
+			     :callback (update-preview-class-cb :ranger)
 			     :color :green)
     :initarg  :checkb-ranger
     :accessor checkb-ranger)
@@ -2210,6 +2294,7 @@
 			     :x 0.0
 			     :y (pgen-chk-button-y 6.0)
 			     :label (_ "Male ")
+			     :callback (update-preview-gender-cb :male)
 			     :color :green)
     :initarg  :checkb-male
     :accessor checkb-male)
@@ -2220,6 +2305,7 @@
 			     :x 0.0
 			     :y (pgen-chk-button-y 7.0)
 			     :label (_ "Female ")
+			     :callback (update-preview-gender-cb :female)
 			     :color :green)
     :initarg  :checkb-female
     :accessor checkb-female)
@@ -2235,25 +2321,37 @@
     :accessor b-generate)
    (b-save
     :initform (make-instance 'button
-			     :height (checkbutton-h *reference-sizes*)
-			     :width  (pgen-chk-button-w)
-			     :x 0.0
-			     :y (d+ (spacing *reference-sizes*)
-				    (pgen-chk-button-y 10.0))
-			     :callback #'save-cb
-			     :label (_ "Save"))
+			     :height   (checkbutton-h *reference-sizes*)
+			     :width    (pgen-chk-button-w)
+			     :x        0.0
+			     :y        (d+ (spacing *reference-sizes*)
+					   (pgen-chk-button-y 10.0))
+			     :callback #'player-save-cb
+			     :label    (_ "Save"))
     :initarg  :b-save
     :accessor b-save)
    (b-load
     :initform (make-instance 'button
-			     :height (checkbutton-h *reference-sizes*)
-			     :width  (pgen-chk-button-w)
-			     :x 0.0
-			     :y (d+ (d* 2.0 (spacing *reference-sizes*))
-				    (pgen-chk-button-y 11.0))
-			     :label (_ "Load"))
+			     :height   (checkbutton-h *reference-sizes*)
+			     :width    (pgen-chk-button-w)
+			     :x        0.0
+			     :y        (d+ (d* 2.0 (spacing *reference-sizes*))
+					   (pgen-chk-button-y 11.0))
+			     :callback #'player-load-cb
+			     :label    (_ "Load"))
     :initarg  :b-load
     :accessor b-load)
+   (b-accept
+    :initform (make-instance 'button
+			     :height   (checkbutton-h *reference-sizes*)
+			     :width    (pgen-chk-button-w)
+			     :x        0.0
+			     :y        (d+ (d* 3.0 (spacing *reference-sizes*))
+					   (pgen-chk-button-y 12.0))
+			     :callback #'player-accept-cb
+			     :label    (_ "Accept"))
+    :initarg  :b-accept
+    :accessor b-accept)
    (img-portrait
     :initform (make-instance 'signalling-light
 			     :width  +portrait-size+
@@ -2801,22 +2899,43 @@
     :initform (make-instance 'simple-label-prefixed
 			     :width  (input-text-w *reference-sizes*)
 			     :height (input-text-h *reference-sizes*)
-			     :x (pgen-characteristics-x)
-			     :y (pgen-characteristics-y 5.0)
+			     :x      (pgen-characteristics-x)
+			     :y      (pgen-characteristics-y 5.0)
 			     :prefix (_ "EM:  ")
-			     :label "")
+			     :label  "")
     :initarg  :lb-empaty
     :accessor lb-empaty)
    (lb-weight
     :initform (make-instance 'simple-label-prefixed
 			     :width  (input-text-w *reference-sizes*)
 			     :height (input-text-h *reference-sizes*)
-			     :x (pgen-characteristics-x)
-			     :y (pgen-characteristics-y 6.0)
+			     :x      (pgen-characteristics-x)
+			     :y      (pgen-characteristics-y 6.0)
 			     :prefix (_ "WG:  ")
-			     :label "")
+			     :label  "")
     :initarg  :lb-weight
-    :accessor lb-weight)))
+    :accessor lb-weight)
+   (img-preview
+    :initform (make-instance 'signalling-light
+			     :width         +portrait-size+
+			     :height        +portrait-size+
+			     :x             (pgen-preview-x)
+			     :y             0.0
+			     :texture-name  +preview-unknown-texture-name+
+			     :button-status t)
+    :initarg :img-preview
+    :accessor img-preview)
+   (b-next-preview
+    :initform (make-instance 'button
+			     :height   (checkbutton-h *reference-sizes*)
+			     :width    (pgen-chk-button-w)
+			     :x        (pgen-preview-x)
+			     :y        (d+ +portrait-size+
+					   (spacing *reference-sizes*))
+			     :callback #'rotate-preview-cb
+			     :label    (_ "Next"))
+    :initarg  :b-next-preview
+    :accessor b-next-preview)))
 
 (defmethod initialize-instance :after ((object player-generator) &key &allow-other-keys)
   (with-accessors ((player player)
@@ -2832,6 +2951,7 @@
 		   (b-generate b-generate)
 		   (b-save b-save)
 		   (b-load b-load)
+		   (b-accept b-accept)
 		   (img-portrait img-portrait)
 		   (lb-damage-pt lb-damage-pt)
  		   (b-inc-damage-pt b-inc-damage-pt)
@@ -2903,7 +3023,9 @@
 		   (lb-agility lb-agility)
 		   (lb-smartness lb-smartness)
 		   (lb-empaty lb-empaty)
-		   (lb-weight lb-weight)) object
+		   (lb-weight lb-weight)
+		   (img-preview img-preview)
+		   (b-next-preview b-next-preview)) object
     (let ((group-class (make-check-group* checkb-warrior
 					  checkb-wizard
 					  checkb-healer
@@ -2933,7 +3055,7 @@
     (add-child object b-generate)
     (add-child object b-save)
     (add-child object b-load)
-    (setf (callback b-load) #'player-load-cb)
+    (add-child object b-accept)
     ;; second column
     (add-child object img-portrait)
     (add-child object lb-damage-pt)
@@ -3008,7 +3130,9 @@
     (add-child object lb-agility)
     (add-child object lb-smartness)
     (add-child object lb-empaty)
-    (add-child object lb-weight)))
+    (add-child object lb-weight)
+    (add-child object img-preview)
+    (add-child object b-next-preview)))
 
 (defun setup-player-character (window &key (from-player nil))
   (setf (player window)
@@ -3079,7 +3203,7 @@
 	(%setup-character win :new-player new-player))))
   t)
 
-(defun save-cb (button event)
+(defun player-save-cb (button event)
   (declare (ignore event))
   (with-parent-widget (win) button
     (with-accessors ((input-name input-name) (input-last-name input-last-name)
@@ -3093,6 +3217,21 @@
 				:direction :output :if-exists :supersede
 				:if-does-not-exist :create)
 	  (format stream "~a" (serialize player))))))
+  t)
+
+(defun player-accept-cb (button event)
+  (declare (ignore event))
+  (with-parent-widget (win) button
+    (with-accessors ((player player)
+		     (world world)
+		     (model-preview-paths model-preview-paths)) win
+      (if (null model-preview-paths)
+	  (let ((error-message (widget:make-message-box (_ "Mesh not specified")
+							"Error"
+							:error
+							(cons (_ "Ok") #' hide-parent-cb))))
+	    (setf (compiled-shaders error-message) (compiled-shaders win))
+	    (add-child win error-message)))))
   t)
 
 (defun %find-max-lenght-ability-prefix (win)
@@ -3114,7 +3253,7 @@
 		   (lb-deactivate-trap-ch lb-deactivate-trap-ch)
 		   (lb-reply-attack-ch lb-reply-attack-ch)
 		   (lb-ambush-attack-ch lb-ambush-attack-ch)
-		   (lb-spell-ch lb-spell-ch )
+		   (lb-spell-ch lb-spell-ch)
 		   (lb-attack-spell-ch lb-attack-spell-ch)
 		   (lb-level lb-level)
 		   (lb-exp-points lb-exp-points)) win
@@ -3367,10 +3506,11 @@
       (setf (prefix lb-exp-points) (right-padding (prefix lb-exp-points) max-length-prefix)
 	    (label lb-exp-points)  (format nil "~d" (character:exp-points player))))))
 
-(defun make-player-generator ()
+(defun make-player-generator (world)
   (make-instance 'player-generator
-		 :x 0.0
-		 :y 200.0
+		 :world  world
+		 :x      0.0
+		 :y      200.0
 		 :width  (pgen-window-w)
 		 :height (pgen-window-h)
 		 :label  (_ "Generate character")))

@@ -179,3 +179,15 @@
 (define-constant +standard-float-print-format+     "~,2@f"                        :test #'string=)
 
 (define-constant +container-capacity+              3                              :test #'=)
+
+(define-constant +model-preview-warrior-re+       "preview-warrior"               :test #'string=)
+
+(define-constant +model-preview-archer-re+        "preview-archer"                :test #'string=)
+
+(define-constant +model-preview-wizard-re+        "preview-wizard"                :test #'string=)
+
+(define-constant +model-preview-healer-re+        "preview-healer"                :test #'string=)
+
+(define-constant +model-preview-ranger-re+        "preview-healer"                :test #'string=)
+
+(define-constant +model-preview-ext-re+           "\\.tga$"                       :test #'string=)

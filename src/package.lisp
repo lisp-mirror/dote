@@ -120,7 +120,13 @@
    :+gui-static-text-delim+
    :+gui-static-text-nbsp+
    :+standard-float-print-format+
-   :+container-capacity+))
+   :+container-capacity+
+   :+model-preview-warrior-re+
+   :+model-preview-archer-re+
+   :+model-preview-wizard-re+
+   :+model-preview-healer-re+
+   :+model-preview-ranger-re+
+   :+model-preview-ext-re+))
 
 (defpackage :profiling
   (:use :cl)
@@ -343,6 +349,7 @@
    :cat-parent-dir
    :has-extension
    :do-directory
+   :search-matching-file
    :split-path-elements
    :path-last-element
    :path-to-hidden-file-p
@@ -2183,6 +2190,7 @@
    :+coma-texture-name+
    :+terror-texture-name+
    :+portrait-unknown-texture-name+
+   :+preview-unknown-texture-name+
    :+silhouette-texture-name+
    :+bag-texture-name+
    :+add-to-bag-texture-name+

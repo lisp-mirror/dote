@@ -76,7 +76,7 @@
   ((camera
     :accessor camera
     :initarg :camera
-    :initform nil)
+    :initform (make-instance 'camera :pos (vec 0.0 0.0 1.0)))
    (skydome
     :accessor skydome
     :initarg :skydome
@@ -88,7 +88,7 @@
 			     :aabb (vec4:vec4 0.0 0.0
 					      (num:d +map-max-size+)
 					      (num:d +map-max-size+))))
-    (main-state
+   (main-state
     :initarg :main-state
     :initform nil
     :allocation :class)
@@ -148,6 +148,14 @@
     :accessor walkable-bag
     :initarg  :walkable-bag
     :initform nil)
+   (toolbar
+    :accessor toolbar
+    :initarg  :toolbar
+    :initform (make-instance 'widget:main-toolbar
+				   :x 0.0
+				   :y 0.0
+				   :width  (num:d *window-w*)
+				   :height (num:d *window-h*)))
    (gui
     :accessor gui
     :initarg  :gui
@@ -287,45 +295,10 @@
   (build-projection-matrix (camera object) near far fov ratio))
 
 (defmethod initialize-instance :after ((object world) &key &allow-other-keys)
-  (setf (camera object) (make-instance 'camera :pos (vec 0.0 0.0 1.0)))
   ;; gui
-  (let* ((char  (character:make-warrior :human))
-	 (chest (random-container:generate-container 10))
-	 (obj1   (random-shoes:generate-shoes 10))
-	 (obj2   (random-elm:generate-elm 10))
-	 (obj3   (random-potion:generate-potion 10))
-	 (texture-portrait (texture:gen-name-and-inject-in-database
-			    (avatar-portrait:build-avatar "m"))))
-    (texture:prepare-for-rendering texture-portrait)
-    (setf (character:portrait char) texture-portrait)
-    (setf (character:first-name char)  "first"
-	  (character:last-name char)   "last")
-    (setf (character:inventory char)
-	  (list (random-ring:generate-ring     10)
-		(random-weapon:generate-weapon 10 :sword)
-		(random-armor:generate-armor   10)))
-    (add-child chest obj1)
-    (add-child chest obj2)
-    (add-child chest obj3)
-    (setf (character:portrait char) texture-portrait)
-    (let* ((toolbar (make-instance 'widget:main-toolbar
-				   :x 0.0
-				   :y 0.0
-				   :width  (num:d *window-w*)
-				   :height (num:d *window-h*)))
-	   (gen-player-test (widget:make-player-generator))
-	   (report          (widget:make-player-report-win  char))
-	   (inventory-test  (widget:make-inventory-window char chest))
-	   (message         (widget:make-message-box "Test message"
-						     "test"
-						     :info
-						     (cons (_ "yes") nil)
-						     (cons (_ "no")  nil))))
-      (add-child (gui object) toolbar)
-      (add-child (gui object) gen-player-test)
-      (add-child (gui object) inventory-test)
-      (add-child (gui object) report)
-      (add-child (gui object) message))))
+  (add-child (gui object) (toolbar object))
+  ;; test
+  (add-child (gui object) (widget:make-player-generator object)))
 
 (defmethod calculate ((object world) dt)
   (incf (current-time (main-state object)) dt)

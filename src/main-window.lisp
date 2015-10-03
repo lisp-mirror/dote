@@ -22,11 +22,12 @@
 
 ;; (defparameter *zpos*    0.0)
 
-(defparameter *xpos*    128.0)
 
-(defparameter *ypos*     42.0)
+(defparameter *xpos*    36.0)
 
-(defparameter *zpos*     128.0)
+(defparameter *ypos*     -2.0)
+
+(defparameter *zpos*     15.0)
 
 (defparameter *xeye*   32.0)
 

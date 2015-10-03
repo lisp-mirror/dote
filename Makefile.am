@@ -131,6 +131,7 @@ data/models/ortnok/body-texture.tga                      \
 data/models/ortnok/head01.md2                            \
 data/models/ortnok/head-animation.lisp                   \
 data/models/ortnok/head-texture.tga                      \
+data/models/ortnok/preview-warrior-male.tga              \
 data/models/objects/copper-coin/texture.tga              \
 data/models/objects/copper-coin/model.obj                \
 data/models/objects/copper-coin/model.mtl                \
@@ -1537,6 +1538,7 @@ data/gui/default/option-overlay.tga                      \
 data/gui/default/plus-overlay.tga                        \
 data/gui/default/poison.tga                              \
 data/gui/default/portrait-unknown.tga                    \
+data/gui/default/preview-unknown.tga                     \
 data/gui/default/previous-overlay.tga                    \
 data/gui/default/quit-overlay.tga                        \
 data/gui/default/red-bar.tga                             \

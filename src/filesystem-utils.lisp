@@ -35,7 +35,7 @@
 
 (defun dump-sequence-to-file (seq file)
   (with-open-file (stream file
-			  :direction :output 
+			  :direction :output
 			  :if-exists :supersede
 			  :if-does-not-exist :create)
     (write-sequence seq stream)))
@@ -51,8 +51,8 @@
   (alexandria:with-gensyms (dir)
     `(let ((,dir (nix:opendir ,root)))
        (unwind-protect
-	    (handler-case	    
-		(do ((,var (cat-parent-dir ,root (nix:readdir ,dir)) 
+	    (handler-case
+		(do ((,var (cat-parent-dir ,root (nix:readdir ,dir))
 			   (cat-parent-dir ,root (nix:readdir ,dir))))
 		    ((cl-ppcre:scan "NIL$" ,var))
 		  ,@body)
@@ -60,6 +60,31 @@
 	      (nix:eacces () 0)
 	      (nix:eloop () 0))
        (nix:closedir ,dir)))))
+
+(defun search-matching-file (root-directory &key (name ".*"))
+  "Scan a filesystem saving files that match the provided criteria,
+   does not follow symlinks."
+  (let ((matched '())
+	(scanner (cl-ppcre:create-scanner name)))
+    (labels ((match (dir)
+	       (do-directory (path) dir
+		   (let ((filename (path-last-element path)))
+		     (cond
+		       ((regular-file-p path)
+			(when (cl-ppcre:scan scanner filename)
+			  (push path matched)))
+		       ((and (not (cl-ppcre:scan "^\\.\\." filename))
+			     (not (cl-ppcre:scan "^\\."   filename))
+			     (dirp path))
+			(match path)))))))
+      (match root-directory)
+      matched)))
+
+(defun regular-file-p (path)
+  (nix:s-isreg (nix:stat-mode (nix:stat path))))
+
+(defun dirp (path)
+  (nix:s-isdir (nix:stat-mode (nix:stat path))))
 
 (defun split-path-elements (path)
   (cl-ppcre:split *directory-sep-regexp* path))
@@ -87,11 +112,11 @@
 	 (elt registers 0))))
 
 (defun parent-dir-path (path)
-  (let ((splitted (remove-if #'(lambda (a) (string= "" a)) 
+  (let ((splitted (remove-if #'(lambda (a) (string= "" a))
 			     (split-path-elements path))))
     (cond
       ((> (length splitted) 1)
-       (let ((res (if (string= (string (elt path 0)) *directory-sep*) 
+       (let ((res (if (string= (string (elt path 0)) *directory-sep*)
 		      (concatenate 'string *directory-sep* (first splitted))
 		      (first splitted))))
 	 (loop for i in (subseq splitted 1 (1- (length splitted))) do
@@ -138,7 +163,7 @@
 (defun temporary-filename (&optional (temp-directory nil))
   (let ((tmpdir (or temp-directory (nix:getenv "TMPDIR"))))
     (if tmpdir
-	(nix:mktemp (format nil "~a~a~a" tmpdir *directory-sep* 
+	(nix:mktemp (format nil "~a~a~a" tmpdir *directory-sep*
 		    config:+program-name+))
 	(nix:mktemp (format nil "~atmp~a~a" *directory-sep* *directory-sep*
 		    config:+program-name+)))))
@@ -146,7 +171,7 @@
 (defmacro with-anaphoric-temp-file ((stream &key (prefix nil) (unlink nil)) &body body)
   `(let ((temp-file (temporary-filename ,prefix))) ; anaphora
        (unwind-protect
-	    (with-open-file (,stream temp-file :direction :output 
+	    (with-open-file (,stream temp-file :direction :output
 				     :if-exists :error
 				     :if-does-not-exist :create)
 	      ,@body)
@@ -168,4 +193,3 @@
 
 (defun file-in-package (name)
   (concatenate 'string (namestring (package-path)) name))
-	       

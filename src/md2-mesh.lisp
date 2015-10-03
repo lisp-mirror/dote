@@ -594,7 +594,7 @@
 				  (texture-file +model-texture-filename+)
 				  (animation-file +model-animations-filename+)
 				  (tags-file      nil))
-  (let ((model (make-instance 'md2-mesh :render-normals t :render-aabb t)))
+  (let ((model (make-instance 'md2-mesh :render-normals nil :render-aabb nil)))
     (setf (material-params model) material)
     (load-texture model (res:get-resource-file (text-utils:strcat modeldir texture-file)
 					       +models-resource+

@@ -179,6 +179,9 @@
 (gen-texture-bulk (portrait-unknown.tga
 		   +default-gui-resource+
 		   (setf (interpolation-type bg) :linear))
+		  (preview-unknown.tga
+		   +default-gui-resource+
+		   (setf (interpolation-type bg) :linear))
 		  (berserk.tga
 		   +default-gui-resource+
 		   (setf (interpolation-type bg) :linear))
@@ -481,6 +484,7 @@
   (setup-bg-berserk)
   (setup-bg-coma)
   (setup-bg-portrait-unknown)
+  (setup-bg-preview-unknown)
   (setup-bg-terror)
   (setup-bg-poison)
   (setup-bg-conversation-overlay)
