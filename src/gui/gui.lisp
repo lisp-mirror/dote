@@ -181,7 +181,10 @@
 		   (setf (interpolation-type bg) :linear))
 		  (preview-unknown.tga
 		   +default-gui-resource+
-		   (setf (interpolation-type bg) :linear))
+		   (setf (interpolation-type bg) :linear)
+		   (setf (s-wrap-mode  bg) :clamp-to-border)
+		   (setf (t-wrap-mode  bg) :clamp-to-border)
+		   (setf (border-color bg) §c00000000))
 		  (berserk.tga
 		   +default-gui-resource+
 		   (setf (interpolation-type bg) :linear))

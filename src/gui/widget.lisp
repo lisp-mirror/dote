@@ -2141,7 +2141,12 @@
   (with-parent-widget (win) button
     (with-accessors ((model-preview-paths model-preview-paths)) win
       (when model-preview-paths
-	(setf model-preview-paths (alexandria:rotate model-preview-paths 1)))
+	(setf model-preview-paths (alexandria:rotate model-preview-paths 1))
+	(let ((new-preview (pixmap:slurp-pixmap 'pixmap:tga (elt model-preview-paths 0)))
+	      (texture     (get-texture +preview-unknown-texture-name+)))
+	  (setf (pixmap:data texture) (pixmap:data new-preview))
+	  (pixmap:sync-data-to-bits texture)
+	  (update-for-rendering texture)))
       t)))
 
 (defun update-preview-class-cb (type)
@@ -2212,8 +2217,16 @@
     :accessor player)
    (model-preview-paths
     :initform  nil
-    :initarg  model-preview-paths
+    :initarg  :model-preview-paths
     :accessor model-preview-paths)
+   (backup-data-texture-portrait
+    :initform nil
+    :initarg  :backup-data-texture-portrait
+    :accessor backup-data-texture-portrait)
+   (backup-data-texture-preview
+    :initform nil
+    :initarg  :backup-data-texture-preview
+    :accessor backup-data-texture-preview)
    (lb-class
     :initform (make-instance 'simple-label
 			     :label     (_ "Class")
@@ -2940,6 +2953,8 @@
 (defmethod initialize-instance :after ((object player-generator) &key &allow-other-keys)
   (with-accessors ((player player)
 		   (lb-class lb-class)
+		   (backup-data-texture-portrait backup-data-texture-portrait)
+		   (backup-data-texture-preview backup-data-texture-preview)
 		   (checkb-warrior checkb-warrior)
 		   (checkb-wizard checkb-wizard)
 		   (checkb-healer checkb-healer)
@@ -3036,7 +3051,6 @@
       (setf (group checkb-healer)  group-class)
       (setf (group checkb-archer)  group-class)
       (setf (group checkb-ranger)  group-class))
-    (flip-state checkb-warrior)
     (add-child object checkb-warrior)
     (add-child object checkb-wizard)
     (add-child object checkb-healer)
@@ -3132,7 +3146,11 @@
     (add-child object lb-empaty)
     (add-child object lb-weight)
     (add-child object img-preview)
-    (add-child object b-next-preview)))
+    (add-child object b-next-preview)
+    (setf backup-data-texture-portrait
+	  (pixmap:data (get-texture +portrait-unknown-texture-name+)))
+    (setf backup-data-texture-preview
+	  (pixmap:data (get-texture +preview-unknown-texture-name+)))))
 
 (defun setup-player-character (window &key (from-player nil))
   (setf (player window)
@@ -3219,19 +3237,39 @@
 	  (format stream "~a" (serialize player))))))
   t)
 
+(defun player-accept-error-message-cb (widget event)
+  (declare (ignore event))
+  (with-parent-widget (win) widget
+    (hide win)
+    (remove-child win
+		  (make-instance 'message-window)
+		  :key #'identity
+		  :test #'(lambda (a b)
+			    (declare (ignore a))
+			    (typep b 'message-window)))))
+
 (defun player-accept-cb (button event)
   (declare (ignore event))
   (with-parent-widget (win) button
     (with-accessors ((player player)
 		     (world world)
-		     (model-preview-paths model-preview-paths)) win
-      (if (null model-preview-paths)
-	  (let ((error-message (widget:make-message-box (_ "Mesh not specified")
-							"Error"
-							:error
-							(cons (_ "Ok") #' hide-parent-cb))))
-	    (setf (compiled-shaders error-message) (compiled-shaders win))
-	    (add-child win error-message)))))
+		     (model-preview-paths model-preview-paths)
+		     (backup-data-texture-portrait backup-data-texture-portrait)
+		     (backup-data-texture-preview backup-data-texture-preview)) win
+      (when (null model-preview-paths)
+	(let ((error-message (make-message-box (_ "Mesh not specified")
+					       "Error"
+					       :error
+					       (cons (_ "Ok")
+						     #'player-accept-error-message-cb))))
+	  (setf (compiled-shaders error-message) (compiled-shaders win))
+	  (add-child win error-message)))
+      (setf (pixmap:data (get-texture +preview-unknown-texture-name+))
+	    backup-data-texture-preview)
+      (pixmap:sync-data-to-bits (get-texture +preview-unknown-texture-name+))
+      (setf (pixmap:data (get-texture +portrait-unknown-texture-name+))
+	    backup-data-texture-portrait)
+      (pixmap:sync-data-to-bits (get-texture +portrait-unknown-texture-name+))))
   t)
 
 (defun %find-max-lenght-ability-prefix (win)
