@@ -396,7 +396,7 @@
 					 :compact-vertices nil))
 			  (setf (elt frames count) frame-mesh))))
 		    ;;;;; NOTE just for testing purpose! ;;;;;;;;;;;;;;;;;;;;;
-		    (let ((transf (matrix* (scale (vec 0.1 0.1 0.1))
+		    (let ((transf (matrix* (scale (vec 0.05 0.05 0.05))
 					   (quaternion:quat->matrix
 					    (quaternion:quat-rotate-to-vec
 					     +entity-forward-direction+

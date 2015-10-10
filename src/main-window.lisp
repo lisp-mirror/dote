@@ -22,7 +22,6 @@
 
 (defparameter *zpos*   -20.0)
 
-
 ;; (defparameter *xpos*    128.0)
 
 ;; (defparameter *ypos*     42.0)
@@ -168,9 +167,9 @@
 	;; (setf (entity:up      body)  (vec  0.0 0.0 -1.0))
 	;; (setf (entity:dir     body)  (vec  -1.0 0.0 0.0))
 	;; (setf (entity:scaling body)  (vec  0.1  0.1 0.1))
-	(setf (entity:pos body)      (vec (misc:coord-map->chunk 0.0)
-					  (num:d+ 3.0 +zero-height+)
-					  (misc:coord-map->chunk 0.0)))
+	(setf (entity:pos body) (vec (misc:coord-map->chunk 0.0)
+				     (num:d+ 1.5 +zero-height+)
+				     (misc:coord-map->chunk 0.0)))
 	;;;;;;;;;;;;;
 	(world:push-entity world body)
 	(setf delta-time-elapsed (sdl2:get-ticks))))))
