@@ -16,23 +16,24 @@
 
 (in-package :main-window)
 
-;; (defparameter *xpos*    0.0)
+(defparameter *xpos*     2.0)
 
-;; (defparameter *ypos*   42.0)
+(defparameter *ypos*    40.0)
 
-;; (defparameter *zpos*    0.0)
+(defparameter *zpos*   -20.0)
 
-(defparameter *xpos*    128.0)
 
-(defparameter *ypos*     42.0)
+;; (defparameter *xpos*    128.0)
 
-(defparameter *zpos*     128.0)
+;; (defparameter *ypos*     42.0)
 
-(defparameter *xeye*   32.0)
+;; (defparameter *zpos*     128.0)
 
-(defparameter *yeye*    0.0)
+(defparameter *xeye*   2.0)
 
-(defparameter *zeye*   32.0)
+(defparameter *yeye*   0.0)
+
+(defparameter *zeye*   2.0)
 
 (defparameter *far*   440.0)
 
@@ -159,10 +160,18 @@
 				      :tags-file      nil)))
 	(setf (interfaces:compiled-shaders body) compiled-shaders
 	      (interfaces:compiled-shaders head) compiled-shaders)
-	(md2:set-animation body :move)
+	(md2:set-animation body :stand)
 	(md2:set-animation head :stand)
 	(setf (md2:tag-key-parent head) md2:+tag-head-key+)
 	(mtree-utils:add-child body head)
+	;;;;;;;;;;;;; to be removed soon
+	;; (setf (entity:up      body)  (vec  0.0 0.0 -1.0))
+	;; (setf (entity:dir     body)  (vec  -1.0 0.0 0.0))
+	;; (setf (entity:scaling body)  (vec  0.1  0.1 0.1))
+	(setf (entity:pos body)      (vec (misc:coord-map->chunk 0.0)
+					  (num:d+ 3.0 +zero-height+)
+					  (misc:coord-map->chunk 0.0)))
+	;;;;;;;;;;;;;
 	(world:push-entity world body)
 	(setf delta-time-elapsed (sdl2:get-ticks))))))
 

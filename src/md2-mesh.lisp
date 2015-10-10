@@ -395,8 +395,27 @@
 					 :gen-triangle t :gen-normal nil :manifoldp nil
 					 :compact-vertices nil))
 			  (setf (elt frames count) frame-mesh))))
-		  (map nil #'prepare-for-rendering (frames object))
-		  (%alloc-arrays object))
+		    ;;;;; NOTE just for testing purpose! ;;;;;;;;;;;;;;;;;;;;;
+		    (let ((transf (matrix* (scale (vec 0.1 0.1 0.1))
+					   (quaternion:quat->matrix
+					    (quaternion:quat-rotate-to-vec
+					     +entity-forward-direction+
+					     (vec -1.0 0.0 0.0)
+					     :fallback-axis +y-axe+))
+					   (quaternion:quat->matrix
+					    (quaternion:quat-rotate-to-vec
+					     +entity-up-direction+
+					     (vec 0.0 0.0 -1.0)
+					     :fallback-axis +z-axe+)))))
+		      (loop for tags in (tags-table object) do
+			   (loop for tag across (cdr tags) do
+				(setf (elt tag 3)
+				      (transform-point (elt tag 3) transf))))
+		      (loop for f across (frames object) do
+			   (transform-vertices f transf)))
+		    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		    (map nil #'prepare-for-rendering (frames object))
+		    (%alloc-arrays object))
 		(push-errors object ;; (if (string= magic-num +magic-number+) else...
 			     (format nil "Wrong magic number ~a expected ~a found instead"
 				     +magic-number+ magic-num))))))))
@@ -511,12 +530,12 @@
 		   (nsetup-tag-matrix (cdr i) orn))))
 	  (when (render-normals object)
 	    (gl-utils:lerp-gl-array (renderer-data-normals-obj-space
-	  			   (svref frames starting-frame-idx))
-	  			  (renderer-data-normals-obj-space
-	  			   (svref frames next-frame-idx))
-	  			  renderer-data-normals-obj-space
-				  (normals-obj-space-vertex-count object)
-	  			  interpolation-factor))
+				     (svref frames starting-frame-idx))
+				    (renderer-data-normals-obj-space
+				     (svref frames next-frame-idx))
+				    renderer-data-normals-obj-space
+				    (normals-obj-space-vertex-count object)
+				    interpolation-factor))
 	  (when (render-aabb object)
 	    (with-slots (aabb) object
 	      (reset aabb)
@@ -527,10 +546,14 @@
 				     (gl:glaref renderer-data-vertices (+ pos 2)))))
 		     (expand aabb vert)))
 	      (make-data-for-opengl-aabb-obj-space object))))))
+    (bubbleup-modelmatrix object)
     (when (not (mtree-utils:rootp object))
       (let ((tag-matrix (find-tag-cdr tag-key-parent (tags-matrices (mtree-utils:parent object)))))
 	(when tag-matrix
-	  (setf (model-matrix object) tag-matrix))))
+	  (with-model-matrix (model-matrix object)
+	    (setf (model-matrix object)
+		  (matrix* model-matrix
+			   tag-matrix))))))
     (bind-vbo object t)
     (do-children-mesh (i object)
       (calculate i dt))))
@@ -602,13 +625,13 @@
     (load-animations model (res:get-resource-file (text-utils:strcat modeldir animation-file)
 						  +models-resource+
 						  :if-does-not-exists :error))
-    (load model (res:get-resource-file (text-utils:strcat modeldir mesh-file)
-				       +models-resource+
-				       :if-does-not-exists :error))
     (when tags-file
       (load-tags model (res:get-resource-file (text-utils:strcat modeldir tags-file)
 					      +models-resource+
 					      :if-does-not-exists :error)))
+    (load model (res:get-resource-file (text-utils:strcat modeldir mesh-file)
+				       +models-resource+
+				       :if-does-not-exists :error))
     (when +debug-mode+
       (misc:dbg "error md2 parsing ~a" (parsing-errors model)))
     (prepare-for-rendering model)

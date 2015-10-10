@@ -266,6 +266,24 @@
 			      0))))
      ,@body))
 
+(defmacro with-modelview-matrix ((matrix model &key (wrapped nil)) &body body)
+  `(let* ((,matrix ,(if wrapped
+			`(the (simple-array simple-array (1))
+			      (modelview-matrix ,model))
+			`(elt (the (simple-array simple-array (1))
+				   (modelview-matrix ,model))
+			      0))))
+     ,@body))
+
+(defmacro with-model-matrix ((matrix model &key (wrapped nil)) &body body)
+  `(let* ((,matrix ,(if wrapped
+			`(the (simple-array simple-array (1))
+			      (model-matrix ,model))
+			`(elt (the (simple-array simple-array (1))
+				   (model-matrix ,model))
+			      0))))
+     ,@body))
+
 (defclass triangle-mesh (entity transformable renderizable destructible m-tree)
   ((renderer-data-vertices
     :initform nil
@@ -925,7 +943,8 @@
 		   (/= 0 cumulative-vertices-count)
 		   (= (mod cumulative-vertices-count 3) 0))
 	  (if gen-normal
-	      (triangle-w-calculated-normal object :compact-vertices compact-vertices
+	      (triangle-w-calculated-normal object
+					    :compact-vertices compact-vertices
 					    :manifoldp manifoldp)
 	      (triangle object :compact-vertices compact-vertices :manifoldp manifoldp)))))))
 
@@ -2369,6 +2388,23 @@
 	  (mref matrix 2 3) (elt orien 2)
 	  (mref matrix 3 3) 1.0)
     matrix))
+
+(defun matrix->tag (matrix)
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (declare (sb-cga:matrix matrix))
+  (let ((r1     (vec (mref matrix 0 0)
+		     (mref matrix 1 0)
+		     (mref matrix 2 0)))
+	(r2     (vec (mref matrix 0 1)
+		     (mref matrix 1 1)
+		     (mref matrix 2 1)))
+	(r3     (vec (mref matrix 0 2)
+		     (mref matrix 1 2)
+		     (mref matrix 2 2)))
+	(orient (vec (mref matrix 0 3)
+		     (mref matrix 1 3)
+		     (mref matrix 2 3))))
+    (values r1 r2 r3 orient)))
 
 (defun find-tag-cdr (key tags-list)
   (declare (optimize (debug 0) (safety 0) (speed 3)))

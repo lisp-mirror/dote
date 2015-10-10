@@ -1892,6 +1892,8 @@
    :set-custom-attribute
    :with-camera-projection-matrix
    :with-camera-view-matrix
+   :with-modelview-matrix
+   :with-model-matrix
    :mesh
    :do-children-mesh
    :do-triangles
@@ -1991,6 +1993,7 @@
    :load-tag-file
    :load-tags
    :tag->matrix
+   :matrix->tag
    :nsetup-tag-matrix
    :find-tag-cdr
    :find-tag
