@@ -390,6 +390,14 @@ active program (set by sdk2.kit:use-program)."
 		:ia)
      (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
 	       :fragment-shader ,(get-shader-source "gui.frag")))
+    (:gui-splash-progress
+     (:uniforms :modelview-matrix
+		:proj-matrix
+		:texture-object
+		:progress)
+     (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
+	       :fragment-shader ,(get-shader-source "splash-progress-gauge.frag")))
+
     (:gui-fonts
      (:uniforms :modelview-matrix
 		:proj-matrix

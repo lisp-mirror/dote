@@ -1502,6 +1502,7 @@ data/gui/default/inventory/w-throw002.tga                \
 data/gui/default/inventory/w-throw003.tga                \
 data/gui/default/inventory/w-throw004.tga                \
 data/gui/default/inventory/w-throw05.tga                 \
+data/gui/default/splash-progress-gauge.tga               \
 data/gui/default/silhouette.tga                          \
 data/gui/default/attack-long-range-imprecise-overlay.tga \
 data/gui/default/attack-long-range-overlay.tga           \

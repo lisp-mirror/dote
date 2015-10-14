@@ -63,6 +63,10 @@
 
 (alexandria:define-constant +saved-seed-key+ "random-seed" :test #'string=)
 
+(alexandria:define-constant +max-progress-slot+    0.4  :test #'=)
+
+(alexandria:define-constant +inc-progress-slot+    0.01 :test #'=)
+
 (defmacro err (str &rest param)
   `(format nil ,str ,@param))
 
@@ -117,6 +121,13 @@
 	   (push (alexandria:make-keyword (elt l 0)) output)
 	   (setf l (rest l)))))))
 
+
+(defparameter *main-window* nil)
+
+(defparameter *renderer*    nil)
+
+(defparameter *progress*    0.0)
+
 (defparameter *raw-seed* "")
 
 (defparameter *seed-after-loading* "")
@@ -160,6 +171,15 @@
 (defparameter *walkable-furnitures*        '())
 
 (defparameter *wall-decoration-furnitures* '())
+
+(defun limited-progress ()
+  (setf *progress* (min +max-progress-slot+ (d+ *progress* +inc-progress-slot+)))
+  (update-progress *progress*))
+
+(defun update-progress (progress)
+  (setf (widget:progress (elt (mtree:children (world:gui *renderer*)) 0))
+	progress)
+  (sdl2.kit:render *main-window*))
 
 (defun gen-normalmap-if-needed (diffuse-texture)
   (let ((roughness (texture:n-roughness diffuse-texture)))
@@ -288,7 +308,10 @@
      (setf *floor* mesh)))
 
 (defun clean-global-wars ()
-  (setf *map*                        nil
+  (setf *progress*                   0.0
+        *main-window*                nil
+	*renderer*                   nil
+        *map*                        nil
 	*trees*                      '()
 	*furnitures*                 '()
 	*containers-furnitures*      '()
@@ -310,7 +333,7 @@
 (defmacro define-level (&body body)
   (ensure-cache-running
     ;; clean a bit and free the memory associated with global variables
-    (clean-global-wars)
+    ;(clean-global-wars)
     (need-keyword ((first body) :set)
       (need-keyword ((second body) :seed)
 	(need-type ((third body) 'string)
@@ -319,10 +342,15 @@
 		*raw-seed*  (third body))
 	  (branch-generate (subseq body 3)))
 	(setup-floor)
+	(limited-progress)
 	(setup-walls)
+	(limited-progress)
 	(setup-window)
+	(limited-progress)
 	(setup-doors)
-	(setup-seed)))))
+	(limited-progress)
+	(setup-seed)
+	(limited-progress)))))
 
 (defun setup-seed ()
   (let ((cache-key (regular-file-strings->cache-key *raw-seed* +saved-seed-key+)))
@@ -382,6 +410,7 @@
   (if body
       (need-keyword-if ((first body) :generate)
 	(let ((offset 0))
+	  (limited-progress)
 	  (case (alexandria:make-keyword (second body))
 	    (:skydome
 	     (setf offset (generate-skydome (subseq body 1))))

@@ -421,6 +421,13 @@
   2015 qubodup released under CC0 1.0
   https://creativecommons.org/publicdomain/zero/1.0/
 
+- data/gui/default/splash-progress-gauge.tga
+  derived from © 2015 Sir Twist
+  according to http://opengameart.org/content/dagger
+  released under Creative Commons Attribution-ShareAlike 3.0
+  Unported (CC BY-SA 3.0) license
+  https://creativecommons.org/licenses/by-sa/3.0/
+
 - src/test/data/avatars/avatar0.tga
   derived from
   Licensed     under    CC-BY-3.0

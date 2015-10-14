@@ -294,12 +294,6 @@
 (defmethod build-projection-matrix ((object world) near far fov ratio)
   (build-projection-matrix (camera object) near far fov ratio))
 
-(defmethod initialize-instance :after ((object world) &key &allow-other-keys)
-  ;; gui
-  (add-child (gui object) (toolbar object))
-  ;; test
-  (add-child (gui object) (widget:make-player-generator object)))
-
 (defmethod calculate ((object world) dt)
   (incf (current-time (main-state object)) dt)
   (setf (widget:label (widget:text-fps (elt (mtree-utils:children (gui object)) 0)))
@@ -382,7 +376,8 @@
        path))
 
 (defmethod selected-pc ((object world))
-  (selected-pc (main-state object)))
+  (when (main-state object)
+    (selected-pc (main-state object))))
 
 (defmethod turn-off-highligthed-tiles ((object world))
   (walk-quad-tree (object)

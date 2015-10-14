@@ -100,6 +100,45 @@
 			     "temperate/lemon.lsys"       ; 12
 			     "general/dead-tree-3.lsys")) ; 13
 
+(defparameter *map-loaded-p*   nil)
+
+(defun load-map (window)
+  (with-accessors ((world world)
+		   (compiled-shaders compiled-shaders)) window
+    (load-level:load-level window world (game-state window) compiled-shaders "test.lisp")
+    (setf *placeholder* (trees:gen-tree
+			 (res:get-resource-file (elt *test-trees* 0)
+						constants:+trees-resource+
+						:if-does-not-exists :error)
+			 :flatten t))
+    (setf (interfaces:compiled-shaders *placeholder*) compiled-shaders)
+    (setf (entity:pos *placeholder*)
+	  (vec (misc:coord-map->chunk 1.0)
+	       +zero-height+
+	       (misc:coord-map->chunk 1.0)))
+    (world:push-entity world *placeholder*)
+    (let ((body (md2:load-md2-model "ortnok/"
+				    :mesh-file "body01.md2"
+				    :animation-file "body-animation.lisp"
+				    :texture-file   "body-texture.tga"
+				    :tags-file      "body01.tag"))
+	  (head (md2:load-md2-model "ortnok/"
+				    :mesh-file "head01.md2"
+				    :animation-file "head-animation.lisp"
+				    :texture-file   "head-texture.tga"
+				    :tags-file      nil)))
+      (setf (interfaces:compiled-shaders body) compiled-shaders
+	    (interfaces:compiled-shaders head) compiled-shaders)
+      (md2:set-animation body :stand)
+      (md2:set-animation head :stand)
+      (setf (md2:tag-key-parent head) md2:+tag-head-key+)
+      (mtree-utils:add-child body head)
+      ;; to be removed soon
+      (setf (entity:pos body) (vec (misc:coord-map->chunk 0.0)
+				   (num:d+ 1.5 +zero-height+)
+				   (misc:coord-map->chunk 0.0)))
+      (world:push-entity world body))))
+
 (defmethod initialize-instance ((object test-window) &key &allow-other-keys)
   (with-accessors ((vao vao) (compiled-shaders compiled-shaders)
 		   (projection-matrix projection-matrix)
@@ -113,66 +152,30 @@
       (gl:depth-func :less)
       (gl:polygon-mode :front-and-back :fill)
       (gl:clear-color 0.039215688 0.17254902 0.08235294 1.0)
-      (gl:clear-color 1 0 1 1)
       (gl:clear-depth 1.0)
       (setf compiled-shaders (compile-library))
       (gui:setup-gui compiled-shaders)
       ;; set up world
       (setf world (make-instance 'world :frame-window object))
-      (setf (interfaces:compiled-shaders (world::gui world)) compiled-shaders)
-      (load-level:load-level world (game-state object) compiled-shaders "test.lisp")
+      (mtree:add-child (world:gui world) (widget:make-splash-progress-gauge))
+      (setf (interfaces:compiled-shaders (world:gui world)) compiled-shaders)
       ;; setup camera
-      (camera:look-at (world:camera (world object))
+      (camera:look-at (world:camera world)
 		      *xpos* *ypos* *zpos* *xeye* *yeye* *zeye* 0.0 1.0 0.0)
-      (setf (mode (world:camera (world object))) :fp)
-      (camera:install-path-interpolator (world:camera (world object))
+      (setf (mode (world:camera world)) :fp)
+      (camera:install-path-interpolator (world:camera world)
 					(vec  0.0  15.0 0.0)
 					(vec  64.0 30.0 0.0)
 					(vec  64.0 20.0 64.0)
 					(vec  0.0  30.0 64.0)
 					(vec  64.0  90.0 64.0))
-      (camera:install-drag-interpolator (world:camera (world object)))
-      (camera:install-orbit-interpolator (world:camera (world object)) 5.0 5.0 10.0)
+      (camera:install-drag-interpolator (world:camera world))
+      (camera:install-orbit-interpolator (world:camera world) 5.0 5.0 10.0)
       ;; setup projection
-      (transformable:build-projection-matrix (world object) *near* *far* *fov*
+      (transformable:build-projection-matrix world *near* *far* *fov*
 					     (num:desired (/ *window-w* *window-h*)))
-      (setf *placeholder* (trees:gen-tree
-			   (res:get-resource-file (elt *test-trees* 0)
-						  constants:+trees-resource+
-						  :if-does-not-exists :error)
-			   :flatten t))
-      (setf (interfaces:compiled-shaders *placeholder*) compiled-shaders)
-      (setf (entity:pos *placeholder*)
-	    (vec (misc:coord-map->chunk 1.0)
-		 +zero-height+
-		 (misc:coord-map->chunk 1.0)))
-      (world:push-entity world *placeholder*)
-      (let ((body (md2:load-md2-model "ortnok/"
-				      :mesh-file "body01.md2"
-				      :animation-file "body-animation.lisp"
-				      :texture-file   "body-texture.tga"
-				      :tags-file      "body01.tag"))
-	    (head (md2:load-md2-model "ortnok/"
-				      :mesh-file "head01.md2"
-				      :animation-file "head-animation.lisp"
-				      :texture-file   "head-texture.tga"
-				      :tags-file      nil)))
-	(setf (interfaces:compiled-shaders body) compiled-shaders
-	      (interfaces:compiled-shaders head) compiled-shaders)
-	(md2:set-animation body :stand)
-	(md2:set-animation head :stand)
-	(setf (md2:tag-key-parent head) md2:+tag-head-key+)
-	(mtree-utils:add-child body head)
-	;;;;;;;;;;;;; to be removed soon
-	;; (setf (entity:up      body)  (vec  0.0 0.0 -1.0))
-	;; (setf (entity:dir     body)  (vec  -1.0 0.0 0.0))
-	;; (setf (entity:scaling body)  (vec  0.1  0.1 0.1))
-	(setf (entity:pos body) (vec (misc:coord-map->chunk 0.0)
-				     (num:d+ 1.5 +zero-height+)
-				     (misc:coord-map->chunk 0.0)))
-	;;;;;;;;;;;;;
-	(world:push-entity world body)
-	(setf delta-time-elapsed (sdl2:get-ticks))))))
+
+      (setf delta-time-elapsed (sdl2:get-ticks)))))
 
 (defmacro with-gui ((world) &body body)
   (alexandria:with-gensyms (3d-projection-matrix 3d-view-matrix)
@@ -200,25 +203,35 @@
 		   (delta-time-elapsed delta-time-elapsed)
 		   (frames-count       frames-count)
 		   (fps fps))                              object
-    (let* ((now      (sdl2:get-ticks))
-	   (dt       (num:f- now delta-time-elapsed))
-	   (float-dt (num:d dt)))
-      (setf delta-time-elapsed now)
-      (incf cpu-time-elapsed float-dt)
-      (do ((fdt (num:d/ float-dt 1000.0)))
-	  ((not (num:d> fdt 0.0)))
-	(let ((actual-dt (min +game-fps+ fdt)))
-	  (decf fdt actual-dt)
-	  (world::calculate world actual-dt))))
-    ;; rendering
-    (gl:clear :color-buffer)
-    (gl:clear :depth-buffer)
-    (interfaces:render world world)
-    ;; gui
-    (with-gui (world)
-      (world:render-gui world))
-    (incf frames-count)
-    (setf fps (num:d/ (num:d frames-count) (num:d/ (num:d cpu-time-elapsed) 1000.0)))))
+    (if *map-loaded-p*
+	(progn
+	  (let* ((now      (sdl2:get-ticks))
+		 (dt       (num:f- now delta-time-elapsed))
+		 (float-dt (num:d dt)))
+	    (setf delta-time-elapsed now)
+	    (incf cpu-time-elapsed float-dt)
+	    (do ((fdt (num:d/ float-dt 1000.0)))
+		((not (num:d> fdt 0.0)))
+	      (let ((actual-dt (min +game-fps+ fdt)))
+		(decf fdt actual-dt)
+		(world::calculate world actual-dt))))
+	  ;; rendering
+	  (gl:clear :color-buffer)
+	  (gl:clear :depth-buffer)
+	  (interfaces:render world world)
+	  ;; gui
+	  (with-gui (world)
+	    (world:render-gui world))
+	  (incf frames-count)
+	  (setf fps (num:d/ (num:d frames-count)
+			    (num:d/ (num:d cpu-time-elapsed) 1000.0))))
+	(progn
+	  ;; rendering
+	  (gl:clear-color 0 0 0 1)
+	  (gl:clear :color-buffer)
+	  (gl:clear :depth-buffer)
+	  (with-gui (world)
+	    (world:render-gui world))))))
 
 (defmethod close-window ((w test-window))
   (with-accessors ((vao vao)) w
@@ -236,8 +249,8 @@
 	(call-next-method)))))
 
 (defmethod mousewheel-event ((object test-window) ts x y)
-  (misc:dbg "wheel ~a ~a ~a" ts x y)
-  (camera::drag-camera (world:camera (world object)) (vec2:vec2 1.0 1.0)))
+  (misc:dbg "wheel ~a ~a ~a" ts x y))
+;  (camera::drag-camera (world:camera (world object)) (vec2:vec2 1.0 1.0)))
 
 (defmethod textinput-event ((object test-window) ts text)
   (if (string= text "s")
@@ -254,7 +267,7 @@
 		      (camera:target camera)
 		      (camera::up     camera)
 		      (camera::dir    camera))))
-	(when (find text '("o" "i" "r" "l" "u" "d" "f" "F" "n" "N" "V" "v") :test #'string=)
+	(when (find text '("o" "i" "r" "l" "u" "d" "f" "F" "n" "N" "V" "v" "L") :test #'string=)
 	  (when (string-equal text "o")
 	    (incf (elt (entity:pos (world:camera (world object))) 2) 1.0))
 	  (when (string-equal text "i")
@@ -282,7 +295,22 @@
 	    (incf *near* +.1))
 	  (when (string= text "N")
 	    (misc:dbg "n ~a" *near*)
-	    (incf *near* -.1)))
+	    (incf *near* -.1))
+	  (when (string= text "L")
+	      (load-map object)
+	      ;; gui
+	      (setf (world:gui (world object))
+		    (make-instance 'widget:widget
+				   :x 0.0 :y 0.0
+				   :width  *window-w*
+				   :height *window-h*
+				   :label nil))
+	      (mtree:add-child (world:gui (world object)) (world::toolbar (world object)))
+	      ;; test
+	      (mtree:add-child (world:gui (world object)) (widget:make-player-generator (world object)))
+	      (setf (interfaces:compiled-shaders (world:gui (world object))) (compiled-shaders object))
+	      (setf *map-loaded-p* t)
+	      (gl:clear-color 0.039215688 0.17254902 0.08235294 1.0)))
 	(when (find text '("Y" "y" "X" "x") :test #'string=)
 	  (when (string= text "Y")
 	    (incf (elt (camera:target (world:camera (world object))) 1) 1.0))
@@ -293,7 +321,7 @@
 	  (when (string= text "x")
 	    (incf (elt (camera:target (world:camera (world object))) 0) -1.0)))
 	(transformable:build-projection-matrix (world object) *near* *far* *fov*
-					     (num:desired (/ *window-w* *window-h*)))
+					       (num:desired (/ *window-w* *window-h*)))
 	(camera:look-at* (world:camera (world object)))))
   (when (string= "q" text)
     (setf *placeholder* nil)
@@ -396,7 +424,6 @@
 	(when (not (selected-pc world))
 	  (world:highlight-tile-screenspace world world x y)))))
 
-
 (defun main ()
   (tg:gc :full t)
   (handler-bind ((error
@@ -410,6 +437,7 @@
 			     1))
   (setf lparallel:*kernel* (lparallel:make-kernel *workers-number*))
   (setf identificable:*entity-id-counter* +start-id-counter+)
+  (setf *map-loaded-p* nil)
   (start)
   (sdl2:gl-set-attr :context-profile-mask  1)
   (sdl2:gl-set-attr :context-major-version 3)

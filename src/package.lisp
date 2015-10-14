@@ -1675,6 +1675,8 @@
    :+available-level-floor+
    :+available-level-door+
    :+available-level-ceil+
+   :*main-window*
+   :*renderer*
    :*raw-seed*
    :*game-hour*
    :*map*
@@ -1696,6 +1698,7 @@
    :*door-s*
    :*door-e*
    :*door-w*
+   :update-progress
    :clean-global-wars
    :gen-normalmap-if-needed))
 
@@ -2280,7 +2283,10 @@
    :make-inventory-window
    :player-report
    :make-player-report-win
-   :make-message-box))
+   :make-message-box
+   :progress-gauge
+   :progress
+   :make-splash-progress-gauge))
 
 (defpackage :world
   (:use :cl
