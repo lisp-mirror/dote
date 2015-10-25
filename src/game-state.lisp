@@ -104,10 +104,6 @@
     :initform -1
     :initarg  :entity-id
     :accessor entity-id)
-   (character-id
-    :initform -1
-    :initarg  :character-id
-    :accessor character-id)
    (el-type
     :initform +empty-type+
     :initarg  :el-type

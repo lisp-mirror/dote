@@ -2142,7 +2142,10 @@
     (with-accessors ((model-preview-paths model-preview-paths)) win
       (when model-preview-paths
 	(setf model-preview-paths (alexandria:rotate model-preview-paths 1))
-	(let ((new-preview (pixmap:slurp-pixmap 'pixmap:tga (elt model-preview-paths 0)))
+	(let ((new-preview (pixmap:slurp-pixmap 'pixmap:tga
+						(res:get-resource-file (elt model-preview-paths 0)
+								       +models-resource+
+								       :if-does-not-exists :error)))
 	      (texture     (get-texture +preview-unknown-texture-name+)))
 	  (setf (pixmap:data texture) (pixmap:data new-preview))
 	  (pixmap:sync-data-to-bits texture)
@@ -2206,12 +2209,16 @@
 	       (:female
 		"-female"))
 	     +model-preview-ext-re+)))
-    (filesystem-utils:search-matching-file (resources-utils:get-resource-file +models-resource+
-									      ".")
-					   :name re)))
+    (mapcar #'(lambda (a) (res:strip-off-resource-path +models-resource+ a))
+	    (fs:search-matching-file (resources-utils:get-resource-file +models-resource+ "")
+				     :name re))))
 
 (defclass player-generator (window)
-  ((player
+  ((world
+    :initform nil
+    :initarg  :world
+    :accessor world)
+   (player
     :initform  nil
     :initarg  :player
     :accessor player)
@@ -3248,6 +3255,25 @@
 			    (declare (ignore a))
 			    (typep b 'message-window)))))
 
+(defun place-player (world &optional (pos '(0 0)))
+  (let ((matrix (game-state:map-state (world:main-state world))))
+    (labels ((%place-player (pos)
+	       (let* ((next-tiles (shuffle (matrix:gen-neighbour (elt pos 0) (elt pos 1))))
+		      (empty-tiles (remove-if-not #'(lambda (pos)
+						      (let ((x (elt pos 0))
+							    (y (elt pos 1)))
+							(matrix:with-check-matrix-borders (matrix x y)
+							  (map-element-empty-p (matrix:matrix-elt matrix y x)))))
+						  next-tiles)))
+		 (if empty-tiles
+		     (return-from place-player (elt empty-tiles 0))
+		     (loop for i in next-tiles do
+			  (let ((x (elt i 0))
+				(y (elt i 1)))
+			    (matrix:with-check-matrix-borders (matrix x y)
+			      (%place-player i))))))))
+      (%place-player pos))))
+
 (defun player-accept-cb (button event)
   (declare (ignore event))
   (with-parent-widget (win) button
@@ -3256,21 +3282,36 @@
 		     (model-preview-paths model-preview-paths)
 		     (backup-data-texture-portrait backup-data-texture-portrait)
 		     (backup-data-texture-preview backup-data-texture-preview)) win
-      (when (null model-preview-paths)
-	(let ((error-message (make-message-box (_ "Mesh not specified")
-					       "Error"
-					       :error
-					       (cons (_ "Ok")
-						     #'player-accept-error-message-cb))))
-	  (setf (compiled-shaders error-message) (compiled-shaders win))
-	  (add-child win error-message)))
-      (setf (pixmap:data (get-texture +preview-unknown-texture-name+))
-	    backup-data-texture-preview)
-      (pixmap:sync-data-to-bits (get-texture +preview-unknown-texture-name+))
-      (setf (pixmap:data (get-texture +portrait-unknown-texture-name+))
-	    backup-data-texture-portrait)
-      (pixmap:sync-data-to-bits (get-texture +portrait-unknown-texture-name+))))
-  t)
+      (if (null model-preview-paths)
+	  (let ((error-message (make-message-box (_ "Mesh not specified")
+						 "Error"
+						 :error
+						 (cons (_ "Ok")
+						       #'player-accept-error-message-cb))))
+	    (setf (compiled-shaders error-message) (compiled-shaders win))
+	    (add-child win error-message))
+	  (progn
+	    ;; restore preview
+	    (setf (pixmap:data (get-texture +preview-unknown-texture-name+))
+		  backup-data-texture-preview)
+	    (pixmap:sync-data-to-bits (get-texture +preview-unknown-texture-name+))
+	    (setf (pixmap:data (get-texture +portrait-unknown-texture-name+))
+		  backup-data-texture-portrait)
+	    (pixmap:sync-data-to-bits (get-texture +portrait-unknown-texture-name+))
+	    ;; setup model
+	    (let* ((dir   (strcat (fs:path-first-element (first model-preview-paths))
+				  fs:*directory-sep*))
+		   (model (md2:load-md2-player dir (compiled-shaders world)))
+		   (player-coordinates (place-player world)))
+	      (misc:dbg "new coord ~a" player-coordinates)
+	      (setf (entity:pos model)
+		    (sb-cga:vec (misc:coord-map->chunk (d (elt player-coordinates 0)))
+				(num:d+ 1.5 +zero-height+) ; hardcoded value, to be removed soon
+				(misc:coord-map->chunk (d (elt player-coordinates 1)))))
+	      (setf (character:model-origin-dir player) dir)
+	      (setf (entity:ghost model) player)
+	      (world:push-interactive-entity world model game-state:+pc-type+ :occlude))))))
+    t)
 
 (defun %find-max-lenght-ability-prefix (win)
   (with-accessors ((lb-damage-pt lb-damage-pt)

@@ -476,7 +476,11 @@
 	   (description-for-humans (interaction-get-magic-effect object)))))
 
 (defclass player-character (np-character)
-  ((gender
+  ((model-origin-dir
+    :initform ""
+    :initarg  :model-origin-dir
+    :accessor model-origin-dir)
+   (gender
     :initarg :gender
     :initform :male
     :accessor gender)
@@ -704,8 +708,9 @@
 	    (mapcar #'description-for-humans (inventory object)))))
 
 (defmethod marshal:class-persistant-slots ((object player-character))
-  (append  '(player-class
+  (append  '(model-origin-dir
 	     gender
+	     player-class
 	     strength
 	     stamina
 	     dexterity

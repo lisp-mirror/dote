@@ -116,28 +116,7 @@
 	  (vec (misc:coord-map->chunk 1.0)
 	       +zero-height+
 	       (misc:coord-map->chunk 1.0)))
-    (world:push-entity world *placeholder*)
-    (let ((body (md2:load-md2-model "ortnok/"
-				    :mesh-file "body01.md2"
-				    :animation-file "body-animation.lisp"
-				    :texture-file   "body-texture.tga"
-				    :tags-file      "body01.tag"))
-	  (head (md2:load-md2-model "ortnok/"
-				    :mesh-file "head01.md2"
-				    :animation-file "head-animation.lisp"
-				    :texture-file   "head-texture.tga"
-				    :tags-file      nil)))
-      (setf (interfaces:compiled-shaders body) compiled-shaders
-	    (interfaces:compiled-shaders head) compiled-shaders)
-      (md2:set-animation body :stand)
-      (md2:set-animation head :stand)
-      (setf (md2:tag-key-parent head) md2:+tag-head-key+)
-      (mtree-utils:add-child body head)
-      ;; to be removed soon
-      (setf (entity:pos body) (vec (misc:coord-map->chunk 0.0)
-				   (num:d+ 1.5 +zero-height+)
-				   (misc:coord-map->chunk 0.0)))
-      (world:push-entity world body))))
+    (world:push-entity world *placeholder*)))
 
 (defmethod initialize-instance ((object test-window) &key &allow-other-keys)
   (with-accessors ((vao vao) (compiled-shaders compiled-shaders)

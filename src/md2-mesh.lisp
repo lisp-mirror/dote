@@ -639,6 +639,25 @@
     (set-animation model :stand)
     model))
 
+(defun load-md2-player (dir compiled-shaders)
+  (let ((body (md2:load-md2-model dir
+				  :mesh-file "body01.md2"
+				  :animation-file "body-animation.lisp"
+				  :texture-file   "body-texture.tga"
+				  :tags-file      "body01.tag"))
+	(head (md2:load-md2-model dir
+				  :mesh-file "head01.md2"
+				  :animation-file "head-animation.lisp"
+				  :texture-file   "head-texture.tga"
+				  :tags-file      nil)))
+    (setf (interfaces:compiled-shaders body) compiled-shaders
+	  (interfaces:compiled-shaders head) compiled-shaders)
+      (md2:set-animation body :stand)
+      (md2:set-animation head :stand)
+      (setf (md2:tag-key-parent head) md2:+tag-head-key+)
+      (mtree-utils:add-child body head)
+      body))
+
 (alexandria:define-constant +magic-num-md2-tag-file '(74 68 80 50) :test #'equalp)
 
 (alexandria:define-constant +tag-file-name-size+ 64 :test #'=)

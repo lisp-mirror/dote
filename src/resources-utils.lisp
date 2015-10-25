@@ -26,11 +26,19 @@
 	    (if (cl-ppcre:scan (strcat +virtual-fs-dir-separator-regexp+ "$") p)
 		*directory-sep*))))
 
+(defun home-datadir ()
+  (join-with-srings* *directory-sep*
+		     (uiop:getenvp "HOME")
+		     +home-data-dir+))
+
+(defun shared-datadir ()
+  (join-with-srings* *directory-sep*
+		     +sys-data-dir+))
+
 (defun find-in-home-datadir (file)
   (let ((actual-path (join-with-srings* *directory-sep*
-					(uiop:getenvp "HOME")
-					+home-data-dir+
-					(construct-path file))))
+					 (home-datadir)
+					 (construct-path file))))
     (cond
       ((not (uiop:getenvp "HOME"))
 	nil)
@@ -43,7 +51,7 @@
 
 (defun find-in-shared-datadir (file)
   (let ((actual-path (join-with-srings* *directory-sep*
-					+sys-data-dir+
+					(shared-datadir)
 					(construct-path file))))
     (if (or
 	 (uiop:directory-exists-p actual-path)
@@ -122,3 +130,13 @@
 	   (uiop:directory-files shared-path))
 	 (t
 	  (error 'resource-not-writable-error :pathname "." :resource resource)))))))
+
+(defun strip-off-resource-path (resource path)
+  (flet ((strip-prefix (pref path)
+	   (cl-ppcre:regex-replace (strcat pref *directory-sep* "*")
+				   path
+				   "")))
+    (let ((relative-path (strip-prefix (home-datadir)
+					(strip-prefix (shared-datadir)
+						      path))))
+      (strip-prefix (construct-resource-path resource "") relative-path))))

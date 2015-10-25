@@ -94,6 +94,11 @@
     (and elements
 	 (alexandria:last-elt elements))))
 
+(defun path-first-element (path)
+  (let ((elements (cl-ppcre:split *directory-sep-regexp* path)))
+    (and elements
+	 (alexandria:first-elt elements))))
+
 (defun path-to-hidden-file-p (path)
   "unix-like only"
   (let ((last-element (path-last-element path)))

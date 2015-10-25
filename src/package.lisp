@@ -352,6 +352,7 @@
    :search-matching-file
    :split-path-elements
    :path-last-element
+   :path-first-element
    :path-to-hidden-file-p
    :parent-dir-path
    :strip-dirs-from-path
@@ -402,8 +403,11 @@
 	:text-utils)
   (:nicknames :res)
   (:export
+   :home-datadir
+   :shared-datadir
    :get-resource-file
-   :get-resource-files))
+   :get-resource-files
+   :strip-off-resource-path))
 
 (defpackage :resource-cache
   (:use :cl
@@ -2410,6 +2414,7 @@
    :+tag-right-weapon-key+
    :find-tag
    :load-md2-model
+   :load-md2-player
    :tag-key-parent
    :set-animation))
 
@@ -2683,6 +2688,7 @@
    :portrait
    :first-name
    :last-name
+   :model-origin-dir
    :gender
    :player-class
    :strength
