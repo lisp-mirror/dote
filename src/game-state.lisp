@@ -101,7 +101,7 @@
 
 (defclass map-state-element (identificable)
   ((entity-id
-    :initform -1
+    :initform (- +start-id-counter+ 1)
     :initarg  :entity-id
     :accessor entity-id)
    (el-type
@@ -168,14 +168,14 @@
     :accessor map-cache-dir
     :initarg  :map-cache-dir
     :initform nil)
-   (pc-characters
+   (player-entities
     :initform (make-hash-table :test 'equal)
-    :initarg  :pc-characters
-    :accessor pc-characters)
-   (npc-characters
+    :initarg  :player-entities
+    :accessor player-entities)
+   (ai-entities
     :initform (make-hash-table :test 'equal)
-    :initarg  :npc-characters
-    :accessor npc-characters)
+    :initarg  :ai-entities
+    :accessor ai-entities)
    (selected-pc
     :initform nil
     :initarg  :selected-pc
@@ -198,6 +198,14 @@
 (defgeneric push-entity  (object entity))
 
 (defgeneric map-level (object))
+
+(defgeneric add-to-player-entities (object id))
+
+(defgeneric add-to-ai-entities (object id))
+
+(defgeneric fetch-from-player-entities (object id-entity))
+
+(defgeneric fetch-from-ai-entities (object entity))
 
 (defmethod  setup-game-hour ((object game-state) hour)
   (with-accessors ((game-hour game-hour)
@@ -283,3 +291,19 @@
 						       (d +maximum-map-size+)
 						       (d (width (map-state object)))))))
 	       2)))
+
+(defmethod add-to-player-entities ((object game-state) entity)
+  (with-accessors ((player-entities player-entities)) object
+    (setf (gethash (id entity) player-entities) entity)))
+
+(defmethod add-to-ai-entities ((object game-state) entity)
+  (with-accessors ((ai-entities ai-entities)) object
+    (setf (gethash (id entity) ai-entities) entity)))
+
+(defmethod fetch-from-player-entities ((object game-state) id-entity)
+  (with-accessors ((player-entities player-entities)) object
+    (gethash id-entity player-entities)))
+
+(defmethod fetch-from-ai-entities ((object game-state) id-entity)
+  (with-accessors ((ai-entities ai-entities)) object
+    (gethash id-entity ai-entities)))

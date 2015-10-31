@@ -77,6 +77,8 @@
 
 (defevent end-turn ())
 
+(defevent camera-drag-ends ())
+
 (defevent healing-effect-turn
     ((parameters
       :initform nil

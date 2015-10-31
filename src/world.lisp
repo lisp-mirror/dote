@@ -183,6 +183,8 @@
 
 (defgeneric highlight-path-costs-space (object renderer path))
 
+(defgeneric pick-player-entity (object renderer x y))
+
 (defgeneric iterate-quad-tree (object function probe))
 
 (defgeneric iterate-quad-tree-anyway (object function))
@@ -375,6 +377,29 @@
 		       (return-from walking))))))))
        path))
 
+(defmethod pick-player-entity ((object world) renderer x y)
+  "Coordinates in screen space"
+  (with-accessors ((main-state main-state)
+		   (toolbar toolbar)) object
+    (walk-quad-tree-anyway (object)
+	(multiple-value-bind (picked cost-matrix-position matrix-position raw-position)
+	    (pick-pointer-position entity renderer x y)
+	  (declare (ignore raw-position matrix-position))
+	  (when picked
+	    (let* ((x-cost      (elt cost-matrix-position 0)) ; column
+		   (y-cost      (elt cost-matrix-position 1)) ; row
+		   (entity-id   (entity-id-in-pos main-state x-cost y-cost)))
+	      ;; sync with toolbar...maybe better in main-window ?
+	      (when (valid-id-p entity-id)
+		(let ((entity (fetch-from-player-entities main-state entity-id)))
+		  (when entity
+		    (setf (selected-pc main-state) entity)
+		    (setf (widget:bound-player toolbar) entity)
+		    (widget:sync-with-player toolbar))))
+	      (return-from pick-player-entity t))))))
+  nil)
+
+
 (defmethod selected-pc ((object world))
   (when (main-state object)
     (selected-pc (main-state object))))
@@ -499,8 +524,9 @@
 				 (clouds-3 (texture:get-texture texture:+cloud-3+))
 				 (smoke    (texture:get-texture texture:+smoke-tray+))
 				 (weather-type :foggy-night-clear-day))
-  (setf (skydome object)   (make-skydome bg clouds-1 clouds-2 clouds-3 smoke)
-	(weather-type (skydome object)) weather-type))
+  (setf (skydome object) (make-skydome bg clouds-1 clouds-2 clouds-3 smoke)
+	(weather-type    (skydome object)) weather-type
+	(widget:bound-world     (toolbar object)) object))
 
 (defmethod get-window-size ((object world))
   (sdl2:get-window-size (frame-window object)))

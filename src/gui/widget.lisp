@@ -1753,9 +1753,48 @@
   (game-event:propagate-end-turn (make-instance 'game-event:end-turn))
   t)
 
+(defmacro with-toolbar-world ((world) toolbar &body body)
+  `(with-accessors ((,world bound-world)) , toolbar
+     ,@body))
+
+(defun toolbar-open-inventory-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (toolbar) w
+    (with-accessors ((bound-player bound-player)) toolbar
+      (when bound-player
+	(with-accessors ((ghost ghost)) bound-player
+	  (let ((inventory (make-inventory-window ghost)))
+	    (setf (compiled-shaders inventory) (compiled-shaders toolbar))
+	    (add-child toolbar inventory))))))
+  t)
+
+(defun toolbar-zoom-in-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (toolbar) w
+    (with-toolbar-world (world) toolbar
+      (let ((camera (world:camera world)))
+	(setf (mode camera) :drag)
+	(camera::drag-camera (world:camera world) (sb-cga:vec .0 (d- +gui-zoom-entity+) .0))))))
+
+(defun toolbar-zoom-out-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (toolbar) w
+    (with-toolbar-world (world) toolbar
+      (let ((camera (world:camera world)))
+	(setf (mode camera) :drag)
+	(camera::drag-camera (world:camera world) (sb-cga:vec .0 +gui-zoom-entity+ .0))))))
+
 (defclass main-toolbar (widget)
-  ;; first row
-  ((s-coma
+  ((bound-player
+    :initform nil
+    :initarg  :bound-player
+    :accessor bound-player)
+   (bound-world
+    :initform nil
+    :initarg  :bound-world
+    :accessor bound-world)
+   ;; first row
+   (s-coma
     :initform (make-health-condition (d* 4.0 *small-square-button-size*)
 				     (d+ *small-square-button-size*
 					 (d* 0.5 *small-square-button-size*))
@@ -1783,7 +1822,18 @@
 				     0.25 +berserk-texture-name+)
     :initarg  :s-berserk
     :accessor s-berserk)
-
+   (b-portrait
+    :initform (make-instance 'naked-button
+			     :x (d* 5.0 *small-square-button-size*)
+			     :y *small-square-button-size*
+			     :width  *small-square-button-size*
+			     :height *small-square-button-size*
+			     :texture-object  (get-texture +preview-unknown-texture-name+)
+			     :texture-pressed (get-texture +preview-unknown-texture-name+)
+			     :texture-overlay (get-texture +transparent-texture-name+)
+			     :callback        #'toolbar-open-inventory-cb)
+   :initarg  :b-portrait
+   :accessor b-portrait)
    (b-attack-short
     :initform (make-square-button (d* 3.0 *square-button-size*)
 				  *small-square-button-size*
@@ -1914,7 +1964,7 @@
 				       (d* 3.0 *small-square-button-size*))
 				   0.0
 				   +zoom-overlay-texture-name+
-				   nil  ;; TODO callback
+				   #'toolbar-zoom-in-cb
 				   :small t)
      :initarg :b-zoom
      :accessor b-zoom)
@@ -1923,7 +1973,7 @@
 				      (d* 4.0 *small-square-button-size*))
 				  0.0
 				  +unzoom-overlay-texture-name+
-				  nil  ;; TODO callback
+				  #'toolbar-zoom-out-cb
 				  :small t)
     :initarg :b-unzoom
     :accessor b-unzoom)
@@ -2014,6 +2064,7 @@
   (add-child object (s-poisoned              object))
   (add-child object (s-terrorized            object))
   (add-child object (s-berserk               object))
+  (add-child object (b-portrait              object))
   (add-child object (b-attack-short          object))
   (add-child object (b-attack-long           object))
   (add-child object (b-attack-long-imprecise object))
@@ -2039,6 +2090,51 @@
   (add-child object (b-zoom        object))
   (add-child object (b-unzoom      object))
   (add-child object (text-fps      object)))
+
+(defgeneric sync-with-player (object))
+
+(defun sync-bar-with-player (bar bar-label slot slot-current ghost)
+  (let* ((slot-value          (slot-value ghost slot))
+	 (current-slots-value (slot-value ghost slot-current))
+	 (new-fill-level      (if (> slot-value 0)
+				  (d (/ current-slots-value slot-value))
+				  0.0)))
+    (setf (fill-level bar)       new-fill-level)
+    (setf (label      bar-label) (format nil
+					 +standard-float-print-format+
+					 current-slots-value))))
+
+(defmethod sync-with-player ((object main-toolbar))
+  (with-accessors ((bound-player bound-player)
+		   (bar-mp bar-mp)   (text-mp text-mp)
+		   (bar-dmg bar-dmg) (text-dmg text-dmg)
+		   (bar-sp bar-sp)   (text-sp text-sp)
+		   (s-coma           s-coma)
+		   (s-poisoned       s-poisoned)
+		   (s-terrorized     s-terrorized)
+		   (s-berserk        s-berserk)
+		   (b-portrait       b-portrait)) object
+    (when bound-player
+      (with-accessors ((ghost ghost)) bound-player
+	(sync-bar-with-player bar-mp  text-mp  'movement-points 'current-movement-points ghost)
+	(sync-bar-with-player bar-dmg text-dmg 'damage-points   'current-damage-points ghost)
+	(sync-bar-with-player bar-sp  text-sp  'magic-points    'current-magic-points ghost)
+	(setf (button-state s-coma)       nil)
+	(setf (button-state s-poisoned)   nil)
+	(setf (button-state s-terrorized) nil)
+	(setf (button-state s-berserk)    nil)
+	(case (status ghost)
+	  (:coma
+	   (setf (button-state s-coma)     t))
+	  (:poisoned
+	   (setf (button-state s-poisoned) t))
+	  (:terror
+	   (setf (button-state s-terrorized) t))
+	  (:berserk
+	   (setf (button-state s-berserk) t)))
+	(setf (texture-pressed b-portrait) (portrait ghost)
+	      (texture-object  b-portrait) (portrait ghost)
+	      (current-texture b-portrait) (portrait ghost))))))
 
 (defun make-pgen-button (x y plus)
   (make-instance 'naked-button
@@ -2071,6 +2167,7 @@
 	      (when (and (d>= new-capital 0.0)
 			 (or plus
 			     (d>= new-current 0.0)))
+		(misc:dbg "~a ~a" slot new-current)
 		(setf (label widget-capital)               (format nil +standard-float-print-format+
 								   new-capital)
 		      (label widget-destination)           (format nil +standard-float-print-format+
@@ -3232,7 +3329,7 @@
   (declare (ignore event))
   (with-parent-widget (win) button
     (with-accessors ((input-name input-name) (input-last-name input-last-name)
-		     (portrait portrait) (player player)) win
+		     (player player)) win
       (with-file-chooser (button fchooser-window)
 	(setf (character:first-name player) (label input-name)
 	      (character:last-name  player) (label input-last-name))
@@ -3278,6 +3375,7 @@
   (declare (ignore event))
   (with-parent-widget (win) button
     (with-accessors ((player player)
+		     (img-portrait img-portrait)
 		     (world world)
 		     (model-preview-paths model-preview-paths)
 		     (backup-data-texture-portrait backup-data-texture-portrait)
@@ -3291,27 +3389,37 @@
 	    (setf (compiled-shaders error-message) (compiled-shaders win))
 	    (add-child win error-message))
 	  (progn
-	    ;; restore preview
-	    (setf (pixmap:data (get-texture +preview-unknown-texture-name+))
-		  backup-data-texture-preview)
-	    (pixmap:sync-data-to-bits (get-texture +preview-unknown-texture-name+))
-	    (setf (pixmap:data (get-texture +portrait-unknown-texture-name+))
-		  backup-data-texture-portrait)
-	    (pixmap:sync-data-to-bits (get-texture +portrait-unknown-texture-name+))
+	    ;; copy some new points to current
+	    (setf (current-damage-points   player) (damage-points player))
+	    (setf (current-movement-points player) (movement-points player))
+	    (setf (current-magic-points    player) (magic-points player))
 	    ;; setup model
 	    (let* ((dir   (strcat (fs:path-first-element (first model-preview-paths))
 				  fs:*directory-sep*))
 		   (model (md2:load-md2-player dir (compiled-shaders world)))
-		   (player-coordinates (place-player world)))
-	      (misc:dbg "new coord ~a" player-coordinates)
+		   (player-coordinates (place-player world))
+		   (portrait-texture   (texture:gen-name-and-inject-in-database
+					(clone (get-texture +portrait-unknown-texture-name+)))))
+	      (pixmap:sync-data-to-bits portrait-texture)
+	      (texture:prepare-for-rendering portrait-texture)
 	      (setf (entity:pos model)
 		    (sb-cga:vec (misc:coord-map->chunk (d (elt player-coordinates 0)))
 				(num:d+ 1.5 +zero-height+) ; hardcoded value, to be removed soon
 				(misc:coord-map->chunk (d (elt player-coordinates 1)))))
 	      (setf (character:model-origin-dir player) dir)
 	      (setf (entity:ghost model) player)
-	      (world:push-interactive-entity world model game-state:+pc-type+ :occlude))))))
-    t)
+	      (setf (portrait (entity:ghost model)) portrait-texture)
+	      (game-state:add-to-player-entities (world:main-state world) model)
+	      (world:push-interactive-entity world model game-state:+pc-type+ :occlude))
+	    ;; restore preview
+	    (setf (pixmap:data (get-texture +preview-unknown-texture-name+))
+		  backup-data-texture-preview)
+	    (pixmap:sync-data-to-bits (get-texture +preview-unknown-texture-name+))
+	    (setf (pixmap:data (get-texture +portrait-unknown-texture-name+))
+		  backup-data-texture-portrait)
+	    (pixmap:sync-data-to-bits (get-texture +portrait-unknown-texture-name+))))))
+
+  t)
 
 (defun %find-max-lenght-ability-prefix (win)
   (with-accessors ((lb-damage-pt lb-damage-pt)
@@ -3459,131 +3567,131 @@
       (setf (prefix lb-damage-pt) (right-padding (prefix lb-damage-pt) max-length-prefix)
 	    (label lb-damage-pt) (format nil +standard-float-print-format+ (character:damage-points player)))
       (%add-callback-to-pgen-buttons b-inc-damage-pt b-dec-damage-pt
-				     player 'character:damage-points
+				     player 'damage-points
 				     lb-exp-points lb-damage-pt 0.1 1.0)
       (setf (prefix lb-movement-pt) (right-padding (prefix lb-movement-pt) max-length-prefix)
-	    (label  lb-movement-pt) (format nil +standard-float-print-format+ (character:movement-points player)))
+	    (label  lb-movement-pt) (format nil +standard-float-print-format+ (movement-points player)))
       (%add-callback-to-pgen-buttons b-inc-movement-pt b-dec-movement-pt
-				     player 'character:movement-points
+				     player 'movement-points
 				     lb-exp-points lb-movement-pt 0.5 1.0)
       (setf (prefix lb-magic-pt) (right-padding (prefix lb-magic-pt) max-length-prefix)
-	    (label  lb-magic-pt) (format nil +standard-float-print-format+ (character:magic-points player)))
+	    (label  lb-magic-pt) (format nil +standard-float-print-format+ (magic-points player)))
       (%add-callback-to-pgen-buttons b-inc-magic-pt b-dec-magic-pt
-				     player 'character:magic-points
+				     player 'magic-points
 				     lb-exp-points lb-magic-pt 0.5 1.0)
       (setf (prefix lb-dodge-ch) (right-padding (prefix lb-dodge-ch) max-length-prefix)
-	    (label  lb-dodge-ch) (format nil +standard-float-print-format+ (character:dodge-chance player)))
+	    (label  lb-dodge-ch) (format nil +standard-float-print-format+ (dodge-chance player)))
       (%add-callback-to-pgen-buttons b-inc-dodge-ch b-dec-dodge-ch
-				     player 'character:dodge-chance
+				     player 'dodge-chance
 				     lb-exp-points lb-dodge-ch 0.5 1.0)
       (setf (prefix lb-melee-atk-ch) (right-padding (prefix lb-melee-atk-ch) max-length-prefix)
-	    (label  lb-melee-atk-ch) (format nil +standard-float-print-format+ (character:melee-attack-chance player)))
+	    (label  lb-melee-atk-ch) (format nil +standard-float-print-format+ (melee-attack-chance player)))
       (%add-callback-to-pgen-buttons b-inc-melee-atk-ch b-dec-melee-atk-ch
-				     player 'character:melee-attack-chance
+				     player 'melee-attack-chance
 				     lb-exp-points lb-melee-atk-ch)
       (setf (prefix lb-range-atk-ch) (right-padding (prefix lb-range-atk-ch) max-length-prefix)
-	    (label  lb-range-atk-ch) (format nil +standard-float-print-format+ (character:range-attack-chance player)))
+	    (label  lb-range-atk-ch) (format nil +standard-float-print-format+ (range-attack-chance player)))
       (%add-callback-to-pgen-buttons b-inc-range-atk-ch b-dec-range-atk-ch
-				     player 'character:range-attack-chance
+				     player 'range-attack-chance
 				     lb-exp-points lb-range-atk-ch 0.5 1.0)
       (setf (prefix lb-melee-atk-dmg) (right-padding (prefix lb-melee-atk-ch) max-length-prefix)
 	    (label  lb-melee-atk-dmg) (format nil +standard-float-print-format+
-					      (character:melee-attack-damage player)))
+					      (melee-attack-damage player)))
       (%add-callback-to-pgen-buttons b-inc-melee-atk-dmg b-dec-melee-atk-dmg
-				     player 'character:melee-attack-damage
+				     player 'melee-attack-damage
 				     lb-exp-points lb-melee-atk-dmg 0.25 1.0)
       (setf (prefix lb-range-atk-dmg) (right-padding (prefix lb-range-atk-dmg) max-length-prefix)
 	    (label  lb-range-atk-dmg) (format nil +standard-float-print-format+
-					      (character:range-attack-damage player)))
+					      (range-attack-damage player)))
       (%add-callback-to-pgen-buttons b-inc-range-atk-dmg b-dec-range-atk-dmg
-				     player 'character:range-attack-damage
+				     player 'range-attack-damage
 				   lb-exp-points lb-range-atk-dmg 0.25 1.0)
       (setf (prefix lb-edge-wpn-ch-bonus) (right-padding (prefix lb-edge-wpn-ch-bonus)
 							 max-length-prefix)
 	    (label lb-edge-wpn-ch-bonus) (format nil +standard-float-print-format+
-						 (character:edge-weapons-chance-bonus player)))
+						 (edge-weapons-chance-bonus player)))
       (%add-callback-to-pgen-buttons b-inc-edge-wpn-ch-bonus b-dec-edge-wpn-ch-bonus
-				     player 'character:edge-weapons-chance-bonus
+				     player 'edge-weapons-chance-bonus
 				     lb-exp-points lb-edge-wpn-ch-bonus 0.25 1.0)
       (setf (prefix lb-edge-wpn-dmg-bonus) (right-padding (prefix lb-edge-wpn-dmg-bonus)
 							  max-length-prefix)
 	    (label lb-edge-wpn-dmg-bonus) (format nil +standard-float-print-format+
-						  (character:edge-weapons-damage-bonus player)))
+						  (edge-weapons-damage-bonus player)))
       (%add-callback-to-pgen-buttons b-inc-edge-wpn-dmg-bonus b-dec-edge-wpn-dmg-bonus
-				     player 'character:edge-weapons-damage-bonus
+				     player 'edge-weapons-damage-bonus
 				     lb-exp-points lb-edge-wpn-dmg-bonus 0.25 1.0)
       (setf (prefix lb-impact-wpn-ch-bonus) (right-padding (prefix lb-impact-wpn-ch-bonus)
 							   max-length-prefix)
 	    (label lb-impact-wpn-ch-bonus) (format nil +standard-float-print-format+
-						   (character:impact-weapons-chance-bonus player)))
+						   (impact-weapons-chance-bonus player)))
       (%add-callback-to-pgen-buttons b-inc-impact-wpn-ch-bonus b-dec-impact-wpn-ch-bonus
-				     player 'character:impact-weapons-chance-bonus
+				     player 'impact-weapons-chance-bonus
 				     lb-exp-points lb-impact-wpn-ch-bonus 0.25 1.0)
       (setf (prefix lb-impact-wpn-dmg-bonus) (right-padding (prefix lb-impact-wpn-dmg-bonus)
 							    max-length-prefix)
 	    (label lb-impact-wpn-dmg-bonus) (format nil +standard-float-print-format+
-						    (character:impact-weapons-damage-bonus player)))
+						    (impact-weapons-damage-bonus player)))
       (%add-callback-to-pgen-buttons b-inc-impact-wpn-dmg-bonus b-dec-impact-wpn-dmg-bonus
-				     player 'character:impact-weapons-damage-bonus
+				     player 'impact-weapons-damage-bonus
 				     lb-exp-points lb-impact-wpn-dmg-bonus 0.25 1.0)
       (setf (prefix lb-pole-wpn-ch-bonus) (right-padding (prefix lb-pole-wpn-ch-bonus)
 							 max-length-prefix)
 	    (label lb-pole-wpn-ch-bonus) (format nil +standard-float-print-format+
-						    (character:pole-weapons-chance-bonus player)))
+						    (pole-weapons-chance-bonus player)))
       (%add-callback-to-pgen-buttons b-inc-pole-wpn-ch-bonus b-dec-pole-wpn-ch-bonus
-				     player 'character:pole-weapons-chance-bonus
+				     player 'pole-weapons-chance-bonus
 				     lb-exp-points lb-pole-wpn-ch-bonus 0.25 1.0)
       (setf (prefix lb-pole-wpn-dmg-bonus) (right-padding (prefix lb-pole-wpn-dmg-bonus)
 							  max-length-prefix)
 	    (label lb-pole-wpn-dmg-bonus) (format nil +standard-float-print-format+
-						  (character:pole-weapons-damage-bonus player)))
+						  (pole-weapons-damage-bonus player)))
       (%add-callback-to-pgen-buttons b-inc-pole-wpn-dmg-bonus b-dec-pole-wpn-dmg-bonus
-				     player 'character:pole-weapons-damage-bonus
+				     player 'pole-weapons-damage-bonus
 				     lb-exp-points lb-pole-wpn-dmg-bonus 0.25 1.0)
       (setf (prefix lb-unlock-ch) (right-padding (prefix lb-unlock-ch) max-length-prefix)
 	    (label lb-unlock-ch) (format nil +standard-float-print-format+
-					 (character:unlock-chance player)))
+					 (unlock-chance player)))
       (%add-callback-to-pgen-buttons b-inc-unlock-ch b-dec-unlock-ch
-				     player 'character:unlock-chance
+				     player 'unlock-chance
 				     lb-exp-points lb-unlock-ch 0.5 1.0)
       (setf (prefix lb-deactivate-trap-ch) (right-padding (prefix lb-deactivate-trap-ch)
 							  max-length-prefix)
 	    (label lb-deactivate-trap-ch) (format nil +standard-float-print-format+
-						  (character:deactivate-trap-chance player)))
+						  (deactivate-trap-chance player)))
       (%add-callback-to-pgen-buttons b-inc-deactivate-trap-ch b-dec-deactivate-trap-ch
-				     player 'character:deactivate-trap-chance
+				     player 'deactivate-trap-chance
 				     lb-exp-points lb-deactivate-trap-ch 0.5 1.0)
       (setf (prefix lb-reply-attack-ch) (right-padding (prefix lb-reply-attack-ch)
 						       max-length-prefix)
 	    (label lb-reply-attack-ch) (format nil +standard-float-print-format+
-					       (character:reply-attack-chance player)))
+					       (reply-attack-chance player)))
       (%add-callback-to-pgen-buttons b-inc-reply-attack-ch b-dec-reply-attack-ch
-				     player 'character:reply-attack-chance
+				     player 'reply-attack-chance
 				     lb-exp-points lb-reply-attack-ch 0.33 1.0)
       (setf (prefix lb-ambush-attack-ch) (right-padding (prefix lb-ambush-attack-ch)
 							max-length-prefix)
 	    (label lb-ambush-attack-ch) (format nil +standard-float-print-format+
-						(character:ambush-attack-chance player)))
+						(ambush-attack-chance player)))
       (%add-callback-to-pgen-buttons b-inc-ambush-attack-ch b-dec-ambush-attack-ch
-				     player 'character:ambush-attack-chance
+				     player 'ambush-attack-chance
 				     lb-exp-points lb-ambush-attack-ch 0.33 1.0)
       (setf (prefix lb-spell-ch) (right-padding (prefix lb-spell-ch) max-length-prefix)
 	    (label lb-spell-ch) (format nil +standard-float-print-format+
-					(character:spell-chance player)))
+					(spell-chance player)))
       (%add-callback-to-pgen-buttons b-inc-spell-ch b-dec-spell-ch
-				     player 'character:spell-chance
+				     player 'spell-chance
 				     lb-exp-points lb-spell-ch 0.25 1.0)
       (setf (prefix lb-attack-spell-ch) (right-padding (prefix lb-attack-spell-ch)
 						       max-length-prefix)
 	    (label lb-attack-spell-ch) (format nil +standard-float-print-format+
-					       (character:attack-spell-chance player)))
+					       (attack-spell-chance player)))
       (%add-callback-to-pgen-buttons b-inc-attack-spell-ch b-dec-attack-spell-ch
-				     player 'character:attack-spell-chance
+				     player 'attack-spell-chance
 				     lb-exp-points lb-attack-spell-ch 0.25 1.0)
       (setf (prefix lb-level) (right-padding (prefix lb-level) max-length-prefix)
-	    (label lb-level) (format nil "~d" (character:level player)))
+	    (label lb-level) (format nil "~d" (level player)))
       (setf (prefix lb-exp-points) (right-padding (prefix lb-exp-points) max-length-prefix)
-	    (label lb-exp-points)  (format nil "~d" (character:exp-points player))))))
+	    (label lb-exp-points)  (format nil "~d" (exp-points player))))))
 
 (defun make-player-generator (world)
   (make-instance 'player-generator

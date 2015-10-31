@@ -191,3 +191,5 @@
 (define-constant +model-preview-ranger-re+        "preview-healer"                :test #'string=)
 
 (define-constant +model-preview-ext-re+           "\\.tga$"                       :test #'string=)
+
+(define-constant +gui-zoom-entity+                50.0                            :test #'=)

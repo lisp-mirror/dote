@@ -228,8 +228,9 @@
 	(call-next-method)))))
 
 (defmethod mousewheel-event ((object test-window) ts x y)
-  (misc:dbg "wheel ~a ~a ~a" ts x y))
-;  (camera::drag-camera (world:camera (world object)) (vec2:vec2 1.0 1.0)))
+  (misc:dbg "wheel ~a ~a ~a" ts x y)
+  (setf (mode (world:camera (world object))) :drag)
+  (camera::drag-camera (world:camera (world object)) (vec .0 1.0 .0)))
 
 (defmethod textinput-event ((object test-window) ts text)
   (if (string= text "s")
@@ -370,7 +371,8 @@
 				    :y-event (num:d (- *window-h* y)))))
       (if (eq state :mousebuttondown)
 	  (when (not (widget:on-mouse-pressed (world:gui world) gui-event))
-	    (misc:dbg "~s button: ~A at ~A, ~A" state b x y))
+	    (misc:dbg "~s button: ~A at ~A, ~A" state b x y)
+	    (world::pick-player-entity world world x y))
 	  (when (not (widget:on-mouse-released (world:gui world) gui-event))
 	    (misc:dbg "~s button: ~A at ~A, ~A" state b x y))))))
 

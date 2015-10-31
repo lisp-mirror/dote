@@ -16,6 +16,8 @@
 
 (in-package :camera)
 
+(alexandria:define-constant +drag-camera-ends-threshold+ 0.01 :test #'=)
+
 (defclass camera (transformable entity)
   ((target
     :initform nil
@@ -141,6 +143,7 @@
 	  (drag-target-pos object) (copy-vec target)
 	  (up     object) (copy-vec +y-axe+)
 	  (dir    object) (vec- (target object) (pos object)))
+    (game-event:register-for-camera-drag-ends object)
     (look-at* object)))
 
 (defmethod render ((object camera) renderer))
@@ -155,6 +158,10 @@
      (%draw-drag-mode object dt))
     (:otherwise
      t)))
+
+(defmethod on-game-event ((object camera) (event game-event:camera-drag-ends))
+  (setf (mode object) :fp)
+  nil)
 
 (defgeneric %draw-path-mode (object dt))
 
@@ -214,7 +221,9 @@
     (let* ((offset  (integrate drag-interpolator dt)))
       (setf pos               (vec+ previous-pos (vec- drag-equilibrium-pos offset))
 	    target            (vec+ drag-target-pos (vec- drag-equilibrium-pos offset)))
-      (look-at* object))))
+      (look-at* object)
+      (when (vec~ offset +zero-vec+ +drag-camera-ends-threshold+)
+	(game-event:propagate-camera-drag-ends (make-instance 'game-event:camera-drag-ends))))))
 
 (defmethod look-at* ((object camera))
   (setf (dir object) (normalize (vec- (target object) (pos object))))
@@ -284,7 +293,7 @@
   "move camera on the x-z plane to position specified by vector"
   (declare (optimize (safety 0) (speed 3) (debug 0)))
   (declare (camera object))
-  (declare (vec2:vec2 offset))
+  (declare (vec offset))
   (with-accessors ((dir dir) (up up)
 		   (pos pos)
 		   (target target)
@@ -293,9 +302,10 @@
 		   (drag-target-pos drag-target-pos)
 		   (drag-equilibrium-pos drag-equilibrium-pos)) object
     (let* ((u      (actual-up-vector object))
-	   (push-y (%calc-push-y object u dir (elt offset 1)))
+	   (push-y (%calc-push-y object u dir (elt offset 2)))
 	   (push-x (vec* (normalize (cross-product dir up)) (elt offset 0)))
-	   (push   (vec+ push-x push-y)))
+	   (push   (vec+ (vec+ push-x push-y)
+			 (vec* (vec-negate dir) (elt offset 1)))))
       (setf (current-pos drag-interpolator) push
 	    drag-equilibrium-pos            push
 	    previous-pos                    pos
