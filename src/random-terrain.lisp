@@ -20,11 +20,7 @@
 
 (alexandria:define-constant +maximum-branching-chance+      100   :test #'=)
 
-(alexandria:define-constant +invalicable-element-cost+      512.0 :test #'=)
-
 (alexandria:define-constant +invalicable-element-cost-dbg+  255.0 :test #'=)
-
-(alexandria:define-constant +open-terrain-cost+               4.0 :test #'=)
 
 (alexandria:define-constant +road-terrain-max-cost-bonus+     3.0 :test #'=)
 

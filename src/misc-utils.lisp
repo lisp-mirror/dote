@@ -530,6 +530,11 @@
   "convert from terrain chunk to costs matrix"
   (coord-chunk->matrix (num:d a)))
 
+(definline map-manhattam-distance (from to)
+  (* +open-terrain-cost+
+     (+ (abs (- (elt to 0) (elt from 0)))
+	(abs (- (elt to 1) (elt from 1))))))
+
 ;; cffi
 
 (definline make-null-pointer ()

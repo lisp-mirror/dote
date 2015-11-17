@@ -282,8 +282,6 @@
       (setf (matrix:matrix-elt lookup-tile-triangle row column) element)
       (values row column))))
 
-
-
 (define-condition null-tile-element (warning)
   ((coordinates
     :initarg :coordinates
@@ -354,7 +352,6 @@
   (with-accessors ((aabb aabb)) object
     (uivec2 (f- column (coord-chunk->matrix (min-x aabb)))
 	    (f- row    (coord-chunk->matrix (min-z aabb))))))
-
 
 (defmethod set-tile-highlight ((object pickable-mesh) row column
 			       &key

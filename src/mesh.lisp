@@ -434,7 +434,7 @@
     :writer (setf aabb))
    (bounding-sphere
     :initform (make-instance 'bounding-sphere)
-    :initarg :aabb
+    :initarg :bounding-sphere
     :accessor bounding-sphere)
    (vao
     :initform '()
@@ -553,6 +553,20 @@
 	     render-tangents)
 	   (call-next-method)))
 
+(defmethod game-event:on-game-event ((object triangle-mesh) (event game-event:end-turn))
+  (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
+  nil)
+
+(defmethod game-event:on-game-event ((object triangle-mesh)
+				     (event  game-event:move-entity-along-path-event))
+  (if (= (id object) (game-event:id-destination event))
+      t
+      nil))
+
+(defmethod game-event:on-game-event ((object triangle-mesh)
+				     (event game-event:move-entity-entered-in-tile-event))
+  nil)
+
 (defgeneric aabb (object))
 
 (defgeneric reset-aabb (object))
@@ -665,6 +679,10 @@
 (defgeneric setup-projective-texture (object))
 
 (defgeneric remove-mesh-data (object))
+
+(defgeneric calculate-decrement-move-points-entering-tile (object))
+
+(defgeneric decrement-move-points-entering-tile (object))
 
 (defmethod remove-mesh-data ((object triangle-mesh))
   (setf (normals       object) nil
@@ -785,6 +803,22 @@
 (defmethod setup-projective-texture ((object triangle-mesh))
   ;; does nothing
   object)
+
+(defmethod calculate-decrement-move-points-entering-tile ((object triangle-mesh))
+  (with-accessors ((ghost ghost)) object
+    (with-accessors ((current-path character:current-path)) ghost
+      (if current-path
+	  (let* ((next-tile     (alexandria:first-elt current-path))
+		 (cost-dec      (game-state:get-cost (state object)
+						     (elt next-tile 0)
+						     (elt next-tile 1))))
+	    cost-dec)
+	  (d 0)))))
+
+(defmethod decrement-move-points-entering-tile ((object triangle-mesh))
+  (decf (character:current-movement-points (ghost object))
+	(calculate-decrement-move-points-entering-tile object)))
+
 
 (defmethod get-first-near ((object triangle-mesh) vertex-index)
   (misc:do-while* ((first-face (find-triangle-by-vertex-index object vertex-index))
@@ -2489,9 +2523,19 @@
 (defun fill-shell-from-mesh (mesh &optional (type 'triangle-mesh-shell))
   (fill-mesh-data (make-instance type) mesh))
 
-(defmethod on-game-event ((object triangle-mesh-shell) (event game-event:end-turn))
+(defmethod game-event:on-game-event ((object triangle-mesh-shell)
+			  (event game-event:end-turn))
   (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
   nil)
+
+(defmethod game-event:on-game-event ((object triangle-mesh-shell)
+			  (event game-event:move-entity-along-path-event))
+  (misc:dbg "rec")
+  (if (= (id object) (game-event:id-destination event))
+      (progn
+	(misc:dbg "rr")
+	t)
+      nil))
 
 (defclass tree-mesh-shell (triangle-mesh-shell)
   ((start-time

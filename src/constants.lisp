@@ -58,6 +58,10 @@
 
 (define-constant +maximum-mountain-height+          255.0              :test '=)
 
+(define-constant +invalicable-element-cost+         512.0              :test #'=)
+
+(define-constant +open-terrain-cost+                  2.0              :test #'=)
+
 (define-constant +default-size+                     256                :test '=)
 
 (define-constant +map-max-size+                     512                :test '=)
@@ -192,4 +196,6 @@
 
 (define-constant +model-preview-ext-re+           "\\.tga$"                       :test #'string=)
 
-(define-constant +gui-zoom-entity+                50.0                            :test #'=)
+(define-constant +model-move-speed+               0.02                            :test #'=)
+
+(define-constant +gui-zoom-entity+                30.0                            :test #'=)

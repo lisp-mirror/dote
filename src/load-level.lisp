@@ -558,12 +558,12 @@
     ;;for each tile
     (loop for x from 0.0 below (d/ w +terrain-chunk-size-scale+) do
 	 (loop for y from 0.0 below (d/ h +terrain-chunk-size-scale+) do
-	      (setup-map-state-tile world
-				     (truncate (+ x (coord-layer->map-state min-x)))
-				     (truncate (+ y (coord-layer->map-state min-y)))
-				     +floor-type+
-				     (Identificable:id mesh)
-				     nil)))
+	      (world:setup-map-state-tile world
+					  (truncate (+ x (coord-layer->map-state min-x)))
+					  (truncate (+ y (coord-layer->map-state min-y)))
+					  +floor-type+
+					  (Identificable:id mesh)
+					  nil)))
     mesh))
 
 (defun build-ceiling-mesh (w h)
@@ -650,11 +650,13 @@
     chunk))
 
 (defun build-and-cache-terrain-chunk (x z whole cache-key)
-  (let ((chunk (terrain-chunk:clip-with-aabb whole
+  (let* ((chunk (terrain-chunk:clip-with-aabb whole
 					     (vec4:vec4 x z
 							(d+ x +quad-tree-leaf-size+)
 							(d+ z +quad-tree-leaf-size+))
-					     :clip-if-inside nil)))
+					     :clip-if-inside nil))
+	 (min-y (3d-utils:min-y (mesh:aabb chunk))))
+    (setf (terrain-chunk:origin-offset chunk) (vec x min-y z))
     (pickable-mesh:populate-lookup-triangle-matrix chunk)
     (let ((in-cache (copy-flat chunk)))
       (%terrain-remove-mesh-data in-cache)
@@ -697,10 +699,10 @@
 					   z
 					   whole
 					   chunk-cache-key)
-		      (lparallel:submit-task channel
-					     'revive-terrain-chunk
-					     whole
-					     chunk-cache-key)))))
+		    (lparallel:submit-task channel
+					   'revive-terrain-chunk
+					   whole
+					   chunk-cache-key)))))
     (loop for i from cache-channels-count above 0 do
 	 (let ((chunk (lparallel:receive-result channel)))
 	   (prepare-for-rendering chunk)

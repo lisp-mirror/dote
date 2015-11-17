@@ -165,6 +165,19 @@
 			     :height *window-h*
 			     :label nil))))
 
+(defmethod initialize-instance :after ((object world) &key &allow-other-keys)
+  (game-event:register-for-refresh-toolbar-event object)
+  (game-event:register-for-update-highlight-path object))
+
+(defmethod game-event:on-game-event ((object world)
+				     (event game-event:refresh-toolbar-event))
+  (with-accessors ((toolbar toolbar)) object
+    (widget:sync-with-player toolbar)))
+
+(defmethod game-event:on-game-event ((object world)
+				     (event game-event:update-highlight-path))
+  (highlight-path-costs-space object object (game-event:tile-pos event)))
+
 (defgeneric (setf main-state) (new-state object))
 
 (defgeneric get-window-size (object))
@@ -185,6 +198,8 @@
 
 (defgeneric pick-player-entity (object renderer x y))
 
+(defgeneric pick-height-terrain (object x z))
+
 (defgeneric iterate-quad-tree (object function probe))
 
 (defgeneric iterate-quad-tree-anyway (object function))
@@ -195,26 +210,21 @@
 
 (defgeneric push-interactive-entity (object entity type occlusion-value))
 
-(defgeneric set-map-state-type (object x y type))
-
-(defgeneric set-map-state-id (object x y id))
-
-(defgeneric set-map-state-occlusion (object x y occlusion-value))
-
-(defgeneric setup-map-state-entity (object entity type occlusion-value))
-
 (defgeneric setup-map-state-tile (object x y type id occlusion-value))
 
-(defmethod iterate-quad-tree ((object world) function probe)
-  (quad-tree:iterate-nodes-intersect (entities object)
-				    function
-				    probe))
+(defgeneric set-window-accepts-input (object value))
+
+(defmethod move-map-state-entity (object entity from))
 
 (defmethod iterate-quad-tree ((object world) function probe)
   (quad-tree:iterate-nodes-intersect (entities object)
 				    function
 				    probe))
 
+(defmethod iterate-quad-tree ((object world) function probe)
+  (quad-tree:iterate-nodes-intersect (entities object)
+				    function
+				    probe))
 
 (defmacro walk-quad-tree ((object &optional (aabb `(aabb-2d (camera ,object)))) &body body)
   `(iterate-quad-tree ,object
@@ -337,6 +347,13 @@
 	  (values cost-matrix-position matrix-position raw-position)))))
   nil)
 
+(defmethod pick-height-terrain ((object world) x z)
+  "x z in world space"
+  (walk-quad-tree (object)
+    (when (and (typep entity 'terrain-chunk:terrain-chunk)
+	       (insidep (aabb entity) (vec x +zero-height+ z)))
+      (return-from pick-height-terrain (terrain-chunk:approx-terrain-height entity x z)))))
+
 (defmethod highlight-tile-screenspace ((object world) renderer x y)
   "Coordinates in screen space"
     (walk-quad-tree-anyway (object)
@@ -395,10 +412,9 @@
 		  (when entity
 		    (setf (selected-pc main-state) entity)
 		    (setf (widget:bound-player toolbar) entity)
-		    (widget:sync-with-player toolbar))))
-	      (return-from pick-player-entity t))))))
+		    (widget:sync-with-player toolbar)
+		    (return-from pick-player-entity t)))))))))
   nil)
-
 
 (defmethod selected-pc ((object world))
   (when (main-state object)
@@ -549,26 +565,33 @@
   "Use for any interactive entity (i.e. has a character)"
   (push-entity             object entity)  ; add to quadtree
   (push-entity (main-state object) entity) ; add to entity tree of game-state
-  (setup-map-state-entity  object  entity type occlusion-value)) ; add to game-state's matrix
+  (world:setup-map-state-entity  object  entity type occlusion-value)) ; add to game-state's matrix
 
 (defmethod set-map-state-type ((object world) x y type)
-  (setf (el-type (matrix:matrix-elt (map-state (main-state object)) y x)) type))
+  (game-state:set-map-state-type (main-state object) x y type))
 
 (defmethod set-map-state-id ((object world) x y id)
-  (setf (entity-id (matrix:matrix-elt (map-state (main-state object)) y x)) id))
+  (game-state:set-map-state-id (main-state object) x y id))
 
 (defmethod set-map-state-occlusion ((object world) x y occlusion-value)
-  (setf (occlude (matrix:matrix-elt (map-state (main-state object)) y x)) occlusion-value))
+  (game-state:set-map-state-occlusion (main-state object) x y occlusion-value))
 
 (defmethod setup-map-state-entity ((object world) entity type occlusion-value)
-  (with-accessors ((pos pos) (id identificable:id)) entity
-    (let ((x-matrix (misc:coord-chunk->matrix (elt pos 0)))
-	  (y-matrix (misc:coord-chunk->matrix (elt pos 2))))
-      (set-map-state-type      object x-matrix y-matrix type)
-      (set-map-state-id        object x-matrix y-matrix id)
-      (set-map-state-occlusion object x-matrix y-matrix occlusion-value))))
+  (game-state:setup-map-state-entity (main-state object) entity type occlusion-value))
+
+(defmethod move-map-state-entity ((object world) entity from)
+  (game-state:move-map-state-entity (main-state object) entity from))
 
 (defmethod setup-map-state-tile ((object world) x y type id occlusion-value)
-  (set-map-state-type      object x y type)
-  (set-map-state-id        object x y id)
-  (set-map-state-occlusion object x y occlusion-value))
+  (world:set-map-state-type      object x y type)
+  (world:set-map-state-id        object x y id)
+  (world:set-map-state-occlusion object x y occlusion-value))
+
+(defmethod place-player-on-map ((object world) player faction &optional (pos #(0 0)))
+  (game-state:place-player-on-map (main-state object) player faction pos)
+  (game-event:register-for-end-turn                          player)
+  (game-event:register-for-move-entity-along-path-event      player)
+  (game-event:register-for-move-entity-along-path-end-event  player)
+  (game-event:register-for-move-entity-entered-in-tile-event player)
+  (game-event:register-for-end-turn                          player)
+  (world:push-interactive-entity object player faction :occlude))

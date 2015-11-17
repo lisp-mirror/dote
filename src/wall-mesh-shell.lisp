@@ -88,10 +88,11 @@
     (setf (projector object) (look@ pos eye +y-axe+))
     pos))
 
-(defmethod on-game-event ((object decorated-wall-mesh-shell) (event game-event:end-turn))
-  (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
-  nil)
+(defmethod game-event:on-game-event ((object decorated-wall-mesh-shell)
+				      (event game-event:end-turn))
+   (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
+   nil)
 
-(defmethod on-game-event ((object wall-mesh-shell) (event game-event:end-turn))
+(defmethod game-event:on-game-event ((object wall-mesh-shell) (event game-event:end-turn))
   (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
   nil)

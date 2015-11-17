@@ -18,6 +18,6 @@
 
 (defclass container-mesh-shell (triangle-mesh-shell) ())
 
-(defmethod on-game-event ((object container-mesh-shell) (event game-event:end-turn))
+(defmethod game-event:on-game-event ((object container-mesh-shell) (event game-event:end-turn))
   (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
   nil)

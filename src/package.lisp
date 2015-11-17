@@ -60,6 +60,8 @@
    :+road-height+
    :+maximum-mountain-height+
    :+minimum-mountain-height+
+   :+invalicable-element-cost+
+   :+open-terrain-cost+
    :+default-size+
    :+map-max-size+
    :+pi+
@@ -127,6 +129,7 @@
    :+model-preview-healer-re+
    :+model-preview-ranger-re+
    :+model-preview-ext-re+
+   :+model-move-speed+
    :+gui-zoom-entity+))
 
 (defpackage :profiling
@@ -220,6 +223,7 @@
    :coord-chunk->costs
    :coord-chunk->matrix
    :coord-layer->map-state
+   :map-manhattam-distance
    :make-null-pointer))
 
 (defpackage :base64
@@ -442,6 +446,16 @@
    :ensure-cache-directory
    :ensure-cache-directory*))
 
+(defpackage :sdl2.kit-utils
+  (:use :cl
+	:alexandria
+	:sdl2.kit
+	:config
+	:constants)
+  (:export
+   :fetch-window
+   :fetch-window-id))
+
 (defpackage :interfaces
   (:use :cl
 	:constants
@@ -488,6 +502,7 @@
    :+ivec2-zero+
    :make-fresh-ivec2
    :copy-ivec2
+   :ivec2=
    :ivec2p
    :ivec2*
    :ivec2/
@@ -1386,6 +1401,27 @@
    :id
    :find-entity-by-id))
 
+(defpackage :entity
+  (:use :cl
+	:alexandria
+	:constants
+	:config
+	:sb-cga
+	:sb-cga-utils
+	:interfaces
+	:identificable)
+  (:shadowing-import-from :sb-cga :rotate)
+  (:export
+   :entity
+   :modified
+   :pos
+   :dir
+   :scaling
+   :up
+   :ghost
+   :state
+   :aabb-2d))
+
 ;; procedural content
 
 (defpackage :random-labyrinth
@@ -1656,6 +1692,7 @@
    :list-of-texture-by-tag
    :gen-name-and-inject-in-database
    :gen-name
+   :clone
    :prepare-for-rendering
    :setup-texture-parameters
    :n-ka
@@ -1716,6 +1753,7 @@
 	:vec4
 	:matrix
 	:identificable
+	:entity
 	:level-config
 	:random-terrain)
   (:export
@@ -1739,6 +1777,11 @@
    :+pc-type+
    :+floor-type+
    :+ceiling-type+
+   :movement-path
+   :tiles
+   :cost
+   :make-movement-path
+   :invalid-entity-id-map-state
    :map-state-element
    :map-element-empty-p
    :entity-id
@@ -1758,14 +1801,19 @@
    :ai-entities
    :level-difficult
    :map-cache-dir
+   :window-id
    :light-color
+   :fetch-window
+   :fetch-world
    :setup-game-hour
    :prepare-map-state
    :get-cost
    :get-cost-insecure
    :el-type-in-pos
    :entity-id-in-pos
+   :occludep-in-pos
    :selected-pc
+   :selected-path
    :build-movement-path
    :terrain-aabb-2d
    :find-entity-by-id
@@ -1774,7 +1822,16 @@
    :add-to-player-entities
    :add-to-ai-entities
    :fetch-from-player-entities
-   :fetch-from-ai-entities))
+   :fetch-from-ai-entities
+   :faction-player-p
+   :faction-ai-p
+   :approx-terrain-height@pos
+   :place-player-on-map
+   :set-map-state-type
+   :set-map-state-id
+   :set-map-state-occlusion
+   :setup-map-state-entity
+   :move-map-state-entity))
 
 (defpackage :game-event
   (:use
@@ -1784,12 +1841,13 @@
    :num)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
+   :clean-all-events-vectors
    :generic-game-event
    :id-origin
    :age
    :name
    :priority
-   :data
+   :event-data
    :game-event-w-destination
    :id-destination
    :game-event-procrastinated
@@ -1807,7 +1865,35 @@
    :register-for-healing-effect-turn
    :unregister-for-healing-effect-turn
    :propagate-healing-effect-turn
-   :cancel-healing-effect-game-event))
+   :cancel-healing-effect-game-event
+   :move-entity-along-path-event
+   :register-for-move-entity-along-path-event
+   :unregister-for-move-entity-along-path-event
+   :propagate-move-entity-along-path-event
+   :move-entity-entered-in-tile-event
+   :register-for-move-entity-entered-in-tile-event
+   :unregister-for-move-entity-entered-in-tile-event
+   :propagate-move-entity-entered-in-tile-event
+   :tile-pos
+   :move-entity-along-path-end-event
+   :path
+   :cost
+   :register-for-move-entity-along-path-end-event
+   :unregister-for-move-entity-along-path-end-event
+   :propagate-move-entity-along-path-end-event
+   :window-accept-input-event
+   :accept-input-p
+   :register-for-window-accept-input-event
+   :unregister-for-window-accept-input-event
+   :propagate-window-accept-input-event
+   :refresh-toolbar-event
+   :register-for-refresh-toolbar-event
+   :unregister-for-refresh-toolbar-event
+   :propagate-refresh-toolbar-event
+   :update-highlight-path
+   :register-for-update-highlight-path
+   :unregister-for-update-highlight-path
+   :propagate-update-highlight-path))
 
 (defpackage :basic-interaction-parameters
   (:use :cl
@@ -1938,7 +2024,8 @@
 	:mtree-utils
 	:interfaces
 	:identificable
-	:basic-interaction-parameters)
+	:basic-interaction-parameters
+	:game-event)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :+unknown-ability-bonus+
@@ -1984,6 +2071,7 @@
    :first-name
    :last-name
    :model-origin-dir
+   :current-path
    :gender
    :player-class
    :strength
@@ -2029,6 +2117,9 @@
    :inventory
    :inventory-slot-pages-number
    :player-gender->gender-description
+   :path-same-ends-p
+   :reset-movement-points
+   :reset-magic-points
    :player-class->class-description
    :basic-interaction-params
    :make-warrior
@@ -2314,27 +2405,6 @@
 
 ;; engine
 
-(defpackage :entity
-  (:use :cl
-	:alexandria
-	:constants
-	:config
-	:sb-cga
-	:sb-cga-utils
-	:interfaces
-	:identificable)
-  (:shadowing-import-from :sb-cga :rotate)
-  (:export
-   :entity
-   :modified
-   :pos
-   :dir
-   :scaling
-   :up
-   :ghost
-   :state
-   :aabb-2d))
-
 (defpackage :camera
   (:use :cl
 	:constants
@@ -2395,7 +2465,6 @@
 	:camera
 	:game-state)
   (:shadowing-import-from :graph :matrix)
-  (:import-from           :game-event :on-game-event)
   ;;(:shadowing-import-from :num-utils epsilon=)
   (:export
    :+vbo-count+
@@ -2541,7 +2610,9 @@
    :door-mesh-shell
    :fountain-mesh-shell
    :container-mesh-shell
-   :setup-projective-texture))
+   :setup-projective-texture
+   :calculate-decrement-move-points-entering-tile
+   :decrement-move-points-entering-tile))
 
 (defpackage :pickable-mesh
   (:use :cl
@@ -2856,6 +2927,7 @@
    :walkable-bag
    :windows-bag
    :gui
+   :toolbar
    :render-for-reflection
    :push-entity
    :get-window-size
@@ -2864,6 +2936,9 @@
    :initialize-skydome
    :render-gui
    :highlight-tile-screenspace
+   :pick-player-entity
+   :pick-pointer-position
+   :pick-height-terrain
    :all-furniture-bags-not-empty-p
    :all-furnitures-but-pillars-not-empty-p
    :push-interactive-entity
@@ -2871,7 +2946,10 @@
    :set-map-state-id
    :set-map-state-occlusion
    :setup-map-state-entity
-   :setup-map-state-tile))
+   :move-map-state-entity
+   :setup-map-state-tile
+   :place-player-on-map
+   :set-window-accept-input))
 
 (defpackage :terrain-chunk
   (:use :cl
@@ -2910,6 +2988,7 @@
    :build-mesh
    :nclip-with-aabb
    :clip-with-aabb
+   :approx-terrain-height
    :make-terrain-chunk))
 
 (defpackage :md2-mesh
@@ -2924,8 +3003,13 @@
 	:interfaces
 	:transformable
 	:identificable
+	:entity
 	:num
+	:game-event
 	:misc
+	:vec2
+	:ivec2
+	:character
 	:mesh-material
 	:mesh)
   (:export
@@ -3039,7 +3123,11 @@
 	:config
 	:constants
 	:sb-cga
+	:num
+	:misc
 	:vec4
+	:vec2
+	:ivec2
 	:sb-cga-utils
 	:transformable
 	:camera
@@ -3047,7 +3135,10 @@
 	:world
 	:sdl2.kit
 	:shaders-utils
+	:identificable
 	:load-level)
   (:export
+   :world
+   :accept-input-p
    :main
    :fps))

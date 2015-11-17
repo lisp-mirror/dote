@@ -100,10 +100,87 @@
    (cycle-animation
     :initform t
     :initarg :cycle-animation
-    :accessor cycle-animation)))
+    :accessor cycle-animation)
+   (current-action
+    :initform :stand
+    :initarg :current-action
+    :accessor current-action)))
 
 (defmethod print-object ((object md2-mesh) stream)
   (print-unreadable-object (object stream :type t :identity t)))
+
+(defun path->dir (path &key (start-index 0))
+  (let* ((start      (ivec2 (elt (elt path start-index) 0)
+			    (elt (elt path start-index) 1)))
+	 (end        (ivec2 (elt (elt path (1+ start-index)) 0)
+			    (elt (elt path (1+ start-index)) 1)))
+	 (new-dir-2d (ivec2- end start)))
+    (vec (d (elt new-dir-2d 0)) 0.0  (d (elt new-dir-2d 1)))))
+
+(defmethod on-game-event ((object md2-mesh) (event move-entity-along-path-event))
+  (with-accessors ((ghost ghost)
+		   (dir dir)) object
+    (with-accessors ((current-path current-path)) ghost
+      (if (= (id object) (id-destination event))
+	  (let ((disable-input-event (make-instance 'window-accept-input-event
+						    :accept-input-p nil)))
+	    (game-event:propagate-window-accept-input-event disable-input-event)
+	    (setf (game-state:selected-path (state object)) nil)
+	    (set-animation object :move)
+	    (setf (current-action object) :move)
+	    (setf current-path (path event))
+	    (setf dir (path->dir current-path :start-index 0))
+	    t)
+	  nil))))
+
+(defmethod on-game-event ((object md2-mesh) (event move-entity-entered-in-tile-event))
+  (with-accessors ((ghost ghost)
+		   (dir dir)
+		   (id id)
+		   (state state)) object
+    (with-accessors ((current-path current-path)) ghost
+      (when (= (id-origin event) id)
+	(let ((refresh-toolbar-event (make-instance 'game-event:refresh-toolbar-event)))
+	  ;; update state matrix
+	  (game-state:move-map-state-entity state object (alexandria:first-elt current-path))
+	  ;; TODO reset cost for first tile of the path
+	  (setf current-path (subseq current-path 1))
+	  (if (= (length current-path) 1)
+	    (let ((end-event (make-instance 'move-entity-along-path-end-event
+					    :id-origin id
+					    :tile-pos  (alexandria:last-elt current-path))))
+	      (decrement-move-points-entering-tile object)
+	      (propagate-move-entity-along-path-end-event end-event))
+	    (progn
+	      (decrement-move-points-entering-tile object)
+	      (setf dir (path->dir current-path :start-index 0))))
+
+	  (propagate-update-highlight-path (make-instance 'update-highlight-path
+							   :tile-pos current-path))
+	  (propagate-refresh-toolbar-event refresh-toolbar-event)))
+      nil)))
+
+(defmethod on-game-event ((object md2-mesh) (event move-entity-along-path-end-event))
+  (with-accessors ((id id)
+		   (ghost ghost)) object
+    (when (= (id-origin event) id)
+      (let ((enable-input-event (make-instance 'window-accept-input-event
+					       :accept-input-p t)))
+	;; TODO set cost to max for the last tile
+	(game-event:propagate-window-accept-input-event enable-input-event)
+	(setf (current-action object) :stand)
+	(set-animation object :stand))))
+  nil)
+
+
+(defmethod on-game-event ((object md2-mesh) (event end-turn))
+  (with-accessors ((ghost ghost)) object
+    (when ghost
+      (let ((refresh-toolbar-event (make-instance 'game-event:refresh-toolbar-event)))
+	(character:reset-magic-points    ghost)
+	(character:reset-movement-points ghost)
+	(propagate-refresh-toolbar-event refresh-toolbar-event))))
+  nil)
 
 (defgeneric push-errors (object the-error))
 
@@ -118,6 +195,8 @@
 (defgeneric set-animation (object animation))
 
 (defgeneric %alloc-arrays (object))
+
+(defgeneric calculate-move (object dt))
 
 (defmethod destroy :after ((object md2-mesh))
   (when +debug-mode+
@@ -455,6 +534,27 @@
     (%alloc-arrays object)
     (bind-vbo object nil)))
 
+(defmethod calculate-move ((object md2-mesh) dt)
+  (declare (ignore dt))
+  (with-accessors ((ghost ghost)
+		   (pos pos)
+		   (dir dir)) object
+    (let* ((x-chunk (coord-map->chunk (elt (elt (character:current-path ghost) 1) 0)))
+	   (z-chunk (coord-map->chunk (elt (elt (character:current-path ghost) 1) 1)))
+	   (y       (d+ 1.5 ; hardcoded :(  to be removed soon
+			(game-state:approx-terrain-height@pos (state object) x-chunk z-chunk)))
+	   (end (vec x-chunk y z-chunk))
+	   (dir (let ((new-dir (vec- end (pos object))))
+		  (if (vec~ new-dir +zero-vec+)
+		      (vec 0.0 1.0 0.0)
+		      (normalize new-dir)))))
+      (if (not (vec~ (pos object) end (d/ +terrain-chunk-tile-size+ 8.0)))
+	  (setf (pos object) (vec+ (pos object) (vec* dir +model-move-speed+)))
+	  (let ((movement-event (make-instance 'move-entity-entered-in-tile-event
+					       :id-origin (id object)
+					       :tile-pos  end)))
+	    (propagate-move-entity-entered-in-tile-event movement-event))))))
+
 (defmethod calculate ((object md2-mesh) dt)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (single-float dt))
@@ -474,12 +574,20 @@
 		   (stop-animation stop-animation)
 		   (cycle-animation cycle-animation)
 		   (renderer-data-normals-obj-space renderer-data-normals-obj-space)
-		   (data-aabb renderer-data-aabb-obj-space)) object
+		   (data-aabb renderer-data-aabb-obj-space)
+		   (current-action current-action)
+		   (ghost ghost)) object
     (declare (single-float current-time fps))
     (declare (fixnum end-frame starting-frame current-frame-offset))
     (declare (simple-array frames))
     (declare (string tag-key-parent))
     (declare (list tags-table tags-matrices))
+    (ecase current-action
+      (:stand
+       ;; nothing to do
+       )
+      (:move
+       (calculate-move object dt)))
     (unless stop-animation
       (let ((next-time (+ current-time dt))
 	    (frames-numbers (the fixnum (1+ (- end-frame starting-frame))))

@@ -99,9 +99,12 @@
 	  npc
 	  pc)
 
+(defun invalid-entity-id-map-state ()
+  (- +start-id-counter+ 1))
+
 (defclass map-state-element (identificable)
   ((entity-id
-    :initform (- +start-id-counter+ 1)
+    :initform (invalid-entity-id-map-state)
     :initarg  :entity-id
     :accessor entity-id)
    (el-type
@@ -121,6 +124,19 @@
 	  +empty-type+)
       (eq (el-type object)
 	  +floor-type+)))
+
+(defclass movement-path ()
+  ((tiles
+    :initform nil
+    :accessor tiles
+    :initarg  :tiles)
+   (cost
+    :initform nil
+    :accessor cost
+    :initarg  :cost)))
+
+(defun make-movement-path (tiles cost)
+  (make-instance 'movement-path :tiles tiles :cost cost))
 
 (defclass game-state ()
   ((game-hour
@@ -168,6 +184,10 @@
     :accessor map-cache-dir
     :initarg  :map-cache-dir
     :initform nil)
+   (window-id
+    :initform nil
+    :initarg  :window-id
+    :accessor window-id)
    (player-entities
     :initform (make-hash-table :test 'equal)
     :initarg  :player-entities
@@ -179,7 +199,15 @@
    (selected-pc
     :initform nil
     :initarg  :selected-pc
-    :accessor selected-pc)))
+    :accessor selected-pc)
+   (selected-path
+    :initform nil
+    :initarg  :selected-path
+    :accessor selected-path)))
+
+(defgeneric fetch-render-window (object))
+
+(defgeneric fetch-world (object))
 
 (defgeneric setup-game-hour (object hour))
 
@@ -206,6 +234,35 @@
 (defgeneric fetch-from-player-entities (object id-entity))
 
 (defgeneric fetch-from-ai-entities (object entity))
+
+(defgeneric faction-player-p (object id-entity))
+
+(defgeneric faction-ai-p (object id-entity))
+
+(defgeneric terrain-height@pos (object x z))
+
+(defgeneric place-player-on-map (object player faction &optional position))
+
+(defgeneric set-invalicable-cost (object x y))
+
+(defgeneric set-map-state-type (object x y type))
+
+(defgeneric set-map-state-id (object x y id))
+
+(defgeneric set-map-state-occlusion (object x y occlusion-value))
+
+(defgeneric setup-map-state-entity (object entity type occlusion-value))
+
+(defgeneric move-map-state-entity (object entity from))
+
+(defmethod fetch-render-window ((object game-state))
+  (and (window-id object)
+       (sdl2.kit-utils:fetch-window (window-id object))))
+
+(defmethod fetch-world ((object game-state))
+  (let ((w (fetch-render-window object)))
+    (and w
+	 (main-window:world w))))
 
 (defmethod  setup-game-hour ((object game-state) hour)
   (with-accessors ((game-hour game-hour)
@@ -237,7 +294,7 @@
 		   (declare (optimize (speed 0) (safety 3) (debug 3)))
 		   (,fn (matrix-elt (map-state object) y x))))))))
 
-(gen-map-state-reader el-type entity-id)
+(gen-map-state-reader el-type entity-id occludep)
 
 (defmethod prepare-map-state ((object game-state) (map random-terrain))
   (with-accessors ((map-state map-state)) object
@@ -247,12 +304,32 @@
      (loop for i from 0 below (length (data map-state)) do
 	  (setf (elt (data map-state) i) (make-instance 'map-state-element)))))
 
+(defun heuristic-manhattam ()
+  #'(lambda (object a b start-node)
+      (declare (ignore object))
+      (declare ((simple-array fixnum (2)) a b start-node))
+      (declare (optimize (speed 3) (safety 0) (debug 0)))
+      (let* ((a-x   (d (elt a 0)))
+	     (a-y   (d (elt a 1)))
+	     (b-x   (d (elt b 0)))
+	     (b-y   (d (elt b 1)))
+	     (s-x   (d (elt start-node 0)))
+	     (s-y   (d (elt start-node 1)))
+	     (cost  (d+ (dabs (d- b-x a-x))
+			(dabs (d- b-y a-y))))
+	     (dx1   (d- b-x a-x))
+	     (dy1   (d- b-y a-y))
+	     (dx2   (d- s-x a-x))
+	     (dy2   (d- s-y a-y))
+	     (cross (abs (d- (d* dx1 dy2) (d* dx2 dy1)))))
+	(d+ cost (d* cross 0.05)))))
+
 (defmethod build-movement-path ((object game-state) start end)
   (with-accessors ((movement-costs movement-costs)) object
     (let ((tree	(graph:astar-search movement-costs
 				    (graph:node->node-id movement-costs start)
 				    (graph:node->node-id movement-costs end)
-				    :heuristic-cost-function (graph:heuristic-manhattam))))
+				    :heuristic-cost-function (heuristic-manhattam))))
       (multiple-value-bind (raw-path cost)
 	  (graph:graph->path tree (graph:node->node-id movement-costs end))
 	(values
@@ -307,3 +384,80 @@
 (defmethod fetch-from-ai-entities ((object game-state) id-entity)
   (with-accessors ((ai-entities ai-entities)) object
     (gethash id-entity ai-entities)))
+
+(defmethod faction-player-p ((object game-state) id-entity)
+  (fetch-from-player-entities object id-entity))
+
+(defmethod faction-ai-p ((object game-state) id-entity)
+  (fetch-from-ai-entities object id-entity))
+
+(defmethod approx-terrain-height@pos ((object game-state) x z)
+  "x and z in world space"
+  (let* ((world-ref (fetch-world object)))
+    (world::pick-height-terrain world-ref x z)))
+
+(defmethod place-player-on-map ((object game-state) player faction &optional (pos #(0 0)))
+  (with-accessors ((map-state map-state)) object
+    (let ((stop nil)
+	  (player-coordinates nil))
+      (labels ((%place-player (pos)
+		 (when (not stop)
+		   (let* ((next-tiles (misc:shuffle (gen-neighbour (elt pos 0) (elt pos 1))))
+			  (empty-tiles (remove-if-not #'(lambda (pos)
+							  (let ((x (elt pos 0))
+								(y (elt pos 1)))
+							    (with-check-matrix-borders (map-state x y)
+							      (map-element-empty-p (matrix:matrix-elt map-state y x)))))
+						      next-tiles)))
+		     (if empty-tiles
+			 (progn
+			   (setf stop t)
+			   (setf player-coordinates (elt empty-tiles 0)))
+			 (loop for i in next-tiles do
+			      (let ((x (elt i 0))
+				    (y (elt i 1)))
+				(with-check-matrix-borders (map-state x y)
+				  (%place-player i)))))))))
+	(%place-player pos)
+	(setf (entity:pos player)
+	      (sb-cga:vec (misc:coord-map->chunk (d (elt player-coordinates 0)))
+			  (num:d+ 1.5 ; hardcoded :(  to be removed soon
+				  (approx-terrain-height@pos object
+							     (d (elt player-coordinates 0))
+							     (d (elt player-coordinates 1))))
+			  (misc:coord-map->chunk (d (elt player-coordinates 1)))))
+	;; TODO set cost for player in cost player layer of game-state
+	(if (eq faction +pc-type+)
+	    (add-to-player-entities object player)
+	    (add-to-ai-entities     object player))))))
+
+(defmethod set-invalicable-cost ((object game-state) x y)
+  (with-accessors ((movement-costs movement-costs)) object
+    (setf (matrix-elt (graph:matrix movement-costs) y x) +invalicable-element-cost+)))
+
+(defmethod set-map-state-type ((object game-state) x y type)
+  (setf (el-type (matrix:matrix-elt (map-state object) y x)) type))
+
+(defmethod set-map-state-id ((object game-state) x y id)
+  (setf (entity-id (matrix:matrix-elt (map-state object) y x)) id))
+
+(defmethod set-map-state-occlusion ((object game-state) x y occlusion-value)
+  (setf (occlude (matrix:matrix-elt (map-state object) y x)) occlusion-value))
+
+(defmethod setup-map-state-entity ((object game-state) entity type occlusion-value)
+  (with-accessors ((pos pos) (id id)) entity
+    (let ((x-matrix (misc:coord-chunk->matrix (elt pos 0)))
+	  (y-matrix (misc:coord-chunk->matrix (elt pos 2))))
+      (set-map-state-type      object x-matrix y-matrix type)
+      (set-map-state-id        object x-matrix y-matrix id)
+      (set-map-state-occlusion object x-matrix y-matrix occlusion-value))))
+
+(defmethod move-map-state-entity ((object game-state) entity from)
+  (let* ((old-x         (elt from 0))
+	 (old-y         (elt from 1))
+	 (old-type      (el-type-in-pos  object old-x old-y))
+	 (old-occlusion (occludep-in-pos object old-x old-y)))
+    (set-map-state-type      object old-x old-y +empty-type+)
+    (set-map-state-id        object old-x old-y (invalid-entity-id-map-state))
+    (set-map-state-occlusion object old-x old-y nil)
+    (setup-map-state-entity  object entity old-type old-occlusion)))

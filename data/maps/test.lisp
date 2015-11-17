@@ -1,7 +1,7 @@
 (in-package :level-config)
 
 (define-level
-  set seed "2"
+  set seed "123"
   set clouds random (clear cloudy covered)
   set buildings-level (random (0 1 2))
 

@@ -22,17 +22,11 @@
 
 (defparameter *zpos*   -20.0)
 
-;; (defparameter *xpos*    128.0)
-
-;; (defparameter *ypos*     42.0)
-
-;; (defparameter *zpos*     128.0)
-
 (defparameter *xeye*   2.0)
 
 (defparameter *yeye*   0.0)
 
-(defparameter *zeye*   2.0)
+(defparameter *zeye*   8.0)
 
 (defparameter *far*   440.0)
 
@@ -44,7 +38,7 @@
 
 (defparameter *dt* .0017)
 
-(defclass test-window (transformable gl-window)
+(defclass test-window (identificable transformable gl-window)
   ((compiled-shaders
     :initform nil
     :accessor compiled-shaders
@@ -61,6 +55,10 @@
     :initform nil
     :accessor world
     :initarg :world)
+   (accept-input-p
+    :initform t
+    :accessor accept-input-p
+    :initarg :accept-input-p)
    (cpu-time-elapsed
     :initform 1
     :accessor cpu-time-elapsed
@@ -83,6 +81,10 @@
      (call-next-method)
      ,@body))
 
+(defmacro with-accept-input ((window) &body body)
+  `(when (accept-input-p ,window)
+     ,@body))
+
 (defgeneric keydown-event (object ts repeat-p keysym))
 
 (defparameter *test-trees* '("test.lsys"                  ;  0
@@ -102,6 +104,8 @@
 
 (defparameter *map-loaded-p*   nil)
 
+(defgeneric set-player-path (object x y))
+
 (defun load-map (window)
   (with-accessors ((world world)
 		   (compiled-shaders compiled-shaders)) window
@@ -118,43 +122,44 @@
 	       (misc:coord-map->chunk 1.0)))
     (world:push-entity world *placeholder*)))
 
-(defmethod initialize-instance ((object test-window) &key &allow-other-keys)
+(defmethod initialize-instance :after ((object test-window) &key &allow-other-keys)
   (with-accessors ((vao vao) (compiled-shaders compiled-shaders)
 		   (projection-matrix projection-matrix)
 		   (model-matrix model-matrix)
 		   (view-matrix view-matrix)
 		   (world world) (mesh mesh)
+		   (game-state game-state)
 		   (delta-time-elapsed delta-time-elapsed)) object
-    (with-gl-context ; this call is needed to set up a opengl context
-      (gl:front-face :ccw)
-      (gl:enable :depth-test :cull-face)
-      (gl:depth-func :less)
-      (gl:polygon-mode :front-and-back :fill)
-      (gl:clear-color 0.039215688 0.17254902 0.08235294 1.0)
-      (gl:clear-depth 1.0)
-      (setf compiled-shaders (compile-library))
-      (gui:setup-gui compiled-shaders)
-      ;; set up world
-      (setf world (make-instance 'world :frame-window object))
-      (mtree:add-child (world:gui world) (widget:make-splash-progress-gauge))
-      (setf (interfaces:compiled-shaders (world:gui world)) compiled-shaders)
-      ;; setup camera
-      (camera:look-at (world:camera world)
-		      *xpos* *ypos* *zpos* *xeye* *yeye* *zeye* 0.0 1.0 0.0)
-      (setf (mode (world:camera world)) :fp)
-      (camera:install-path-interpolator (world:camera world)
-					(vec  0.0  15.0 0.0)
-					(vec  64.0 30.0 0.0)
-					(vec  64.0 20.0 64.0)
-					(vec  0.0  30.0 64.0)
-					(vec  64.0  90.0 64.0))
-      (camera:install-drag-interpolator (world:camera world))
-      (camera:install-orbit-interpolator (world:camera world) 5.0 5.0 10.0)
-      ;; setup projection
-      (transformable:build-projection-matrix world *near* *far* *fov*
-					     (num:desired (/ *window-w* *window-h*)))
-
-      (setf delta-time-elapsed (sdl2:get-ticks)))))
+    (setf (game-state:window-id game-state) (sdl2.kit-utils:fetch-window-id object))
+    (game-event:register-for-window-accept-input-event object)
+    (gl:front-face :ccw)
+    (gl:enable :depth-test :cull-face)
+    (gl:depth-func :less)
+    (gl:polygon-mode :front-and-back :fill)
+    (gl:clear-color 0.039215688 0.17254902 0.08235294 1.0)
+    (gl:clear-depth 1.0)
+    (setf compiled-shaders (compile-library))
+    (gui:setup-gui compiled-shaders)
+    ;; set up world
+    (setf world (make-instance 'world :frame-window object))
+    (mtree:add-child (world:gui world) (widget:make-splash-progress-gauge))
+    (setf (interfaces:compiled-shaders (world:gui world)) compiled-shaders)
+    ;; setup camera
+    (camera:look-at (world:camera world)
+		    *xpos* *ypos* *zpos* *xeye* *yeye* *zeye* 0.0 1.0 0.0)
+    (setf (mode (world:camera world)) :fp)
+    (camera:install-path-interpolator (world:camera world)
+				      (vec 0.0  15.0 0.0)
+				      (vec 64.0 30.0 0.0)
+				      (vec 64.0 20.0 64.0)
+				      (vec 0.0  30.0 64.0)
+				      (vec 64.0  90.0 64.0))
+    (camera:install-drag-interpolator (world:camera world))
+    (camera:install-orbit-interpolator (world:camera world) 5.0 5.0 10.0)
+    ;; setup projection
+    (transformable:build-projection-matrix world *near* *far* *fov*
+					   (num:desired (/ *window-w* *window-h*)))
+    (setf delta-time-elapsed (sdl2:get-ticks))))
 
 (defmacro with-gui ((world) &body body)
   (alexandria:with-gensyms (3d-projection-matrix 3d-view-matrix)
@@ -193,7 +198,7 @@
 		((not (num:d> fdt 0.0)))
 	      (let ((actual-dt (min +game-fps+ fdt)))
 		(decf fdt actual-dt)
-		(world::calculate world actual-dt))))
+		(interfaces:calculate world actual-dt))))
 	  ;; rendering
 	  (gl:clear :color-buffer)
 	  (gl:clear :depth-buffer)
@@ -223,6 +228,7 @@
 	(interfaces:destroy (compiled-shaders w))
 	(texture:clean-db)
 	(gui:clean-font-db)
+	(game-event:clean-all-events-vectors)
 	(lparallel:end-kernel :wait t)
 	(tg:gc :full t)
 	(call-next-method)))))
@@ -243,10 +249,10 @@
 	    (misc:dbg "~a ~a
                        up ~a
                        ~a"
-		      (camera::pos    camera)
+		      (entity:pos    camera)
 		      (camera:target camera)
-		      (camera::up     camera)
-		      (camera::dir    camera))))
+		      (entity:up     camera)
+		      (entity:dir    camera))))
 	(when (find text '("o" "i" "r" "l" "u" "d" "f" "F" "n" "N" "V" "v" "L") :test #'string=)
 	  (when (string-equal text "o")
 	    (incf (elt (entity:pos (world:camera (world object))) 2) 1.0))
@@ -285,7 +291,7 @@
 				   :width  *window-w*
 				   :height *window-h*
 				   :label nil))
-	      (mtree:add-child (world:gui (world object)) (world::toolbar (world object)))
+	      (mtree:add-child (world:gui (world object)) (world:toolbar (world object)))
 	      ;; test
 	      (mtree:add-child (world:gui (world object)) (widget:make-player-generator (world object)))
 	      (setf (interfaces:compiled-shaders (world:gui (world object))) (compiled-shaders object))
@@ -323,9 +329,9 @@
 						*window-w* *window-h*)
 		(interfaces:render world world))))
 	  (when *placeholder*
-	    (let ((old-pos (entity:pos *placeholder*)))
+	    (let* ((old-pos (entity:pos *placeholder*)))
 	      (when (eq :scancode-f1 scancode)
-		(misc:dbg "position ~a costs ~a, ~a cost: ~a what ~a id ~a"
+		(misc:dbg "position ~a costs ~a, ~a cost: ~a what ~a id ~a~%"
 			  old-pos
 			  (misc:coord-chunk->costs (elt old-pos 0))
 			  (misc:coord-chunk->costs (elt old-pos 2))
@@ -341,23 +347,28 @@
 	      (when (and (eq :scancode-up scancode))
 		(setf (entity:pos *placeholder*)
 		      (vec (elt old-pos 0)
-			   (elt old-pos 1)
+			   0.0
 			   (num:d+ (elt old-pos 2) +terrain-chunk-tile-size+))))
 	      (when (eq :scancode-down scancode)
 		(setf (entity:pos *placeholder*)
 		      (vec (elt old-pos 0)
-			   (elt old-pos 1)
+			   0.0
 			   (num:d- (elt old-pos 2) +terrain-chunk-tile-size+))))
 	      (when (eq :scancode-left scancode)
 		(setf (entity:pos *placeholder*)
 		      (vec (num:d+ (elt old-pos 0) +terrain-chunk-tile-size+)
-			   (elt old-pos 1)
+			   0.0
 			   (elt old-pos 2))))
 	      (when (eq :scancode-right scancode)
 		(setf (entity:pos *placeholder*)
 		      (vec (num:d- (elt old-pos 0) +terrain-chunk-tile-size+)
-			   (elt old-pos 1)
-			   (elt old-pos 2)))))))))))
+			   0.0
+			   (elt old-pos 2)))))
+	    (let ((height-terrain (world::pick-height-terrain world
+							      (elt (entity:pos *placeholder*) 0)
+							      (elt (entity:pos *placeholder*) 2))))
+	      (when height-terrain
+		(setf (elt (entity:pos *placeholder*) 1) height-terrain)))))))))
 
 (defmethod keyboard-event ((object test-window) state ts repeat-p keysym)
   (when (eq state :keydown)
@@ -365,45 +376,97 @@
 
 (defmethod mousebutton-event ((object test-window) state ts b x y)
   (with-accessors ((world world)) object
-    (let ((gui-event (make-instance 'gui-events:mouse-pressed
-				    :button-event (gui-events:mouse-button->code b)
-				    :x-event (num:d x)
-				    :y-event (num:d (- *window-h* y)))))
-      (if (eq state :mousebuttondown)
-	  (when (not (widget:on-mouse-pressed (world:gui world) gui-event))
-	    (misc:dbg "~s button: ~A at ~A, ~A" state b x y)
-	    (world::pick-player-entity world world x y))
-	  (when (not (widget:on-mouse-released (world:gui world) gui-event))
-	    (misc:dbg "~s button: ~A at ~A, ~A" state b x y))))))
+    (with-accessors ((selected-pc selected-pc)
+		     (main-state main-state)) world
+      (with-accept-input (object)
+	(let ((gui-event (make-instance 'gui-events:mouse-pressed
+					:button-event (gui-events:mouse-button->code b)
+					:x-event (num:d x)
+					:y-event (num:d (- *window-h* y)))))
+	  (if (eq state :mousebuttondown)
+	      (when (not (widget:on-mouse-pressed (world:gui world) gui-event))
+		;; test movement
+		(if (world:pick-player-entity world world x y)
+		    (misc:dbg "pick ~a" (id selected-pc))
+		    (let* ((selected-path (game-state:selected-path main-state)))
+		      (when selected-path
+			(let ((movement-event (make-instance 'game-event:move-entity-along-path-event
+							     :path (game-state:tiles selected-path)
+							     :cost (game-state:cost  selected-path)
+							     :id-destination (id selected-pc))))
+			  (game-event:propagate-move-entity-along-path-event movement-event))))))
+	      (when (not (widget:on-mouse-released (world:gui world) gui-event))
+		(misc:dbg "~s button: ~A at ~A, ~A" state b x y))))))))
+
+(defmethod set-player-path ((object test-window) x y)
+  (with-accessors ((world world)
+		   (main-state main-state)) object
+    (with-accessors ((selected-pc selected-pc)
+		     (main-state main-state)) world
+      (let* ((player-position       (entity:pos selected-pc))
+	     (cost-player-position  (ivec2 (misc:coord-chunk->costs (elt player-position 0))
+					   (misc:coord-chunk->costs (elt player-position 2))))
+	     (cost-pointer-position (world::pick-pointer-position world world x y))
+	     (cost-pointer          (or (and cost-pointer-position
+					     (game-state:get-cost main-state
+								  (elt cost-pointer-position 0)
+								  (elt cost-pointer-position 1)))
+					+invalicable-element-cost+))
+	     (ghost                 (entity:ghost selected-pc)))
+	(when (and cost-pointer-position
+		   (not (character:path-same-ends-p (entity:ghost selected-pc)
+					       cost-player-position
+					       cost-pointer-position)))
+	  (let ((min-cost               (misc:map-manhattam-distance cost-pointer-position
+								     cost-player-position))
+		(player-movement-points (character:current-movement-points ghost)))
+	    (when (and (>= player-movement-points +open-terrain-cost+)
+		       (<= min-cost player-movement-points)
+		       (<= cost-pointer player-movement-points))
+	      (multiple-value-bind (path cost)
+		  (and cost-player-position
+		       cost-pointer-position
+		       (game-state:build-movement-path main-state
+						       cost-player-position
+						       cost-pointer-position))
+		(when (and path
+			   (<= cost player-movement-points))
+		  (setf (game-state:selected-path main-state)
+			(game-state:make-movement-path path cost))
+		  (world::highlight-path-costs-space world world path))))))))))
 
 (defmethod mousemotion-event ((object test-window) ts mask x y xr yr)
   (with-accessors ((world world)) object
-    (if (> mask 0) ;; dragging
-	(let ((gui-event (make-instance 'gui-events:mouse-dragged
-					:x-event  (num:d x)
-					:y-event  (num:d (- *window-h* y))
-					:dx-event (num:d xr)
-					:dy-event (num:d- (num:d yr)))))
-	  (when (not (widget:on-mouse-dragged (world:gui world) gui-event))
-	    (cond
-	      ((eq (camera:mode (world:camera (world object))) :fp)
-	       (multiple-value-bind (w h)
-		   (sdl2:get-window-size (sdl-window object))
-		 (sdl2:warp-mouse-in-window (sdl-window object) (/ w 2) (/ h 2))
-		 (let ((offset (vec2:vec2 (num:d- (num:d/ (num:desired w) 2.0) (num:desired x))
-					  (num:d- (num:d/ (num:desired h) 2.0) (num:desired y)))))
-		   (camera:reorient-fp-camera (world:camera (world object)) offset))))
-	      ((eq (camera:mode (world:camera (world object))) :drag)
-	       ;; does not works!
-	       (multiple-value-bind (w h)
-		   (sdl2:get-window-size (sdl-window object))
-		 (sdl2:warp-mouse-in-window (sdl-window object) (/ w 2) (/ h 2))
-		 (let ((offset (vec2:vec2 (num:d- (num:d/ (num:desired w) 2.0) (num:desired x))
-					  (num:d- (num:d/ (num:desired h) 2.0) (num:desired y)))))
-		   (camera:drag-camera (world:camera (world object)) offset)))))))
-	;; picking test
-	(when (not (selected-pc world))
-	  (world:highlight-tile-screenspace world world x y)))))
+    (with-accessors ((selected-pc selected-pc)) world
+      ;; dragging
+      (if (> mask 0)
+	  (let ((gui-event (make-instance 'gui-events:mouse-dragged
+					  :x-event  (d x)
+					  :y-event  (d (- *window-h* y))
+					  :dx-event (d xr)
+					  :dy-event (d- (d yr)))))
+	    (when (not (widget:on-mouse-dragged (world:gui world) gui-event))
+	      (cond
+		((eq (camera:mode (world:camera world)) :fp)
+		 (multiple-value-bind (w h)
+		     (sdl2:get-window-size (sdl-window object))
+		   (sdl2:warp-mouse-in-window (sdl-window object) (/ w 2) (/ h 2))
+		   (let ((offset (vec2:vec2 (d- (d/ (desired w) 2.0) (desired x))
+					    (d- (d/ (desired h) 2.0) (desired y)))))
+		     (camera:reorient-fp-camera (world:camera world) offset)))))))
+	  ;; no dragging
+	  (with-accept-input (object)
+	    (if (not selected-pc)
+		(world:highlight-tile-screenspace world world x y)
+		(when (< (vec2:vec2-length (vec2:vec2 (d xr) (d yr))) 2)
+		  (set-player-path object x y))))))))
+
+(defmethod game-event:on-game-event ((object test-window)
+				     (event game-event:window-accept-input-event))
+  (setf (accept-input-p object) (game-event:accept-input-p event)))
+
+(defmethod other-event ((object test-window) event)
+  (misc:dbg "other ~a" event))
 
 (defun main ()
   (tg:gc :full t)

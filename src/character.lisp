@@ -480,6 +480,10 @@
     :initform ""
     :initarg  :model-origin-dir
     :accessor model-origin-dir)
+   (current-path
+    :initform nil
+    :initarg  :current-path
+    :accessor current-path)
    (gender
     :initarg :gender
     :initform :male
@@ -664,6 +668,12 @@
     :initform '()
     :accessor inventory)))
 
+(defmethod initialize-instance :after ((object player-character) &key &allow-other-keys)
+  ;; copy some new points to current
+  (setf (current-damage-points   object) (damage-points object))
+  (setf (current-movement-points object) (movement-points object))
+  (setf (current-magic-points    object) (magic-points object)))
+
 (defmethod print-object ((object player-character) stream)
   (print-unreadable-object (object stream :type t :identity t)
     (format stream
@@ -709,6 +719,7 @@
 
 (defmethod marshal:class-persistant-slots ((object player-character))
   (append  '(model-origin-dir
+	     current-path
 	     gender
 	     player-class
 	     strength
@@ -765,6 +776,12 @@
 
 (defgeneric player-gender->gender-description (object))
 
+(defgeneric path-same-ends-p (object start end))
+
+(defgeneric reset-movement-points (object))
+
+(defgeneric reset-magic-points (object))
+
 (defmethod random-fill-slots ((object player-character) capital characteristics)
   (loop for charact in characteristics do
        (when (> capital 0)
@@ -808,6 +825,19 @@
        (_ "male"))
       (:female
        (_ "female")))))
+
+(defmethod path-same-ends-p ((object player-character) start end)
+  (with-accessors ((current-path current-path)) object
+    (and current-path
+	 (and current-path
+	      (ivec2:ivec2= (alexandria:first-elt current-path) start)
+	      (ivec2:ivec2= (alexandria:last-elt  current-path) end)))))
+
+(defmethod reset-movement-points ((object player-character))
+  (setf (current-movement-points object) (movement-points object)))
+
+(defmethod reset-magic-points ((object player-character))
+  (setf (current-magic-points object) (magic-points object)))
 
 (defmacro gen-make-player (player-class)
   (alexandria:with-gensyms (char rest-capital)

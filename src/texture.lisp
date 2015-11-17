@@ -274,6 +274,8 @@
 	(progn
 	  (setf (handle object) handle)
 	  (setup-finalizer object)
+	  (setf (filename object) (text-utils:strcat (filename object)
+						     (format nil "~a" handle)))
 	  (push object *texture-factory-db*)
 	  object)
 	nil)))
@@ -285,6 +287,8 @@
 	(progn
 	  (destroy object)
 	  (setf (handle object) handle)
+	  (setf (filename object) (text-utils:strcat (filename object)
+						     (format nil "~a" handle)))
 	  (setup-finalizer object)
 	  object)
 	nil)))
