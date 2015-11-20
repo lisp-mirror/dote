@@ -594,4 +594,6 @@
   (game-event:register-for-move-entity-along-path-end-event  player)
   (game-event:register-for-move-entity-entered-in-tile-event player)
   (game-event:register-for-end-turn                          player)
+  (game-event:register-for-rotate-entity-cw-event            player)
+  (game-event:register-for-rotate-entity-ccw-event           player)
   (world:push-interactive-entity object player faction :occlude))

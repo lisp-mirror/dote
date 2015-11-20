@@ -140,12 +140,11 @@
 		   (state state)) object
     (with-accessors ((current-path current-path)) ghost
       (when (= (id-origin event) id)
-	(let ((refresh-toolbar-event (make-instance 'game-event:refresh-toolbar-event)))
-	  ;; update state matrix
-	  (game-state:move-map-state-entity state object (alexandria:first-elt current-path))
-	  ;; TODO reset cost for first tile of the path
-	  (setf current-path (subseq current-path 1))
-	  (if (= (length current-path) 1)
+	;; update state matrix
+	(game-state:move-map-state-entity state object (alexandria:first-elt current-path))
+	;; TODO reset cost for first tile of the path
+	(setf current-path (subseq current-path 1))
+	(if (= (length current-path) 1)
 	    (let ((end-event (make-instance 'move-entity-along-path-end-event
 					    :id-origin id
 					    :tile-pos  (alexandria:last-elt current-path))))
@@ -154,10 +153,9 @@
 	    (progn
 	      (decrement-move-points-entering-tile object)
 	      (setf dir (path->dir current-path :start-index 0))))
-
-	  (propagate-update-highlight-path (make-instance 'update-highlight-path
-							   :tile-pos current-path))
-	  (propagate-refresh-toolbar-event refresh-toolbar-event)))
+	(propagate-update-highlight-path (make-instance 'update-highlight-path
+							:tile-pos current-path))
+	(send-refresh-toolbar-event))
       nil)))
 
 (defmethod on-game-event ((object md2-mesh) (event move-entity-along-path-end-event))
@@ -172,14 +170,40 @@
 	(set-animation object :stand))))
   nil)
 
+(defmethod on-game-event ((object md2-mesh) (event rotate-entity-cw-event))
+  (with-accessors ((ghost ghost)
+		   (dir dir)) object
+    (if (= (id object) (id-destination event))
+	(when (> (current-movement-points ghost)
+		 0)
+	  (decrement-move-points-rotate object)
+	  (setf (current-action object) :rotate)
+	  (setf dir (sb-cga:transform-direction dir (rotate-around +y-axe+ (d- +pi/2+))))
+	  ;; TODO can we see an enemy?
+	  (send-refresh-toolbar-event)
+	  t)
+	nil)))
+
+(defmethod on-game-event ((object md2-mesh) (event rotate-entity-ccw-event))
+  (with-accessors ((ghost ghost)
+		   (dir dir)) object
+    (if (= (id object) (id-destination event))
+	(when (> (current-movement-points ghost)
+		 0)
+	  (decrement-move-points-rotate object)
+	  (setf (current-action object) :rotate)
+	  (setf dir (sb-cga:transform-direction dir (rotate-around +y-axe+ +pi/2+)))
+	  ;; TODO can we see an enemy?
+	  (send-refresh-toolbar-event)
+	  t)
+	nil)))
 
 (defmethod on-game-event ((object md2-mesh) (event end-turn))
   (with-accessors ((ghost ghost)) object
     (when ghost
-      (let ((refresh-toolbar-event (make-instance 'game-event:refresh-toolbar-event)))
-	(character:reset-magic-points    ghost)
-	(character:reset-movement-points ghost)
-	(propagate-refresh-toolbar-event refresh-toolbar-event))))
+      (character:reset-magic-points    ghost)
+      (character:reset-movement-points ghost)
+      (send-refresh-toolbar-event)))
   nil)
 
 (defgeneric push-errors (object the-error))
@@ -586,6 +610,10 @@
       (:stand
        ;; nothing to do
        )
+      (:rotate
+       ;; nothing to do
+       )
+
       (:move
        (calculate-move object dt)))
     (unless stop-animation

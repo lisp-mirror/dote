@@ -120,6 +120,10 @@
     :initarg  :tile-pos
     :accessor tile-pos)))
 
+(defevent rotate-entity-cw-event (game-event-w-destination) ())
+
+(defevent rotate-entity-ccw-event (game-event-w-destination) ())
+
 (defevent window-accept-input-event ()
   ((accept-input-p
     :initform nil
@@ -131,6 +135,10 @@
     :initform nil
     :initarg  :accept-input-p
     :accessor accept-input-p)))
+
+(defun send-refresh-toolbar-event ()
+  (let ((refresh-toolbar-event (make-instance 'game-event:refresh-toolbar-event)))
+    (propagate-refresh-toolbar-event refresh-toolbar-event)))
 
 (defevent update-highlight-path ()
   ((tile-pos

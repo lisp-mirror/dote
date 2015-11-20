@@ -306,6 +306,16 @@
 		    (setf (s-wrap-mode  bg) :clamp-to-border)
 		    (setf (t-wrap-mode  bg) :clamp-to-border)
 		    (setf (border-color bg) §c00000000))
+		   (rotate-char-cw-overlay.tga
+		    +default-gui-resource+
+		    (setf (s-wrap-mode  bg) :clamp-to-border)
+		    (setf (t-wrap-mode  bg) :clamp-to-border)
+		    (setf (border-color bg) §c00000000))
+		   (rotate-char-ccw-overlay.tga
+		    +default-gui-resource+
+		    (setf (s-wrap-mode  bg) :clamp-to-border)
+		    (setf (t-wrap-mode  bg) :clamp-to-border)
+		    (setf (border-color bg) §c00000000))
 		   (next-turn-overlay.tga
 		    +default-gui-resource+
 		    (setf (s-wrap-mode  bg) :clamp-to-border)
@@ -482,6 +492,8 @@
   (setup-bg-quit-overlay)
   (setup-bg-next-overlay)
   (setup-bg-previous-overlay)
+  (setup-bg-rotate-char-cw-overlay)
+  (setup-bg-rotate-char-ccw-overlay)
   (setup-bg-next-turn-overlay)
   (setup-bg-option-overlay)
   (setup-bg-berserk)

@@ -62,6 +62,7 @@
    :+minimum-mountain-height+
    :+invalicable-element-cost+
    :+open-terrain-cost+
+   :+rotate-entity-cost-cost+
    :+default-size+
    :+map-max-size+
    :+pi+
@@ -1881,6 +1882,14 @@
    :register-for-move-entity-along-path-end-event
    :unregister-for-move-entity-along-path-end-event
    :propagate-move-entity-along-path-end-event
+   :rotate-entity-cw-event
+   :register-for-rotate-entity-cw-event
+   :unregister-for-rotate-entity-cw-event
+   :propagate-rotate-entity-cw-event
+   :rotate-entity-ccw-event
+   :register-for-rotate-entity-ccw-event
+   :unregister-for-rotate-entity-ccw-event
+   :propagate-rotate-entity-ccw-event
    :window-accept-input-event
    :accept-input-p
    :register-for-window-accept-input-event
@@ -1890,6 +1899,7 @@
    :register-for-refresh-toolbar-event
    :unregister-for-refresh-toolbar-event
    :propagate-refresh-toolbar-event
+   :send-refresh-toolbar-event
    :update-highlight-path
    :register-for-update-highlight-path
    :unregister-for-update-highlight-path
@@ -2612,6 +2622,7 @@
    :container-mesh-shell
    :setup-projective-texture
    :calculate-decrement-move-points-entering-tile
+   :decrement-move-points-rotate
    :decrement-move-points-entering-tile))
 
 (defpackage :pickable-mesh
@@ -2778,6 +2789,8 @@
    :+quit-overlay-texture-name+
    :+next-overlay-texture-name+
    :+previous-overlay-texture-name+
+   :+rotate-char-cw-overlay-texture-name+
+   :+rotate-char-ccw-overlay-texture-name+
    :+next-turn-overlay-texture-name+
    :+open-overlay-texture-name+
    :+close-overlay-texture-name+

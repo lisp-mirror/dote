@@ -255,6 +255,8 @@
 
 (defgeneric move-map-state-entity (object entity from))
 
+(defgeneric approx-terrain-height@pos (object x z))
+
 (defmethod fetch-render-window ((object game-state))
   (and (window-id object)
        (sdl2.kit-utils:fetch-window (window-id object))))

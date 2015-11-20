@@ -1753,6 +1753,26 @@
   (game-event:propagate-end-turn (make-instance 'game-event:end-turn))
   t)
 
+(defun rotate-cw-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (toolbar) w
+    (with-accessors ((bound-player bound-player)) toolbar
+      (when bound-player
+	(let ((event (make-instance 'game-event:rotate-entity-cw-event
+				    :id-destination (id bound-player))))
+	  (game-event:propagate-rotate-entity-cw-event event)))))
+    t)
+
+(defun rotate-ccw-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (toolbar) w
+    (with-accessors ((bound-player bound-player)) toolbar
+      (when bound-player
+	(let ((event (make-instance 'game-event:rotate-entity-cw-event
+				    :id-destination (id bound-player))))
+	  (game-event:propagate-rotate-entity-cw-event event)))))
+  t)
+
 (defmacro with-toolbar-world ((world) toolbar &body body)
   `(with-accessors ((,world bound-world)) , toolbar
      ,@body))
@@ -1926,12 +1946,29 @@
     :initarg :b-previous
     :accessor b-previous)
    (b-next-turn
-    :initform (make-rect-button   *square-button-size* 0.0
+    :initform (make-rect-button   *square-button-size*
+				  0.0
 				  1.0 0.5
 				  +next-turn-overlay-texture-name+
 				  #'next-turn-cb)
     :initarg :b-next-turn
     :accessor b-next-turn)
+   (b-rotate-cw
+    :initform (make-square-button (d* 4.0 *small-square-button-size*)
+				  0.0
+				  +rotate-char-cw-overlay-texture-name+
+				  #'rotate-cw-cb
+				  :small t)
+    :initarg :b-rotate-cw
+    :accessor b-rotate-cw)
+   (b-rotate-ccw
+    :initform (make-square-button (d* 5.0 *small-square-button-size*)
+				  0.0
+				  +rotate-char-ccw-overlay-texture-name+
+				  #'rotate-ccw-cb
+				  :small t)
+    :initarg :b-rotate-ccw
+    :accessor b-rotate-ccw)
    (b-spell
     :initform (make-square-button (d* 3.0 *square-button-size*)
 
@@ -2078,6 +2115,8 @@
   (add-child object (b-next        object))
   (add-child object (b-previous    object))
   (add-child object (b-next-turn   object))
+  (add-child object (b-rotate-cw   object))
+  (add-child object (b-rotate-ccw  object))
   (add-child object (b-spell       object))
   (add-child object (b-open        object))
   (add-child object (b-close       object))

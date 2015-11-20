@@ -819,6 +819,9 @@
   (decf (character:current-movement-points (ghost object))
 	(calculate-decrement-move-points-entering-tile object)))
 
+(defmethod decrement-move-points-rotate ((object triangle-mesh))
+  (decf (character:current-movement-points (ghost object))
+	+rotate-entity-cost-cost+))
 
 (defmethod get-first-near ((object triangle-mesh) vertex-index)
   (misc:do-while* ((first-face (find-triangle-by-vertex-index object vertex-index))

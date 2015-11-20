@@ -60,7 +60,11 @@
 
 (define-constant +invalicable-element-cost+         512.0              :test #'=)
 
-(define-constant +open-terrain-cost+                  2.0              :test #'=)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (define-constant +open-terrain-cost+                  2.0            :test #'=))
+
+(define-constant +rotate-entity-cost-cost+  (/ +open-terrain-cost+
+						2.0)                   :test #'=)
 
 (define-constant +default-size+                     256                :test '=)
 
