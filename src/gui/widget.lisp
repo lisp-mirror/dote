@@ -1773,6 +1773,63 @@
 	  (game-event:propagate-rotate-entity-cw-event event)))))
   t)
 
+(defun facing-door (game-state pos dir)
+  "Pos in cost space, dir in world space"
+  (let ((all-doors (game-state:get-neighborhood game-state
+						(elt pos 1)
+						(elt pos 0)
+						#'(lambda (a p)
+						    (declare (ignore p))
+						    (or (eq (game-state:el-type a)
+							    +door-n-type+)
+							(eq (game-state:el-type a)
+							    +door-s-type+)
+							(eq (game-state:el-type a)
+							    +door-w-type+)
+							(eq (game-state:el-type a)
+							    +door-e-type+)))))
+	(facing-door                           nil))
+    (loop for door across all-doors do
+	 (when (map-utils:facingp pos dir (cdr door))
+	   (setf facing-door door)))
+    facing-door))
+
+
+(defun open-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (toolbar) w
+    (with-accessors ((bound-player bound-player)) toolbar
+      (when bound-player
+	(with-accessors ((dir dir)) bound-player
+	  (let* ((game-state  (mesh::state bound-player))
+		 (pos         (mesh:calculate-cost-position bound-player))
+		 (facing-door (facing-door game-state pos dir)))
+	    (when facing-door
+	      (let* ((id-door (entity-id (car facing-door)))
+		     (door-event (game-event:make-simple-event-w-dest 'game-event:open-door-event
+								      (id bound-player)
+								      id-door)))
+		(game-event:propagate-open-door-event door-event))))))))
+  t)
+
+(defun close-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (toolbar) w
+    (with-accessors ((bound-player bound-player)) toolbar
+      (when bound-player
+	(with-accessors ((dir dir)) bound-player
+	  (let* ((game-state  (mesh::state bound-player))
+		 (pos         (mesh:calculate-cost-position bound-player))
+		 (facing-door (facing-door game-state pos dir)))
+	    (when facing-door
+	      (let* ((id-door (entity-id (car facing-door)))
+		     (door-event (game-event:make-simple-event-w-dest 'game-event:close-door-event
+								      (id bound-player)
+								      id-door)))
+		(game-event:propagate-close-door-event door-event))))))))
+  t)
+
+
 (defmacro with-toolbar-world ((world) toolbar &body body)
   `(with-accessors ((,world bound-world)) , toolbar
      ,@body))
@@ -1983,7 +2040,7 @@
 				      *small-square-button-size*)
 				  0.0
 				  +open-overlay-texture-name+
-				  nil ;; TODO callback
+				  #'open-cb
 				  :small t)
     :initarg  :b-open
     :accessor b-open)
@@ -1992,7 +2049,7 @@
 				      (d* 2.0 *small-square-button-size*))
 				  0.0
 				  +close-overlay-texture-name+
-				  nil ;; TODO callback
+				  #'close-cb
 				  :small t)
     :initarg  :b-close
     :accessor b-close)

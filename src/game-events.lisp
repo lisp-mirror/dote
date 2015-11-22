@@ -145,3 +145,10 @@
     :initform nil
     :initarg  :tile-pos
     :accessor tile-pos)))
+
+(defevent open-door-event (game-event-w-destination) ())
+
+(defevent close-door-event (game-event-w-destination) ())
+
+(defun make-simple-event-w-dest (class id-from id-to)
+  (make-instance class :id-origin id-from :id-destination id-to))

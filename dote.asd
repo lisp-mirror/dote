@@ -83,6 +83,7 @@
 	       (:file "avatar-portrait")
 	       (:file "cl-gl-utils")
 	       (:file "shaders-utils")
+	       (:file "map-utils")
 	       (:file "transformable")
 	       (:file "mesh-material")
 	       (:file "texture")

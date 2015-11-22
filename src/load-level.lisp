@@ -92,6 +92,9 @@
     ;; the character
     (setf (entity:ghost door-shell)
 	  (random-inert-object:generate-inert-object (game-state:map-level (main-state world))))
+    ;; events
+    (game-event:register-for-open-door-event door-shell)
+    (game-event:register-for-close-door-event door-shell)
     (push-interactive-entity world door-shell door-type :occlude)))
 
 (defun calculate-furnitures-shares (level)

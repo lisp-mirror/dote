@@ -565,38 +565,41 @@
 	   (lookup-tile-coord (cost-coord->lookup-tile object y-cost x-cost))
 	   (lookup-tile       (matrix:matrix-elt (pickable-mesh:lookup-tile-triangle object)
 						 (elt lookup-tile-coord 1)
-						 (elt lookup-tile-coord 0)))
-	   (first-triangle           (elt (triangles object)
-					  (pickable-mesh:index-tr-1 lookup-tile)))
-	   (first-triangle-indices   (vertex-index first-triangle))
-	   (first-triangle-vertices  (vector (find-value-by-index object
-								  (elt first-triangle-indices 0)
-								  :what :vertex)
-					     (find-value-by-index object
-								  (elt first-triangle-indices 1)
-								  :what :vertex)
-					     (find-value-by-index object
-								  (elt first-triangle-indices 2)
-								  :what :vertex)))
-	   (barycenter-first-triangle (triangle-centroid (elt first-triangle-vertices 0)
-							 (elt first-triangle-vertices 1)
-							 (elt first-triangle-vertices 2)))
-	   (second-triangle           (elt (triangles object)
-					   (pickable-mesh:index-tr-1 lookup-tile)))
-	   (second-triangle-indices   (vertex-index second-triangle))
-	   (second-triangle-vertices  (vector (find-value-by-index object
-								   (elt second-triangle-indices 0)
-								   :what :vertex)
-					      (find-value-by-index object
-								   (elt second-triangle-indices 1)
-								   :what :vertex)
-					      (find-value-by-index object
-								   (elt second-triangle-indices 2)
-								   :what :vertex)))
-	   (barycenter-second-triangle (triangle-centroid (elt second-triangle-vertices 0)
-							  (elt second-triangle-vertices 1)
-							  (elt second-triangle-vertices 2))))
-      (elt (vec-average barycenter-first-triangle barycenter-second-triangle) 1))))
+						 (elt lookup-tile-coord 0))))
+      (if lookup-tile
+	  (let* ((first-triangle           (elt (triangles object)
+						(pickable-mesh:index-tr-1 lookup-tile)))
+		 (first-triangle-indices   (vertex-index first-triangle))
+		 (first-triangle-vertices  (vector (find-value-by-index object
+									(elt first-triangle-indices 0)
+									:what :vertex)
+						   (find-value-by-index object
+									(elt first-triangle-indices 1)
+									:what :vertex)
+						   (find-value-by-index object
+									(elt first-triangle-indices 2)
+									:what :vertex)))
+		 (barycenter-first-triangle (triangle-centroid (elt first-triangle-vertices 0)
+							       (elt first-triangle-vertices 1)
+							       (elt first-triangle-vertices 2)))
+		 (second-triangle           (elt (triangles object)
+						 (pickable-mesh:index-tr-1 lookup-tile)))
+		 (second-triangle-indices   (vertex-index second-triangle))
+		 (second-triangle-vertices  (vector (find-value-by-index object
+									 (elt second-triangle-indices 0)
+									 :what :vertex)
+						    (find-value-by-index object
+									 (elt second-triangle-indices 1)
+									 :what :vertex)
+						    (find-value-by-index object
+									 (elt second-triangle-indices 2)
+									 :what :vertex)))
+		 (barycenter-second-triangle (triangle-centroid (elt second-triangle-vertices 0)
+								(elt second-triangle-vertices 1)
+								(elt second-triangle-vertices 2))))
+	    (elt (vec-average barycenter-first-triangle barycenter-second-triangle) 1))
+	  +zero-height+)))) ; if we are here  you are in a hole of the
+			    ; terrain or out of its boundaries
 
 (defun make-terrain-chunk (map shaders &key (generate-rendering-data nil))
   (let ((res (make-instance 'terrain-chunk:terrain-chunk

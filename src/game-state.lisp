@@ -119,6 +119,10 @@
 
 (defgeneric map-element-empty-p (object))
 
+(defgeneric neighborhood-by-type (object row column type &key w-offset h-offset))
+
+(defgeneric get-neighborhood (object row column predicate &key w-offset h-offset))
+
 (defmethod map-element-empty-p ((object map-state-element))
   (or (eq (el-type object)
 	  +empty-type+)
@@ -243,7 +247,9 @@
 
 (defgeneric place-player-on-map (object player faction &optional position))
 
-(defgeneric set-invalicable-cost (object x y))
+(defgeneric set-invalicable-cost@ (object x y))
+
+(defgeneric set-minimum-cost@ (object x y))
 
 (defgeneric set-map-state-type (object x y type))
 
@@ -404,7 +410,8 @@
 	  (player-coordinates nil))
       (labels ((%place-player (pos)
 		 (when (not stop)
-		   (let* ((next-tiles (misc:shuffle (gen-neighbour (elt pos 0) (elt pos 1))))
+		   (let* ((next-tiles (misc:shuffle (gen-neighbour-position (elt pos 0)
+									    (elt pos 1))))
 			  (empty-tiles (remove-if-not #'(lambda (pos)
 							  (let ((x (elt pos 0))
 								(y (elt pos 1)))
@@ -433,9 +440,13 @@
 	    (add-to-player-entities object player)
 	    (add-to-ai-entities     object player))))))
 
-(defmethod set-invalicable-cost ((object game-state) x y)
+(defmethod set-invalicable-cost@ ((object game-state) x y)
   (with-accessors ((movement-costs movement-costs)) object
     (setf (matrix-elt (graph:matrix movement-costs) y x) +invalicable-element-cost+)))
+
+(defmethod set-minimum-cost@ ((object game-state) x y)
+  (with-accessors ((movement-costs movement-costs)) object
+    (setf (matrix-elt (graph:matrix movement-costs) y x) +open-terrain-cost+)))
 
 (defmethod set-map-state-type ((object game-state) x y type)
   (setf (el-type (matrix:matrix-elt (map-state object) y x)) type))
@@ -463,3 +474,25 @@
     (set-map-state-id        object old-x old-y (invalid-entity-id-map-state))
     (set-map-state-occlusion object old-x old-y nil)
     (setup-map-state-entity  object entity old-type old-occlusion)))
+
+(defmethod get-neighborhood ((object game-state) row column predicate
+			     &key (w-offset 2) (h-offset 2))
+  (with-accessors ((map-state map-state)) object
+    (let ((pos (remove-if-not
+		#'(lambda (a) (element@-inside-p map-state (elt a 0) (elt a 1)))
+		(gen-neighbour-position-in-box column row w-offset h-offset :add-center nil)))
+	  (results (misc:make-fresh-array 0 nil 'map-state-element nil)))
+      (loop for i across pos do
+	   (let ((element (matrix-elt map-state (elt i 1) (elt i 0))))
+	     (when (funcall predicate element i)
+	       (vector-push-extend (cons element i) results))))
+      results)))
+
+(defmethod neighborhood-by-type ((object game-state) row column type
+				     &key (w-offset 2) (h-offset 2))
+  (get-neighborhood object row column
+		    #'(lambda (el pos)
+			(declare (ignore pos))
+			(or (null type)
+			    (eq (el-type el) type)))
+		    :w-offset w-offset :h-offset h-offset))

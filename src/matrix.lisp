@@ -187,6 +187,8 @@
 
   (defgeneric pixel-inside-p (object x y))
 
+  (defgeneric element@-inside-p (object x y))
+
   (defgeneric flood-fill (object x y &key
 				       tolerance max-iteration randomize-growth
 				       position-acceptable-p-fn))
@@ -276,7 +278,7 @@
 	     (format stream "~a size not valid" (size condition))))
   (:documentation "Error when matrix size is invalid"))
 
-(defun gen-neighbour (x y &key (add-center t))
+(defun gen-neighbour-position (x y &key (add-center t))
   "
 if add-center is t
 	       +--+--+--+
@@ -314,6 +316,16 @@ else
 	   (list x (1- y))
 	   (list (1- x) y)
 	   (list x (1+ y)))))
+
+(defun gen-neighbour-position-in-box (x y w-offset h-offset &key (add-center t))
+  (let ((results (misc:make-fresh-array 0 nil 'ivec2:ivec2 nil)))
+    (loop for x-box from (- x (floor (/ w-offset 2))) to (+ x (floor (/ w-offset 2))) by 1 do
+	 (loop for y-box from (- y (floor (/ h-offset 2))) to (+ y (floor (/ h-offset 2))) by 1 do
+	      (when (or (/= x-box x)
+			(/= y-box y)
+			add-center)
+		(vector-push-extend (ivec2:ivec2 x-box y-box) results))))
+    results))
 
 (defmacro with-check-borders ((x y x-bond y-bond w h) then else)
   `(if (and
@@ -874,17 +886,23 @@ else
     (matrix-hline object x acty width color)))
 
 (defmethod pixel-inside-p ((object matrix) x y)
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (element@-inside-p object x y))
+
+(defmethod element@-inside-p ((object matrix) x y)
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (declare (fixnum x y))
   (and (>= x 0)
-       (< x (width object))
+       (< x (the fixnum (width object)))
        (>= y 0)
-       (< y (height object))))
+       (< y (the fixnum (height object)))))
 
 (defun good-aabb-start ()
   (list (1+ +maximum-map-size+) (1+ +maximum-map-size+) -1.0 -1.0))
 
 (defmacro gen-neighbour-form (matrix queue x y)
   (alexandria:with-gensyms (neighbour)
-    `(let ((,neighbour (gen-neighbour ,x ,y :add-center nil)))
+    `(let ((,neighbour (gen-neighbour-position ,x ,y :add-center nil)))
        (loop for i in ,neighbour do
 	    (when (pixel-inside-p ,matrix (first i) (second i))
 	      (push i ,queue))))))

@@ -1072,7 +1072,7 @@
 		   :test #'(lambda (a b) (equalp (num-utils:round-all a)
 						 (num-utils:round-all b))))))
     (let ((res nil))
-      (loop for i in (matrix:gen-neighbour x y) do
+      (loop for i in (matrix:gen-neighbour-position x y) do
 	   (dfs (get-root object)
 		#'(lambda (obj)
 		    (ecase what

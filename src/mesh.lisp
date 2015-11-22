@@ -448,6 +448,10 @@
     :initform nil
     :initarg  :find-index-by-value-from-end
     :accessor find-index-by-value-from-end)
+   (renderp
+    :initform t
+    :initarg :renderp
+    :accessor renderp)
    (render-normals
     :initform nil
     :initarg :render-normals
@@ -548,6 +552,7 @@
 	     edges
 	     parent-mesh
 	     aabb
+	     renderp
 	     render-aabb
 	     render-normals
 	     render-tangents)
@@ -683,6 +688,10 @@
 (defgeneric calculate-decrement-move-points-entering-tile (object))
 
 (defgeneric decrement-move-points-entering-tile (object))
+
+(defgeneric decrement-move-points-rotate (object))
+
+(defgeneric calculate-cost-position (object))
 
 (defmethod remove-mesh-data ((object triangle-mesh))
   (setf (normals       object) nil
@@ -822,6 +831,11 @@
 (defmethod decrement-move-points-rotate ((object triangle-mesh))
   (decf (character:current-movement-points (ghost object))
 	+rotate-entity-cost-cost+))
+
+(defmethod calculate-cost-position ((object triangle-mesh))
+  (with-accessors ((pos pos)) object
+    (ivec2:ivec2 (misc:coord-chunk->costs (elt pos 0))
+		 (misc:coord-chunk->costs (elt pos 2)))))
 
 (defmethod get-first-near ((object triangle-mesh) vertex-index)
   (misc:do-while* ((first-face (find-triangle-by-vertex-index object vertex-index))
@@ -1512,12 +1526,14 @@
     (setf (model-matrix object) res)))
 
 (defmethod render ((object triangle-mesh) renderer)
-  (with-accessors ((normal-map normal-map)) object
-    (if normal-map
-	(render-normalmap object renderer)
-	(render-phong object renderer))
-    (do-children-mesh (c object)
-      (render c renderer))))
+  (with-accessors ((normal-map normal-map)
+		   (renderp renderp))      object
+    (when renderp
+      (if normal-map
+	  (render-normalmap object renderer)
+	  (render-phong object renderer))
+      (do-children-mesh (c object)
+	(render c renderer)))))
 
 (defmethod render-phong ((object triangle-mesh) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))

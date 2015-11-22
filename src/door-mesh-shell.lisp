@@ -18,6 +18,23 @@
 
 (defclass door-mesh-shell (triangle-mesh-shell) ())
 
-(defmethod game-event:on-game-event ((object door-mesh-shell) (event game-event:end-turn))
+(defmethod on-game-event ((object door-mesh-shell) (event game-event:end-turn))
   (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
+  nil)
+
+(defmethod on-game-event ((object door-mesh-shell) (event game-event:open-door-event))
+    (if (= (id object) (game-event:id-destination event))
+	(let ((pos (mesh:calculate-cost-position object)))
+	  ;; TODO here enemy could spot you
+	  (set-minimum-cost@ (state object) (elt pos 0) (elt pos 1))
+	  (setf (renderp object) nil)
+	  t))
+    nil)
+
+(defmethod on-game-event ((object door-mesh-shell) (event game-event:close-door-event))
+  (if (= (id object) (game-event:id-destination event))
+      (let ((pos (mesh:calculate-cost-position object)))
+       	(set-invalicable-cost@ (state object) (elt pos 0) (elt pos 1))
+	(setf (renderp object) t)
+	t))
   nil)

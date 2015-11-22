@@ -1328,7 +1328,8 @@
 					   (noise (bias-noise (noise:perlin-3d (d/ x-norm 0.1)
 									       (d/ y-norm 0.1)
 									       1/max-iteration)))
-					   (neighb (matrix:gen-neighbour x y :add-center t))
+					     (neighb (matrix:gen-neighbour-position x y
+										    :add-center t))
 					   (dx+1   (d- (matrix:matrix-elt* matrix (elt neighb 1))
 						       (matrix:matrix-elt* matrix (elt neighb 0))))
 					   (dy+1   (d- (matrix:matrix-elt* matrix (elt neighb 3))

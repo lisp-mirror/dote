@@ -511,7 +511,7 @@
    :ivec2+
    :ivec2-
    :ivec2-length
-   :ivec2-normalyize))
+   :ivec2-normalize))
 
 (defpackage :vec2
   (:use :cl
@@ -531,7 +531,8 @@
    :vec2-
    :vec2-negate
    :vec2-length
-   :vec2-normalyize))
+   :vec2-normalize
+   :vec2-dot-product))
 
 (defpackage :uivec
   (:use :cl
@@ -1088,8 +1089,9 @@
    :ploop-matrix
    :gen-matrix-frame
    :make-matrix
-   :gen-neighbour
+   :gen-neighbour-position
    :gen-4-neighbour-counterclockwise
+   :gen-neighbour-position-in-box
    :with-check-borders
    :with-check-matrix-borders
    :with-check-matrix-borders-then-else
@@ -1111,6 +1113,7 @@
    :matrix-vline
    :matrix-rect
    :pixel-inside-p
+   :element@-inside-p
    :good-aabb-start
    :flood-fill-tolerance-p-fn
    :flood-fill
@@ -1582,6 +1585,15 @@
    :get-shader-source
    :compile-library))
 
+(defpackage :map-utils
+  (:use :cl
+	:alexandria
+	:constants
+	:ivec2
+	:vec2)
+  (:export
+   :facingp))
+
 (defpackage :transformable
   (:use :cl)
   (:import-from :interfaces :clone :clone-into)
@@ -1828,11 +1840,15 @@
    :faction-ai-p
    :approx-terrain-height@pos
    :place-player-on-map
+   :set-minimum-cost@
+   :set-invalicable-cost@
    :set-map-state-type
    :set-map-state-id
    :set-map-state-occlusion
    :setup-map-state-entity
-   :move-map-state-entity))
+   :move-map-state-entity
+   :get-neighborhood
+   :neighborhood-by-type))
 
 (defpackage :game-event
   (:use
@@ -1850,6 +1866,7 @@
    :priority
    :event-data
    :game-event-w-destination
+   :make-simple-event-w-dest
    :id-destination
    :game-event-procrastinated
    :trigger-turn
@@ -1903,7 +1920,15 @@
    :update-highlight-path
    :register-for-update-highlight-path
    :unregister-for-update-highlight-path
-   :propagate-update-highlight-path))
+   :propagate-update-highlight-path
+   :open-door-event
+   :register-for-open-door-event
+   :unregister-for-open-door-event
+   :propagate-open-door-event
+   :close-door-event
+   :register-for-close-door-event
+   :unregister-for-close-door-event
+   :propagate-close-door-event))
 
 (defpackage :basic-interaction-parameters
   (:use :cl
@@ -2427,7 +2452,7 @@
 	:identificable
 	:entity
 	:transformable)
-  (:import-from           :game-event :on-game-event)
+  (:import-from :game-event :on-game-event)
   (:export
    :camera
    :frustum-aabb
@@ -2475,7 +2500,7 @@
 	:camera
 	:game-state)
   (:shadowing-import-from :graph :matrix)
-  ;;(:shadowing-import-from :num-utils epsilon=)
+  (:import-from           :game-event :on-game-event)
   (:export
    :+vbo-count+
    :+vao-count+
@@ -2623,7 +2648,8 @@
    :setup-projective-texture
    :calculate-decrement-move-points-entering-tile
    :decrement-move-points-rotate
-   :decrement-move-points-entering-tile))
+   :decrement-move-points-entering-tile
+   :calculate-cost-position))
 
 (defpackage :pickable-mesh
   (:use :cl
