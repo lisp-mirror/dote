@@ -115,7 +115,25 @@
     :initform t
     :initarg  :occlude
     :reader   occludep
-    :writer   (setf occlude))))
+    :writer   (setf occlude))
+   (old-state-element
+    :initform nil
+    :initarg  :old-state-element
+    :accessor old-state-element)))
+
+(defmethod initialize-instance :after ((object map-state-element) &key &allow-other-keys)
+  (when (not (eq (old-state-element object) :stopper))
+    (let ((saved (make-instance 'map-state-element :old-state-element :stopper)))
+      (clone-into object saved)
+      (setf (old-state-element object) saved))))
+
+(defmethod clone-into ((from map-state-element) (to map-state-element))
+  (setf (entity-id to)         (entity-id from)
+	(el-type   to)         (el-type   from)
+	(occlude   to)         (occludep  from)))
+
+(defmethod clone ((object map-state-element))
+  (with-simple-clone (object 'map-state-element)))
 
 (defgeneric map-element-empty-p (object))
 
@@ -466,13 +484,20 @@
       (set-map-state-occlusion object x-matrix y-matrix occlusion-value))))
 
 (defmethod move-map-state-entity ((object game-state) entity from)
-  (let* ((old-x         (elt from 0))
-	 (old-y         (elt from 1))
-	 (old-type      (el-type-in-pos  object old-x old-y))
-	 (old-occlusion (occludep-in-pos object old-x old-y)))
-    (set-map-state-type      object old-x old-y +empty-type+)
-    (set-map-state-id        object old-x old-y (invalid-entity-id-map-state))
-    (set-map-state-occlusion object old-x old-y nil)
+  (let* ((old-x            (elt from 0))
+	 (old-y            (elt from 1))
+	 (old-type         (el-type-in-pos  object old-x old-y))
+	 (old-occlusion    (occludep-in-pos object old-x old-y))
+	 (target-state-pos (mesh:calculate-cost-position entity))
+	 (target-x         (elt target-state-pos 0))
+	 (target-y         (elt target-state-pos 1)))
+    ;; set tile coming from to the saved
+    (setf (matrix:matrix-elt (map-state object) old-y old-x)
+	  (clone (old-state-element (matrix:matrix-elt (map-state object) old-y old-x))))
+    ;; set saved tile going with the value from the old
+    (setf (old-state-element (matrix:matrix-elt (map-state object) target-y target-x))
+	  (clone (matrix:matrix-elt (map-state object) target-y target-x)))
+    ;; finally set the value of the tile with the entity
     (setup-map-state-entity  object entity old-type old-occlusion)))
 
 (defmethod get-neighborhood ((object game-state) row column predicate

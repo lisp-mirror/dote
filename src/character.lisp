@@ -912,6 +912,7 @@
 									  (smartness (2 0))
 									  (weight    (52 23))))))
     (setf (player-class player) :warrior)
+    (setf (movement-points player) 50.0)
     player))
 
 (defun make-wizard (race)

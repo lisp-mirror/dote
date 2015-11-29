@@ -16,7 +16,11 @@
 
 (in-package :mesh)
 
-(defclass door-mesh-shell (triangle-mesh-shell) ())
+(defclass door-mesh-shell (triangle-mesh-shell)
+  ((openp
+    :initform nil
+    :initarg  :openp
+    :accessor openp)))
 
 (defmethod on-game-event ((object door-mesh-shell) (event game-event:end-turn))
   (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
@@ -28,6 +32,7 @@
 	  ;; TODO here enemy could spot you
 	  (set-minimum-cost@ (state object) (elt pos 0) (elt pos 1))
 	  (setf (renderp object) nil)
+	  (setf (openp   object) t)
 	  t))
     nil)
 
@@ -36,5 +41,6 @@
       (let ((pos (mesh:calculate-cost-position object)))
        	(set-invalicable-cost@ (state object) (elt pos 0) (elt pos 1))
 	(setf (renderp object) t)
+	(setf (openp   object) nil)
 	t))
   nil)

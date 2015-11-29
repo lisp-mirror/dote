@@ -131,7 +131,10 @@
    :+model-preview-ranger-re+
    :+model-preview-ext-re+
    :+model-move-speed+
-   :+gui-zoom-entity+))
+   :+gui-zoom-entity+
+   :+visibility-cone-half-hangle+
+   :+visibility-cone-height+
+   :+visibility-ray-displ-incr+))
 
 (defpackage :profiling
   (:use :cl)
@@ -842,6 +845,7 @@
   (:use :cl
 	:sb-cga
 	:vec4
+	:constants
 	:interfaces
 	:num-utils
 	:misc)
@@ -858,6 +862,7 @@
    :insidep
    :flatten-to-aabb2-xz
    :reset
+   :aabb-center
    :min-x
    :min-y
    :min-z
@@ -870,6 +875,15 @@
    :aabb->bounding-sphere
    :triangle-normal
    :triangle-centroid
+   :cone
+   :cone-apex
+   :half-angle
+   :cone-height
+   :point-in-cone-p
+   :ray
+   :ray-direction
+   :displacement
+   :ray-ends
    :tangent-TBN
    :tangent-in-normal-space
    :ccw-poly-fannify
@@ -1007,6 +1021,7 @@
    :make-leaf-quad-tree
    :subdivide
    :query-smallest-intersect-aabb
+   :query-leaf-in-point
    :calculate-subaabb
    :iterate-nodes-intersect
    :iterate-nodes
@@ -1126,6 +1141,8 @@
    :gaussian-blur-separated
    :pgaussian-blur-separated
    :psobel-edge-detection
+   :pgradient-image
+   :gradient-image
    :pmatrix-blit
    :pblit-matrix
    :blit-matrix
@@ -1765,6 +1782,7 @@
 	:num
 	:vec4
 	:matrix
+	:interfaces
 	:identificable
 	:entity
 	:level-config
@@ -1809,6 +1827,7 @@
    :celestial-body-position
    :movement-costs
    :map-state
+   :old-state-element
    :all-entities
    :player-entities
    :ai-entities
@@ -2643,6 +2662,7 @@
    :window-mesh-shell
    :decorated-wall-mesh-shell
    :door-mesh-shell
+   :openp
    :fountain-mesh-shell
    :container-mesh-shell
    :setup-projective-texture
@@ -2650,6 +2670,45 @@
    :decrement-move-points-rotate
    :decrement-move-points-entering-tile
    :calculate-cost-position))
+
+(defpackage :able-to-see-mesh
+  (:use :cl
+	:alexandria
+	:sb-cga
+	:sb-cga-utils
+	:config
+	:constants
+	:conditions
+	:misc
+	:shaders-utils
+	:cl-gl-utils
+	:interfaces
+	:transformable
+	:num
+	:vec2
+	:vec4
+	:quaternion
+	:uivec
+	:2d-utils
+	:mtree-utils
+	:graph
+	:mesh-material
+	:mesh
+	:identificable
+	:entity
+	:camera
+	:game-state)
+  (:shadowing-import-from :sb-cga :matrix     :rotate)
+  (:shadowing-import-from :misc   :random-elt :shuffle)
+  (:export
+   :able-to-see-mesh
+   :visibility-cone
+   :other-visible-p
+   :update-visibility-cone
+   :visible-players
+   :other-visible-p
+   :other-visible-cone-p
+   :other-visible-ray-p))
 
 (defpackage :pickable-mesh
   (:use :cl
@@ -3050,7 +3109,8 @@
 	:ivec2
 	:character
 	:mesh-material
-	:mesh)
+	:mesh
+	:able-to-see-mesh)
   (:export
    :+tag-head-key+
    :+tag-left-weapon-key+

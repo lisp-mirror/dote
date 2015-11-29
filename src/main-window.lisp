@@ -154,7 +154,7 @@
 				      (vec 64.0 20.0 64.0)
 				      (vec 0.0  30.0 64.0)
 				      (vec 64.0  90.0 64.0))
-    (camera:install-drag-interpolator (world:camera world))
+    (camera:install-drag-interpolator (world:camera world) :spring-k 10.0)
     (camera:install-orbit-interpolator (world:camera world) 5.0 5.0 10.0)
     ;; setup projection
     (transformable:build-projection-matrix world *near* *far* *fov*

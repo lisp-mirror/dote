@@ -24,7 +24,6 @@
 
 (alexandria:define-constant +pixmap-dir+ "data/pixmap/"  :test #'string=)
 
-
 (alexandria:define-constant +tmp-dir+ (concatenate 'string (test-dir) "tmp/")
   :test #'string=)
 
@@ -44,8 +43,19 @@
 	 (input-path (format nil "~a~a" +pixmap-dir+ output-filename)))
     (values (matrix->pixmap
 	     (matrix:rotate-matrix input 45.0
-				   :fill-value (ubvec4:ubvec4 0 0 2 1) 
+				   :fill-value (ubvec4:ubvec4 0 0 2 1)
 				   :repeat t))
+	    input-path)))
+
+(defun %test-gradient ()
+  (let* ((output-filename "gradient-test-out.pgm")
+	 (path (concatenate 'string +pixmap-dir+ "gradient-test.pgm"))
+	 (input (all-test:load-test-pgm path))
+	 (input-path (format nil "~a~a" +pixmap-dir+ output-filename)))
+    (values (matrix:gradient-image input
+				   :round-fn #'(lambda (a) (alexandria:clamp (ceiling (abs a))
+									     0
+									     255)))
 	    input-path)))
 
 (defun %rotate-180 ()
@@ -55,7 +65,7 @@
 		   (concatenate 'string +pixmap-dir+ "test-rotated-180.tga"))))
     (values (matrix->pixmap
 	     (matrix:rotate-matrix not-rotated 180.0
-				   :fill-value (ubvec4:ubvec4 0 0 2 1) 
+				   :fill-value (ubvec4:ubvec4 0 0 2 1)
 				   :repeat nil))
 	    rotated)))
 
@@ -70,7 +80,7 @@
 (deftest test-read-tga-from-vector (pixmap-suite)
   (assert-true
       (multiple-value-bind (loaded input-file-path) (%test-read-tga-from-vector)
-	(equalp  
+	(equalp
 	 (pixmap:data (load-test-tga input-file-path))
 	 (pixmap:data loaded)))))
 
@@ -78,7 +88,7 @@
   (with-kernel
     (assert-true
 	(multiple-value-bind (rotated input-file-path) (%rotate-w-repeat)
-	  (equalp  
+	  (equalp
 	   (pixmap:data (load-test-tga input-file-path))
 	   (pixmap:data rotated))))))
 
@@ -86,14 +96,14 @@
   (with-kernel
     (assert-true
 	(multiple-value-bind (rotated reference) (%rotate-180)
-	  (equalp  
+	  (equalp
 	   (pixmap:data rotated)
 	   (pixmap:data reference))))))
 
 (deftest test-blit (pixmap-suite)
   (assert-true
       (multiple-value-bind (blitted input-file-path) (%blit)
-	(equalp  
+	(equalp
 	 (pixmap:data (load-test-tga input-file-path))
 	 (pixmap:data blitted)))))
 
@@ -110,5 +120,12 @@
     (assert-true
 	(=
 	 (pixmap:dhash (load-test-tga (format nil "~a~a" +pixmap-dir+ "blood-splat-seamless.tga")))
-	 (pixmap:dhash (tileize (load-test-tga (format nil "~a~a" +pixmap-dir+ 
+	 (pixmap:dhash (tileize (load-test-tga (format nil "~a~a" +pixmap-dir+
 						       "blood-splat.tga"))))))))
+
+(deftest test-gradient (pixmap-suite)
+  (assert-true
+      (multiple-value-bind (loaded input-file-path) (%test-gradient)
+	(equalp
+	 (pixmap:data (load-test-pgm input-file-path))
+	 (pixmap:data loaded)))))

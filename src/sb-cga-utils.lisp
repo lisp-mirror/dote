@@ -75,8 +75,9 @@
 
 (defgeneric reset (object))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
+(defgeneric aabb-center (object))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defmacro %with-optimized-vector ((aabb p accessor) &body body)
     `(let ((,p (,accessor ,aabb)))
        (declare (vec ,p))
@@ -170,6 +171,10 @@
   (setf (aabb-p1 object) (copy-vec +safe-p1-aabb+)
 	(aabb-p2 object) (copy-vec +safe-p2-aabb+)))
 
+(defmethod aabb-center ((object aabb))
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (vec/ (vec+ (aabb-p1 object) (aabb-p2 object)) 2.0))
+
 (defclass bounding-sphere ()
   ((sphere-center
     :initform (vec 0.0 0.0 0.0)
@@ -186,7 +191,7 @@
 
 (defun aabb->bounding-sphere (aabb)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
-  (let* ((center (vec/ (vec+ (aabb-p1 aabb) (aabb-p2 aabb)) 2.0))
+  (let* ((center (aabb-center aabb))
 	 (radius (vec-length (vec- (aabb-p2 aabb) center))))
     (make-instance 'bounding-sphere :sphere-radius radius :sphere-center center)))
 
@@ -205,6 +210,67 @@
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (vec a b c))
   (vec/ (vec+ a (vec+ b c)) 3.0))
+
+(defclass cone ()
+  ((cone-apex
+    :initform +zero-vec+
+    :initarg  :cone-apex
+    :accessor cone-apex)
+   (half-angle
+    :initform +visibility-cone-half-hangle+
+    :initarg  :half-angle
+    :accessor half-angle)
+   (cone-height
+    :initform +visibility-cone-height+
+    :initarg  :cone-height
+    :accessor cone-height)))
+
+(defmethod print-object ((object cone) stream)
+  (print-unreadable-object (object stream :type t :identity t)
+    (format stream
+	    "apex: ~a height: ~a angle: ~a"
+	    (cone-apex   object)
+	    (cone-height object)
+	    (half-angle  object))))
+
+(defgeneric point-in-cone-p (object point))
+
+(defmethod point-in-cone-p ((object cone) point)
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (declare (vec point))
+  (with-accessors ((cone-apex   cone-apex)
+		   (half-angle  half-angle)
+		   (cone-height cone-height)) object
+    (let* ((apex->point  (vec- point cone-apex))
+	   (cone-dir     (normalize cone-height))
+	   (cosine-point (dot-product (safe-normalize apex->point) cone-dir)))
+      (if (d<= cosine-point (dcos half-angle))
+	  nil
+	  (if (d<= (dot-product apex->point cone-dir)
+		   (vec-length cone-height))
+	      t
+	      nil)))))
+
+(defclass ray ()
+  ((ray-direction
+    :initform +z-axe+
+    :initarg  :ray-direction
+    :accessor ray-direction)
+   (displacement
+    :initform +terrain-chunk-tile-size+
+    :initarg  :displacement
+    :accessor displacement)))
+
+(defmethod print-object ((object ray) stream)
+  (print-unreadable-object (object stream :type t :identity t)
+    (format stream "dir: ~a displ: ~a" (ray-direction object) (displacement object))))
+
+(defgeneric ray-ends (object start))
+
+(defmethod ray-ends (object start)
+  (with-accessors ((ray-direction ray-direction)
+		   (displacement  displacement)) object
+      (vec+ start (vec* ray-direction displacement))))
 
 (defun tangent-TBN (a b c tex-a tex-b tex-c)
   "counterclockwise"

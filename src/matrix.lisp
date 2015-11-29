@@ -210,6 +210,10 @@
 
   (defgeneric psobel-edge-detection (object))
 
+  (defgeneric pgradient-image (object &key round-fn))
+
+  (defgeneric gradient-image (object &key round-fn))
+
   (defgeneric pblit-matrix (src dest x-dst y-dst &key blend-fn))
 
   (defgeneric blit-matrix (src dest x-dst y-dst &key blend-fn))
@@ -803,7 +807,7 @@ else
 
 (defmethod element-type ((object matrix))
   (if (> (length (data object)) 0)
-      (type-of (matrix-elt object 0 0))
+      (class-of (matrix-elt object 0 0))
       nil))
 
 (defmethod row->sequence ((object matrix) row &optional (output-spec 'vector))
@@ -1043,6 +1047,19 @@ else
     (setf (matrix-elt gy 2 2) -1.0)
   (values gx gy)))
 
+(defun gradient-kernel-matrix ()
+  (let ((res (gen-matrix-frame 3 3 0.0)))
+    (setf (matrix-elt res 0 0)  0.0)
+    (setf (matrix-elt res 0 1) -1.0)
+    (setf (matrix-elt res 0 2)  0.0)
+    (setf (matrix-elt res 1 0) -1.0)
+    (setf (matrix-elt res 1 1)  0.0)
+    (setf (matrix-elt res 1 2)  1.0)
+    (setf (matrix-elt res 2 0)  0.0)
+    (setf (matrix-elt res 2 1)  1.0)
+    (setf (matrix-elt res 2 2)  0.0)
+  res))
+
 (defun gaussian-kernel-vector (&optional (radius 5))
   (when (evenp radius)
     (incf radius))
@@ -1230,6 +1247,14 @@ else
 		 (sb-cga:vec grad-x grad-y (dsqrt (d+ (dexpt grad-x 2.0)
 						      (dexpt grad-y 2.0)))))))
       res)))
+
+(defmethod pgradient-image ((object matrix) &key (round-fn #'identity))
+  (let ((kernel (gradient-kernel-matrix)))
+    (papply-kernel object kernel :round-fn round-fn)))
+
+(defmethod gradient-image ((object matrix) &key (round-fn #'identity))
+  (let ((kernel (gradient-kernel-matrix)))
+    (apply-kernel object kernel :round-fn round-fn)))
 
 (defmethod pblit-matrix ((src matrix) (dest matrix) x-dst y-dst
 			 &key (blend-fn

@@ -764,6 +764,18 @@
     (load px file)
     px))
 
+(defun test-gradient ()
+  (let ((px (gradient-image (slurp-pixmap 'pgm (fs:file-in-package "gradient-test.pgm"))
+			    :round-fn #'(lambda (a) (alexandria:clamp (ceiling (abs a))
+								      0
+								      255)))))
+    (with-open-file (stream
+		     (fs:file-in-package "gradient-out.pgm")
+		     :direction :output
+		     :if-exists :supersede
+		     :if-does-not-exist :create)
+      (format stream "~a" (matrix->pgm px "gradient" 255)))))
+
 (defgeneric load (object file))
 
 (defgeneric load-from-stream (object stream))

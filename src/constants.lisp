@@ -61,7 +61,7 @@
 (define-constant +invalicable-element-cost+         512.0              :test #'=)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (define-constant +open-terrain-cost+                4.0              :test #'=))
+  (define-constant +open-terrain-cost+                2.0              :test #'=))
 
 (define-constant +rotate-entity-cost-cost+  (/ +open-terrain-cost+
 						2.0)                   :test #'=)
@@ -203,3 +203,10 @@
 (define-constant +model-move-speed+               0.02                            :test #'=)
 
 (define-constant +gui-zoom-entity+                30.0                            :test #'=)
+
+(define-constant +visibility-cone-half-hangle+    0.5235988                       :test #'=)
+
+(define-constant +visibility-cone-height+         (sb-cga:vec 0.0 0.0 3200.0)
+  :test #'sb-cga:vec~)
+
+(define-constant +visibility-ray-displ-incr+      0.01                            :test #'=)

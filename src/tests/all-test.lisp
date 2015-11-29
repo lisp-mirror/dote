@@ -30,6 +30,8 @@
 
 (gen-load-pixmap ppm)
 
+(gen-load-pixmap pgm)
+
 (defun dump-pixmap (pixmap path name)
   (pixmap:save-pixmap pixmap (format nil "~a~a" path name))
   (values name path))

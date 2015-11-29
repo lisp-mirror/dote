@@ -1768,9 +1768,9 @@
   (with-parent-widget (toolbar) w
     (with-accessors ((bound-player bound-player)) toolbar
       (when bound-player
-	(let ((event (make-instance 'game-event:rotate-entity-cw-event
+	(let ((event (make-instance 'game-event:rotate-entity-ccw-event
 				    :id-destination (id bound-player))))
-	  (game-event:propagate-rotate-entity-cw-event event)))))
+	  (game-event:propagate-rotate-entity-ccw-event event)))))
   t)
 
 (defun facing-door (game-state pos dir)
@@ -3670,7 +3670,7 @@
       (%add-callback-to-pgen-buttons b-inc-range-atk-ch b-dec-range-atk-ch
 				     player 'range-attack-chance
 				     lb-exp-points lb-range-atk-ch 0.5 1.0)
-      (setf (prefix lb-melee-atk-dmg) (right-padding (prefix lb-melee-atk-ch) max-length-prefix)
+      (setf (prefix lb-melee-atk-dmg) (right-padding (prefix lb-melee-atk-dmg) max-length-prefix)
 	    (label  lb-melee-atk-dmg) (format nil +standard-float-print-format+
 					      (melee-attack-damage player)))
       (%add-callback-to-pgen-buttons b-inc-melee-atk-dmg b-dec-melee-atk-dmg

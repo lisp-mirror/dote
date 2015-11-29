@@ -44,6 +44,10 @@
     :initform nil
     :initarg :cost-matrix
     :accessor cost-matrix)
+   (mountain-cost-matrix
+    :initform nil
+    :initarg :mountain-cost-matrix
+    :accessor mountain-cost-matrix)
    (texture-weights
     :initform nil
     :initarg :texture-weights
@@ -923,6 +927,9 @@
 	  (truncate (num:dlerp (num:smoothstep-interpolate 0.0 40.0 area) 0.0 40.0)))
 	(if (< x 1) 3 4))))
 
+(defun gradient-clamp-value (a)
+  (d (alexandria:clamp (ceiling (abs a)) 0 255)))
+
 (defmethod make-map ((object random-terrain)
 		     &key
 		       (mountain-rate              0.2)
@@ -953,6 +960,19 @@
 		    :mountain-sigma-w-function mountain-sigma-w-function
 		    :mountain-sigma-h-function mountain-sigma-h-function
 		    :max-iter maximum-iteration)
+  ;; set cost for mountain based on gradient of their heights
+  (dump object (fs:file-in-package "height-mountain-only.pgm"))
+  (setf (mountain-cost-matrix object)
+	(gaussian-blur (gradient-image (matrix object)
+				       :round-fn #'gradient-clamp-value)
+		       #'identity
+		       3))
+  (with-open-file (stream
+		   (fs:file-in-package "gradient-mountain-only.pgm")
+		   :direction :output
+		   :if-exists :supersede
+		   :if-does-not-exist :create)
+    (format stream "~a" (matrix->pgm (mountain-cost-matrix object) "gradient" 255)))
   (make-lakes object
 	      :rate lake-rate
 	      :size-function lake-size-function
@@ -1410,6 +1430,7 @@
 (defmethod build-cost-matrix ((object random-terrain) debugp)
   (with-accessors ((matrix matrix) (texture-weights texture-weights)
 		   (cost-matrix cost-matrix)
+		   (mountain-cost-matrix mountain-cost-matrix)
 		   (trees trees)) object
     (when (and texture-weights matrix)
       (let* ((res            (gen-matrix-frame (width matrix) (height matrix)
@@ -1417,20 +1438,26 @@
 	     (heights        matrix)
 	     (road-channel   pixmap:+red-channel+)
 	     (mud-channel    pixmap:+blue-channel+))
-	;;raw-terrain cost
+	;; raw-terrain cost
+	;; mountain-gradient-only
 	(loop-matrix (res x y)
 	   (setf (matrix-elt res y x)
-		 (let ((px (matrix-elt heights y x)))
+		 (let ((px (matrix-elt mountain-cost-matrix y x)))
 		   (cond
-		      ((epsilon= px +zero-height+) ;; flat terrain
+		      ((epsilon= px 0.0) ;; flat terrain
 		       +open-terrain-cost+)
-		     ((d< px +zero-height+) ;; water
-		      (if debugp
-			  +invalicable-element-cost-dbg+
-			  +invalicable-element-cost+))
-		     (t                               ;; otherwise
-		      (d+ +open-terrain-cost+
-			  (d- (d* +costs-scale-mountain+ px) +zero-height+)))))))
+		      (t                ;; otherwise
+		       (d+ +open-terrain-cost+
+			   (d* +costs-scale-mountain+ px)))))))
+	;; every else
+	;; water
+	(loop-matrix (res x y)
+	   (let ((px (matrix-elt heights y x)))
+	     (if (d< px +zero-height+)
+		 (setf (matrix-elt res y x)
+		       (if debugp
+			   +invalicable-element-cost-dbg+
+			   +invalicable-element-cost+)))))
 	;; roads
 	(if debugp
 	    (%apply-cost-modifier texture-weights res road-channel

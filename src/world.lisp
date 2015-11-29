@@ -214,7 +214,7 @@
 
 (defgeneric set-window-accepts-input (object value))
 
-(defmethod move-map-state-entity (object entity from))
+(defgeneric move-map-state-entity (object entity from))
 
 (defmethod iterate-quad-tree ((object world) function probe)
   (quad-tree:iterate-nodes-intersect (entities object)
@@ -403,9 +403,9 @@
 	    (pick-pointer-position entity renderer x y)
 	  (declare (ignore raw-position matrix-position))
 	  (when picked
-	    (let* ((x-cost      (elt cost-matrix-position 0)) ; column
-		   (y-cost      (elt cost-matrix-position 1)) ; row
-		   (entity-id   (entity-id-in-pos main-state x-cost y-cost)))
+	    (let* ((x-cost    (elt cost-matrix-position 0)) ; column
+		   (y-cost    (elt cost-matrix-position 1)) ; row
+		   (entity-id (entity-id-in-pos main-state x-cost y-cost)))
 	      ;; sync with toolbar...maybe better in main-window ?
 	      (when (valid-id-p entity-id)
 		(let ((entity (fetch-from-player-entities main-state entity-id)))

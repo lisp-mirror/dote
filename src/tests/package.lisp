@@ -22,6 +22,7 @@
    :all-suite
    :load-test-tga
    :load-test-ppm
+   :load-test-pgm
    :dump-pixmap
    :with-kernel
    :run-all-tests))

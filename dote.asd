@@ -111,6 +111,7 @@
 	       (:file "container-mesh-shell")
 	       (:file "fountain-mesh-shell")
 	       (:file "pickable-mesh")
+	       (:file "able-to-see-mesh")
 	       (:file "building-floor-mesh")
 	       (:module gui
 			:components ((:file "gui-events")

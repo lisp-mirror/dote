@@ -98,6 +98,8 @@
 
 (defgeneric query-smallest-intersect-aabb (object aabb))
 
+(defgeneric query-leaf-in-point (object probe))
+
 (defgeneric path-to (object &optional path))
 
 (defgeneric node-quadrant (object))
@@ -141,6 +143,27 @@
 			     (intersect-ne (aabb2-intersect-p probe (aabb ne)))
 			     (intersect-sw (aabb2-intersect-p probe (aabb sw)))
 			     (intersect-se (aabb2-intersect-p probe (aabb se))))
+			 (and intersect-nw (%query nw))
+			 (and intersect-ne (%query ne))
+			 (and intersect-sw (%query sw))
+			 (and intersect-se (%query se))))))))
+      (%query object)
+      results)))
+
+(defmethod query-leaf-in-point ((object quad-tree) probe)
+  (let ((results nil))
+    (labels ((%query (object)
+	       (with-accessors ((aabb aabb) (nw nw) (ne ne) (sw sw) (se se)
+				(data data)) object
+		 (when (inside-iaabb2-p aabb (elt probe 0) (elt probe 1))
+		   (if (leafp object)
+		       (progn
+			 (setf results object)
+			 (return-from %query results))
+		       (let ((intersect-nw (inside-aabb2-p (aabb nw) (elt probe 0) (elt probe 1)))
+			     (intersect-ne (inside-aabb2-p (aabb ne) (elt probe 0) (elt probe 1)))
+			     (intersect-sw (inside-aabb2-p (aabb sw) (elt probe 0) (elt probe 1)))
+			     (intersect-se (inside-aabb2-p (aabb se) (elt probe 0) (elt probe 1))))
 			 (and intersect-nw (%query nw))
 			 (and intersect-ne (%query ne))
 			 (and intersect-sw (%query sw))

@@ -55,7 +55,7 @@
 	  for start from 0 by 4 collect
 	    `(,name ,start 4))))
 
-(defclass md2-mesh (triangle-mesh)
+(defclass md2-mesh (able-to-see-mesh)
   ((frames
     :initform (misc:make-array-frame 0)
     :initarg :frames
@@ -172,14 +172,15 @@
 
 (defmethod on-game-event ((object md2-mesh) (event rotate-entity-cw-event))
   (with-accessors ((ghost ghost)
-		   (dir dir)) object
+		   (dir dir)
+		   (pos pos)) object
     (if (= (id object) (id-destination event))
-	(when (> (current-movement-points ghost)
-		 0)
+	(when (> (current-movement-points ghost) 0)
 	  (decrement-move-points-rotate object)
 	  (setf (current-action object) :rotate)
 	  (setf dir (sb-cga:transform-direction dir (rotate-around +y-axe+ (d- +pi/2+))))
-	  ;; TODO can we see an enemy?
+	  (update-visibility-cone object)
+	  (misc:dbg "~a" (visible-players object))
 	  (send-refresh-toolbar-event)
 	  t)
 	nil)))
@@ -188,12 +189,12 @@
   (with-accessors ((ghost ghost)
 		   (dir dir)) object
     (if (= (id object) (id-destination event))
-	(when (> (current-movement-points ghost)
-		 0)
+	(when (> (current-movement-points ghost) 0)
 	  (decrement-move-points-rotate object)
 	  (setf (current-action object) :rotate)
 	  (setf dir (sb-cga:transform-direction dir (rotate-around +y-axe+ +pi/2+)))
-	  ;; TODO can we see an enemy?
+	  (update-visibility-cone object)
+	  (misc:dbg "~a" (visible-players object))
 	  (send-refresh-toolbar-event)
 	  t)
 	nil)))
@@ -611,11 +612,10 @@
        ;; nothing to do
        )
       (:rotate
-       ;; nothing to do
-       )
-
+       (update-visibility-cone object))
       (:move
-       (calculate-move object dt)))
+       (calculate-move object dt)
+       (update-visibility-cone object)))
     (unless stop-animation
       (let ((next-time (+ current-time dt))
 	    (frames-numbers (the fixnum (1+ (- end-frame starting-frame))))
@@ -672,15 +672,15 @@
 				    renderer-data-normals-obj-space
 				    (normals-obj-space-vertex-count object)
 				    interpolation-factor))
-	  (when (render-aabb object)
-	    (with-slots (aabb) object
-	      (reset aabb)
-	      (loop for i fixnum from 0 below renderer-data-count-vertices by 3 do
-		   (let* ((pos (the (unsigned-byte 32) i))
-			  (vert (vec (gl:glaref renderer-data-vertices pos)
-				     (gl:glaref renderer-data-vertices (+ pos 1))
-				     (gl:glaref renderer-data-vertices (+ pos 2)))))
-		     (expand aabb vert)))
+	  (with-slots (aabb) object
+	    (reset aabb)
+	    (loop for i fixnum from 0 below renderer-data-count-vertices by 3 do
+		 (let* ((pos (the (unsigned-byte 32) i))
+			(vert (vec (gl-utils:fast-glaref renderer-data-vertices pos)
+				   (gl-utils:fast-glaref renderer-data-vertices (+ pos 1))
+				   (gl-utils:fast-glaref renderer-data-vertices (+ pos 2)))))
+		   (expand aabb vert)))
+	    (when (render-aabb object)
 	      (make-data-for-opengl-aabb-obj-space object))))))
     (bubbleup-modelmatrix object)
     (when (not (mtree-utils:rootp object))
