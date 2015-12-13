@@ -108,6 +108,7 @@
 	       (:file "wall-mesh-shell")
 	       (:file "window-mesh-shell")
 	       (:file "door-mesh-shell")
+	       (:file "furniture-mesh-shell")
 	       (:file "container-mesh-shell")
 	       (:file "fountain-mesh-shell")
 	       (:file "pickable-mesh")

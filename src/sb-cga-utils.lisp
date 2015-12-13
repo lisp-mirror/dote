@@ -395,6 +395,21 @@
 	  (d/ 1.0
 	      (dot-product (cross-product n1 n2) n3)))))
 
+(defun vector-plane-intersection (v-origin v-direction plane)
+  "plane is #(nx ny nz d)"
+  (let* ((d-plane (elt plane 3))
+	 (normal  (vec (elt plane 0) (elt plane 1) (elt plane 2)))
+	 (dot     (d (dot-product v-direction normal))))
+    (if (epsilon= dot 0)
+	(values nil nil)
+	(let* ((point-of-plane (vec* normal d-plane))
+	       (scaling        (d/ (d (dot-product (vec- point-of-plane v-origin)
+						   normal))
+				   dot)))
+	  (if (<= 0.0 scaling 1.0)
+	      (values t   scaling)
+	      (values nil scaling))))))
+
 (defun copy-matrix-element (from to row column)
   (setf (mref to row column) (mref from row column)))
 

@@ -16,7 +16,7 @@
 
 (in-package :camera)
 
-(alexandria:define-constant +drag-camera-ends-threshold+ 0.01 :test #'=)
+(alexandria:define-constant +drag-camera-ends-threshold+ 0.1 :test #'=)
 
 (defclass camera (transformable entity)
   ((target
@@ -110,7 +110,15 @@
    (frustum-aabb
     :accessor frustum-aabb
     :initarg  :frustum-aabb
-    :initform (make-instance '3d-utils:aabb))))
+    :initform (make-instance '3d-utils:aabb))
+   (frustum-sphere
+    :accessor frustum-sphere
+    :initarg  :frustum-sphere
+    :initform (make-instance 'bounding-sphere))
+   (frustum-cone
+    :accessor frustum-cone
+    :initarg  :frustum-cone
+    :initform (make-instance 'cone))))
 
 (defmethod game-state:current-time ((object camera))
   (game-state:current-time (state object)))
@@ -193,6 +201,10 @@
 
 (defgeneric calculate-aabb    (object))
 
+(defgeneric calculate-cone    (object))
+
+(defgeneric calculate-sphere  (object))
+
 (defgeneric containsp (object p))
 
 (defmethod %draw-path-mode ((object camera) dt)
@@ -223,6 +235,7 @@
 	    target            (vec+ drag-target-pos (vec- drag-equilibrium-pos offset)))
       (look-at* object)
       (when (vec~ offset +zero-vec+ +drag-camera-ends-threshold+)
+	;;(setf (euler:elapsed-time (drag-interpolator object)) 0.0)
 	(game-event:propagate-camera-drag-ends (make-instance 'game-event:camera-drag-ends))))))
 
 (defmethod look-at* ((object camera))
@@ -364,9 +377,12 @@
 	(gen-orbit-interpolator object phi-angular-velocity theta-angular-velocity dist)))
 
 (defmethod calculate-frustum ((object camera))
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
   (with-accessors ((frustum-planes frustum-planes)
 		   (view-matrix view-matrix)
 		   (projection-matrix projection-matrix)) object
+    (declare ((simple-array vec4:vec4 (6)) frustum-planes))
+    (declare ((simple-array sb-cga:matrix (1)) projection-matrix view-matrix))
     (let ((projection-view-matrix (matrix* (elt projection-matrix 0)
 					   (elt view-matrix 0))))
       (extract-frustum-plane (elt frustum-planes 0) projection-view-matrix  1)
@@ -381,10 +397,10 @@
 	(frustum-near object) near
 	(frustum-far object)  far)
   (let ((fov-radians (deg->rad fov)))
-    (setf (frustum-h-near object) (d* 2.0 (tan (d/ fov-radians 2.0))  near))
+    (setf (frustum-h-near object) (d* 2.0 (tan (d/ fov-radians 2.0)) near))
     (setf (frustum-w-near object) (d* (frustum-h-near object) ratio))
-    (setf (frustum-h-far  object) (d* 2.0 (tan (d/ fov-radians 2.0))  far))
-    (setf (frustum-w-near object) (d* (frustum-h-far object) ratio)))
+    (setf (frustum-h-far  object) (d* 2.0 (tan (d/ fov-radians 2.0)) far))
+    (setf (frustum-w-far  object) (d* (frustum-h-far object) ratio)))
   (setf (projection-matrix object) (perspective fov ratio near far)))
 
 (defmethod calculate-aabb ((object camera))
@@ -428,6 +444,54 @@
       (expand aabb near-bottom-left)
       (expand aabb near-bottom-right)
       (setf frustum-aabb aabb)
+      object)))
+
+(defmethod calculate-cone ((object camera))
+  (with-accessors ((up up) (dir dir) (target target) (pos pos)
+		   (frustum-far frustum-far) (frustum-near frustum-near)
+		   (frustum-h-near frustum-h-near)
+		   (frustum-w-near frustum-w-near)
+		   (frustum-h-far  frustum-h-far)
+		   (frustum-w-far frustum-w-far)
+		   (frustum-cone frustum-cone)) object
+    (let* ((side         (normalize (cross-product dir up)))
+	   (far-center   (vec+ pos (vec* (normalize dir) frustum-far)))
+	   (near-center  (vec+ pos (vec* (normalize dir) frustum-near)))
+	   (height       (vec- far-center near-center))
+	   (hfar/2       (d/ frustum-h-far 2.0))
+	   (wfar/2       (d/ frustum-w-far 2.0))
+	   (far-top-left (vec- (vec+ far-center (vec* up hfar/2))
+			       (vec* side wfar/2)))
+	   (directrix    (vec- far-top-left pos))
+	   (cone         (make-instance 'cone
+					:cone-apex   pos
+					:cone-height height
+					:half-angle  (acos (dot-product (normalize directrix)
+									dir)))))
+      (setf frustum-cone cone)
+      object)))
+
+(defmethod calculate-sphere ((object camera))
+  (with-accessors ((up up) (dir dir) (target target) (pos pos)
+		   (frustum-far frustum-far) (frustum-near frustum-near)
+		   (frustum-h-near frustum-h-near)
+		   (frustum-w-near frustum-w-near)
+		   (frustum-h-far  frustum-h-far)
+		   (frustum-w-far  frustum-w-far)
+		   (frustum-sphere frustum-sphere)) object
+    (let* ((side         (normalize (cross-product dir up)))
+	   (far-center   (vec+ pos (vec* (normalize dir) frustum-far)))
+	   (near-center  (vec+ pos (vec* (normalize dir) frustum-near)))
+	   (height       (vec- far-center near-center))
+	   (hfar/2       (d/ frustum-h-far 2.0))
+	   (wfar/2       (d/ frustum-w-far 2.0))
+	   (far-top-left (vec- (vec+ far-center (vec* up hfar/2))
+			       (vec* side wfar/2)))
+	   (sphere       (make-instance 'bounding-sphere
+					:sphere-radius (vec-length (vec- far-top-left
+									 (vec* height 0.5)))
+					:sphere-center (vec* height 0.5))))
+      (setf frustum-sphere sphere)
       object)))
 
 (defmethod aabb-2d ((object camera))

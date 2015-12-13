@@ -351,6 +351,8 @@
   (:use :cl)
   (:nicknames :fs)
   (:export
+   :+preprocess-include+
+   :+file-path-regex+
    :*directory-sep-regexp*
    :*directory-sep*
    :slurp-file
@@ -370,11 +372,14 @@
    :get-stat-atime
    :file-outdated-p
    :file-exists-p
+   :delete-file-if-exists
    :file-hash
    :temporary-filename
    :with-anaphoric-temp-file
    :temp-file
    :file-can-write-p
+   :preprocess-include-file
+   :preprocess
    :package-path
    :file-in-package))
 
@@ -800,6 +805,7 @@
    :aabb2~
    :valid-aabb2-p
    :expand-aabb2
+   :nexpand-aabb2
    :union-aabb2
    :aabb2->rect2
    :rect2->aabb2
@@ -891,6 +897,7 @@
    :plane-equation-as-vec4
    :same-plane-p
    :same-plane-p*
+   :vector-plane-intersection
    :plane-point-same-side-p
    :extract-frustum-plane
    :3-planes-intersection
@@ -1835,6 +1842,7 @@
    :map-cache-dir
    :window-id
    :light-color
+   :fog-density
    :fetch-window
    :fetch-world
    :setup-game-hour
@@ -1867,7 +1875,10 @@
    :setup-map-state-entity
    :move-map-state-entity
    :get-neighborhood
-   :neighborhood-by-type))
+   :neighborhood-by-type
+   :path-same-ends-p
+   :turn-on-fog
+   :turn-off-fog))
 
 (defpackage :game-event
   (:use
@@ -2171,7 +2182,6 @@
    :inventory
    :inventory-slot-pages-number
    :player-gender->gender-description
-   :path-same-ends-p
    :reset-movement-points
    :reset-magic-points
    :player-class->class-description
@@ -2464,8 +2474,11 @@
 	:constants
 	:sb-cga
 	:sb-cga-utils
-	:interfaces
+	:vec4
+	:vec2
 	:num
+	:misc
+	:interfaces
 	:euler
 	:quaternion
 	:identificable
@@ -2475,6 +2488,8 @@
   (:export
    :camera
    :frustum-aabb
+   :frustum-sphere
+   :frustum-cone
    :reorient-fp-camera
    :drag-camera
    :target
@@ -2488,6 +2503,8 @@
    :look-at
    :look-at*
    :calculate-frustum
+   :calculate-cone
+   :calculate-sphere
    :containsp
    :frustum-planes
    :calculate-aabb))
@@ -2541,6 +2558,8 @@
    :with-modelview-matrix
    :with-model-matrix
    :mesh
+   :current-time
+   :fog-density
    :do-children-mesh
    :do-triangles
    :triangles
@@ -2665,6 +2684,7 @@
    :openp
    :fountain-mesh-shell
    :container-mesh-shell
+   :furniture-mesh-shell
    :setup-projective-texture
    :calculate-decrement-move-points-entering-tile
    :decrement-move-points-rotate
@@ -2747,6 +2767,7 @@
    :index-tr-2
    :pickable-mesh-p
    :pickable-mesh
+   :origin-offset
    :lookup-tile-triangle
    :highligthed-tiles-coords
    :pick-overlay-values
@@ -2989,6 +3010,7 @@
 	:sb-cga
 	:sb-cga-utils
 	:cl-gl-utils
+	:num
 	:identificable
 	:entity
 	:game-state
@@ -3032,8 +3054,10 @@
    :main-light-pos
    :main-light-color
    :initialize-skydome
+   :cone-bounding-sphere-intersects-p
    :render-gui
    :highlight-tile-screenspace
+   :highlight-path-costs-space
    :pick-player-entity
    :pick-pointer-position
    :pick-height-terrain
@@ -3081,7 +3105,6 @@
    :terrain-chunk
    :heightmap
    :decal-weights
-   :origin-offset
    :build-mesh-dbg
    :build-mesh
    :nclip-with-aabb

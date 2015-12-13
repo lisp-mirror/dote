@@ -16,7 +16,7 @@
 
 (in-package graph)
 
-(defclass graph () 
+(defclass graph ()
   ((node-id-map-table
     :initform (make-hash-table :test #'equal)
     :initarg :node-id-map-table
@@ -88,11 +88,11 @@
       (incf start-id))))
 
 (defmethod get-first-near ((object tile-based-graph) (node sequence))
-  (remove-if #'(lambda (coord) (not 
+  (remove-if #'(lambda (coord) (not
 				(matrix:valid-index-p (matrix object)
 						      (second coord)
 						      (first coord))))
-	     (matrix:gen-4-neighbour-counterclockwise 
+	     (matrix:gen-4-neighbour-counterclockwise
 	      (elt node 0)
 	      (elt node 1) :add-center nil)))
 
@@ -147,7 +147,7 @@
 
 (defmethod get-first-near ((object matrix-graph) node)
   (let ((row (matrix:row->sequence object node)))
-    (loop 
+    (loop
        for i in row
        for ct from 0 below (length row) when i collect
        ct)))
@@ -201,9 +201,9 @@
     :initform 0
     :initarg :cost
     :accessor cost)))
-  
+
 (defmethod print-object ((object arc-graph) stream)
-  (format stream "{start ~a -> ~a cost ~a}" 
+  (format stream "{start ~a -> ~a cost ~a}"
 	  (start object)
 	  (destination object)
 	  (cost object)))
@@ -253,7 +253,7 @@
 (defmethod node->node-id ((object list-graph) node)
   (declare (ignore object))
   node)
- 
+
 (defmethod node-id->node ((object list-graph) node-id)
   (declare (ignore object))
   node-id)
@@ -281,7 +281,7 @@
   (let ((to-adj (find-node object to)))
     (when (not to-adj)
       (add-node object to)))
-  
+
   (let* ((position-arc-from (position-arc object from to))
 	 (position-arc-to (position-arc object to from)))
     (if position-arc-from
@@ -290,9 +290,9 @@
 	(setf (find-node object from)
 	      (concatenate 'list
 			   (find-node object from)
-			   (list (make-instance 'arc-graph 
-						:start from 
-						:destination to 
+			   (list (make-instance 'arc-graph
+						:start from
+						:destination to
 						:cost value)))))
     (if position-arc-to
 	(setf (cost (nth position-arc-to (find-node object to)))
@@ -300,8 +300,8 @@
 	(setf (find-node object to)
 	      (concatenate 'list
 			   (find-node object to)
-			   (list (make-instance 'arc-graph 
-						:start to 
+			   (list (make-instance 'arc-graph
+						:start to
 						:destination from
 						:cost value)))))))
 
@@ -315,7 +315,7 @@
 	      (concatenate 'list
 			   (list (first adj-from))
 			   (misc:safe-delete@ (rest adj-from) (1- position-arc-from))))
-	
+
 	(setf (find-node object to)
 	      (concatenate 'list
 			   (list (first adj-to))
@@ -411,12 +411,12 @@
 	     (cross (abs (- (* dx1 dy2) (* dx2 dy1)))))
 	(+ cost (* cross 0.05)))))
 
-(defmethod astar-search ((object graph) from-id to-id 
+(defmethod astar-search ((object graph) from-id to-id
 			 &key (heuristic-cost-function #'(lambda (object a b)
 							   (declare (ignore object a b)) 0)))
   (labels ((find-node-in-set (node-id the-set)
 	     (let ((found (bs-tree:search the-set node-id :key #'first :compare #'< :equal #'=)))
-	       (if found 
+	       (if found
 		   (bs-tree:data found)
 		   (list node-id 0))))
 	   (find-cost-in-node-set (node-id the-set)
@@ -426,7 +426,7 @@
 	  (bst (make-instance 'list-graph))
 	  (frontier (make-instance 'list-graph)))
       (pq:with-min-queue ((equal-function*)
-			  (compare-function*) 
+			  (compare-function*)
 			  #'identity)
 	(pq:push from-id)
 	(setf (traverse-cost frontier from-id from-id) 0)
@@ -441,15 +441,15 @@
 	  (let ((next-nodes (get-first-near-as-id object visited)))
 	    (loop for next in next-nodes do
 		 (let* ((new-cost (+ (find-cost-in-node-set visited cumulative-cost)
-				     (traverse-cost object (node-id->node object visited) 
+				     (traverse-cost object (node-id->node object visited)
 						    (node-id->node object next))))
-			(new-cost-plus-heuristic (+ new-cost 
+			(new-cost-plus-heuristic (+ new-cost
 						    (funcall heuristic-cost-function
 							     object
-							     (node-id->node object to-id) 
+							     (node-id->node object to-id)
 							     (node-id->node object next)
 							     (node-id->node object from-id)))))
-		   (when (or 
+		   (when (or
 			  (null (find-node frontier next))
 			  (and  (null (find-node bst next))
 				(< new-cost (find-cost-in-node-set
@@ -459,21 +459,21 @@
 					     (list next new-cost-plus-heuristic)
 					     :key #'first
 					     :key-datum #'first
-					     :compare #'< 
+					     :compare #'<
 					     :equal #'=))
 		     (setf cumulative-cost
 			   (bs-tree:insert cumulative-cost
 					     (list next new-cost)
 					     :key #'first
 					     :key-datum #'first
-					     :compare #'< 
+					     :compare #'<
 					     :equal #'=))
 		     (pq:push next)
 		     (delete-all-arcs frontier next)
 		     (setf (traverse-cost frontier next visited) new-cost)))))))))))
 
 (defmethod dijkstra-search ((object graph) from-id)
-  (astar-search object from-id nil 
+  (astar-search object from-id nil
 		:heuristic-cost-function #'(lambda (a b)
 					     (declare (ignore a b)) 0)))
 
@@ -490,7 +490,7 @@
 (defmethod from-sexp ((object list-graph) sexp) ;; NO
   (mapc #'(lambda (node)
 
-	    (push 
+	    (push
 	     (concatenate 'list
 			  (list (first node))
 			  (mapcar #'(lambda (adj)
@@ -516,7 +516,7 @@
   (labels ((conc-package (name)
 	     (alexandria:format-symbol package "~:@(~a~)" name)))
     (alexandria:with-gensyms (visited res object from-id)
-      `(defmethod ,(alexandria:format-symbol t "~:@(~a~)" name) 
+      `(defmethod ,(alexandria:format-symbol t "~:@(~a~)" name)
 	   ((,object graph) ,from-id)
 	 (with-container (,(alexandria:make-keyword package))
 	   (,(conc-package 'push) ,from-id)

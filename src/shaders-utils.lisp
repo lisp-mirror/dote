@@ -43,8 +43,11 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun get-shader-source (name)
-    (filesystem-utils:slurp-file (res:get-resource-file name +shaders-resource+))))
-
+    (let ((actual-file (fs:preprocess (res:get-resource-file name +shaders-resource+)
+				      +shaders-resource+)))
+      (prog1
+	  (filesystem-utils:slurp-file actual-file)
+	(fs:delete-file-if-exists actual-file)))))
 
 ;; (defvar *shader-dict*
 ;;   '((:solid
@@ -214,6 +217,8 @@ active program (set by sdk2.kit:use-program)."
       ;; fragment
       :height-texture-thrs
       :pick-color
+      :fog-density
+      :time
       :texture-terrain-level-1
       :texture-terrain-level-2
       :texture-terrain-level-3
@@ -240,7 +245,7 @@ active program (set by sdk2.kit:use-program)."
       :modelview-matrix
       :proj-matrix)
      (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
-               :vertex-shader   ,(get-shader-source "terrain.vert")
+	       :vertex-shader   ,(get-shader-source "terrain.vert")
 	       :fragment-shader ,(get-shader-source "terrain.frag")))
     (:water
      (:uniforms :light-pos
@@ -271,6 +276,8 @@ active program (set by sdk2.kit:use-program)."
 		:ks
 		:shine
 		:time
+		:fog-density
+		:model-matrix
 		:modelview-matrix
 		:proj-matrix
 		:texture-object)
@@ -286,6 +293,10 @@ active program (set by sdk2.kit:use-program)."
 		:kd
 		:ks
 		:shine
+		:time
+		:fog-density
+		:model-matrix
+		:model-matrix
 		:modelview-matrix
 		:proj-matrix
 		:texture-object
@@ -302,6 +313,7 @@ active program (set by sdk2.kit:use-program)."
 		:kd
 		:ks
 		:shine
+		:fog-density
 		:pick-color
 		:modelview-matrix
 		:proj-matrix
@@ -320,6 +332,7 @@ active program (set by sdk2.kit:use-program)."
 		:kd
 		:ks
 		:shine
+		:fog-density
 		:pick-color
 		:modelview-matrix
 		:proj-matrix
@@ -338,6 +351,9 @@ active program (set by sdk2.kit:use-program)."
 		:ks
 		:shine
 		:modelview-matrix
+		:model-matrix
+		:time
+		:fog-density
 		:proj-matrix
 		:texture-object
 		:scale-text-coord)
@@ -359,7 +375,10 @@ active program (set by sdk2.kit:use-program)."
 		:kd
 		:ks
 		:shine
+		:fog-density
 		:modelview-matrix
+		:model-matrix
+		:time
 		:proj-matrix
 		:proj-texture-matrix
 		:texture-object

@@ -114,7 +114,7 @@
     ((eq furniture-type +container-type+)
      'mesh:container-mesh-shell)
     (t
-     'mesh:triangle-mesh-shell)))
+     'mesh:furniture-mesh-shell)))
 
 (defun setup-furnitures (world min-x min-y x y freq keychain)
   (when (all-furnitures-but-pillars-not-empty-p world)
@@ -155,7 +155,7 @@
 (defun common-setup-furniture (world bag min-x min-y x y)
   "Note: will add ghost as well"
   (let* ((choosen  (random-elt bag))
-	 (shell    (mesh:fill-shell-from-mesh choosen))
+	 (shell    (mesh:fill-shell-from-mesh choosen 'mesh:furniture-mesh-shell))
 	 (mesh-x   (d+ (d* +terrain-chunk-size-scale+ min-x)
 		       (coord-map->chunk (d (+ x min-x)))))
 	 (mesh-y   (d+ (d* +terrain-chunk-size-scale+ min-y)
@@ -557,6 +557,10 @@
 	  (mesh:normal-map      mesh) (mesh:normal-map ref-mesh)
 	  (mesh:material-params mesh) (clone (mesh:material-params ref-mesh)))
     (prepare-for-rendering mesh)
+    (mesh:reset-aabb mesh)
+    (setf (origin-offset mesh) (vec (3d-utils:min-x (mesh:aabb mesh))
+				    +zero-height+
+				    (3d-utils:min-z (mesh:aabb mesh))))
     (building-floor-mesh:setup-texture-coord-scaling mesh)
     ;;for each tile
     (loop for x from 0.0 below (d/ w +terrain-chunk-size-scale+) do
@@ -644,6 +648,7 @@
 (defun revive-terrain-chunk (whole cache-key)
   (let ((chunk   (copy-flat   whole))
 	(revived (deserialize 'terrain-chunk:terrain-chunk cache-key)))
+    (setf (origin-offset chunk) (origin-offset revived))
     (setf (pickable-mesh:lookup-tile-triangle chunk)
 	  (pickable-mesh:lookup-tile-triangle revived))
     (setf (mesh:triangles chunk) (mesh:triangles revived))
@@ -657,9 +662,11 @@
 					     (vec4:vec4 x z
 							(d+ x +quad-tree-leaf-size+)
 							(d+ z +quad-tree-leaf-size+))
+					     :remove-orphaned-vertices t
+					     :regenerate-rendering-data t
 					     :clip-if-inside nil))
 	 (min-y (3d-utils:min-y (mesh:aabb chunk))))
-    (setf (terrain-chunk:origin-offset chunk) (vec x min-y z))
+    (setf (pickable-mesh:origin-offset chunk) (vec x min-y z))
     (pickable-mesh:populate-lookup-triangle-matrix chunk)
     (let ((in-cache (copy-flat chunk)))
       (%terrain-remove-mesh-data in-cache)
@@ -685,11 +692,14 @@
 					     #'(lambda (a)
 						 (coord-terrain->chunk a :tile-offset 0.0))
 					     aabb)
+					:remove-orphaned-vertices nil
 					:regenerate-rendering-data nil
 					:clip-if-inside t))
     (pickable-mesh:populate-lookup-triangle-matrix whole)
     (setf (quad-tree:aabb (entities world)) (entity:aabb-2d whole))
     (quad-tree:subdivide  (entities world)  quadtree-depth)
+    ;; I guess this loop works  only because labyrinths can not extend
+    ;; beyond the borders of the whole map...
     (loop for x from 0.0 below (aabb2-max-x (entity:aabb-2d whole)) by +quad-tree-leaf-size+ do
     	 (loop for z from 0.0 below (aabb2-max-y (entity:aabb-2d whole))
     	    by +quad-tree-leaf-size+ do
@@ -707,7 +717,7 @@
 					   whole
 					   chunk-cache-key)))))
     (loop for i from cache-channels-count above 0 do
-	 (let ((chunk (lparallel:receive-result channel)))
+	 (let ((chunk  (lparallel:receive-result channel)))
 	   (prepare-for-rendering chunk)
 	   (push-entity world chunk)))))
 
@@ -751,7 +761,7 @@
      (update-progress 0.6)
      (setup-floor                 world  *map*)
      (update-progress 0.7)
-     ;;(setup-ceiling              world  *map*)
+     ;(setup-ceiling              world  *map*)
      (setup-labyrinths            world  *map*)
      (update-progress 0.8)
      (setup-trees                 world  *map*)

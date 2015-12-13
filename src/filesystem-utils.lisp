@@ -16,6 +16,10 @@
 
 (in-package :filesystem-utils)
 
+(alexandria:define-constant +preprocess-include+ "^%include" :test #'string=)
+
+(alexandria:define-constant +file-path-regex+ "[\\p{L},\\/,\\\\,\\.]+" :test 'string=)
+
 (defparameter *directory-sep-regexp*
   #+windows "\\"
   #-windows "\\/")
@@ -165,6 +169,9 @@
 (defun file-exists-p (f)
   (uiop:file-exists-p f))
 
+(defun delete-file-if-exists (f)
+  (uiop:delete-file-if-exists f))
+
 (defun temporary-filename (&optional (temp-directory nil))
   (let ((tmpdir (or temp-directory (nix:getenv "TMPDIR"))))
     (if tmpdir
@@ -181,7 +188,7 @@
 				     :if-does-not-exist :create)
 	      ,@body)
 	 ,(if unlink
-	      `(nix:unlink temp-file)
+	      `(delete-file-if-exists temp-file)
 	      nil))))
 
 (defun has-file-permission-p (file permission)
@@ -189,6 +196,33 @@
 
 (defun file-can-write-p (file)
   (has-file-permission-p file :user-write))
+
+(defun preprocess-include-file (line resource)
+  (let ((included-filepath (second (cl-ppcre:split "\\p{Z}" line))))
+    (if (cl-ppcre:scan +file-path-regex+ included-filepath)
+	(filesystem-utils:slurp-file (res:get-resource-file included-filepath
+							    resource))
+	"")))
+
+(defun preprocess (file resource)
+  (let ((preprocessed-p nil))
+    (with-open-file (stream-input file :direction :input :if-does-not-exist :error)
+      (filesystem-utils:with-anaphoric-temp-file (stream-out :prefix nil :unlink nil)
+	(do ((line (read-line stream-input nil nil) (read-line stream-input nil nil)))
+	    ((null line))
+	  (cond
+	    ((cl-ppcre:scan +preprocess-include+ line)
+	     (setf preprocessed-p t)
+	     (format stream-out "~a" (preprocess-include-file line resource)))
+	    (t
+	     (format stream-out "~a~%" line))))
+	(if preprocessed-p
+	    (prog1
+		(progn
+		  (finish-output stream-out)
+		  (preprocess filesystem-utils:temp-file resource))
+	      (delete-file-if-exists filesystem-utils:temp-file))
+	    filesystem-utils:temp-file)))))
 
 (defun package-path ()
   (uiop:pathname-parent-directory-pathname

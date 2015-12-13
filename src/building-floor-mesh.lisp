@@ -37,7 +37,9 @@
 		   (compiled-shaders compiled-shaders)
 		   (triangles triangles)
 		   (material-params material-params)
-		   (texture-coord-scaling texture-coord-scaling)) object
+		   (texture-coord-scaling texture-coord-scaling)
+		   (current-time current-time)
+		   (fog-density fog-density)) object
     (declare (texture:texture texture-object))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
@@ -61,6 +63,8 @@
 	  (uniformf  compiled-shaders :ks    (ks material-params))
 	  (uniformf  compiled-shaders :shine (shininess material-params))
 	  (uniformfv compiled-shaders :pick-color pickable-mesh:+color-tile-pick-can-move+)
+	  (uniformf  compiled-shaders :time  current-time)
+	  (uniformf  compiled-shaders :fog-density fog-density)
 	  (uniform-matrix compiled-shaders :modelview-matrix 4
 				   (vector (matrix* camera-vw-matrix
 						    (elt view-matrix 0)
@@ -83,7 +87,8 @@
 		   (compiled-shaders compiled-shaders)
 		   (triangles triangles)
 		   (material-params material-params)
-		   (texture-coord-scaling texture-coord-scaling)) object
+		   (texture-coord-scaling texture-coord-scaling)
+		   (fog-density fog-density)) object
     (declare (texture:texture texture-object normal-map))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
@@ -108,6 +113,7 @@
 	  (uniformf  compiled-shaders :kd    (kd material-params))
 	  (uniformf  compiled-shaders :ks    (ks material-params))
 	  (uniformf  compiled-shaders :shine (shininess material-params))
+	  (uniformf  compiled-shaders :fog-density fog-density)
 	  (uniformfv compiled-shaders :pick-color pickable-mesh:+color-tile-pick-can-move+)
 	  (uniform-matrix compiled-shaders :modelview-matrix 4
 				   (vector (matrix* camera-vw-matrix

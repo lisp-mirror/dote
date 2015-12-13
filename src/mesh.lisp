@@ -248,6 +248,10 @@
 (defun init-texture-coordinates-slot ()
   (misc:make-array-frame 0 (vec2 0.0 0.0) 'vec2 nil))
 
+(defmacro with-camera ((camera renderer) &body body)
+  `(let* ((,camera (camera ,renderer)))
+     ,@body))
+
 (defmacro with-camera-view-matrix ((matrix renderer &key (wrapped nil)) &body body)
   `(let* ((,matrix ,(if wrapped
 			`(the (simple-array simple-array (1))
@@ -521,6 +525,12 @@
 
 (gen-accessors-matrix view-matrix)
 
+(defmethod current-time ((object triangle-mesh))
+  (game-state:current-time (state object)))
+
+(defmethod fog-density ((object triangle-mesh))
+  (game-state:fog-density (state object)))
+
 (defmethod (setf pos) (new-pos (object triangle-mesh))
   (setf (slot-value object 'pos) new-pos))
 
@@ -693,6 +703,8 @@
 
 (defgeneric calculate-cost-position (object))
 
+(defgeneric rendering-needed-p (object renderer))
+
 (defmethod remove-mesh-data ((object triangle-mesh))
   (setf (normals       object) nil
 	(vertices      object) nil
@@ -836,6 +848,10 @@
   (with-accessors ((pos pos)) object
     (ivec2:ivec2 (misc:coord-chunk->costs (elt pos 0))
 		 (misc:coord-chunk->costs (elt pos 2)))))
+
+(defmethod rendering-needed-p ((object triangle-mesh) renderer)
+  (declare (ignore object renderer))
+  t)
 
 (defmethod get-first-near ((object triangle-mesh) vertex-index)
   (misc:do-while* ((first-face (find-triangle-by-vertex-index object vertex-index))
@@ -1528,7 +1544,7 @@
 (defmethod render ((object triangle-mesh) renderer)
   (with-accessors ((normal-map normal-map)
 		   (renderp renderp))      object
-    (when renderp
+    (when (and renderp (rendering-needed-p object renderer))
       (if normal-map
 	  (render-normalmap object renderer)
 	  (render-phong object renderer))
@@ -1545,7 +1561,9 @@
 		   (view-matrix view-matrix)
 		   (compiled-shaders compiled-shaders)
 		   (triangles triangles)
-		   (material-params material-params)) object
+		   (material-params material-params)
+		   (current-time current-time)
+		   (fog-density fog-density)) object
     (declare (texture:texture texture-object))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
@@ -1566,6 +1584,9 @@
 	  (uniformf  compiled-shaders :kd    (kd material-params))
 	  (uniformf  compiled-shaders :ks    (ks material-params))
 	  (uniformf  compiled-shaders :shine (shininess material-params))
+	  (uniformf  compiled-shaders :time  current-time)
+	  (uniformf  compiled-shaders :fog-density fog-density)
+	  (uniform-matrix compiled-shaders :model-matrix 4 model-matrix nil)
 	  (uniform-matrix compiled-shaders :modelview-matrix 4
 				   (vector (matrix* camera-vw-matrix
 						    (elt view-matrix 0)
@@ -1587,7 +1608,9 @@
 		   (view-matrix view-matrix)
 		   (compiled-shaders compiled-shaders)
 		   (triangles triangles)
-		   (material-params material-params)) object
+		   (material-params material-params)
+		   (current-time current-time)
+		   (fog-density fog-density)) object
     (declare (texture:texture texture-object normal-map))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
@@ -1610,6 +1633,9 @@
 	  (uniformf  compiled-shaders :kd    (kd material-params))
 	  (uniformf  compiled-shaders :ks    (ks material-params))
 	  (uniformf  compiled-shaders :shine (shininess material-params))
+	  (uniformf  compiled-shaders :time  current-time)
+	  (uniformf  compiled-shaders :fog-density fog-density)
+	  (uniform-matrix compiled-shaders :model-matrix 4 model-matrix nil)
 	  (uniform-matrix compiled-shaders :modelview-matrix 4
 				   (vector (matrix* camera-vw-matrix
 						    (elt view-matrix 0)
@@ -2570,6 +2596,18 @@
     :initarg :animation-speed
     :accessor animation-speed)))
 
+(defmethod rendering-needed-p ((object tree-mesh-shell) renderer)
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (with-camera (camera renderer)
+    (let* ((center     (aabb-center (aabb object)))
+	   (pos-camera (pos camera))
+	   (a      (vec2 (elt center 0)     (elt center 2)))
+	   (b      (vec2 (elt pos-camera 0) (elt pos-camera 2))))
+      (declare (vec center pos-camera))
+      (and (d< (vec2-length (vec2- a b))
+	       (d* 2.0 +quad-tree-leaf-size+))
+	   (world:cone-bounding-sphere-intersects-p renderer object)))))
+
 (defmethod calculate :after ((object tree-mesh-shell) dt)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (ignore dt))
@@ -2588,7 +2626,8 @@
 		   (compiled-shaders compiled-shaders)
 		   (triangles triangles)
 		   (material-params material-params)
-		   (el-time el-time)) object
+		   (el-time el-time)
+		   (fog-density fog-density)) object
     (declare (texture:texture texture-object))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
@@ -2610,6 +2649,8 @@
 	    (uniformf  compiled-shaders :ks    (ks material-params))
 	    (uniformf  compiled-shaders :shine (shininess material-params))
 	    (uniformf  compiled-shaders :time  el-time)
+	    (uniformf  compiled-shaders :fog-density fog-density)
+	    (uniform-matrix compiled-shaders :model-matrix 4 model-matrix nil)
 	    (uniform-matrix compiled-shaders :modelview-matrix 4
 			    (vector (matrix* camera-vw-matrix
 					     (elt view-matrix 0)
@@ -2649,9 +2690,6 @@
     ;; the smoke tray
     (setf (projector object) (look@ center +zero-vec+ +y-axe+))
     (setf (id              object) +id-skydome+)))
-
-(defmethod current-time ((object triangle-mesh))
-  (game-state:current-time (state object)))
 
 (defmethod calculate ((object skydome) dt)
   (declare (ignore dt))

@@ -83,10 +83,10 @@
     :initarg :current-frame-offset
     :accessor current-frame-offset
     :type fixnum)
-   (current-time
+   (current-animation-time
     :initform 0
-    :initarg :current-time
-    :accessor current-time
+    :initarg :current-animation-time
+    :accessor current-animation-time
     :type single-float)
    (fps
     :initform 20
@@ -595,14 +595,14 @@
 		   (end-frame end-frame)
 		   (current-frame-offset current-frame-offset)
 		   (fps fps)
-		   (current-time current-time)
+		   (current-animation-time current-animation-time)
 		   (stop-animation stop-animation)
 		   (cycle-animation cycle-animation)
 		   (renderer-data-normals-obj-space renderer-data-normals-obj-space)
 		   (data-aabb renderer-data-aabb-obj-space)
 		   (current-action current-action)
 		   (ghost ghost)) object
-    (declare (single-float current-time fps))
+    (declare (single-float current-animation-time fps))
     (declare (fixnum end-frame starting-frame current-frame-offset))
     (declare (simple-array frames))
     (declare (string tag-key-parent))
@@ -617,7 +617,7 @@
        (calculate-move object dt)
        (update-visibility-cone object)))
     (unless stop-animation
-      (let ((next-time (+ current-time dt))
+      (let ((next-time (+ current-animation-time dt))
 	    (frames-numbers (the fixnum (1+ (- end-frame starting-frame))))
 	    (frame-freq (/ 1.0 fps)))
 	(declare (single-float next-time frame-freq))
@@ -625,10 +625,10 @@
 	(if (> next-time frame-freq)
 	    (setf current-frame-offset (mod (the unsigned-byte (1+ current-frame-offset))
 					    frames-numbers)
-		  current-time 0.0)
-	    (setf current-time next-time))
+		  current-animation-time 0.0)
+	    (setf current-animation-time next-time))
 	(let* ((next-frame-offset    (mod (the fixnum (1+ current-frame-offset)) frames-numbers))
-	       (interpolation-factor (d* fps current-time))
+	       (interpolation-factor (d* fps current-animation-time))
 	       (starting-frame-idx   (f+ starting-frame current-frame-offset))
 	       (next-frame-idx       (f+ starting-frame next-frame-offset)))
 	  (declare (single-float interpolation-factor))
@@ -680,6 +680,7 @@
 				   (gl-utils:fast-glaref renderer-data-vertices (+ pos 1))
 				   (gl-utils:fast-glaref renderer-data-vertices (+ pos 2)))))
 		   (expand aabb vert)))
+	    (setf (bounding-sphere object) (aabb->bounding-sphere aabb))
 	    (when (render-aabb object)
 	      (make-data-for-opengl-aabb-obj-space object))))))
     (bubbleup-modelmatrix object)
@@ -737,14 +738,14 @@
 		   (end-frame end-frame)
 		   (current-frame-offset current-frame-offset)
 		   (fps fps)
-		   (current-time current-time)
+		   (current-animation-time current-animation-time)
 		   (animation-table animation-table)) object
     (let ((anim-spec (assoc animation animation-table :test #'eql)))
       (when anim-spec
 	(setf starting-frame (second anim-spec)
 	      end-frame (third anim-spec)
 	      fps (fourth anim-spec)
-	      current-time 0.0)
+	      current-animation-time 0.0)
 	(calculate object 0.0)))))
 
 (defun load-md2-model (modeldir &key

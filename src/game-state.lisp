@@ -16,23 +16,27 @@
 
 (in-package :game-state)
 
-(alexandria:define-constant +start-day+     6 :test #'=)
+(alexandria:define-constant +start-day+     6                :test #'=)
 
-(alexandria:define-constant +end-day+      20 :test #'=)
+(alexandria:define-constant +end-day+      20                :test #'=)
 
-(alexandria:define-constant +start-night+  21 :test #'=)
+(alexandria:define-constant +start-night+  21                :test #'=)
 
-(alexandria:define-constant +end-night+     5 :test #'=)
+(alexandria:define-constant +end-night+     5                :test #'=)
 
-(alexandria:define-constant +zenith-night+ 23 :test #'=)
+(alexandria:define-constant +zenith-night+ 23                :test #'=)
 
-(alexandria:define-constant +zenith-day+   13 :test #'=)
+(alexandria:define-constant +zenith-day+   13                :test #'=)
 
 (alexandria:define-constant +yellow-light-color+  §cffff99ff :test #'vec4~)
 
 (alexandria:define-constant +white-light-color+   §cffffffff :test #'vec4~)
 
 (alexandria:define-constant +blueish-light-color+ §c7ba8e4ff :test #'vec4~)
+
+(alexandria:define-constant +density-no-fog+      0.0        :test #'=)
+
+(alexandria:define-constant +density-fog+         0.004      :test #'=)
 
 (defun hour->light-color (h)
   (cond
@@ -186,6 +190,10 @@
     :initarg  :light-color
     :initform (vec4->vec §cffffffff)
     :documentation "The diffuse and specular color (phong shading) for sun or moon light")
+   (fog-density
+    :accessor fog-density
+    :initarg  :fog-density
+    :initform +density-no-fog+)
    (movement-costs
     :accessor movement-costs
     :initarg  :movement-costs
@@ -281,6 +289,12 @@
 
 (defgeneric approx-terrain-height@pos (object x z))
 
+(defgeneric path-same-ends-p (object start end))
+
+(defgeneric turn-on-fog (object))
+
+(defgeneric turn-off-fog (object))
+
 (defmethod fetch-render-window ((object game-state))
   (and (window-id object)
        (sdl2.kit-utils:fetch-window (window-id object))))
@@ -333,8 +347,6 @@
 (defun heuristic-manhattam ()
   #'(lambda (object a b start-node)
       (declare (ignore object))
-      (declare ((simple-array fixnum (2)) a b start-node))
-      (declare (optimize (speed 3) (safety 0) (debug 0)))
       (let* ((a-x   (d (elt a 0)))
 	     (a-y   (d (elt a 1)))
 	     (b-x   (d (elt b 0)))
@@ -521,3 +533,16 @@
 			(or (null type)
 			    (eq (el-type el) type)))
 		    :w-offset w-offset :h-offset h-offset))
+
+(defmethod path-same-ends-p ((object game-state) start end)
+  (with-accessors ((selected-path selected-path)) object
+    (when selected-path
+      (let ((tiles (tiles selected-path)))
+	(ivec2:ivec2= (alexandria:first-elt tiles) start)
+	(ivec2:ivec2= (alexandria:last-elt  tiles) end)))))
+
+(defmethod turn-on-fog ((object game-state))
+  (setf (fog-density object) +density-fog+))
+
+(defmethod turn-off-fog ((object game-state))
+  (setf (fog-density object) +density-no-fog+))

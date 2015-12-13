@@ -28,7 +28,7 @@
 
 (defparameter *zeye*   8.0)
 
-(defparameter *far*   440.0)
+(defparameter *far*    440.0)
 
 (defparameter *near*    5.0)
 
@@ -64,7 +64,7 @@
     :accessor cpu-time-elapsed
     :initarg  :cpu-time-elapsed)
    (delta-time-elapsed
-    :initform 0
+    :initform (sdl2:get-ticks)
     :accessor delta-time-elapsed
     :initarg  :delta-time-elapsed)
    (frames-count
@@ -196,7 +196,7 @@
 	    (incf cpu-time-elapsed float-dt)
 	    (do ((fdt (num:d/ float-dt 1000.0)))
 		((not (num:d> fdt 0.0)))
-	      (let ((actual-dt (min +game-fps+ fdt)))
+	      (let ((actual-dt (min (/ +game-fps+ 1000) fdt)))
 		(decf fdt actual-dt)
 		(interfaces:calculate world actual-dt))))
 	  ;; rendering
@@ -296,6 +296,7 @@
 	      (mtree:add-child (world:gui (world object)) (widget:make-player-generator (world object)))
 	      (setf (interfaces:compiled-shaders (world:gui (world object))) (compiled-shaders object))
 	      (setf *map-loaded-p* t)
+	      (setf (delta-time-elapsed object) (sdl2:get-ticks))
 	      (gl:clear-color 0.039215688 0.17254902 0.08235294 1.0)))
 	(when (find text '("Y" "y" "X" "x") :test #'string=)
 	  (when (string= text "Y")
@@ -364,7 +365,7 @@
 		      (vec (num:d- (elt old-pos 0) +terrain-chunk-tile-size+)
 			   0.0
 			   (elt old-pos 2)))))
-	    (let ((height-terrain (world::pick-height-terrain world
+	    (let ((height-terrain (world:pick-height-terrain world
 							      (elt (entity:pos *placeholder*) 0)
 							      (elt (entity:pos *placeholder*) 2))))
 	      (when height-terrain
@@ -387,7 +388,6 @@
 	      (when (not (widget:on-mouse-pressed (world:gui world) gui-event))
 		;; test movement
 		(if (world:pick-player-entity world world x y)
-		    (misc:dbg "pick ~a" (id selected-pc))
 		    (let* ((selected-path (game-state:selected-path main-state)))
 		      (when selected-path
 			(let ((movement-event (make-instance 'game-event:move-entity-along-path-event
@@ -406,7 +406,7 @@
       (let* ((player-position       (entity:pos selected-pc))
 	     (cost-player-position  (ivec2 (misc:coord-chunk->costs (elt player-position 0))
 					   (misc:coord-chunk->costs (elt player-position 2))))
-	     (cost-pointer-position (world::pick-pointer-position world world x y))
+	     (cost-pointer-position (world:pick-pointer-position world world x y))
 	     (cost-pointer          (or (and cost-pointer-position
 					     (game-state:get-cost main-state
 								  (elt cost-pointer-position 0)
@@ -414,9 +414,9 @@
 					+invalicable-element-cost+))
 	     (ghost                 (entity:ghost selected-pc)))
 	(when (and cost-pointer-position
-		   (not (character:path-same-ends-p (entity:ghost selected-pc)
-					       cost-player-position
-					       cost-pointer-position)))
+		   (not (path-same-ends-p main-state
+					  cost-player-position
+					  cost-pointer-position)))
 	  (let ((min-cost               (misc:map-manhattam-distance cost-pointer-position
 								     cost-player-position))
 		(player-movement-points (character:current-movement-points ghost)))
@@ -433,7 +433,7 @@
 			   (<= cost player-movement-points))
 		  (setf (game-state:selected-path main-state)
 			(game-state:make-movement-path path cost))
-		  (world::highlight-path-costs-space world world path))))))))))
+		  (world:highlight-path-costs-space world world path))))))))))
 
 (defmethod mousemotion-event ((object test-window) ts mask x y xr yr)
   (with-accessors ((world world)) object

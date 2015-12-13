@@ -1,5 +1,7 @@
 #version 330 core
 
+%include fog.vert.inc
+
 layout (location = 0) in vec4 position;
 
 layout (location = 1)  in float pick_weights;
@@ -30,5 +32,7 @@ void main () {
   ADS(position, normal, vec4(light_pos,1.0), normal_matrix, modelview_matrix, N, V, L);
   frag_text_coord = texture_coord;
   pick_weight     = pick_weights;
+  eye_position    = modelview_matrix * position;
+  world_position  = position;
   gl_Position = proj_matrix *  modelview_matrix * position;
 }

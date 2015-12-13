@@ -1,11 +1,15 @@
 #version 330 core
 
+%include fog.frag.inc
+
 in vec2 frag_text_coord;
 in vec3 eye_dir;
 in vec3 light_dir;
 in vec3 N_stat;
 
 in float pick_weight;
+
+uniform float time = 0.0;
 
 uniform sampler2D texture_object;
 uniform sampler2D normal_map;
@@ -37,5 +41,6 @@ void main () {
   vec3 spec_color     = ks * (pow(max(dot(R, V),0.0),shine) * is);
 
   color = mix(vec4(amb_diff_color,1.0) + vec4(spec_color,1.0), pick_color, pick_weight);
+  float fog_factor    = calc_fog_factor(eye_position, world_position, 0.0);
+  color               = mix(color, fog_color, fog_factor);
 }
-

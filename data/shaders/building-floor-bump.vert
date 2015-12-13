@@ -10,6 +10,8 @@ layout (location = 8) in vec3 tangent;
 
 layout (location = 12) in vec2 texture_coord;
 
+%include fog.vert.inc
+
 uniform mat4 modelview_matrix;
 //uniform mat4 view_matrix;
 uniform mat4 proj_matrix;
@@ -36,5 +38,7 @@ void main () {
   frag_text_coord = texture_coord;
   eye_dir         = normalize(TBN * -P.xyz);
   light_dir       = normalize(TBN * (light_pos - P.xyz));
+  eye_position           = modelview_matrix * position;
+  world_position  = position;
   gl_Position     = proj_matrix * P;
 }

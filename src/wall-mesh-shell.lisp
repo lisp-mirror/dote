@@ -20,6 +20,7 @@
 
 (defclass decorated-wall-mesh-shell (triangle-mesh-shell) ())
 
+
 (defmethod render-phong ((object decorated-wall-mesh-shell) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((vbo vbo)
@@ -32,7 +33,9 @@
 		   (view-matrix view-matrix)
 		   (compiled-shaders compiled-shaders)
 		   (triangles triangles)
-		   (material-params material-params)) object
+		   (material-params material-params)
+		   (current-time current-time)
+		   (fog-density fog-density)) object
     (declare (texture:texture texture-object))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
@@ -55,6 +58,9 @@
 	(uniformf  compiled-shaders :kd    (kd material-params))
 	(uniformf  compiled-shaders :ks    (ks material-params))
 	(uniformf  compiled-shaders :shine (shininess material-params))
+	(uniformf  compiled-shaders :time  current-time)
+	(uniformf  compiled-shaders :fog-density fog-density)
+	(uniform-matrix compiled-shaders :model-matrix 4 model-matrix nil)
 	(uniform-matrix compiled-shaders :modelview-matrix 4
 				 (vector (matrix* camera-vw-matrix
 						  (elt view-matrix 0)

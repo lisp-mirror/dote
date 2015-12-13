@@ -16,13 +16,13 @@
 
 (in-package :mesh)
 
-(defclass fountain-mesh-shell (triangle-mesh-shell) ())
+(defclass furniture-mesh-shell (triangle-mesh-shell) ())
 
-(defmethod game-event:on-game-event ((object fountain-mesh-shell) (event game-event:end-turn))
+(defmethod game-event:on-game-event ((object furniture-mesh-shell) (event game-event:end-turn))
   (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
   nil)
 
-(defmethod rendering-needed-p ((object fountain-mesh-shell) renderer)
+(defmethod rendering-needed-p ((object furniture-mesh-shell) renderer)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (with-camera (camera renderer)
     (let* ((center     (aabb-center (aabb object)))

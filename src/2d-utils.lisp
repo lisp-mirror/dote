@@ -234,6 +234,20 @@
       (setf (elt cp 3) (elt coord 1)))
     cp))
 
+(defun nexpand-aabb2 (aabb coord)
+  (when (< (elt coord 0) (elt aabb 0))
+    (setf (elt aabb 0) (elt coord 0)))
+
+  (when (> (elt coord 0) (elt aabb 2))
+    (setf (elt aabb 2) (elt coord 0)))
+
+  (when (< (elt coord 1) (elt aabb 1))
+    (setf (elt aabb 1) (elt coord 1)))
+
+  (when (> (elt coord 1) (elt aabb 3))
+    (setf (elt aabb 3) (elt coord 1)))
+  aabb)
+
 (defun union-aabb2 (aabb aabb2)
   (let ((cp (copy-vec4 aabb)))
     (setf cp (expand-aabb2 cp (subseq aabb2 0 2)))

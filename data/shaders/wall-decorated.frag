@@ -1,5 +1,7 @@
 #version 330 core
 
+%include fog.frag.inc
+
 in vec2 frag_text_coord;
 
 in vec4 proj_text_coord;
@@ -22,11 +24,13 @@ uniform float  ks   = 1.0;
 
 uniform float shine = 12.0;
 
+uniform float time;
+
 out vec4 color;
 
 void main () {
   vec4 texel          = texture2D(texture_object,frag_text_coord);
-  vec4 decal          = proj_text_coord.q < 0 ? 
+  vec4 decal          = proj_text_coord.q < 0 ?
                         vec4(0.0) :
                         texture2DProj(texture_projector, proj_text_coord);
   vec3 N              = normalize(N);
@@ -37,5 +41,6 @@ void main () {
   vec3 spec_color     = ks * (pow(max(dot(R, V),0.0),shine) * is);
   vec4 color_raw      = vec4(amb_diff_color,1.0) * texel + vec4(spec_color,1.0);
   color               = mix(color_raw, decal, decal.a);
+  float fog_factor = calc_fog_factor(eye_position, world_position, time);
+  color      = mix(color, fog_color, fog_factor);
 }
-

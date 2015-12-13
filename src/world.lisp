@@ -182,11 +182,11 @@
 
 (defgeneric get-window-size (object))
 
-(defgeneric frustum-intersects-p (object ent))
-
 (defgeneric frustum-bounding-sphere-intersects-p (object ent))
 
 (defgeneric frustum-aabb-intersects-p (object ent))
+
+(defgeneric cone-bounding-sphere-intersects-p (object ent))
 
 (defgeneric initialize-skydome (object &key bg clouds-1 clouds-2 clouds-3 smoke weather-type))
 
@@ -210,11 +210,11 @@
 
 (defgeneric push-interactive-entity (object entity type occlusion-value))
 
+(defgeneric push-terrain-chunk (object entity aabb))
+
 (defgeneric setup-map-state-tile (object x y type id occlusion-value))
 
 (defgeneric set-window-accepts-input (object value))
-
-(defgeneric move-map-state-entity (object entity from))
 
 (defmethod iterate-quad-tree ((object world) function probe)
   (quad-tree:iterate-nodes-intersect (entities object)
@@ -315,6 +315,7 @@
   (calculate (skydome object) dt)
   (calculate-frustum (camera object))
   (calculate-aabb    (camera object))
+  (calculate-cone    (camera object))
   (quad-tree:iterate-nodes (entities object)
 			   #'(lambda (a) (map 'nil #'(lambda(e) (calculate e dt))
 					      (quad-tree:data a)))))
@@ -323,20 +324,17 @@
   (render (camera  object) object)
   (render (skydome object) object)
   (walk-quad-tree (object)
-    (when (and (not (water-mesh-p entity))
-	       (frustum-intersects-p object entity))
+    (when (and (not (water-mesh-p entity)))
       (render entity renderer)))
   (walk-quad-tree (object)
-    (when (and (water-mesh-p entity)
-	       (frustum-intersects-p object entity))
+    (when (water-mesh-p entity)
       (render entity renderer))))
 
 (defmethod render-for-reflection ((object world) (renderer world))
   (render-for-reflection (camera  object) object)
   (render-for-reflection (skydome object) object)
   (walk-quad-tree (object)
-    (when (frustum-intersects-p object entity)
-      (render-for-reflection entity renderer))))
+    (render-for-reflection entity renderer)))
 
 (defmethod pick-pointer-position ((object world) renderer x y)
   (walk-quad-tree (object)
@@ -356,7 +354,7 @@
 
 (defmethod highlight-tile-screenspace ((object world) renderer x y)
   "Coordinates in screen space"
-    (walk-quad-tree-anyway (object)
+    (walk-quad-tree (object)
       (multiple-value-bind (picked cost-matrix-position matrix-position raw-position)
 	  (pick-pointer-position entity renderer x y)
 	(declare (ignore raw-position))
@@ -379,7 +377,9 @@
 	   (block walking
 	     (walk-quad-tree-anyway (object)
 	       (when (pickable-mesh-p entity)
-		 (let ((tile-coord (cost-coord->lookup-tile entity (elt coord 1) (elt coord 0))))
+		 (let ((tile-coord (cost-coord->lookup-tile entity
+							    (elt coord 1)
+							    (elt coord 0))))
 		   (handler-bind ((null-tile-element
 				   #'(lambda(e)
 				       (declare (ignore e))
@@ -450,13 +450,7 @@
 
 (defmethod push-entity ((object world) entity)
   (bubbleup-modelmatrix entity)
-  (quad-tree:push-down (entities object) entity)
-  (let ((paths '()))
-    (quad-tree:iterate-nodes (entities object)
-			    #'(lambda (q)
-				(when (not (misc:vector-empty-p (quad-tree:data q)))
-				  (setf paths (mapcar #'quad-tree:node-quadrant
-						      (quad-tree:path-to q))))))))
+  (quad-tree:push-down (entities object) entity))
 
 (defmethod (setf compiled-shaders) (new-value (object world))
   (with-slots (compiled-shaders) object
@@ -466,26 +460,56 @@
 (defmethod get-camera-pos ((object world))
   (pos (camera object)))
 
-(defmethod frustum-intersects-p ((object world) ent)
-  (or (frustum-bounding-sphere-intersects-p object ent)
-      (frustum-aabb-intersects-p            object ent)))
-
 (defmethod frustum-bounding-sphere-intersects-p ((object world) ent)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (world object))
-  (let* ((sphere (bounding-sphere ent))
-	 (center (sphere-center sphere))
-	 (radius (sphere-radius sphere))
-	 (planes (frustum-planes (camera object))))
-    (declare ((simple-array vec4:vec4 (6)) planes))
-    (loop for plane across planes do
-	 (let* ((normal   (vec (elt plane 0) (elt plane 1) (elt plane 2)))
-		(distance (elt plane 3))
-		(totally-outside (num:d< (num:d+ (dot-product normal center) distance)
-					 (num:d- radius))))
-	   (when totally-outside
-	     (return-from frustum-bounding-sphere-intersects-p nil))))
-    t))
+  (let* ((ent-sphere (bounding-sphere ent))
+	 (ent-center (sphere-center   ent-sphere))
+	 (camera-sphere (frustum-sphere (camera object)))
+	 (camera-sphere-center (sphere-center camera-sphere))
+	 (camera-sphere-radius (sphere-radius camera-sphere)))
+    (declare (num:desired-type camera-sphere-radius))
+    (num:d< (vec-length (vec- ent-center camera-sphere-center))
+	    camera-sphere-radius)))
+
+(defmethod cone-bounding-sphere-intersects-p ((object world) ent)
+  (declare (optimize (debug 3) (safety 3) (speed 0)))
+  (declare (world object))
+  (with-accessors ((camera camera)) object
+    ;;      e          h
+    ;;       +--------+
+    ;;      /|       /|
+    ;;     / |      / |
+    ;; f  +--------+ g|
+    ;;    |  |     |  |
+    ;;    |a +-----|--+ d
+    ;;    | /      | /
+    ;;    |/       |/
+    ;;  b +--------+ c
+    (let* ((aabb  (aabb ent))
+	   (min-x (min-x aabb))
+	   (min-y (min-y aabb))
+	   (min-z (min-z aabb))
+	   (max-x (max-x aabb))
+	   (max-y (max-y aabb))
+	   (max-z (max-z aabb))
+	   (a     (vec min-x min-y min-z))
+	   (b     (vec min-x min-y max-z))
+	   (c     (vec max-x min-y max-z))
+	   (d     (vec max-x min-y min-z))
+	   (e     (vec min-x max-y min-z))
+	   (f     (vec min-x max-y max-z))
+	   (g     (vec max-x max-y max-z))
+	   (h     (vec max-x max-y min-z))
+	   (cone  (frustum-cone camera)))
+      (or (point-in-cone-p cone a)
+	  (point-in-cone-p cone b)
+	  (point-in-cone-p cone c)
+	  (point-in-cone-p cone d)
+	  (point-in-cone-p cone e)
+	  (point-in-cone-p cone f)
+	  (point-in-cone-p cone g)
+	  (point-in-cone-p cone h)))))
 
 (defmethod frustum-aabb-intersects-p ((object world) ent)
   (declare (optimize (debug 0) (safety 0) (speed 3)))

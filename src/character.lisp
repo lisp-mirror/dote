@@ -776,8 +776,6 @@
 
 (defgeneric player-gender->gender-description (object))
 
-(defgeneric path-same-ends-p (object start end))
-
 (defgeneric reset-movement-points (object))
 
 (defgeneric reset-magic-points (object))
@@ -825,13 +823,6 @@
        (_ "male"))
       (:female
        (_ "female")))))
-
-(defmethod path-same-ends-p ((object player-character) start end)
-  (with-accessors ((current-path current-path)) object
-    (and current-path
-	 (and current-path
-	      (ivec2:ivec2= (alexandria:first-elt current-path) start)
-	      (ivec2:ivec2= (alexandria:last-elt  current-path) end)))))
 
 (defmethod reset-movement-points ((object player-character))
   (setf (current-movement-points object) (movement-points object)))

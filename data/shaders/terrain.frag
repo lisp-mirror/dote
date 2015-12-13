@@ -1,5 +1,7 @@
 #version 330 core
 
+%include fog.frag.inc
+
 in vec2 frag_text_coord;
 
 in vec3 N;
@@ -27,6 +29,8 @@ uniform vec4 height_texture_thrs = vec4(0.02, 0.03, 0.2, 0.65);
 
 uniform vec4 pick_color          = vec4(0.0, 0.0, 1.0, 1.0);
 
+uniform float time = 0.0;
+
 // sand
 uniform sampler2D texture_terrain_level_1;
 // grass
@@ -35,7 +39,7 @@ uniform sampler2D texture_terrain_level_2;
 uniform sampler2D texture_terrain_level_3;
 // soil
 uniform sampler2D texture_terrain_rock_level_1;
-// statigraphic rock 
+// stratigraphic rock
 uniform sampler2D texture_terrain_rock_level_2;
 // dry soil
 uniform sampler2D texture_soil_decal;
@@ -66,7 +70,7 @@ uniform float scale_soil_text_coord     = 2.0;
 out vec4 color;
 
 float lerp (in float from, in float to, in float pos) {
-  float w = (pos - from) / (to - from); 
+  float w = (pos - from) / (to - from);
   return w;
 }
 
@@ -92,7 +96,7 @@ vec4 terrain_color_by_height() {
 	    height <= height_texture_thrs[thrs_snow]){
     vec4 col_snow  = texture2D(texture_terrain_level_3, frag_text_coord);
     return mix(col_empty,col_snow,
-	       smoothstep(0.0, 1.0, 
+	       smoothstep(0.0, 1.0,
 			  lerp(height_texture_thrs[thrs_empty], height_texture_thrs[thrs_snow],
 			       height)));
   }else {
@@ -125,23 +129,24 @@ vec4 terrain_color (){
 
   vec4 weights = sample_decal_weigths();
 
-  vec4 color_soil = texture2D(texture_soil_decal, 
+  vec4 color_soil = texture2D(texture_soil_decal,
 			      frag_text_coord * scale_soil_text_coord);
   raw_terrain = mix(raw_terrain, color_soil, weights[idx_decal_soil]);
-  
-  vec4 color_building = texture2D(texture_building_decal, 
+
+  vec4 color_building = texture2D(texture_building_decal,
 				  frag_text_coord  * scale_building_text_coord);
   raw_terrain = mix(raw_terrain, color_building, weights[idx_decal_building]);
-  
-  vec4 color_roads = texture2D(texture_roads_decal, 
+
+  vec4 color_roads = texture2D(texture_roads_decal,
 			       frag_text_coord * scale_road_text_coord);
   raw_terrain = mix(raw_terrain, color_roads, weights[idx_decal_road]);
-  
-  
-  //raw_terrain = weights;  
+
+
+  //raw_terrain = weights;
   return raw_terrain;
 
 }
+
 
 void main () {
   vec3 N = normalize(N);
@@ -159,5 +164,6 @@ void main () {
   color = mix(vec4(amb_diff_color,1.0) * texel + vec4(spec_color,1.0),
 	      pick_color,
 	      pick_weight);
+  float fog_factor = calc_fog_factor(eye_position, world_position, time);
+  color      = mix(color, fog_color, fog_factor);
 }
-

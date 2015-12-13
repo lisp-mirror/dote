@@ -1,5 +1,9 @@
 #version 330 core
 
+%include fog.frag.inc
+
+uniform float time = 0.0;
+
 in vec2 frag_text_coord;
 
 in vec3 N;
@@ -39,5 +43,6 @@ void main () {
   vec3 spec_color     = ks * (pow(max(dot(R, V),0.0),shine) * is);
   color               = vec4(amb_diff_color,1.0) * texel + vec4(spec_color,1.0);
   color               = mix(color, pick_color, pick_weight);
+  float fog_factor = calc_fog_factor(eye_position, world_position, time);
+  color      = mix(color, fog_color, fog_factor);
 }
-

@@ -68,7 +68,7 @@
        (setf (y-axe object) (transform-direction (y-axe object) rotation-mat))))
     (setf (direction object) (transform-direction (direction object) rotation-mat))))
 
-(defmethod rotate-turtle-arbitrary-axe ((object turtle) (angle float) 
+(defmethod rotate-turtle-arbitrary-axe ((object turtle) (angle float)
 					&key (axe (vec 0.0 1.0 0.0)))
 
   (let* ((rotation-mat (rotate-around axe (coerce (deg->rad angle) 'single-float))))
@@ -76,7 +76,7 @@
     (setf (y-axe object) (transform-direction (y-axe object) rotation-mat))
     (setf (z-axe object) (transform-direction (z-axe object) rotation-mat))
     (setf (direction object) (transform-direction (direction object) rotation-mat))))
-      
+
 (defmethod clone-turtle ((object turtle))
   (with-accessors ((x x-axe) (y y-axe) (z z-axe)
 		   (direction direction)) object
@@ -94,7 +94,7 @@
 
 (defun make-turtle (&optional (x-axe +x-axe+) (y-axe +y-axe+) (z-axe +z-axe+)
 		    (direction +y-axe+))
-  (make-instance 'turtle 
+  (make-instance 'turtle
 		   :x-axe x-axe
 		   :y-axe y-axe
 		   :x-axe z-axe
@@ -183,8 +183,6 @@
 
 (alexandria:define-constant +float+ "-?[0-9]+(\\.[0-9]+)?" :test 'string=)
 
-(alexandria:define-constant +file-path-regex+ "[\\p{L},\\/,\\\\,\\.]+" :test 'string=)
-
 (alexandria:define-constant +pop+ "\\)" :test 'string=)
 
 (alexandria:define-constant +push+ "\\(" :test 'string=)
@@ -192,13 +190,13 @@
 (defmacro gen-push-constant (&rest attributes)
   `(progn
      ,@(loop for i in attributes collect
-	    `(alexandria:define-constant 
+	    `(alexandria:define-constant
 		 ,(alexandria:format-symbol t "~:@(+push-~a+~)" (first i))
 		 ,(string-downcase (symbol-name (second i)))
 	       :test #'string=))))
 
 (gen-push-constant (all a) (color c) (direction d) (rotation-angle g)
-		   (length l) (position p) (radius r) 
+		   (length l) (position p) (radius r)
 		   (texture-coordinate t)
 		   (rotation-axes x))
 
@@ -326,8 +324,6 @@
 
 (alexandria:define-constant +section-s-coord-offset+ 0.25 :test #'=)
 
-(alexandria:define-constant +preprocess-include+ "^%include" :test #'string=)
-
 (define-tokenizer (lsys-parsed-file
 		   +inline-label+
 		   +delete-branch+
@@ -337,17 +333,17 @@
 		   +polygon-magnetic-range+
 		   +section-magnetic-range+
 		   +chance-param-label+
-		   +rotate-positive+ +rotate-negative+ 
-		   +draw+ +move+ +select-x+ +select-y+ 
-		   +select-z+ +next-rotation-axe+ 
-		   +previous-rotation-axe+ +next-color+ +reset-pos+ 
+		   +rotate-positive+ +rotate-negative+
+		   +draw+ +move+ +select-x+ +select-y+
+		   +select-z+ +next-rotation-axe+
+		   +previous-rotation-axe+ +next-color+ +reset-pos+
 		   +reset-direction+
-		   +color+ 
+		   +color+
 		   +scale-length+ +scale-radius+ +scale-angle+
 		   +scale-tropism-bending-factor+
 		   +scale-magnetic-polygon-range+
 		   +scale-section-magnetic-range+
-		   +length+ +angle+ +radius+ 
+		   +length+ +angle+ +radius+
 		   +s-coord-section+
 		   +t-coord-section+
 		   +t-coord-section-end+
@@ -357,10 +353,10 @@
 		   +s-coord+ +t-coord+
 		   +incr-s-coord+ +incr-t-coord+
 		   +eol+ +equal+ +integer+ +float+
-		   +colors-separator+ +push+ +push-all+ +push-color+ 
-		   +push-direction+ +push-rotation-angle+ 
-		   +push-length+ +push-position+ 
-		   +push-radius+ +push-rotation-axes+ 
+		   +colors-separator+ +push+ +push-all+ +push-color+
+		   +push-direction+ +push-rotation-angle+
+		   +push-length+ +push-position+
+		   +push-radius+ +push-rotation-axes+
 		   +push-texture-coordinate+
 		   +pop+
 		   +rule-stopper+ +color-definition-label+
@@ -378,33 +374,6 @@
    (buffered-input-file:increment-pointer *file*)
    (next-token *file*)))
 
-(defun preprocess-include-file (line)
-  (let ((included-filepath (second (cl-ppcre:split "\\p{Z}" line))))
-    (if (cl-ppcre:scan +file-path-regex+ included-filepath)
-	(filesystem-utils:slurp-file (res:get-resource-file included-filepath
-							    +trees-resource+))
-	"")))
-
-(defun preprocess (file)
-  (let ((preprocessed-p nil))
-    (with-open-file (stream-input file :direction :input :if-does-not-exist :error)
-      (filesystem-utils:with-anaphoric-temp-file (stream-out :prefix nil :unlink nil)
-	(do ((line (read-line stream-input nil nil) (read-line stream-input nil nil)))
-	    ((null line))
-	  (cond 
-	    ((cl-ppcre:scan +preprocess-include+ line)
-	     (setf preprocessed-p t)
-	     (format stream-out "~a" (preprocess-include-file line)))
-	    (t
-	     (format stream-out "~a~%" line))))
-	(if preprocessed-p
-	    (prog1
-		(progn
-		  (finish-output stream-out)
-		  (preprocess filesystem-utils:temp-file))
-	      (nix:unlink filesystem-utils:temp-file))
-	    filesystem-utils:temp-file)))))
-
 (define-is-stuff-p cl-ppcre:scan
     +inline-label+
   +delete-branch+
@@ -414,16 +383,16 @@
   +polygon-magnetic-range+
   +section-magnetic-range+
   +chance-param-label+
-  +rotate-positive+ +rotate-negative+ +draw+ +move+ 
-  +select-x+ +select-y+ +select-z+ +next-rotation-axe+ 
-  +previous-rotation-axe+ +next-color+ +reset-pos+ 
+  +rotate-positive+ +rotate-negative+ +draw+ +move+
+  +select-x+ +select-y+ +select-z+ +next-rotation-axe+
+  +previous-rotation-axe+ +next-color+ +reset-pos+
   +reset-direction+
-  +color+  
+  +color+
   +scale-length+ +scale-radius+ +scale-angle+
   +scale-tropism-bending-factor+
   +scale-magnetic-polygon-range+
   +scale-section-magnetic-range+
-  +length+ +angle+ +radius+ 
+  +length+ +angle+ +radius+
   +s-coord-section+
   +t-coord-section+
   +t-coord-section-end+
@@ -434,9 +403,9 @@
   +incr-s-coord+ +incr-t-coord+
   +eol+ +equal+ +colors-separator+
   +push+
-  +push-all+ +push-color+ 
-  +push-direction+ +push-rotation-angle+ 
-  +push-length+ +push-position+ 
+  +push-all+ +push-color+
+  +push-direction+ +push-rotation-angle+
+  +push-length+ +push-position+
   +push-radius+ +push-rotation-axes+
   +push-texture-coordinate+
   +integer+ +float+ +rule-names+ +pop+
@@ -454,7 +423,7 @@
 (defmacro test-all (token &body constants)
   `(or
     ,@(loop for i in constants collect
-	   `(,(alexandria:format-symbol t "IS-~a-P" 
+	   `(,(alexandria:format-symbol t "IS-~a-P"
 					(subseq (subseq (symbol-name i) 1)
 						0 (1- (length (subseq (symbol-name i) 1)))))
 	      ,token))))
@@ -462,11 +431,11 @@
 (defun is-opcode-p (token)
   (test-all token
     +delete-branch+
-    +rotate-positive+ +rotate-negative+ +draw+ +move+ 
-    +select-x+ +select-y+ +select-z+ +next-rotation-axe+ 
+    +rotate-positive+ +rotate-negative+ +draw+ +move+
+    +select-x+ +select-y+ +select-z+ +next-rotation-axe+
     +previous-rotation-axe+ +next-color+ +reset-pos+
     +reset-direction+
-    +color+ 
+    +color+
     +scale-length+ +scale-radius+ +scale-angle+
     +scale-tropism-bending-factor+
     +scale-magnetic-polygon-range+
@@ -481,9 +450,9 @@
     +s-coord+ +t-coord+
     +incr-s-coord+ +incr-t-coord+
     +push-texture-coordinate+
-    +push-all+ +push-color+ 
-    +push-direction+ +push-rotation-angle+ 
-    +push-length+ +push-position+ 
+    +push-all+ +push-color+
+    +push-direction+ +push-rotation-angle+
+    +push-length+ +push-position+
     +push-radius+ +push-rotation-axes+
     +enter-polygon-mode+
     +conditional+))
@@ -492,10 +461,10 @@
   (test-all token +color+
 	    +incr-s-coord+ +incr-t-coord+
 	    +scale-tropism-bending-factor+
-	    +scale-length+ +scale-radius+ +scale-angle+ 
+	    +scale-length+ +scale-radius+ +scale-angle+
 	    +scale-magnetic-polygon-range+
 	    +scale-section-magnetic-range+
-	    +length+ +angle+ +radius+ 
+	    +length+ +angle+ +radius+
 	    +s-coord-section+
 	    +t-coord-section+
 	    +t-coord-section-end+
@@ -506,9 +475,9 @@
 	    +incr-s-coord+ +incr-t-coord+))
 
 (defun is-push-opcode-p (token)
-  (test-all token +push-all+ +push-color+ 
-	    +push-direction+ +push-rotation-angle+ 
-	    +push-length+ +push-position+ 
+  (test-all token +push-all+ +push-color+
+	    +push-direction+ +push-rotation-angle+
+	    +push-length+ +push-position+
 	    +push-radius+ +push-rotation-axes+
 	    +push-texture-coordinate+))
 
@@ -640,13 +609,13 @@
     (:z :x)))
 
 (defun previous-rotation-axe (current)
-  (ecase current 
+  (ecase current
     (:x :z)
     (:z :y)
     (:y :x)))
 
 (defun next-palette-color ()
-  (let ((next-color-index (mod (1+ *palette-pointer*) (length *palette*)))) 
+  (let ((next-color-index (mod (1+ *palette-pointer*) (length *palette*))))
     (setf *palette-pointer* next-color-index)
     (nth *palette-pointer* *palette*)))
 
@@ -703,7 +672,7 @@
 		,(if var
 		     `(setf ,var (parse-number->desired (next-token *file*)))
 		     `(parse-number->desired (next-token *file*))))))))))
- 
+
 (gen-parse-key-float-value-entry (bending-factor *current-bending-factor*
 						 is-bending-factor-label-p))
 
@@ -717,17 +686,17 @@
 
 (gen-parse-key-float-value-entry (angle *current-rotation-angle* is-angle-definition-label-p))
 
-(gen-parse-key-float-value-entry (randomize-length-rate *length-randomize-rate* 
+(gen-parse-key-float-value-entry (randomize-length-rate *length-randomize-rate*
 							is-randomize-length-label-p))
 
-(gen-parse-key-float-value-entry (randomize-angle-rate *angle-randomize-rate* 
+(gen-parse-key-float-value-entry (randomize-angle-rate *angle-randomize-rate*
 						       is-randomize-angle-label-p))
 
-(gen-parse-key-float-value-entry (polygon-magnetic-range *current-polygon-magnetic-range* 
+(gen-parse-key-float-value-entry (polygon-magnetic-range *current-polygon-magnetic-range*
 							 is-polygon-magnetic-range-p))
 
 (gen-parse-key-float-value-entry (section-magnetic-range
-				  *current-fill-gap-treshold* 
+				  *current-fill-gap-treshold*
 				  is-section-magnetic-range-p))
 
 
@@ -752,7 +721,7 @@
 (defun parse-texture ()
   (parse-texture-raw)
   (let ((path (string-trim *blank-space* *current-texture*)))
-    (if (cl-ppcre:scan +file-path-regex+ path)
+    (if (cl-ppcre:scan fs:+file-path-regex+ path)
 	(setf *current-texture* (res:get-resource-file path +trees-resource+))
 	;;(filesystem-utils:sys-datadir-root-path path))
 	(push-errors (format nil "Error: invalid texture path: ~a." *current-texture*)))))
@@ -765,7 +734,7 @@
 	 (next-token *file*)
 	 (parse-color-def))
 	((is-float-p token)
-	 (let ((color 
+	 (let ((color
 		(loop for rgba from 0 below 4 collect ;; for any color tuple
 		     (progn
 		       (with-no-errors
@@ -779,7 +748,7 @@
 	   (push color *palette*)
 	   (with-no-errors
 	     (let ((separator (peek-token *file*)))
-	       (cond 
+	       (cond
 		 ((is-colors-separator-p separator)
 		  (next-token *file*)
 		  (parse-color-def))
@@ -797,7 +766,7 @@
 	 (next-token *file*)
 	 (parse-tropism))
 	((is-float-p token)
-	 (let ((tropism-vector 
+	 (let ((tropism-vector
 		(loop for rgba from 0 below 3 collect ;; for any component
 		     (progn
 		       (with-no-errors
@@ -823,7 +792,7 @@
 
 (defnocfun parse-axioms ()
   (if (peek-valid-stream)
-    (with-no-errors* 
+    (with-no-errors*
       (parse-axiom)
       (parse-axioms))))
 
@@ -877,8 +846,8 @@
     (when (and (is-rule-names-p name)
 	       (is-equal-p equal-sign))
       (let-noerr* ((expression (parse-expression))
-		   (new-axiom (make-instance 'rule 
-					     :expression expression 
+		   (new-axiom (make-instance 'rule
+					     :expression expression
 					     :chance chance)))
 	(when (not (gethash name *rules*))
 	  (setf (gethash name *rules*) (make-instance 'rules-set)))
@@ -915,9 +884,9 @@
 	      (false-branch (parse-expression)))
     (if (is-conditional-p the-if)
 	(list the-if boole-expr true-branch false-branch)
-	(push-errors (format nil "Error: looking for ~a ~a found instead." +conditional+ 
+	(push-errors (format nil "Error: looking for ~a ~a found instead." +conditional+
 			     the-if)))))
-    
+
 
 (defnocfun parse-expression (&optional (expression ()))
   (let-noerr ((peek (peek-token *file*)))
@@ -939,7 +908,7 @@
        (let ((opcode (reverse (parse-opcode))))
 	 (setf expression (append expression opcode))
 	 (parse-expression expression))))))
-	  
+
 (defnocfun parse-opcode ()
   (with-no-errors
     (let ((peek (peek-token *file*)))
@@ -987,13 +956,13 @@
 			     *stack-s-coord-section*
 			     *stack-t-coord-section*
 			     *stack-t-coord-section-end*)
-			     
+
 (defmacro gen-pop-functions (&rest function-var-stack)
   `(progn
      ,@(loop for i in function-var-stack collect
 	    `(defun ,(alexandria:format-symbol t "~:@(pop-~a~)" (first i)) ()
-	       (when (not (,(alexandria:format-symbol t 
-						"~:@(~a-empty-p~)" 
+	       (when (not (,(alexandria:format-symbol t
+						"~:@(~a-empty-p~)"
 						(string-trim '(#\*) (third i)))))
 		 (setf ,(second i) (pop ,(third i))))))))
 
@@ -1007,7 +976,7 @@
 		    (t-coord *current-t-coord* *stack-t-coord*)
 		    (s-coord-section *current-s-coord-section* *stack-s-coord-section*)
 		    (t-coord-section *current-t-coord-section* *stack-t-coord-section*)
-		    (t-coord-section-end *current-t-coord-section-end* 
+		    (t-coord-section-end *current-t-coord-section-end*
 					 *stack-t-coord-section-end*)
 		    (radius *current-radius* *stack-radius*))
 
@@ -1025,7 +994,7 @@
 		   (t-coord *current-t-coord* *stack-t-coord*)
 		   (s-coord-section *current-s-coord-section* *stack-s-coord-section*)
 		   (t-coord-section *current-t-coord-section* *stack-t-coord-section*)
-		   (t-coord-section-end *current-t-coord-section-end* 
+		   (t-coord-section-end *current-t-coord-section-end*
 					*stack-t-coord-section-end*)
 		   (radius *current-radius* *stack-radius*))
 
@@ -1117,7 +1086,7 @@
      *current-radius*)
     ((string= label +bool-length-label+)
      *current-length*)))
-    
+
 (defun bool-operator->function (operator)
   (cond
     ((string= operator +<+)
@@ -1160,7 +1129,7 @@
 		       (let* ((*depth* (1+ *depth*))
 			      (chosen-rule (gethash expression *rules*)))
 			 (when chosen-rule
-			   (fire-rule (expression 
+			   (fire-rule (expression
 				       (choose-rule (gethash expression *rules*)))))))
 		      ((is-delete-branch-p expression)
 		       (setf *skip-rule* t))
@@ -1168,13 +1137,13 @@
 		       (process-opcode expression)))
 		    (fire-rule (rest actual-rule) nil)))
 	      (when (not (null expression))
-		(cond 
+		(cond
 		  ((is-push-opcode-p (first expression))
 		   (let ((type-pushed (first expression))
 			 (saved-parent (current-node *file*)))
 		     (fire-rule (rest expression) type-pushed)
 		     (pop-from-stacks type-pushed)
-		     (when (push-opcode-makes-physical-branch-p 
+		     (when (push-opcode-makes-physical-branch-p
 			    type-pushed)
 		       (setf (current-node *file*) saved-parent))
 		     (fire-rule (rest actual-rule) nil)))
@@ -1185,7 +1154,7 @@
 		     (when (> (length (triangles *current-polygon*)) 0)
 		       (multiple-value-bind (parent child)
 			   (mtree-utils:add-child (current-node *file*) *current-polygon*)
-			 (setf (mtree-utils:data child) 
+			 (setf (mtree-utils:data child)
 			       (make-instance 'section-parameters
 					      :id -1
 					      :radius *current-radius*
@@ -1198,7 +1167,7 @@
      (declare (ignorable arg))
      (declare (optimize (speed 3) (debug 0) (safety 0)))
      (declare (base-string opcode))
-     (cond 
+     (cond
        ,@(loop for i in var-compare-body collect
 	      `((,(second i) ,(first i) opcode)
 		,@(rest (rest i)))))))
@@ -1211,22 +1180,22 @@
   (declare (optimize (speed 3) (debug 0) (safety 0)))
   (let* ((tropism-torsion-vector (cross-product (direction *current-direction*)
 						*current-tropism*))
-	 (alpha (d* *current-bending-factor* (rad->deg 
+	 (alpha (d* *current-bending-factor* (rad->deg
 					     (vec-length tropism-torsion-vector)))))
-    (rotate-turtle-arbitrary-axe *current-direction* alpha 
+    (rotate-turtle-arbitrary-axe *current-direction* alpha
 				 :axe (if (vec~ tropism-torsion-vector +zero-vec+)
 					  +zero-vec+
 					  (normalize tropism-torsion-vector)))
     (let* ((sign (get-random-float-sign))
-	   (actual-length (d+ (d* sign 
-				  (d* (lcg-next01) *length-randomize-rate*) 
+	   (actual-length (d+ (d* sign
+				  (d* (lcg-next01) *length-randomize-rate*)
 				  *current-length*)
 			      *current-length*))
-	   (new-position (adjust-vec *current-position* 
+	   (new-position (adjust-vec *current-position*
 				     (direction *current-direction*)
 				     actual-length))
-	   (rotation-mat (if (not (vec~ (cross-product +y-axe+ 
-						       (direction *current-direction*)) 
+	   (rotation-mat (if (not (vec~ (cross-product +y-axe+
+						       (direction *current-direction*))
 					+zero-vec+))
 			     (reorient +y-axe+ (direction *current-direction*))
 			     (if (d< (svref (direction *current-direction*) 1) 0.0)
@@ -1238,7 +1207,7 @@
       (setf *current-position* new-position))))
 
 (defun draw-polygon-mode ()
-  (let* ((new-position (adjust-vec *current-position* 
+  (let* ((new-position (adjust-vec *current-position*
 				   (direction *current-direction*)
 				   *current-length*)))
     (texel *current-polygon* *current-s-coord* *current-t-coord*)
@@ -1272,7 +1241,7 @@
   		 ;;(misc:dbg "radius scale ~a -> ~a" arg *current-radius*)
   		 (setf *current-radius* (d* arg *current-radius*)))
  (+scale-tropism-bending-factor+ string=
-  				 (setf *current-bending-factor* 
+  				 (setf *current-bending-factor*
   				       (d* arg *current-bending-factor*)))
  (+scale-length+ string=
   		 (setf *current-length* (d* arg *current-length*)))
@@ -1284,7 +1253,7 @@
  (+scale-section-magnetic-range+ string=
 				 (setf *current-fill-gap-treshold*
 				       (d* arg *current-fill-gap-treshold*)))
- ;; color iteration 
+ ;; color iteration
  (+next-color+ string=
   	       (setf *current-color* (next-palette-color)))
  ;; select axys
@@ -1314,8 +1283,8 @@
  (+rotate-negative+ string=
 		    (let* ((sign (get-random-float-sign))
 			   (actual-angle (d+
-					  (d* sign 
-					     (d* (the desired-type (lcg-next01)) 
+					  (d* sign
+					     (d* (the desired-type (lcg-next01))
 						 *angle-randomize-rate*)
 					     *current-rotation-angle*)
 					  *current-rotation-angle*)))
@@ -1323,7 +1292,7 @@
  (+rotate-positive+ cl-ppcre:scan
 		    (let* ((sign (get-random-float-sign))
 			   (actual-angle (d+
-					  (d* sign 
+					  (d* sign
 					     (d* (the desired-type (lcg-next01))
 						 *angle-randomize-rate*)
 					     *current-rotation-angle*)
@@ -1342,12 +1311,12 @@
 	      (setf *current-position* +zero-vec+))
 
  (+move+ string=
-	 (let ((new-position (adjust-vec *current-position* 
+	 (let ((new-position (adjust-vec *current-position*
 					 (direction *current-direction*)
 					 *current-length*)))
 	   (setf *current-position* new-position))))
 
-;;; rendering 
+;;; rendering
 
 (defmethod prepare-for-rendering ((object lsys-parsed-file))
   (mesh:prepare-for-rendering (mesh object)))
@@ -1366,20 +1335,20 @@
 					:start-s-texture *current-s-coord-section*
 					:start-t-texture *current-t-coord-section*
 					:end-t-texture *current-t-coord-section-end*
-					:max-s-texture (d+ *current-s-coord-section* 
+					:max-s-texture (d+ *current-s-coord-section*
 							   +section-s-coord-offset+)
 					:wrapper-transformation transformation
 					:manifold t)))
       (multiple-value-bind (parent child)
 	  (mtree-utils:add-child (current-node *file*) section-mesh)
-	(setf (mtree-utils:data child) 
+	(setf (mtree-utils:data child)
 	      (make-instance 'section-parameters
 			     :id -1
 			     :radius *current-radius*
 			     :parameters-parent (mtree-utils:data parent)))
 	(average-normals child)
 	(gen-tangents child)
-	(when (and parent 
+	(when (and parent
 		   (mtree-utils:data parent))
 	  (let* ((size        *current-radius*)
 		 (size-parent (radius (mtree-utils:data parent)))
@@ -1393,7 +1362,7 @@
 (defparameter *test-subdivision-level* 0)
 
 (defun gen-tree (lsys-file &key (flatten t))
-    (let ((actual-file (preprocess lsys-file))
+    (let ((actual-file (fs:preprocess lsys-file +trees-resource+))
 	  (the-tree nil))
       (with-lsys-file (:filename actual-file)
 	(parse-system)
@@ -1417,7 +1386,7 @@
 						  (setf (mesh:render-aabb     n) nil
 							(mesh:render-tangents n) nil
 							(mesh:render-normals  n) nil)))
-		  (nix:unlink actual-file)
+		  (fs:delete-file-if-exists actual-file)
 		  (let ((triangles-count 0))
 		    (mtree-utils:top-down-visit
 		     (mesh the-tree)
@@ -1429,5 +1398,5 @@
 			actual-mesh)
 		      (mesh the-tree)))))
 	    (progn
-	      (nix:unlink actual-file)
+	      (fs:delete-file-if-exists actual-file)
 	      nil)))))

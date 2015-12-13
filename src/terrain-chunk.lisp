@@ -46,14 +46,14 @@
 	nil)))
 
 (defclass terrain-chunk (pickable-mesh)
-  ((heightmap
+  ((el-time
+    :initform 0.0
+    :initarg :el-time
+    :accessor el-time)
+   (heightmap
     :initform nil
     :initarg  :heightmap
     :accessor heightmap)
-   (origin-offset
-    :initform (vec 0.0 0.0 0.0)
-    :initarg  :origin-offset
-    :accessor origin-offset)
    (text-coord-weights
     :initform (misc:make-fresh-array 0 (num:desired 0.0) t nil)
     :initarg  :text-coord-weights
@@ -103,7 +103,7 @@
     :reader decal-weights)))
 
 (defmethod marshal:class-persistant-slots ((object terrain-chunk))
-  (append '(origin-offset)
+  (append '()
 	  (call-next-method)))
 
 (defmethod find-index-by-value ((object terrain-chunk) value &key (what :vertex) (from-end t))
@@ -152,6 +152,11 @@
 				(misc:dbg "finalize destroy terrain ~a" id))
 			      (free-memory* (list (gl:free-gl-array gl-arr-weight)) nil nil)
 			      (setf gl-arr-weight nil))))))
+
+(defmethod calculate :after ((object terrain-chunk) dt)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((el-time el-time)) object
+    (setf el-time (d+ el-time dt))))
 
 (defmethod render ((object terrain-chunk) renderer)
   (actual-render object renderer))
@@ -238,9 +243,17 @@
 
 (defgeneric (setf decal-weights) (pixmap object))
 
-(defgeneric nclip-with-aabb (object aabb &key regenerate-rendering-data clip-if-inside))
+(defgeneric nclip-with-aabb (object aabb
+			     &key
+			       remove-orphaned-vertices
+			       regenerate-rendering-data
+			       clip-if-inside))
 
-(defgeneric clip-with-aabb (object aabb &key regenerate-rendering-data clip-if-inside))
+(defgeneric clip-with-aabb (object aabb
+			    &key
+			      remove-orphaned-vertices
+			      regenerate-rendering-data
+			      clip-if-inside))
 
 (defgeneric clip-triangles (object aabb predicate))
 
@@ -254,7 +267,8 @@
 
 (defmethod actual-render ((object terrain-chunk) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
-  (with-accessors ((vbo vbo)
+  (with-accessors ((el-time el-time)
+		   (vbo vbo)
 		   (vao vao)
 		   (texture-shore texture-shore)
 		   (texture-grass texture-grass)
@@ -269,7 +283,8 @@
 		   (model-matrix model-matrix)
 		   (view-matrix view-matrix)
 		   (compiled-shaders compiled-shaders)
-		   (triangles triangles)) object
+		   (triangles triangles)
+		   (fog-density fog-density)) object
     (declare (texture:texture texture-shore texture-grass texture-snow
 			      texture-soil-level-1   texture-soil-level-2
 			      texture-soil-decal     texture-road-decal
@@ -308,6 +323,8 @@
 	  (gl:active-texture :texture8)
 	  (texture:bind-texture decal-weights)
 	  (uniformi compiled-shaders :decals-weights 8)
+	  (uniformf  compiled-shaders :time  el-time)
+	  (uniformf  compiled-shaders :fog-density fog-density)
 	  (uniformfv compiled-shaders :light-pos
 			      (the vec (main-light-pos-eye-space renderer)))
 	  (uniformfv compiled-shaders :ia        (the vec (main-light-color renderer)))
@@ -509,17 +526,21 @@
 
 (defmethod nclip-with-aabb ((object terrain-chunk) aabb &key
 							  (clip-if-inside t)
+							  (remove-orphaned-vertices t)
 							  (regenerate-rendering-data t))
   (let ((predicate (if clip-if-inside
 		       #'every
 		       #'notevery)))
     (clip-triangles object aabb predicate)
+    (when remove-orphaned-vertices
+      (remove-orphaned-vertices object))
     (when regenerate-rendering-data
       (prepare-for-rendering object))
     object))
 
 (defmethod clip-with-aabb ((object terrain-chunk) aabb &key
 							 (clip-if-inside t)
+							 (remove-orphaned-vertices t)
 							 (regenerate-rendering-data t))
   (let* ((results   (copy-flat object))
 	 (predicate #'notevery))
@@ -540,7 +561,8 @@
 	      (push (triangle-2 (matrix:matrix-elt mat y x)) nw-triangles)))
 	  (setf (triangles results) nw-triangles))
 	(clip-triangles results aabb predicate))
-    (remove-orphaned-vertices results)
+    (when remove-orphaned-vertices
+      (remove-orphaned-vertices results))
     (reset-aabb results)
     (when regenerate-rendering-data
       (prepare-for-rendering results))

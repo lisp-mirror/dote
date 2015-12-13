@@ -150,9 +150,7 @@
 				  +minimum-num-healing-fx+
 				  +maximum-num-healing-fx+)
 		       number-of-normal-effects))))
-    (if (<= max 0)
-     	0
-     	(lcg-next-upto (max 0.0 max)))))
+    (1+ (lcg-next-upto (max 1 max)))))
 
 (defun generate-potion (map-level)
   (%generate-potion (res:get-resource-file +default-interaction-filename+
