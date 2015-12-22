@@ -387,14 +387,14 @@
 	  (if (eq state :mousebuttondown)
 	      (when (not (widget:on-mouse-pressed (world:gui world) gui-event))
 		;; test movement
-		(if (world:pick-player-entity world world x y)
-		    (let* ((selected-path (game-state:selected-path main-state)))
-		      (when selected-path
-			(let ((movement-event (make-instance 'game-event:move-entity-along-path-event
-							     :path (game-state:tiles selected-path)
-							     :cost (game-state:cost  selected-path)
-							     :id-destination (id selected-pc))))
-			  (game-event:propagate-move-entity-along-path-event movement-event))))))
+		(when (not (world:pick-player-entity world world x y))
+		  (let* ((selected-path (game-state:selected-path main-state)))
+		    (when selected-path
+		      (let ((movement-event (make-instance 'game-event:move-entity-along-path-event
+							   :path (game-state:tiles selected-path)
+							   :cost (game-state:cost  selected-path)
+							   :id-destination (id selected-pc))))
+			(game-event:propagate-move-entity-along-path-event movement-event))))))
 	      (when (not (widget:on-mouse-released (world:gui world) gui-event))
 		(misc:dbg "~s button: ~A at ~A, ~A" state b x y))))))))
 

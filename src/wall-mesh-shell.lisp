@@ -20,7 +20,6 @@
 
 (defclass decorated-wall-mesh-shell (triangle-mesh-shell) ())
 
-
 (defmethod render-phong ((object decorated-wall-mesh-shell) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((vbo vbo)
@@ -102,3 +101,7 @@
 (defmethod game-event:on-game-event ((object wall-mesh-shell) (event game-event:end-turn))
   (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
   nil)
+
+(defmethod rendering-needed-p ((object decorated-wall-mesh-shell) renderer)
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (world:cone-bounding-sphere-intersects-p renderer object))

@@ -1584,6 +1584,7 @@
    :+attribute-normal-location+
    :+attribute-tangent-location+
    :+attribute-texture-location+
+   :+attribute-pick-pos-location+
    ;; for terrain decals (roads etc...)
    :+attribute-texture-decals-location+
    :+attribute-pick-weight-location+
@@ -1778,6 +1779,10 @@
    :*door-s*
    :*door-e*
    :*door-w*
+   :*chair-n*
+   :*chair-s*
+   :*chair-e*
+   :*chair-w*
    :update-progress
    :clean-global-wars
    :gen-normalmap-if-needed))
@@ -1836,6 +1841,7 @@
    :map-state
    :old-state-element
    :all-entities
+   :labyrinth-entities
    :player-entities
    :ai-entities
    :level-difficult
@@ -1859,6 +1865,8 @@
    :find-entity-by-id
    :map-level
    :push-entity
+   :push-labyrinth-entity
+   :find-labyrinth-by-id
    :add-to-player-entities
    :add-to-ai-entities
    :fetch-from-player-entities
@@ -2653,8 +2661,10 @@
    :triangle
    :triangle-mesh-shell
    :tree-mesh-shell
+   :tree-trunk-aabb
    :fill-mesh-data
    :fill-shell-from-mesh
+   :fill-shell-from-mesh-w-renderer-data
    :load-tag-file
    :load-tags
    :tag->matrix
@@ -2681,6 +2691,21 @@
    :window-mesh-shell
    :decorated-wall-mesh-shell
    :door-mesh-shell
+   :instanced-mesh
+   :labyrinth-mesh
+   :parent-labyrinth
+   :wall-instanced
+   :window-instanced
+   :pillar-instanced
+   :door-n-instanced
+   :door-s-instanced
+   :door-e-instanced
+   :door-w-instanced
+   :table-instanced
+   :chair-n-instanced
+   :chair-s-instanced
+   :chair-e-instanced
+   :chair-w-instanced
    :openp
    :fountain-mesh-shell
    :container-mesh-shell
@@ -3025,6 +3050,11 @@
    :door-s
    :door-e
    :door-w
+   :chairs
+   :chair-n
+   :chair-s
+   :chair-e
+   :chair-w
    :world
    :entities
    :main-state
@@ -3063,6 +3093,8 @@
    :pick-height-terrain
    :all-furniture-bags-not-empty-p
    :all-furnitures-but-pillars-not-empty-p
+   :push-labyrinth-entity
+   :find-labyrinth-by-id
    :push-interactive-entity
    :set-map-state-type
    :set-map-state-id

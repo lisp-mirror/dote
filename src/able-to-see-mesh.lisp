@@ -34,6 +34,10 @@
 
 (defgeneric other-visible-ray-p (object target))
 
+(defgeneric labyrinth-element-hitted-by-ray (object target))
+
+(defgeneric nonlabyrinth-element-hitted-by-ray (object target))
+
 (defmethod update-visibility-cone ((object able-to-see-mesh))
   (with-accessors ((visibility-cone visibility-cone)
 		   (pos  pos)
@@ -67,6 +71,23 @@
       (point-in-cone-p visibility-cone center))))
 
 (defmethod other-visible-ray-p ((object able-to-see-mesh) (target triangle-mesh))
+  (let ((lab-hitted-p    (labyrinth-element-hitted-by-ray object target))
+	(nonlab-hitted-p (nonlabyrinth-element-hitted-by-ray object target)))
+    (when +debug-mode+
+      (misc:dbg "labyrinth hitted? ~a" lab-hitted-p)
+      (misc:dbg "non labyrinth hitted? ~a" lab-hitted-p))
+    (cond
+      ((null nonlab-hitted-p)
+       nil)
+      ((null lab-hitted-p)
+       nonlab-hitted-p)
+      (t ;hitted both labirinth and player
+       (if (d< (displacement lab-hitted-p)
+	       (displacement nonlab-hitted-p))
+	   nil
+	   t)))))
+
+(defmethod nonlabyrinth-element-hitted-by-ray ((object able-to-see-mesh) (target triangle-mesh))
    (with-accessors ((dir dir)
 		   (pos pos)
 		   (state state)
@@ -96,15 +117,73 @@
 									 x-chunk
 									 z-chunk)))
 			 (when (and y (< (elt ends 1) y))
-			   (return-from other-visible-ray-p nil))))
-		      ((and (typep d 'mesh:door-mesh-shell)
-			    (openp d))
+			   (return-from nonlabyrinth-element-hitted-by-ray nil))))
+		      ((typep d 'mesh:labyrinth-mesh)
 		       ;;does nothing, continue to the next iteration
 		       )
+		      ((typep d 'mesh:tree-mesh-shell)
+		       (misc:dbg "tree trunk ~%~a ~a -> ~a" (tree-trunk-aabb d)
+				 ends (insidep (tree-trunk-aabb d) ends))
+		       (when (and (insidep (aabb d) ends)
+				  (insidep (tree-trunk-aabb d) ends))
+			 (return-from nonlabyrinth-element-hitted-by-ray nil)))
 		      (t
-		       (when (insidep (aabb d) (ray-ends ray pos))
+		       (when (insidep (aabb d) (ray-ends ray pos)) ;; O_O
 			 (if (= (id d) (id target))
 			     (progn
-			       (return-from other-visible-ray-p t))
+			       (return-from nonlabyrinth-element-hitted-by-ray (values ray d)))
 			     (when (not (= (id d) (id object)))
-			       (return-from other-visible-ray-p nil)))))))))))))
+			       (return-from nonlabyrinth-element-hitted-by-ray nil)))))))))))))
+
+(defun %blocked-by-ray-p (ray-ends vec-object)
+  (loop for a across vec-object do
+       (when (insidep (aabb a) ray-ends)
+	 (return-from %blocked-by-ray-p a)))
+  nil)
+
+(defmethod labyrinth-element-hitted-by-ray ((object able-to-see-mesh) (target triangle-mesh))
+  (with-accessors ((dir dir)
+		   (pos pos)
+		   (state state)
+		   (visibility-cone visibility-cone)) object
+    ;; launch a ray
+    (let* ((ray (make-instance 'ray
+			       :ray-direction (normalize (vec- (aabb-center (aabb target))
+							       (aabb-center (aabb object))))))
+	   (all-labyrinths (loop for l being the hash-value in
+				(game-state:labyrinth-entities (state object))
+			      collect l)))
+      (loop
+	 for dt from 0.0
+	 below (vec-length (cone-height visibility-cone))
+	 by +visibility-ray-displ-incr+ do
+	   (incf (displacement ray) dt)
+	   (let* ((ends (ray-ends ray pos)))
+	     (loop for lab in all-labyrinths do
+		  (when (insidep (aabb lab) ends)
+		    (let ((walls    (children (wall-instanced    lab)))
+			  (windows  (children (window-instanced  lab)))
+			  (pillars  (children (pillar-instanced  lab)))
+			  (doors-n  (remove-if #'openp (children (door-n-instanced lab))))
+			  (doors-s  (remove-if #'openp (children (door-s-instanced lab))))
+			  (doors-e  (remove-if #'openp (children (door-e-instanced lab))))
+			  (doors-w  (remove-if #'openp (children (door-w-instanced lab))))
+			  (tables   (children (table-instanced   lab)))
+			  (chairs-n (children (chair-n-instanced lab)))
+			  (chairs-s (children (chair-s-instanced lab)))
+			  (chairs-e (children (chair-e-instanced lab)))
+			  (chairs-w (children (chair-w-instanced lab))))
+		      (let ((res (or (%blocked-by-ray-p ends walls)
+				     (%blocked-by-ray-p ends windows)
+				     (%blocked-by-ray-p ends pillars)
+				     (%blocked-by-ray-p ends doors-n)
+				     (%blocked-by-ray-p ends doors-s)
+				     (%blocked-by-ray-p ends doors-e)
+				     (%blocked-by-ray-p ends doors-w)
+				     (%blocked-by-ray-p ends tables)
+				     (%blocked-by-ray-p ends chairs-n)
+				     (%blocked-by-ray-p ends chairs-s)
+				     (%blocked-by-ray-p ends chairs-e)
+				     (%blocked-by-ray-p ends chairs-w))))
+			(when res
+			  (return-from labyrinth-element-hitted-by-ray (values ray res))))))))))))

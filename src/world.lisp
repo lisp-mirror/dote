@@ -72,6 +72,34 @@
 	   (door-e object) nil
 	   (door-w object) nil))
 
+(defclass chairs ()
+  ((chair-n
+    :accessor chair-n
+    :initarg :chair-n
+    :initform nil)
+   (chair-s
+    :accessor chair-s
+    :initarg :chair-s
+    :initform nil)
+   (chair-e
+    :accessor chair-e
+    :initarg :chair-e
+    :initform nil)
+   (chair-w
+    :accessor chair-w
+    :initarg :chair-w
+    :initform nil)))
+
+(defmethod destroy ((object chairs))
+  (destroy (chair-n object))
+  (destroy (chair-s object))
+  (destroy (chair-e object))
+  (destroy (chair-w object))
+  (setf    (chair-n object) nil
+	   (chair-s object) nil
+	   (chair-e object) nil
+	   (chair-w object) nil))
+
 (defclass world (transformable renderizable)
   ((camera
     :accessor camera
@@ -112,6 +140,10 @@
     :accessor doors-bag
     :initarg  :doors-bag
     :initform (make-instance 'doors))
+   (chairs-bag
+    :accessor chairs-bag
+    :initarg  :chairs-bag
+    :initform (make-instance 'chairs))
    (furnitures-bag
     :accessor furnitures-bag
     :initarg  :furnitures-bag
@@ -131,10 +163,6 @@
    (pillars-bag
     :accessor pillars-bag
     :initarg  :pillars-bag
-    :initform nil)
-   (chairs-bag
-    :accessor chairs-bag
-    :initarg  :chairs-bag
     :initform nil)
    (tables-bag
     :accessor tables-bag
@@ -208,7 +236,10 @@
 
 (defgeneric all-furnitures-but-pillars-not-empty-p (object))
 
-(defgeneric push-interactive-entity (object entity type occlusion-value))
+(defgeneric push-interactive-entity (object entity type occlusion-value
+				     &key
+				      add-to-world
+				      add-to-gamestate))
 
 (defgeneric push-terrain-chunk (object entity aabb))
 
@@ -264,7 +295,7 @@
   (setf (magic-furnitures-bag object) nil)
   (map nil #'destroy (pillars-bag object))
   (setf (pillars-bag object) nil)
-  (map nil #'destroy (chairs-bag object))
+  (destroy (chairs-bag object))
   (setf (chairs-bag object) nil)
   (map nil #'destroy (tables-bag object))
   (setf (tables-bag object) nil)
@@ -585,11 +616,18 @@
        (containers-bag       object)
        (magic-furnitures-bag object)))
 
-(defmethod push-interactive-entity ((object world) entity type occlusion-value)
+(defmethod push-interactive-entity ((object world) entity type occlusion-value
+				    &key
+				      (add-to-world t)
+				      (add-to-gamestate t))
   "Use for any interactive entity (i.e. has a character)"
-  (push-entity             object entity)  ; add to quadtree
-  (push-entity (main-state object) entity) ; add to entity tree of game-state
-  (world:setup-map-state-entity  object  entity type occlusion-value)) ; add to game-state's matrix
+  (when add-to-world
+    (push-entity             object entity))  ; add to quadtree
+  (when add-to-gamestate
+    ;; add to entity tree of game-state
+    (push-entity (main-state object) entity)
+    ;; add to game-state's matrix
+    (world:setup-map-state-entity  object  entity type occlusion-value)))
 
 (defmethod set-map-state-type ((object world) x y type)
   (game-state:set-map-state-type (main-state object) x y type))
@@ -620,4 +658,15 @@
   (game-event:register-for-end-turn                          player)
   (game-event:register-for-rotate-entity-cw-event            player)
   (game-event:register-for-rotate-entity-ccw-event           player)
-  (world:push-interactive-entity object player faction :occlude))
+  (push-interactive-entity object player faction :occlude))
+
+(defmethod push-labyrinth-entity ((object world) labyrinth)
+  (game-state:push-labyrinth-entity (main-state object) labyrinth)
+  (push-interactive-entity object labyrinth
+			   +wall-type+ ; ignored as :add-to-gamestate is nil
+			   :occlude    ; ignored as :add-to-gamestate is nil
+			   :add-to-gamestate nil
+			   :add-to-world     t))
+
+(defmethod find-labyrinth-by-id ((object world) labyrinth-id)
+  (game-state:find-labyrinth-by-id (main-state object) labyrinth-id))

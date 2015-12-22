@@ -78,7 +78,7 @@
 		   +furniture-table-color+
 		   +furniture-chair-color+
 		   +furniture-pillar-color+
-		   +furniture-wall-decoration-color+)
+		   +furniture-other-color+)
 
 (defun seed-color ()
   +seed-color+)

@@ -24,12 +24,4 @@
 
 (defmethod rendering-needed-p ((object furniture-mesh-shell) renderer)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
-  (with-camera (camera renderer)
-    (let* ((center     (aabb-center (aabb object)))
-	   (pos-camera (pos camera))
-	   (a      (vec2 (elt center 0)     (elt center 2)))
-	   (b      (vec2 (elt pos-camera 0) (elt pos-camera 2))))
-      (declare (vec center pos-camera))
-      (and (d< (vec2-length (vec2- a b))
-	       (d* 2.0 +quad-tree-leaf-size+))
-	   (world:cone-bounding-sphere-intersects-p renderer object)))))
+  (world:cone-bounding-sphere-intersects-p renderer object))

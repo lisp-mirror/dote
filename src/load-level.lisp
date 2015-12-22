@@ -58,9 +58,16 @@
 		 (vec (coord-terrain->chunk (elt tree-pos 0))
 		      +zero-height+
 		      (coord-terrain->chunk (elt tree-pos 1))))
-	   (push-interactive-entity world tree +tree-type+ :occlude)))))
+	   ;; to ensure the tree lies in a leaf node of the quadtree...
+	   (let ((saved-aabb (slot-value tree 'mesh:aabb)))
+	     (setf (mesh:aabb tree) (make-instance '3d-utils:aabb
+					      :aabb-p1 (entity:pos tree)
+					      :aabb-p2 (vec+ (vec 0.0 10.0 0.0)
+							     (entity:pos tree))))
+	     (push-interactive-entity world tree +tree-type+ :occlude)
+	     (setf (mesh:aabb tree) saved-aabb))))))
 
-(defun setup-door (world type min-x min-y x y)
+(defun setup-door (world type min-x min-y x y labyrinth-mesh)
   (let* ((door-type-fn (ecase type
 			   (:door-n
 			    #'door-n)
@@ -79,8 +86,8 @@
 		       +door-e-type+)
 		      (:door-w
 		       +door-w-type+)))
-	 (door-shell (mesh:fill-shell-from-mesh (funcall door-type-fn (doors-bag world))
-						'mesh:door-mesh-shell)))
+	 (door-shell (mesh:fill-shell-from-mesh-w-renderer-data (funcall door-type-fn (doors-bag world))
+								'mesh:door-mesh-shell)))
     (setf (compiled-shaders door-shell) (compiled-shaders world))
     ;; set the mesh
     (setf (entity:pos door-shell)
@@ -95,7 +102,18 @@
     ;; events
     (game-event:register-for-open-door-event door-shell)
     (game-event:register-for-close-door-event door-shell)
-    (push-interactive-entity world door-shell door-type :occlude)))
+    (push-interactive-entity world door-shell door-type :occlude
+			     :add-to-gamestate t
+			     :add-to-world     nil)
+    (cond
+      ((eq door-type +door-n-type+)
+       (mtree:add-child (mesh:door-n-instanced labyrinth-mesh) door-shell))
+      ((eq door-type +door-s-type+)
+       (mtree:add-child (mesh:door-s-instanced labyrinth-mesh) door-shell))
+      ((eq door-type +door-e-type+)
+       (mtree:add-child (mesh:door-e-instanced labyrinth-mesh) door-shell))
+      ((eq door-type +door-w-type+)
+       (mtree:add-child (mesh:door-w-instanced labyrinth-mesh) door-shell)))))
 
 (defun calculate-furnitures-shares (level)
   (let* ((normal-share    (d+ 0.66 (d* (d- (d level) 1.0) 0.01)))
@@ -155,7 +173,7 @@
 (defun common-setup-furniture (world bag min-x min-y x y)
   "Note: will add ghost as well"
   (let* ((choosen  (random-elt bag))
-	 (shell    (mesh:fill-shell-from-mesh choosen 'mesh:furniture-mesh-shell))
+	 (shell    (mesh:fill-shell-from-mesh-w-renderer-data choosen 'mesh:furniture-mesh-shell))
 	 (mesh-x   (d+ (d* +terrain-chunk-size-scale+ min-x)
 		       (coord-map->chunk (d (+ x min-x)))))
 	 (mesh-y   (d+ (d* +terrain-chunk-size-scale+ min-y)
@@ -166,10 +184,13 @@
 	  (random-inert-object:generate-inert-object (game-state:map-level (main-state world))))
     (values shell world)))
 
-(defun setup-pillar (world min-x min-y x y)
+(defun setup-pillar (world min-x min-y x y labyrinth-mesh)
   (when (pillars-bag world)
     (let ((shell (common-setup-furniture world (pillars-bag world) min-x min-y x y)))
-      (push-interactive-entity world shell +pillar-type+ :occlude))))
+      (push-interactive-entity world shell +pillar-type+ :occlude
+			       :add-to-gamestate t
+			       :add-to-world     nil)
+      (mtree:add-child (mesh:pillar-instanced labyrinth-mesh) shell))))
 
 (defun setup-walkable (world min-x min-y x y)
   (when (walkable-bag world)
@@ -191,22 +212,62 @@
 	   (return-from find-next-by-type (values i all-next-to))))
     (values nil all-next-to)))
 
-(defun setup-chair (world min-x min-y x y)
-  (when (chairs-bag world)
-    (let* ((shell      (common-setup-furniture world (chairs-bag world) min-x min-y x y))
-	   (x-world    (%relative-coord-furniture->cood-mat-state min-x x))
-	   (y-world    (%relative-coord-furniture->cood-mat-state min-y y))
-	   (table-near (find-next-by-type world x-world y-world +table-type+)))
-      (when table-near
-	(setf (entity:dir shell) (vec (d (- (elt table-near 0) x-world))
-				      0.0
-				      (d (- (elt table-near 1) y-world)))))
-      (push-interactive-entity world shell +chair-type+ nil))))
+(defun map-state-delta->orientation (dx dy)
+  (cond
+    ((and (= dx 0) (= dy -1))
+     :n)
+    ((and (= dx 1) (= dy 0))
+     :w)
+    ((and (= dx 0) (= dy 1))
+     :s)
+    ((and (= dx -1) (= dy 0))
+     :e)
+    (t (error "orientation invalid"))))
 
-(defun setup-table (world min-x min-y x y)
+(defun setup-chair (world min-x min-y x y labyrinth-mesh)
+  (when (chairs-bag world)
+    (let* ((x-world     (%relative-coord-furniture->cood-mat-state min-x x))
+	   (y-world     (%relative-coord-furniture->cood-mat-state min-y y))
+	   (mesh-x      (d+ (d* +terrain-chunk-size-scale+ min-x)
+			    (coord-map->chunk (d (+ x min-x)))))
+	   (mesh-y      (d+ (d* +terrain-chunk-size-scale+ min-y)
+			    (coord-map->chunk (d (+ y min-y)))))
+	   (table-near  (find-next-by-type world x-world y-world +table-type+))
+	   (orientation (if table-near ; choose orientation
+			    (let* ((dx (truncate (- (elt table-near 0) x-world)))
+				   (dy (truncate (- (elt table-near 1) y-world))))
+			      (map-state-delta->orientation dx dy))
+			    nil))
+	   (shell      (mesh:fill-shell-from-mesh-w-renderer-data
+			(if orientation ; choose orientation
+			    (ecase orientation
+			      (:n (world:chair-n (world:chairs-bag world)))
+			      (:s (world:chair-s (world:chairs-bag world)))
+			      (:e (world:chair-e (world:chairs-bag world)))
+			      (:w (world:chair-w (world:chairs-bag world))))
+			    (world:chair-n (world:chairs-bag world))))))
+      (setf (compiled-shaders shell) (compiled-shaders world)
+	    (entity:pos shell)	   (vec mesh-x +zero-height+ mesh-y))
+      (setf (entity:ghost shell)
+	    (random-inert-object:generate-inert-object (game-state:map-level (main-state world))))
+      (push-interactive-entity world shell +chair-type+ nil
+			       :add-to-gamestate t
+			       :add-to-world     nil)
+      (case orientation
+	(:n (mtree:add-child (mesh:chair-n-instanced labyrinth-mesh) shell))
+	(:s (mtree:add-child (mesh:chair-s-instanced labyrinth-mesh) shell))
+	(:e (mtree:add-child (mesh:chair-e-instanced labyrinth-mesh) shell))
+	(:w (mtree:add-child (mesh:chair-w-instanced labyrinth-mesh) shell))
+	(otherwise
+	 (mtree:add-child (mesh:chair-n-instanced labyrinth-mesh) shell))))))
+
+(defun setup-table (world min-x min-y x y labyrinth-mesh)
   (when (tables-bag world)
     (let ((shell (common-setup-furniture world (tables-bag world) min-x min-y x y)))
-      (push-interactive-entity world shell +table-type+ nil))))
+      (push-interactive-entity world shell +table-type+ nil
+			       :add-to-gamestate t
+			       :add-to-world     nil)
+      (mtree:add-child (mesh:table-instanced labyrinth-mesh) shell))))
 
 (defun setup-wall-decoration (world min-x min-y x y)
   (when (wall-decorations-bag world)
@@ -229,18 +290,20 @@
 						      (d* 0.5 +terrain-chunk-tile-size+)))))
 	(push-interactive-entity world shell +wall-decoration-type+ nil)))))
 
-(defun setup-wall (world bmp min-x min-y x y &key (chance 5))
+(defun setup-wall (world bmp min-x min-y x y labyrinth-mesh &key (chance 5))
   (let* ((dice-roll       (lcg-next-upto chance))
 	 (mesh            (walls-bag world))
 	 (decal-side-free (and (< (1+ y) (width bmp))
 			       (not (random-labyrinth:invalicablep
 				     (matrix-elt bmp (1+ y) x)))))
-	 (shell           (mesh:fill-shell-from-mesh mesh
-						     (if (and (null (mesh:normal-map mesh))
-							      (= (mod dice-roll chance) 0)
-							      decal-side-free)
-							 'mesh:decorated-wall-mesh-shell
-							 'mesh:wall-mesh-shell))))
+	 (type            (if (and (null (mesh:normal-map mesh))
+				   (= (mod dice-roll chance) 0)
+				   decal-side-free)
+			      'mesh:decorated-wall-mesh-shell
+			      'mesh:wall-mesh-shell))
+	 (shell           (if (eq type 'mesh:decorated-wall-mesh-shell)
+			      (mesh:fill-shell-from-mesh mesh type)
+			      (mesh:fill-shell-from-mesh-w-renderer-data mesh type))))
     (setf (compiled-shaders shell) (compiled-shaders world))
     (setf (entity:pos shell)
 	  (vec (d+ (d* +terrain-chunk-size-scale+ min-x)
@@ -251,21 +314,30 @@
     (setf (entity:ghost shell)
 	  (random-inert-object:generate-inert-object (game-state:map-level (main-state world))))
     (game-event:register-for-end-turn shell)
-    (push-interactive-entity world shell +wall-type+ :occlude)
-    (when (typep shell 'mesh:decorated-wall-mesh-shell)
-      (setf (mesh:texture-projector shell)
-	    (random-elt (texture:list-of-texture-by-tag
-			 texture:+texture-tag-int-decal+)))
-      (setf (texture:s-wrap-mode     (mesh:texture-projector shell)) :clamp-to-border)
-      (setf (texture:t-wrap-mode     (mesh:texture-projector shell)) :clamp-to-border)
-      (setf (texture:border-color    (mesh:texture-projector shell)) §c00000000)
-      (texture:prepare-for-rendering (mesh:texture-projector shell))
-      (mesh:setup-projective-texture shell))
+    (if (typep shell 'mesh:decorated-wall-mesh-shell)
+	(progn
+	  (setf (mesh:texture-projector shell)
+		(random-elt (texture:list-of-texture-by-tag
+			     texture:+texture-tag-int-decal+)))
+	  (setf (texture:s-wrap-mode     (mesh:texture-projector shell)) :clamp-to-border)
+	  (setf (texture:t-wrap-mode     (mesh:texture-projector shell)) :clamp-to-border)
+	  (setf (texture:border-color    (mesh:texture-projector shell)) §c00000000)
+	  (texture:prepare-for-rendering (mesh:texture-projector shell))
+	  (mesh:setup-projective-texture shell)
+	  (push-interactive-entity world shell +wall-type+ :occlude
+			     :add-to-gamestate t
+			     :add-to-world     t))
+	(progn
+	  (push-interactive-entity world shell +wall-type+ :occlude
+				   :add-to-gamestate t
+				   :add-to-world     nil)
+	  (mtree:add-child (mesh:wall-instanced labyrinth-mesh) shell)))
     shell))
 
-(defun setup-window (world min-x min-y x y)
+(defun setup-window (world min-x min-y x y labyrinth-mesh)
   (let* ((mesh            (windows-bag world))
-	 (shell           (mesh:fill-shell-from-mesh mesh 'mesh:window-mesh-shell)))
+	 (shell           (mesh:fill-shell-from-mesh-w-renderer-data mesh
+								     'mesh:window-mesh-shell)))
     (setf (compiled-shaders shell) (compiled-shaders world))
     (setf (entity:pos shell)
 	  (vec (d+ (d* +terrain-chunk-size-scale+ min-x)
@@ -276,7 +348,10 @@
     (setf (entity:ghost shell)
 	  (random-inert-object:generate-inert-object (game-state:map-level (main-state world))))
     (game-event:register-for-end-turn shell)
-    (push-interactive-entity world shell +wall-type+ nil)
+    (push-interactive-entity world shell +wall-type+ nil
+			     :add-to-gamestate t
+			     :add-to-world     t)
+    (mtree:add-child (mesh:window-instanced labyrinth-mesh) shell)
     shell))
 
 (defun find-container-fn (world)
@@ -486,29 +561,31 @@
        for bmp  in (mapcar #'(lambda (a)
 			       (clean-and-redraw-mat a)
 			       (shared-matrix        a))
-			   (labyrinths map))             do
+				   (labyrinths map))
+       do
 	 (let* ((min-x   (iaabb2-min-x aabb))
-		(min-y   (iaabb2-min-y aabb)))
+		(min-y   (iaabb2-min-y aabb))
+		(labyrinth-mesh (make-instance 'mesh:labyrinth-mesh)))
 	   (loop-matrix (bmp x y)
 	      (cond
 		((wallp (matrix-elt bmp y x))
-		 (setup-wall world bmp min-x min-y x y))
+		 (setup-wall world bmp min-x min-y x y labyrinth-mesh))
 		((windowp (matrix-elt bmp y x))
-		 (setup-window world min-x min-y x y))
+		 (setup-window world min-x min-y x y labyrinth-mesh))
 		((door-n-p (matrix-elt bmp y x))
-		 (setup-door world :door-s min-x min-y x y))
+		 (setup-door world :door-s min-x min-y x y labyrinth-mesh))
 		((door-s-p (matrix-elt bmp y x))
-		 (setup-door world :door-n min-x min-y x y))
+		 (setup-door world :door-n min-x min-y x y labyrinth-mesh))
 		((door-e-p (matrix-elt bmp y x))
-		 (setup-door world :door-e min-x min-y x y))
+		 (setup-door world :door-e min-x min-y x y labyrinth-mesh))
 		((door-w-p (matrix-elt bmp y x))
-		 (setup-door world :door-w min-x min-y x y))
+		 (setup-door world :door-w min-x min-y x y labyrinth-mesh))
 		((furniture-pillar-p  (matrix-elt bmp y x))
-		 (setup-pillar world min-x min-y x y))
+		 (setup-pillar world min-x min-y x y labyrinth-mesh))
 		((furniture-walkable-p  (matrix-elt bmp y x))
 		 (setup-walkable world min-x min-y x y))
 		((furniture-table-p  (matrix-elt bmp y x))
-		 (setup-table world min-x min-y x y))
+		 (setup-table world min-x min-y x y labyrinth-mesh))
 		((furniture-other-p (matrix-elt bmp y x))
 		 (setup-furnitures world min-x min-y x y
 				   (sort (calculate-furnitures-shares (game-state:level-difficult
@@ -522,13 +599,16 @@
 	   (loop-matrix (bmp x y)
 	      (cond
 		((furniture-chair-p  (matrix-elt bmp y x))
-		 (setup-chair world min-x min-y x y))
+		 (setup-chair world min-x min-y x y labyrinth-mesh))
 		((furniture-wall-decoration-p  (matrix-elt bmp y x))
-		 (setup-wall-decoration world min-x min-y x y))))))
+		 (setup-wall-decoration world min-x min-y x y))))
+	   (setf (compiled-shaders labyrinth-mesh) (compiled-shaders world))
+	   (prepare-for-rendering labyrinth-mesh)
+	   (push-labyrinth-entity world labyrinth-mesh)))
     (rearrange-keys-for-containers    world keychain)
     (fill-containers-with-objects world)
     (when +debug-mode+
-      (dump-containers              world))))
+      (dump-containers world))))
 
 (defun setup-single-floor (world aabb)
   (let* ((rect            (aabb2->rect2 aabb))
@@ -748,12 +828,16 @@
 						      :door-s *door-s*
 						      :door-e *door-e*
 						      :door-w *door-w*))
+     (setf (chairs-bag world)          (make-instance 'chairs
+						      :chair-n *chair-n*
+						      :chair-s *chair-s*
+						      :chair-e *chair-e*
+						      :chair-w *chair-w*))
      (setf (floor-bag             world) *floor*)
      (setf (furnitures-bag        world) *furnitures*)
      (setf (containers-bag        world) *containers-furnitures*)
      (setf (magic-furnitures-bag  world) *magic-furnitures*)
      (setf (pillars-bag           world) *pillar-furnitures*)
-     (setf (chairs-bag            world) *chair-furnitures*)
      (setf (tables-bag            world) *table-furnitures*)
      (setf (wall-decorations-bag  world) *wall-decoration-furnitures*)
      (setf (walkable-bag          world) *walkable-furnitures*)

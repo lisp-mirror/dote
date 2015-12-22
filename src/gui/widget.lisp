@@ -1794,7 +1794,6 @@
 	   (setf facing-door door)))
     facing-door))
 
-
 (defun open-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w

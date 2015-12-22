@@ -705,6 +705,8 @@
 
 (defgeneric rendering-needed-p (object renderer))
 
+(defgeneric parent-labyrinth (object))
+
 (defmethod remove-mesh-data ((object triangle-mesh))
   (setf (normals       object) nil
 	(vertices      object) nil
@@ -717,6 +719,7 @@
   (with-slots (aabb) object
     (with-accessors ((model-matrix model-matrix)
 		     (bounding-sphere bounding-sphere)) object
+      (declare ((simple-vector 1) model-matrix))
       (let* ((mat (elt model-matrix 0))
 	     (min-x (min-x aabb))
 	     (max-x (max-x aabb))
@@ -2354,6 +2357,12 @@
 	(texture:prepare-for-rendering (normal-map res)))
       res)))
 
+(defmethod parent-labyrinth ((object triangle-mesh))
+  (handler-case
+      (parent-labyrinth (mtree:parent object))
+    (error ()
+      nil)))
+
 (alexandria:define-constant +magic-num-md2-tag-file '(74 68 80 50) :test #'equalp)
 
 (alexandria:define-constant +tag-file-name-size+ 64 :test #'=)
@@ -2536,7 +2545,9 @@
 
 (defgeneric fill-mesh-data (object source))
 
-(defmethod  fill-mesh-data ((object triangle-mesh-shell) (source triangle-mesh))
+(defgeneric fill-mesh-data-w-renderer-data (object source))
+
+(defmethod fill-mesh-data ((object triangle-mesh-shell) (source triangle-mesh))
   (with-accessors ((vao-host vao) (vbo-host vbo) (texture-host texture-object)
 		   (normal-map-host normal-map)  (triangles-host triangles)
                    (children-host children)
@@ -2565,8 +2576,47 @@
 	  (add-child object new-child)))
       object)))
 
+(defmethod fill-mesh-data-w-renderer-data ((object triangle-mesh-shell) (source triangle-mesh))
+  (with-accessors ((vao-host vao) (vbo-host vbo) (texture-host texture-object)
+		   (normal-map-host normal-map)  (triangles-host triangles)
+                   (children-host children)
+		   (material-params-host material-params)
+		   (compiled-shaders-host compiled-shaders)
+		   (renderer-data-vertices renderer-data-vertices)
+		   (renderer-data-texture  renderer-data-texture)
+		   (renderer-data-normals  renderer-data-normals)
+		   (renderer-data-tangents renderer-data-tangents)
+		   (renderer-data-normals-obj-space  renderer-data-normals-obj-space)
+		   (renderer-data-tangents-obj-space renderer-data-tangents-obj-space)
+		   (renderer-data-aabb-obj-space     renderer-data-aabb-obj-space)
+		   (aabb-host aabb))  object
+    (with-slots (aabb) source
+      (setf vao-host                          (vao              source)
+	    vbo-host                          (vbo              source)
+	    texture-host                      (texture-object   source)
+	    normal-map-host                   (normal-map       source)
+	    triangles-host                    (triangles        source)
+	    material-params-host              (material-params  source)
+	    compiled-shaders-host             (compiled-shaders source)
+	    aabb-host                         aabb))
+    (setf renderer-data-vertices            (renderer-data-vertices           source)
+	  renderer-data-texture  	    (renderer-data-texture            source)
+	  renderer-data-normals  	    (renderer-data-normals            source)
+	  renderer-data-tangents 	    (renderer-data-tangents           source)
+	  renderer-data-normals-obj-space   (renderer-data-normals-obj-space  source)
+	  renderer-data-tangents-obj-space  (renderer-data-tangents-obj-space source)
+	  renderer-data-aabb-obj-space      (renderer-data-aabb-obj-space     source))
+    (do-children-mesh (child source)
+	(let ((new-child (make-instance 'triangle-mesh-shell)))
+	  (fill-mesh-data-w-renderer-data new-child child)
+	  (add-child object new-child)))
+      object))
+
 (defun fill-shell-from-mesh (mesh &optional (type 'triangle-mesh-shell))
   (fill-mesh-data (make-instance type) mesh))
+
+(defun fill-shell-from-mesh-w-renderer-data (mesh &optional (type 'triangle-mesh-shell))
+  (fill-mesh-data-w-renderer-data (make-instance type) mesh))
 
 (defmethod game-event:on-game-event ((object triangle-mesh-shell)
 			  (event game-event:end-turn))
@@ -2598,15 +2648,7 @@
 
 (defmethod rendering-needed-p ((object tree-mesh-shell) renderer)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
-  (with-camera (camera renderer)
-    (let* ((center     (aabb-center (aabb object)))
-	   (pos-camera (pos camera))
-	   (a      (vec2 (elt center 0)     (elt center 2)))
-	   (b      (vec2 (elt pos-camera 0) (elt pos-camera 2))))
-      (declare (vec center pos-camera))
-      (and (d< (vec2-length (vec2- a b))
-	       (d* 2.0 +quad-tree-leaf-size+))
-	   (world:cone-bounding-sphere-intersects-p renderer object)))))
+  (world:cone-bounding-sphere-intersects-p renderer object))
 
 (defmethod calculate :after ((object tree-mesh-shell) dt)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -2660,6 +2702,18 @@
 	    (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
 	    (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))
       (render-debug object renderer))))
+
+(defgeneric tree-trunk-aabb (object))
+
+(defmethod tree-trunk-aabb ((object tree-mesh-shell))
+  (with-accessors ((pos pos)) object
+    (make-instance '3d-utils:aabb
+		   :aabb-p2 (vec+ pos (vec (d/ +terrain-chunk-tile-size+ 2.0)
+					   +wall-h+
+					   (d/ +terrain-chunk-tile-size+ 2.0)))
+		   :aabb-p1 (vec+ pos (vec (d- (d/ +terrain-chunk-tile-size+ 2.0))
+					   0.0
+					   (d- (d/ +terrain-chunk-tile-size+ 2.0)))))))
 
 (alexandria:define-constant +clouds-levels+ 3 :test #'=)
 

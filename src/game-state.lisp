@@ -218,6 +218,10 @@
     :initform nil
     :initarg  :window-id
     :accessor window-id)
+   (labyrinth-entities
+    :initform (make-hash-table :test 'equal)
+    :initarg  :labyrinth-entities
+    :accessor labyrinth-entities)
    (player-entities
     :initform (make-hash-table :test 'equal)
     :initarg  :player-entities
@@ -253,7 +257,11 @@
 
 (defgeneric terrain-aabb-2d (object))
 
-(defgeneric push-entity  (object entity))
+(defgeneric push-entity (object entity))
+
+(defgeneric push-labyrinth-entity (object labyrinth))
+
+(defgeneric find-labyrinth-by-id (object labyrinth-id))
 
 (defgeneric map-level (object))
 
@@ -390,6 +398,12 @@
 				       :compare   #'<
 				       :key-datum #'id
 				       :key       #'id))))
+
+(defmethod push-labyrinth-entity ((object game-state) labyrinth)
+  (setf (gethash (id labyrinth) (labyrinth-entities object)) labyrinth))
+
+(defmethod find-labyrinth-by-id ((object game-state) labyrinth-id)
+  (gethash labyrinth-id (labyrinth-entities object)))
 
 (defmethod find-entity-by-id ((object game-state) id)
   (with-accessors ((all-entities all-entities)) object

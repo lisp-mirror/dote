@@ -47,8 +47,6 @@
     :initform nil
     :allocation :class)))
 
-
-
 (defmethod clone-into :after ((from entity) (to entity))
   (setf (modified to) (modified from)
 	(pos to)      (copy-vec (pos from))

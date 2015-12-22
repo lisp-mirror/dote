@@ -206,7 +206,7 @@
 
 (define-constant +visibility-cone-half-hangle+    0.5235988                       :test #'=)
 
-(define-constant +visibility-cone-height+         (sb-cga:vec 0.0 0.0 3200.0)
+(define-constant +visibility-cone-height+         (sb-cga:vec 0.0 0.0 200.0)
   :test #'sb-cga:vec~)
 
 (define-constant +visibility-ray-displ-incr+      0.01                            :test #'=)

@@ -111,6 +111,7 @@
 	       (:file "furniture-mesh-shell")
 	       (:file "container-mesh-shell")
 	       (:file "fountain-mesh-shell")
+	       (:file "labyrinth-mesh")
 	       (:file "pickable-mesh")
 	       (:file "able-to-see-mesh")
 	       (:file "building-floor-mesh")

@@ -24,6 +24,9 @@
 
 (alexandria:define-constant +attribute-texture-location+        12 :test #'=)
 
+;; for instanced rendering
+(alexandria:define-constant +attribute-pick-pos-location+        1 :test #'=)
+
 ;; for terrain decals (roads etc...)
 (alexandria:define-constant +attribute-texture-decals-location+ 13 :test #'=)
 
@@ -304,6 +307,26 @@ active program (set by sdk2.kit:use-program)."
      (:shaders :vertex-shader   ,(get-shader-source "bump.vert")
                :vertex-shader   ,(get-shader-source "mesh-bump.vert")
 	       :fragment-shader ,(get-shader-source "mesh-bump.frag")))
+    (:mesh-bump-inst
+     (:uniforms :light-pos
+		:ia
+		:id
+		:is
+		:ka
+		:kd
+		:ks
+		:shine
+		:time
+		:fog-density
+		:model-matrix
+		:model-matrix
+		:modelview-matrix
+		:proj-matrix
+		:texture-object
+		:normal-map)
+     (:shaders :vertex-shader   ,(get-shader-source "bump.vert")
+               :vertex-shader   ,(get-shader-source "mesh-bump-inst.vert")
+	       :fragment-shader ,(get-shader-source "mesh-bump.frag")))
     (:building-floor-bump
      (:uniforms :light-pos
 		:ia
@@ -360,6 +383,26 @@ active program (set by sdk2.kit:use-program)."
      (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
 	       :vertex-shader   ,(get-shader-source "mesh-ads.vert")
 	       :fragment-shader ,(get-shader-source "mesh-ads.frag")))
+    (:mesh-ads-inst
+     (:uniforms :light-pos
+		:ia
+		:id
+		:is
+		:ka
+		:kd
+		:ks
+		:shine
+		:modelview-matrix
+		:model-matrix
+		:time
+		:fog-density
+		:proj-matrix
+		:texture-object
+		:scale-text-coord)
+     (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
+	       :vertex-shader   ,(get-shader-source "mesh-ads-inst.vert")
+	       :fragment-shader ,(get-shader-source "mesh-ads.frag")))
+
     (:mesh-debug
      (:uniforms :out-color
 		:modelview-matrix

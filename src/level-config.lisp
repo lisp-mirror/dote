@@ -154,6 +154,14 @@
 
 (defparameter *door-w*  	      	   nil)
 
+(defparameter *chair-n*  	      	   nil)
+
+(defparameter *chair-s*  	      	   nil)
+
+(defparameter *chair-e*  	      	   nil)
+
+(defparameter *chair-w*  	      	   nil)
+
 (defparameter *floor*   	      	   nil)
 
 (defparameter *furnitures*                 '())
@@ -210,7 +218,7 @@
     (when normal-map
       (setf (texture:use-mipmap normal-map) t)
       (setf (texture:interpolation-type normal-map) :linear)
-      (setf (texture:tags normal-map) #("normalmap door"))
+      (setf (texture:tags normal-map) #("normalmap wall"))
       (interfaces:prepare-for-rendering normal-map))
     (setf (mesh:texture-object mesh) texture)
     (mesh:get-material-from-texture mesh)
@@ -286,6 +294,19 @@
 						(interfaces:clone mesh)
 						(sb-cga:rotate-around +y-axe+ +pi/2+))))))
 
+(defun setup-chairs ()
+  (let* ((mesh (misc:random-elt *chair-furnitures*)))
+    (setf *chair-s* (mesh:prepare-for-rendering (interfaces:clone mesh))
+	  *chair-e* (mesh:prepare-for-rendering (mesh:transform-vertices
+						 (interfaces:clone mesh)
+						 (sb-cga:rotate-around +y-axe+ (- +pi/2+))))
+	  *chair-n* (mesh:prepare-for-rendering (mesh:transform-vertices
+						 (interfaces:clone mesh)
+						 (sb-cga:rotate-around +y-axe+ +pi+)))
+	  *chair-w* (mesh:prepare-for-rendering (mesh:transform-vertices
+						(interfaces:clone mesh)
+						(sb-cga:rotate-around +y-axe+ +pi/2+))))))
+
 (defun setup-floor ()
    (let* ((tag        (elt +available-level-floor+ *building-level*))
 	  (texture    (random-elt (texture:list-of-texture-by-tag tag)))
@@ -327,6 +348,10 @@
 	*door-s*                     nil
 	*door-e*                     nil
 	*door-w*                     nil
+	*chair-n*                    nil
+	*chair-s*                    nil
+	*chair-e*                    nil
+	*chair-w*                    nil
 	*floor*                      nil)
   (tg:gc :full t))
 
@@ -350,6 +375,7 @@
 	(setup-doors)
 	(limited-progress)
 	(setup-seed)
+	(setup-chairs)
 	(limited-progress)))))
 
 (defun setup-seed ()
