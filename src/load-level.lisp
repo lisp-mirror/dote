@@ -41,7 +41,7 @@
 	 (push-entity world water))))
 
 (defun height-tree->level (tree)
-  (let* ((tree-aabb (aabb tree))
+  (let* ((tree-aabb (mesh:aabb tree))
 	 (h (- (3d-utils:max-y tree-aabb)
 	      (3d-utils:min-y  tree-aabb))))
     (truncate (alexandria:clamp (1+ (* 0.3 h))
