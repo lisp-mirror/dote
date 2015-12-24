@@ -642,7 +642,11 @@
   (game-state:setup-map-state-entity (main-state object) entity type occlusion-value))
 
 (defmethod move-map-state-entity ((object world) entity from)
-  (game-state:move-map-state-entity (main-state object) entity from))
+  (with-accessors ((entities entities)) object
+    ;; update quadtree
+    (remove-entity-by-id entities (id entity))
+    (push-entity object entity)
+    (game-state:move-map-state-entity (main-state object) entity from)))
 
 (defmethod setup-map-state-tile ((object world) x y type id occlusion-value)
   (world:set-map-state-type      object x y type)

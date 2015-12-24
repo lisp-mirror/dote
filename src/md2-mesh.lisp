@@ -140,8 +140,9 @@
 		   (state state)) object
     (with-accessors ((current-path current-path)) ghost
       (when (= (id-origin event) id)
-	;; update state matrix
-	(game-state:move-map-state-entity state object (alexandria:first-elt current-path))
+	(game-state:with-world (world state)
+	  ;; update state matrix
+	  (world:move-map-state-entity world object (alexandria:first-elt current-path)))
 	;; TODO reset cost for first tile of the path
 	(setf current-path (subseq current-path 1))
 	(if (= (length current-path) 1)

@@ -463,7 +463,8 @@
 	:constants)
   (:export
    :fetch-window
-   :fetch-window-id))
+   :fetch-window-id
+   :with-world))
 
 (defpackage :interfaces
   (:use :cl
@@ -917,6 +918,20 @@
    :look@
    :look@*))
 
+(defpackage :identificable
+  (:use :cl
+	:constants
+	:config
+	:interfaces)
+  (:export
+   :*clone-id*
+   :*entity-id-counter*
+   :valid-id-p
+   :identificable
+   :id
+   :find-entity-by-id
+   :remove-entity-by-id))
+
 (defpackage :bs-tree
   (:use
    :cl
@@ -1013,7 +1028,8 @@
    :num-utils
    :vec4
    :vec2
-   :2d-utils)
+   :2d-utils
+   :identificable)
   ;;(:shadowing-import-from :num-utils epsilon=)
   (:import-from :bs-tree :leafp)
   (:export
@@ -1415,19 +1431,6 @@
    :clouds
    :gen-bg-sky-colors
    :skydome))
-
-(defpackage :identificable
-  (:use :cl
-	:constants
-	:config
-	:interfaces)
-  (:export
-   :*clone-id*
-   :*entity-id-counter*
-   :valid-id-p
-   :identificable
-   :id
-   :find-entity-by-id))
 
 (defpackage :entity
   (:use :cl
@@ -1850,6 +1853,7 @@
    :light-color
    :fog-density
    :fetch-window
+   :with-world
    :fetch-world
    :setup-game-hour
    :prepare-map-state
@@ -2473,6 +2477,8 @@
 	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
+   :+minimum-level+
+   :+maximum-level+
    :generate-inert-object))
 
 ;; engine

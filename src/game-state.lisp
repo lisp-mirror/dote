@@ -36,7 +36,7 @@
 
 (alexandria:define-constant +density-no-fog+      0.0        :test #'=)
 
-(alexandria:define-constant +density-fog+         0.004      :test #'=)
+(alexandria:define-constant +density-fog+         0.006      :test #'=)
 
 (defun hour->light-color (h)
   (cond
@@ -307,6 +307,10 @@
   (and (window-id object)
        (sdl2.kit-utils:fetch-window (window-id object))))
 
+(defmacro with-world ((world object) &body body)
+  `(let ((,world (fetch-world ,object)))
+     ,@body))
+
 (defmethod fetch-world ((object game-state))
   (let ((w (fetch-render-window object)))
     (and w
@@ -445,7 +449,7 @@
 
 (defmethod approx-terrain-height@pos ((object game-state) x z)
   "x and z in world space"
-  (let* ((world-ref (fetch-world object)))
+  (let ((world-ref (fetch-world object)))
     (world::pick-height-terrain world-ref x z)))
 
 (defmethod place-player-on-map ((object game-state) player faction &optional (pos #(0 0)))

@@ -868,15 +868,19 @@
 (defmethod get-first-near-as-id ((object triangle-mesh) vertex-index)
   (get-first-near object vertex-index))
 
+(defparameter *print-mesh-details* nil)
+
 (defmethod print-object ((object triangle-mesh) stream)
-  (let ((*print-circle* t))
-    (print-unreadable-object (object stream :type t :identity t)
-      (loop for tr in (triangles object) do
- 	   (format stream "~a +~a+~%--~a--~%" tr
- 		   (loop for i across (normal-index tr) collect
- 			(find-value-by-index object i :what :normal))
+  (if *print-mesh-details*
+      (let ((*print-circle* t))
+	(print-unreadable-object (object stream :type t :identity t)
+	  (loop for tr in (triangles object) do
+	       (format stream "~a +~a+~%--~a--~%" tr
+		       (loop for i across (normal-index tr) collect
+			    (find-value-by-index object i :what :normal))
  		   (loop for i across (vertex-index tr) collect
- 			(find-value-by-index object i)))))))
+			(find-value-by-index object i))))))
+      (print-unreadable-object (object stream :type t :identity t))))
 
 (defmacro gen-recursive-writer (what argname)
   (let ((fn-name (alexandria:format-symbol t "~:@(~a~)" what)))
@@ -2617,20 +2621,6 @@
 
 (defun fill-shell-from-mesh-w-renderer-data (mesh &optional (type 'triangle-mesh-shell))
   (fill-mesh-data-w-renderer-data (make-instance type) mesh))
-
-(defmethod game-event:on-game-event ((object triangle-mesh-shell)
-			  (event game-event:end-turn))
-  (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
-  nil)
-
-(defmethod game-event:on-game-event ((object triangle-mesh-shell)
-			  (event game-event:move-entity-along-path-event))
-  (misc:dbg "rec")
-  (if (= (id object) (game-event:id-destination event))
-      (progn
-	(misc:dbg "rr")
-	t)
-      nil))
 
 (defclass tree-mesh-shell (triangle-mesh-shell)
   ((start-time

@@ -47,3 +47,5 @@
   (= (id lhs) (id rhs)))
 
 (defgeneric find-entity-by-id (object id))
+
+(defgeneric remove-entity-by-id (object id))

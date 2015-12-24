@@ -112,6 +112,8 @@
 
 (defgeneric push-down (object entity &optional ent-aabb))
 
+(defgeneric remove-element (object entity))
+
 (defmethod subdivide ((object quad-tree) level)
   (with-accessors ((aabb aabb) (nw nw) (ne ne) (sw sw) (se se) (data data)) object
     (if (> level 0)
@@ -227,6 +229,15 @@
     (if (leafp object)
 	(vector-push-extend entity (data object))
 	(%cond-push-down object entity ent-aabb  (nw ne sw se)))))
+
+(defmethod remove-entity-by-id ((object quad-tree) id)
+  (iterate-nodes object
+		 #'(lambda (n)
+		     (with-accessors ((data data)) n
+		       (when (find id data :key #'id :test #'=)
+			 (setf data (delete id data :key #'id :test #'=))
+			 (return-from remove-entity-by-id t)))))
+  nil)
 
 (defun quad-sizes->level (side-host side-guest)
   (let ((ratio (d/ (dexpt side-host 2.0) (dexpt side-guest 2.0))))

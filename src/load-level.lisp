@@ -40,6 +40,14 @@
 	 (mesh:prepare-for-rendering water)
 	 (push-entity world water))))
 
+(defun height-tree->level (tree)
+  (let* ((tree-aabb (aabb tree))
+	 (h (- (3d-utils:max-y tree-aabb)
+	      (3d-utils:min-y  tree-aabb))))
+    (truncate (alexandria:clamp (1+ (* 0.3 h))
+				random-inert-object:+minimum-level+
+				random-inert-object:+maximum-level+))))
+
 (defun setup-trees (world map)
   (let ((tree-bag-sorted nil))
     (loop for tree-pos in (random-terrain:trees map) do
@@ -61,11 +69,12 @@
 	   ;; to ensure the tree lies in a leaf node of the quadtree...
 	   (let ((saved-aabb (slot-value tree 'mesh:aabb)))
 	     (setf (mesh:aabb tree) (make-instance '3d-utils:aabb
-					      :aabb-p1 (entity:pos tree)
-					      :aabb-p2 (vec+ (vec 0.0 10.0 0.0)
-							     (entity:pos tree))))
+					      :aabb-p1 (vec 0.0 0.0 0.0)
+					      :aabb-p2 (vec 0.0 10.0 0.0)))
 	     (push-interactive-entity world tree +tree-type+ :occlude)
-	     (setf (mesh:aabb tree) saved-aabb))))))
+	     (setf (mesh:aabb tree) saved-aabb)
+	     (setf (entity:ghost tree)
+		   (random-inert-object:generate-inert-object (height-tree->level tree))))))))
 
 (defun setup-door (world type min-x min-y x y labyrinth-mesh)
   (let* ((door-type-fn (ecase type
