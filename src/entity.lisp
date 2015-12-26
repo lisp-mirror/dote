@@ -65,3 +65,9 @@
 	  (call-next-method)))
 
 (defgeneric aabb-2d (object))
+
+(defgeneric find-entity-by-id (object id))
+
+(defgeneric remove-entity-by-id (object id))
+
+(defgeneric remove-entity-if (object predicate))

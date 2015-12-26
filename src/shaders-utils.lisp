@@ -72,7 +72,7 @@
           for text in (cdr shaders) by #'cddr
           do (let ((shader (gl:create-shader type)))
                (alexandria:when-let ((log (compile-and-check-shader shader text)))
-                 (format *error-output* "Compile Log for ~A:~%~A~%" type log))
+                 (format *error-output* "Compile Log for ~A:~%~A~%shader ~a" type log text))
                (push shader compiled-shaders)))
     (let ((program (gl:create-program)))
       (if (= 0 program)
@@ -459,7 +459,6 @@ active program (set by sdk2.kit:use-program)."
 		:progress)
      (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
 	       :fragment-shader ,(get-shader-source "splash-progress-gauge.frag")))
-
     (:gui-fonts
      (:uniforms :modelview-matrix
 		:proj-matrix
@@ -474,7 +473,18 @@ active program (set by sdk2.kit:use-program)."
 		:texture-overlay
 		:ia)
      (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
-	       :fragment-shader ,(get-shader-source "gui-naked-button.frag")))))
+	       :fragment-shader ,(get-shader-source "gui-naked-button.frag")))
+    (:tooltip
+     (:uniforms :modelview-matrix
+		:proj-matrix
+		:texture-object
+		:post-scaling
+		:vert-displacement-speed
+		:duration
+		:mult-color
+		:time)
+      (:shaders :vertex-shader   ,(get-shader-source "tooltip.vert")
+		:fragment-shader ,(get-shader-source "tooltip.frag")))))
 
 (defun compile-library ()
   (let ((*error-output* (make-string-output-stream)))

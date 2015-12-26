@@ -355,10 +355,10 @@
   (render (camera  object) object)
   (render (skydome object) object)
   (walk-quad-tree (object)
-    (when (and (not (water-mesh-p entity)))
+    (when (and (not (use-blending-p entity)))
       (render entity renderer)))
   (walk-quad-tree (object)
-    (when (water-mesh-p entity)
+    (when (use-blending-p entity)
       (render entity renderer))))
 
 (defmethod render-for-reflection ((object world) (renderer world))

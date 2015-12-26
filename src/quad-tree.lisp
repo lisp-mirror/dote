@@ -239,6 +239,12 @@
 			 (return-from remove-entity-by-id t)))))
   nil)
 
+(defmethod remove-entity-if ((object quad-tree) predicate)
+  (iterate-nodes object
+		 #'(lambda (n)
+		     (with-accessors ((data data)) n
+		       (setf data (delete-if predicate data))))))
+
 (defun quad-sizes->level (side-host side-guest)
   (let ((ratio (d/ (dexpt side-host 2.0) (dexpt side-guest 2.0))))
     (declare (desired-type ratio))

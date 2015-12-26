@@ -500,7 +500,11 @@
    :serialize
    :serialize-to-stream
    :deserialize
-   :description-for-humans))
+   :description-for-humans
+   :inner-animation
+   :start-time
+   :el-time
+   :animation-speed))
 
 (defpackage :ivec2
   (:use :cl
@@ -928,9 +932,31 @@
    :*entity-id-counter*
    :valid-id-p
    :identificable
-   :id
+   :id))
+
+(defpackage :entity
+  (:use :cl
+	:alexandria
+	:constants
+	:config
+	:sb-cga
+	:sb-cga-utils
+	:interfaces
+	:identificable)
+  (:shadowing-import-from :sb-cga :rotate)
+  (:export
+   :entity
+   :modified
+   :pos
+   :dir
+   :scaling
+   :up
+   :ghost
+   :state
+   :aabb-2d
    :find-entity-by-id
-   :remove-entity-by-id))
+   :remove-entity-by-id
+   :remove-entity-if))
 
 (defpackage :bs-tree
   (:use
@@ -1029,7 +1055,8 @@
    :vec4
    :vec2
    :2d-utils
-   :identificable)
+   :identificable
+   :entity)
   ;;(:shadowing-import-from :num-utils epsilon=)
   (:import-from :bs-tree :leafp)
   (:export
@@ -1431,27 +1458,6 @@
    :clouds
    :gen-bg-sky-colors
    :skydome))
-
-(defpackage :entity
-  (:use :cl
-	:alexandria
-	:constants
-	:config
-	:sb-cga
-	:sb-cga-utils
-	:interfaces
-	:identificable)
-  (:shadowing-import-from :sb-cga :rotate)
-  (:export
-   :entity
-   :modified
-   :pos
-   :dir
-   :scaling
-   :up
-   :ghost
-   :state
-   :aabb-2d))
 
 ;; procedural content
 
@@ -2608,6 +2614,8 @@
    :render-aabb
    :aabb
    :reset-aabb
+   :renderp
+   :use-blending-p
    :bounding-sphere
    :transform-vertices
    :get-material-from-texture
@@ -3004,6 +3012,7 @@
    :signalling-light
    :button-state
    :flip-state
+   :common-setup-label
    :simple-label
    :static-text
    :h-bar
@@ -3032,6 +3041,42 @@
    :progress-gauge
    :progress
    :make-splash-progress-gauge))
+
+(defpackage :billboard
+  (:use :cl
+	:alexandria
+	:sb-cga
+	:config
+	:constants
+	:num
+	:misc
+	:mtree-utils
+	:shaders-utils
+	:interfaces
+	:sb-cga-utils
+	:vec2
+	:vec4
+	:texture
+	:identificable
+	:transformable
+	:entity
+	:camera
+	:game-state
+	:mesh
+	:gui-events
+	:gui
+	:widget)
+  (:shadowing-import-from :sb-cga :rotate)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :+tooltip-w+
+   :+tooltip-h+
+   :+damage-color+
+   :+poison-damage-color+
+   :+healing-color+
+   :tooltip
+   :duration
+   :make-tooltip))
 
 (defpackage :world
   (:use :cl

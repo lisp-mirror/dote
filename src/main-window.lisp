@@ -198,7 +198,7 @@
 		((not (num:d> fdt 0.0)))
 	      (let ((actual-dt (min (/ +game-fps+ 1000) fdt)))
 		(decf fdt actual-dt)
-		(interfaces:calculate world actual-dt))))
+		(interfaces:calculate world (d actual-dt)))))
 	  ;; rendering
 	  (gl:clear :color-buffer)
 	  (gl:clear :depth-buffer)
@@ -293,8 +293,10 @@
 				   :label nil))
 	      (mtree:add-child (world:gui (world object)) (world:toolbar (world object)))
 	      ;; test
-	      (mtree:add-child (world:gui (world object)) (widget:make-player-generator (world object)))
-	      (setf (interfaces:compiled-shaders (world:gui (world object))) (compiled-shaders object))
+	      (mtree:add-child (world:gui (world object))
+			       (widget:make-player-generator (world object)))
+	      (setf (interfaces:compiled-shaders (world:gui (world object)))
+		    (compiled-shaders object))
 	      (setf *map-loaded-p* t)
 	      (setf (delta-time-elapsed object) (sdl2:get-ticks))
 	      (gl:clear-color 0.039215688 0.17254902 0.08235294 1.0)))

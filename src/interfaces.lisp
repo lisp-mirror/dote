@@ -142,3 +142,17 @@
 
 (defmethod description-for-humans ((object t))
   (if object " " nil))
+
+(defclass inner-animation ()
+  ((start-time
+    :initform 0.0
+    :initarg :start-time
+    :accessor start-time)
+   (el-time
+    :initform 0.0
+    :initarg :el-time
+    :accessor el-time)
+   (animation-speed
+    :initform 0.15
+    :initarg :animation-speed
+    :accessor animation-speed)))

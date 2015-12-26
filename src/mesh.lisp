@@ -456,6 +456,10 @@
     :initform t
     :initarg :renderp
     :accessor renderp)
+   (use-blending-p
+    :initform nil
+    :initarg  :use-blending-p
+    :accessor use-blending-p)
    (render-normals
     :initform nil
     :initarg :render-normals
@@ -563,6 +567,7 @@
 	     parent-mesh
 	     aabb
 	     renderp
+	     use-blending-p
 	     render-aabb
 	     render-normals
 	     render-tangents)
@@ -2622,19 +2627,10 @@
 (defun fill-shell-from-mesh-w-renderer-data (mesh &optional (type 'triangle-mesh-shell))
   (fill-mesh-data-w-renderer-data (make-instance type) mesh))
 
-(defclass tree-mesh-shell (triangle-mesh-shell)
-  ((start-time
-    :initform (d (lcg-next-upto 5))
-    :initarg :start-time
-    :accessor start-time)
-   (el-time
-    :initform 0.0
-    :initarg :el-time
-    :accessor el-time)
-   (animation-speed
-    :initform 0.15
-    :initarg :animation-speed
-    :accessor animation-speed)))
+(defclass tree-mesh-shell (triangle-mesh-shell inner-animation) ())
+
+(defmethod initialize-instance :after ((object tree-mesh-shell) &key &allow-other-keys)
+  (setf (start-time object) (d (lcg-next-upto 5))))
 
 (defmethod rendering-needed-p ((object tree-mesh-shell) renderer)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
@@ -2859,6 +2855,7 @@
     (setf (texture:t-wrap-mode texture-object) :clamp-to-edge)
     (setf (texture:interpolation-type texture-object) :linear)
     (setf (texture:border-color texture-object) §cff0000ff)
+    (setf (use-blending-p object) t)
     (texture:setup-texture-parameters texture-object)))
 
 (defmethod calculate ((object water) dt)
