@@ -16,6 +16,10 @@
 
 (in-package :world)
 
+(alexandria:define-constant +camera-point-to-entity-dir-scale+ (d* +terrain-chunk-tile-size+
+							8.0)
+  :test #'=)
+
 (defun make-skydome (bg cloud-1 cloud-2 cloud-3 smoke)
   (let ((mesh (gen-skydome 100.0)))
     ;; background
@@ -195,7 +199,8 @@
 
 (defmethod initialize-instance :after ((object world) &key &allow-other-keys)
   (game-event:register-for-refresh-toolbar-event object)
-  (game-event:register-for-update-highlight-path object))
+  (game-event:register-for-update-highlight-path object)
+  (game-event:register-for-end-turn              object))
 
 (defmethod game-event:on-game-event ((object world)
 				     (event game-event:refresh-toolbar-event))
@@ -205,6 +210,19 @@
 (defmethod game-event:on-game-event ((object world)
 				     (event game-event:update-highlight-path))
   (highlight-path-costs-space object object (game-event:tile-pos event)))
+
+
+(defmethod game-event:on-game-event ((object world) (event game-event:end-turn))
+  (with-accessors ((main-state main-state)) object
+    (misc:dbg " end turn ~a ~a" (type-of object) (type-of event))
+    (remove-entity-if (entities object) #'(lambda (a) (typep a 'billboard:tooltip)))
+    (remove-entity-if (gui object) #'(lambda (a) (typep a 'widget:message-window)))
+    (incf (game-turn (main-state object)))
+    (maphash #'(lambda (k v) (declare (ignore k)) (mesh:process-postponed-messages v))
+	     (game-state:player-entities main-state))
+    (maphash #'(lambda (k v) (declare (ignore k)) (mesh:process-postponed-messages v))
+	     (game-state:ai-entities main-state))
+    nil))
 
 (defgeneric (setf main-state) (new-state object))
 
@@ -246,6 +264,16 @@
 (defgeneric setup-map-state-tile (object x y type id occlusion-value))
 
 (defgeneric set-window-accepts-input (object value))
+
+(defgeneric move-entity (object entity from))
+
+(defgeneric toolbar-selected-action (object))
+
+(defgeneric (setf toolbar-selected-action) (val object))
+
+(defgeneric post-entity-message (object entity text &rest actions))
+
+(defgeneric point-camera-to-entity (object entity))
 
 (defmethod iterate-quad-tree ((object world) function probe)
   (quad-tree:iterate-nodes-intersect (entities object)
@@ -642,11 +670,23 @@
   (game-state:setup-map-state-entity (main-state object) entity type occlusion-value))
 
 (defmethod move-map-state-entity ((object world) entity from)
+  (game-state:move-map-state-entity (main-state object) entity from))
+
+(defmethod move-entity ((object world) entity from)
   (with-accessors ((entities entities)) object
     ;; update quadtree
     (remove-entity-by-id entities (id entity))
     (push-entity object entity)
-    (game-state:move-map-state-entity (main-state object) entity from)))
+    (game-state:move-map-state-entity object entity from)))
+
+(defmethod toolbar-selected-action ((object world))
+  (widget:selected-action (toolbar object)))
+
+(defmethod (setf toolbar-selected-action) (val (object world))
+  (setf (widget:selected-action (toolbar object)) val))
+
+(defmethod reset-toolbar-selected-action ((object world))
+  (widget:reset-toolbar-selected-action (toolbar object)))
 
 (defmethod setup-map-state-tile ((object world) x y type id occlusion-value)
   (world:set-map-state-type      object x y type)
@@ -654,15 +694,48 @@
   (world:set-map-state-occlusion object x y occlusion-value))
 
 (defmethod place-player-on-map ((object world) player faction &optional (pos #(0 0)))
-  (game-state:place-player-on-map (main-state object) player faction pos)
+  ;; events
   (game-event:register-for-end-turn                          player)
+  ;; movement
   (game-event:register-for-move-entity-along-path-event      player)
   (game-event:register-for-move-entity-along-path-end-event  player)
   (game-event:register-for-move-entity-entered-in-tile-event player)
-  (game-event:register-for-end-turn                          player)
   (game-event:register-for-rotate-entity-cw-event            player)
   (game-event:register-for-rotate-entity-ccw-event           player)
-  (push-interactive-entity object player faction :occlude))
+  ;; healing
+  ;;poison
+  (game-event:register-for-cause-poisoning-event             player)
+  (game-event:register-for-cure-poisoning-event              player)
+  (game-event:register-for-immune-poisoning-event            player)
+  (game-event:register-for-cancel-immune-poisoning-event     player)
+  ;; terror
+  (game-event:register-for-cause-terror-event                player)
+  (game-event:register-for-cure-terror-event                 player)
+  (game-event:register-for-cancel-terror-event               player)
+  (game-event:register-for-immune-terror-event               player)
+  (game-event:register-for-cancel-immune-terror-event        player)
+  ;; berserk
+  (game-event:register-for-cause-berserk-event               player)
+  (game-event:register-for-cure-berserk-event                player)
+  (game-event:register-for-cancel-berserk-event              player)
+  (game-event:register-for-immune-berserk-event              player)
+  (game-event:register-for-cancel-immune-berserk-event       player)
+  ;; faint
+  (game-event:register-for-cause-faint-event                 player)
+  (game-event:register-for-cure-faint-event                  player)
+  (game-event:register-for-cancel-faint-event                player)
+  (game-event:register-for-immune-faint-event                player)
+  (game-event:register-for-cancel-immune-faint-event         player)
+  ;; DMG points
+  (game-event:register-for-heal-damage-event                 player)
+  ;; modifier
+  (game-event:register-for-modifier-object-event             player)
+  ;; wearing
+  (game-event:register-for-wear-object-event                 player)
+  (game-event:register-for-unwear-object-event               player)
+  ;; events registration ends here
+  (game-state:place-player-on-map (main-state object)        player faction pos)
+  (push-interactive-entity object                            player faction :occlude))
 
 (defmethod push-labyrinth-entity ((object world) labyrinth)
   (game-state:push-labyrinth-entity (main-state object) labyrinth)
@@ -674,3 +747,34 @@
 
 (defmethod find-labyrinth-by-id ((object world) labyrinth-id)
   (game-state:find-labyrinth-by-id (main-state object) labyrinth-id))
+
+(defmethod post-entity-message ((object world) entity text &rest actions)
+  (with-accessors ((gui gui)
+		   (compiled-shaders compiled-shaders)) object
+    (with-accessors ((ghost ghost)) entity
+      (with-accessors ((portrait portrait)) ghost
+	(let* ((image       (or (texture:handle portrait) :info))
+	       (all-actions (concatenate 'list
+					 (list
+					  (cons (_ "OK")
+						#'widget:hide-and-remove-parent-cb))
+					 actions))
+	       (message-box (widget:make-message-box* text
+						      (_ "Message")
+						      image
+						      all-actions)))
+	  (setf (compiled-shaders message-box) compiled-shaders)
+	  (mtree:add-child gui message-box))))))
+
+(defun point-to-entity-and-hide-cb (world entity)
+  #'(lambda (w e)
+      (widget:hide-and-remove-parent-cb w e)
+      (world:point-camera-to-entity world entity)))
+
+(defmethod point-camera-to-entity ((object world) (entity entity))
+  (with-accessors ((camera camera)) object
+    (with-accessors ((pos pos)) entity
+      (setf (mode camera) :drag)
+      (drag-camera-to camera (vec+ (aabb-p2 (aabb entity))
+				   (vec* (vec-negate (dir camera))
+					 +camera-point-to-entity-dir-scale+))))))

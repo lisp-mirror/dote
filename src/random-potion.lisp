@@ -58,12 +58,6 @@
 (define-constant +chance-healing-fx-mean+   #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
   :test #'equalp)
 
-(define-constant +chance-healing-fx-sigma+ #(.08 .1 .12 .18 .22 .23 .24 .25 .26 .28)
-  :test #'equalp)
-
-(define-constant +chance-healing-fx-mean+  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
-  :test #'equalp)
-
 (define-constant +minimum-duration-healing-fx+        2.0  :test #'=)
 
 (define-constant +minimum-num-healing-fx+             2.0  :test #'=)
@@ -79,6 +73,8 @@
 (define-constant +minimum-damage-point+               1.0  :test #'=)
 
 (define-constant +maximum-damage-point+               2.0  :test #'=)
+
+(define-constant +standard-potion-decay+            500.0  :test #'=)
 
 (defun randomize-damage-points (character level)
   (setf (damage-points character)
@@ -101,7 +97,14 @@
 (defun calculate-modifier (potion-level)
   (multiple-value-bind (sigma mean)
       (modifier-params (1- potion-level))
-    (abs (gaussian-probability sigma mean))))
+    (d (abs (gaussian-probability sigma mean)))))
+
+
+(defun calculate-decay (map-level)
+  (make-instance 'decay-parameters
+		 :leaving-message (_ " exausted.")
+		 :points          (/ +standard-potion-decay+ map-level)
+		 :when-decay      +decay-by-turns+))
 
 (defun calculate-potion-level (map-level)
   (multiple-value-bind (sigma mean)
@@ -120,7 +123,7 @@
 
 (defun set-healing-dmg-effect (path potion-level interaction)
   (let ((effect-object (make-instance 'heal-damage-points-effect-parameters
-				      :trigger +effect-when-used+
+				      :trigger +effect-when-consumed+
 				      :points  (calculate-modifier potion-level)
 				      :chance  (calculate-healing-fx-params-chance
 						potion-level)
@@ -129,17 +132,15 @@
 
 (defun set-healing-effect (effect-path potion-level interaction)
   (let ((effect-object (make-instance 'healing-effect-parameters
-				      :trigger  +effect-when-used+
-				      :duration  (healing-effect-duration
-						  effect-path
-						  (ceiling (calculate-modifier potion-level)))
-				      :chance (calculate-healing-fx-params-chance
-					       potion-level)
-				      :target  +target-self+)))
+				      :trigger  +effect-when-consumed+
+				      :duration (ceiling (calculate-modifier potion-level))
+				      :chance   (calculate-healing-fx-params-chance potion-level)
+				      :target   +target-self+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun set-poison-effect (effect-path potion-level interaction)
   (let ((effect-object (make-instance 'poison-effect-parameters
+				      :target          +target-self+
 				      :points-per-turn (calculate-modifier potion-level))))
     (n-setf-path-value interaction effect-path effect-object)))
 
@@ -153,13 +154,14 @@
     (1+ (lcg-next-upto (max 1 max)))))
 
 (defun generate-potion (map-level)
-  (%generate-potion (res:get-resource-file +default-interaction-filename+
-					   +default-character-potion-dir+
-					   :if-does-not-exists :error)
-		    (res:get-resource-file +default-character-filename+
-					   +default-character-potion-dir+
-					   :if-does-not-exists :error)
-		    map-level))
+  (clean-effects
+   (%generate-potion (res:get-resource-file +default-interaction-filename+
+					    +default-character-potion-dir+
+					    :if-does-not-exists :error)
+		     (res:get-resource-file +default-character-filename+
+					    +default-character-potion-dir+
+					    :if-does-not-exists :error)
+		     map-level)))
 
 (defun %generate-potion (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
@@ -167,7 +169,8 @@
     (with-interaction-parameters (template interaction-file)
       (let* ((potion-level       (calculate-potion-level map-level))
 	     (healing-effects-no (number-of-healing-effects potion-level 0))
-	     (healing-effects    (%get-healing-fx-shuffled template healing-effects-no)))
+	     (healing-effects    (%get-healing-fx-shuffled template healing-effects-no))
+	     (decay              (calculate-decay map-level)))
 	(loop for i in healing-effects do
 	     (cond
 	       ((eq i +heal-damage-points+)
@@ -176,6 +179,7 @@
 		(set-poison-effect (list +healing-effects+ i) potion-level template))
 	       (t
 		(set-healing-effect (list +healing-effects+ i) potion-level template))))
+	(n-setf-path-value template (list +decay+) decay)
 	(setf template (remove-generate-symbols template))
 	(fill-character-plist char-template template potion-level)
 	(let ((potion-character (params->np-character char-template)))

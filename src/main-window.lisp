@@ -102,7 +102,7 @@
 			     "temperate/lemon.lsys"       ; 12
 			     "general/dead-tree-3.lsys")) ; 13
 
-(defparameter *map-loaded-p*   nil)
+(defparameter *map-loaded-p* nil)
 
 (defgeneric set-player-path (object x y))
 
@@ -154,7 +154,7 @@
 				      (vec 64.0 20.0 64.0)
 				      (vec 0.0  30.0 64.0)
 				      (vec 64.0  90.0 64.0))
-    (camera:install-drag-interpolator (world:camera world) :spring-k 10.0)
+    (camera:install-drag-interpolator (world:camera world) :spring-k +camera-drag-spring-k+)
     (camera:install-orbit-interpolator (world:camera world) 5.0 5.0 10.0)
     ;; setup projection
     (transformable:build-projection-matrix world *near* *far* *fov*
@@ -334,7 +334,7 @@
 	  (when *placeholder*
 	    (let* ((old-pos (entity:pos *placeholder*)))
 	      (when (eq :scancode-f1 scancode)
-		(misc:dbg "position ~a costs ~a, ~a cost: ~a what ~a id ~a~%"
+		(misc:dbg "position ~a costs ~a, ~a cost: ~a what ~a id ~a~% approx h ~a"
 			  old-pos
 			  (misc:coord-chunk->costs (elt old-pos 0))
 			  (misc:coord-chunk->costs (elt old-pos 2))
@@ -346,7 +346,10 @@
 					    (misc:coord-chunk->costs (elt old-pos 2)))
 			  (entity-id-in-pos (game-state object)
 					    (misc:coord-chunk->costs (elt old-pos 0))
-					    (misc:coord-chunk->costs (elt old-pos 2)))))
+					    (misc:coord-chunk->costs (elt old-pos 2)))
+			  (approx-terrain-height@pos (game-state object)
+					    (elt old-pos 0)
+					    (elt old-pos 2))))
 	      (when (and (eq :scancode-up scancode))
 		(setf (entity:pos *placeholder*)
 		      (vec (elt old-pos 0)
@@ -396,7 +399,8 @@
 							   :path (game-state:tiles selected-path)
 							   :cost (game-state:cost  selected-path)
 							   :id-destination (id selected-pc))))
-			(game-event:propagate-move-entity-along-path-event movement-event))))))
+			(game-event:propagate-move-entity-along-path-event movement-event)
+			(world:reset-toolbar-selected-action world))))))
 	      (when (not (widget:on-mouse-released (world:gui world) gui-event))
 		(misc:dbg "~s button: ~A at ~A, ~A" state b x y))))))))
 
@@ -460,7 +464,8 @@
 	  (with-accept-input (object)
 	    (if (not selected-pc)
 		(world:highlight-tile-screenspace world world x y)
-		(when (< (vec2:vec2-length (vec2:vec2 (d xr) (d yr))) 2)
+		(when (and (< (vec2:vec2-length (vec2:vec2 (d xr) (d yr))) 2)
+			   (eq (world:toolbar-selected-action world) widget:+action-move+))
 		  (set-player-path object x y))))))))
 
 (defmethod game-event:on-game-event ((object test-window)
@@ -483,6 +488,7 @@
 			     1))
   (setf lparallel:*kernel* (lparallel:make-kernel *workers-number*))
   (setf identificable:*entity-id-counter* +start-id-counter+)
+  (player-messages-text:init-player-messages-db)
   (setf *map-loaded-p* nil)
   (start)
   (sdl2:gl-set-attr :context-profile-mask  1)

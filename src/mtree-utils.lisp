@@ -144,6 +144,8 @@
 
 (defgeneric remove-child (object needle &key key test))
 
+(defgeneric remove-child-if (object predicate))
+
 (defparameter *use-pprint-tree* nil)
 
 (defmethod print-object ((object m-tree) stream)
@@ -273,6 +275,29 @@
 				      (subseq children (1+ i))))
 		   (return-from remove-child t))
 		 (remove-child (elt children i) needle :key key :test test))))))
+
+(defmethod remove-child ((object m-tree) needle &key
+						  (key #'identity)
+						  (test #'eq))
+  (with-accessors ((children children)) object
+    (if (leafp object)
+	nil
+	(loop for i fixnum from 0 below (length children) do
+	     (if (funcall test (funcall key needle) (funcall key (elt children i)))
+		 (progn
+		   (setf children
+			 (concatenate `(vector ,(array-element-type children)
+						      ,(1- (length children)))
+				      (subseq children 0 i)
+				      (subseq children (1+ i))))
+		   (return-from remove-child t))
+		 (remove-child (elt children i) needle :key key :test test))))))
+
+(defmethod remove-child-if ((object m-tree) predicate)
+  (top-down-visit object
+		  #'(lambda (n)
+		      (with-accessors ((children children)) n
+			(setf children (delete-if predicate children))))))
 
 (defun make-node (data &optional (parent nil))
   (make-instance 'm-tree :data data :parent parent))

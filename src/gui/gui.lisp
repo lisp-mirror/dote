@@ -18,13 +18,17 @@
 
 (defparameter *fonts-db* (make-hash-table :test 'eql))
 
-(alexandria:define-constant +ascii-size+ 128 :test #'=)
+(alexandria:define-constant +ascii-size+                128 :test #'=)
 
-(alexandria:define-constant +font-file-extension+ ".tga" :test #'string=)
+(alexandria:define-constant +font-file-extension+    ".tga" :test #'string=)
 
-(alexandria:define-constant +default-font+ "default" :test #'string=)
+(alexandria:define-constant +default-font+        "default" :test #'string=)
 
-(alexandria:define-constant +default-font-handle+ 0 :test #'=)
+(alexandria:define-constant +default-font-handle+         0 :test #'=)
+
+(alexandria:define-constant +tooltip-font+        "tooltip" :test #'string=)
+
+(alexandria:define-constant +tooltip-font-handle+         1 :test #'=)
 
 (defun join-lines-for-static-text (lines)
   (join-with-srings lines +gui-static-text-delim+))
@@ -197,6 +201,18 @@
 		  (poison.tga
 		   +default-gui-resource+
 		   (setf (interpolation-type bg) :linear))
+		  (immune-berserk.tga
+		   +default-gui-resource+
+		   (setf (interpolation-type bg) :linear))
+		  (immune-coma.tga
+		   +default-gui-resource+
+		   (setf (interpolation-type bg) :linear))
+		  (immune-terror.tga
+		   +default-gui-resource+
+		   (setf (interpolation-type bg) :linear))
+		  (immune-poison.tga
+		   +default-gui-resource+
+		   (setf (interpolation-type bg) :linear))
 		   window-top-bar.tga
 		   window.tga
 		   button.tga
@@ -242,6 +258,11 @@
 		    (setf (t-wrap-mode  bg) :clamp-to-border)
 		    (setf (border-color bg) §c00000000))
 		   (use-overlay.tga
+		    +default-gui-resource+
+		    (setf (s-wrap-mode  bg) :clamp-to-border)
+		    (setf (t-wrap-mode  bg) :clamp-to-border)
+		    (setf (border-color bg) §c00000000))
+		   (use-item-overlay.tga
 		    +default-gui-resource+
 		    (setf (s-wrap-mode  bg) :clamp-to-border)
 		    (setf (t-wrap-mode  bg) :clamp-to-border)
@@ -317,6 +338,11 @@
 		    (setf (t-wrap-mode  bg) :clamp-to-border)
 		    (setf (border-color bg) §c00000000))
 		   (next-turn-overlay.tga
+		    +default-gui-resource+
+		    (setf (s-wrap-mode  bg) :clamp-to-border)
+		    (setf (t-wrap-mode  bg) :clamp-to-border)
+		    (setf (border-color bg) §c00000000))
+		   (move-overlay.tga
 		    +default-gui-resource+
 		    (setf (s-wrap-mode  bg) :clamp-to-border)
 		    (setf (t-wrap-mode  bg) :clamp-to-border)
@@ -446,6 +472,7 @@
 
 (defun setup-gui (compiled-shaders)
   (load-font +default-font+ +default-font-handle+ compiled-shaders)
+  (load-font +tooltip-font+ +tooltip-font-handle+ compiled-shaders)
   (setup-bg-frame)
   (setup-bg-window-top-bar)
   (setup-bg-window-close-button)
@@ -482,6 +509,7 @@
   (setup-bg-down-arrow-overlay)
   (setup-bg-wear-overlay)
   (setup-bg-use-overlay)
+  (setup-bg-use-item-overlay)
   (setup-bg-plus-overlay)
   (setup-bg-minus-overlay)
   (setup-bg-up-overlay)
@@ -495,13 +523,18 @@
   (setup-bg-rotate-char-cw-overlay)
   (setup-bg-rotate-char-ccw-overlay)
   (setup-bg-next-turn-overlay)
+  (setup-bg-move-overlay)
   (setup-bg-option-overlay)
-  (setup-bg-berserk)
-  (setup-bg-coma)
   (setup-bg-portrait-unknown)
   (setup-bg-preview-unknown)
+  (setup-bg-berserk)
+  (setup-bg-coma)
   (setup-bg-terror)
   (setup-bg-poison)
+  (setup-bg-immune-berserk)
+  (setup-bg-immune-coma)
+  (setup-bg-immune-terror)
+  (setup-bg-immune-poison)
   (setup-bg-conversation-overlay)
   (setup-bg-attack-short-range-overlay)
   (setup-bg-attack-long-range-overlay)

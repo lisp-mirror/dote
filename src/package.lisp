@@ -63,6 +63,7 @@
    :+invalicable-element-cost+
    :+open-terrain-cost+
    :+rotate-entity-cost-cost+
+   :+wear-object-entity-cost-cost+
    :+default-size+
    :+map-max-size+
    :+pi+
@@ -134,7 +135,8 @@
    :+gui-zoom-entity+
    :+visibility-cone-half-hangle+
    :+visibility-cone-height+
-   :+visibility-ray-displ-incr+))
+   :+visibility-ray-displ-incr+
+   :+camera-drag-spring-k+))
 
 (defpackage :profiling
   (:use :cl)
@@ -346,6 +348,22 @@
    :f<=
    :f>
    :f>=))
+
+(defpackage :die-utils
+  (:nicknames :dice)
+  (:use :cl
+	:alexandria
+	:config
+	:constants
+	:conditions
+	:misc
+	:num)
+  (:shadowing-import-from :misc   :random-elt :shuffle)
+  (:export
+   :gen-pass-dice
+   :pass-d1.0
+   :pass-d2
+   :pass-d100.0))
 
 (defpackage :filesystem-utils
   (:use :cl)
@@ -721,6 +739,7 @@
    :bottom-up-visit
    :remove-all-children
    :remove-child
+   :remove-child-if
    :do-children
    :do-children-from-end
    :find-child
@@ -874,6 +893,7 @@
    :flatten-to-aabb2-xz
    :reset
    :aabb-center
+   :aabb-top-center
    :min-x
    :min-y
    :min-z
@@ -956,7 +976,8 @@
    :aabb-2d
    :find-entity-by-id
    :remove-entity-by-id
-   :remove-entity-if))
+   :remove-entity-if
+   :entity-dead-p))
 
 (defpackage :bs-tree
   (:use
@@ -1084,11 +1105,14 @@
 (defpackage :priority-queue
   (:use :cl)
   (:nicknames :pq)
-  (:shadow :push :pop :find)
   (:export
-   :push
-   :pop
-   :find
+   :priority-queue
+   :key-function
+   :compare-function
+   :equal-function
+   :push-element
+   :pop-element
+   :find-element
    :emptyp
    :with-min-queue))
 
@@ -1623,10 +1647,14 @@
   (:use :cl
 	:alexandria
 	:constants
+	:config
+	:misc
 	:ivec2
 	:vec2)
+  (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
-   :facingp))
+   :facingp
+   :pos-entity-chunk->cost-pos))
 
 (defpackage :transformable
   (:use :cl)
@@ -1843,6 +1871,7 @@
    :game-state
    :game-hour
    :game-minutes
+   :game-turn
    :current-time
    :sky-bg-color
    :celestial-body-position
@@ -1920,6 +1949,7 @@
    :trigger-turn
    :on-game-event
    :end-turn
+   :end-turn-count
    :register-for-end-turn
    :unregister-for-end-turn
    :propagate-end-turn
@@ -1976,20 +2006,138 @@
    :close-door-event
    :register-for-close-door-event
    :unregister-for-close-door-event
-   :propagate-close-door-event))
+   :propagate-close-door-event
+   :cause-poisoning-event
+   :register-for-cause-poisoning-event
+   :unregister-for-cause-poisoning-event
+   :propagate-cause-poisoning-event
+   :make-cause-poisoning-event
+   :cause-terror-event
+   :register-for-cause-terror-event
+   :unregister-for-cause-terror-event
+   :propagate-cause-terror-event
+   :make-cause-terror-event
+   :cause-berserk-event
+   :register-for-cause-berserk-event
+   :unregister-for-cause-berserk-event
+   :propagate-cause-berserk-event
+   :make-cause-berserk-event
+   :cause-faint-event
+   :register-for-cause-faint-event
+   :unregister-for-cause-faint-event
+   :propagate-cause-faint-event
+   :make-cause-faint-event
+   :cure-poisoning-event
+   :register-for-cure-poisoning-event
+   :unregister-for-cure-poisoning-event
+   :propagate-cure-poisoning-event
+   :make-cure-poisoning-event
+   :cure-terror-event
+   :register-for-cure-terror-event
+   :unregister-for-cure-terror-event
+   :propagate-cure-terror-event
+   :make-cure-terror-event
+   :cure-faint-event
+   :register-for-cure-faint-event
+   :unregister-for-cure-faint-event
+   :propagate-cure-faint-event
+   :make-cure-faint-event
+   :cure-berserk-event
+   :register-for-cure-berserk-event
+   :unregister-for-cure-berserk-event
+   :propagate-cure-berserk-event
+   :make-cure-berserk-event
+   :cancel-poisoning-event
+   :register-for-cancel-poisoning-event
+   :unregister-for-cancel-poisoning-event
+   :propagate-cancel-poisoning-event
+   :make-cancel-poisoning-event
+   :cancel-terror-event
+   :register-for-cancel-terror-event
+   :unregister-for-cancel-terror-event
+   :propagate-cancel-terror-event
+   :make-cancel-terror-event
+   :cancel-faint-event
+   :register-for-cancel-faint-event
+   :unregister-for-cancel-faint-event
+   :propagate-cancel-faint-event
+   :make-cancel-faint-event
+   :cancel-berserk-event
+   :register-for-cancel-berserk-event
+   :unregister-for-cancel-berserk-event
+   :propagate-cancel-berserk-event
+   :make-cancel-berserk-event
+   :cancel-immune-poisoning-event
+   :register-for-cancel-immune-poisoning-event
+   :unregister-for-cancel-immune-poisoning-event
+   :propagate-cancel-immune-poisoning-event
+   :make-cancel-immune-poisoning-event
+   :cancel-immune-terror-event
+   :register-for-cancel-immune-terror-event
+   :unregister-for-cancel-immune-terror-event
+   :propagate-cancel-immune-terror-event
+   :make-cancel-immune-terror-event
+   :cancel-immune-faint-event
+   :register-for-cancel-immune-faint-event
+   :unregister-for-cancel-immune-faint-event
+   :propagate-cancel-immune-faint-event
+   :make-cancel-immune-faint-event
+   :cancel-immune-berserk-event
+   :register-for-cancel-immune-berserk-event
+   :unregister-for-cancel-immune-berserk-event
+   :propagate-cancel-immune-berserk-event
+   :make-cancel-immune-berserk-event
+   :heal-damage-event
+   :make-heal-damage-event
+   :register-for-heal-damage-event
+   :unregister-for-heal-damage-event
+   :propagate-heal-damage-event
+   :wear-object-event
+   :register-for-wear-object-event
+   :unregister-for-wear-object-event
+   :propagate-wear-object-event
+   :unwear-object-event
+   :register-for-unwear-object-event
+   :unregister-for-unwear-object-event
+   :propagate-unwear-object-event
+   :modifier-object-event
+   :register-for-modifier-object-event
+   :unregister-for-modifier-object-event
+   :propagate-modifier-object-event
+   :make-modifier-object-event
+   :immune-poisoning-event
+   :register-for-immune-poisoning-event
+   :unregister-for-immune-poisoning-event
+   :propagate-immune-poisoning-event
+   :make-immune-poisoning-event
+   :immune-terror-event
+   :register-for-immune-terror-event
+   :unregister-for-immune-terror-event
+   :propagate-immune-terror-event
+   :make-immune-terror-event
+   :immune-faint-event
+   :register-for-immune-faint-event
+   :unregister-for-immune-faint-event
+   :propagate-immune-faint-event
+   :make-immune-faint-event
+   :immune-berserk-event
+   :register-for-immune-berserk-event
+   :unregister-for-immune-berserk-event
+   :propagate-immune-berserk-event
+   :make-immune-berserk-event))
 
 (defpackage :basic-interaction-parameters
   (:use :cl
 	:alexandria
 	:constants
 	:config
+	:num
 	:interfaces
 	:identificable)
   (:nicknames :interaction)
   (:export
    :effect-unlimited-p
    :healing-effect-cure-p
-   :healing-effect-duration
    :+decay-by-use+
    :+decay-by-turns+
    :+effect-when-used+
@@ -2074,11 +2222,15 @@
    :+immune-faint+
    :+immune-terror+
    :+magic-effects+
+   :+duration-unlimited+
    :decay-parameters
+   :points
    :effect-parameters
    :modifier
    :trigger
    :duration
+   :target
+   :chance
    :healing-effect-parameters
    :magic-effect-parameters
    :poison-effect-parameters
@@ -2090,11 +2242,25 @@
    :define-effects
    :define-healing-effects
    :define-healing-effect
+   :define-heal-dmg-effect
    :define-magic-effect
    :define-poison-effect
    :define-character
    :define-interaction
    :with-interaction-parameters))
+
+(defpackage :player-messages-text
+  (:use :cl
+	:config)
+  (:export
+   :*terror-recover*
+   :*berserk-recover*
+   :*faint-recover*
+   :*cancel-immune-berserk*
+   :*cancel-immune-faint*
+   :*cancel-immune-terror*
+   :*cancel-immune-poisoning*
+   :init-player-messages-db))
 
 (defpackage :character
   (:use :cl
@@ -2124,6 +2290,7 @@
    :+smartness+
    :+empaty+
    :+weight+
+   :+decay+
    :+damage-points+
    :+movement-points+
    :+magic-points+
@@ -2145,10 +2312,17 @@
    :+spell-chance+
    :+attack-spell-chance+
    :+status+
+   :+status-poisoned+
+   :+status-terror+
+   :+status-berserk+
+   :+status-faint+
    :+race+
    :+level+
    :+exp-points+
    :np-character
+   :clean-effects
+   :restart-age
+   :description-type
    :player-character
    :portrait
    :first-name
@@ -2181,13 +2355,40 @@
    :impact-weapons-damage-bonus
    :pole-weapons-chance-bonus
    :pole-weapons-damage-bonus
+   :modifiers-effects
    :unlock-chance
    :deactivate-trap-chance
    :reply-attack-chance
    :ambush-attack-chance
    :spell-chance
    :attack-spell-chance
+   :actual-damage-points
+   :actual-movement-points
+   :actual-magic-points
+   :actual-dodge-chance
+   :actual-melee-attack-chance
+   :actual-range-attack-chance
+   :actual-melee-attack-damage
+   :actual-range-attack-damage
+   :actual-edge-weapons-chance-bonus
+   :actual-edge-weapons-damage-bonus
+   :actual-impact-weapons-chance-bonus
+   :actual-impact-weapons-damage-bonus
+   :actual-pole-weapons-chance-bonus
+   :actual-pole-weapons-damage-bonus
+   :actual-unlock-chance
+   :actual-deactivate-trap-chance
+   :actual-reply-attack-chance
+   :actual-ambush-attack-chance
+   :actual-spell-chance
+   :actual-attack-spell-chance
    :status
+   :immune-faint-status
+   :immune-berserk-status
+   :immune-poison-status
+   :immune-terror-status
+   :recurrent-effects
+   :postponed-messages
    :race
    :level
    :exp-points
@@ -2202,6 +2403,10 @@
    :player-gender->gender-description
    :reset-movement-points
    :reset-magic-points
+   :remove-decayed-items
+   :remove-from-inventory
+   :remove-from-modifiers
+   :sum-modifiers
    :player-class->class-description
    :basic-interaction-params
    :make-warrior
@@ -2251,6 +2456,7 @@
    :interaction-get-agility
    :interaction-get-smartness
    :interaction-get-empaty
+   :interaction-get-decay
    :interaction-get-weight
    :interaction-get-damage-points
    :interaction-get-movement-points
@@ -2272,6 +2478,7 @@
    :interaction-get-ambush-attack-chance
    :interaction-get-spell-chance
    :interaction-get-attack-spell-chance
+   :interaction-get-heal-damage-points
    :interaction-get-heal-poison
    :interaction-get-heal-berserk
    :interaction-get-heal-faint
@@ -2487,6 +2694,61 @@
    :+maximum-level+
    :generate-inert-object))
 
+(defpackage :random-object-messages
+  (:use
+   :cl
+   :alexandria
+   :config
+   :config
+   :num-utils
+   :misc-utils
+   :text-utils
+   :mtree-utils
+   :interfaces
+   :identificable
+   :game-event
+   :basic-interaction-parameters
+   :character)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :+poison-turn-arg-key+
+   :untrigged-effect-p-fn
+   :to-other-target-effect-p-fn
+   :heal-damage-msg
+   :modifier-effect-msg
+   :msg-characteristic
+   :msg-object-description
+   :msg-points
+   :msg-origin
+   :msg-modifier
+   :cause-poison-msg
+   :cause-terror-msg
+   :cause-faint-msg
+   :cause-berserk-msg
+   :cure-poison-msg
+   :cure-terror-msg
+   :cure-faint-msg
+   :cure-berserk-msg
+   :immune-poison-msg
+   :immune-terror-msg
+   :immune-faint-msg
+   :immune-berserk-msg
+   :cancel-immune-poison-msg
+   :cancel-immune-terror-msg
+   :cancel-immune-faint-msg
+   :cancel-immune-berserk-msg
+   :msg-trigger
+   :msg-duration
+   :msg-chance
+   :msg-target
+   :msg-damage
+   :turn
+   :damage
+   :effect->msg
+   :params->effects-messages
+   :params->effects-messages-complement
+   :propagate-effects-msg))
+
 ;; engine
 
 (defpackage :camera
@@ -2512,6 +2774,7 @@
    :frustum-cone
    :reorient-fp-camera
    :drag-camera
+   :drag-camera-to
    :target
    :mode
    :minor-mode
@@ -2686,6 +2949,9 @@
    :nsetup-tag-matrix
    :find-tag-cdr
    :find-tag
+   :traverse-recurrent-effects
+   :process-postponed-messages
+   :set-death-status
    :skydome
    :texture-clouds
    :texture-smoke
@@ -2728,6 +2994,8 @@
    :calculate-decrement-move-points-entering-tile
    :decrement-move-points-rotate
    :decrement-move-points-entering-tile
+   :decrement-move-points-wear
+   :can-use-movement-points-p
    :calculate-cost-position))
 
 (defpackage :able-to-see-mesh
@@ -2856,6 +3124,35 @@
    :setup-texture-coord-scaling
    :floor-tile))
 
+(defpackage :battle-utils
+  (:use :cl
+	:alexandria
+	:sb-cga
+	:sb-cga-utils
+	:config
+	:constants
+	:conditions
+	:misc
+	:num
+	:shaders-utils
+	:cl-gl-utils
+	:interfaces
+	:transformable
+	:identificable
+	:num
+	:vec2
+	:vec4
+	:uivec
+	:2d-utils
+	:mtree-utils
+	:mesh
+	:mesh-material
+	:pickable-mesh)
+  (:shadowing-import-from :misc   :random-elt :shuffle)
+  (:shadowing-import-from :sb-cga :rotate)
+  (:export
+   :+recover-from-faint-dmg-fraction+))
+
 ;; UI
 
 (defpackage :gui-events
@@ -2888,6 +3185,7 @@
 	:mesh)
   (:export
    :clean-font-db
+   :+tooltip-font-handle+
    :+window-texture-name+
    :+button-texture-name+
    :+button-pressed-texture-name+
@@ -2926,6 +3224,7 @@
    :+right-overlay-texture-name+
    :+wear-overlay-texture-name+
    :+use-overlay-texture-name+
+   :+use-item-overlay-texture-name+
    :+plus-overlay-texture-name+
    :+minus-overlay-texture-name+
    :+up-overlay-texture-name+
@@ -2937,19 +3236,24 @@
    :+rotate-char-cw-overlay-texture-name+
    :+rotate-char-ccw-overlay-texture-name+
    :+next-turn-overlay-texture-name+
+   :+move-overlay-texture-name+
    :+open-overlay-texture-name+
    :+close-overlay-texture-name+
    :+zoom-overlay-texture-name+
    :+unzoom-overlay-texture-name+
-   :+berserk-texture-name+
-   :+coma-texture-name+
-   :+terror-texture-name+
    :+portrait-unknown-texture-name+
    :+preview-unknown-texture-name+
    :+silhouette-texture-name+
    :+bag-texture-name+
    :+add-to-bag-texture-name+
+   :+berserk-texture-name+
+   :+coma-texture-name+
+   :+terror-texture-name+
    :+poison-texture-name+
+   :+immune-berserk-texture-name+
+   :+immune-coma-texture-name+
+   :+immune-terror-texture-name+
+   :+immune-poison-texture-name+
    :+conversation-overlay-texture-name+
    :+attack-short-range-overlay-texture-name+
    :+attack-long-range-overlay-texture-name+
@@ -2989,10 +3293,12 @@
 	:camera
 	:game-state
 	:mesh
+	:random-object-messages
 	:character
 	:gui-events
 	:gui)
   (:export
+   :+action-move+
    :widget
    :x
    :y
@@ -3005,6 +3311,8 @@
    :on-mouse-dragged
    :on-key-pressed
    :flip-y
+   :hide-parent-cb
+   :hide-and-remove-parent-cb
    :naked-button
    :button
    :text-field
@@ -3024,9 +3332,11 @@
    :b-cancel
    :make-file-chooser
    :main-toolbar
+   :selected-action
    :bound-world
    :bound-player
    :sync-with-player
+   :reset-toolbar-selected-action
    :text-communication
    :text-fps
    :b-save
@@ -3037,7 +3347,9 @@
    :make-inventory-window
    :player-report
    :make-player-report-win
+   :message-window
    :make-message-box
+   :make-message-box*
    :progress-gauge
    :progress
    :make-splash-progress-gauge))
@@ -3074,9 +3386,21 @@
    :+damage-color+
    :+poison-damage-color+
    :+healing-color+
+   :+blessing-color+
+   :+tooltip-poison-char+
+   :+tooltip-terror-char+
+   :+tooltip-berserk-char+
+   :+tooltip-faint-char+
+   :+tooltip-immune-faint-char+
+   :+tooltip-immune-poison-char+
+   :+tooltip-immune-terror-char+
+   :+tooltip-immune-berserk-char+
+   :+tooltip-heal-char+
+   :+tooltip-revive-char+
    :tooltip
    :duration
-   :make-tooltip))
+   :make-tooltip
+   :apply-tooltip))
 
 (defpackage :world
   (:use :cl
@@ -3092,9 +3416,11 @@
 	:game-state
 	:transformable
 	:interfaces
+	:character
 	:camera
 	:mesh
 	:pickable-mesh)
+  (:import-from :widget :reset-toolbar-selected-action)
   (:export
    :doors
    :door-n
@@ -3152,9 +3478,16 @@
    :set-map-state-occlusion
    :setup-map-state-entity
    :move-map-state-entity
+   :move-entity
+   :toolbar-selected-action
+   :reset-toolbar-selected-action
+   :post-entity-message
    :setup-map-state-tile
    :place-player-on-map
-   :set-window-accept-input))
+   :set-window-accept-input
+   :post-entity-message
+   :point-to-entity-and-hide-cb
+   :point-camera-to-entity))
 
 (defpackage :terrain-chunk
   (:use :cl
@@ -3213,6 +3546,7 @@
 	:misc
 	:vec2
 	:ivec2
+	:player-messages-text
 	:character
 	:mesh-material
 	:mesh
@@ -3222,6 +3556,7 @@
    :+tag-left-weapon-key+
    :+tag-right-weapon-key+
    :find-tag
+   :md2-mesh
    :load-md2-model
    :load-md2-player
    :tag-key-parent

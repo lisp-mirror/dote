@@ -39,6 +39,7 @@
       attack-spell-chance          none)
     healing-effects
     (define-healing-effects
+      cause-berserk                generate
       immune-berserk               generate
       immune-faint                 generate
       immune-terror                generate)

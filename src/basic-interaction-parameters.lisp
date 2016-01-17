@@ -1,3 +1,19 @@
+;; dawn of the Era: a tactical game.
+;; Copyright (C) 2015  cage
+
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 (in-package :basic-interaction-parameters)
 
 (define-constant +decay-by-use+                :use                         :test #'eq)
@@ -174,7 +190,7 @@
 
 (define-constant +magic-effects+               :magic-effect                :test #'eq)
 
-(define-constant +duration-unlimited+          :magic-effect                :test #'eq)
+(define-constant +duration-unlimited+          :unlimited                   :test #'eq)
 
 (defun effect-unlimited-p (val)
   (not (numberp val)))
@@ -184,11 +200,6 @@
       (eq val +heal-poison+)
       (eq val +heal-berserk+)
       (eq val +heal-faint+)))
-
-(defun healing-effect-duration (path val)
-  (if (healing-effect-cure-p (last-elt (flatten path)))
-      +duration-unlimited+
-      val))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
 
@@ -221,7 +232,7 @@
 
   (defmethod print-object ((object decay-parameters) stream)
     (print-unreadable-object (object stream :type t :identity t)
-      (format stream "when? ~a points ~a fn ~a msg ~s"
+      (format stream "when? ~s points ~a fn ~a msg ~s"
 	      (when-decay      object)
 	      (points          object)
 	      (decay-fn        object)
@@ -268,7 +279,7 @@
 
     (defmethod print-object ((object effect-parameters) stream)
       (print-unreadable-object (object stream :type t :identity t)
-	(format stream "when? ~a duration ~a mod ~a"
+	(format stream "when? ~s duration ~a mod ~a"
 		(trigger object)
 		(duration    object)
 		(modifier    object))))
@@ -288,7 +299,6 @@
 	      +gui-static-text-nbsp+
 	      (modifier object))))
 
-
 (defmacro define-effect (params)
   (let* ((parameters  (misc:build-plist params))
 	 (trigger     (cdr (assoc :trigger parameters)))
@@ -303,13 +313,13 @@
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
 				+effect-when-consumed+
 				+effect-until-picked+ +effect-until-held+))
-      (error (format nil (_ "Invalid trigger ~a, expected ~a")
+      (error (format nil (_ "Invalid trigger ~s, expected ~s")
 		     trigger (list +effect-when-worn+ +effect-when-used+
 				   +effect-when-consumed+ +effect-until-picked+
 				   +effect-until-held+))))
     (make-instance 'effect-parameters
 		   :trigger  (or trigger  +effect-when-used+)
-		   :duration (or duration :unlimited)
+		   :duration (or duration +duration-unlimited+)
 		   :modifier (or modifier 0))))
 
 (defmacro define-effects (&rest parameters)
@@ -321,6 +331,9 @@
 
 (defun chance->chance-for-human (c)
   (* 100 c))
+
+(defun chance-for-human->chance (c)
+  (d/ (d c) 100.0))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass parameters-with-chance ()
@@ -335,7 +348,19 @@
 				   :environment environment)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defclass healing-effect-parameters (parameters-with-chance)
+  (defclass parameters-with-target ()
+    ((target
+      :initform +target-self+
+      :initarg  :target
+      :accessor target)))
+
+  (defmethod make-load-form ((object parameters-with-target) &optional environment)
+      (make-load-form-saving-slots object
+				   :slot-names '(target)
+				   :environment environment)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defclass healing-effect-parameters (parameters-with-chance parameters-with-target)
     ((trigger
       :initform :use
       :initarg  :trigger
@@ -343,23 +368,19 @@
      (duration
       :initform 1000000
       :initarg  :duration
-      :accessor duration)
-     (target
-      :initform +target-self+
-      :initarg  :target
-      :accessor target)))
+      :accessor duration)))
 
     (defmethod print-object ((object healing-effect-parameters) stream)
       (print-unreadable-object (object stream :type t :identity t)
-	(format stream "when? ~a duration ~a chance ~a target ~a"
+	(format stream "when? ~s duration ~a chance ~,1f target ~s"
 		(trigger  object)
 		(duration object)
-		(chance   object)
+		(chance->chance-for-human (chance object))
 		(target object))))
 
     (defmethod make-load-form ((object healing-effect-parameters) &optional environment)
       (make-load-form-saving-slots object
-				   :slot-names '(trigger duration target)
+				   :slot-names '(trigger duration chance target)
 				   :environment environment))
 
     (defmethod description-for-humans ((object healing-effect-parameters))
@@ -367,7 +388,7 @@
 				     (_ "chance: ~,1f% target ~a"))
 	      (if (effect-unlimited-p (duration object))
 		  ""
-		  (format nil (_ "~d turns") (duration object)))
+		  (format nil (_ "~d turns ") (duration object)))
 	      (chance->chance-for-human (chance object))
 	      (target object))))
 
@@ -388,7 +409,7 @@
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
 				+effect-when-consumed+ +effect-until-picked+
 				+effect-until-held+))
-      (error (format nil (_ "Invalid trigger ~a, expected ~a")
+      (error (format nil (_ "Invalid trigger ~s, expected ~s")
 		     trigger (list +effect-when-worn+ +effect-when-used+
 				   +effect-when-consumed+ +effect-until-picked+
 				   +effect-until-held+))))
@@ -406,7 +427,7 @@
 				       (cdr i)))))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defclass magic-effect-parameters ()
+  (defclass magic-effect-parameters (parameters-with-target)
     ((trigger
       :initform :use
       :initarg  :trigger
@@ -416,22 +437,27 @@
       :initarg  :spell-id
       :accessor spell-id)))
 
-    (defmethod print-object ((object magic-effect-parameters) stream)
-      (print-unreadable-object (object stream :type t :identity t)
-	(format stream "when? ~a spell ~a"
-		(trigger object)
-		(spell-id object))))
+  (defmethod initialize-instance :after ((object magic-effect-parameters)
+					 &key &allow-other-keys)
+	     (setf (target object) nil))
+
+  (defmethod print-object ((object magic-effect-parameters) stream)
+    (print-unreadable-object (object stream :type t :identity t)
+      (format stream "when? ~s spell ~a target ~s"
+		(trigger  object)
+		(spell-id object)
+		(target   object))))
 
     (defmethod make-load-form ((object magic-effect-parameters) &optional environment)
       (make-load-form-saving-slots object
-				   :slot-names '(trigger spell-id)
+				   :slot-names '(trigger spell-id target)
 				   :environment environment))
 
     (defmethod description-for-humans ((object magic-effect-parameters))
       (format nil "~a" (spell-id object))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defclass poison-effect-parameters (parameters-with-chance)
+  (defclass poison-effect-parameters (parameters-with-chance parameters-with-target)
     ((points-per-turn
       :initform :points-per-turn
       :initarg  :points-per-turn
@@ -443,39 +469,44 @@
 
     (defmethod print-object ((object poison-effect-parameters) stream)
       (print-unreadable-object (object stream :type t :identity t)
-	(format stream "when? ~a points? ~a chance? ~a"
-		(trigger object)
+	(format stream "when? ~s points? ~a chance? ~a target ~s"
+		(trigger         object)
 		(points-per-turn object)
-		(chance object))))
+		(chance          object)
+		(target          object))))
 
     (defmethod make-load-form ((object poison-effect-parameters) &optional environment)
       (make-load-form-saving-slots object
-				   :slot-names '(points-per-turn trigger)
+				   :slot-names '(points-per-turn trigger chance target)
 				   :environment environment))
 
     (defmethod description-for-humans ((object poison-effect-parameters))
-      (format nil (_ "poison enemy ~a chance ~,1f")
+      (format nil (_ "~a chance: ~,1f target: ~a")
 	      (if (and (points-per-turn object)
 		       (> (points-per-turn object) 0))
 		  (format nil (_ "(~,1f damage per turn)") (points-per-turn object))
 		  "")
-	      (chance->chance-for-human (chance object)))))
+	      (chance->chance-for-human (chance object))
+	      (target object))))
 
 (defmacro define-poison-effect (params)
   (let* ((parameters (misc:build-plist params))
 	 (points     (cdr (assoc :points  parameters)))
 	 (trigger    (cdr (assoc :trigger parameters)))
-	 (chance     (cdr (assoc :chance  parameters))))
+	 (chance     (cdr (assoc :chance  parameters)))
+	 (target     (cdr (assoc :target   parameters))))
     (when (null points)
       (warn (_ "Interation: No points specified for poison effect, using \"-1\".")))
     (when (null trigger)
       (warn (_ "Interation: No activation trigger specified for poison effect, using \":use.\"")))
     (when (null chance)
       (warn (_ "Interation: No chance specified for healing effect, using 0")))
+    (when (null target)
+      (warn (_ "Interation: No target specified for effect, using self.")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
 				+effect-when-consumed+ +effect-until-picked+
 				+effect-until-held+))
-      (error (format nil (_ "Invalid trigger ~a, expected ~a")
+      (error (format nil (_ "Invalid trigger ~s, expected ~s")
 		     trigger (list +effect-when-worn+ +effect-when-used+
 				   +effect-when-consumed+ +effect-until-picked+
 				   +effect-until-held+))))
@@ -484,10 +515,11 @@
     (make-instance 'poison-effect-parameters
 		   :points-per-turn  points
 		   :trigger (or trigger +effect-when-used+)
-		   :chance  (or chance 0.0))))
+		   :chance  (or chance 0.0)
+		   :target  (or target +target-self+))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defclass heal-damage-points-effect-parameters (parameters-with-chance)
+  (defclass heal-damage-points-effect-parameters (parameters-with-chance parameters-with-target)
     ((points
       :initform -10
       :initarg  :points
@@ -495,15 +527,11 @@
      (trigger
       :initform :use
       :initarg  :trigger
-      :accessor trigger)
-     (target
-      :initform +target-self+
-      :initarg  :target
-      :accessor target)))
+      :accessor trigger)))
 
     (defmethod print-object ((object heal-damage-points-effect-parameters) stream)
       (print-unreadable-object (object stream :type t :identity t)
-	(format stream "when? ~a points? ~a chance ~,1f% target ~a"
+	(format stream "when? ~s points? ~a chance ~,1f% target ~s"
 		(trigger object)
 		(points  object)
 		(chance->chance-for-human (chance object))
@@ -511,7 +539,7 @@
 
     (defmethod make-load-form ((object heal-damage-points-effect-parameters) &optional environment)
       (make-load-form-saving-slots object
-				   :slot-names '(points trigger target)
+				   :slot-names '(points trigger chance target)
 				   :environment environment))
 
     (defmethod description-for-humans ((object heal-damage-points-effect-parameters))
@@ -537,10 +565,10 @@
     (when (not (numberp points))
       (error (format nil (_ "Invalid points ~a, expected a number") points)))
     (when (not (valid-keyword-p trigger +effect-when-used+ +effect-when-consumed+))
-      (error (format nil (_ "Invalid trigger ~a, expected ~a")
+      (error (format nil (_ "Invalid trigger ~s, expected ~s")
 		     trigger (list +effect-when-used+ +effect-when-consumed+))))
     (make-instance 'heal-damage-points-effect-parameters
-		   :points-per-turn  points
+		   :points   points
 		   :trigger  (or trigger +effect-when-used+)
 		   :chance   (or chance  0.0)
 		   :target   (or target +target-self+))))
@@ -548,21 +576,25 @@
 (defmacro define-magic-effect (params)
   (let* ((parameters (misc:build-plist params))
 	 (trigger    (cdr (assoc :trigger parameters)))
-	 (spell-id   (cdr (assoc :spell-id parameters))))
+	 (spell-id   (cdr (assoc :spell-id parameters)))
+	 (target     (cdr (assoc :target   parameters))))
     (when (null trigger)
       (warn (_ "Interation: No activation trigger specified for magic effect, using \":use.\"")))
     (when (null spell-id)
       (warn (_ "Interation: No spell for magic effect, using \":heal-1.\"")))
+    (when (null target)
+      (warn (_ "Interation: No target specified for effect, using self.")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
 				+effect-when-consumed+ +effect-until-picked+
 				+effect-until-held+))
-      (error (format nil (_ "Invalid trigger ~a, expected ~a")
+      (error (format nil (_ "Invalid trigger ~s, expected ~s")
 		     trigger (list +effect-when-worn+ +effect-when-used+
 				   +effect-when-consumed+ +effect-until-picked+
 				   +effect-until-held+))))
     (make-instance 'magic-effect-parameters
 		   :trigger  (or trigger  +effect-when-used+)
-		   :spell-id  (or spell-id :heal-1))))
+		   :spell-id  (or spell-id :heal-1)
+		   :target   (or target +target-self+))))
 
 (defparameter *interaction-parameters* nil)
 

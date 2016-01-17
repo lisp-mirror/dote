@@ -16,25 +16,53 @@
 
 (in-package :billboard)
 
-(define-constant +damage-color+             §cff0000ff                         :test #'vec4=)
+(define-constant +damage-color+             §cff0000ff                :test #'vec4=)
 
-(define-constant +poison-damage-color+      §ca50db3ff                         :test #'vec4=)
+(define-constant +poison-damage-color+      §ca50db3ff                :test #'vec4=)
 
-(define-constant +healing-color+            §c1dba12ff                         :test #'vec4=)
+(define-constant +healing-color+            §c1dba12ff                :test #'vec4=)
 
-(define-constant +tooltip-w+                +terrain-chunk-tile-size+          :test #'=)
+(define-constant +blessing-color+           §ccdf7ffff                :test #'vec4=)
 
-(define-constant +tooltip-h+                +terrain-chunk-tile-size+          :test #'=)
+(define-constant +tooltip-w+                +terrain-chunk-tile-size+ :test #'=)
 
-(define-constant +tooltip-font-handle+       0                                 :test #'=)
+(define-constant +tooltip-h+                +terrain-chunk-tile-size+ :test #'=)
 
-(define-constant +tooltip-v-speed+           0.06                              :test #'=)
+(define-constant +tooltip-v-speed+           0.06                     :test #'=)
+
+(define-constant +tooltip-poison-char+          "#"                   :test #'string=)
+
+(define-constant +tooltip-terror-char+          "%"                   :test #'string=)
+
+(define-constant +tooltip-berserk-char+         "{"                   :test #'string=)
+
+(define-constant +tooltip-immune-faint-char+    "\\"                  :test #'string=)
+
+(define-constant +tooltip-immune-poison-char+   "["                   :test #'string=)
+
+(define-constant +tooltip-immune-terror-char+   "]"                   :test #'string=)
+
+(define-constant +tooltip-immune-berserk-char+  "^"                   :test #'string=)
+
+(define-constant +tooltip-faint-char+           "&"                   :test #'string=)
+
+(define-constant +tooltip-heal-char+            "\""                  :test #'string=)
+
+(define-constant +tooltip-revive-char+          "$"                   :test #'string=)
 
 (defclass tooltip (triangle-mesh inner-animation)
   ((duration
     :initform 3.0
     :initarg  :duration
     :accessor duration)
+   (gravity
+    :initform 1.0
+    :initarg  :gravity
+    :accessor gravity)
+   (font-type
+    :initform +tooltip-font-handle+
+    :initarg  :font-type
+    :accessor font-type)
    (font-color
     :initform +damage-color+
     :initarg  :font-color
@@ -47,13 +75,14 @@
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (simple-string new-label))
   (time
-  (with-accessors ((children children)) host
+   (with-accessors ((children children)
+		    (font-type font-type)) host
     (with-slots (label) host
       (declare (simple-string label))
       (loop
 	 for c across new-label
 	 for i from   0.0  by 1.0  do
-	   (let* ((mesh (clone (gui:get-char-mesh +tooltip-font-handle+ c))))
+	   (let* ((mesh (clone (gui:get-char-mesh font-type c))))
 	     (when mesh
 	       (transform-vertices mesh (translate (vec i 0.0 0.0)))
 	       (setf (texture-object host) (texture-object mesh))
@@ -80,6 +109,7 @@
 		   (compiled-shaders compiled-shaders)
 		   (font-color font-color)
 		   (el-time el-time)
+		   (gravity  gravity)
 		   (model-matrix model-matrix)
 		   (triangles triangles)
 		   (scaling scaling)
@@ -99,7 +129,8 @@
 	(uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
 	(uniformf  compiled-shaders :duration duration)
 	(uniformf  compiled-shaders :vert-displacement-speed +tooltip-v-speed+)
-	(uniformf  compiled-shaders :time  el-time)
+	(uniformf  compiled-shaders :time   el-time)
+	(uniformf  compiled-shaders :gravity gravity)
 	(uniformfv compiled-shaders :mult-color font-color)
 	(uniform-matrix compiled-shaders
 			:post-scaling 4
@@ -116,10 +147,40 @@
 	(gl:draw-arrays :triangles 0 (* 3 (length triangles)))
 	(gl:disable :blend)))))
 
-(defun make-tooltip (label pos shaders &key (color +damage-color+))
-  (let ((tooltip (make-instance 'billboard:tooltip :animation-speed 1.0 :font-color color)))
+(defun make-tooltip (label pos shaders
+		     &key
+		       (color +damage-color+)
+		       (font-type gui:+default-font-handle+)
+		       (gravity 1.0))
+  (let ((tooltip (make-instance 'billboard:tooltip
+				:animation-speed 1.0
+				:font-color      color
+				:font-type       font-type
+				:gravity         gravity)))
     (setf (interfaces:compiled-shaders tooltip) shaders)
     (setf (entity:pos tooltip) pos)
-    (setf (billboard::label tooltip) label)
+    (setf (label tooltip) label)
     (mesh:prepare-for-rendering tooltip)
     tooltip))
+
+(defgeneric apply-tooltip (object label &key color))
+
+(defmethod apply-tooltip ((object mesh:triangle-mesh) label
+			  &key
+			    (color +damage-color+)
+			    (font-type gui:+default-font-handle+)
+			    (gravity 1.0))
+  (with-accessors ((ghost ghost)
+		   (id id)
+		   (state state)) object
+    (with-accessors ((recurrent-effects recurrent-effects)
+		     (immune-poison-status immune-poison-status)
+		     (status status)) ghost
+      (game-state:with-world (world state)
+	(let ((tooltip (billboard:make-tooltip label
+					       (aabb-top-center (aabb object))
+					       (compiled-shaders object)
+					       :color color
+					       :font-type font-type
+					       :gravity   gravity)))
+	  (world:push-entity world tooltip))))))

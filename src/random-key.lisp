@@ -131,9 +131,7 @@
 (defun set-healing-effect (effect-path key-level interaction)
   (let ((effect-object (make-instance 'healing-effect-parameters
 				      :trigger  +effect-when-used+
-				      :duration (healing-effect-duration
-						 effect-path
-						 (ceiling (healing-fx-params-duration key-level)))
+				      :duration (ceiling (healing-fx-params-duration key-level))
 				      :chance   (calculate-healing-fx-params-chance key-level)
 				      :target  +target-self+)))
     (n-setf-path-value interaction effect-path effect-object)))
@@ -150,14 +148,15 @@
 	(lcg-next-upto (max 0.0 max)))))
 
 (defun generate-key (map-level keycode)
-  (generate-key* (res:get-resource-file +default-interaction-filename+
-					+default-character-key-dir+
-					:if-does-not-exists :error)
-		 (res:get-resource-file +default-character-filename+
-					+default-character-key-dir+
-					:if-does-not-exists :error)
-		 map-level
-		 keycode))
+  (clean-effects
+   (generate-key* (res:get-resource-file +default-interaction-filename+
+					 +default-character-key-dir+
+					 :if-does-not-exists :error)
+		  (res:get-resource-file +default-character-filename+
+					 +default-character-key-dir+
+					 :if-does-not-exists :error)
+		  map-level
+		  keycode)))
 
 (defun generate-key* (interaction-file character-file map-level keycode)
   (validate-interaction-file interaction-file)

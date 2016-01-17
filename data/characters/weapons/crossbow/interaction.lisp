@@ -62,10 +62,10 @@
     healing-effects
     (define-healing-effects
 	heal-damage-points         none
-      heal-poison                generate
-      heal-berserk                 generate
-      heal-faint                   generate
-      heal-terror                  generate
+      heal-poison                none
+      heal-berserk                 none
+      heal-faint                   none
+      heal-terror                  none
       cause-poison                 generate
       cause-berserk                generate
       cause-faint                  generate

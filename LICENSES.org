@@ -307,6 +307,42 @@
   © 2015 Marc Russell released under Creative Commons Attribution 3.0 Unported (CC BY 3.0)
   https://creativecommons.org/licenses/by/3.0/
 
+  data/fonts/tooltip.tga
+  based on the works
+  © 2015
+  - Lorc;
+  - Delapouite;
+  - John Colburn;
+  - Felbrigg;
+  - John Redman;
+  - Carl Olsen;
+  - sbed;
+  - PriorBlue;
+  - Willdabeast.
+  released under released under Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+  https://creativecommons.org/licenses/by/3.0/
+  Downloaded from: http://game-icons.net/
+
+  and
+
+  © 2015 Marc Russell released under Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+  https://creativecommons.org/licenses/by/3.0/
+
+  © 2016
+  - Lorc;
+  - Delapouite;
+  - John Colburn;
+  - Felbrigg;
+  - John Redman;
+  - Carl Olsen;
+  - sbed;
+  - PriorBlue;
+  - Willdabeast
+  - Marc Russell
+  - cage
+  released under Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+  https://creativecommons.org/licenses/by/3.0/
+
 - data/gui/default/attack-short-range-overlay.tga
   data/gui/default/basic-frame.tga
   data/gui/default/blue-bar.tga
@@ -342,6 +378,7 @@
   https://creativecommons.org/licenses/by-sa/3.0/
 
 - data/gui/default/next-turn-overlay.tga
+  data/gui/default/move-overlay.tga
   data/gui/default/portrait-unknown.tga
   data/gui/default/preview-unknown.tga
   data/gui/default/up-overlay.tga
@@ -356,8 +393,13 @@
   data/gui/default/coma.tga
   data/gui/default/poison.tga
   data/gui/default/terror.tga
+  data/gui/default/immune-berserk.tga
+  data/gui/default/immune-coma.tga
+  data/gui/default/immune-poison.tga
+  data/gui/default/immune-terror.tga
+  data/gui/default/use-item-overlay.tga
   based on the works
-  © 2105
+  © 2015
   - Lorc;
   - Delapouite;
   - John Colburn;

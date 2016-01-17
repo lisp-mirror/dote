@@ -129,11 +129,8 @@
 (defun set-healing-effect (effect-path fountain-level interaction)
   (let ((effect-object (make-instance 'healing-effect-parameters
 				      :trigger  +effect-when-used+
-				      :duration (healing-effect-duration
-						 effect-path
-						 (ceiling (calculate-modifier fountain-level)))
-				      :chance (calculate-healing-fx-params-chance
-					       fountain-level)
+				      :duration (ceiling (calculate-modifier fountain-level))
+				      :chance   (calculate-healing-fx-params-chance fountain-level)
 				       :target  +target-self+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
@@ -179,13 +176,14 @@
 	(lcg-next-upto (max 0.0 max)))))
 
 (defun generate-fountain (map-level)
-  (%generate-fountain (res:get-resource-file +default-interaction-filename+
+  (clean-effects
+   (%generate-fountain (res:get-resource-file +default-interaction-filename+
 					      +default-character-fountain-dir+
 					      :if-does-not-exists :error)
 		       (res:get-resource-file +default-character-filename+
 					      +default-character-fountain-dir+
 					      :if-does-not-exists :error)
-		       map-level))
+		       map-level)))
 
 (defun %generate-fountain (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)

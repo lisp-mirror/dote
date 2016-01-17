@@ -16,9 +16,9 @@
 
 (in-package :character)
 
-(alexandria:define-constant +unknown-ability-bonus+             -5                      :test #'=)
+(alexandria:define-constant +unknown-ability-bonus+             -5.0                   :test #'=)
 
-(alexandria:define-constant +starting-exp-points+               10                      :test #'=)
+(alexandria:define-constant +starting-exp-points+               10.0                    :test #'=)
 
 (alexandria:define-constant +max-inventory-slots-page+           3.0                    :test #'=)
 
@@ -87,6 +87,14 @@
 (alexandria:define-constant +attack-spell-chance+          :attack-spell-chance         :test #'eq)
 
 (alexandria:define-constant +status+                       :status                      :test #'eq)
+
+(alexandria:define-constant +status-poisoned+              :poisoned                    :test #'eq)
+
+(alexandria:define-constant +status-terror+                :terror                      :test #'eq)
+
+(alexandria:define-constant +status-berserk+               :berserk                     :test #'eq)
+
+(alexandria:define-constant +status-faint+                 :faint                       :test #'eq)
 
 (alexandria:define-constant +race+                         :race                        :test #'eq)
 
@@ -165,6 +173,12 @@
 
 (defgeneric object-keycode (object))
 
+(defgeneric clean-effects (object))
+
+(defgeneric restart-age (object))
+
+(defgeneric description-type (object))
+
 (defmethod lookup-basic-interaction ((object np-character) key)
   (cdr (assoc key (basic-interaction-params object))))
 
@@ -188,6 +202,13 @@
 	 (let ((path (build-assocs-chain ,(reverse vars) (basic-interaction-params object))))
 	    path)))))
 
+;; events
+
+(defmethod game-event:on-game-event ((object np-character) (event game-event:end-turn))
+  (misc:dbg " end turn character ~a(~a) ~a" (type-of object) (id object) (type-of event))
+  (incf (age object))
+  nil)
+
 (gen-trivial-interaction-path get-strength                    +effects+ +strength+)
 
 (gen-trivial-interaction-path get-stamina                     +effects+ +stamina+)
@@ -201,6 +222,8 @@
 (gen-trivial-interaction-path get-empaty                      +effects+ +empaty+)
 
 (gen-trivial-interaction-path get-weight                      +effects+ +weight+)
+
+(gen-trivial-interaction-path get-decay                       +decay+)
 
 (gen-trivial-interaction-path get-damage-points               +effects+ +damage-points+)
 
@@ -243,6 +266,10 @@
 (gen-trivial-interaction-path get-spell-chance                +effects+ +spell-chance+)
 
 (gen-trivial-interaction-path get-attack-spell-chance         +effects+ +attack-spell-chance+)
+
+(gen-trivial-interaction-path get-heal-damage-points
+			      +healing-effects+
+			      +heal-damage-points+)
 
 (gen-trivial-interaction-path get-heal-poison                 +healing-effects+ +heal-poison+)
 
@@ -379,6 +406,22 @@
 	  label
 	  +gui-static-text-delim+))
 
+(defmethod description-type ((object np-character))
+  (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~] ~a ~a")
+	   (can-cut-p   object)
+	   (can-smash-p object)
+	   (can-launch-bolt-p object)
+	   (can-launch-arrow-p object)
+	   (fountainp  object)
+	   (potionp    object)
+	   (elmp       object)
+	   (armorp     object)
+	   (ringp      object)
+	   (shoesp     object)
+	   (first-name object)
+	   (last-name  object)
+	   +gui-static-text-delim+))
+
 (defmethod description-for-humans ((object np-character))
   (strcat
    (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~] ~a ~a~a")
@@ -450,6 +493,8 @@
 	   (description-for-humans (interaction-get-spell-chance object)))
    (format nil (prepare-format-description (_ "~a attack spell chance"))
 	   (description-for-humans (interaction-get-attack-spell-chance object)))
+   (format nil (prepare-format-description (_ "~a recover DMG"))
+	   (description-for-humans (interaction-get-heal-damage-points object)))
    (format nil (prepare-format-description (_ "heals poison condition ~a"))
 	   (description-for-humans (interaction-get-heal-poison object)))
    (format nil (prepare-format-description (_ "heals berserk condition ~a"))
@@ -465,15 +510,61 @@
    (format nil (prepare-format-description (_ "makes immune from berserk (~a)"))
 	   (description-for-humans (interaction-get-immune-berserk object)))
    (format nil (prepare-format-description (_ "makes immune from faint (~a)"))
-	   (description-for-humans (interaction-get-immune-berserk object)))
+	   (description-for-humans (interaction-get-immune-faint object)))
    (format nil (prepare-format-description (_ "~a cause faint condition"))
 	   (description-for-humans (interaction-get-cause-faint object)))
+   (format nil (prepare-format-description (_ "~a cause poison condition"))
+	   (description-for-humans (interaction-get-cause-poison object)))
    (format nil (prepare-format-description (_ "~a cause terror condition"))
 	   (description-for-humans (interaction-get-cause-terror object)))
    (format nil (prepare-format-description (_ "~a cause berserk condition"))
 	   (description-for-humans (interaction-get-cause-berserk object)))
    (format nil (prepare-format-description (_ "launchs ~a"))
 	   (description-for-humans (interaction-get-magic-effect object)))))
+
+(defun clean-single-contradiction (interaction-params path1 path2)
+  (when (and (plist-path-value interaction-params path1)
+	     (plist-path-value interaction-params path2))
+    (if (dice:pass-d2 1)
+	(n-setf-path-value interaction-params path1 nil)
+	(n-setf-path-value interaction-params path2 nil))))
+
+(defmethod clean-effects ((object np-character))
+  (with-accessors ((basic-interaction-params basic-interaction-params)) object
+    (clean-single-contradiction basic-interaction-params
+				(list +healing-effects+ +immune-berserk+)
+				(list +healing-effects+ +cause-berserk+))
+    (clean-single-contradiction basic-interaction-params
+				(list +healing-effects+ +immune-faint+)
+				(list +healing-effects+ +cause-faint+))
+    (clean-single-contradiction basic-interaction-params
+				(list +healing-effects+ +immune-terror+)
+				(list +healing-effects+ +cause-terror+))
+    (clean-single-contradiction basic-interaction-params
+				(list +healing-effects+ +immune-poison+)
+				(list +healing-effects+ +cause-poison+))
+    (clean-single-contradiction basic-interaction-params
+				(list +healing-effects+ +cause-berserk+)
+				(list +healing-effects+ +heal-berserk+))
+    (clean-single-contradiction basic-interaction-params
+				(list +healing-effects+ +cause-faint+)
+				(list +healing-effects+ +heal-faint+))
+    (clean-single-contradiction basic-interaction-params
+				(list +healing-effects+ +cause-terror+)
+				(list +healing-effects+ +heal-terror+))
+    (clean-single-contradiction basic-interaction-params
+				(list +healing-effects+ +cause-poison+)
+				(list +healing-effects+ +heal-poison+))
+    object))
+
+(defmethod restart-age ((object np-character))
+  (setf (age object) 0.0))
+
+(defun init-postponed-messages-functions (pq)
+  (setf (pq:key-function     pq) #'game-event:trigger-turn)
+  (setf (pq:compare-function pq) #'<)
+  (setf (pq:equal-function   pq) #'=)
+  pq)
 
 (defclass player-character (np-character)
   ((model-origin-dir
@@ -597,6 +688,10 @@
     :initform +unknown-ability-bonus+
     :accessor pole-weapons-damage-bonus
     :type integer)
+   (modifiers-effects
+    :initarg  :modifiers-effects
+    :initform '()
+    :accessor modifiers-effects)
    (unlock-chance
     :initarg :unlock-chance
     :initform +unknown-ability-bonus+
@@ -628,9 +723,33 @@
     :accessor attack-spell-chance
     :type integer)
    (status
-    :initarg :status
-    :initform :normal
+    :initarg  :status
+    :initform nil
     :accessor status)
+   (immune-faint-status
+    :initarg :immune-faint-status
+    :initform nil
+    :accessor immune-faint-status)
+   (immune-berserk-status
+    :initarg :immune-berserk-status
+    :initform nil
+    :accessor immune-berserk-status)
+   (immune-poison-status
+    :initarg :immune-poison-status
+    :initform nil
+    :accessor immune-poison-status)
+   (immune-terror-status
+    :initarg :immune-terror-status
+    :initform nil
+    :accessor immune-terror-status)
+   (recurrent-effects
+    :initarg  :recurrent-effects
+    :initform nil
+    :accessor recurrent-effects)
+   (postponed-messages
+    :initform (init-postponed-messages-functions (make-instance 'pq:priority-queue))
+    :initarg  :postponed-messages
+    :accessor postponed-messages)
    (race
     :initarg :race
     :initform :human
@@ -642,7 +761,7 @@
    (elm
     :initarg :elm
     :initform nil
-    :accessor wlm)
+    :accessor elm)
    (shoes
     :initarg :shoes
     :initform nil
@@ -744,6 +863,7 @@
 	     impact-weapons-damage-bonus
 	     pole-weapons-chance-bonus
 	     pole-weapons-damage-bonus
+	     modifiers-effects
 	     unlock-chance
 	     deactivate-trap-chance
 	     reply-attack-chance
@@ -751,6 +871,11 @@
 	     spell-chance
 	     attack-spell-chance
 	     status
+	     immune-faint-status
+	     immune-berserk-status
+	     immune-poison-status
+	     immune-terror-status
+	     recurrent-effects
 	     race
 	     exp-points)
 	   (call-next-method)))
@@ -766,7 +891,15 @@
   (let ((res (marshal:unmarshal (read-from-string (filesystem-utils:slurp-file file)))))
     (when (portrait res)
       (texture:gen-name-and-inject-in-database (portrait res)))
+    (init-postponed-messages-functions (postponed-messages res))
     res))
+
+;; events
+
+(defmethod game-event:on-game-event :after ((object player-character) (event game-event:end-turn))
+  (misc:dbg " end turn character ~a(~a) ~a" (type-of object) (id object) (type-of event))
+  (remove-decayed-items object (game-event:end-turn-count event))
+  nil)
 
 (defgeneric random-fill-slots (object capital characteristics))
 
@@ -779,6 +912,14 @@
 (defgeneric reset-movement-points (object))
 
 (defgeneric reset-magic-points (object))
+
+(defgeneric remove-decayed-items (object turn-count))
+
+(defgeneric remove-from-inventory (object item))
+
+(defgeneric remove-from-modifiers (object item-origin-id))
+
+(defgeneric sum-modifiers (object modifier-name))
 
 (defmethod random-fill-slots ((object player-character) capital characteristics)
   (loop for charact in characteristics do
@@ -825,10 +966,109 @@
        (_ "female")))))
 
 (defmethod reset-movement-points ((object player-character))
-  (setf (current-movement-points object) (movement-points object)))
+  (setf (current-movement-points object) (actual-movement-points object)))
 
 (defmethod reset-magic-points ((object player-character))
   (setf (current-magic-points object) (magic-points object)))
+
+(defmethod remove-decayed-items ((object player-character) turn-count)
+  (with-accessors ((inventory inventory)
+		   (elm        elm)
+		   (shoes      shoes)
+		   (armor      armor)
+		   (left-hand  left-hand)
+		   (right-hand right-hand)
+		   (ring       ring)) object
+    (flet ((decayedp (item)
+	     (let* ((decay-params (interaction-get-decay item))
+		    (decay-point  (and decay-params (interaction:points decay-params))))
+	       (and decay-point
+		    (>= (age item) decay-point)))))
+      (let* ((new-inventory (remove-if #'(lambda (a) (decayedp a)) inventory))
+	     (removed-items (remove-if #'(lambda (a) (not (decayedp a))) inventory)))
+	(when (and elm
+		   (decayedp elm))
+	  (push elm removed-items)
+	  (setf elm nil))
+	(when (and shoes
+		   (decayedp shoes))
+	  (push shoes removed-items)
+	  (setf shoes nil))
+	(when (and armor
+		   (decayedp armor))
+	  (push armor removed-items)
+	  (setf armor nil))
+	(when (and left-hand
+		   (decayedp left-hand))
+	  (push left-hand removed-items)
+	  (setf left-hand nil))
+	(when (and right-hand
+		   (decayedp right-hand))
+	  (push right-hand removed-items)
+	  (setf right-hand nil))
+	(when (and ring
+		   (decayedp ring))
+	  (push ring removed-items)
+	  (setf ring nil))
+	(setf inventory new-inventory)
+	(values removed-items inventory)))))
+
+(defmethod remove-from-inventory ((object player-character) item)
+  (setf (inventory object) (remove (id item) (inventory object) :key #'id :test #'=)))
+
+(defmethod remove-from-modifiers ((object player-character) item-origin-id)
+  (with-accessors ((modifiers-effects modifiers-effects)) object
+    (setf modifiers-effects
+	  (remove-if #'(lambda (a)
+			 (= (random-object-messages:msg-origin a)
+			    item-origin-id))
+		     modifiers-effects))))
+
+(defmethod sum-modifiers ((object player-character) modifier-name)
+  (with-accessors ((modifiers-effects modifiers-effects)) object
+    (reduce #'(lambda (a b) (d+ a (random-object-messages:msg-modifier b)))
+	    (remove-if #'(lambda (a)
+			   (or (not (typep a 'random-object-messages:modifier-effect-msg))
+			       (not (eq    modifier-name
+					   (random-object-messages:msg-characteristic a)))))
+		       modifiers-effects)
+	    :initial-value 0.0)))
+
+(defmacro gen-actual-characteristic (name)
+  (let ((fn       (format-fn-symbol t "actual-~a" name))
+	(accessor (format-fn-symbol t "~a"        name))
+	(constant (format-fn-symbol t "+~a+"      name)))
+    `(progn
+       (defgeneric ,fn (object))
+       (defmethod  ,fn ((object player-character))
+	 (d+ (,accessor object)
+	     (sum-modifiers object ,constant))))))
+
+(defmacro gen-actual-characteristics (&rest names)
+  `(progn
+     ,@(loop for name in names collect
+	    `(gen-actual-characteristic ,name))))
+
+(gen-actual-characteristics damage-points
+			    movement-points
+			    magic-points
+			    dodge-chance
+			    melee-attack-chance
+			    range-attack-chance
+			    melee-attack-damage
+			    range-attack-damage
+			    edge-weapons-chance-bonus
+			    edge-weapons-damage-bonus
+			    impact-weapons-chance-bonus
+			    impact-weapons-damage-bonus
+			    pole-weapons-chance-bonus
+			    pole-weapons-damage-bonus
+			    unlock-chance
+			    deactivate-trap-chance
+			    reply-attack-chance
+			    ambush-attack-chance
+			    spell-chance
+			    attack-spell-chance)
 
 (defmacro gen-make-player (player-class)
   (alexandria:with-gensyms (char rest-capital)
@@ -843,45 +1083,45 @@
 					   (weight    (25 10)))))
        (let* ((,char (or charact (make-instance 'player-character)))
 	      (,rest-capital (random-fill-slots ,char capital slots)))
-	 (setf (damage-points ,char)   (truncate (* (stamina ,char) 0.5))
-	       (movement-points ,char) (truncate (* (agility ,char) 0.5))
-	       (magic-points ,char) (truncate (/ (alexandria:lerp 0.1
-								 (alexandria:lerp 0.5
-										  (smartness ,char)
-										  (empaty ,char))
-								 (dexterity ,char))
-						3))
-	       (dodge-chance ,char) (truncate (max 0 (- (agility ,char) (/ (weight ,char) 2))))
+	 (setf (damage-points ,char)   (d (truncate (* (stamina ,char) 0.5)))
+	       (movement-points ,char) (d (truncate (* (agility ,char) 0.5)))
+	       (magic-points ,char) (d (truncate (/ (alexandria:lerp 0.1
+								     (alexandria:lerp 0.5
+										      (smartness ,char)
+										      (empaty ,char))
+								     (dexterity ,char))
+						    3)))
+	       (dodge-chance ,char) (d (truncate (max 0 (- (agility ,char) (/ (weight ,char) 2)))))
 	       (melee-attack-chance ,char) (alexandria:lerp 0.3 (strength ,char) (agility ,char))
 	       (range-attack-chance ,char) (alexandria:lerp 0.1
 							    (dexterity ,char)
 							    (agility   ,char))
-	       (melee-attack-damage ,char) (truncate (* (strength ,char) 0.25))
-	       (range-attack-damage ,char) (truncate (* (dexterity ,char) 0.25))
-	       (unlock-chance ,char) (truncate (/ (alexandria:lerp 0.9
+	       (melee-attack-damage ,char) (d (truncate (* (strength ,char) 0.25)))
+	       (range-attack-damage ,char) (d (truncate (* (dexterity ,char) 0.25)))
+	       (unlock-chance ,char) (d (truncate (/ (alexandria:lerp 0.9
 								   (agility ,char)
 								   (dexterity ,char))
 
-						  10))
-	       (deactivate-trap-chance ,char) (truncate
-					       (/ (alexandria:lerp 0.8
-								   (agility ,char)
-								   (dexterity ,char))
-						  10))
-	       (reply-attack-chance ,char) (truncate (/ (agility ,char) 5))
-	       (ambush-attack-chance ,char) (truncate
-					     (/ (alexandria:lerp 0.9
-								 (agility ,char)
-								 (strength ,char))
-						10))
-	       (spell-chance ,char) (truncate (/ (alexandria:lerp 0.9
-								  (smartness ,char)
-								  (empaty ,char))
-						 3))
-	       (attack-spell-chance ,char) (truncate (/ (alexandria:lerp 0.9
-									 (agility ,char)
-									 (smartness ,char))
-							3))
+						  10)))
+	       (deactivate-trap-chance ,char) (d (truncate
+						  (/ (alexandria:lerp 0.8
+								      (agility ,char)
+								      (dexterity ,char))
+						     10)))
+	       (reply-attack-chance ,char)  (d (truncate (/ (agility ,char) 5)))
+	       (ambush-attack-chance ,char) (d (truncate
+						(/ (alexandria:lerp 0.9
+								    (agility ,char)
+								    (strength ,char))
+						   10)))
+	       (spell-chance ,char) (d (truncate (/ (alexandria:lerp 0.9
+								     (smartness ,char)
+								     (empaty ,char))
+						    3)))
+	       (attack-spell-chance ,char) (d (truncate (/ (alexandria:lerp 0.9
+									    (agility ,char)
+									    (smartness ,char))
+							   3)))
 	       (race ,char) race)
 	 (if (> ,rest-capital 0)
 	     (,(alexandria:format-symbol t "~@:(make-~a~)" player-class)
@@ -903,7 +1143,7 @@
 									  (smartness (2 0))
 									  (weight    (52 23))))))
     (setf (player-class player) :warrior)
-    (setf (movement-points player) 50.0)
+    (setf (movement-points player) 100.0)
     player))
 
 (defun make-wizard (race)
@@ -1086,7 +1326,6 @@
       (setf (texture:border-color (portrait results)) §c00000000)
       (texture:prepare-for-rendering (portrait results)))
     results))
-
 
 (defun load-randomize-character (file)
   (with-character-parameters (params file)

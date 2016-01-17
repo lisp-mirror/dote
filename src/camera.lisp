@@ -189,6 +189,8 @@
 
 (defgeneric drag-camera (object offset))
 
+(defgeneric drag-camera-to (object destination))
+
 (defgeneric install-path-interpolator (object &rest knots))
 
 (defgeneric install-path-interpolator* (object knots))
@@ -303,7 +305,7 @@
     push-y))
 
 (defmethod drag-camera ((object camera) (offset vector))
-  "move camera on the x-z plane to position specified by vector"
+  "move camera on the x-z plane to position specified by vector as offset"
   (declare (optimize (safety 0) (speed 3) (debug 0)))
   (declare (camera object))
   (declare (vec offset))
@@ -323,6 +325,24 @@
 	    drag-equilibrium-pos            push
 	    previous-pos                    pos
 	    drag-target-pos                 target))))
+
+(defmethod drag-camera-to ((object camera) (destination vector))
+  "move camera on the x-z plane to position specified by destination"
+  (declare (optimize (safety 0) (speed 3) (debug 0)))
+  (declare (camera object))
+  (with-accessors ((dir dir) (up up)
+		   (pos pos)
+		   (target target)
+		   (previous-pos previous-pos)
+		   (drag-interpolator drag-interpolator)
+		   (drag-target-pos drag-target-pos)
+		   (drag-equilibrium-pos drag-equilibrium-pos)) object
+
+    (let* ((offset (vec- destination pos)))
+      (setf (current-pos drag-interpolator) offset
+	    drag-equilibrium-pos            offset
+	    previous-pos                    pos
+	    drag-target-pos                 (vec+ target destination)))))
 
 (defun gen-path-interpolator* (knots)
   (let* ((interpolator (interpolation:catmul-roll-interpolation* knots))

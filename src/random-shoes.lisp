@@ -70,15 +70,13 @@
       (decay-params (1- shoes-level))
     (truncate (max +minimum-decay+ (gaussian-probability sigma mean)))))
 
-(defun calculate-decay (object-level character decay-points)
+
+(defun calculate-decay (object-level decay-points)
   (make-instance 'decay-parameters
 		 :leaving-message (format nil
-					  (_ "~a broken")
-					  (plist-path-value character (list +description+)))
+					  (_ " (object level ~a).") object-level)
 		 :points decay-points
-		 :when-decay (if (and (> object-level (/ +maximum-level+ 2))
-				      (= (lcg-next-upto 10) 0))
-				 +decay-by-turns+ +decay-by-use+)))
+		 :when-decay +decay-by-turns+))
 
 (defun level-params (map-level)
   (values (elt +level-sigma+ map-level)
@@ -109,13 +107,14 @@
     (lcg-next-upto max)))
 
 (defun generate-shoes (map-level)
-  (%generate-shoes (res:get-resource-file +default-interaction-filename+
-					      +default-character-shoes-dir+
-					      :if-does-not-exists :error)
-		       (res:get-resource-file +default-character-filename+
-					      +default-character-shoes-dir+
-					      :if-does-not-exists :error)
-		       map-level))
+  (clean-effects
+   (%generate-shoes (res:get-resource-file +default-interaction-filename+
+					   +default-character-shoes-dir+
+					   :if-does-not-exists :error)
+		    (res:get-resource-file +default-character-filename+
+					   +default-character-shoes-dir+
+					   :if-does-not-exists :error)
+		    map-level)))
 
 (defun %generate-shoes (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
@@ -128,7 +127,7 @@
 	(n-setf-path-value char-template (list +description+) +type-name+)
 	(n-setf-path-value template
 			   (list +decay+)
-			   (calculate-decay shoes-level char-template shoes-decay))
+			   (calculate-decay shoes-level shoes-decay))
 	(loop for i in effects do
 	     (set-effect (list +effects+ i) shoes-level template))
 	(setf template (remove-generate-symbols template))
@@ -145,7 +144,7 @@
 				       ;; effect lasting forever  for
 				       ;; shoes,  they   will  broke
 				       ;; anyway.
-				      :duration  :unlimited)))
+				      :duration +duration-unlimited+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun regexp-file-portrait (shoes-level)

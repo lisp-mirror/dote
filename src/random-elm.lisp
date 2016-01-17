@@ -96,15 +96,13 @@
       (decay-params (1- elm-level))
     (truncate (max +minimum-decay+ (gaussian-probability sigma mean)))))
 
-(defun calculate-decay (object-level character decay-points)
+
+(defun calculate-decay (object-level decay-points)
   (make-instance 'decay-parameters
 		 :leaving-message (format nil
-					  (_ "~a broken")
-					  (plist-path-value character (list +description+)))
+					  (_ " (object level ~a).") object-level)
 		 :points decay-points
-		 :when-decay (if (and (> object-level (/ +maximum-level+ 2))
-				      (= (lcg-next-upto 10) 0))
-				 +decay-by-turns+ +decay-by-use+)))
+		 :when-decay +decay-by-turns+))
 
 (defun level-params (map-level)
   (values (elt +level-sigma+ map-level)
@@ -145,13 +143,14 @@
 	(lcg-next-upto (max 0.0 max)))))
 
 (defun generate-elm (map-level)
-  (%generate-elm (res:get-resource-file +default-interaction-filename+
-					+default-character-elm-dir+
-					:if-does-not-exists :error)
-		 (res:get-resource-file +default-character-filename+
-					+default-character-elm-dir+
-					:if-does-not-exists :error)
-		 map-level))
+  (clean-effects
+   (%generate-elm (res:get-resource-file +default-interaction-filename+
+					 +default-character-elm-dir+
+					 :if-does-not-exists :error)
+		  (res:get-resource-file +default-character-filename+
+					 +default-character-elm-dir+
+					 :if-does-not-exists :error)
+		  map-level)))
 
 (defun %generate-elm (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
@@ -166,7 +165,7 @@
 	(n-setf-path-value char-template (list +description+) +type-name+)
 	(n-setf-path-value template
 			   (list +decay+)
-			   (calculate-decay elm-level char-template elm-decay))
+			   (calculate-decay elm-level elm-decay))
 	(loop for i in effects do
 	     (set-effect (list +effects+ i) elm-level template))
 	(loop for i in healing-effects do
@@ -192,7 +191,7 @@
 				       ;; effect lasting forever  for
 				       ;; elms,  they   will  broke
 				       ;; anyway.
-				      :duration  :unlimited)))
+				      :duration +duration-unlimited+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun healing-fx-params-duration (elm-level)
@@ -224,7 +223,7 @@
 				       ;; effect lasting forever  for
 				       ;; elms,  they   will  broke
 				       ;; anyway.
-				      :duration :unlimited
+				      :duration +duration-unlimited+
 				      :chance (calculate-healing-fx-params-chance elm-level)
 				      :target +target-self+)))
     (n-setf-path-value interaction effect-path effect-object)))

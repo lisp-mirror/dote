@@ -37,13 +37,14 @@
   (alexandria:clamp map-level 1 3))
 
 (defun generate-inert-object (map-level)
-  (%generate-inert-object (res:get-resource-file +default-interaction-filename+
-						 +default-character-inert-obj-dir+
-						 :if-does-not-exists :error)
-			  (res:get-resource-file +default-character-filename+
-						 +default-character-inert-obj-dir+
-						 :if-does-not-exists :error)
-			  map-level))
+  (clean-effects
+   (%generate-inert-object (res:get-resource-file +default-interaction-filename+
+						  +default-character-inert-obj-dir+
+						  :if-does-not-exists :error)
+			   (res:get-resource-file +default-character-filename+
+						  +default-character-inert-obj-dir+
+						  :if-does-not-exists :error)
+			   map-level)))
 
 (defun %generate-inert-object (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)

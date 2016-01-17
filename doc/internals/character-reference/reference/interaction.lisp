@@ -82,7 +82,7 @@
       heal-terror                  none
       cause-poison                 (define-poison-effect (points -10
 							  trigger when-used
-							  condition berserk
+							  target self
 							  chance 0.3))
       cause-berserk                none
       cause-faint                  none
@@ -101,4 +101,4 @@
       immune-faint                 none
       immune-terror                none)
     magic-effect
-    (define-magic-effect (spell-id fireball-1 trigger when-used)))
+    (define-magic-effect (spell-id fireball-1 trigger when-used target other)))

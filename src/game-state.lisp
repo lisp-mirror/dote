@@ -173,6 +173,10 @@
     :accessor game-minutes
     :initarg :game-minutes
     :initform 0)
+   (game-turn
+    :accessor game-turn
+    :initarg :game-turn
+    :initform 0)
    (current-time
     :accessor current-time
     :initarg :current-time
@@ -480,8 +484,10 @@
 	      (sb-cga:vec (misc:coord-map->chunk (d (elt player-coordinates 0)))
 			  (num:d+ 1.5 ; hardcoded :(  to be removed soon
 				  (approx-terrain-height@pos object
-							     (d (elt player-coordinates 0))
-							     (d (elt player-coordinates 1))))
+							     (misc:coord-map->chunk
+							      (d (elt player-coordinates 0)))
+							     (misc:coord-map->chunk
+							      (d (elt player-coordinates 1)))))
 			  (misc:coord-map->chunk (d (elt player-coordinates 1)))))
 	;; TODO set cost for player in cost player layer of game-state
 	(if (eq faction +pc-type+)

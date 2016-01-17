@@ -8,3 +8,7 @@
 					       (vec2:vec2 (num:d (elt dir 0))
 							  (num:d (elt dir 2))))))
     (num:epsilon= dot-product 1.0)))
+
+(defun pos-entity-chunk->cost-pos (pos)
+  (ivec2:ivec2 (coord-chunk->costs (elt pos 0))
+	       (coord-chunk->costs (elt pos 2))))

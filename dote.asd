@@ -7,8 +7,6 @@
   :depends-on (:swank
 	       :clunit
 	       :alexandria
-	       :cl-lex
-	       :yacc
 	       :lparallel
 	       :parse-number
 	       :ieee-floats
@@ -36,6 +34,7 @@
 	       (:file "misc-utils")
 	       (:file "base64")
 	       (:file "num-utils")
+	       (:file "die-utils")
 	       (:file "filesystem-utils")
 	       (:file "os-utils")
 	       (:file "text-utils")
@@ -91,6 +90,7 @@
 	       (:file "game-state")
 	       (:file "game-events")
 	       (:file "basic-interaction-parameters")
+	       (:file "player-messages-text")
 	       (:file "character")
 	       (:file "random-weapon")
 	       (:file "random-potion")
@@ -103,6 +103,7 @@
 	       (:file "random-elm")
 	       (:file "random-ring")
 	       (:file "random-inert-object")
+	       (:file "random-object-messages")
 	       (:file "camera")
 	       (:file "mesh")
 	       (:file "wall-mesh-shell")
@@ -115,10 +116,12 @@
 	       (:file "pickable-mesh")
 	       (:file "able-to-see-mesh")
 	       (:file "building-floor-mesh")
+	       (:file "battle-utils")
 	       (:module gui
 			:components ((:file "gui-events")
 				     (:file "gui")
 				     (:file "widget")
+				     (:file "inventory-window")
 				     (:file "player-report-window")
 				     (:file "splash-screen-progress-gauge")))
 	       (:file "billboard")

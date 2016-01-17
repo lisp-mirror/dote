@@ -474,7 +474,7 @@
 
 (defmacro gen-format-label-with-max (max-fn-symbol character)
   (let ((fn-current (alexandria:format-symbol :character "~:@(current-~a~)" max-fn-symbol))
-	(fn-max     (alexandria:format-symbol :character "~:@(~a~)"         max-fn-symbol)))
+	(fn-max     (alexandria:format-symbol :character "~:@(actual-~a~)"         max-fn-symbol)))
     `(format nil
 	     (strcat "~,1f / ~d")
 	     (,fn-current ,character)
@@ -547,63 +547,89 @@
       (setf (prefix lb-magic-pt) (right-padding (prefix lb-magic-pt) max-length-prefix)
 	    (label  lb-magic-pt) (gen-format-label-with-max magic-points player))
       (setf (prefix lb-dodge-ch) (right-padding (prefix lb-dodge-ch) max-length-prefix)
-	    (label  lb-dodge-ch) (format nil +standard-float-print-format+ (character:dodge-chance player)))
+	    (label  lb-dodge-ch) (format nil
+					 +standard-float-print-format+
+					 (character:actual-dodge-chance player)))
       (setf (prefix lb-melee-atk-ch) (right-padding (prefix lb-melee-atk-ch) max-length-prefix)
-	    (label  lb-melee-atk-ch) (format nil +standard-float-print-format+ (character:melee-attack-chance player)))
+	    (label  lb-melee-atk-ch) (format nil
+					     +standard-float-print-format+
+					     (character:actual-melee-attack-chance player)))
       (setf (prefix lb-range-atk-ch) (right-padding (prefix lb-range-atk-ch) max-length-prefix)
-	    (label  lb-range-atk-ch) (format nil +standard-float-print-format+ (character:range-attack-chance player)))
-      (setf (prefix lb-melee-atk-dmg) (right-padding (prefix lb-melee-atk-ch) max-length-prefix)
-	    (label  lb-melee-atk-dmg) (format nil +standard-float-print-format+
-					      (character:melee-attack-damage player)))
+	    (label  lb-range-atk-ch) (format nil
+					     +standard-float-print-format+
+					     (character:actual-range-attack-chance player)))
+      (setf (prefix lb-melee-atk-dmg) (right-padding (prefix lb-melee-atk-dmg) max-length-prefix)
+	    (label  lb-melee-atk-dmg) (format nil
+					      +standard-float-print-format+
+					      (character:actual-melee-attack-damage player)))
       (setf (prefix lb-range-atk-dmg) (right-padding (prefix lb-range-atk-dmg) max-length-prefix)
-	    (label  lb-range-atk-dmg) (format nil +standard-float-print-format+
-					      (character:range-attack-damage player)))
+	    (label  lb-range-atk-dmg) (format nil
+					      +standard-float-print-format+
+					      (character:actual-range-attack-damage player)))
       (setf (prefix lb-edge-wpn-ch-bonus) (right-padding (prefix lb-edge-wpn-ch-bonus)
 							 max-length-prefix)
-	    (label lb-edge-wpn-ch-bonus) (format nil +standard-float-print-format+
-						 (character:edge-weapons-chance-bonus player)))
+	    (label lb-edge-wpn-ch-bonus)
+	    (format nil
+		    +standard-float-print-format+
+		    (character:actual-edge-weapons-chance-bonus player)))
       (setf (prefix lb-edge-wpn-dmg-bonus) (right-padding (prefix lb-edge-wpn-dmg-bonus)
 							  max-length-prefix)
-	    (label lb-edge-wpn-dmg-bonus) (format nil +standard-float-print-format+
-						  (character:edge-weapons-damage-bonus player)))
+	    (label lb-edge-wpn-dmg-bonus)
+	    (format nil
+		    +standard-float-print-format+
+		    (character:actual-edge-weapons-damage-bonus player)))
       (setf (prefix lb-impact-wpn-ch-bonus) (right-padding (prefix lb-impact-wpn-ch-bonus)
 							   max-length-prefix)
-	    (label lb-impact-wpn-ch-bonus) (format nil +standard-float-print-format+
-						   (character:impact-weapons-chance-bonus player)))
+	    (label lb-impact-wpn-ch-bonus)
+	    (format nil
+		    +standard-float-print-format+
+		    (character:actual-impact-weapons-chance-bonus player)))
       (setf (prefix lb-impact-wpn-dmg-bonus) (right-padding (prefix lb-impact-wpn-dmg-bonus)
 							    max-length-prefix)
-	    (label lb-impact-wpn-dmg-bonus) (format nil +standard-float-print-format+
-						    (character:impact-weapons-damage-bonus player)))
+	    (label lb-impact-wpn-dmg-bonus)
+	    (format nil
+		    +standard-float-print-format+
+		    (character:actual-impact-weapons-damage-bonus player)))
       (setf (prefix lb-pole-wpn-ch-bonus) (right-padding (prefix lb-pole-wpn-ch-bonus)
 							 max-length-prefix)
-	    (label lb-pole-wpn-ch-bonus) (format nil +standard-float-print-format+
-						    (character:pole-weapons-chance-bonus player)))
+	    (label lb-pole-wpn-ch-bonus)
+	    (format nil
+		    +standard-float-print-format+
+		    (character:actual-pole-weapons-chance-bonus player)))
       (setf (prefix lb-pole-wpn-dmg-bonus) (right-padding (prefix lb-pole-wpn-dmg-bonus)
 							  max-length-prefix)
-	    (label lb-pole-wpn-dmg-bonus) (format nil +standard-float-print-format+
-						  (character:pole-weapons-damage-bonus player)))
+	    (label lb-pole-wpn-dmg-bonus)
+	    (format nil
+		    +standard-float-print-format+
+		    (character:actual-pole-weapons-damage-bonus player)))
       (setf (prefix lb-unlock-ch) (right-padding (prefix lb-unlock-ch) max-length-prefix)
-	    (label lb-unlock-ch) (format nil +standard-float-print-format+
-					 (character:unlock-chance player)))
+	    (label lb-unlock-ch) (format nil
+					 +standard-float-print-format+
+					 (character:actual-unlock-chance player)))
       (setf (prefix lb-deactivate-trap-ch) (right-padding (prefix lb-deactivate-trap-ch)
 							  max-length-prefix)
-	    (label lb-deactivate-trap-ch) (format nil +standard-float-print-format+
-						  (character:deactivate-trap-chance player)))
+	    (label lb-deactivate-trap-ch) (format nil
+						  +standard-float-print-format+
+						  (character:actual-deactivate-trap-chance player)))
       (setf (prefix lb-reply-attack-ch) (right-padding (prefix lb-reply-attack-ch)
 						       max-length-prefix)
-	    (label lb-reply-attack-ch) (format nil +standard-float-print-format+
-					       (character:reply-attack-chance player)))
+	    (label lb-reply-attack-ch) (format nil
+					       +standard-float-print-format+
+					       (character:actual-reply-attack-chance player)))
       (setf (prefix lb-ambush-attack-ch) (right-padding (prefix lb-ambush-attack-ch)
 							max-length-prefix)
-	    (label lb-ambush-attack-ch) (format nil +standard-float-print-format+
-						(character:ambush-attack-chance player)))
+	    (label lb-ambush-attack-ch) (format nil
+						+standard-float-print-format+
+						(character:actual-ambush-attack-chance player)))
       (setf (prefix lb-spell-ch) (right-padding (prefix lb-spell-ch) max-length-prefix)
-	    (label lb-spell-ch) (format nil +standard-float-print-format+
-					(character:spell-chance player)))
+	    (label lb-spell-ch) (format nil
+					+standard-float-print-format+
+					(character:actual-spell-chance player)))
       (setf (prefix lb-attack-spell-ch) (right-padding (prefix lb-attack-spell-ch)
 						       max-length-prefix)
-	    (label lb-attack-spell-ch) (format nil +standard-float-print-format+
-					       (character:attack-spell-chance player)))
+	    (label lb-attack-spell-ch) (format nil
+					       +standard-float-print-format+
+					       (character:actual-attack-spell-chance player)))
       (setf (prefix lb-level) (right-padding (prefix lb-level) max-length-prefix)
 	    (label lb-level) (format nil "~d" (character:level player)))
       (setf (prefix lb-exp-points) (right-padding (prefix lb-exp-points) max-length-prefix)

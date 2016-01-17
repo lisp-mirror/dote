@@ -482,6 +482,7 @@ active program (set by sdk2.kit:use-program)."
 		:vert-displacement-speed
 		:duration
 		:mult-color
+		:gravity
 		:time)
       (:shaders :vertex-shader   ,(get-shader-source "tooltip.vert")
 		:fragment-shader ,(get-shader-source "tooltip.frag")))))

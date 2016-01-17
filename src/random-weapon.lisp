@@ -110,17 +110,15 @@
 (defun calculate-decay-points (weapon-level)
   (multiple-value-bind (sigma mean)
       (decay-params (1- weapon-level))
-    (truncate (max +minimum-decay+ (gaussian-probability sigma mean)))))
+    (truncate (max +minimum-decay+ (gaussian-probability sigma mean)))
+    2.0))
 
-(defun calculate-decay (object-level character decay-points)
+(defun calculate-decay (object-level decay-points)
   (make-instance 'decay-parameters
 		 :leaving-message (format nil
-					  (_ "~a broken")
-					  (plist-path-value character (list +description+)))
+					  (_ " (object level ~a).") object-level)
 		 :points decay-points
-		 :when-decay (if (and (> object-level (/ +maximum-level+ 2))
-				      (= (lcg-next-upto 10) 0))
-				 +decay-by-turns+ +decay-by-use+)))
+		 :when-decay +decay-by-turns+))
 
 (defun level-params (map-level)
   (values (elt +level-sigma+ map-level)
@@ -175,15 +173,16 @@
 		     +default-character-staff+)
 		    (:sword
 		     +default-character-sword+))))
-    (%generate-weapon (res:get-resource-file +default-interaction-filename+
-					     (append +default-character-weapon-dir+
-						     type-dir)
-					     :if-does-not-exists :error)
-		      (res:get-resource-file +default-character-filename+
-					     (append +default-character-weapon-dir+
-						     type-dir)
-					     :if-does-not-exists :error)
-		      map-level)))
+    (clean-effects
+     (%generate-weapon (res:get-resource-file +default-interaction-filename+
+					      (append +default-character-weapon-dir+
+						      type-dir)
+					      :if-does-not-exists :error)
+		       (res:get-resource-file +default-character-filename+
+					      (append +default-character-weapon-dir+
+						      type-dir)
+					      :if-does-not-exists :error)
+		       map-level))))
 
 (defun %generate-weapon (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
@@ -196,12 +195,12 @@
 	(cond
 	  ((plist-path-value template (list +can-cut+))
 	   (n-setf-path-value char-template (list +description+) +sword-type-name+)
-	   (generate-weapon-common template char-template weapon-level weapon-decay
+	   (generate-weapon-common template weapon-level weapon-decay
 			           effects-no healing-effect-no)
 	   (setf template (remove-generate-symbols template))
 	   (fill-sword-plists char-template template weapon-level))
 	  ((plist-path-value template (list +can-smash+))
-	   (generate-weapon-common template char-template weapon-level weapon-decay
+	   (generate-weapon-common template weapon-level weapon-decay
 			           effects-no healing-effect-no)
 	   (setf template (remove-generate-symbols template))
 	   (if (= (lcg-next-upto (truncate (+ +mace-or-staff-chance+
@@ -216,19 +215,19 @@
 		 (fill-mace-plists char-template template weapon-level))))
 	  ((plist-path-value template (list +mounted-on-pole+))
 	   (n-setf-path-value char-template (list +description+) +spear-type-name+)
-	   (generate-weapon-common template char-template weapon-level weapon-decay
+	   (generate-weapon-common template weapon-level weapon-decay
 			           effects-no healing-effect-no)
 	   (setf template (remove-generate-symbols template))
 	   (fill-spear-plists char-template template weapon-level))
   	  ((plist-path-value template (list +can-launch-bolt+))
 	   (n-setf-path-value char-template (list +description+) +crossbow-type-name+)
-	   (generate-weapon-common template char-template weapon-level weapon-decay
+	   (generate-weapon-common template weapon-level weapon-decay
 			           effects-no healing-effect-no)
 	   (setf template (remove-generate-symbols template))
 	   (fill-crossbow-plists char-template template weapon-level))
 	  ((plist-path-value template (list +can-launch-arrow+))
 	   (n-setf-path-value char-template (list +description+) +bow-type-name+)
-	   (generate-weapon-common template char-template weapon-level weapon-decay
+	   (generate-weapon-common template weapon-level weapon-decay
 			           effects-no healing-effect-no)
 	   (setf template (remove-generate-symbols template))
 	   (fill-bow-plists char-template template weapon-level))
@@ -246,7 +245,7 @@
 				       ;; effect lasting forever  for
 				       ;; weapons,  they   will  broke
 				       ;; anyway.
-				      :duration  :unlimited)))
+				      :duration +duration-unlimited+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun healing-fx-params-duration (weapon-level)
@@ -276,19 +275,16 @@
   (let* ((target (healing-target))
 	 (effect-object (make-instance 'healing-effect-parameters
 				       :trigger  +effect-until-held+
-				       :duration (if (eq target +target-self+)
-						     :unlimited
-						     (healing-effect-duration
-						      effect-path
-						      (ceiling (max 1
-								    (- +maximum-level+
-								       weapon-level)))))
+				       :duration (ceiling (max 1
+							       (- +maximum-level+
+								  weapon-level)))
 				       :chance (calculate-healing-fx-params-chance weapon-level)
 				       :target  target)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun set-poison-effect (effect-path weapon-level interaction)
   (let ((effect-object (make-instance 'poison-effect-parameters
+				      :target          +target-other+
 				      :points-per-turn (calculate-modifier
 							weapon-level))))
     (n-setf-path-value interaction effect-path effect-object)))
@@ -313,13 +309,13 @@
 				       :trigger  +effect-until-held+)))
     (n-setf-path-value interaction (list +magic-effects+) effect-object)))
 
-(defun generate-weapon-common (interaction character weapon-level weapon-decay-points
+(defun generate-weapon-common (interaction weapon-level weapon-decay-points
 			       effects-no healing-effects-no)
   (let* ((effects         (%get-normal-fx-shuffled  interaction effects-no))
 	 (healing-effects (%get-healing-fx-shuffled interaction healing-effects-no)))
     (n-setf-path-value interaction
 		       (list +decay+)
-		       (calculate-decay weapon-level character weapon-decay-points))
+		       (calculate-decay weapon-level weapon-decay-points))
     (loop for i in effects do
 	 (set-effect (list +effects+ i) weapon-level interaction))
     (loop for i in healing-effects do

@@ -81,7 +81,11 @@
 		(return-from ,propagate-symbol t)))
 	 nil))))
 
-(defevent end-turn () ())
+(defevent end-turn ()
+  ((end-turn-count
+    :initform 0
+    :initarg  :end-turn-count
+    :accessor end-turn-count)))
 
 (defevent camera-drag-ends () ())
 
@@ -152,3 +156,113 @@
 
 (defun make-simple-event-w-dest (class id-from id-to)
   (make-instance class :id-origin id-from :id-destination id-to))
+
+(defmacro gen-cause-*-events (&rest event-type)
+  `(progn
+     ,@(loop for ev in event-type collect
+	    `(defevent
+		,(misc:format-fn-symbol t "cause-~a-event" ev)
+		(game-event-w-destination) ()))))
+
+(gen-cause-*-events poisoning terror faint berserk)
+
+(defmacro gen-make-cause-*-events (&rest event-type)
+  `(progn
+     ,@(loop for ev in event-type collect
+	    `(defun
+		 ,(misc:format-fn-symbol t "make-cause-~a-event" ev)
+		 (id-from id-to
+		  ,(misc:format-fn-symbol t "cause-~a-effects" ev))
+	       (make-instance ',(misc:format-fn-symbol t "cause-~a-event" ev)
+			      :id-origin      id-from
+			      :id-destination id-to
+			      :event-data     ,(misc:format-fn-symbol t "cause-~a-effects" ev))))))
+
+(gen-make-cause-*-events poisoning terror faint berserk)
+
+(defmacro gen-cure-*-events (&rest event-type)
+  `(progn
+     ,@(loop for ev in event-type collect
+	    `(defevent
+		,(misc:format-fn-symbol t "cure-~a-event" ev)
+		(game-event-w-destination) ()))))
+
+(gen-cure-*-events poisoning terror faint berserk)
+
+(defmacro gen-make-cure-*-events (&rest event-type)
+  `(progn
+     ,@(loop for ev in event-type collect
+	    `(defun
+		 ,(misc:format-fn-symbol t "make-cure-~a-event" ev)
+		 (id-from id-to
+		  ,(misc:format-fn-symbol t "cure-~a-effects" ev))
+	       (make-instance ',(misc:format-fn-symbol t "cure-~a-event" ev)
+			      :id-origin      id-from
+			      :id-destination id-to
+			      :event-data     ,(misc:format-fn-symbol t "cure-~a-effects" ev))))))
+
+(gen-make-cure-*-events poisoning terror faint berserk)
+
+(defmacro gen-cancel-*-events (&rest event-type)
+  `(progn
+     ,@(loop for ev in event-type collect
+	    `(defevent
+		,(misc:format-fn-symbol t "cancel-~a-event" ev)
+		(game-event-w-destination game-event-procrastinated) ()))))
+
+(gen-cancel-*-events poisoning        terror        faint        berserk
+		     immune-poisoning immune-terror immune-faint immune-berserk)
+
+(defmacro gen-make-cancel-*-events (&rest event-type)
+  `(progn
+     ,@(loop for ev in event-type collect
+	    `(defun
+		 ,(misc:format-fn-symbol t "make-cancel-~a-event" ev)
+		 (id-from id-to trigger-turn &key (original-event nil))
+	       (make-instance ',(misc:format-fn-symbol t "cancel-~a-event" ev)
+			      :id-origin      id-from
+			      :id-destination id-to
+			      :trigger-turn   trigger-turn
+			      :event-data     original-event)))))
+
+(gen-make-cancel-*-events poisoning        terror        faint        berserk
+		          immune-poisoning immune-terror immune-faint immune-berserk)
+
+(defmacro gen-immune-*-events (&rest event-type)
+  `(progn
+     ,@(loop for ev in event-type collect
+	    `(defevent
+		,(misc:format-fn-symbol t "immune-~a-event" ev)
+		(game-event-w-destination) ()))))
+
+(gen-immune-*-events poisoning terror faint berserk)
+
+(defmacro gen-make-immune-*-events (&rest event-type)
+  `(progn
+     ,@(loop for ev in event-type collect
+	    `(defun
+		 ,(misc:format-fn-symbol t "make-immune-~a-event" ev)
+		 (id-from id-to
+		  ,(misc:format-fn-symbol t "immune-~a-effects" ev))
+	       (make-instance ',(misc:format-fn-symbol t "immune-~a-event" ev)
+			      :id-origin      id-from
+			      :id-destination id-to
+			      :event-data     ,(misc:format-fn-symbol t "immune-~a-effects" ev))))))
+
+(gen-make-immune-*-events poisoning terror faint berserk)
+
+(defevent heal-damage-event (game-event-w-destination) ())
+
+(defun make-heal-damage-event (id-from id-to heal-damage-effects)
+   (make-instance 'heal-damage-event :id-origin id-from :id-destination
+                  id-to :event-data heal-damage-effects))
+
+(defevent modifier-object-event (game-event-w-destination) ())
+
+(defun make-modifier-object-event (id-from id-to modifier-effects)
+   (make-instance 'modifier-object-event :id-origin id-from :id-destination
+                  id-to :event-data modifier-effects))
+
+(defevent wear-object-event (game-event-w-destination) ())
+
+(defevent unwear-object-event (game-event-w-destination) ())

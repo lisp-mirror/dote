@@ -5,9 +5,14 @@ tactical game.
 
 ** Features
 
-- procedural  generation of  levels, terrains,  trees, labyrinths  and
-  most of the textures;
-- random game object generation;
+- procedural  generation of:
+  - levels;
+  - terrains;
+  - trees;
+  - labyrinths;
+  - combat units;
+  - game object (potions, weapons etc..);
+  - most of the textures.
 - supported mesh  in obj and MD2  file format, tags supported  for the
   latter;
 - simple caching system for levels;
@@ -55,8 +60,6 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
    - swank;
    - clunit;
    - alexandria;
-   - cl-lex;
-   - yacc;
    - lparallel;
    - parse-number;
    - ieee-floats;

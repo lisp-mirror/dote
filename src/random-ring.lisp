@@ -104,15 +104,17 @@
       (decay-params (1- ring-level))
     (truncate (max +minimum-decay+ (gaussian-probability sigma mean)))))
 
-(defun calculate-decay (object-level character decay-points)
+(defun calculate-decay (object-level decay-points)
   (make-instance 'decay-parameters
 		 :leaving-message (format nil
-					  (_ "~a broken")
-					  (plist-path-value character (list +description+)))
+					  (_ " (object level ~a).") object-level)
 		 :points decay-points
-		 :when-decay (if (and (> object-level (/ +maximum-level+ 2))
-				      (= (lcg-next-upto 10) 0))
-				 +decay-by-turns+ +decay-by-use+)))
+		 :when-decay  +decay-by-turns+))
+
+;; :points decay-points
+;; :when-decay (if (and (> object-level (/ +maximum-level+ 2))
+;; 		      (= (lcg-next-upto 10) 0))
+;; 		 +decay-by-turns+ +decay-by-use+)))
 
 (defun level-params (map-level)
   (values (elt +level-sigma+ map-level)
@@ -154,13 +156,14 @@
 	(lcg-next-upto (max 0.0 max)))))
 
 (defun generate-ring (map-level)
-  (%generate-ring (res:get-resource-file +default-interaction-filename+
-					      +default-character-ring-dir+
-					      :if-does-not-exists :error)
-		  (res:get-resource-file +default-character-filename+
-					 +default-character-ring-dir+
-					 :if-does-not-exists :error)
-		  map-level))
+  (clean-effects
+   (%generate-ring (res:get-resource-file +default-interaction-filename+
+					  +default-character-ring-dir+
+					  :if-does-not-exists :error)
+		   (res:get-resource-file +default-character-filename+
+					  +default-character-ring-dir+
+					  :if-does-not-exists :error)
+		   map-level)))
 
 (defun %generate-ring (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
@@ -176,7 +179,7 @@
 	(n-setf-path-value char-template (list +description+) +type-name+)
 	(n-setf-path-value template
 			   (list +decay+)
-			   (calculate-decay ring-level char-template ring-decay))
+			   (calculate-decay ring-level ring-decay))
 	(loop for i in effects do
 	     (set-effect (list +effects+ i) ring-level template))
 	(loop for i in healing-effects do
@@ -205,7 +208,7 @@
 				       ;; effect lasting forever  for
 				       ;; rings,  they   will  broke
 				       ;; anyway.
-				      :duration  :unlimited)))
+				      :duration   +duration-unlimited+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun healing-fx-params-duration (ring-level)
@@ -228,11 +231,8 @@
 
 (defun set-healing-effect (effect-path ring-level interaction)
   (let ((effect-object (make-instance 'healing-effect-parameters
-				      :trigger  +effect-until-held+
-				       ;; effect lasting forever  for
-				       ;; rings,  they   will  broke
-				       ;; anyway.
-				      :duration :unlimited
+				      :trigger  +effect-when-worn+
+				      :duration (calculate-healing-fx-params-duration ring-level)
 				      :chance (calculate-healing-fx-params-chance ring-level)
 				      :target +target-self+)))
     (n-setf-path-value interaction effect-path effect-object)))

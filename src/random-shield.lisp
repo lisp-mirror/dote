@@ -104,15 +104,12 @@
       (decay-params (1- shield-level))
     (truncate (max +minimum-decay+ (gaussian-probability sigma mean)))))
 
-(defun calculate-decay (object-level character decay-points)
+(defun calculate-decay (object-level decay-points)
   (make-instance 'decay-parameters
 		 :leaving-message (format nil
-					  (_ "~a broken")
-					  (plist-path-value character (list +description+)))
+					  (_ " (object level ~a).") object-level)
 		 :points decay-points
-		 :when-decay (if (and (> object-level (/ +maximum-level+ 2))
-				      (= (lcg-next-upto 10) 0))
-				 +decay-by-turns+ +decay-by-use+)))
+		 :when-decay +decay-by-turns+))
 
 (defun level-params (map-level)
   (values (elt +level-sigma+ map-level)
@@ -154,13 +151,14 @@
 	(lcg-next-upto (max 0.0 max)))))
 
 (defun generate-shield (map-level)
-  (%generate-shield (res:get-resource-file +default-interaction-filename+
-					      +default-character-shield-dir+
-					      :if-does-not-exists :error)
-		       (res:get-resource-file +default-character-filename+
-					      +default-character-shield-dir+
-					      :if-does-not-exists :error)
-		       map-level))
+  (clean-effects
+   (%generate-shield (res:get-resource-file +default-interaction-filename+
+					    +default-character-shield-dir+
+					    :if-does-not-exists :error)
+		     (res:get-resource-file +default-character-filename+
+					    +default-character-shield-dir+
+					    :if-does-not-exists :error)
+		     map-level)))
 
 (defun %generate-shield (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
@@ -176,7 +174,7 @@
 	(n-setf-path-value char-template (list +description+) +type-name+)
 	(n-setf-path-value template
 			   (list +decay+)
-			   (calculate-decay shield-level char-template shield-decay))
+			   (calculate-decay shield-level shield-decay))
 	(loop for i in effects do
 	     (set-effect (list +effects+ i) shield-level template))
 	(loop for i in healing-effects do
@@ -205,7 +203,7 @@
 				       ;; effect lasting forever  for
 				       ;; shields,  they   will  broke
 				       ;; anyway.
-				      :duration  :unlimited)))
+				      :duration  +duration-unlimited+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun healing-fx-params-duration (shield-level)
@@ -226,23 +224,12 @@
       (healing-fx-params-chance (1- shield-level))
     (max +minimum-chance-healing-fx+ (dabs (gaussian-probability sigma mean)))))
 
-(defun healing-target ()
-  (if (= (lcg-next-upto +healing-target-self-chance+) 0)
-      +target-other+
-      +target-self+))
-
 (defun set-healing-effect (effect-path shield-level interaction)
-  (let* ((target (healing-target))
-	 (effect-object (make-instance 'healing-effect-parameters
+  (let* ((effect-object (make-instance 'healing-effect-parameters
 				       :trigger  +effect-until-held+
-				       :duration (if (eq target +target-self+)
-						     :unlimited
-						     (healing-effect-duration
-						      effect-path
-						      (max 1 (- +maximum-level+ shield-level))))
-				       :chance (calculate-healing-fx-params-chance
-						shield-level)
-				       :target target)))
+				       :duration (max 1 (- +maximum-level+ shield-level))
+				       :chance   (calculate-healing-fx-params-chance shield-level)
+				       :target   +target-self+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun set-poison-effect (effect-path shield-level interaction)

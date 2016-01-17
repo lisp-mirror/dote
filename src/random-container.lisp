@@ -138,20 +138,21 @@
   (subseq (shuffle "1234567890") 0 8))
 
 (defun generate-container (map-level &key (keychain (misc:make-fresh-array 0 nil t nil)))
-  (%generate-container (res:get-resource-file +default-interaction-filename+
-					      +default-character-container-dir+
-					      :if-does-not-exists :error)
-		       (res:get-resource-file +default-character-filename+
-					      +default-character-container-dir+
-					      :if-does-not-exists :error)
-		       map-level
-		       (res:get-resource-file +default-interaction-filename+
-					      +default-character-key-dir+
-					      :if-does-not-exists :error)
-		       (res:get-resource-file +default-character-filename+
-					      +default-character-key-dir+
-					      :if-does-not-exists :error)
-		       :keychain keychain))
+  (clean-effects
+   (%generate-container (res:get-resource-file +default-interaction-filename+
+					       +default-character-container-dir+
+					       :if-does-not-exists :error)
+			(res:get-resource-file +default-character-filename+
+					       +default-character-container-dir+
+					       :if-does-not-exists :error)
+			map-level
+			(res:get-resource-file +default-interaction-filename+
+					       +default-character-key-dir+
+					       :if-does-not-exists :error)
+			(res:get-resource-file +default-character-filename+
+					       +default-character-key-dir+
+					       :if-does-not-exists :error)
+			:keychain keychain)))
 
 (defun %generate-container (interaction-file character-file map-level
 			    key-interaction-file key-character-file

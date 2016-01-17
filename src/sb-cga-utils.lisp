@@ -77,6 +77,8 @@
 
 (defgeneric aabb-center (object))
 
+(defgeneric aabb-top-center (object))
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defmacro %with-optimized-vector ((aabb p accessor) &body body)
     `(let ((,p (,accessor ,aabb)))
@@ -174,6 +176,14 @@
 (defmethod aabb-center ((object aabb))
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (vec/ (vec+ (aabb-p1 object) (aabb-p2 object)) 2.0))
+
+(defmethod aabb-top-center ((object aabb))
+  (declare (optimize (debug 3) (safety 3) (speed 0)))
+  (with-accessors ((aabb-p2 aabb-p2)) object
+    (declare (vec aabb-p2))
+    (let ((res (copy-vec (aabb-center object))))
+      (setf (elt res 1) (elt aabb-p2 1))
+      res)))
 
 (defclass bounding-sphere ()
   ((sphere-center

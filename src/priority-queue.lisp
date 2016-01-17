@@ -16,81 +16,121 @@
 
 (in-package :priority-queue)
 
-(defparameter *equal-function* #'equalp)
+(defclass priority-queue ()
+  ((heap
+    :initform (misc:make-array-frame 1 nil)
+    :initarg :heap
+    :accessor heap)
+   (key-function
+    :initform #'identity
+    :initarg :key-function
+    :accessor key-function)
+   (compare-function
+    :initform #'<
+    :initarg :compare-function
+    :accessor compare-function)
+   (equal-function
+    :initform (misc:make-array-frame 1 nil)
+    :initarg :equal-function
+    :accessor equal-function)))
 
-(defparameter *compare-function* #'<)
+(defmethod marshal:class-persistant-slots ((object priority-queue))
+  (append '(heap)
+	   (call-next-method)))
 
-(defparameter *key-fun* #'identity)
+(defgeneric get-children-pos (object parent-pos))
 
-(defparameter *heap* (misc:make-array-frame 1 nil))
+(defgeneric rearrange-bottom-up (object &optional pos))
 
-(defun get-children-pos (parent-pos)
-  (declare (integer parent-pos))
-  (list (and (< (* 2 parent-pos) (fill-pointer *heap*))
-		(* 2 parent-pos))
-	(and (< (1+ (* 2 parent-pos)) (fill-pointer *heap*))
-	     (1+ (* 2 parent-pos)))))
+(defgeneric rearrange-top-bottom (object &optional root-pos))
+
+(defgeneric push-element (object val))
+
+(defgeneric pop-element (object))
+
+(defgeneric emptyp (object))
+
+(defgeneric find-element (object element))
 
 (defun get-parent-pos (pos)
   (floor (/ pos 2)))
 
-(defun rearrange-bottom-up (&optional (pos (1- (length *heap*))))
-  (let ((parent-pos (get-parent-pos pos)))
-    (when (and (> parent-pos 0)
-	       (funcall *compare-function* 
-			(funcall *key-fun* (elt *heap* pos)) 
-			(funcall *key-fun* (elt *heap* parent-pos))))
-      (let ((swp (elt *heap* parent-pos)))
-	(setf (elt *heap* parent-pos) (elt *heap* pos))
-	(setf (elt *heap* pos) swp))
-      (rearrange-bottom-up parent-pos))))
+(defmethod get-children-pos ((object priority-queue) parent-pos)
+  (declare (integer parent-pos))
+  (with-accessors ((heap heap)) object
+    (list (and (< (* 2 parent-pos) (fill-pointer heap))
+	       (* 2 parent-pos))
+	  (and (< (1+ (* 2 parent-pos)) (fill-pointer heap))
+	       (1+ (* 2 parent-pos))))))
 
-(defun rearrange-top-bottom (&optional (root-pos 1))
-  (let ((children (remove-if #'null (get-children-pos root-pos))))
-    (let ((maximum-child (cond
-			   ((null children) 
-			    root-pos)
-			   ((= (length children) 1)
-			    (first children))
-			   (t
-			    (if (funcall *compare-function* 
-					 (funcall *key-fun* (elt *heap* (first children)))
-					 (funcall *key-fun* (elt *heap* (second children))))
-				(first children)
-				(second children))))))
-      (when (not (funcall *equal-function* 
-			  (funcall *key-fun* (elt *heap* maximum-child))
-			  (funcall *key-fun* (elt *heap* root-pos))))
-	(let ((swp (elt *heap* root-pos)))
-	  (setf (elt *heap* root-pos) (elt *heap* maximum-child))
-	  (setf (elt *heap* maximum-child) swp))
-	(rearrange-top-bottom maximum-child)))))
-	  
-(defun push (val)
-  (vector-push-extend val *heap*)
-  (rearrange-bottom-up))
+(defmethod rearrange-bottom-up ((object priority-queue)
+				&optional (pos (1- (length (heap object)))))
+  (with-accessors ((heap heap)
+		   (key-function key-function)
+		   (compare-function compare-function)) object
+    (let ((parent-pos (get-parent-pos pos)))
+      (when (and (> parent-pos 0)
+		 (funcall compare-function
+			  (funcall key-function (elt heap pos))
+			  (funcall key-function (elt heap parent-pos))))
+	(let ((swp (elt heap parent-pos)))
+	  (setf (elt heap parent-pos) (elt heap pos))
+	  (setf (elt heap pos) swp))
+	(rearrange-bottom-up object parent-pos)))))
 
-(defun emptyp ()
-   (<= (length *heap*) 1))
+(defmethod rearrange-top-bottom ((object priority-queue) &optional (root-pos 1))
+  (with-accessors ((heap heap)
+		   (key-function key-function)
+		   (compare-function compare-function)
+		   (equal-function equal-function)) object
+    (let ((children (remove-if #'null (get-children-pos object root-pos))))
+      (let ((maximum-child (cond
+			     ((null children)
+			      root-pos)
+			     ((= (length children) 1)
+			      (first children))
+			     (t
+			      (if (funcall compare-function
+					   (funcall key-function (elt heap (first children)))
+					   (funcall key-function (elt heap (second children))))
+				  (first children)
+				  (second children))))))
+	(when (not (funcall equal-function
+			    (funcall key-function (elt heap maximum-child))
+			    (funcall key-function (elt heap root-pos))))
+	  (let ((swp (elt heap root-pos)))
+	    (setf (elt heap root-pos) (elt heap maximum-child))
+	    (setf (elt heap maximum-child) swp))
+	  (rearrange-top-bottom object maximum-child))))))
 
-(defmacro with-min-queue ((compare sort key) &body body)
-  `(let ((*heap* (misc:make-array-frame 1 nil))
- 	 (*equal-function* ,compare)
- 	 (*compare-function* ,sort)
- 	 (*key-fun* ,key))
-      ,@body))
+(defmethod push-element ((object priority-queue) val)
+  (with-accessors ((heap heap)) object
+    (vector-push-extend val heap)
+    (rearrange-bottom-up object)))
 
-(defun pop ()
-  (if (emptyp)
-      nil
-      (prog1
-	  (elt *heap* 1)
-	(if (= (length *heap*) 2)
-	    (setf (fill-pointer *heap*) (1- (fill-pointer *heap*)))
-	    (progn
-	      (setf (elt *heap* 1) (alexandria:last-elt *heap*))
-	      (setf (fill-pointer *heap*) (1- (fill-pointer *heap*)))
-	      (rearrange-top-bottom))))))
+(defmethod emptyp ((object priority-queue))
+  (with-accessors ((heap heap)) object
+    (<= (length heap) 1)))
 
-(defun find (element)
-   (cl:find element *heap* :key *key-fun* :test *equal-function*)) 
+(defmethod pop-element ((object priority-queue))
+  (with-accessors ((heap heap)) object
+    (if (emptyp object)
+	nil
+	(prog1
+	    (elt heap 1)
+	  (if (= (length heap) 2)
+	      (setf (fill-pointer heap) (1- (fill-pointer heap)))
+	      (progn
+		(setf (elt heap 1) (alexandria:last-elt heap))
+		(setf (fill-pointer heap) (1- (fill-pointer heap)))
+		(rearrange-top-bottom object)))))))
+
+(defmacro with-min-queue ((queue compare sort key) &body body)
+  `(let ((,queue (make-instance 'priority-queue
+				:equal-function   ,compare
+				:compare-function ,sort
+				:key-function          ,key)))
+     ,@body))
+
+(defmethod find-element ((object priority-queue) element)
+  (find element (heap object) :key (key-function object) :test (equal-function object)))

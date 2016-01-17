@@ -706,11 +706,21 @@
 
 (defgeneric decrement-move-points-rotate (object))
 
+(defgeneric decrement-move-points-wear (object))
+
+(defgeneric can-use-movement-points-p (object))
+
 (defgeneric calculate-cost-position (object))
 
 (defgeneric rendering-needed-p (object renderer))
 
 (defgeneric parent-labyrinth (object))
+
+(defgeneric traverse-recurrent-effects (object))
+
+(defgeneric process-postponed-messages (object))
+
+(defgeneric set-death-status (object))
 
 (defmethod remove-mesh-data ((object triangle-mesh))
   (setf (normals       object) nil
@@ -845,12 +855,23 @@
 	  (d 0)))))
 
 (defmethod decrement-move-points-entering-tile ((object triangle-mesh))
-  (decf (character:current-movement-points (ghost object))
-	(calculate-decrement-move-points-entering-tile object)))
+  (when (> (character:current-movement-points (ghost object)) 0)
+    (decf (character:current-movement-points (ghost object))
+	  (calculate-decrement-move-points-entering-tile object))))
 
 (defmethod decrement-move-points-rotate ((object triangle-mesh))
-  (decf (character:current-movement-points (ghost object))
-	+rotate-entity-cost-cost+))
+  (when (> (character:current-movement-points (ghost object)) 0)
+    (decf (character:current-movement-points (ghost object))
+	  +rotate-entity-cost-cost+)))
+
+(defmethod decrement-move-points-wear ((object triangle-mesh))
+  (when (> (character:current-movement-points (ghost object)) 0)
+    (decf (character:current-movement-points (ghost object))
+	  +wear-object-entity-cost-cost+)))
+
+(defmethod can-use-movement-points-p ((object triangle-mesh))
+  (and (character:current-movement-points (ghost object))
+       (> (character:current-movement-points (ghost object)) 0)))
 
 (defmethod calculate-cost-position ((object triangle-mesh))
   (with-accessors ((pos pos)) object
@@ -2371,6 +2392,10 @@
       (parent-labyrinth (mtree:parent object))
     (error ()
       nil)))
+
+(defmethod entity-dead-p ((object triangle-mesh))
+  (with-accessors ((ghost ghost)) object
+    (<= (character:current-damage-points ghost) 0)))
 
 (alexandria:define-constant +magic-num-md2-tag-file '(74 68 80 50) :test #'equalp)
 

@@ -141,8 +141,8 @@
     (with-accessors ((current-path current-path)) ghost
       (when (= (id-origin event) id)
 	(game-state:with-world (world state)
-	  ;; update state matrix
-	  (world:move-map-state-entity world object (alexandria:first-elt current-path)))
+	  ;; update state matrix and quadtree
+	  (world:move-entity world object (alexandria:first-elt current-path)))
 	;; TODO reset cost for first tile of the path
 	(setf current-path (subseq current-path 1))
 	(if (= (length current-path) 1)
@@ -200,13 +200,419 @@
 	  t)
 	nil)))
 
+(defmacro with-cause-events-accessors ((mesh event immune-status-accessor) &body body)
+  `(with-accessors ((ghost ghost)
+		    (id id)
+		    (state state)) ,mesh
+     (with-accessors ((recurrent-effects recurrent-effects)
+		      (,immune-status-accessor ,immune-status-accessor)
+		      (status status)) ghost
+       (with-accessors ((event-data event-data)) ,event
+	 (if (and (= id (id-destination ,event))
+		  (dice:pass-d1.0 (random-object-messages:msg-chance event-data))
+		  (not ,immune-status-accessor)
+		  (null status)) ;; ensure player  can not  suffers
+                                 ;; more than one abnormal status
+	     (progn
+	       ,@body)
+	     nil)))))
+
+(defmethod on-game-event ((object md2-mesh) (event cause-poisoning-event))
+  (with-accessors ((ghost ghost)
+		   (id id)
+		   (state state)) object
+    (with-accessors ((recurrent-effects recurrent-effects)
+		     (immune-poison-status immune-poison-status)
+		     (status status)) ghost
+      (with-accessors ((event-data event-data)) event
+	(if (and (= id (id-destination event))
+		 (dice:pass-d1.0 (random-object-messages:msg-chance event-data))
+		 (not immune-poison-status)
+		 (null status)) ;; ensure player  can not  suffers
+	                        ;; more than one abnormal status
+	    (progn
+	      (push event-data recurrent-effects)
+	      (billboard:apply-tooltip object
+				       billboard:+tooltip-poison-char+
+				       :color     billboard:+poison-damage-color+
+				       :font-type gui:+tooltip-font-handle+)
+	      (setf status +status-poisoned+)
+	      (send-refresh-toolbar-event)
+	      t)
+	    nil)))))
+
+(defmacro with-simple-cause-status ((mesh event immune-accessor new-status tooltip)
+				     &body body)
+  `(with-cause-events-accessors (,mesh ,event ,immune-accessor)
+     (billboard:apply-tooltip ,mesh
+			      ,tooltip
+			      :color     billboard:+poison-damage-color+
+			      :font-type gui:+tooltip-font-handle+)
+     (setf status ,new-status)
+     ,@body
+     (send-refresh-toolbar-event)))
+
+(defmethod on-game-event ((object md2-mesh) (event cause-terror-event))
+  (with-simple-cause-status (object event immune-terror-status +status-terror+
+				    billboard:+tooltip-terror-char+)
+    (with-accessors ((event-data event-data)) event
+      (when (numberp (random-object-messages:msg-duration event-data))
+	(pq:push-element (character:postponed-messages (ghost object))
+			 (make-cancel-terror-event (id-origin event)
+						   (id object)
+						   (+ (random-object-messages:msg-duration event-data)
+						      (game-state:game-turn state))
+						   :original-event event))))))
+
+(defmethod on-game-event ((object md2-mesh) (event cause-berserk-event))
+  (with-simple-cause-status (object event immune-berserk-status +status-berserk+
+				    billboard:+tooltip-berserk-char+)
+    (with-accessors ((event-data event-data)) event
+      (when (numberp (random-object-messages:msg-duration event-data))
+	(pq:push-element (character:postponed-messages (ghost object))
+			 (make-cancel-berserk-event (id-origin event)
+						    (id object)
+						    (+ (random-object-messages:msg-duration event-data)
+						       (game-state:game-turn state))
+						    :original-event event))))))
+
+(defmethod on-game-event ((object md2-mesh) (event cause-faint-event))
+  (with-simple-cause-status (object event immune-berserk-status +status-berserk+
+				    billboard:+tooltip-faint-char+)
+    (set-death-status object)))
+
+(defun %common-cure-status-events (mesh event
+				   &optional (action-fn #'(lambda (a b)
+							    (declare (ignore a b))
+							    t)))
+  (with-accessors ((ghost ghost)
+		   (id id)
+		   (state state)) mesh
+    (with-accessors ((status status)
+		     (recurrent-effects recurrent-effects)) ghost
+      (with-accessors ((event-data event-data)) event
+	(if (and (= id (id-destination event))
+		 (dice:pass-d1.0 (random-object-messages:msg-chance event-data)))
+	    (progn
+	      (billboard:apply-tooltip mesh
+				       billboard:+tooltip-heal-char+
+				       :color     billboard:+healing-color+
+				       :font-type gui:+tooltip-font-handle+)
+	      (setf status nil)
+	      (funcall action-fn mesh ghost)
+	      (send-refresh-toolbar-event)
+	      t)
+	    nil)))))
+
+(defmethod on-game-event ((object md2-mesh) (event cure-poisoning-event))
+  (%common-cure-status-events object event
+			      #'(lambda (mesh ghost)
+				  (declare (ignore mesh))
+				  (setf (recurrent-effects ghost)
+					(delete-if #'(lambda (a)
+						       (typep a
+							      'random-object-messages:cause-poison-msg))
+						   (recurrent-effects ghost))))))
+
+(defmethod on-game-event ((object md2-mesh) (event cure-terror-event))
+  (%common-cure-status-events object event))
+
+(defmethod on-game-event ((object md2-mesh) (event cure-berserk-event))
+  (%common-cure-status-events object event))
+
+(defmethod on-game-event ((object md2-mesh) (event cure-faint-event))
+  (%common-cure-status-events object event
+			      #'(lambda (mesh ghost)
+				  (declare (ignore mesh))
+				  (with-accessors ((damage-points damage-points)
+						   (current-damage-points current-damage-points))
+				      ghost
+				    (setf current-damage-points
+					  (d (truncate (* damage-points
+							  battle-utils:+recover-from-faint-dmg-fraction+))))))))
+
+(defmacro with-common-cancel-event (object event status-affected text-message-bag)
+  `(with-accessors ((ghost ghost) (id id) (state state)) ,object
+     (with-accessors ((status status)) ghost
+       (if (and (= id (id-destination ,event))
+		(eq status ,status-affected))
+	   (progn
+	     (game-state:with-world (world state)
+	       (world:post-entity-message world object
+					  (random-elt ,text-message-bag)
+					  (cons (_ "Move to")
+						(world:point-to-entity-and-hide-cb world object))))
+	     (setf status nil)
+	     (send-refresh-toolbar-event)
+	     t)
+	   nil))))
+
+(defmethod on-game-event ((object md2-mesh) (event cancel-terror-event))
+  (with-common-cancel-event object event +status-terror+ *terror-recover*))
+
+(defmethod on-game-event ((object md2-mesh) (event cancel-berserk-event))
+  (with-common-cancel-event object event +status-berserk+ *berserk-recover*))
+
+(defmethod on-game-event ((object md2-mesh) (event cancel-faint-event))
+  (with-common-cancel-event object event +status-faint+ *faint-recover*))
+
+(defmacro with-common-cancel-immune-event (object event immune-accessor text-message-bag)
+  `(with-accessors ((ghost ghost) (id id) (state state)) ,object
+     (with-accessors ((,immune-accessor ,immune-accessor)) ghost
+       (if (= id (id-destination ,event))
+	   (progn
+	     (game-state:with-world (world state)
+	       (world:post-entity-message world object
+					  (random-elt ,text-message-bag)
+					  (cons (_ "Move to")
+						(world:point-to-entity-and-hide-cb world object))))
+	     (setf ,immune-accessor nil)
+	     (send-refresh-toolbar-event)
+	     t)
+	   nil))))
+
+(defmethod on-game-event ((object md2-mesh) (event cancel-immune-berserk-event))
+  (with-common-cancel-immune-event object event immune-berserk-status *cancel-immune-berserk*))
+
+(defmethod on-game-event ((object md2-mesh) (event cancel-immune-faint-event))
+  (with-common-cancel-immune-event object event immune-faint-status *cancel-immune-faint*))
+
+(defmethod on-game-event ((object md2-mesh) (event cancel-immune-terror-event))
+  (with-common-cancel-immune-event object event immune-terror-status *cancel-immune-terror*))
+
+(defmethod on-game-event ((object md2-mesh) (event cancel-immune-poisoning-event))
+  (with-common-cancel-immune-event object event immune-poison-status *cancel-immune-poisoning*))
+
+(defmacro with-immune-events-accessors ((mesh event immune-status-accessor status-affected)
+				       &body body)
+  `(with-accessors ((ghost ghost)
+		    (id id)
+		    (state state)) ,mesh
+     (with-accessors ((,immune-status-accessor ,immune-status-accessor)
+		      (status status)) ghost
+       (with-accessors ((event-data event-data)) ,event
+	 (if (and (= id (id-destination ,event))
+		  (dice:pass-d1.0 (random-object-messages:msg-chance event-data))
+		  (not ,immune-status-accessor)
+		  (not (eq status ,status-affected))) ;; ensure player  do not  suffers
+                                                      ;; from this status
+	     (progn
+	       ,@body)
+	     nil)))))
+
+(defmacro with-simple-immune-status ((mesh event immune-accessor status-affected tooltip)
+				     &body body)
+  `(with-immune-events-accessors (,mesh ,event ,immune-accessor ,status-affected)
+     (billboard:apply-tooltip ,mesh
+			      ,tooltip
+			      :color     billboard:+poison-damage-color+
+			      :font-type gui:+tooltip-font-handle+)
+     (setf ,immune-accessor t)
+     ,@body
+     (send-refresh-toolbar-event)))
+
+(defmethod on-game-event ((object md2-mesh) (event immune-berserk-event))
+  (with-simple-immune-status (object event immune-berserk-status +status-berserk+
+				    billboard:+tooltip-immune-berserk-char+)
+    (with-accessors ((event-data event-data)) event
+      (when (numberp (random-object-messages:msg-duration event-data))
+	(pq:push-element (character:postponed-messages (ghost object))
+			 (make-cancel-immune-berserk-event (id-origin event)
+							   (id object)
+							   (+ (random-object-messages:msg-duration event-data)
+							      (game-state:game-turn state))
+							   :original-event event))))))
+
+(defmethod on-game-event ((object md2-mesh) (event immune-terror-event))
+  (with-simple-immune-status (object event immune-terror-status +status-terror+
+				    billboard:+tooltip-immune-terror-char+)
+    (with-accessors ((event-data event-data)) event
+      (when (numberp (random-object-messages:msg-duration event-data))
+	(pq:push-element (character:postponed-messages (ghost object))
+			 (make-cancel-immune-terror-event (id-origin event)
+							  (id object)
+							  (+ (random-object-messages:msg-duration event-data)
+							     (game-state:game-turn state))
+							  :original-event event))))))
+
+(defmethod on-game-event ((object md2-mesh) (event immune-faint-event))
+  (with-simple-immune-status (object event immune-faint-status +status-faint+
+				    billboard:+tooltip-immune-faint-char+)
+    (with-accessors ((event-data event-data)) event
+      (when (numberp (random-object-messages:msg-duration event-data))
+	(pq:push-element (character:postponed-messages (ghost object))
+			 (make-cancel-immune-faint-event (id-origin event)
+							  (id object)
+							  (+ (random-object-messages:msg-duration event-data)
+							     (game-state:game-turn state))
+							  :original-event event))))))
+
+(defmethod on-game-event ((object md2-mesh) (event immune-poisoning-event))
+  (with-simple-immune-status (object event immune-poison-status +status-poisoned+
+				    billboard:+tooltip-immune-poison-char+)
+    (with-accessors ((event-data event-data)) event
+      (when (numberp (random-object-messages:msg-duration event-data))
+	(pq:push-element (character:postponed-messages (ghost object))
+			 (make-cancel-immune-poisoning-event (id-origin event)
+							     (id object)
+							     (+ (random-object-messages:msg-duration event-data)
+								(game-state:game-turn state))
+							     :original-event event))))))
+
+(defmethod on-game-event ((object md2-mesh) (event heal-damage-event))
+  (with-accessors ((ghost ghost)
+		   (id id)
+		   (state state)) object
+    (with-accessors ((current-damage-points current-damage-points)
+		     (damage-points damage-points)
+		     (status status)) ghost
+      (with-accessors ((event-data event-data)) event
+	(if (and (= id (id-destination event))
+		 (dice:pass-d1.0 (random-object-messages:msg-chance event-data))
+		 (not (or (eq status +status-faint+)
+			  (eq status +status-berserk+))))
+	    (progn
+	      (setf current-damage-points
+		    (min damage-points
+			 (d+ current-damage-points
+			     (random-object-messages:msg-points event-data))))
+	      (billboard:apply-tooltip object
+				       (format nil
+					       +standard-float-print-format+
+					       (random-object-messages:msg-points event-data))
+				       :color     billboard:+healing-color+
+				       :font-type gui:+tooltip-font-handle+)
+	      (send-refresh-toolbar-event)
+	      t)
+	    nil)))))
+
+(defmethod on-game-event ((object md2-mesh) (event wear-object-event))
+  (with-accessors ((ghost ghost) (id id) (state state)) object
+    (with-accessors ((messages event-data)) event
+      (with-accessors ((modifiers-effects modifiers-effects)) ghost
+	(if (= id (id-destination event))
+	    (let ((triggered            (remove-if
+					 (random-object-messages:untrigged-effect-p-fn
+					  basic-interaction-parameters:+effect-when-worn+)
+					 messages))
+		  (all-effects-to-other (remove-if-not
+					 (random-object-messages:to-other-target-effect-p-fn)
+					 messages)))
+	      (decrement-move-points-wear object)
+	      (random-object-messages:propagate-effects-msg (id-origin event) id triggered)
+	      (dolist (effect all-effects-to-other)
+		(push effect modifiers-effects))
+	      (send-refresh-toolbar-event)
+	      t)
+	    nil)))))
+
+(defmethod on-game-event ((object md2-mesh) (event unwear-object-event))
+  (with-accessors ((ghost ghost) (id id) (state state)) object
+    (if (= id (id-destination event))
+	(progn
+	  (decrement-move-points-wear object)
+	  (remove-from-modifiers ghost (id-origin event))
+	  (send-refresh-toolbar-event)
+	  t)
+	nil)))
+
+(defmethod on-game-event ((object md2-mesh) (event modifier-object-event))
+  (with-accessors ((ghost ghost) (id id) (state state)) object
+    (if (= id (id-destination event))
+	(progn
+	  (push (event-data event) (modifiers-effects ghost))
+	  (send-refresh-toolbar-event)
+	  t)
+	nil)))
+
 (defmethod on-game-event ((object md2-mesh) (event end-turn))
-  (with-accessors ((ghost ghost)) object
-    (when ghost
-      (character:reset-magic-points    ghost)
-      (character:reset-movement-points ghost)
-      (send-refresh-toolbar-event)))
-  nil)
+  (with-accessors ((ghost ghost)
+		   (state state)) object
+    (game-state:with-world (world state)
+      (when ghost
+	(character:reset-magic-points    ghost)
+	(character:reset-movement-points ghost)
+	(traverse-recurrent-effects      object)
+	(let ((decayed-items (remove-decayed-items ghost (end-turn-count event))))
+	  (dolist (item decayed-items)
+	    (remove-from-modifiers ghost (id item))
+	    (world:post-entity-message world object
+				       (format nil
+					       (_"~a broken")
+					       (description-type item))
+				       (cons (_ "Move to")
+					     (world:point-to-entity-and-hide-cb world object)))))
+	(send-refresh-toolbar-event)
+	nil))))
+
+(defmethod traverse-recurrent-effects ((object md2-mesh))
+  (with-accessors ((ghost ghost)
+		   (id id)
+		   (state state)
+		   (current-action current-action)
+		   (cycle-animation cycle-animation)
+		   (stop-animation stop-animation)) object
+    (with-accessors ((recurrent-effects recurrent-effects)
+		     (status status)
+		     (current-damage-points current-damage-points)) ghost
+      (loop for effect in recurrent-effects do
+	   (cond
+	     ((typep effect 'random-object-messages:cause-poison-msg)
+	      (when (not (entity-dead-p object))
+		(setf current-damage-points (d- current-damage-points
+						(random-object-messages:msg-damage effect)))
+		(if (entity-dead-p object)
+		    (set-death-status object)
+		    (progn
+		      (setf current-action  :pain)
+		      (set-animation object :pain)
+		      (setf stop-animation nil)
+		      (setf cycle-animation nil)))
+		(billboard:apply-tooltip object
+					 (format nil
+						 +standard-float-print-format+
+						 (d- (random-object-messages:msg-damage effect)))
+					 :color billboard:+damage-color+
+					 :font-type gui:+tooltip-font-handle+))))))))
+
+(defmethod process-postponed-messages ((object md2-mesh))
+  (with-accessors ((ghost ghost)
+		   (state state)) object
+    (with-accessors ((postponed-messages postponed-messages)) ghost
+      (when (not (pq:emptyp postponed-messages))
+	(let ((msg (pq:pop-element postponed-messages)))
+	  (if (= (trigger-turn msg)
+		 (game-state:game-turn state))
+	      (progn
+		(cond
+		  ((typep msg 'cancel-terror-event)
+		   (propagate-cancel-terror-event msg))
+		  ((typep msg 'cancel-faint-event)
+		   (propagate-cancel-faint-event msg))
+		  ((typep msg 'cancel-berserk-event)
+		   (propagate-cancel-berserk-event msg))
+		  ((typep msg 'cancel-immune-terror-event)
+		   (propagate-cancel-immune-terror-event msg))
+		  ((typep msg 'cancel-immune-faint-event)
+		   (propagate-cancel-immune-faint-event msg))
+		  ((typep msg 'cancel-immune-berserk-event)
+		   (propagate-cancel-immune-berserk-event msg)))
+		(process-postponed-messages object))
+	      (pq:push-element postponed-messages msg)))))))
+
+(defmethod set-death-status ((object md2-mesh))
+  (with-accessors ((ghost ghost)
+		   (current-action current-action)
+		   (cycle-animation cycle-animation)
+		   (stop-animation stop-animation)) object
+    (with-accessors ((status status)
+		     (current-damage-points current-damage-points)) ghost
+      (setf (status ghost) +status-faint+)
+      (setf current-action  :death)
+      (set-animation object :death)
+      (setf stop-animation nil)
+      (setf cycle-animation nil)
+      (setf current-damage-points (d 0.0)))))
 
 (defgeneric push-errors (object the-error))
 
@@ -218,7 +624,7 @@
 
 (defgeneric bind-vbo (object &optional refresh))
 
-(defgeneric set-animation (object animation))
+(defgeneric set-animation (object animation &key recalculate))
 
 (defgeneric %alloc-arrays (object))
 
@@ -612,11 +1018,21 @@
       (:stand
        ;; nothing to do
        )
+      (:death
+       ;; nothing to do
+       )
+
       (:rotate
        (update-visibility-cone object))
       (:move
        (calculate-move object dt)
-       (update-visibility-cone object)))
+       (update-visibility-cone object))
+      (:pain
+       (when stop-animation
+	 (setf cycle-animation t)
+	 (setf stop-animation nil)
+	 (set-animation object :stand :recalculate nil)
+	 (setf (current-action object) :stand))))
     (unless stop-animation
       (let ((next-time (+ current-animation-time dt))
 	    (frames-numbers (the fixnum (1+ (- end-frame starting-frame))))
@@ -734,7 +1150,7 @@
 	  (gl:buffer-data :array-buffer :dynamic-draw renderer-data-aabb-obj-space)))
     (prepare-for-rendering-phong object)))
 
-(defmethod set-animation ((object md2-mesh) animation)
+(defmethod set-animation ((object md2-mesh) animation &key (recalculate t))
   (with-accessors ((starting-frame starting-frame)
 		   (end-frame end-frame)
 		   (current-frame-offset current-frame-offset)
@@ -746,8 +1162,10 @@
 	(setf starting-frame (second anim-spec)
 	      end-frame (third anim-spec)
 	      fps (fourth anim-spec)
-	      current-animation-time 0.0)
-	(calculate object 0.0)))))
+	      current-animation-time 0.0
+	      current-frame-offset 0)
+	(when recalculate
+	  (calculate object 0.0))))))
 
 (defun load-md2-model (modeldir &key
 				  (material (make-mesh-material .1 1.0 0.1 0.0 128.0))
@@ -792,6 +1210,7 @@
 	  (interfaces:compiled-shaders head) compiled-shaders)
       (md2:set-animation body :stand)
       (md2:set-animation head :stand)
+;      (setf (render-aabb  body) t)
       (setf (md2:tag-key-parent head) md2:+tag-head-key+)
       (mtree-utils:add-child body head)
       body))

@@ -71,3 +71,5 @@
 (defgeneric remove-entity-by-id (object id))
 
 (defgeneric remove-entity-if (object predicate))
+
+(defgeneric entity-dead-p (object))
