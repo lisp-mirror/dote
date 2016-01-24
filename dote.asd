@@ -147,6 +147,7 @@
 				     (:file "vec2-test")
 				     (:file "base64-test")
 				     (:file "matrix-test")
+				     (:file "graph-test")
 				     (:file "resource-cache-test")
 				     (:file "interpolation-test")
 				     (:file "quad-tree-test")

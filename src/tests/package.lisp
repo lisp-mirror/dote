@@ -78,13 +78,19 @@
 	:all-test)
   (:export :matrix-suite))
 
+(defpackage :graph-test
+  (:use :cl
+	:clunit
+	:graph
+	:all-test)
+  (:export :test-a*-multilayer))
+
 (defpackage :resource-cache-test
   (:use :cl
 	:clunit
 	:resource-cache
 	:all-test)
   (:export :matrix-suite))
-
 
 (defpackage :quaternion-test
   (:use :cl

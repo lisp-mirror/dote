@@ -99,7 +99,7 @@
 	      (add-containded-item     available-slot item)
 	      (remove-containded-item  chest-slot)
 	      (remove-child (chest win) item :test #'= :key #'id)
-	      (push item (character:inventory (ghost owner))))))))))
+	      (character:add-to-inventory (ghost owner) item))))))))
 
 (defun find-available-slot (inventory-win)
   (find-if #'(lambda (s) (empty-slot-p s))

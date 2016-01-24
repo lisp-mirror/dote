@@ -1178,6 +1178,9 @@
    :ploop-matrix
    :gen-matrix-frame
    :make-matrix
+   :make-matrix*
+   :make-matrix-with-trim
+   :define-matrix
    :gen-neighbour-position
    :gen-4-neighbour-counterclockwise
    :gen-neighbour-position-in-box
@@ -1220,6 +1223,7 @@
    :pmatrix-blit
    :pblit-matrix
    :blit-matrix
+   :matrix=
    :submatrix=))
 
 (defpackage :graph
@@ -1228,6 +1232,9 @@
   (:export
    :graph
    :tile-based-graph
+   :tile-multilayers-graph
+   :layers
+   :make-tile-multilayer-graph
    :matrix->graph
    :matrix-graph
    :matrix
@@ -2406,6 +2413,7 @@
    :remove-decayed-items
    :remove-from-inventory
    :remove-from-modifiers
+   :add-to-inventory
    :sum-modifiers
    :player-class->class-description
    :basic-interaction-params

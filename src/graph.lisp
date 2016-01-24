@@ -132,6 +132,66 @@
   #'(lambda (a b) (< (matrix:matrix-elt costs (second a) (first a))
 		     (matrix:matrix-elt costs (second b) (first b)))))
 
+
+(defclass tile-multilayers-graph (graph)
+  ((layers
+    :initform (misc:make-fresh-array 0)
+    :initarg :layers
+    :accessor layers)
+   (ids
+    :initform nil
+    :initarg :ids
+    :accessor ids)))
+
+(defun make-tile-multilayer-graph (&rest layers)
+  (let ((arr (misc:make-fresh-array (length layers) nil 'matrix:matrix t)))
+    (misc:copy-list-into-array layers arr)
+    (make-instance 'tile-multilayers-graph
+		   :layers arr)))
+
+(defmethod initialize-instance :after ((object tile-multilayers-graph) &key &allow-other-keys)
+  (setf (ids object) (matrix:gen-matrix-frame (matrix:width  (elt (layers object) 0))
+					      (matrix:height  (elt (layers object) 0))
+					      nil))
+  (let ((start-id 0))
+    (matrix:loop-matrix ((ids object) x y)
+      (setf (matrix:matrix-elt (ids object) y x) start-id)
+      (incf start-id))))
+
+(defmethod get-first-near ((object tile-multilayers-graph) (node sequence))
+  (with-accessors ((layers layers)) object
+    (let ((mat (elt layers 0)))
+      (remove-if #'(lambda (coord) (not
+				    (matrix:valid-index-p mat
+							  (second coord)
+							  (first coord))))
+		 (matrix:gen-4-neighbour-counterclockwise
+		  (elt node 0)
+		  (elt node 1) :add-center nil)))))
+
+(defmethod get-first-near-as-id ((object tile-multilayers-graph) (node number))
+  (mapcar #'(lambda (n) (node->node-id object n))
+	  (get-first-near object (node-id->node object node))))
+
+(defmethod traverse-cost ((object tile-multilayers-graph) (from list) (to list))
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (with-accessors ((layers layers)) object
+    (declare ((simple-array matrix:matrix (*)) layers))
+    (reduce #'(lambda (a b) (num:d+ a (matrix:matrix-elt* b to)))
+	    layers
+	    :initial-value 0.0)))
+
+(defmethod node->node-id ((object tile-multilayers-graph) node)
+  (matrix:matrix-elt* (ids object) node))
+
+(defmethod node-id->node ((object tile-multilayers-graph) node-id)
+  (let ((w (matrix:width (ids object))))
+    (list (mod node-id w) (floor (/ node-id w)))))
+
+(defmethod random-node-id ((object tile-multilayers-graph))
+  (node->node-id object (list (mod (num:lcg-next) (matrix:width (matrix object)))
+			      (mod (num:lcg-next) (matrix:height (matrix object))))))
+
 (defclass matrix-graph (graph)
   ((matrix
     :initform nil
@@ -510,23 +570,23 @@
      `(qu:with-queue (#'= #'identity)
 	,@body))))
 
-;; (defmacro gen-basic-visit (name package)
-;;   (labels ((conc-package (name)
-;; 	     (alexandria:format-symbol package "~:@(~a~)" name)))
-;;     (alexandria:with-gensyms (visited res object from-id)
-;;       `(defmethod ,(alexandria:format-symbol t "~:@(~a~)" name)
-;; 	   ((,object graph) ,from-id)
-;; 	 (with-container (,(alexandria:make-keyword package))
-;; 	   (,(conc-package 'push) ,from-id)
-;; 	   (do ((,visited (,(conc-package 'pop)) (,(conc-package 'pop)))
-;; 		(,res nil))
-;; 	       ((not ,visited) ,res)
-;; 	     (when (not (find ,visited ,res :key ,(conc-package '*key-function*)
-;; 			      :test ,(conc-package '*equal-function*)))
-;; 	       (push ,visited ,res)
-;; 	       (loop for i in (get-first-near-as-id ,object ,visited) do
-;; 		    (,(conc-package 'push) i)))))))))
+(defmacro gen-basic-visit (name package)
+  (labels ((conc-package (name)
+	     (alexandria:format-symbol package "~:@(~a~)" name)))
+    (alexandria:with-gensyms (visited res object from-id)
+      `(defmethod ,(alexandria:format-symbol t "~:@(~a~)" name)
+	   ((,object graph) ,from-id)
+	 (with-container (,(alexandria:make-keyword package))
+	   (,(conc-package 'push) ,from-id)
+	   (do ((,visited (,(conc-package 'pop)) (,(conc-package 'pop)))
+		(,res nil))
+	       ((not ,visited) ,res)
+	     (when (not (find ,visited ,res :key ,(conc-package '*key-function*)
+			      :test ,(conc-package '*equal-function*)))
+	       (push ,visited ,res)
+	       (loop for i in (get-first-near-as-id ,object ,visited) do
+		    (,(conc-package 'push) i)))))))))
 
-;; (gen-basic-visit dfs stack)
+(gen-basic-visit dfs stack)
 
-;; (gen-basic-visit bfs queue)
+(gen-basic-visit bfs queue)

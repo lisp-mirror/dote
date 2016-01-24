@@ -60,6 +60,92 @@
 		   :width width
 		   :height height))
 
+  (define-condition make-matrix-too-much-elements (error)
+    ((w
+      :initarg :w
+      :reader w)
+     (h
+      :initarg :h
+      :reader h)
+     (data
+      :initarg :data
+      :reader data))
+    (:report (lambda (condition stream)
+	       (format stream
+		       "Asked for a ~aX~a matrix but you provided ~a elements."
+		       (w condition) (h condition) (length (data condition)))))
+    (:documentation "Error when too much elements was provided"))
+
+  (define-condition make-matrix-too-fews-elements (error)
+    ((w
+      :initarg :w
+      :reader w)
+     (h
+      :initarg :h
+      :reader h)
+     (data
+      :initarg :data
+      :reader data))
+    (:report (lambda (condition stream)
+	       (format stream
+		       "Asked for a ~aX~a matrix but you provided ~a elements."
+		       (w condition) (h condition) (length (data condition)))))
+    (:documentation "Error when too fews elements was provided"))
+
+  (defun %make-matrix* (w h data)
+    (let ((vec-data (misc:make-fresh-array (* w h) nil t t))
+	  (actual-data
+	   (restart-case
+	       (progn
+		 (when (> (length data) (* w h))
+		   (error 'make-matrix-too-much-elements :w w :h h :data data))
+		 (when (< (length data) (* w h))
+		   (error 'make-matrix-too-fews-elements :w w :h h :data data))
+		 data)
+	     (trim (v)
+	       v))))
+      (setf vec-data (map-into vec-data #'(lambda (a) a) actual-data))
+      (make-instance 'matrix
+		     :height h
+		     :width  w
+		     :data   vec-data)))
+
+  (defun make-matrix* (w h &rest data)
+    (let ((vec-data (misc:make-fresh-array (* w h) nil t t))
+	  (actual-data
+	   (restart-case
+	       (progn
+		 (when (> (length data) (* w h))
+		   (error 'make-matrix-too-much-elements :w w :h h :data data))
+		 (when (< (length data) (* w h))
+		   (error 'make-matrix-too-fews-elements :w w :h h :data data))
+		 data)
+	     (trim (v)
+	       v))))
+      (setf vec-data (map-into vec-data #'(lambda (a) a) actual-data))
+      (make-instance 'matrix
+		     :height h
+		     :width  w
+		     :data   vec-data)))
+
+  (defun make-matrix-with-trim (w h filler &rest data)
+    (make-matrix-with-trim* w h filler data))
+
+  (defun make-matrix-with-trim* (w h filler data)
+    (handler-bind ((make-matrix-too-much-elements
+		    #'(lambda (c)
+			(invoke-restart 'trim (subseq (data c) 0 (* (w c) (h c))))))
+		   (make-matrix-too-fews-elements
+		    #'(lambda (c)
+			(let ((new-data (misc:make-fresh-array (* w h) filler t t)))
+			  (loop for i from 0 below (length (data c)) do
+			       (setf (elt new-data i) (elt (data c) i)))
+			  (invoke-restart 'trim new-data)))))
+      (%make-matrix* w h data)))
+
+  (defmacro define-matrix ((w h &optional (filler 0.0)) &body data)
+    `(make-matrix-with-trim ,w ,h ,filler ,@data))
+
   (defmacro with-matrix-op-typecase ((element) lambda-plist)
     (macrolet ((add-if-t (el body)
 		 `(if (getf lambda-plist ,el nil)
@@ -222,6 +308,8 @@
 			    &key transparent-value function-blend))
 
   (defgeneric submatrix= (object sample x y &key test))
+
+  (defgeneric matrix= (a b &key test))
 
   (defmethod matrix-elt ((object matrix) row col)
     (declare (optimize (speed 1) (safety 0) (debug 0)))
@@ -1302,7 +1390,12 @@ else
   					  val-dst
   					  (funcall function-blend val-source val-dst))))))
 
+(defmethod matrix= ((a matrix) (b matrix) &key (test #'equalp))
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (declare (function test))
+  (funcall test (data a) (data b)))
 
 (defmethod submatrix= ((object matrix) (sample matrix) x y &key (test #'equalp))
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
   (let ((submatrix (submatrix object x y (width sample) (height sample))))
-    (funcall test (data submatrix) (data sample))))
+    (matrix= submatrix sample :test test)))

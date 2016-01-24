@@ -913,6 +913,8 @@
 
 (defgeneric reset-magic-points (object))
 
+(defgeneric add-to-inventory (object item))
+
 (defgeneric remove-decayed-items (object turn-count))
 
 (defgeneric remove-from-inventory (object item))
@@ -970,6 +972,9 @@
 
 (defmethod reset-magic-points ((object player-character))
   (setf (current-magic-points object) (magic-points object)))
+
+(defmethod add-to-inventory ((object player-character) item)
+  (push item (character:inventory object)))
 
 (defmethod remove-decayed-items ((object player-character) turn-count)
   (with-accessors ((inventory inventory)
@@ -1134,6 +1139,76 @@
 
 (gen-make-player player)
 
+
+;;;;;;;;;;;;;;;; testing only! ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun forged-potion ()
+  (let ((potion (random-potion:generate-potion 10))
+	(effect-cause-berserk (make-instance 'healing-effect-parameters
+					    :trigger +effect-when-consumed+
+					    :duration 2
+					    :chance   0.9)))
+    (n-setf-path-value (basic-interaction-params potion)
+		       '(:healing-effects :cause-berserk)
+		       effect-cause-berserk)
+    potion))
+
+(defun forged-potion-cure-berserk ()
+  (let ((potion (random-potion:generate-potion 10))
+	(effect-cure (define-healing-effect (duration unlimited
+						      trigger  when-consumed
+						      chance   0.9
+						      target   self))))
+    (n-setf-path-value (basic-interaction-params potion)
+		       '(:healing-effects :heal-berserk)
+		       effect-cure)
+    potion))
+
+(defun forged-potion-cure-dmg ()
+  (let ((potion (random-potion:generate-potion 10))
+	(effect-cure (define-heal-dmg-effect (points 3.0
+						     trigger  when-consumed
+						     chance   0.9
+						     target   self))))
+    (n-setf-path-value (basic-interaction-params potion)
+		       '(:healing-effects :heal-damage-points)
+		       effect-cure)
+    (clean-effects potion)))
+
+(defun forged-ring ()
+  (let ((ring (random-ring:generate-ring 10))
+	(effect-cause-berserk (make-instance 'healing-effect-parameters
+					    :trigger +effect-when-worn+
+					    :duration 2
+					    :chance   0.9)))
+    (n-setf-path-value (basic-interaction-params ring)
+		       '(:healing-effects :cause-berserk)
+		       effect-cause-berserk)
+    (clean-effects ring)
+    ring))
+
+(defun forged-sword ()
+  (let ((sword (random-weapon:generate-weapon 10 :sword))
+	(effect-modifier  (make-instance 'effect-parameters
+					    :trigger +effect-when-worn+
+					    :duration +duration-unlimited+
+					    :modifier 5.0))
+	(poisoning        (make-instance 'poison-effect-parameters
+					 :change 0.9
+					 :target          +target-other+
+					 :points-per-turn 2.0)))
+    (n-setf-path-value (basic-interaction-params sword)
+		       '(:effects :melee-attack-chance)
+		       effect-modifier)
+    (n-setf-path-value (basic-interaction-params sword)
+		       '(:healing-effects :cause-poison)
+		       poisoning)
+    (clean-effects sword)
+    sword))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 (defun make-warrior (race)
   (let ((player (make-player *standard-capital-characteristic* race nil '((strength (50 10))
 									  (stamina  (40 10))
@@ -1143,7 +1218,23 @@
 									  (smartness (2 0))
 									  (weight    (52 23))))))
     (setf (player-class player) :warrior)
-    (setf (movement-points player) 100.0)
+    ;; testing
+    (let ((forged-potion              (forged-potion))
+	  (forged-potion-cure-dmg     (forged-potion-cure-dmg))
+	  (forged-potion-cure-berserk (forged-potion-cure-berserk))
+	  (forged-ring                (forged-ring))
+	  (forged-sword               (forged-sword)))
+      (game-event:register-for-end-turn forged-potion)
+      (game-event:register-for-end-turn forged-potion-cure-dmg)
+      (game-event:register-for-end-turn forged-potion-cure-berserk)
+      (game-event:register-for-end-turn forged-ring)
+      (game-event:register-for-end-turn forged-sword)
+      (add-to-inventory player forged-potion)
+      (add-to-inventory player forged-potion-cure-dmg)
+      (add-to-inventory player forged-potion-cure-berserk)
+      (add-to-inventory player forged-ring)
+      (add-to-inventory player forged-sword)
+      (setf (movement-points player) 100.0))
     player))
 
 (defun make-wizard (race)
