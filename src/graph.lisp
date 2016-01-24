@@ -173,11 +173,12 @@
   (mapcar #'(lambda (n) (node->node-id object n))
 	  (get-first-near object (node-id->node object node))))
 
-(defmethod traverse-cost ((object tile-multilayers-graph) (from list) (to list))
+(defmethod traverse-cost ((object tile-multilayers-graph) (from sequence) (to sequence))
   (declare (optimize (speed 3) (safety 0) (debug 0)))
   (with-accessors ((layers layers)) object
     (declare ((simple-array matrix:matrix (*)) layers))
-    (reduce #'(lambda (a b) (num:d+ a (matrix:matrix-elt* b to)))
+    (reduce #'(lambda (a b)
+		(num:d+ a (matrix:matrix-elt* b to)))
 	    layers
 	    :initial-value 0.0)))
 

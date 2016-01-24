@@ -1194,7 +1194,7 @@
 					    :duration +duration-unlimited+
 					    :modifier 5.0))
 	(poisoning        (make-instance 'poison-effect-parameters
-					 :change 0.9
+					 :chance 0.9
 					 :target          +target-other+
 					 :points-per-turn 2.0)))
     (n-setf-path-value (basic-interaction-params sword)

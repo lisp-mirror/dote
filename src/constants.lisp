@@ -60,6 +60,8 @@
 
 (define-constant +invalicable-element-cost+         512.0              :test #'=)
 
+(define-constant +minimum-player-layer-cost+          0.0              :test #'=)
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (define-constant +open-terrain-cost+                2.0              :test #'=))
 

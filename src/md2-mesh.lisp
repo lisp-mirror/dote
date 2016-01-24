@@ -140,23 +140,23 @@
 		   (state state)) object
     (with-accessors ((current-path current-path)) ghost
       (when (= (id-origin event) id)
-	(game-state:with-world (world state)
-	  ;; update state matrix and quadtree
-	  (world:move-entity world object (alexandria:first-elt current-path)))
-	;; TODO reset cost for first tile of the path
-	(setf current-path (subseq current-path 1))
-	(if (= (length current-path) 1)
-	    (let ((end-event (make-instance 'move-entity-along-path-end-event
-					    :id-origin id
-					    :tile-pos  (alexandria:last-elt current-path))))
-	      (decrement-move-points-entering-tile object)
-	      (propagate-move-entity-along-path-end-event end-event))
-	    (progn
-	      (decrement-move-points-entering-tile object)
-	      (setf dir (path->dir current-path :start-index 0))))
-	(propagate-update-highlight-path (make-instance 'update-highlight-path
-							:tile-pos current-path))
-	(send-refresh-toolbar-event))
+	(let ((leaving-tile (alexandria:first-elt current-path)))
+	  (setf current-path (subseq current-path 1))
+	  (if (= (length current-path) 1)
+	      (let ((end-event (make-instance 'move-entity-along-path-end-event
+					      :id-origin id
+					      :tile-pos  (alexandria:last-elt current-path))))
+		(decrement-move-points-entering-tile object)
+		(propagate-move-entity-along-path-end-event end-event))
+	      (progn
+		(decrement-move-points-entering-tile object)
+		(setf dir (path->dir current-path :start-index 0))))
+	  (game-state:with-world (world state)
+	    ;; update state matrix and quadtree
+	    (world:move-entity world object leaving-tile))
+	  (propagate-update-highlight-path (make-instance 'update-highlight-path
+							  :tile-pos current-path))
+	  (send-refresh-toolbar-event)))
       nil)))
 
 (defmethod on-game-event ((object md2-mesh) (event move-entity-along-path-end-event))

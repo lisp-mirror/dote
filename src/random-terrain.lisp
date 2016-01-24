@@ -1471,7 +1471,10 @@
 	    (%apply-cost-modifier texture-weights res
 				  mud-channel +muddy-terrain-cost-penalty+ nil))
 	;; scale
-	(setf res (scale-matrix res +terrain-chunk-size-scale+ +terrain-chunk-size-scale+))
+	(setf res
+	      (map-matrix
+	       (scale-matrix res +terrain-chunk-size-scale+ +terrain-chunk-size-scale+)
+	       #'(lambda (a) (num:d a))))
 	;; labyrinths
 	(loop for i from 0 below (length (labyrinths-aabb object)) do
 	     (let* ((aabb   (elt (labyrinths-aabb object) i))

@@ -673,10 +673,18 @@
   (game-state:move-map-state-entity (main-state object) entity from))
 
 (defmethod move-entity ((object world) entity from)
-  (with-accessors ((entities entities)) object
+  (with-accessors ((entities entities)
+		   (main-state main-state)) object
     ;; update quadtree
     (remove-entity-by-id entities (id entity))
     (push-entity object entity)
+    ;; set minimum cost for leaved tile
+    (game-state:set-minimum-cost-player-layer@ main-state (elt from 0) (elt from 1))
+    ;; set maximum cost for entered tile
+    (let ((cost-pos-target (mesh:calculate-cost-position entity)))
+      (game-state:set-invalicable-cost-player-layer@ main-state
+						     (elt cost-pos-target 0)
+						     (elt cost-pos-target 1)))
     (game-state:move-map-state-entity object entity from)))
 
 (defmethod toolbar-selected-action ((object world))
@@ -702,7 +710,7 @@
   (game-event:register-for-move-entity-entered-in-tile-event player)
   (game-event:register-for-rotate-entity-cw-event            player)
   (game-event:register-for-rotate-entity-ccw-event           player)
-  ;; healing
+  ;; health
   ;;poison
   (game-event:register-for-cause-poisoning-event             player)
   (game-event:register-for-cure-poisoning-event              player)

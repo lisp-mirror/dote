@@ -201,7 +201,18 @@
    (movement-costs
     :accessor movement-costs
     :initarg  :movement-costs
-    :initform nil)
+    :initform nil
+    :type graph:tile-multilayers-graph)
+   (costs-from-map
+    :accessor costs-from-map
+    :initarg  :costs-from-map
+    :initform nil
+    :type matrix:matrix)
+   (costs-from-players
+    :accessor costs-from-players
+    :initarg  :costs-from-players
+    :initform nil
+    :type matrix:matrix)
    (map-state
     :accessor map-state
     :initarg  :map-state
@@ -285,9 +296,13 @@
 
 (defgeneric place-player-on-map (object player faction &optional position))
 
-(defgeneric set-invalicable-cost@ (object x y))
+(defgeneric set-invalicable-cost-player-layer@ (object x y))
 
-(defgeneric set-minimum-cost@ (object x y))
+(defgeneric set-invalicable-cost-map-layer@ (object x y))
+
+(defgeneric set-minimum-cost-map-layer@ (object x y))
+
+(defgeneric set-minimum-cost-player-layer@ (object x y))
 
 (defgeneric set-map-state-type (object x y type))
 
@@ -332,12 +347,13 @@
 						 sky-bg-color)))))
 
 (defmethod get-cost ((object game-state) x y)
-  (declare (optimize (speed 0) (safety 3) (debug 3)))
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
   (get-cost-insecure object x y))
 
 (defmethod get-cost-insecure ((object game-state) x y)
-  (declare (optimize (speed 0) (safety 3) (debug 3)))
-  (matrix-elt (graph:matrix (movement-costs object)) y x))
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (with-accessors ((movement-costs movement-costs)) object
+    (graph:traverse-cost movement-costs #() (vector x y))))
 
 (defmacro gen-map-state-reader (&rest names)
   `(progn
@@ -489,18 +505,28 @@
 							     (misc:coord-map->chunk
 							      (d (elt player-coordinates 1)))))
 			  (misc:coord-map->chunk (d (elt player-coordinates 1)))))
-	;; TODO set cost for player in cost player layer of game-state
+	(set-invalicable-cost-player-layer@ object
+					    (elt player-coordinates 0)
+					    (elt player-coordinates 1))
 	(if (eq faction +pc-type+)
 	    (add-to-player-entities object player)
 	    (add-to-ai-entities     object player))))))
 
-(defmethod set-invalicable-cost@ ((object game-state) x y)
-  (with-accessors ((movement-costs movement-costs)) object
-    (setf (matrix-elt (graph:matrix movement-costs) y x) +invalicable-element-cost+)))
+(defmethod set-invalicable-cost-player-layer@ ((object game-state) x y)
+  (with-accessors ((costs-from-players costs-from-players)) object
+    (setf (matrix-elt costs-from-players y x) +invalicable-element-cost+)))
 
-(defmethod set-minimum-cost@ ((object game-state) x y)
-  (with-accessors ((movement-costs movement-costs)) object
-    (setf (matrix-elt (graph:matrix movement-costs) y x) +open-terrain-cost+)))
+(defmethod set-invalicable-cost-map-layer@ ((object game-state) x y)
+  (with-accessors ((costs-from-map costs-from-map)) object
+    (setf (matrix-elt costs-from-map y x) +invalicable-element-cost+)))
+
+(defmethod set-minimum-cost-map-layer@ ((object game-state) x y)
+  (with-accessors ((costs-from-map costs-from-map)) object
+    (setf (matrix-elt costs-from-map y x) +open-terrain-cost+)))
+
+(defmethod set-minimum-cost-player-layer@ ((object game-state) x y)
+  (with-accessors ((costs-from-players costs-from-players)) object
+    (setf (matrix-elt costs-from-players y x) +minimum-player-layer-cost+)))
 
 (defmethod set-map-state-type ((object game-state) x y type)
   (setf (el-type (matrix:matrix-elt (map-state object) y x)) type))

@@ -42,7 +42,7 @@
     (if (= (id object) (game-event:id-destination event))
 	(let ((pos (mesh:calculate-cost-position object)))
 	  ;; TODO here enemies could spot you
-	  (set-minimum-cost@ (state object) (elt pos 0) (elt pos 1))
+	  (set-minimum-cost-map-layer@ (state object) (elt pos 0) (elt pos 1))
 	  (setf (renderp object) nil)
 	  (setf (openp   object) t)
 	  ;; update the labyrinth
@@ -53,7 +53,7 @@
 (defmethod on-game-event ((object door-mesh-shell) (event game-event:close-door-event))
   (if (= (id object) (game-event:id-destination event))
       (let ((pos (mesh:calculate-cost-position object)))
-       	(set-invalicable-cost@ (state object) (elt pos 0) (elt pos 1))
+	(set-invalicable-cost-map-layer@ (state object) (elt pos 0) (elt pos 1))
 	(setf (renderp object) t)
 	(setf (openp   object) nil)
 	(update-for-rendering (parent-labyrinth object))

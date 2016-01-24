@@ -61,6 +61,7 @@
    :+maximum-mountain-height+
    :+minimum-mountain-height+
    :+invalicable-element-cost+
+   :+minimum-player-layer-cost+
    :+open-terrain-cost+
    :+rotate-entity-cost-cost+
    :+wear-object-entity-cost-cost+
@@ -1883,6 +1884,8 @@
    :sky-bg-color
    :celestial-body-position
    :movement-costs
+   :costs-from-map
+   :costs-from-players
    :map-state
    :old-state-element
    :all-entities
@@ -1921,8 +1924,10 @@
    :faction-ai-p
    :approx-terrain-height@pos
    :place-player-on-map
-   :set-minimum-cost@
-   :set-invalicable-cost@
+   :set-invalicable-cost-player-layer@
+   :set-invalicable-cost-map-layer@
+   :set-minimum-cost-map-layer@
+   :set-minimum-cost-player-layer@
    :set-map-state-type
    :set-map-state-id
    :set-map-state-occlusion
