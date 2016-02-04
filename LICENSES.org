@@ -194,42 +194,50 @@
   models and texture got from [[http://opengameart.org/content/creature-rat][OGA]]
   and released under public domain https://creativecommons.org/publicdomain/zero/1.0/
 
-- data/models/ortnok/body-animation.lisp
+- data/models/human-player/ortnok/body-animation.lisp
+  data/models/ai/ortnok/body-animation.lisp
   based on works © Lukas "Rastaman" Beyeler released under GNU General Public License
   2.0 (see UFO Alien invasion sources
   [[http://ufoai.org/wiki/News][http://ufoai.org/wiki/News]])
 
-- data/models/ortnok/body01.md2
+- data/models/human-player/ortnok/body01.md2
+  data/models/ai/ortnok/body01.md2
   © Lukas "Rastaman" Beyeler released under GNU General Public License
   2.0 (see UFO Alien invasion sources
   [[http://ufoai.org/wiki/News][http://ufoai.org/wiki/News]])
 
-- data/models/ortnok/body01.tag
+- data/models/human-player/ortnok/body01.tag
+  data/models/ai/ortnok/body01.tag
   © Lukas "Rastaman" Beyeler released under GNU General Public License
   2.0 (see UFO Alien invasion sources
   [[http://ufoai.org/wiki/News][http://ufoai.org/wiki/News]])
 
-- data/models/models/ortnok/body-texture.tga
+- data/models/models/human-player/ortnok/body-texture.tga
+  data/models/models/ai/ortnok/body-texture.tga
   based on works © Lukas "Rastaman" Beyeler;MCR
   GNU General Public License 2.0 (see UFO Alien invasion sources
   [[http://ufoai.org/wiki/News][http://ufoai.org/wiki/News]])
 
-- data/models/ortnok/head-animation.lisp
+- data/models/human-player/ortnok/head-animation.lisp
+  data/models/ai/ortnok/head-animation.lisp
   © 2015  cage released under Creative  Commons Attribution-ShareAlike
   3.0           Unported            (CC           BY-SA           3.0)
   https://creativecommons.org/licenses/by-sa/3.0/
 
-- data/models/ortnok/head01.md2
+- data/models/human-player/ortnok/head01.md2
+  data/models/ai/ortnok/head01.md2
   © Lukas "Rastaman" Beyeler released under GNU General Public License
   2.0 (see UFO Alien invasion sources
   [[http://ufoai.org/wiki/News][http://ufoai.org/wiki/News]])
 
-- data/models/models/ortnok/head-texture.tga
+- data/models/models/human-player/ortnok/head-texture.tga
+  data/models/models/ai/ortnok/head-texture.tga
   based on works © Lukas "Rastaman" Beyeler;MCR
   GNU General Public License 2.0 (see UFO Alien invasion sources
   [[http://ufoai.org/wiki/News][http://ufoai.org/wiki/News]])
 
-- data/models/models/ortnok/preview-warrior-male.tga
+- data/models/models/human-player/ortnok/preview-warrior-male.tga
+  data/models/models/ai/ortnok/preview-warrior-male.tga
   based on works © Lukas "Rastaman" Beyeler;MCR
   GNU General Public License 2.0 (see UFO Alien invasion sources
   [[http://ufoai.org/wiki/News][http://ufoai.org/wiki/News]])

@@ -18,6 +18,10 @@
 
 (alexandria:define-constant +drag-camera-ends-threshold+ 0.1 :test #'=)
 
+(alexandria:define-constant +fit-to-aabb-offset+         0.1 :test #'=)
+
+(alexandria:define-constant +fit-to-aabb-scale-pos+      2.0 :test #'=)
+
 (defclass camera (transformable entity)
   ((target
     :initform nil
@@ -208,6 +212,8 @@
 (defgeneric calculate-sphere  (object))
 
 (defgeneric containsp (object p))
+
+(defgeneric fit-to-aabb (object aabb))
 
 (defmethod %draw-path-mode ((object camera) dt)
   (with-accessors ((target target) (pos pos)) object
@@ -410,7 +416,8 @@
       (extract-frustum-plane (elt frustum-planes 2) projection-view-matrix  2)
       (extract-frustum-plane (elt frustum-planes 3) projection-view-matrix -2)
       (extract-frustum-plane (elt frustum-planes 4) projection-view-matrix  3)
-      (extract-frustum-plane (elt frustum-planes 5) projection-view-matrix -3))))
+      (extract-frustum-plane (elt frustum-planes 5) projection-view-matrix -3)
+      object)))
 
 (defmethod build-projection-matrix ((object camera) near far fov ratio)
   (setf (frustum-fov object)  fov
@@ -523,3 +530,23 @@
 	 (when (not (plane-point-same-side-p plane p))
 	     (return-from containsp nil)))
     t))
+
+(defmethod fit-to-aabb ((object camera) aabb)
+  (with-accessors ((pos pos)
+		   (dir dir)
+		   (target target)) object
+    (setf pos (vec (elt pos 0) (elt (3d-utils:aabb-center aabb) 1) (elt pos 2)))
+    (setf target (vec* pos +fit-to-aabb-scale-pos+))
+    (camera:look-at* object)
+    (do* ((scale 0.0 (d+ scale +fit-to-aabb-offset+))
+	  (offset  (vec-negate dir)
+		   (vec* (vec-negate offset) scale))
+	  (updated-camera (camera:calculate-frustum object)
+			  (camera:calculate-frustum updated-camera)))
+	 ((and (camera:containsp updated-camera
+				 (3d-utils:aabb-p2 aabb))
+	       (camera:containsp updated-camera
+				 (3d-utils:aabb-p1 aabb))))
+      (setf pos (vec+ pos offset))
+      (camera:look-at* updated-camera)
+     object)))

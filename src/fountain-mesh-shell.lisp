@@ -24,4 +24,4 @@
 
 (defmethod rendering-needed-p ((object fountain-mesh-shell) renderer)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
-  (world:cone-bounding-sphere-intersects-p renderer object))
+  (world:cone-aabb-intersects-p renderer object))

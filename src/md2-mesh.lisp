@@ -109,6 +109,22 @@
 (defmethod print-object ((object md2-mesh) stream)
   (print-unreadable-object (object stream :type t :identity t)))
 
+(defmethod on-game-event ((object md2-mesh) (event update-visibility))
+  (with-accessors ((state state)
+		   (id id)) object
+    (flet ((check (key entity)
+	     (declare (ignore key))
+	     (when (and (not (= id (id entity)))
+			(find-if #'(lambda (a) (= id (id a))) (visible-players entity)))
+	       (setf (renderp object) t)
+	       (return-from on-game-event nil))))
+	;;(setf (renderp object) nil)
+	(game-state:map-player-entities state #'(lambda (k v)
+						  (declare (ignore k))
+						  (update-visibility-cone v)))
+	(game-state:map-player-entities state #'check)
+	nil)))
+
 (defun path->dir (path &key (start-index 0))
   (let* ((start      (ivec2 (elt (elt path start-index) 0)
 			    (elt (elt path start-index) 1)))
@@ -156,6 +172,8 @@
 	    (world:move-entity world object leaving-tile))
 	  (propagate-update-highlight-path (make-instance 'update-highlight-path
 							  :tile-pos current-path))
+	  (update-visibility-cone object)
+	  (send-update-visibility-event object)
 	  (send-refresh-toolbar-event)))
       nil)))
 
@@ -165,7 +183,6 @@
     (when (= (id-origin event) id)
       (let ((enable-input-event (make-instance 'window-accept-input-event
 					       :accept-input-p t)))
-	;; TODO set cost to max for the last tile
 	(game-event:propagate-window-accept-input-event enable-input-event)
 	(setf (current-action object) :stand)
 	(set-animation object :stand))))
@@ -181,7 +198,8 @@
 	  (setf (current-action object) :rotate)
 	  (setf dir (sb-cga:transform-direction dir (rotate-around +y-axe+ (d- +pi/2+))))
 	  (update-visibility-cone object)
-	  (misc:dbg "visibility test: ~a" (visible-players object))
+	  ;;(misc:dbg "visibility test: ~a" (visible-players object))
+	  (send-update-visibility-event object)
 	  (send-refresh-toolbar-event)
 	  t)
 	nil)))
@@ -195,7 +213,8 @@
 	  (setf (current-action object) :rotate)
 	  (setf dir (sb-cga:transform-direction dir (rotate-around +y-axe+ +pi/2+)))
 	  (update-visibility-cone object)
-	  (misc:dbg "visibility test: ~a" (visible-players object))
+	  ;;(misc:dbg "visibility test: ~a" (visible-players object))
+	  (send-update-visibility-event object)
 	  (send-refresh-toolbar-event)
 	  t)
 	nil)))
@@ -1172,21 +1191,22 @@
 				  (mesh-file +model-filename+)
 				  (texture-file +model-texture-filename+)
 				  (animation-file +model-animations-filename+)
-				  (tags-file      nil))
+				  (tags-file      nil)
+				  (resource-path  +models-resource+))
   (let ((model (make-instance 'md2-mesh :render-normals nil :render-aabb nil)))
     (setf (material-params model) material)
     (load-texture model (res:get-resource-file (text-utils:strcat modeldir texture-file)
-					       +models-resource+
+					       resource-path
 					       :if-does-not-exists :error))
     (load-animations model (res:get-resource-file (text-utils:strcat modeldir animation-file)
-						  +models-resource+
+						  resource-path
 						  :if-does-not-exists :error))
     (when tags-file
       (load-tags model (res:get-resource-file (text-utils:strcat modeldir tags-file)
-					      +models-resource+
+					      resource-path
 					      :if-does-not-exists :error)))
     (load model (res:get-resource-file (text-utils:strcat modeldir mesh-file)
-				       +models-resource+
+				       resource-path
 				       :if-does-not-exists :error))
     (when +debug-mode+
       (misc:dbg "error md2 parsing ~a" (parsing-errors model)))
@@ -1195,17 +1215,19 @@
     (set-animation model :stand)
     model))
 
-(defun load-md2-player (dir compiled-shaders)
+(defun load-md2-player (dir compiled-shaders resource-path)
   (let ((body (md2:load-md2-model dir
-				  :mesh-file "body01.md2"
+				  :mesh-file      "body01.md2"
 				  :animation-file "body-animation.lisp"
 				  :texture-file   "body-texture.tga"
-				  :tags-file      "body01.tag"))
+				  :tags-file      "body01.tag"
+				  :resource-path  resource-path))
 	(head (md2:load-md2-model dir
-				  :mesh-file "head01.md2"
+				  :mesh-file      "head01.md2"
 				  :animation-file "head-animation.lisp"
 				  :texture-file   "head-texture.tga"
-				  :tags-file      nil)))
+				  :tags-file      nil
+				  :resource-path  resource-path)))
     (setf (interfaces:compiled-shaders body) compiled-shaders
 	  (interfaces:compiled-shaders head) compiled-shaders)
       (md2:set-animation body :stand)

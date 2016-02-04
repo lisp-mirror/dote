@@ -50,7 +50,7 @@
   "A list containing all visible pc satisfing predicate"
   (with-accessors ((dir dir)
 		   (pos pos)) object
-    (misc:dbg "~a" (visibility-cone object))
+    ;(misc:dbg "~a" (visibility-cone object))
     (loop for ent being the hash-value in (game-state:player-entities (state object))
 	 when (and (other-visible-p object ent)
 		   (funcall predicate ent))
@@ -60,7 +60,7 @@
 (defmethod other-visible-p ((object able-to-see-mesh) (target triangle-mesh))
   (let ((in-cone-p (other-visible-cone-p object target)))
     (when in-cone-p
-      (misc:dbg "visible for cone ~a" (id target))
+      ;;(misc:dbg "visible for cone ~a" (id target))
       (if (other-visible-ray-p object target)
 	  t
 	  nil))))
@@ -122,8 +122,8 @@
 		       ;;does nothing, continue to the next iteration
 		       )
 		      ((typep d 'mesh:tree-mesh-shell)
-		       (misc:dbg "tree trunk ~%~a ~a -> ~a" (tree-trunk-aabb d)
-				 ends (insidep (tree-trunk-aabb d) ends))
+		       ;;(misc:dbg "tree trunk ~%~a ~a -> ~a" (tree-trunk-aabb d)
+		       ;;	 ends (insidep (tree-trunk-aabb d) ends))
 		       (when (and (insidep (aabb d) ends)
 				  (insidep (tree-trunk-aabb d) ends))
 			 (return-from nonlabyrinth-element-hitted-by-ray nil)))

@@ -393,6 +393,10 @@
     :initform nil
     :initarg :projector
     :reader projector)
+   (impostor
+    :initform nil
+    :initarg :impostor
+    :accessor impostor)
    (modelview-matrix
     :initform (identity-matrix)
     :initarg :modelview-matrix
@@ -599,6 +603,8 @@
 
 (defgeneric render-phong (object renderer))
 
+(defgeneric render-lod-1 (object renderer))
+
 (defgeneric vertex-v (object vec &key gen-triangle gen-normal compact-vertices manifoldp))
 
 (defgeneric vertex (object x y z &key gen-triangle gen-normal compact-vertices manifoldp))
@@ -700,6 +706,8 @@
 
 (defgeneric remove-mesh-data (object))
 
+(defgeneric use-lod-p (object threshold renderer))
+
 (defgeneric calculate-decrement-move-points-entering-tile (object))
 
 (defgeneric decrement-move-points-entering-tile (object))
@@ -729,6 +737,12 @@
 	(tangents      object) nil
 	(texture-coord object) nil
 	(triangles     object) nil))
+
+(defmethod use-lod-p ((object triangle-mesh) threshold  renderer)
+  (with-accessors ((aabb aabb)) object
+    (with-camera (camera renderer)
+      (>= (vec-length (vec- (pos camera) (aabb-center aabb)))
+	  (d* threshold +quad-tree-leaf-size+)))))
 
 (defmethod aabb ((object triangle-mesh))
   (with-slots (aabb) object
@@ -2659,14 +2673,15 @@
 
 (defmethod rendering-needed-p ((object tree-mesh-shell) renderer)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
-  (world:cone-bounding-sphere-intersects-p renderer object))
+  (world::frustum-aabb-intersects-p renderer object))
 
 (defmethod calculate :after ((object tree-mesh-shell) dt)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
-  (declare (ignore dt))
-  (setf (el-time object)
-	(d+ (start-time object)
-	    (d* (animation-speed object) (current-time object)))))
+  (with-accessors ((impostor impostor)) object
+    (and impostor (calculate impostor dt))
+    (setf (el-time object)
+	  (d+ (start-time object)
+	      (d* (animation-speed object) (current-time object))))))
 
 (defmethod render-phong ((object tree-mesh-shell) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -2677,6 +2692,7 @@
 		   (model-matrix model-matrix)
 		   (view-matrix view-matrix)
 		   (compiled-shaders compiled-shaders)
+		   (impostor impostor)
 		   (triangles triangles)
 		   (material-params material-params)
 		   (el-time el-time)
@@ -2684,35 +2700,37 @@
     (declare (texture:texture texture-object))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
-    (when (> (length triangles) 0)
-      (with-camera-view-matrix (camera-vw-matrix renderer)
-	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	  (with-no-cull-face
-	    (use-program compiled-shaders :tree)
-	    (gl:active-texture :texture0)
-	    (texture:bind-texture texture-object)
-	    (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
-	    (uniformfv compiled-shaders :light-pos
-		       (the vec (main-light-pos-eye-space renderer)))
-	    (uniformfv compiled-shaders :ia    #(1.0 1.0 1.0))
-	    (uniformfv compiled-shaders :id    (the vec (main-light-color renderer)))
-	    (uniformfv compiled-shaders :is    (the vec (main-light-color renderer)))
-	    (uniformf  compiled-shaders :ka    (ka material-params))
-	    (uniformf  compiled-shaders :kd    (kd material-params))
-	    (uniformf  compiled-shaders :ks    (ks material-params))
-	    (uniformf  compiled-shaders :shine (shininess material-params))
-	    (uniformf  compiled-shaders :time  el-time)
-	    (uniformf  compiled-shaders :fog-density fog-density)
-	    (uniform-matrix compiled-shaders :model-matrix 4 model-matrix nil)
-	    (uniform-matrix compiled-shaders :modelview-matrix 4
-			    (vector (matrix* camera-vw-matrix
-					     (elt view-matrix 0)
-					     (elt model-matrix 0)))
-			    nil)
-	    (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
-	    (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-	    (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))
-      (render-debug object renderer))))
+    (if (use-lod-p object 2.0 renderer)
+	(render impostor renderer)
+	(when (> (length triangles) 0)
+	  (with-camera-view-matrix (camera-vw-matrix renderer)
+	    (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+	      (with-no-cull-face
+		(use-program compiled-shaders :tree)
+		(gl:active-texture :texture0)
+		(texture:bind-texture texture-object)
+		(uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+		(uniformfv compiled-shaders :light-pos
+			   (the vec (main-light-pos-eye-space renderer)))
+		(uniformfv compiled-shaders :ia    #(1.0 1.0 1.0))
+		(uniformfv compiled-shaders :id    (the vec (main-light-color renderer)))
+		(uniformfv compiled-shaders :is    (the vec (main-light-color renderer)))
+		(uniformf  compiled-shaders :ka    (ka material-params))
+		(uniformf  compiled-shaders :kd    (kd material-params))
+		(uniformf  compiled-shaders :ks    (ks material-params))
+		(uniformf  compiled-shaders :shine (shininess material-params))
+		(uniformf  compiled-shaders :time  el-time)
+		(uniformf  compiled-shaders :fog-density fog-density)
+		(uniform-matrix compiled-shaders :model-matrix 4 model-matrix nil)
+		(uniform-matrix compiled-shaders :modelview-matrix 4
+				(vector (matrix* camera-vw-matrix
+						 (elt view-matrix 0)
+						 (elt model-matrix 0)))
+				nil)
+		(uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
+		(gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+		(gl:draw-arrays :triangles 0 (* 3 (length triangles))))))
+	  (render-debug object renderer)))))
 
 (defgeneric tree-trunk-aabb (object))
 
@@ -2883,6 +2901,10 @@
     (setf (use-blending-p object) t)
     (texture:setup-texture-parameters texture-object)))
 
+(defmethod rendering-needed-p ((object water) renderer)
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (world:cone-aabb-intersects-p renderer object))
+
 (defmethod calculate ((object water) dt)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (ignore dt))
@@ -2959,45 +2981,92 @@
   ;;do nothing
   t)
 
+(defmethod render-lod-1 ((object water) renderer)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((vbo vbo)
+		   (vao vao)
+		   (projection-matrix projection-matrix)
+		   (model-matrix model-matrix)
+		   (view-matrix view-matrix)
+		   (compiled-shaders compiled-shaders)
+		   (triangles triangles)
+		   (el-time el-time)
+		   (material-params material-params)
+		   (current-time current-time)
+		   (fog-density fog-density)) object
+    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
+    (declare (list triangles vao vbo))
+    (when (> (length triangles) 0)
+      (with-camera-view-matrix (camera-vw-matrix renderer)
+	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+	  (gl:enable :blend)
+	  (gl:blend-func :src-alpha :one-minus-src-alpha)
+	  (use-program compiled-shaders :water-no-texture)
+	  (uniformfv compiled-shaders :id        (the vec (main-light-color renderer)))
+	  (uniformfv compiled-shaders :is        (the vec (main-light-color renderer)))
+	  (uniformf  compiled-shaders :ka        1.0)
+	  (uniformf  compiled-shaders :kd        1.0)
+	  (uniformf  compiled-shaders :ks        0.0)
+	  (uniformf  compiled-shaders :shine    100.0)
+	  (uniformfv compiled-shaders
+			      :ia (vec4:vec4->vec (the vec4 (sky-bg-color (main-state renderer)))))
+
+	  (uniformf compiled-shaders :time el-time)
+	  (uniformfv compiled-shaders :light-pos
+		     (the vec (main-light-pos-eye-space renderer)))
+	  (uniform-matrix compiled-shaders :modelview-matrix 4
+				   (vector (matrix* camera-vw-matrix
+						    (elt view-matrix 0)
+						    (elt model-matrix 0)))
+				   nil)
+	  (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+	  (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+	  (gl:draw-arrays :triangles 0 (* 3 (length triangles)))
+	  (gl:disable :blend))))))
+
 (defmethod render ((object water) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
-  ;; setup the texture
-  (let* ((camera              (camera renderer))
-	 (saved-camera-pos    (pos camera))
-	 (saved-camera-target (target camera))
-	 (saved-camera-up     (up camera))
-	 (saved-camera-dir    (vec- saved-camera-target saved-camera-pos))
-	 (saved-camera-side   (normalize (cross-product saved-camera-up saved-camera-dir)))
-	 (new-camera-pos-y    (d- (d* 2.0 +water-mesh-starting-y+)
-				  (elt saved-camera-pos 1)))
-	 (new-camera-target-y (d- (d* 2.0 +water-mesh-starting-y+)
-				  (elt saved-camera-target 1)))
-	 (new-camera-pos      (vec (elt saved-camera-pos 0)
-	 			   new-camera-pos-y
-	 			   (elt saved-camera-pos 2)))
-	 (new-camera-target   (vec (elt saved-camera-target 0)
-	 			   new-camera-target-y
-	 			   (elt saved-camera-target 2)))
-	 (new-camera-dir      (vec- new-camera-target new-camera-pos))
-	 (new-camera-up       (normalize (cross-product saved-camera-side new-camera-dir)))
-	 (view-matrix-camera  (view-matrix camera)))
-    (declare ((simple-array simple-array (1)) view-matrix-camera))
-    (setf (pos camera)    new-camera-pos
-       	  (target camera) new-camera-target
-       	  (up  camera)    new-camera-up)
-    (look-at* camera)
-    (setf (projector object) (elt view-matrix-camera 0))
-    (render-to-texture (framebuffer object) (depthbuffer object)
-		       (texture:handle (texture-object object))
-		       +reflection-texture-size+
-		       +reflection-texture-size+
-		       #'(lambda () (render-for-reflection renderer renderer)))
-    (setf (pos camera)    saved-camera-pos
-      	  (target camera) saved-camera-target
-      	  (up  camera)    saved-camera-up)
-    (look-at* camera))
-  (gl:viewport 0 0 (the fixnum *window-w*) (the fixnum *window-h*))
-  (render-plane object renderer))
+  (when (rendering-needed-p object renderer)
+    (if (use-lod-p object 3.0 renderer)
+	(render-lod-1 object renderer)
+	(progn
+	  ;; setup the texture
+	  (let* ((camera              (camera renderer))
+		 (saved-camera-pos    (pos camera))
+		 (saved-camera-target (target camera))
+		 (saved-camera-up     (up camera))
+		 (saved-camera-dir    (vec- saved-camera-target saved-camera-pos))
+		 (saved-camera-side   (normalize (cross-product saved-camera-up saved-camera-dir)))
+		 (new-camera-pos-y    (d- (d* 2.0 +water-mesh-starting-y+)
+					  (elt saved-camera-pos 1)))
+		 (new-camera-target-y (d- (d* 2.0 +water-mesh-starting-y+)
+					  (elt saved-camera-target 1)))
+		 (new-camera-pos      (vec (elt saved-camera-pos 0)
+					   new-camera-pos-y
+					   (elt saved-camera-pos 2)))
+		 (new-camera-target   (vec (elt saved-camera-target 0)
+					   new-camera-target-y
+					   (elt saved-camera-target 2)))
+		 (new-camera-dir      (vec- new-camera-target new-camera-pos))
+		 (new-camera-up       (normalize (cross-product saved-camera-side new-camera-dir)))
+		 (view-matrix-camera  (view-matrix camera)))
+	    (declare ((simple-array simple-array (1)) view-matrix-camera))
+	    (setf (pos camera)    new-camera-pos
+		  (target camera) new-camera-target
+		  (up  camera)    new-camera-up)
+	    (look-at* camera)
+	    (setf (projector object) (elt view-matrix-camera 0))
+	    (render-to-memory-texture (framebuffer object) (depthbuffer object)
+				      (texture:handle (texture-object object))
+				      +reflection-texture-size+
+				      +reflection-texture-size+
+				      #'(lambda () (render-for-reflection renderer renderer)))
+	    (setf (pos camera)    saved-camera-pos
+		  (target camera) saved-camera-target
+		  (up  camera)    saved-camera-up)
+	    (look-at* camera))
+	  (gl:viewport 0 0 (the fixnum *window-w*) (the fixnum *window-h*))
+	  (render-plane object renderer)))))
 
 (defmethod destroy :after ((object water))
   (with-accessors ((framebuffer framebuffer) (depthbuffer depthbuffer)) object

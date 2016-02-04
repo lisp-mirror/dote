@@ -32,7 +32,7 @@
       (declare (vec center pos-camera))
       (and (d< (vec2-length (vec2- a b))
 	       (d* 2.0 +quad-tree-leaf-size+))
-	   (world:cone-bounding-sphere-intersects-p renderer object)))))
+	   (world:cone-aabb-intersects-p renderer object)))))
 
 (defmethod on-game-event ((object door-mesh-shell) (event game-event:end-turn))
   (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))

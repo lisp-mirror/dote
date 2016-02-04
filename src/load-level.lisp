@@ -43,13 +43,29 @@
 (defun height-tree->level (tree)
   (let* ((tree-aabb (mesh:aabb tree))
 	 (h (- (3d-utils:max-y tree-aabb)
-	      (3d-utils:min-y  tree-aabb))))
+	       (3d-utils:min-y  tree-aabb))))
     (truncate (alexandria:clamp (1+ (* 0.3 h))
 				random-inert-object:+minimum-level+
 				random-inert-object:+maximum-level+))))
 
 (defun setup-trees (world map)
   (let ((tree-bag-sorted nil))
+    (loop for i from 0 below (length (trees-bag world)) do
+	 (let ((tree (elt (trees-bag world) i))
+	       (camera (camera world)))
+	 (setf (compiled-shaders tree) (compiled-shaders world))
+	 (setf (entity:pos tree) +zero-vec+)
+	 (mesh:reset-aabb  tree)
+	 (camera:fit-to-aabb camera (mesh:aabb tree))
+	 (let ((impostor-mesh (billboard:make-impostor-mesh
+			       (mesh:aabb tree)
+			       (billboard:make-impostor-texture world tree))))
+	   (interfaces:prepare-for-rendering impostor-mesh)
+	   (setf (compiled-shaders impostor-mesh) (compiled-shaders world))
+	   (setf (mesh:impostor tree) impostor-mesh))))
+	   ;; (pixmap:save-pixmap (billboard:make-impostor-pixmap world tree)
+	   ;; 		       (fs:file-in-package
+	   ;; 			(format nil  "impostor-~a.tga" i)))))
     (loop for tree-pos in (random-terrain:trees map) do
 	 (let* ((tree-data (num:random-select-by-frequency
 			    (trees-bag world)
@@ -61,11 +77,16 @@
 			    :sort-predicate #'<
 			    :normalize t))
 		(tree      (mesh:fill-shell-from-mesh tree-data 'mesh:tree-mesh-shell)))
+	   (setf (mesh:impostor tree)
+		 (mesh:fill-shell-from-mesh (mesh:impostor tree-data)
+					    'billboard:tree-impostor-shell))
 	   (setf (compiled-shaders tree) (compiled-shaders world))
 	   (setf (entity:pos tree)
 		 (vec (coord-terrain->chunk (elt tree-pos 0))
 		      +zero-height+
 		      (coord-terrain->chunk (elt tree-pos 1))))
+	   (setf (entity:pos (mesh:impostor tree))
+		 (entity:pos tree))
 	   ;; to ensure the tree lies in a leaf node of the quadtree...
 	   (let ((saved-aabb (slot-value tree 'mesh:aabb)))
 	     (setf (mesh:aabb tree) (make-instance '3d-utils:aabb
@@ -359,7 +380,7 @@
     (game-event:register-for-end-turn shell)
     (push-interactive-entity world shell +wall-type+ nil
 			     :add-to-gamestate t
-			     :add-to-world     t)
+			     :add-to-world     nil)
     (mtree:add-child (mesh:window-instanced labyrinth-mesh) shell)
     shell))
 

@@ -31,6 +31,12 @@
      ,@body
      (gl:enable :cull-face)))
 
+(defmacro with-clip-plane (&body body)
+  `(progn
+    (gl:enable :clip-distance0)
+    ,@body
+    (gl:disable :clip-distance0)))
+
 (definline fast-glaref (v offset)
   (cffi:mem-aref (gl::gl-array-pointer v) :float offset))
 
@@ -97,18 +103,18 @@
   (gl:viewport 0.0 0.0 w h)
   (gl:clear :color-buffer :depth-buffer))
 
-(defun render-to-texture (framebuffer depthbuffer texture w h fn)
+(defun render-to-memory-texture (framebuffer depthbuffer texture w h fn)
   (prepare-framebuffer-for-rendering framebuffer depthbuffer texture w h)
   ;; draw
   (funcall fn)
   (gl:bind-framebuffer :framebuffer 0)
   (gl:bind-texture :texture-2d 0))
 
-(defmacro with-render-to-texture ((framebuffer depthbuffer texture w h) &body body)
-  `(render-to-texture ,framebuffer ,depthbuffer ,texture ,w ,h
-		      #'(lambda () (progn ,@body))))
+(defmacro with-render-to-memory-texture ((framebuffer depthbuffer texture w h) &body body)
+  `(render-to-memory-texture ,framebuffer ,depthbuffer ,texture ,w ,h
+			     #'(lambda () (progn ,@body))))
 
-(defun render-to-file (file framebuffer depthbuffer texture w h fn)
+(defun render-to-pixmap (framebuffer depthbuffer texture w h fn)
   (prepare-framebuffer-for-rendering framebuffer depthbuffer texture w h)
   ;; draw
   (funcall fn)
@@ -119,9 +125,13 @@
     (pixmap:sync-bits-to-data pixmap)
     (matrix:ploop-matrix (pixmap x y)
       (setf (elt (matrix:pixel@ pixmap x y) 3) 255))
-    (pixmap:save-pixmap pixmap file)
     (gl:bind-framebuffer :framebuffer 0)
-    (gl:bind-texture :texture-2d 0)))
+    (gl:bind-texture :texture-2d 0)
+    pixmap))
+
+(defun render-to-file (file framebuffer depthbuffer texture w h fn)
+  (let ((pixmap (render-to-pixmap framebuffer depthbuffer texture w h fn)))
+    (pixmap:save-pixmap pixmap file)))
 
 (defmacro with-render-to-file ((file w h) &body body)
   (alexandria:with-gensyms (texture framebuffers depthbuffers framebuffer depthbuffer)
@@ -137,6 +147,25 @@
        (texture:prepare-for-rendering ,texture)
        (unwind-protect
 	    (render-to-file ,file ,framebuffer ,depthbuffer (texture:handle ,texture) ,w ,h
+			    #'(lambda () (progn ,@body)))
+	 (gl:delete-framebuffers  ,framebuffers)
+	 (gl:delete-renderbuffers ,depthbuffers)
+	 (interfaces:destroy ,texture)))))
+
+(defmacro with-render-to-pixmap ((w h) &body body)
+  (alexandria:with-gensyms (texture framebuffers depthbuffers framebuffer depthbuffer)
+    `(let* ((,framebuffers (gl:gen-framebuffers 1))
+	    (,depthbuffers (gl:gen-renderbuffers 1))
+	    (,framebuffer  (elt ,framebuffers 0))
+	    (,depthbuffer  (elt ,depthbuffers 0))
+	    (,texture      (make-instance 'texture:texture
+					  :width ,w
+					  :height ,h
+					  :interpolation-type :linear)))
+       (texture:gen-name ,texture)
+       (texture:prepare-for-rendering ,texture)
+       (unwind-protect
+	    (render-to-pixmap ,framebuffer ,depthbuffer (texture:handle ,texture) ,w ,h
 			    #'(lambda () (progn ,@body)))
 	 (gl:delete-framebuffers  ,framebuffers)
 	 (gl:delete-renderbuffers ,depthbuffers)

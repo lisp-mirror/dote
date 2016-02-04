@@ -87,6 +87,12 @@
     :initarg  :end-turn-count
     :accessor end-turn-count)))
 
+(defevent update-visibility () ())
+
+(defun send-update-visibility-event (origin-entity)
+  (let ((event (make-instance 'update-visibility :id-origin (identificable:id origin-entity))))
+    (propagate-update-visibility event)))
+
 (defevent camera-drag-ends () ())
 
 (defevent healing-effect-turn (game-event-w-destination)

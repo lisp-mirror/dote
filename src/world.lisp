@@ -232,7 +232,7 @@
 
 (defgeneric frustum-aabb-intersects-p (object ent))
 
-(defgeneric cone-bounding-sphere-intersects-p (object ent))
+(defgeneric cone-aabb-intersects-p (object ent))
 
 (defgeneric initialize-skydome (object &key bg clouds-1 clouds-2 clouds-3 smoke weather-type))
 
@@ -375,9 +375,8 @@
   (calculate-frustum (camera object))
   (calculate-aabb    (camera object))
   (calculate-cone    (camera object))
-  (quad-tree:iterate-nodes (entities object)
-			   #'(lambda (a) (map 'nil #'(lambda(e) (calculate e dt))
-					      (quad-tree:data a)))))
+  (walk-quad-tree (object)
+    (calculate entity dt)))
 
 (defmethod render ((object world) (renderer world))
   (render (camera  object) object)
@@ -531,7 +530,7 @@
     (num:d< (vec-length (vec- ent-center camera-sphere-center))
 	    camera-sphere-radius)))
 
-(defmethod cone-bounding-sphere-intersects-p ((object world) ent)
+(defmethod cone-aabb-intersects-p ((object world) ent)
   (declare (optimize (debug 3) (safety 3) (speed 0)))
   (declare (world object))
   (with-accessors ((camera camera)) object
@@ -741,6 +740,8 @@
   ;; wearing
   (game-event:register-for-wear-object-event                 player)
   (game-event:register-for-unwear-object-event               player)
+  ;; visibility
+  (game-event:register-for-update-visibility                 player)
   ;; events registration ends here
   (game-state:place-player-on-map (main-state object)        player faction pos)
   (push-interactive-entity object                            player faction :occlude))

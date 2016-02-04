@@ -130,6 +130,10 @@
 
 (define-constant +furnitures-resource+  '("models" "furnitures")               :test #'equalp)
 
+(define-constant +human-player-models-resource+  '("models" "human-player")    :test #'equalp)
+
+(define-constant +ai-player-models-resource+  '("models" "ai")                 :test #'equalp)
+
 (define-constant +fonts-resource+       "fonts"                                :test #'string=)
 
 (define-constant +gui-resource+         "gui"                                  :test #'string=)
@@ -215,4 +219,4 @@
 
 (define-constant +visibility-ray-displ-incr+      0.01                            :test #'=)
 
-(define-constant +camera-drag-spring-k+           10.0                             :test #'=)
+(define-constant +camera-drag-spring-k+           10.0                            :test #'=)

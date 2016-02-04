@@ -511,8 +511,8 @@ else
 		    (declare (desired-type a))
 		    (+ a b)) element delta)))))))
 
-(defmacro loop-matrix ((matrix x y) &body body)
-  `(loop for ,y fixnum from 0 below (height ,matrix) do
+(defmacro loop-matrix ((matrix x y &optional loop-name) &body body)
+  `(loop named ,loop-name for ,y fixnum from 0 below (height ,matrix) do
 	(loop for ,x fixnum from 0 below (width ,matrix) do
 	     ,@body)))
 

@@ -92,6 +92,8 @@
    :+maps-resource+
    :+shaders-resource+
    :+models-resource+
+   :+human-player-models-resource+
+   :+ai-player-models-resource+
    :+textures-resource+
    :+scripts-resource+
    :+furnitures-resource+
@@ -895,6 +897,8 @@
    :reset
    :aabb-center
    :aabb-top-center
+   :aabb-height
+   :aabb-width
    :min-x
    :min-y
    :min-z
@@ -1605,15 +1609,16 @@
    :+transform-matrix-cointainer+
    :with-unbind-vao
    :with-no-cull-face
+   :with-clip-plane
    :mock-null-pointer
    :fast-glaref
    :seq->gl-array
    :copy-gl-array
    :gl-array->list
    :lerp-gl-array
-   :render-to-texture
-   :with-render-to-texture
+   :render-to-memory-texture
    :with-render-to-file
+   :with-render-to-pixmap
    :pick-position))
 
 (defpackage :shaders-utils
@@ -1920,6 +1925,8 @@
    :add-to-ai-entities
    :fetch-from-player-entities
    :fetch-from-ai-entities
+   :map-player-entities
+   :map-ai-entities
    :faction-player-p
    :faction-ai-p
    :approx-terrain-height@pos
@@ -1965,6 +1972,11 @@
    :register-for-end-turn
    :unregister-for-end-turn
    :propagate-end-turn
+   :update-visibility
+   :register-for-update-visibility
+   :unregister-for-update-visibility
+   :propagate-update-visibility
+   :send-update-visibility-event
    :camera-drag-ends
    :register-for-camera-drag-ends
    :unregister-for-camera-drag-ends
@@ -2803,7 +2815,8 @@
    :calculate-sphere
    :containsp
    :frustum-planes
-   :calculate-aabb))
+   :calculate-aabb
+   :fit-to-aabb))
 
 (defpackage :mesh
   (:use :cl
@@ -2900,6 +2913,8 @@
    :texture-object
    :normal-map
    :texture-projector
+   :projector
+   :impostor
    :find-all-index-by-value
    :modelview-matrix
    :modelview-stack
@@ -2921,6 +2936,7 @@
    :make-data-for-opengl
    :make-data-for-opengl-aabb-obj-space
    :prepare-for-rendering
+   :rendering-needed-p
    :render
    :render-phong
    :render-normalmap
@@ -2948,6 +2964,7 @@
    :find-value-by-index
    :bubbleup-modelmatrix
    :normals-count
+   :use-lod-p
    :triangle
    :triangle-mesh-shell
    :tree-mesh-shell
@@ -3147,6 +3164,7 @@
 	:conditions
 	:misc
 	:num
+	:die-utils
 	:shaders-utils
 	:cl-gl-utils
 	:interfaces
@@ -3164,7 +3182,8 @@
   (:shadowing-import-from :misc   :random-elt :shuffle)
   (:shadowing-import-from :sb-cga :rotate)
   (:export
-   :+recover-from-faint-dmg-fraction+))
+   :+recover-from-faint-dmg-fraction+
+   :attack))
 
 ;; UI
 
@@ -3413,7 +3432,11 @@
    :tooltip
    :duration
    :make-tooltip
-   :apply-tooltip))
+   :apply-tooltip
+   :tree-impostor-shell
+   :make-impostor-pixmap
+   :make-impostor-texture
+   :make-impostor-mesh))
 
 (defpackage :world
   (:use :cl
@@ -3474,7 +3497,7 @@
    :main-light-pos
    :main-light-color
    :initialize-skydome
-   :cone-bounding-sphere-intersects-p
+   :cone-aabb-intersects-p
    :render-gui
    :highlight-tile-screenspace
    :highlight-path-costs-space

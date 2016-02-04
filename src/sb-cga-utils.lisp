@@ -77,6 +77,10 @@
 
 (defgeneric aabb-center (object))
 
+(defgeneric aabb-height (object))
+
+(defgeneric aabb-width (object))
+
 (defgeneric aabb-top-center (object))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -178,12 +182,26 @@
   (vec/ (vec+ (aabb-p1 object) (aabb-p2 object)) 2.0))
 
 (defmethod aabb-top-center ((object aabb))
-  (declare (optimize (debug 3) (safety 3) (speed 0)))
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
   (with-accessors ((aabb-p2 aabb-p2)) object
     (declare (vec aabb-p2))
     (let ((res (copy-vec (aabb-center object))))
       (setf (elt res 1) (elt aabb-p2 1))
       res)))
+
+(defmethod aabb-height ((object aabb))
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (with-accessors ((aabb-p2 aabb-p2)
+		   (aabb-p1 aabb-p1)) object
+    (declare (vec aabb-p2 aabb-p1))
+    (dabs (d- (elt aabb-p2 1) (elt aabb-p1 1)))))
+
+(defmethod aabb-width ((object aabb))
+  (declare (optimize (debug 3) (safety 3) (speed 0)))
+  (with-accessors ((aabb-p2 aabb-p2)
+		   (aabb-p1 aabb-p1)) object
+    (declare (vec aabb-p2 aabb-p1))
+    (dabs (d- (elt aabb-p2 0) (elt aabb-p1 0)))))
 
 (defclass bounding-sphere ()
   ((sphere-center

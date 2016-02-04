@@ -288,6 +288,10 @@
 
 (defgeneric fetch-from-ai-entities (object entity))
 
+(defgeneric map-player-entities (object function))
+
+(defgeneric map-ai-entities (object function))
+
 (defgeneric faction-player-p (object id-entity))
 
 (defgeneric faction-ai-p (object id-entity))
@@ -460,6 +464,14 @@
 (defmethod fetch-from-ai-entities ((object game-state) id-entity)
   (with-accessors ((ai-entities ai-entities)) object
     (gethash id-entity ai-entities)))
+
+(defmethod map-player-entities ((object game-state) function)
+  (with-accessors ((player-entities player-entities)) object
+    (maphash function player-entities)))
+
+(defmethod map-ai-entities ((object game-state) function)
+  (with-accessors ((ai-entities ai-entities)) object
+    (maphash function ai-entities)))
 
 (defmethod faction-player-p ((object game-state) id-entity)
   (fetch-from-player-entities object id-entity))

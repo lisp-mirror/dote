@@ -50,6 +50,8 @@
 
 (define-constant +tooltip-revive-char+          "$"                   :test #'string=)
 
+(define-constant +impostor-default-size+        512                   :test #'=)
+
 (defclass tooltip (triangle-mesh inner-animation)
   ((duration
     :initform 3.0
@@ -184,3 +186,127 @@
 					       :font-type font-type
 					       :gravity   gravity)))
 	  (world:push-entity world tooltip))))))
+
+(defun get-bitmap-min-x-opaque (pixmap)
+  (let ((min (matrix:width pixmap)))
+    (matrix:ploop-matrix (pixmap x y)
+      (when (and (/= (elt (matrix:pixel@ pixmap x y) 3) 0)
+		 (< x min))
+	(setf min x)))
+    min))
+
+(defun get-bitmap-max-x-opaque (pixmap)
+  (let ((max -1))
+    (matrix:ploop-matrix (pixmap x y)
+      (when (and (/= (elt (matrix:pixel@ pixmap x y) 3) 0)
+		 (> x max))
+	(setf max x)))
+    max))
+
+
+(defclass tree-impostor-shell (triangle-mesh-shell inner-animation) ())
+
+(defmethod initialize-instance :after ((object tree-impostor-shell) &key &allow-other-keys)
+  (setf (start-time object) (d (lcg-next-upto 5))))
+
+(defmethod calculate :after ((object tree-impostor-shell) dt)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (declare (ignore dt))
+  (setf (el-time object)
+	(d+ (start-time object)
+	    (d* (animation-speed object) (current-time object)))))
+
+(defmethod render ((object tree-impostor-shell) renderer)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((duration duration)
+		   (projection-matrix projection-matrix)
+		   (compiled-shaders compiled-shaders)
+		   (font-color font-color)
+		   (el-time el-time)
+		   (gravity  gravity)
+		   (model-matrix model-matrix)
+		   (triangles triangles)
+		   (scaling scaling)
+		   (texture-object texture-object)
+		   (vao vao)
+		   (view-matrix view-matrix)) object
+    (declare (vec4 font-color))
+    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
+    (declare (list triangles))
+    (with-camera-view-matrix (camera-vw-matrix renderer)
+      (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+	(use-program compiled-shaders :tree-impostor)
+	(gl:active-texture :texture0)
+	(texture:bind-texture texture-object)
+	(uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+	(uniform-matrix compiled-shaders
+			:modelview-matrix 4
+			(vector (matrix* camera-vw-matrix
+					 (elt view-matrix  0)
+					 (elt model-matrix 0)))
+			nil)
+	(uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+	(uniformf  compiled-shaders :time  el-time)
+	(gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+	(gl:draw-arrays :triangles 0 (* 3 (length triangles)))))))
+
+(defun make-impostor-pixmap (renderer mesh
+			     &key (w +impostor-default-size+) (h  +impostor-default-size+))
+  ;; render to texture
+  (let ((pixmap (cl-gl-utils:with-render-to-pixmap (w h)
+		  (cl-gl-utils:with-no-cull-face
+		    (gl:clear-color 0 0 0 1)
+		    (gl:clear :color-buffer)
+		    (gl:clear :depth-buffer)
+		    (interfaces:calculate mesh 0.0)
+		    (interfaces:render mesh renderer)
+		    (gl:viewport 0.0 0.0 *window-w* *window-h*)))))
+    ;; remove transparent color
+    (matrix:ploop-matrix (pixmap x y)
+      (let*  ((px (matrix:pixel@ pixmap x y))
+	      (rgb (vector (elt px 0) (elt px 1) (elt px 2))))
+	(when (num:with-epsilon (1)
+		(uivec:uivec~ rgb #(0 0 0)))
+	  ;; set alpha to zero
+	  (setf (elt (matrix:pixel@ pixmap x y) 3) 0))))
+    ;; try remove the totally transparent area below model
+    (let ((max-y (matrix:loop-matrix (pixmap x y loop-matrix)
+		   (when (/= (elt (matrix:pixel@ pixmap
+						 x
+						 (- (1- (matrix:height pixmap)) y))
+				  3)
+			     0)
+		     (return-from loop-matrix (- (matrix:height pixmap) y)))))
+	  (min-y  (matrix:loop-matrix (pixmap x y loop-matrix)
+		    (when (/= (elt (matrix:pixel@ pixmap x y) 3) 0)
+		      (return-from loop-matrix y))))
+	  (min-x (get-bitmap-min-x-opaque pixmap))
+	  (max-x (get-bitmap-max-x-opaque pixmap)))
+      ;; clip
+      (setf pixmap (matrix:submatrix pixmap
+				     min-x
+				     min-y
+				     (- max-x min-x)
+				     (- max-y min-y)))
+      (pixmap:sync-data-to-bits pixmap)
+      pixmap)))
+
+(defun make-impostor-texture (renderer mesh
+			      &key (w +impostor-default-size+) (h  +impostor-default-size+))
+  (let ((texture (gen-name-and-inject-in-database (make-impostor-pixmap renderer
+									mesh
+									:w w
+									:h h))))
+    (setf (texture:use-mipmap texture) t)
+    (setf (texture:interpolation-type texture) :linear)
+    (prepare-for-rendering texture)
+    texture))
+
+(defun make-impostor-mesh (aabb texture)
+  (let ((mesh (make-instance 'triangle-mesh))
+	(w    (aabb-width aabb))
+	(h    (aabb-height aabb)))
+    (quad mesh w h 0.0 0.0 1.0 1.0 +zero-vec+ nil t)
+    (transform-vertices mesh (translate (vec (d- (d/ w 2.0)) 0.0 0.0)))
+    (setf (texture-object mesh) texture)
+    mesh))

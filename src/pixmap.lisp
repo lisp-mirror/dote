@@ -283,7 +283,8 @@
 		   (loop for channel-count from 0 below depth do
 			(setf (elt bits (+ (* pixel-count depth) channel-count))
 			      (elt (elt data pixel-count) channel-count))))))
-     (h-mirror-matrix object))))
+     (h-mirror-matrix object)
+     object)))
 
 (defmethod sync-bits-to-data ((object pixmap))
   (with-accessors ((data data) (bits bits) (depth depth) (width width) (height height)) object
@@ -970,7 +971,8 @@
 			(setf (elt bits i) (elt data i))))
 		 (loop for i from 0 below (length data) by 1 do
 		      (setf (elt bits i) (elt data i))))))
-      (h-mirror-matrix object))))
+      (h-mirror-matrix object)
+      object)))
 
 (defmethod print-object ((object pgm) stream)
   (with-accessors ((magic-number magic-number)

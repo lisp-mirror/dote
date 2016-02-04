@@ -269,6 +269,25 @@ active program (set by sdk2.kit:use-program)."
      (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
 	       :vertex-shader   ,(get-shader-source "water.vert")
 	       :fragment-shader ,(get-shader-source "water.frag")))
+    (:water-no-texture
+     (:uniforms :light-pos
+		:ia
+		:id
+		:is
+		:ka
+		:kd
+		:ks
+		:shine
+		:time
+		:wave-ampl
+		:wave-freq
+		:modelview-matrix
+		:proj-matrix
+		:proj-texture-matrix)
+     (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
+	       :vertex-shader   ,(get-shader-source "water-no-texture.vert")
+	       :fragment-shader ,(get-shader-source "water-no-texture.frag")))
+
     (:tree
      (:uniforms :light-pos
 		:ia
@@ -474,6 +493,14 @@ active program (set by sdk2.kit:use-program)."
 		:ia)
      (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
 	       :fragment-shader ,(get-shader-source "gui-naked-button.frag")))
+    (:tree-impostor
+     (:uniforms :modelview-matrix
+		:proj-matrix
+		:texture-object
+		:time)
+     (:shaders :vertex-shader   ,(get-shader-source "tree-impostor.vert")
+	       :fragment-shader ,(get-shader-source "tree-impostor.frag")))
+
     (:tooltip
      (:uniforms :modelview-matrix
 		:proj-matrix

@@ -2488,7 +2488,7 @@
 	(setf model-preview-paths (alexandria:rotate model-preview-paths 1))
 	(let ((new-preview (pixmap:slurp-pixmap 'pixmap:tga
 						(res:get-resource-file (elt model-preview-paths 0)
-								       +models-resource+
+								       +human-player-models-resource+
 								       :if-does-not-exists :error)))
 	      (texture     (get-texture +preview-unknown-texture-name+)))
 	  (setf (pixmap:data texture) (pixmap:data new-preview))
@@ -2553,8 +2553,10 @@
 	       (:female
 		"-female"))
 	     +model-preview-ext-re+)))
-    (mapcar #'(lambda (a) (res:strip-off-resource-path +models-resource+ a))
-	    (fs:search-matching-file (resources-utils:get-resource-file +models-resource+ "")
+    (mapcar #'(lambda (a) (res:strip-off-resource-path +human-player-models-resource+ a))
+	    (fs:search-matching-file (resources-utils:get-resource-file
+				      ""
+				      +human-player-models-resource+)
 				     :name re))))
 
 (defclass player-generator (window)
@@ -3623,11 +3625,13 @@
 	      (setf (current-movement-points player) (movement-points player))
 	      (setf (current-magic-points    player) (magic-points player))
 	      ;; setup model
-	      (let* ((dir   (strcat (fs:path-first-element (first model-preview-paths))
-				    fs:*directory-sep*))
-		     (model (md2:load-md2-player dir (compiled-shaders world)))
-		     (portrait-texture   (texture:gen-name-and-inject-in-database
-					  (texture:clone (get-texture +portrait-unknown-texture-name+)))))
+	      (let* ((dir (strcat (fs:path-first-element (first model-preview-paths))
+				  fs:*directory-sep*))
+		     (model (md2:load-md2-player dir
+						 (compiled-shaders world)
+						 +human-player-models-resource+))
+		     (portrait-texture (texture:gen-name-and-inject-in-database
+					(texture:clone (get-texture +portrait-unknown-texture-name+)))))
 		(pixmap:sync-data-to-bits portrait-texture)
 		(texture:prepare-for-rendering portrait-texture)
 		(setf (character:model-origin-dir player) dir)

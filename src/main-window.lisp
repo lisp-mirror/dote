@@ -28,6 +28,12 @@
 
 (defparameter *zeye*   8.0)
 
+(defparameter *xup*   0.0)
+
+(defparameter *yup*   1.0)
+
+(defparameter *zup*   0.0)
+
 (defparameter *far*    440.0)
 
 (defparameter *near*    5.0)
@@ -120,7 +126,10 @@
 	  (vec (misc:coord-map->chunk 1.0)
 	       +zero-height+
 	       (misc:coord-map->chunk 1.0)))
-    (world:push-entity world *placeholder*)))
+    (world:push-entity world *placeholder*)
+    (camera:look-at (world:camera world)
+		    *xpos* *ypos* *zpos* *xeye* *yeye* *zeye* *xup* *yup* *zup*)
+    (setf (mode (world:camera world)) :fp)))
 
 (defmethod initialize-instance :after ((object test-window) &key &allow-other-keys)
   (with-accessors ((vao vao) (compiled-shaders compiled-shaders)
@@ -144,9 +153,8 @@
     (setf world (make-instance 'world :frame-window object))
     (mtree:add-child (world:gui world) (widget:make-splash-progress-gauge))
     (setf (interfaces:compiled-shaders (world:gui world)) compiled-shaders)
-    ;; setup camera
     (camera:look-at (world:camera world)
-		    *xpos* *ypos* *zpos* *xeye* *yeye* *zeye* 0.0 1.0 0.0)
+		    *xpos* *ypos* *zpos* *xeye* *yeye* *zeye* *xup* *yup* *zup*)
     (setf (mode (world:camera world)) :fp)
     (camera:install-path-interpolator (world:camera world)
 				      (vec 0.0  15.0 0.0)

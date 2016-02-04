@@ -172,12 +172,10 @@
     object))
 
 (defmethod render ((object instanced-mesh) renderer)
-  (with-accessors ((normal-map normal-map)
-		   (renderp renderp))      object
-    (when (and renderp (rendering-needed-p object renderer))
-      (if normal-map
-	  (render-normalmap object renderer)
-	  (render-phong object renderer)))))
+  (with-accessors ((normal-map normal-map)) object
+    (if normal-map
+	(render-normalmap object renderer)
+	(render-phong object renderer))))
 
 (defmethod render-phong ((object instanced-mesh) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -559,7 +557,7 @@
 
 (defmethod rendering-needed-p ((object labyrinth-mesh) renderer)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
-  (world:cone-bounding-sphere-intersects-p renderer object))
+  (world:cone-aabb-intersects-p renderer object))
 
 (defgeneric (setf labyrinth-parents-instanced) (val object))
 
