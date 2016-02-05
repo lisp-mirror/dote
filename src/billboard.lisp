@@ -297,8 +297,8 @@
 									mesh
 									:w w
 									:h h))))
-    (setf (texture:use-mipmap texture) t)
-    (setf (texture:interpolation-type texture) :linear)
+    (setf (texture:use-mipmap texture) nil)
+    (setf (texture:interpolation-type texture) :nearest)
     (prepare-for-rendering texture)
     texture))
 

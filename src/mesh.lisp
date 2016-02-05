@@ -2903,7 +2903,7 @@
 
 (defmethod rendering-needed-p ((object water) renderer)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
-  (world:cone-aabb-intersects-p renderer object))
+  (world:frustum-aabb-intersects-p renderer object))
 
 (defmethod calculate ((object water) dt)
   (declare (optimize (debug 0) (speed 3) (safety 0)))

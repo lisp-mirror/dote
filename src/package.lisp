@@ -3498,6 +3498,7 @@
    :main-light-color
    :initialize-skydome
    :cone-aabb-intersects-p
+   :frustum-aabb-intersects-p
    :render-gui
    :highlight-tile-screenspace
    :highlight-path-costs-space
