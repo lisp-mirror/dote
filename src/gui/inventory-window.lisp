@@ -119,28 +119,29 @@
   (declare (ignore e))
   (with-parent-widget (win) w
     (with-accessors ((owner owner)) win
-      (multiple-value-bind (selected-worn-slot worn-item)
-	  (get-selected-worn-item win)
-	(when (and selected-worn-slot
-		   worn-item)
-	  (let ((available-slot (find-available-slot win)))
-	    (when available-slot
-	      (let ((c-slot (item->player-character-slot win worn-item)))
-		(when c-slot
-		  (remove-worn-item selected-worn-slot
-				    available-slot
-				    (ghost owner)
-				    c-slot)
-		  ;; events
-		  (let ((all-effects (remove-if
-				      (random-object-messages:untrigged-effect-p-fn
-				       basic-interaction-parameters:+effect-when-worn+)
-				      (random-object-messages:params->effects-messages-complement worn-item))))
-		    (game-event:propagate-unwear-object-event
-		     (game-event:make-simple-event-w-dest 'game-event:unwear-object-event
-							  (id worn-item)
-							  (id owner)))
-		    (random-object-messages:propagate-effects-msg worn-item owner all-effects)))))))))))
+      (with-accessors ((ghost ghost)) owner
+	(multiple-value-bind (selected-worn-slot worn-item)
+	    (get-selected-worn-item win)
+	  (when (and selected-worn-slot
+		     worn-item)
+	    (let ((available-slot (find-available-slot win)))
+	      (when available-slot
+		(let ((c-slot (item->player-character-slot ghost worn-item)))
+		  (when c-slot
+		    (remove-worn-item selected-worn-slot
+				      available-slot
+				      (ghost owner)
+				      c-slot)
+		    ;; events
+		    (let ((all-effects (remove-if
+					(random-object-messages:untrigged-effect-p-fn
+					 basic-interaction-parameters:+effect-when-worn+)
+					(random-object-messages:params->effects-messages-complement worn-item))))
+		      (game-event:propagate-unwear-object-event
+		       (game-event:make-simple-event-w-dest 'game-event:unwear-object-event
+							    (id worn-item)
+							    (id owner)))
+		      (random-object-messages:propagate-effects-msg worn-item owner all-effects))))))))))))
 
 (defun remove-item-from-inventory (owner slot item)
   (remove-containded-item slot)
@@ -204,25 +205,6 @@
     (map nil #'(lambda (s) (add-child window s)) (current-slots-page window))
     (update-page-counts window next-page-no)))
 
-(defun item->player-character-slot (window item)
-  (with-accessors ((left-hand-slot  left-hand-slot)
-		   (right-hand-slot right-hand-slot)) window
-    (and item
-	 (cond
-	   ((character:ringp item)
-	    'character:ring)
-	   ((character:armorp item)
-	    'character:armor)
-	   ((character:elmp item)
-	    'character:elm)
-	   ((character:shoesp item)
-	    'character:shoes)
-	   ((or (character:weaponp item)
-		(character:shieldp item))
-	    (if (empty-slot-p left-hand-slot)
-		'character:left-hand
-		'character:right-hand))))))
-
 (defun item->window-accessor (window item)
   (with-accessors ((elm-slot        elm-slot)
 		   (shoes-slot      shoes-slot)
@@ -265,21 +247,22 @@
   (declare (ignore e))
   (with-parent-widget (win) widget
     (with-accessors ((owner owner)) win
-      (multiple-value-bind (slot item)
-	  (get-selected-item win)
-	(when item
-	  (let ((c-slot       (item->player-character-slot win item))
-		(win-accessor (item->window-accessor       win item)))
-	    (when (and c-slot
-		       win-accessor
-		       (can-use-movement-points-p owner))
-	      (worn-item slot win-accessor (ghost owner) c-slot)
-	      (let* ((messages (random-object-messages:params->effects-messages item))
-		     (event    (make-instance 'game-event:wear-object-event
-					      :id-origin      (id item)
-					      :id-destination (id owner)
-					      :event-data     messages)))
-		(game-event:propagate-wear-object-event event)))))))))
+      (with-accessors ((ghost ghost)) owner
+	(multiple-value-bind (slot item)
+	    (get-selected-item win)
+	  (when item
+	    (let ((c-slot       (item->available-player-character-slot ghost item))
+		  (win-accessor (item->window-accessor       win   item)))
+	      (when (and c-slot
+			 win-accessor
+			 (can-use-movement-points-p owner))
+		(worn-item slot win-accessor (ghost owner) c-slot)
+		(let* ((messages (random-object-messages:params->effects-messages item))
+		       (event    (make-instance 'game-event:wear-object-event
+						:id-origin      (id item)
+						:id-destination (id owner)
+						:event-data     messages)))
+		  (game-event:propagate-wear-object-event event))))))))))
 
 (defun sort-items (pages)
   (let ((all (mapcar #'contained-entity (alexandria:flatten pages))))

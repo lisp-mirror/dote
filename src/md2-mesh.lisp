@@ -118,7 +118,7 @@
 			(find-if #'(lambda (a) (= id (id a))) (visible-players entity)))
 	       (setf (renderp object) t)
 	       (return-from on-game-event nil))))
-	;;(setf (renderp object) nil)
+	(setf (renderp object) nil)
 	(game-state:map-player-entities state #'(lambda (k v)
 						  (declare (ignore k))
 						  (update-visibility-cone v)))
@@ -649,6 +649,8 @@
 
 (defgeneric calculate-move (object dt))
 
+(defgeneric wear-item      (object item))
+
 (defmethod destroy :after ((object md2-mesh))
   (when +debug-mode+
     (misc:dbg "destroy md2 mesh ~a ~a" (id object) (map 'list #'id (frames object))))
@@ -1006,6 +1008,20 @@
 					       :tile-pos  end)))
 	    (propagate-move-entity-entered-in-tile-event movement-event))))))
 
+(defmethod wear-item ((object md2-mesh) item)
+  (with-accessors ((ghost ghost)
+		   (id id)) object
+    (let ((c-slot (item->available-player-character-slot ghost item)))
+      (when c-slot
+	(setf (slot-value ghost c-slot) item)
+	(remove-from-inventory ghost item)
+	(let* ((messages (random-object-messages:params->effects-messages item))
+	       (event    (make-instance 'game-event:wear-object-event
+					:id-origin      (id item)
+					:id-destination id
+					:event-data     messages)))
+	  (game-event:propagate-wear-object-event event))))))
+
 (defmethod calculate ((object md2-mesh) dt)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (single-float dt))
@@ -1215,7 +1231,78 @@
     (set-animation model :stand)
     model))
 
-(defun load-md2-player (dir compiled-shaders resource-path)
+;;;;;;;;;;;;;;;; testing only! ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun forged-potion ()
+  (let ((potion (random-potion:generate-potion 10))
+	(effect-cause-berserk (make-instance 'basic-interaction-parameters:healing-effect-parameters
+					    :trigger basic-interaction-parameters:+effect-when-consumed+
+					    :duration 2
+					    :chance   0.9)))
+    (n-setf-path-value (basic-interaction-params potion)
+		       '(:healing-effects :cause-berserk)
+		       effect-cause-berserk)
+    potion))
+
+(defun forged-potion-cure-berserk ()
+  (let ((potion (random-potion:generate-potion 10))
+	(effect-cure (basic-interaction-parameters:define-healing-effect
+			 (duration unlimited
+				   trigger  when-consumed
+				   chance   0.9
+				   target   self))))
+    (n-setf-path-value (basic-interaction-params potion)
+		       '(:healing-effects :heal-berserk)
+		       effect-cure)
+    potion))
+
+(defun forged-potion-cure-dmg ()
+  (let ((potion (random-potion:generate-potion 10))
+	(effect-cure (basic-interaction-parameters:define-heal-dmg-effect (points 3.0
+						     trigger  when-consumed
+						     chance   0.9
+						     target   self))))
+    (n-setf-path-value (basic-interaction-params potion)
+		       '(:healing-effects :heal-damage-points)
+		       effect-cure)
+    (clean-effects potion)))
+
+(defun forged-ring ()
+  (let ((ring (random-ring:generate-ring 10))
+	(effect-cause-berserk (make-instance 'basic-interaction-parameters:healing-effect-parameters
+					     :trigger
+					     basic-interaction-parameters:+effect-when-worn+
+					     :duration 2
+					     :chance   0.9)))
+    (n-setf-path-value (basic-interaction-params ring)
+		       '(:healing-effects :cause-berserk)
+		       effect-cause-berserk)
+    (clean-effects ring)
+    ring))
+
+(defun forged-sword ()
+  (let ((sword (random-weapon:generate-weapon 10 :sword))
+	(effect-modifier  (make-instance 'basic-interaction-parameters:effect-parameters
+					 :trigger basic-interaction-parameters:+effect-when-worn+
+					 :duration basic-interaction-parameters:+duration-unlimited+
+					 :modifier 5.0))
+	(poisoning        (make-instance 'basic-interaction-parameters:poison-effect-parameters
+					 :chance 0.9
+					 :target basic-interaction-parameters:+target-other+
+					 :points-per-turn 2.0)))
+    (n-setf-path-value (basic-interaction-params sword)
+		       '(:effects :melee-attack-chance)
+		       effect-modifier)
+    (n-setf-path-value (basic-interaction-params sword)
+		       '(:healing-effects :cause-poison)
+		       poisoning)
+    (clean-effects sword)
+    sword))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defun load-md2-player (ghost dir compiled-shaders resource-path)
   (let ((body (md2:load-md2-model dir
 				  :mesh-file      "body01.md2"
 				  :animation-file "body-animation.lisp"
@@ -1232,9 +1319,28 @@
 	  (interfaces:compiled-shaders head) compiled-shaders)
       (md2:set-animation body :stand)
       (md2:set-animation head :stand)
-;      (setf (render-aabb  body) t)
       (setf (md2:tag-key-parent head) md2:+tag-head-key+)
       (mtree-utils:add-child body head)
+      (setf (ghost body) ghost)
+      ;;;;;;;;;;;;;;;;;;;;;;;; testing
+      (let ((forged-potion              (forged-potion))
+	    (forged-potion-cure-dmg     (forged-potion-cure-dmg))
+	    (forged-potion-cure-berserk (forged-potion-cure-berserk))
+	    (forged-ring                (forged-ring))
+	    (forged-sword               (forged-sword)))
+	(game-event:register-for-end-turn forged-potion)
+	(game-event:register-for-end-turn forged-potion-cure-dmg)
+	(game-event:register-for-end-turn forged-potion-cure-berserk)
+	(game-event:register-for-end-turn forged-ring)
+	(game-event:register-for-end-turn forged-sword)
+	(add-to-inventory (ghost body) forged-potion)
+	(add-to-inventory (ghost body) forged-potion-cure-dmg)
+	(add-to-inventory (ghost body) forged-potion-cure-berserk)
+	(add-to-inventory (ghost body) forged-ring)
+	(add-to-inventory (ghost body) forged-sword)
+	(setf (movement-points (ghost body)) 100.0)
+	(wear-item body forged-sword))
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       body))
 
 (alexandria:define-constant +magic-num-md2-tag-file '(74 68 80 50) :test #'equalp)

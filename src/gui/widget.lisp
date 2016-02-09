@@ -3627,7 +3627,8 @@
 	      ;; setup model
 	      (let* ((dir (strcat (fs:path-first-element (first model-preview-paths))
 				  fs:*directory-sep*))
-		     (model (md2:load-md2-player dir
+		     (model (md2:load-md2-player player
+						 dir
 						 (compiled-shaders world)
 						 +human-player-models-resource+))
 		     (portrait-texture (texture:gen-name-and-inject-in-database
@@ -3635,7 +3636,7 @@
 		(pixmap:sync-data-to-bits portrait-texture)
 		(texture:prepare-for-rendering portrait-texture)
 		(setf (character:model-origin-dir player) dir)
-		(setf (entity:ghost model) player)
+		;(setf (entity:ghost model) player)
 		(setf (portrait (entity:ghost model)) portrait-texture)
 		(world:place-player-on-map world model game-state:+pc-type+ #(0 0)))
 	      ;; restore preview

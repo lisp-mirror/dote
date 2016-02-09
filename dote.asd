@@ -127,6 +127,7 @@
 	       (:file "billboard")
 	       (:file "world")
 	       (:file "terrain-chunk")
+	       (:file "particles")
 	       (:file "md2-mesh-normal-lut")
 	       (:file "md2-mesh")
 	       (:file "obj-mesh")

@@ -242,6 +242,13 @@
   GNU General Public License 2.0 (see UFO Alien invasion sources
   [[http://ufoai.org/wiki/News][http://ufoai.org/wiki/News]])
 
+- data/models/models/objects/weapon/arrow/model.mtl
+  data/models/models/objects/weapon/arrow/model.obj
+  data/models/models/objects/weapon/arrow/texture.tga
+  based on works © 2016 yd released under CC0 1.0
+  https://creativecommons.org/publicdomain/zero/1.0/
+  according to http://opengameart.org/content/archery-set
+
 - data/models/models/column/*
   data/models/models/carpet/*
   according to the original file

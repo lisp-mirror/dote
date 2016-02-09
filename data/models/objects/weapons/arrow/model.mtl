@@ -1,0 +1,13 @@
+# Blender MTL File: 'archerySetOGA.blend'
+# Material Count: 1
+
+newmtl bowArrowQuiver
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.640000 0.640000 0.640000
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+map_Kd /tmp/mozilla_cage0/bow01D.jpg
+map_Bump /tmp/mozilla_cage0/bow01N.jpg

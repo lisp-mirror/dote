@@ -44,6 +44,8 @@
 
 (alexandria:define-constant +texture-unit-clouds-3+              3 :test #'=)
 
+(alexandria:define-constant +feedback-new-position+  :new-position :test #'eq)
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun get-shader-source (name)
     (let ((actual-file (fs:preprocess (res:get-resource-file name +shaders-resource+)
@@ -92,6 +94,40 @@
                      (gl:delete-shader shader))))
       program)))
 
+(defun compile-and-link-feedback-program (&rest shaders)
+  "(compile-and-link-program :vertex-shader STRING :fragment-shader STRING ...)"
+  (let (compiled-shaders)
+    (loop for type in shaders by #'cddr
+       for text in (cdr shaders) by #'cddr
+       do (let ((shader (gl:create-shader type)))
+	    (alexandria:when-let ((log (compile-and-check-shader shader text)))
+	      (format *error-output* "Compile Log for ~A:~%~A~%shader ~a" type log text))
+	    (push shader compiled-shaders)))
+    (let ((program (gl:create-program)))
+      (if (= 0 program)
+          (progn
+            (loop for shader in compiled-shaders
+	       do (gl:delete-shader shader))
+            (error "Error creating program"))
+          (progn
+            (loop for shader in compiled-shaders
+	       do (gl:attach-shader program shader))
+	    ;; set varyings output variable name
+	    (cffi:with-foreign-object (string-array :pointer 1)
+	      (setf (cffi:mem-aref string-array :pointer 0)
+		    (cffi:foreign-string-alloc (symbol-to-uniform +feedback-new-position+)))
+	      (%gl:transform-feedback-varyings-ext program 1 string-array :interleaved-attribs)
+	      (cffi:foreign-string-free (cffi:mem-aref string-array :pointer 0)))
+            (gl:link-program program)
+	    (let ((log (gl:get-program-info-log program)))
+              (unless (string= "" log)
+                (format *error-output* "Link Log:~%~A~%" log)))
+            (loop for shader in compiled-shaders do
+		 (gl:detach-shader program shader)
+		 (gl:delete-shader shader))))
+
+      program)))
+
 (defclass program ()
   ((name
     :initform nil
@@ -130,6 +166,12 @@
     (with-slots (id) program
       (setf id p))))
 
+(defmethod preprocess-program-entry ((type (eql :feedback-shaders)) entry program)
+  (let ((p (apply #'compile-and-link-feedback-program entry)))
+    (gl:use-program p)
+    (with-slots (id) program
+      (setf id p))))
+
 (defun symbol-to-uniform (symbol)
   (substitute #\_ #\- (string-downcase (symbol-name symbol))))
 
@@ -159,16 +201,19 @@ GL-CONTEXT.  The result is only valid while that GL-CONTEXT is
 valid."
   (let ((sd (make-instance 'shader-dictionary)))
     (with-slots (programs) sd
-      (loop for program-spec in dictionary
-            as name = (car program-spec)
-            as program = (make-instance 'program :name name)
-            do (setf (gethash name programs) program)
-               (loop for entry in (cdr program-spec)
-                     do (preprocess-program-entry
-                         (car entry) (cdr entry) program))
-               (loop for entry in (cdr program-spec)
-                     do (postprocess-program-entry
-                         (car entry) (cdr entry) program))))
+      (loop
+	 for program-spec in dictionary
+	 as name = (car program-spec)
+	 as program = (make-instance 'program :name name)
+	 do (setf (gethash name programs) program)
+	   (loop for entry in (cdr program-spec)
+	      do
+		(misc:dbg "preprocess  ~a" (car entry))
+		(preprocess-program-entry
+		 (car entry) (cdr entry) program))
+	   (loop for entry in (cdr program-spec)
+	      do (postprocess-program-entry
+		  (car entry) (cdr entry) program))))
     sd))
 
 (defun use-program (dict program)
@@ -512,7 +557,12 @@ active program (set by sdk2.kit:use-program)."
 		:gravity
 		:time)
       (:shaders :vertex-shader   ,(get-shader-source "tooltip.vert")
-		:fragment-shader ,(get-shader-source "tooltip.frag")))))
+		:fragment-shader ,(get-shader-source "tooltip.frag")))
+    ;;;;; transform feedback
+    (:blood-integrator
+     (:uniforms :time
+		:dt)
+     (:feedback-shaders :vertex-shader ,(get-shader-source "particle-blood-feedback.vert")))))
 
 (defun compile-library ()
   (let ((*error-output* (make-string-output-stream)))

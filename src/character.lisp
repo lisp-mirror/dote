@@ -16,7 +16,7 @@
 
 (in-package :character)
 
-(alexandria:define-constant +unknown-ability-bonus+             -5.0                   :test #'=)
+(alexandria:define-constant +unknown-ability-bonus+             -5.0                    :test #'=)
 
 (alexandria:define-constant +starting-exp-points+               10.0                    :test #'=)
 
@@ -923,6 +923,10 @@
 
 (defgeneric sum-modifiers (object modifier-name))
 
+(defgeneric item->player-character-slot (object item))
+
+(defgeneric item->available-player-character-slot (object item))
+
 (defmethod random-fill-slots ((object player-character) capital characteristics)
   (loop for charact in characteristics do
        (when (> capital 0)
@@ -1039,6 +1043,59 @@
 		       modifiers-effects)
 	    :initial-value 0.0)))
 
+(defmethod item->player-character-slot ((object player-character) item)
+  (with-accessors ((left-hand  left-hand)
+		   (right-hand right-hand)) object
+    (when item
+      (let ((item-id (id item)))
+	 (cond
+	   ((and (character:ringp item)
+		 (ring object)
+		 (= item-id (id (ring object))))
+	    'character:ring)
+	   ((and (character:armorp item)
+		 (armor object)
+		 (= item-id (id (armor object))))
+	    'character:armor)
+	   ((and (character:elmp item)
+		 (elm object)
+		 (= item-id (id (elm object))))
+	    'character:elm)
+	   ((and (character:shoesp item)
+		 (shoes object)
+		 (= item-id (id (shoes object))))
+	    'character:shoes)
+	   ((or (character:weaponp item)
+		(character:shieldp item))
+	    (cond
+	      ((and (left-hand object)
+		    (= item-id (id (left-hand object))))
+	       'character:left-hand)
+	      ((and (right-hand object)
+		    (= item-id (id (right-hand object))))
+	       'character:right-hand))))))))
+
+(defmethod item->available-player-character-slot ((object player-character) item)
+  (with-accessors ((left-hand  left-hand)
+		   (right-hand right-hand)) object
+    (and item
+	 (cond
+	   ((character:ringp item)
+	    'character:ring)
+	   ((character:armorp item)
+	    'character:armor)
+	   ((character:elmp item)
+	    'character:elm)
+	   ((character:shoesp item)
+	    'character:shoes)
+	   ((or (character:weaponp item)
+		(character:shieldp item))
+	    (if (null left-hand)
+		'character:left-hand
+		(if (null right-hand)
+		    'character:right-hand
+		    nil)))))))
+
 (defmacro gen-actual-characteristic (name)
   (let ((fn       (format-fn-symbol t "actual-~a" name))
 	(accessor (format-fn-symbol t "~a"        name))
@@ -1139,76 +1196,6 @@
 
 (gen-make-player player)
 
-
-;;;;;;;;;;;;;;;; testing only! ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defun forged-potion ()
-  (let ((potion (random-potion:generate-potion 10))
-	(effect-cause-berserk (make-instance 'healing-effect-parameters
-					    :trigger +effect-when-consumed+
-					    :duration 2
-					    :chance   0.9)))
-    (n-setf-path-value (basic-interaction-params potion)
-		       '(:healing-effects :cause-berserk)
-		       effect-cause-berserk)
-    potion))
-
-(defun forged-potion-cure-berserk ()
-  (let ((potion (random-potion:generate-potion 10))
-	(effect-cure (define-healing-effect (duration unlimited
-						      trigger  when-consumed
-						      chance   0.9
-						      target   self))))
-    (n-setf-path-value (basic-interaction-params potion)
-		       '(:healing-effects :heal-berserk)
-		       effect-cure)
-    potion))
-
-(defun forged-potion-cure-dmg ()
-  (let ((potion (random-potion:generate-potion 10))
-	(effect-cure (define-heal-dmg-effect (points 3.0
-						     trigger  when-consumed
-						     chance   0.9
-						     target   self))))
-    (n-setf-path-value (basic-interaction-params potion)
-		       '(:healing-effects :heal-damage-points)
-		       effect-cure)
-    (clean-effects potion)))
-
-(defun forged-ring ()
-  (let ((ring (random-ring:generate-ring 10))
-	(effect-cause-berserk (make-instance 'healing-effect-parameters
-					    :trigger +effect-when-worn+
-					    :duration 2
-					    :chance   0.9)))
-    (n-setf-path-value (basic-interaction-params ring)
-		       '(:healing-effects :cause-berserk)
-		       effect-cause-berserk)
-    (clean-effects ring)
-    ring))
-
-(defun forged-sword ()
-  (let ((sword (random-weapon:generate-weapon 10 :sword))
-	(effect-modifier  (make-instance 'effect-parameters
-					    :trigger +effect-when-worn+
-					    :duration +duration-unlimited+
-					    :modifier 5.0))
-	(poisoning        (make-instance 'poison-effect-parameters
-					 :chance 0.9
-					 :target          +target-other+
-					 :points-per-turn 2.0)))
-    (n-setf-path-value (basic-interaction-params sword)
-		       '(:effects :melee-attack-chance)
-		       effect-modifier)
-    (n-setf-path-value (basic-interaction-params sword)
-		       '(:healing-effects :cause-poison)
-		       poisoning)
-    (clean-effects sword)
-    sword))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
 (defun make-warrior (race)
   (let ((player (make-player *standard-capital-characteristic* race nil '((strength (50 10))
 									  (stamina  (40 10))
@@ -1218,23 +1205,6 @@
 									  (smartness (2 0))
 									  (weight    (52 23))))))
     (setf (player-class player) :warrior)
-    ;; testing
-    (let ((forged-potion              (forged-potion))
-	  (forged-potion-cure-dmg     (forged-potion-cure-dmg))
-	  (forged-potion-cure-berserk (forged-potion-cure-berserk))
-	  (forged-ring                (forged-ring))
-	  (forged-sword               (forged-sword)))
-      (game-event:register-for-end-turn forged-potion)
-      (game-event:register-for-end-turn forged-potion-cure-dmg)
-      (game-event:register-for-end-turn forged-potion-cure-berserk)
-      (game-event:register-for-end-turn forged-ring)
-      (game-event:register-for-end-turn forged-sword)
-      (add-to-inventory player forged-potion)
-      (add-to-inventory player forged-potion-cure-dmg)
-      (add-to-inventory player forged-potion-cure-berserk)
-      (add-to-inventory player forged-ring)
-      (add-to-inventory player forged-sword)
-      (setf (movement-points player) 100.0))
     player))
 
 (defun make-wizard (race)

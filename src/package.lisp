@@ -2527,7 +2527,9 @@
    :sum-effects-mod
    :params->player-character
    :calculate-randomized-damage-points
-   :params->np-character))
+   :params->np-character
+   :item->player-character-slot
+   :item->available-player-character-slot))
 
 (defpackage :random-armor
   (:use :cl
@@ -3564,6 +3566,17 @@
    :clip-with-aabb
    :approx-terrain-height
    :make-terrain-chunk))
+
+(defpackage :particles
+  (:use :cl
+	:constants
+	:interfaces
+	:parser
+	:sb-cga
+	:sb-cga-utils
+	:num-utils
+	:mesh)
+  (:export))
 
 (defpackage :md2-mesh
   (:nicknames :md2)
