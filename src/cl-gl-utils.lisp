@@ -37,6 +37,24 @@
     ,@body
     (gl:disable :clip-distance0)))
 
+(defmacro with-rasterizer-discard (&body body)
+  `(progn
+     (gl:enable :rasterizer-discard)
+     ,@body
+     (gl:disable :rasterizer-discard)))
+
+(defmacro with-transform-feedback ((type) &body body)
+  `(progn
+     (%gl:begin-transform-feedback ,type)
+     ,@body
+     (%gl:end-transform-feedback)))
+
+(defmacro with-blending ( &body body)
+  `(progn
+     (gl:enable :blend)
+     ,@body
+     (gl:disable :blend)))
+
 (definline fast-glaref (v offset)
   (cffi:mem-aref (gl::gl-array-pointer v) :float offset))
 

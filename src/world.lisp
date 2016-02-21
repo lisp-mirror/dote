@@ -211,11 +211,14 @@
 				     (event game-event:update-highlight-path))
   (highlight-path-costs-space object object (game-event:tile-pos event)))
 
-
 (defmethod game-event:on-game-event ((object world) (event game-event:end-turn))
   (with-accessors ((main-state main-state)) object
     (misc:dbg " end turn ~a ~a" (type-of object) (type-of event))
     (remove-entity-if (entities object) #'(lambda (a) (typep a 'billboard:tooltip)))
+    (remove-entity-if (entities object) #'(lambda (a)
+					    (misc:dbg "type ~a" (type-of a))
+					    (and (typep a 'particles:particles-cluster)
+						 (removeable-from-world a))))
     (remove-entity-if (gui object) #'(lambda (a) (typep a 'widget:message-window)))
     (incf (game-turn (main-state object)))
     (maphash #'(lambda (k v) (declare (ignore k)) (mesh:process-postponed-messages v))

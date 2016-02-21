@@ -194,6 +194,7 @@
    :vector-empty-p
    :random-num-filled-vector
    :random-elt
+   :copy-multiply
    :list->array
    :list->simple-array
    :copy-list-into-array
@@ -525,7 +526,8 @@
    :inner-animation
    :start-time
    :el-time
-   :animation-speed))
+   :animation-speed
+   :removeable-from-world))
 
 (defpackage :ivec2
   (:use :cl
@@ -1610,6 +1612,9 @@
    :with-unbind-vao
    :with-no-cull-face
    :with-clip-plane
+   :with-rasterizer-discard
+   :with-transform-feedback
+   :with-blending
    :mock-null-pointer
    :fast-glaref
    :seq->gl-array
@@ -3569,14 +3574,28 @@
 
 (defpackage :particles
   (:use :cl
+	:config
 	:constants
-	:interfaces
-	:parser
 	:sb-cga
 	:sb-cga-utils
 	:num-utils
+	:misc
+	:cl-gl-utils
+	:shaders-utils
+	:identificable
+	:transformable
+	:entity
+	:interfaces
 	:mesh)
-  (:export))
+  (:export
+   :particles-cluster
+   :blood
+   :gaussian-velocity-distribution-fn
+   :gaussian-delay-distribution-fn
+   :make-particles-cluster
+   :make-blood-level-0
+   :make-blood-level-1
+   :make-blood-level-2))
 
 (defpackage :md2-mesh
   (:nicknames :md2)

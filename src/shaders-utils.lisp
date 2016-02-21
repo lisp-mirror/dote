@@ -46,6 +46,8 @@
 
 (alexandria:define-constant +feedback-new-position+  :new-position :test #'eq)
 
+(alexandria:define-constant +feedback-new-velocity+  :new-velocity :test #'eq)
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun get-shader-source (name)
     (let ((actual-file (fs:preprocess (res:get-resource-file name +shaders-resource+)
@@ -113,11 +115,14 @@
             (loop for shader in compiled-shaders
 	       do (gl:attach-shader program shader))
 	    ;; set varyings output variable name
-	    (cffi:with-foreign-object (string-array :pointer 1)
+	    (cffi:with-foreign-object (string-array :pointer 2)
 	      (setf (cffi:mem-aref string-array :pointer 0)
 		    (cffi:foreign-string-alloc (symbol-to-uniform +feedback-new-position+)))
-	      (%gl:transform-feedback-varyings-ext program 1 string-array :interleaved-attribs)
-	      (cffi:foreign-string-free (cffi:mem-aref string-array :pointer 0)))
+	      (setf (cffi:mem-aref string-array :pointer 1)
+		    (cffi:foreign-string-alloc (symbol-to-uniform +feedback-new-velocity+)))
+	      (%gl:transform-feedback-varyings-ext program 2 string-array :interleaved-attribs)
+	      (cffi:foreign-string-free (cffi:mem-aref string-array :pointer 0))
+	      (cffi:foreign-string-free (cffi:mem-aref string-array :pointer 1)))
             (gl:link-program program)
 	    (let ((log (gl:get-program-info-log program)))
               (unless (string= "" log)
@@ -558,10 +563,15 @@ active program (set by sdk2.kit:use-program)."
 		:time)
       (:shaders :vertex-shader   ,(get-shader-source "tooltip.vert")
 		:fragment-shader ,(get-shader-source "tooltip.frag")))
+    (:particles-blood
+     (:uniforms :modelview-matrix
+		:proj-matrix)
+      (:shaders :vertex-shader   ,(get-shader-source "particle-blood.vert")
+		:fragment-shader ,(get-shader-source "particle-blood.frag")))
+
     ;;;;; transform feedback
     (:blood-integrator
-     (:uniforms :time
-		:dt)
+     (:uniforms :dt)
      (:feedback-shaders :vertex-shader ,(get-shader-source "particle-blood-feedback.vert")))))
 
 (defun compile-library ()

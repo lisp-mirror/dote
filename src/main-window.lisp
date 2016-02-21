@@ -302,7 +302,7 @@
 	      (mtree:add-child (world:gui (world object)) (world:toolbar (world object)))
 	      ;; test
 	      (mtree:add-child (world:gui (world object))
-			       (widget:make-player-generator (world object)))
+	       		       (widget:make-player-generator (world object)))
 	      (setf (interfaces:compiled-shaders (world:gui (world object)))
 		    (compiled-shaders object))
 	      (setf *map-loaded-p* t)

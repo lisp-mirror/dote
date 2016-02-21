@@ -479,6 +479,16 @@
 (defun remove-if-not-null (a)
   (remove-if #'(lambda (i) (not (null i))) a))
 
+
+(defun copy-multiply (from to length source-step copy-num)
+  (loop for ct from 0 below (* source-step length) by source-step
+        for ct2 from 0 below (* length source-step copy-num) by (* source-step copy-num) do
+       (loop for ct3 from 0 below (* source-step copy-num) by 1 do
+	    (setf (elt to (+ ct2 ct3))
+		  (elt from (+ ct (mod ct3 source-step))))))
+  to)
+
+
 ;; iterations
 
 (defmacro do-while (declaration return-form &body body)

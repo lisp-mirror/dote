@@ -3100,39 +3100,38 @@
       (with-camera-view-matrix (camera-vw-matrix renderer)
 	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
 					;(gl:disable :depth-test)
-	  (gl:enable :blend)
-	  (gl:blend-func :src-alpha :one-minus-src-alpha)
-	  (use-program compiled-shaders :water)
-	  (gl:active-texture :texture0)
-	  (texture:bind-texture texture-object)
-	  (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
-	  (uniformfv compiled-shaders :light-pos
-			      (the vec (main-light-pos-eye-space renderer)))
-	  (uniformfv compiled-shaders :ia        (the vec (main-light-color renderer)))
-	  (uniformfv compiled-shaders :id        (the vec (main-light-color renderer)))
-	  (uniformfv compiled-shaders :is        (the vec (main-light-color renderer)))
-	  (uniformf  compiled-shaders :ka        1.0)
-	  (uniformf  compiled-shaders :kd        1.0)
-	  (uniformf  compiled-shaders :ks        0.0)
-	  (uniformf  compiled-shaders :shine    100.0)
-	  (uniformfv compiled-shaders
-			      :ia (vec4:vec4->vec (the vec4 (sky-bg-color (main-state renderer)))))
-	  (uniformf compiled-shaders :time el-time)
-	  (uniform-matrix compiled-shaders :modelview-matrix 4
-				   (vector (matrix* camera-vw-matrix
-						    (elt view-matrix 0)
-						    (elt model-matrix 0)))
-				   nil)
-	  (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
-	  (uniform-matrix compiled-shaders :proj-texture-matrix 4
-				   (vector (matrix* +projective-scale-bias+
-						    (elt camera-proj-matrix 0)
-						    projector
-						    (elt model-matrix 0)))
-				   nil)
-	  (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-	  (gl:draw-arrays :triangles 0 (* 3 (length triangles)))
-	  (gl:disable :blend))))))
+	  (with-blending
+	    (gl:blend-func :src-alpha :one-minus-src-alpha)
+	    (use-program compiled-shaders :water)
+	    (gl:active-texture :texture0)
+	    (texture:bind-texture texture-object)
+	    (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+	    (uniformfv compiled-shaders :light-pos
+		       (the vec (main-light-pos-eye-space renderer)))
+	    (uniformfv compiled-shaders :ia        (the vec (main-light-color renderer)))
+	    (uniformfv compiled-shaders :id        (the vec (main-light-color renderer)))
+	    (uniformfv compiled-shaders :is        (the vec (main-light-color renderer)))
+	    (uniformf  compiled-shaders :ka        1.0)
+	    (uniformf  compiled-shaders :kd        1.0)
+	    (uniformf  compiled-shaders :ks        0.0)
+	    (uniformf  compiled-shaders :shine    100.0)
+	    (uniformfv compiled-shaders
+		       :ia (vec4:vec4->vec (the vec4 (sky-bg-color (main-state renderer)))))
+	    (uniformf compiled-shaders :time el-time)
+	    (uniform-matrix compiled-shaders :modelview-matrix 4
+			    (vector (matrix* camera-vw-matrix
+					     (elt view-matrix 0)
+					     (elt model-matrix 0)))
+			    nil)
+	    (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
+	    (uniform-matrix compiled-shaders :proj-texture-matrix 4
+			    (vector (matrix* +projective-scale-bias+
+					     (elt camera-proj-matrix 0)
+					     projector
+					     (elt model-matrix 0)))
+			    nil)
+	    (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+	    (gl:draw-arrays :triangles 0 (* 3 (length triangles)))))))))
 
 (defun cylinder-section (mesh radius height divisions
 			 texture-sstart texture-tstart

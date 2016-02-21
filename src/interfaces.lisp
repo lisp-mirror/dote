@@ -156,3 +156,5 @@
     :initform 0.15
     :initarg :animation-speed
     :accessor animation-speed)))
+
+(defgeneric removeable-from-world (object))

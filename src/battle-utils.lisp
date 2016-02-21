@@ -50,8 +50,11 @@
 (defun attack (attack-dmg    bonus-attack-dmg
 	       attack-chance bonus-attack-chance
 	       weapon-level
+	       dodge-chance
 	       &optional (shield-level nil) (armor-level nil))
-  (if (pass-d100.0 (d+ attack-chance bonus-attack-chance))
+  (if (pass-d100.0 (max (d- (d+ attack-chance bonus-attack-chance)
+			    dodge-chance)
+			0.0))
       (let ((gaussian-fn (attack-gaussian-fn attack-dmg
 					     bonus-attack-dmg
 					     weapon-level
@@ -67,7 +70,7 @@
        (loop for y from -0.0 below 100.0 by 1.0 do
 	    (format t "~a ~a ~a~%" x y (funcall producer-fn x y)))))
 
-(defun %attack-statistics (weapon-level attack-dmg shield-level armor-level
+(defun attack-statistics (weapon-level attack-dmg shield-level armor-level
 			   &optional (count 10000))
   (macrolet ((fmt-comment (a fmt-params)
 	       `(format t ,(text-utils:strcat "# " a) ,fmt-params)))
@@ -83,6 +86,7 @@
 				      0.0
 				      100.0 0.0
 				      weapon-level
+				      0.0
 				      shield-level
 				      armor-level))))
 	(fmt-comment "Hit with damage above than 80%: ~,2@f~%"
