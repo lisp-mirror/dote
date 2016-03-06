@@ -200,10 +200,11 @@
 			&optional (other-initargs '()))
   (declare (ignore other-initargs))
   (make-instance 'cause-poison-msg
-		 :msg-damage (points-per-turn object)
-		 :msg-target (target          object)
-		 :msg-origin id-origin
-		 :msg-chance (chance          object)))
+		 :msg-damage  (points-per-turn object)
+		 :msg-target  (target          object)
+		 :msg-origin  id-origin
+		 :msg-chance  (chance          object)
+		 :msg-trigger (trigger         object)))
 
 (defmethod effect->msg-complement ((object poison-effect-parameters) id-origin
 			&optional (other-initargs '()))

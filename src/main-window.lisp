@@ -306,6 +306,9 @@
 	      (setf (interfaces:compiled-shaders (world:gui (world object)))
 		    (compiled-shaders object))
 	      (setf *map-loaded-p* t)
+	      ;; testing opponents
+	      (interfaces:calculate (world object) 0.0)
+	      (world:add-ai-opponent (world object) :warrior :male)
 	      (setf (delta-time-elapsed object) (sdl2:get-ticks))
 	      (gl:clear-color 0.039215688 0.17254902 0.08235294 1.0)))
 	(when (find text '("Y" "y" "X" "x") :test #'string=)
@@ -399,16 +402,32 @@
 					:y-event (num:d (- *window-h* y)))))
 	  (if (eq state :mousebuttondown)
 	      (when (not (widget:on-mouse-pressed (world:gui world) gui-event))
-		;; test movement
-		(when (not (world:pick-player-entity world world x y))
-		  (let* ((selected-path (game-state:selected-path main-state)))
-		    (when selected-path
-		      (let ((movement-event (make-instance 'game-event:move-entity-along-path-event
-							   :path (game-state:tiles selected-path)
-							   :cost (game-state:cost  selected-path)
-							   :id-destination (id selected-pc))))
-			(game-event:propagate-move-entity-along-path-event movement-event)
-			(world:reset-toolbar-selected-action world))))))
+		(cond
+		  ((eq (world:toolbar-selected-action world)
+		       widget:+action-move+)
+		   (when (not (world:pick-player-entity world world x y :bind t))
+		     (let* ((selected-path (game-state:selected-path main-state)))
+		       (when selected-path
+			 (let ((movement-event (make-instance 'game-event:move-entity-along-path-event
+							      :path (game-state:tiles selected-path)
+							      :cost (game-state:cost  selected-path)
+							      :id-destination (id selected-pc))))
+			   (game-event:propagate-move-entity-along-path-event movement-event)
+			   (world:reset-toolbar-selected-action world))))))
+		  ((eq (world:toolbar-selected-action world)
+		       widget:+action-attack-short-range+)
+		   (let ((attacked (world:pick-any-entity world world x y)))
+		     (when attacked
+		       (if (character:worn-weapon (entity:ghost selected-pc))
+			   (battle-utils:send-attack-melee-event selected-pc attacked)
+			   (world:post-entity-message world selected-pc
+				       (format nil
+					       (_"You have not got a weapon"))
+				       (cons (_ "Ok")
+					     #'widget:hide-and-remove-parent-cb)))
+		       (world:reset-toolbar-selected-action world))))
+		  (t
+		   (world:pick-player-entity world world x y :bind t))))
 	      (when (not (widget:on-mouse-released (world:gui world) gui-event))
 		(misc:dbg "~s button: ~A at ~A, ~A" state b x y))))))))
 
@@ -472,9 +491,12 @@
 	  (with-accept-input (object)
 	    (if (not selected-pc)
 		(world:highlight-tile-screenspace world world x y)
-		(when (and (< (vec2:vec2-length (vec2:vec2 (d xr) (d yr))) 2)
-			   (eq (world:toolbar-selected-action world) widget:+action-move+))
-		  (set-player-path object x y))))))))
+		(cond
+		  ((and (< (vec2:vec2-length (vec2:vec2 (d xr) (d yr))) 2)
+			(eq (world:toolbar-selected-action world) widget:+action-move+))
+		   (set-player-path object x y))
+		  ((eq (world:toolbar-selected-action world) widget:+action-attack-short-range+)
+		   (world:highlight-tile-screenspace world world x y)))))))))
 
 (defmethod game-event:on-game-event ((object test-window)
 				     (event game-event:window-accept-input-event))

@@ -25,3 +25,18 @@
 (defmethod rendering-needed-p ((object fountain-mesh-shell) renderer)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (world:cone-aabb-intersects-p renderer object))
+
+(defmethod apply-damage :after ((object fountain-mesh-shell) damage)
+  (with-accessors ((state state)
+		   (pos pos)
+		   (dir dir)
+		   (aabb aabb)
+		   (texture-object texture-object)
+		   (compiled-shaders compiled-shaders)) object
+    (let ((debris (particles:make-debris  (aabb-center aabb)
+					  +y-axe+
+					  50
+					  texture-object
+					  compiled-shaders)))
+      (game-state:with-world (world state)
+	(world:push-entity world debris)))))

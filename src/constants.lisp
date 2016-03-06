@@ -70,6 +70,8 @@
 
 (define-constant +wear-object-entity-cost-cost+       1.0             :test #'=)
 
+(define-constant +attack-melee-cost+                  3.0             :test #'=)
+
 (define-constant +default-size+                     256                :test '=)
 
 (define-constant +map-max-size+                     512                :test '=)
@@ -214,7 +216,7 @@
 
 (define-constant +visibility-cone-half-hangle+    0.5235988                       :test #'=)
 
-(define-constant +visibility-cone-height+         (sb-cga:vec 0.0 0.0 200.0)
+(define-constant +visibility-cone-height+         (sb-cga:vec 0.0 0.0 40.0)
   :test #'sb-cga:vec~)
 
 (define-constant +visibility-ray-displ-incr+      0.01                            :test #'=)

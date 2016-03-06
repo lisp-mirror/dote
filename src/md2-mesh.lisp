@@ -109,21 +109,30 @@
 (defmethod print-object ((object md2-mesh) stream)
   (print-unreadable-object (object stream :type t :identity t)))
 
+(defmethod on-game-event ((object md2-mesh) (event attack-melee-event))
+  (check-event-targeted-to-me (object event)
+    (multiple-value-bind (damage ambush)
+	(battle-utils:defend-from-attack-short-range event)
+      (declare (ignore ambush))
+      (when damage
+	(apply-damage object damage))
+      t)))
+
 (defmethod on-game-event ((object md2-mesh) (event update-visibility))
   (with-accessors ((state state)
 		   (id id)) object
     (flet ((check (key entity)
 	     (declare (ignore key))
-	     (when (and (not (= id (id entity)))
-			(find-if #'(lambda (a) (= id (id a))) (visible-players entity)))
+	     (when (find-if #'(lambda (a) (= id (id a))) (visible-players entity))
 	       (setf (renderp object) t)
 	       (return-from on-game-event nil))))
-	(setf (renderp object) nil)
-	(game-state:map-player-entities state #'(lambda (k v)
-						  (declare (ignore k))
-						  (update-visibility-cone v)))
-	(game-state:map-player-entities state #'check)
-	nil)))
+      (when (game-state:faction-ai-p state id)
+	(setf (renderp object) nil))
+      (game-state:map-player-entities state #'(lambda (k v)
+						(declare (ignore k))
+						(update-visibility-cone v)))
+      (game-state:map-player-entities state #'check)
+      nil)))
 
 (defun path->dir (path &key (start-index 0))
   (let* ((start      (ivec2 (elt (elt path start-index) 0)
@@ -564,6 +573,57 @@
 	(send-refresh-toolbar-event)
 	nil))))
 
+(defun blood-splill-level (damage max-damage)
+  (cond
+    ((< (/ damage max-damage) 0.2)
+     #'particles:make-blood-level-0)
+    ((<= 0.2 (/ damage max-damage) 0.7)
+     #'particles:make-blood-level-1)
+    ((> (/ damage max-damage) 0.7)
+     #'particles:make-blood-level-2)))
+
+(defmethod apply-damage ((object md2-mesh) damage)
+    (with-accessors ((ghost ghost)
+		     (id id)
+		     (state state)
+		     (pos pos)
+		     (dir dir)
+		     (aabb aabb)
+		     (compiled-shaders compiled-shaders)
+		     (current-action current-action)
+		     (cycle-animation cycle-animation)
+		     (stop-animation stop-animation)) object
+      (with-accessors ((recurrent-effects recurrent-effects)
+		       (status status)
+		       (current-damage-points current-damage-points)) ghost
+	(when (not (entity-dead-p object))
+	  (if (null damage)
+	      (billboard:apply-tooltip object
+	       			   (format nil "miss")
+	       			   :color billboard:+damage-color+
+	       			   :font-type gui:+tooltip-font-handle+)
+
+	      (progn
+		(setf current-damage-points (d- current-damage-points damage))
+		(if (entity-dead-p object)
+		    (set-death-status object)
+		    (let ((blood (funcall (blood-splill-level damage (character:actual-damage-points ghost))
+					  (aabb-center aabb)
+					  dir
+					  compiled-shaders)))
+		      (game-state:with-world (world state)
+			(world:push-entity world blood))
+		      (setf current-action  :pain)
+		      (set-animation object :pain)
+		      (setf stop-animation nil)
+		      (setf cycle-animation nil)))
+		(billboard:apply-tooltip object
+					 (format nil
+						 +standard-float-print-format+
+						 (d- damage))
+					 :color billboard:+damage-color+
+					 :font-type gui:+tooltip-font-handle+)))))))
+
 (defmethod traverse-recurrent-effects ((object md2-mesh))
   (with-accessors ((ghost ghost)
 		   (id id)
@@ -621,6 +681,9 @@
 
 (defmethod set-death-status ((object md2-mesh))
   (with-accessors ((ghost ghost)
+		   (aabb aabb)
+		   (state state)
+		   (compiled-shaders compiled-shaders)
 		   (current-action current-action)
 		   (cycle-animation cycle-animation)
 		   (stop-animation stop-animation)) object
@@ -631,7 +694,24 @@
       (set-animation object :death)
       (setf stop-animation nil)
       (setf cycle-animation nil)
-      (setf current-damage-points (d 0.0)))))
+      (setf current-damage-points (d 0.0))
+      (game-state:with-world (world state)
+	(world:push-entity world
+			   (particles:make-blood-death (aabb-center aabb)
+						       +y-axe+
+						       compiled-shaders))))))
+
+(defmethod set-attack-status ((object md2-mesh))
+  (with-accessors ((ghost ghost)
+		   (current-action current-action)
+		   (cycle-animation cycle-animation)
+		   (stop-animation stop-animation)) object
+    (with-accessors ((status status)
+		     (current-damage-points current-damage-points)) ghost
+      (setf current-action  :attack)
+      (set-animation object :attack)
+      (setf stop-animation nil)
+      (setf cycle-animation nil))))
 
 (defgeneric push-errors (object the-error))
 
@@ -1056,7 +1136,12 @@
       (:death
        ;; nothing to do
        )
-
+      (:attack
+       (when stop-animation
+	 (setf cycle-animation t)
+	 (setf stop-animation nil)
+	 (set-animation object :stand :recalculate nil)
+	 (setf (current-action object) :stand)))
       (:rotate
        (update-visibility-cone object))
       (:move

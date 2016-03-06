@@ -50,11 +50,13 @@
 
 (define-constant +tooltip-revive-char+          "$"                   :test #'string=)
 
+(define-constant +tooltip-surprise-attack-char+ "???"                 :test #'string=)
+
 (define-constant +impostor-default-size+        512                   :test #'=)
 
 (defclass tooltip (triangle-mesh inner-animation)
   ((duration
-    :initform 3.0
+    :initform (lcg-next-in-range 3.0 4.0)
     :initarg  :duration
     :accessor duration)
    (gravity
@@ -123,31 +125,32 @@
     (declare (list triangles))
     (with-camera-view-matrix (camera-vw-matrix renderer)
       (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	(gl:enable :blend)
-	(gl:blend-func :src-alpha :one-minus-src-alpha)
-	(use-program compiled-shaders :tooltip)
-	(gl:active-texture :texture0)
-	(texture:bind-texture texture-object)
-	(uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
-	(uniformf  compiled-shaders :duration duration)
-	(uniformf  compiled-shaders :vert-displacement-speed +tooltip-v-speed+)
-	(uniformf  compiled-shaders :time   el-time)
-	(uniformf  compiled-shaders :gravity gravity)
-	(uniformfv compiled-shaders :mult-color font-color)
-	(uniform-matrix compiled-shaders
-			:post-scaling 4
-			(vector (scale scaling))
-			nil)
-	(uniform-matrix compiled-shaders
-			:modelview-matrix 4
-			(vector (matrix* camera-vw-matrix
-					 (elt view-matrix  0)
-					 (elt model-matrix 0)))
-			nil)
-	(uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
-	(gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-	(gl:draw-arrays :triangles 0 (* 3 (length triangles)))
-	(gl:disable :blend)))))
+	(gl:depth-mask :false)
+	(cl-gl-utils:with-blending
+	  (gl:blend-func :src-alpha :one-minus-src-alpha)
+	  (use-program compiled-shaders :tooltip)
+	  (gl:active-texture :texture0)
+	  (texture:bind-texture texture-object)
+	  (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+	  (uniformf  compiled-shaders :duration duration)
+	  (uniformf  compiled-shaders :vert-displacement-speed +tooltip-v-speed+)
+	  (uniformf  compiled-shaders :time   el-time)
+	  (uniformf  compiled-shaders :gravity gravity)
+	  (uniformfv compiled-shaders :mult-color font-color)
+	  (uniform-matrix compiled-shaders
+			  :post-scaling 4
+			  (vector (scale scaling))
+			  nil)
+	  (uniform-matrix compiled-shaders
+			  :modelview-matrix 4
+			  (vector (matrix* camera-vw-matrix
+					   (elt view-matrix  0)
+					   (elt model-matrix 0)))
+			  nil)
+	  (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+	  (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+	  (gl:draw-arrays :triangles 0 (* 3 (length triangles))))
+	(gl:depth-mask :true)))))
 
 (defun make-tooltip (label pos shaders
 		     &key
@@ -167,25 +170,34 @@
 
 (defgeneric apply-tooltip (object label &key color))
 
-(defmethod apply-tooltip ((object mesh:triangle-mesh) label
-			  &key
-			    (color +damage-color+)
-			    (font-type gui:+default-font-handle+)
-			    (gravity 1.0))
-  (with-accessors ((ghost ghost)
-		   (id id)
-		   (state state)) object
-    (with-accessors ((recurrent-effects recurrent-effects)
-		     (immune-poison-status immune-poison-status)
-		     (status status)) ghost
-      (game-state:with-world (world state)
-	(let ((tooltip (billboard:make-tooltip label
-					       (aabb-top-center (aabb object))
-					       (compiled-shaders object)
-					       :color color
-					       :font-type font-type
-					       :gravity   gravity)))
-	  (world:push-entity world tooltip))))))
+(let ((scale 0.0))
+  (defmethod apply-tooltip ((object mesh:triangle-mesh) label
+			    &key
+			      (color +damage-color+)
+			      (font-type gui:+default-font-handle+)
+			      (gravity 1.0))
+    (with-accessors ((ghost ghost)
+		     (id id)
+		     (state state)) object
+      (with-accessors ((recurrent-effects recurrent-effects)
+		       (immune-poison-status immune-poison-status)
+		       (status status)) ghost
+	(setf scale (d+ scale 0.01))
+	(when (d> scale 2.0)
+	  (setf scale 0.0))
+	(game-state:with-world (world state)
+	  (let* ((camera             (camera world))
+		 (camera-pos         (pos camera))
+		 (mesh-pos           (aabb-top-center (aabb object)))
+		 (mesh-to-camera-vec (normalize (vec- camera-pos mesh-pos)))
+		 (displ              (vec* mesh-to-camera-vec scale))
+		 (tooltip (billboard:make-tooltip label
+						  (vec+ mesh-pos displ)
+						  (compiled-shaders object)
+						  :color color
+						  :font-type font-type
+						  :gravity   gravity)))
+	    (world:push-entity world tooltip)))))))
 
 (defun get-bitmap-min-x-opaque (pixmap)
   (let ((min (matrix:width pixmap)))
@@ -204,7 +216,7 @@
     max))
 
 
-(defclass tree-impostor-shell (triangle-mesh-shell inner-animation) ())
+(defclass tree-impostor-shell (triangle-mesh-shell) ())
 
 (defmethod initialize-instance :after ((object tree-impostor-shell) &key &allow-other-keys)
   (setf (start-time object) (d (lcg-next-upto 5))))

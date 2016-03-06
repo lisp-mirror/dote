@@ -5,4 +5,5 @@
   portrait    generate
   first-name  generate
   last-name   generate
-  damage-points 10)
+  damage-points 10
+  level      generate)

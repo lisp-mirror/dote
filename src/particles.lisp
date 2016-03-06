@@ -64,6 +64,10 @@
     :initform '()
     :initarg  :transform-vbo-output
     :accessor transform-vbo-output)
+   (particle-min-y
+    :initform 0.0
+    :initarg  :particle-min-y
+    :accessor particle-min-y)
    (particle-width
     :initform 1.0
     :initarg  :particle-width
@@ -412,6 +416,7 @@
 		   (vbo                        vbo)
 		   (particle-width             particle-width)
 		   (particle-height            particle-height)
+		   (renderer-data-texture      renderer-data-texture)
 		   (transform-vao              transform-vao)
 		   (transform-vbo-input        transform-vbo-input)
 		   (particles                  particles)
@@ -439,6 +444,11 @@
       (gl:buffer-data :array-buffer :dynamic-draw particles-output-positions)
       (gl:vertex-attrib-pointer +attribute-center-pos-location+ 3 :float 0 0 (mock-null-pointer))
       (gl:enable-vertex-attrib-array +attribute-center-pos-location+)
+      ;; texture
+      (gl:bind-buffer :array-buffer (vbo-texture-buffer-handle vbo))
+      (gl:buffer-data :array-buffer :static-draw renderer-data-texture)
+      (gl:vertex-attrib-pointer +attribute-texture-location+ 2 :float 0 0 (mock-null-pointer))
+      (gl:enable-vertex-attrib-array +attribute-texture-location+)
       ;; delay
       (gl:bind-buffer :array-buffer (vbo-delay-buffer-handle vbo))
       (gl:buffer-data :array-buffer :dynamic-draw particles-delay)
@@ -453,13 +463,14 @@
       (gl:bind-buffer :array-buffer (vbo-scaling-buffer-handle vbo))
       (gl:buffer-data :array-buffer :dynamic-draw particles-scaling)
       (gl:vertex-attrib-pointer +attribute-scaling-location+ 1 :float 0 0 (mock-null-pointer))
-      (gl:enable-vertex-attrib-array +attribute-scaling-location+))
-    object))
+      (gl:enable-vertex-attrib-array +attribute-scaling-location+)
+      object)))
 
 (defmethod calculate ((object particles-cluster) dt)
   (with-accessors ((integrator-shader integrator-shader)
 		   (compiled-shaders           compiled-shaders)
 		   (transform-vao              transform-vao)
+		   (particle-min-y             particle-min-y)
 		   (vbo                        vbo)
 		   (particles                  particles)
 		   (particles-positions        particles-positions)
@@ -476,6 +487,7 @@
       (bind-computational-buffers object)
       (use-program compiled-shaders integrator-shader)
       (uniformf compiled-shaders :dt   dt)
+      (uniformf compiled-shaders :min-y particle-min-y)
       (cl-gl-utils:with-rasterizer-discard
 	(%gl:bind-buffer-base :transform-feedback-buffer
 			      0
@@ -526,28 +538,38 @@
 
 (defclass blood (particles-cluster) ())
 
-(defmethod initialize-instance :after ((object blood) &key &allow-other-keys)
+(defmethod initialize-instance :after ((object blood)
+				       &key
+					 (texture (texture:get-texture
+						   texture:+blood-particle+))
+					 &allow-other-keys)
   (setf (use-blending-p object) t)
-  (setf (integrator-shader object) :blood-integrator))
+  (setf (integrator-shader object) :blood-integrator)
+  (setf (texture-object object) texture))
 
 (defmethod render ((object blood) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((vbo vbo)
 		   (vao vao)
+		   (texture-object texture-object)
 		   (projection-matrix projection-matrix)
 		   (model-matrix model-matrix)
 		   (view-matrix view-matrix)
 		   (compiled-shaders compiled-shaders)
 		   (triangles triangles)) object
+    (declare (texture:texture texture-object))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
     (when (> (length triangles) 0)
       (with-camera-view-matrix (camera-vw-matrix renderer)
 	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	  (with-blending
+	  (cl-gl-utils:with-blending
 	    (gl:blend-equation :func-subtract)
-	    (gl:blend-func  :dst-alpha :src-alpha)
+	    (gl:blend-func :src-alpha :one-minus-src-alpha)
 	    (use-program compiled-shaders :particles-blood)
+	    (gl:active-texture :texture0)
+	    (texture:bind-texture texture-object)
+	    (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
 	    (uniform-matrix compiled-shaders :modelview-matrix 4
 			    (vector (matrix* camera-vw-matrix
 					     (elt view-matrix 0)
@@ -555,7 +577,8 @@
 			    nil)
 	    (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
 	    (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-	    (gl:draw-arrays :triangles 0 (* 3 (length triangles)))))))))
+	    (gl:draw-arrays :triangles 0 (* 3 (length triangles)))
+	    (gl:blend-equation :func-add)))))))
 
 (defun gaussian-velocity-distribution-fn (dir max delta max-opening)
   "Assuming dir normalized"
@@ -582,9 +605,11 @@
 
 (defun make-particles-cluster (class particles-count shaders-dict
 			       &key
+				 (texture     (texture:get-texture
+					       texture:+blood-particle+))
 				 (v0-fn       #'(lambda () (vec 0.0 40.0 0.0)))
 				 (mass-fn     #'(lambda () 1.0))
-				 (position-fn #'(lambda () (vec 0.0 11.0 0.0)))
+				 (position-fn #'(lambda () (vec 0.0 0.1 0.0)))
 				 (life-fn     #'(lambda () 10.1))
 				 (delay-fn    #'(lambda () 10.0))
 				 (scaling-fn  #'(lambda (particle dt)
@@ -592,7 +617,8 @@
 						  1.0))
 				 (width       1.0)
 				 (height      1.0)
-				 (pos         +zero-vec+))
+				 (pos         +zero-vec+)
+				 (min-y       0.0))
   (let* ((particles (loop repeat particles-count collect
 			 (make-particle :mass     (funcall mass-fn)
 					:v0       (funcall v0-fn)
@@ -601,7 +627,9 @@
 					:life     (funcall life-fn)
 					:delay    (funcall delay-fn))))
 	 (cluster  (make-instance class
+				  :texture           texture
 				  :pos               pos
+				  :particle-min-y    min-y
 				  :compiled-shaders  shaders-dict
 				  :particle-width    width
 				  :particle-height   height
@@ -613,6 +641,7 @@
 				    100
 				    compiled-shaders
 				    :pos     pos
+				    :min-y   (d- +zero-height+ (elt pos 1))
 				    :v0-fn   (gaussian-velocity-distribution-fn dir
 										2.0
 										1.0
@@ -628,6 +657,7 @@
 				    100
 				    compiled-shaders
 				    :pos     pos
+				    :min-y   (d- +zero-height+ (elt pos 1))
 				    :v0-fn   (gaussian-velocity-distribution-fn dir
 										2.0
 										1.0
@@ -643,16 +673,58 @@
 				    500
 				    compiled-shaders
 				    :pos     pos
+				    :min-y   (d- +zero-height+ (elt pos 1))
 				    :v0-fn   (gaussian-velocity-distribution-fn dir
 										3.0
 										1.0
-										(d/ +pi/2+ 3.0))
+										(d/ +pi/2+ 6.0))
 				    :mass-fn  #'(lambda () 1.0)
 				    :life-fn  (gaussian-distribution-fn 12.0 5.0)
 				    :delay-fn (gaussian-distribution-fn 0.0 1.1)
 				    :scaling-fn #'(lambda (p dt)
 						    (declare (ignore p dt))
-						    0.1)
+						    1.0)
 
-				    :width  1.0
-				    :height 1.0))
+				    :width  .1
+				    :height .1))
+
+(defun make-blood-death (pos dir compiled-shaders)
+  (particles:make-particles-cluster 'particles:blood
+				    1500
+				    compiled-shaders
+				    :pos     pos
+				    :min-y   (d- +zero-height+ (elt pos 1))
+				    :v0-fn   (gaussian-velocity-distribution-fn dir
+										3.0
+										1.0
+										(d/ +pi/2+ 3.0))
+				    :mass-fn  (gaussian-distribution-fn 1.0 .1)
+				    :life-fn  (gaussian-distribution-fn 12.0 5.0)
+				    :delay-fn (gaussian-distribution-fn 0.0 1.1)
+				    :scaling-fn #'(lambda (p dt)
+						    (declare (ignore p dt))
+						    1.0)
+
+				    :width  .1
+				    :height .1))
+
+(defun make-debris (pos dir num texture compiled-shaders)
+  (particles:make-particles-cluster 'particles:blood
+				    num
+				    compiled-shaders
+				    :texture texture
+				    :pos     pos
+				    :min-y   (d- +zero-height+ (elt pos 1))
+				    :v0-fn   (gaussian-velocity-distribution-fn dir
+										3.0
+										1.0
+										(d/ +pi/2+ 3.0))
+				    :mass-fn  (gaussian-distribution-fn 1.0 1.0)
+				    :life-fn  (gaussian-distribution-fn 12.0 5.0)
+				    :delay-fn (gaussian-distribution-fn 0.0 .0001)
+				    :scaling-fn #'(lambda (p dt)
+						    (declare (ignore p dt))
+						    1.0)
+
+				    :width  .1
+				    :height .1))

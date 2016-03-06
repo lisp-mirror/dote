@@ -176,6 +176,7 @@
 	     (effects         (%get-normal-fx-shuffled  template effects-no))
 	     (healing-effects (%get-healing-fx-shuffled template healing-effects-no))
 	     (sum-effects (sum-effects-mod template (list +effects+))))
+	(n-setf-path-value char-template (list +level+) (d ring-level))
 	(n-setf-path-value char-template (list +description+) +type-name+)
 	(n-setf-path-value template
 			   (list +decay+)

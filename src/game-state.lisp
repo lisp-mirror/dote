@@ -318,6 +318,8 @@
 
 (defgeneric move-map-state-entity (object entity from))
 
+(defgeneric clean-map-state-entity (object coord))
+
 (defgeneric approx-terrain-height@pos (object x z))
 
 (defgeneric path-same-ends-p (object start end))
@@ -325,6 +327,8 @@
 (defgeneric turn-on-fog (object))
 
 (defgeneric turn-off-fog (object))
+
+(defgeneric entity-next-p (object me other))
 
 (defmethod fetch-render-window ((object game-state))
   (and (window-id object)
@@ -574,6 +578,14 @@
     ;; finally set the value of the tile with the entity
     (setup-map-state-entity  object entity old-type old-occlusion)))
 
+(defmethod clean-map-state-entity ((object game-state) coord)
+  "Coord is #(x y), #(z x) actually"
+  (with-accessors ((map-state map-state)) object
+    (let* ((x    (elt coord 0))
+	   (y    (elt coord 1))
+	   (tile (make-instance 'map-state-element :occlude nil)))
+      (setf (matrix-elt map-state y x) tile))))
+
 (defmethod get-neighborhood ((object game-state) row column predicate
 			     &key (w-offset 2) (h-offset 2))
   (with-accessors ((map-state map-state)) object
@@ -588,7 +600,8 @@
       results)))
 
 (defmethod neighborhood-by-type ((object game-state) row column type
-				     &key (w-offset 2) (h-offset 2))
+				 &key
+				   (w-offset 2) (h-offset 2))
   (get-neighborhood object row column
 		    #'(lambda (el pos)
 			(declare (ignore pos))
@@ -608,3 +621,12 @@
 
 (defmethod turn-off-fog ((object game-state))
   (setf (fog-density object) +density-no-fog+))
+
+(defmethod entity-next-p ((object game-state) (me entity) (other entity))
+  (let* ((position-matrix (map-utils:pos-entity-chunk->cost-pos (pos me))))
+    (not (misc:vector-empty-p  (get-neighborhood object
+						 (elt position-matrix 1)
+						 (elt position-matrix 0)
+						 #'(lambda (e p)
+						     (declare (ignore p))
+						     (= (entity-id e) (id other))))))))

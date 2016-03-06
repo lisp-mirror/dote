@@ -6,4 +6,5 @@
     last-name      generate
     portrait       generate
     weight         3
-    damage-points 10)
+    damage-points 10
+    level          generate)

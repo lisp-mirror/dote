@@ -114,6 +114,15 @@
       (write-sequence (pixmap->tga-file pixmap) stream))
     "blood-splat.tga"))
 
+(defun test-blood-particle (&optional (size pixmap::+default-size-pixmap-library+))
+  (let ((pixmap (pixmap::blood-particle size)))
+    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "blood-particle.tga")
+			    :direction :output
+ 			    :if-exists :supersede :if-does-not-exist :create
+ 			    :element-type +targa-stream-element-type+)
+      (write-sequence (pixmap->tga-file pixmap) stream))
+    "blood-particle.tga"))
+
 (defun test-half-moon ()
   (let ((pixmap (half-moon)))
     (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "half-moon.tga")
@@ -362,8 +371,11 @@
 		      test-sun
 		      test-sun-cheap
 		      test-dry-soil
-		      test-floor-fancy test-perlin-2d
-		      test-glass-tile test-blood-splat
+		      test-floor-fancy
+		      test-perlin-2d
+		      test-glass-tile
+		      test-blood-splat
+		      test-blood-particle
 		      test-perlin-3d-ref
 		      test-clouds
 		      test-wood-wall)))

@@ -1111,6 +1111,31 @@
 	 pixmap)
        "blood-splat"))))
 
+(defun blood-particle (size &key (gradient
+				  (make-gradient
+				   (make-gradient-color 0.0 #(0.58 0.0 0.0 .5))
+				   (make-gradient-color 0.2 #(0.50 0.0 0.0 .5)))))
+  (with-random-perlin-gradient-offset
+    (labels ((noise (x y range-01)
+	       (gen-fbm x y 6 1.0 1.0 0.5 2.0
+			:normalize t :range-0->1 range-01)))
+      (let* ((pixmap (with-standard-generated-pixmap-square (pixmap size)
+		       (let* ((dist (d+ (noise x y t)
+					(vec2-length (vec2- (vec2 x y) (vec2 0.5 0.5)))))
+			      (color (pick-color gradient
+						 (dlerp (smoothstep-interpolate 0.0 1.0 dist)
+							0.0 1.0))))
+			 color))))
+        (values pixmap "blood-particle")))))
+
+(defun test-blood-particle (&optional (size +default-size-pixmap-library+))
+  (let ((pixmap (blood-particle size)))
+    (with-open-file (stream (fs:file-in-package "blood-particle.tga") :direction :output
+ 			    :if-exists :supersede :if-does-not-exist :create
+ 			    :element-type +targa-stream-element-type+)
+      (write-sequence (pixmap->tga-file pixmap) stream))
+    t))
+
 (defun test-blood-splat (&optional (size +default-size-pixmap-library+))
   (let ((pixmap (blood-splat size)))
     (with-open-file (stream (fs:file-in-package "blood-splat.tga") :direction :output
@@ -1931,6 +1956,10 @@
 (alexandria:define-constant +skydome-width+  3600  :test #'=)
 
 (alexandria:define-constant +skydome-height+ 1350 :test #'=)
+
+;; (alexandria:define-constant +skydome-width+  360  :test #'=)
+
+;; (alexandria:define-constant +skydome-height+ 135 :test #'=)
 
 (defun hour->act-hour (h)
   (d- (desired h) 6.0))

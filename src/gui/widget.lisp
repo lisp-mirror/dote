@@ -16,13 +16,15 @@
 
 (in-package :widget)
 
-(alexandria:define-constant +texture-unit-overlay+      1     :test #'=)
+(alexandria:define-constant +texture-unit-overlay+             1           :test #'=)
 
-(alexandria:define-constant +portrait-size+            64.0   :test #'=)
+(alexandria:define-constant +portrait-size+                   64.0         :test #'=)
 
-(alexandria:define-constant +slots-per-page-side-size+  4     :test #'=)
+(alexandria:define-constant +slots-per-page-side-size+         4           :test #'=)
 
-(alexandria:define-constant +action-move+               :move :test #'eq)
+(alexandria:define-constant +action-move+                      :move       :test #'eq)
+
+(alexandria:define-constant +action-attack-short-range+        :attack-srg :test #'eq)
 
 (defparameter *square-button-size* (d/ (d *window-w*) 10.0))
 
@@ -514,11 +516,10 @@
     (hide win)
     (remove-child (parent win)
 		  ;;(make-instance (class-of win))
-		  (class-of win)
+		  win
 		  :key #'identity
 		  :test #'(lambda (a b)
-			    (declare (ignore a))
-			    (typep b (class-of win))))))
+			    (= (id a) (id b))))))
 
 (defun hide-and-remove-grandparent-cb (widget event)
   (declare (ignore event))
@@ -1916,6 +1917,14 @@
       (when bound-player
 	(setf selected-action +action-move+)))))
 
+(defun toolbar-attack-short-range-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (toolbar) w
+    (with-accessors ((bound-player bound-player)
+		     (selected-action selected-action)) toolbar
+      (when bound-player
+	(setf selected-action +action-attack-short-range+)))))
+
 (defun toolbar-zoom-in-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
@@ -2019,7 +2028,7 @@
     :initform (make-square-button (d* 3.0 *square-button-size*)
 				  *small-square-button-size*
 				  +attack-short-range-overlay-texture-name+
-				  nil ;; TODO callback
+				  #'toolbar-attack-short-range-cb
 				  :small t)
     :initarg  :b-attack-short
     :accessor b-attack-short)
@@ -3596,7 +3605,7 @@
     (hide win)
     (remove-child win
 		  (make-instance 'message-window)
-		  :key #'identity
+		  :key  #'identity
 		  :test #'(lambda (a b)
 			    (declare (ignore a))
 			    (typep b 'message-window)))))

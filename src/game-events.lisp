@@ -272,3 +272,15 @@
 (defevent wear-object-event (game-event-w-destination) ())
 
 (defevent unwear-object-event (game-event-w-destination) ())
+
+(defevent attack-melee-event (game-event-w-destination)
+  ((attacker-entity
+    :initform nil
+    :initarg  :attacker-entity
+    :accessor attacker-entity)))
+
+(defmacro check-event-targeted-to-me ((entity event) &body body)
+  `(if (= (identificable:id ,entity) (id-destination ,event))
+	 (progn
+	   ,@body)
+	 nil))

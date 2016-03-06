@@ -12,7 +12,7 @@ uniform float dt = 1.0;
 
 uniform vec3 gravity = vec3(0.0, -9.0, 0.0);
 
-uniform float min_y =   10.0;
+uniform float min_y =   0.0;
 
 out vec3 new_position;
 

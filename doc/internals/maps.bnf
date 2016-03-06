@@ -60,8 +60,8 @@ BUILDINGS-LEVEL                      := SET 'buildings-level' ( '(' RANDOM LIST-
 EXTERNAL-SCRIPT                      := LOAD FREE-STRING
 
 TREE-DEFINITION                      := GENERATE TREE-LABEL
-			      ( TREE-FROM-SCRIPT | TREE-FROM-FILE )
-      			      WITH-NORMALMAP-PARAMETERS
+			                 ( TREE-FROM-SCRIPT | TREE-FROM-FILE )
+      			                WITH-NORMALMAP-PARAMETERS
 
 TREE-FROM-FILE                       := FROM FILE-LABEL PATH
 

@@ -716,7 +716,9 @@
 
 (defgeneric decrement-move-points-wear (object))
 
-(defgeneric can-use-movement-points-p (object))
+(defgeneric decrement-move-points-attack-melee (object))
+
+(defgeneric can-use-movement-points-p (object &key minimum))
 
 (defgeneric calculate-cost-position (object))
 
@@ -729,6 +731,8 @@
 (defgeneric process-postponed-messages (object))
 
 (defgeneric set-death-status (object))
+
+(defgeneric set-attack-status (object))
 
 (defmethod remove-mesh-data ((object triangle-mesh))
   (setf (normals       object) nil
@@ -883,9 +887,14 @@
     (decf (character:current-movement-points (ghost object))
 	  +wear-object-entity-cost-cost+)))
 
-(defmethod can-use-movement-points-p ((object triangle-mesh))
+(defmethod decrement-move-points-attack-melee ((object triangle-mesh))
+  (when (> (character:current-movement-points (ghost object)) 0)
+    (decf (character:current-movement-points (ghost object))
+	  +attack-melee-cost+)))
+
+(defmethod can-use-movement-points-p ((object triangle-mesh) &key (minimum 0))
   (and (character:current-movement-points (ghost object))
-       (> (character:current-movement-points (ghost object)) 0)))
+       (> (character:current-movement-points (ghost object)) minimum)))
 
 (defmethod calculate-cost-position ((object triangle-mesh))
   (with-accessors ((pos pos)) object
@@ -2570,7 +2579,7 @@
 	  ,@body)
      (pop-matrix ,object :what ,what)))
 
-(defclass triangle-mesh-shell (triangle-mesh) ())
+(defclass triangle-mesh-shell (triangle-mesh inner-animation) ())
 
 (defmethod destroy ((object triangle-mesh-shell))
   "does nothing"
@@ -2666,7 +2675,40 @@
 (defun fill-shell-from-mesh-w-renderer-data (mesh &optional (type 'triangle-mesh-shell))
   (fill-mesh-data-w-renderer-data (make-instance type) mesh))
 
-(defclass tree-mesh-shell (triangle-mesh-shell inner-animation) ())
+(defmethod on-game-event ((object triangle-mesh-shell) (event game-event:attack-melee-event))
+  (game-event:check-event-targeted-to-me (object event)
+    (multiple-value-bind (damage ambush)
+	(battle-utils:defend-from-attack-short-range event)
+      (declare (ignore ambush))
+      (misc:dbg "damage shell ~a ~a" damage (character:current-damage-points (ghost object)))
+      (when damage
+	(apply-damage object damage))
+      t)))
+
+(defmethod apply-damage ((object triangle-mesh-shell) damage)
+  (with-accessors ((ghost ghost)
+		   (id id)
+		   (state state)
+		   (pos pos)
+		   (dir dir)
+		   (aabb aabb)
+		   (compiled-shaders compiled-shaders)) object
+    (with-accessors ((current-damage-points character:current-damage-points)) ghost
+      (when (not (entity-dead-p object))
+	(when (not (null damage))
+	  (setf current-damage-points (d- current-damage-points damage))
+	  (setf (fading-away-fn object) (standard-tremor-fn 20.0))
+	  (when (entity-dead-p object)
+	    (let ((cost-pos (map-utils:pos-entity-chunk->cost-pos pos)))
+	      (clean-map-state-entity state cost-pos)
+	      (game-state:with-world (world state)
+		(remove-entity-by-id (world:entities world) id))
+	      (set-minimum-cost-map-layer@ state (elt cost-pos 0) (elt cost-pos 1))
+	      (setf (renderp object) nil)
+	      (when (parent-labyrinth object)
+		(update-for-rendering (parent-labyrinth object))))))))))
+
+(defclass tree-mesh-shell (triangle-mesh-shell) ())
 
 (defmethod initialize-instance :after ((object tree-mesh-shell) &key &allow-other-keys)
   (setf (start-time object) (d (lcg-next-upto 5))))
@@ -2696,10 +2738,14 @@
 		   (triangles triangles)
 		   (material-params material-params)
 		   (el-time el-time)
-		   (fog-density fog-density)) object
+		   (fog-density fog-density)
+		   (animation-speed animation-speed)
+		   (fading-away-fn fading-away-fn)) object
     (declare (texture:texture texture-object))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
+    (declare (function fading-away-fn))
+    (declare (desired-type animation-speed el-time))
     (if (use-lod-p object 2.0 renderer)
 	(render impostor renderer)
 	(when (> (length triangles) 0)
@@ -2722,12 +2768,17 @@
 		(uniformf  compiled-shaders :time  el-time)
 		(uniformf  compiled-shaders :fog-density fog-density)
 		(uniform-matrix compiled-shaders :model-matrix 4 model-matrix nil)
-		(uniform-matrix compiled-shaders :modelview-matrix 4
-				(vector (matrix* camera-vw-matrix
-						 (elt view-matrix 0)
-						 (elt model-matrix 0)))
-				nil)
-		(uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
+		(multiple-value-bind (transformation duration)
+		    (funcall fading-away-fn object animation-speed)
+		  (declare (ignore duration))
+		  (declare (sb-cga:matrix transformation))
+		  (uniform-matrix compiled-shaders :modelview-matrix 4
+				  (vector (matrix* camera-vw-matrix
+						   (elt view-matrix 0)
+						   (elt model-matrix 0)
+						   transformation))
+				  nil))
+		(uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
 		(gl:bind-vertex-array (vao-vertex-buffer-handle vao))
 		(gl:draw-arrays :triangles 0 (* 3 (length triangles))))))
 	  (render-debug object renderer)))))

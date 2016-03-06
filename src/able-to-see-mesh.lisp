@@ -49,13 +49,23 @@
 (defmethod visible-players ((object able-to-see-mesh) &key (predicate #'identity))
   "A list containing all visible pc satisfing predicate"
   (with-accessors ((dir dir)
-		   (pos pos)) object
-    ;(misc:dbg "~a" (visibility-cone object))
-    (loop for ent being the hash-value in (game-state:player-entities (state object))
-	 when (and (other-visible-p object ent)
-		   (funcall predicate ent))
-	 collect
-       ent)))
+		   (pos pos)
+		   (id id)
+		   (state state)) object
+    ;;(misc:dbg "~a" (visibility-cone object))
+    (let ((others (if (faction-player-p state id)
+		      (game-state:ai-entities     state)
+		      (game-state:player-entities state)))
+	  (mines  (if (faction-player-p state id)
+		      (game-state:player-entities state)
+		      (game-state:ai-entities     state))))
+      (nconc
+       (loop for ent being the hash-value in others
+	  when (and (other-visible-p object ent)
+		    (funcall predicate ent))
+	  collect ent)
+       (loop for ent being the hash-value in mines
+	    collect ent)))))
 
 (defmethod other-visible-p ((object able-to-see-mesh) (target triangle-mesh))
   (let ((in-cone-p (other-visible-cone-p object target)))

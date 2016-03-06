@@ -65,6 +65,7 @@
    :+open-terrain-cost+
    :+rotate-entity-cost-cost+
    :+wear-object-entity-cost-cost+
+   :+attack-melee-cost+
    :+default-size+
    :+map-max-size+
    :+pi+
@@ -527,7 +528,10 @@
    :start-time
    :el-time
    :animation-speed
-   :removeable-from-world))
+   :fading-away-fn
+   :standard-tremor-fn
+   :removeable-from-world
+   :apply-damage))
 
 (defpackage :ivec2
   (:use :cl
@@ -1488,6 +1492,7 @@
    :dry-soil
    :soil
    :blood-splat
+   :blood-particle
    :voronoized-starfish
    :voronoized-graal
    :glass-tile
@@ -1725,6 +1730,7 @@
    :+decal-wall-1+
    :+decal-wall-2+
    :+blood-splat+
+   :+blood-particle+
    :+rock-1+
    :+rock-2+
    :+sand+
@@ -1945,16 +1951,20 @@
    :set-map-state-occlusion
    :setup-map-state-entity
    :move-map-state-entity
+   :clean-map-state-entity
    :get-neighborhood
    :neighborhood-by-type
    :path-same-ends-p
    :turn-on-fog
-   :turn-off-fog))
+   :turn-off-fog
+   :entity-next-p))
 
 (defpackage :game-event
   (:use
    :cl
    :alexandria
+   :config
+   :constants
    :misc
    :num)
   (:shadowing-import-from :misc :random-elt :shuffle)
@@ -2153,7 +2163,13 @@
    :register-for-immune-berserk-event
    :unregister-for-immune-berserk-event
    :propagate-immune-berserk-event
-   :make-immune-berserk-event))
+   :make-immune-berserk-event
+   :attack-melee-event
+   :attacker-entity
+   :register-for-attack-melee-event
+   :unregister-for-attack-melee-event
+   :propagate-attack-melee-event
+   :check-event-targeted-to-me))
 
 (defpackage :basic-interaction-parameters
   (:use :cl
@@ -2534,7 +2550,8 @@
    :calculate-randomized-damage-points
    :params->np-character
    :item->player-character-slot
-   :item->available-player-character-slot))
+   :item->available-player-character-slot
+   :worn-weapon))
 
 (defpackage :random-armor
   (:use :cl
@@ -2989,6 +3006,7 @@
    :traverse-recurrent-effects
    :process-postponed-messages
    :set-death-status
+   :set-attack-status
    :skydome
    :texture-clouds
    :texture-smoke
@@ -3032,6 +3050,7 @@
    :decrement-move-points-rotate
    :decrement-move-points-entering-tile
    :decrement-move-points-wear
+   :decrement-move-points-attack-melee
    :can-use-movement-points-p
    :calculate-cost-position))
 
@@ -3190,7 +3209,9 @@
   (:shadowing-import-from :sb-cga :rotate)
   (:export
    :+recover-from-faint-dmg-fraction+
-   :attack))
+   :send-attack-melee-event
+   :defend-from-attack-short-range
+   :attack-damage))
 
 ;; UI
 
@@ -3338,6 +3359,7 @@
 	:gui)
   (:export
    :+action-move+
+   :+action-attack-short-range+
    :widget
    :x
    :y
@@ -3436,6 +3458,7 @@
    :+tooltip-immune-berserk-char+
    :+tooltip-heal-char+
    :+tooltip-revive-char+
+   :+tooltip-surprise-attack-char+
    :tooltip
    :duration
    :make-tooltip
@@ -3510,6 +3533,7 @@
    :highlight-tile-screenspace
    :highlight-path-costs-space
    :pick-player-entity
+   :pick-any-entity
    :pick-pointer-position
    :pick-height-terrain
    :all-furniture-bags-not-empty-p
@@ -3531,7 +3555,8 @@
    :set-window-accept-input
    :post-entity-message
    :point-to-entity-and-hide-cb
-   :point-camera-to-entity))
+   :point-camera-to-entity
+   :add-ai-opponent))
 
 (defpackage :terrain-chunk
   (:use :cl
@@ -3595,7 +3620,9 @@
    :make-particles-cluster
    :make-blood-level-0
    :make-blood-level-1
-   :make-blood-level-2))
+   :make-blood-level-2
+   :make-blood-death
+   :make-debris))
 
 (defpackage :md2-mesh
   (:nicknames :md2)

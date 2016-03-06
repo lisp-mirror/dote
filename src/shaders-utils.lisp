@@ -565,13 +565,15 @@ active program (set by sdk2.kit:use-program)."
 		:fragment-shader ,(get-shader-source "tooltip.frag")))
     (:particles-blood
      (:uniforms :modelview-matrix
-		:proj-matrix)
+		:proj-matrix
+		:texture-object)
       (:shaders :vertex-shader   ,(get-shader-source "particle-blood.vert")
 		:fragment-shader ,(get-shader-source "particle-blood.frag")))
 
     ;;;;; transform feedback
     (:blood-integrator
-     (:uniforms :dt)
+     (:uniforms :dt
+		:min-y)
      (:feedback-shaders :vertex-shader ,(get-shader-source "particle-blood-feedback.vert")))))
 
 (defun compile-library ()

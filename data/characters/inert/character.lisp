@@ -5,4 +5,5 @@
     portrait   none
     first-name ""
     last-name  ""
-    weight     0)
+    weight     0
+    level      generate)

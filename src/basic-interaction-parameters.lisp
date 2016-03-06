@@ -265,7 +265,7 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass effect-parameters ()
     ((trigger
-      :initform :use
+      :initform +effect-when-used+
       :initarg  :trigger
       :accessor trigger)
      (duration
@@ -362,7 +362,7 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass healing-effect-parameters (parameters-with-chance parameters-with-target)
     ((trigger
-      :initform :use
+      :initform +effect-when-used+
       :initarg  :trigger
       :accessor trigger)
      (duration
@@ -429,7 +429,7 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass magic-effect-parameters (parameters-with-target)
     ((trigger
-      :initform :use
+      :initform +effect-when-used+
       :initarg  :trigger
       :accessor trigger)
      (spell-id
@@ -463,7 +463,7 @@
       :initarg  :points-per-turn
       :accessor  points-per-turn)
      (trigger
-      :initform :use
+      :initform +effect-when-used+
       :initarg  :trigger
       :accessor trigger)))
 
@@ -525,7 +525,7 @@
       :initarg  :points
       :accessor  points)
      (trigger
-      :initform :use
+      :initform +effect-when-used+
       :initarg  :trigger
       :accessor trigger)))
 

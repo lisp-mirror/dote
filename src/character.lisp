@@ -132,12 +132,12 @@
     :type integer)
    (damage-points
     :initarg :damage-points
-    :initform 0
+    :initform 0.0
     :accessor damage-points
     :type integer)
    (current-damage-points
     :initarg :current-damage-points
-    :initform 0
+    :initform 0.0
     :accessor current-damage-points
     :type integer)
    (level
@@ -927,6 +927,8 @@
 
 (defgeneric item->available-player-character-slot (object item))
 
+(defgeneric worn-weapon (object))
+
 (defmethod random-fill-slots ((object player-character) capital characteristics)
   (loop for charact in characteristics do
        (when (> capital 0)
@@ -1095,6 +1097,15 @@
 		(if (null right-hand)
 		    'character:right-hand
 		    nil)))))))
+
+(defmethod worn-weapon ((object player-character))
+  (cond
+    ((weaponp (left-hand object))
+     (left-hand object))
+    ((weaponp (right-hand object))
+     (right-hand object))
+    (t
+     nil)))
 
 (defmacro gen-actual-characteristic (name)
   (let ((fn       (format-fn-symbol t "actual-~a" name))

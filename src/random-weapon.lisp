@@ -192,6 +192,7 @@
 	     (weapon-decay       (calculate-decay-points weapon-level))
 	     (effects-no         (number-of-effects weapon-level))
 	     (healing-effect-no  (number-of-healing-effects weapon-level effects-no)))
+	(n-setf-path-value char-template (list +level+) (d weapon-level))
 	(cond
 	  ((plist-path-value template (list +can-cut+))
 	   (n-setf-path-value char-template (list +description+) +sword-type-name+)

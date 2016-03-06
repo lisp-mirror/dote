@@ -216,7 +216,6 @@
     (misc:dbg " end turn ~a ~a" (type-of object) (type-of event))
     (remove-entity-if (entities object) #'(lambda (a) (typep a 'billboard:tooltip)))
     (remove-entity-if (entities object) #'(lambda (a)
-					    (misc:dbg "type ~a" (type-of a))
 					    (and (typep a 'particles:particles-cluster)
 						 (removeable-from-world a))))
     (remove-entity-if (gui object) #'(lambda (a) (typep a 'widget:message-window)))
@@ -245,7 +244,9 @@
 
 (defgeneric highlight-path-costs-space (object renderer path))
 
-(defgeneric pick-player-entity (object renderer x y))
+(defgeneric pick-player-entity (object renderer x y &key bind))
+
+(defgeneric pick-any-entity (object renderer x y))
 
 (defgeneric pick-height-terrain (object x z))
 
@@ -277,6 +278,8 @@
 (defgeneric post-entity-message (object entity text &rest actions))
 
 (defgeneric point-camera-to-entity (object entity))
+
+(defgeneric add-ai-opponent (object type gender))
 
 (defmethod iterate-quad-tree ((object world) function probe)
   (quad-tree:iterate-nodes-intersect (entities object)
@@ -411,7 +414,8 @@
   (walk-quad-tree (object)
     (when (and (typep entity 'terrain-chunk:terrain-chunk)
 	       (insidep (aabb entity) (vec x +zero-height+ z)))
-      (return-from pick-height-terrain (terrain-chunk:approx-terrain-height entity x z)))))
+      (return-from pick-height-terrain (terrain-chunk:approx-terrain-height entity x z))))
+  (break))
 
 (defmethod highlight-tile-screenspace ((object world) renderer x y)
   "Coordinates in screen space"
@@ -455,7 +459,7 @@
 		       (return-from walking))))))))
        path))
 
-(defmethod pick-player-entity ((object world) renderer x y)
+(defmethod pick-player-entity ((object world) renderer x y &key (bind nil))
   "Coordinates in screen space"
   (with-accessors ((main-state main-state)
 		   (toolbar toolbar)) object
@@ -469,12 +473,33 @@
 		   (entity-id (entity-id-in-pos main-state x-cost y-cost)))
 	      ;; sync with toolbar...maybe better in main-window ?
 	      (when (valid-id-p entity-id)
-		(let ((entity (fetch-from-player-entities main-state entity-id)))
+		(let ((entity (or (fetch-from-player-entities main-state entity-id)
+				  (fetch-from-ai-entities main-state entity-id)))) ;; testing only
 		  (when entity
-		    (setf (selected-pc main-state) entity)
-		    (setf (widget:bound-player toolbar) entity)
-		    (widget:sync-with-player toolbar)
-		    (return-from pick-player-entity t)))))))))
+		    (when bind
+		      (setf (selected-pc main-state) entity)
+		      (setf (widget:bound-player toolbar) entity)
+		      (widget:sync-with-player toolbar))
+		    (return-from pick-player-entity entity)))))))))
+  nil)
+
+(defmethod pick-any-entity ((object world) renderer x y)
+  "Coordinates in screen space"
+  (with-accessors ((main-state main-state)
+		   (toolbar toolbar)) object
+    (walk-quad-tree-anyway (object)
+	(multiple-value-bind (picked cost-matrix-position matrix-position raw-position)
+	    (pick-pointer-position entity renderer x y)
+	  (declare (ignore raw-position matrix-position))
+	  (when picked
+	    (let* ((x-cost    (elt cost-matrix-position 0)) ; column
+		   (y-cost    (elt cost-matrix-position 1)) ; row
+		   (entity-id (entity-id-in-pos main-state x-cost y-cost)))
+	      ;; sync with toolbar...maybe better in main-window ?
+	      (when (valid-id-p entity-id)
+		(let ((entity (find-entity-by-id main-state entity-id)))
+		  (when entity
+		    (return-from pick-any-entity entity)))))))))
   nil)
 
 (defmethod selected-pc ((object world))
@@ -745,6 +770,8 @@
   (game-event:register-for-unwear-object-event               player)
   ;; visibility
   (game-event:register-for-update-visibility                 player)
+  ;; attack
+  (game-event:register-for-attack-melee-event                player)
   ;; events registration ends here
   (game-state:place-player-on-map (main-state object)        player faction pos)
   (push-interactive-entity object                            player faction :occlude))
@@ -790,3 +817,53 @@
       (drag-camera-to camera (vec+ (aabb-p2 (aabb entity))
 				   (vec* (vec-negate (dir camera))
 					 +camera-point-to-entity-dir-scale+))))))
+
+(defun previews-path (type gender)
+  (let ((re (text-utils:strcat
+	     (ecase type
+	       (:warrior
+		+model-preview-warrior-re+)
+	       (:archer
+		+model-preview-archer-re+)
+	       (:wizard
+		+model-preview-wizard-re+)
+	       (:healer
+		+model-preview-healer-re+)
+	       (:ranger
+		+model-preview-ranger-re+))
+	     (ecase gender
+	       (:male
+		"-male")
+	       (:female
+		"-female"))
+	     +model-preview-ext-re+)))
+    (mapcar #'(lambda (a) (res:strip-off-resource-path +human-player-models-resource+ a))
+	    (fs:search-matching-file (resources-utils:get-resource-file
+				      ""
+				      +human-player-models-resource+)
+				     :name re))))
+
+(defmethod add-ai-opponent ((object world) type gender)
+  (with-accessors ((main-state main-state)) object
+    (let ((preview-paths  (previews-path type gender) gender)
+	  (ghost          (ecase type
+			    (:warrior
+			     (make-warrior :human)))))
+      ;; copy some new points to current
+      (setf (current-damage-points   ghost) (damage-points   ghost))
+      (setf (current-movement-points ghost) (movement-points ghost))
+      (setf (current-magic-points    ghost) (magic-points    ghost))
+      ;; setup model
+      (let* ((dir (text-utils:strcat (fs:path-first-element (first preview-paths))
+				  fs:*directory-sep*))
+	     (model (md2:load-md2-player ghost
+					 dir
+					 (compiled-shaders object)
+					 +ai-player-models-resource+))
+	     (portrait-texture (texture:gen-name-and-inject-in-database
+					(texture:clone (texture:get-texture gui:+portrait-unknown-texture-name+)))))
+	(pixmap:sync-data-to-bits portrait-texture)
+	(texture:prepare-for-rendering portrait-texture)
+	(setf (character:model-origin-dir ghost) dir)
+	(setf (portrait (entity:ghost model)) portrait-texture)
+	(world:place-player-on-map object  model game-state:+npc-type+ #(0 0))))))

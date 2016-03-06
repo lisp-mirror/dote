@@ -6,4 +6,5 @@
     first-name  generate
     last-name   generate
     weight      1
-    damage-points 10)
+    damage-points 10
+    level      generate)

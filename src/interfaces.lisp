@@ -155,6 +155,27 @@
    (animation-speed
     :initform 0.15
     :initarg :animation-speed
-    :accessor animation-speed)))
+    :accessor animation-speed)
+   (fading-away-fn
+    :initform #'(lambda (a b) (declare (ignore a b)) (values (sb-cga:identity-matrix) -1.0))
+    :initarg :fading-away-fn
+    :accessor fading-away-fn)))
+
+(defun standard-tremor-fn (duration)
+  (let ((duration duration))
+    #'(lambda (entity dt)
+	(declare (ignore entity))
+	(when dt
+	  (setf duration (num:d- duration dt)))
+	(let ((delta (if (num:d< duration 0.0)
+			 0.0
+			 (num:d/ +terrain-chunk-tile-size+ 30.0))))
+	  (values
+	   (sb-cga:translate (sb-cga:vec (num:lcg-next-in-range (num:d- delta) delta)
+					 0.0
+					 0.0))
+	   duration)))))
 
 (defgeneric removeable-from-world (object))
+
+(defgeneric apply-damage (object damage))

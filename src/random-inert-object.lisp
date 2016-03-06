@@ -31,7 +31,8 @@
 					    +maximum-level+
 					    +minimum-damage-point+
 					    +maximum-damage-point+
-					    (d/ (d level) (d* 5.0 (d +maximum-level+))))))
+					    (d/ (d level) (d* 5.0 (d +maximum-level+)))))
+  (setf (current-damage-points character) (damage-points character)))
 
 (defun calculate-level (map-level)
   (alexandria:clamp map-level 1 3))
@@ -51,6 +52,7 @@
   (with-character-parameters (char-template character-file)
     (with-interaction-parameters (template interaction-file)
       (let ((object-level (calculate-level map-level)))
+	(n-setf-path-value char-template (list +level+) (d object-level))
 	(setf template (remove-generate-symbols template))
 	(let ((object-character (params->np-character char-template)))
 	  (setf (basic-interaction-params object-character) template)

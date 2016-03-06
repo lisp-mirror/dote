@@ -162,6 +162,7 @@
 	     (healing-effects-no (number-of-healing-effects elm-level effects-no))
 	     (effects         (%get-normal-fx-shuffled  template effects-no))
 	     (healing-effects (%get-healing-fx-shuffled template healing-effects-no)))
+	(n-setf-path-value char-template (list +level+) (d elm-level))
 	(n-setf-path-value char-template (list +description+) +type-name+)
 	(n-setf-path-value template
 			   (list +decay+)

@@ -365,6 +365,8 @@
 	  (setf num:*lcg-seed* (num:string-fnv-hash-32 (third body)))
 	  (setf *game-hour* (num:lcg-next-upto 24)
 		*raw-seed*  (third body))
+	  (when config:+debug-mode+
+	    (misc:dbg "hour ~a" *game-hour*))
 	  (branch-generate (subseq body 3)))
 	(setup-floor)
 	(limited-progress)
@@ -483,6 +485,7 @@
 					    :+decal-wall-1+
 					    :+decal-wall-2+
 					    :+blood-splat+
+					    :+blood-particle+
 					    :+rock-1+
 					    :+rock-2+
 					    :+sand+

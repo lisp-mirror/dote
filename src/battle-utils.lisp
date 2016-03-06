@@ -47,19 +47,30 @@
 	(max-damage (d+ attack-dmg bonus-attack-dmg)))
     (standard-battle-gaussian-fn max-damage sigma)))
 
-(defun attack (attack-dmg    bonus-attack-dmg
-	       attack-chance bonus-attack-chance
-	       weapon-level
-	       dodge-chance
-	       &optional (shield-level nil) (armor-level nil))
+(defun attack-damage (attack-dmg    bonus-attack-dmg
+		      attack-chance bonus-attack-chance
+		      weapon-level
+		      dodge-chance
+		      &optional
+			(shield-level nil)
+			(armor-level  nil)
+			(ambush       nil))
   (if (pass-d100.0 (max (d- (d+ attack-chance bonus-attack-chance)
 			    dodge-chance)
 			0.0))
-      (let ((gaussian-fn (attack-gaussian-fn attack-dmg
-					     bonus-attack-dmg
-					     weapon-level
-					     shield-level
-					     armor-level)))
+      (let* ((actual-shield-level (and shield-level
+				       (if ambush
+					   (max 0.0 (d- shield-level 1.0))
+					   shield-level)))
+	     (actual-armor-level (and armor-level
+				      (if ambush
+					  (max 0.0 (d- armor-level 1.0))
+					  armor-level)))
+	     (gaussian-fn (attack-gaussian-fn attack-dmg
+					      bonus-attack-dmg
+					      weapon-level
+					      actual-shield-level
+					      actual-armor-level)))
 	(funcall gaussian-fn
 		 (d- 100.0 (lcg-next-upto 100.0))   ; attacker
 		 (d- 100.0 (lcg-next-upto 100.0)))) ; defender
@@ -82,13 +93,13 @@
       (fmt-comment "shield-level: ~a~%" shield-level)
       (fmt-comment "armor-level : ~a~%" armor-level)
       (let ((all-damages (loop repeat count collect
-			      (attack attack-dmg
-				      0.0
-				      100.0 0.0
-				      weapon-level
-				      0.0
-				      shield-level
-				      armor-level))))
+			      (attack-damage attack-dmg
+					     0.0
+					     100.0 0.0
+					     weapon-level
+					     0.0
+					     shield-level
+					     armor-level))))
 	(fmt-comment "Hit with damage above than 80%: ~,2@f~%"
 		     (- 100 (count-less-than all-damages 0.8)))
 	(fmt-comment "Hit with damage below than 80%: ~,2@f~%"
@@ -97,3 +108,112 @@
 		     (count-less-than all-damages 0.5))
 	(fmt-comment "Hit with damage below than 20%: ~,2@f~%"
 		     (count-less-than all-damages 0.2))))))
+
+(defun send-attack-melee-event (attacker defender)
+  (when (and (mesh:can-use-movement-points-p attacker :minimum +attack-melee-cost+)
+	     (game-state:entity-next-p (entity:state attacker) attacker defender)
+	     (map-utils:facingp (mesh:calculate-cost-position attacker)
+				(entity:dir attacker)
+				(mesh:calculate-cost-position defender)))
+    (let ((msg (make-instance 'game-event:attack-melee-event
+			      :id-origin       (identificable:id attacker)
+			      :id-destination  (identificable:id defender)
+			      :attacker-entity attacker)))
+      (mesh:decrement-move-points-attack-melee attacker)
+      (mesh:set-attack-status attacker)
+      (game-event:send-refresh-toolbar-event)
+      (game-event:propagate-attack-melee-event msg)
+      ;; effects
+      (let* ((weapon            (character:worn-weapon (entity:ghost attacker)))
+	     (effects-to-others (remove-if
+				 #'(lambda (a)
+				     (and (funcall ;; only "when-"used" triggered effects
+					   (random-object-messages:untrigged-effect-p-fn
+					    basic-interaction-parameters:+effect-when-used+)
+					   a)
+					  (funcall ;; only effects affecting others
+					   (random-object-messages:to-other-target-effect-p-fn)
+					   a)))
+				 (random-object-messages:params->effects-messages
+				  weapon))))
+	(random-object-messages:propagate-effects-msg weapon defender effects-to-others)))))
+
+(defun defend-from-attack-short-range (event)
+  (let* ((attacker (game-event:attacker-entity event))
+	 (defender (game-state:find-entity-by-id (entity:state attacker)
+						 (game-event:id-destination event))))
+    (assert (and attacker defender))
+    (let* ((ghost-atk    (entity:ghost attacker))
+	   (ghost-defend (entity:ghost defender))
+	   (weapon       (character:worn-weapon ghost-atk))
+	   (weapon-level (if weapon
+			     (character:level weapon)
+			     0.0))
+	   (weapon-type  (when weapon
+			   (cond
+			     ((character:can-cut-p weapon)
+			      :edge)
+			     ((character:can-smash-p weapon)
+			      :impact)
+			     ((character:mounted-on-pole-p weapon)
+			      :pole)
+			     (t
+			      nil))))
+	   (attack-dmg        (character:actual-melee-attack-damage ghost-atk))
+	   (bonus-attack-dmg  (cond
+				((eq weapon-type :edge)
+				 (character:actual-edge-weapons-damage-bonus ghost-atk))
+				((eq weapon-type :impact)
+				 (character:actual-impact-weapons-damage-bonus ghost-atk))
+				((eq weapon-type :pole)
+				 (character:actual-pole-weapons-damage-bonus ghost-atk))
+				(t
+				 0.0)))
+	   (attack-chance        (character:actual-melee-attack-chance ghost-atk))
+	   (bonus-attack-chance  (cond
+				   ((eq weapon-type :edge)
+				    (character:actual-edge-weapons-chance-bonus ghost-atk))
+				   ((eq weapon-type :impact)
+				    (character:actual-impact-weapons-chance-bonus ghost-atk))
+				   ((eq weapon-type :pole)
+				    (character:actual-pole-weapons-chance-bonus ghost-atk))
+				   (t
+				    0.0))))
+    (cond
+      ((typep (entity:ghost defender) 'character:player-character)
+       (let* ((armor-level  (cond
+			     ((character:armorp (character:armor ghost-defend))
+			      (character:level  (character:armor ghost-defend)))
+			     (t
+			      nil)))
+	      (shield-level (cond
+			      ((character:shieldp (character:left-hand ghost-atk))
+			       (character:level (character:left-hand ghost-atk)))
+			      ((character:shieldp (character:right-hand ghost-atk))
+			       (character:level (character:right-hand ghost-atk)))
+			      (t
+			       nil)))
+	      (dodge-chance         (character:actual-dodge-chance ghost-defend))
+	      (ambushp              (and (vec~ (entity:dir attacker)
+					       (entity:dir defender))
+					 (pass-d100.0 (character:actual-ambush-attack-chance
+						       ghost-atk)))))
+	 (if weapon
+	     (values (attack-damage attack-dmg bonus-attack-dmg
+				    attack-chance bonus-attack-chance
+				    weapon-level
+				    dodge-chance
+				    shield-level
+				    armor-level
+				    ambushp)
+		     ambushp)
+	     (values nil nil))))
+      ((typep (entity:ghost defender) 'character:np-character)
+       (values (attack-damage attack-dmg bonus-attack-dmg
+				    attack-chance bonus-attack-chance
+				    weapon-level
+				    0.0
+				    0.0
+				    (character:level ghost-defend)
+				    nil)
+	       nil))))))

@@ -1,7 +1,7 @@
 (in-package :level-config)
 
 (define-level
-  set seed "123"
+  set seed "t"
   set clouds random (clear cloudy covered)
   set buildings-level (random (0 1 2))
 
@@ -129,6 +129,11 @@
   with tags ("ceil-level-1" "ceil-level-2" "ceil-level-3")
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0) and
   with postprocess pixmap:tileize
+
+  generate blood-particle         from function pixmap:blood-particle
+  with parameters (128)
+  with tags ("blood-particle")
+  with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
   generate map
   ;;with size                        (random (tiny small medium large))

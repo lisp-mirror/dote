@@ -93,6 +93,9 @@
 					      :aabb-p1 (vec 0.0 0.0 0.0)
 					      :aabb-p2 (vec 0.0 10.0 0.0)))
 	     (push-interactive-entity world tree +tree-type+ :occlude)
+	     ;; events
+	     ;; attack
+	     (game-event:register-for-attack-melee-event tree)
 	     (setf (mesh:aabb tree) saved-aabb)
 	     (setf (entity:ghost tree)
 		   (random-inert-object:generate-inert-object (height-tree->level tree))))))))
@@ -195,6 +198,9 @@
 	      ((eq furniture-type +container-type+)
 	       (random-container:generate-container (game-state:map-level (main-state world))
 						    :keychain keychain))))
+      ;; event
+      ;; attack
+      (game-event:register-for-attack-melee-event shell)
       (push-interactive-entity world shell furniture-type nil))))
 
 (defun %relative-coord-furniture->cood-mat-state (min rel-coord)
@@ -220,6 +226,9 @@
       (push-interactive-entity world shell +pillar-type+ :occlude
 			       :add-to-gamestate t
 			       :add-to-world     nil)
+      ;; event
+      ;; attack
+      (game-event:register-for-attack-melee-event shell)
       (mtree:add-child (mesh:pillar-instanced labyrinth-mesh) shell))))
 
 (defun setup-walkable (world min-x min-y x y)
@@ -283,6 +292,9 @@
       (push-interactive-entity world shell +chair-type+ nil
 			       :add-to-gamestate t
 			       :add-to-world     nil)
+      ;; event
+      ;; attack
+      (game-event:register-for-attack-melee-event shell)
       (case orientation
 	(:n (mtree:add-child (mesh:chair-n-instanced labyrinth-mesh) shell))
 	(:s (mtree:add-child (mesh:chair-s-instanced labyrinth-mesh) shell))
@@ -297,6 +309,9 @@
       (push-interactive-entity world shell +table-type+ nil
 			       :add-to-gamestate t
 			       :add-to-world     nil)
+      ;; event
+      ;; attack
+      (game-event:register-for-attack-melee-event shell)
       (mtree:add-child (mesh:table-instanced labyrinth-mesh) shell))))
 
 (defun setup-wall-decoration (world min-x min-y x y)
@@ -343,7 +358,10 @@
 		   (coord-map->chunk (d (+ y min-y))))))
     (setf (entity:ghost shell)
 	  (random-inert-object:generate-inert-object (game-state:map-level (main-state world))))
+    ;; events
     (game-event:register-for-end-turn shell)
+    ;; attack
+    (game-event:register-for-attack-melee-event shell)
     (if (typep shell 'mesh:decorated-wall-mesh-shell)
 	(progn
 	  (setf (mesh:texture-projector shell)
@@ -381,6 +399,8 @@
     (push-interactive-entity world shell +wall-type+ nil
 			     :add-to-gamestate t
 			     :add-to-world     nil)
+    ;; attack
+    (game-event:register-for-attack-melee-event shell)
     (mtree:add-child (mesh:window-instanced labyrinth-mesh) shell)
     shell))
 
@@ -882,7 +902,7 @@
      (update-progress 0.6)
      (setup-floor                 world  *map*)
      (update-progress 0.7)
-     ;(setup-ceiling              world  *map*)
+     ;;(setup-ceiling              world  *map*)
      (setup-labyrinths            world  *map*)
      (update-progress 0.8)
      (setup-trees                 world  *map*)
