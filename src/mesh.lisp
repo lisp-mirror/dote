@@ -710,6 +710,8 @@
 
 (defgeneric calculate-decrement-move-points-entering-tile (object))
 
+(defgeneric decrement-move-points (object how-much))
+
 (defgeneric decrement-move-points-entering-tile (object))
 
 (defgeneric decrement-move-points-rotate (object))
@@ -871,6 +873,11 @@
 						     (elt next-tile 1))))
 	    cost-dec)
 	  (d 0)))))
+
+(defmethod decrement-move-points ((object triangle-mesh) how-much)
+   (when (> (character:current-movement-points (ghost object)) 0)
+     (decf (character:current-movement-points (ghost object))
+	   how-much)))
 
 (defmethod decrement-move-points-entering-tile ((object triangle-mesh))
   (when (> (character:current-movement-points (ghost object)) 0)

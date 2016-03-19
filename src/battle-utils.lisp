@@ -109,6 +109,21 @@
 	(fmt-comment "Hit with damage below than 20%: ~,2@f~%"
 		     (count-less-than all-damages 0.2))))))
 
+(defun send-effects-after-attack (attacker defender)
+  (let* ((weapon            (character:worn-weapon (entity:ghost attacker)))
+	 (effects-to-others (remove-if
+			     #'(lambda (a)
+				 (and (funcall ;; only "when-"used" triggered effects
+				       (random-object-messages:untrigged-effect-p-fn
+					basic-interaction-parameters:+effect-when-used+)
+				       a)
+				      (funcall ;; only effects affecting others
+				       (random-object-messages:to-other-target-effect-p-fn)
+				       a)))
+			     (random-object-messages:params->effects-messages
+			      weapon))))
+    (random-object-messages:propagate-effects-msg weapon defender effects-to-others)))
+
 (defun send-attack-melee-event (attacker defender)
   (when (and (mesh:can-use-movement-points-p attacker :minimum +attack-melee-cost+)
 	     (game-state:entity-next-p (entity:state attacker) attacker defender)
@@ -122,21 +137,7 @@
       (mesh:decrement-move-points-attack-melee attacker)
       (mesh:set-attack-status attacker)
       (game-event:send-refresh-toolbar-event)
-      (game-event:propagate-attack-melee-event msg)
-      ;; effects
-      (let* ((weapon            (character:worn-weapon (entity:ghost attacker)))
-	     (effects-to-others (remove-if
-				 #'(lambda (a)
-				     (and (funcall ;; only "when-"used" triggered effects
-					   (random-object-messages:untrigged-effect-p-fn
-					    basic-interaction-parameters:+effect-when-used+)
-					   a)
-					  (funcall ;; only effects affecting others
-					   (random-object-messages:to-other-target-effect-p-fn)
-					   a)))
-				 (random-object-messages:params->effects-messages
-				  weapon))))
-	(random-object-messages:propagate-effects-msg weapon defender effects-to-others)))))
+      (game-event:propagate-attack-melee-event msg))))
 
 (defun defend-from-attack-short-range (event)
   (let* ((attacker (game-event:attacker-entity event))
@@ -199,15 +200,18 @@
 					 (pass-d100.0 (character:actual-ambush-attack-chance
 						       ghost-atk)))))
 	 (if weapon
-	     (values (attack-damage attack-dmg bonus-attack-dmg
-				    attack-chance bonus-attack-chance
-				    weapon-level
-				    dodge-chance
-				    shield-level
-				    armor-level
-				    ambushp)
-		     ambushp)
-	     (values nil nil))))
+	     (let ((dmg (attack-damage attack-dmg bonus-attack-dmg
+				       attack-chance bonus-attack-chance
+				       weapon-level
+				       dodge-chance
+				       shield-level
+				       armor-level
+				       ambushp)))
+	       (if dmg
+		   (progn
+		     (send-effects-after-attack attacker defender)
+		     (values dmg ambushp))
+		   (values nil nil))))))
       ((typep (entity:ghost defender) 'character:np-character)
        (values (attack-damage attack-dmg bonus-attack-dmg
 				    attack-chance bonus-attack-chance
@@ -217,3 +221,107 @@
 				    (character:level ghost-defend)
 				    nil)
 	       nil))))))
+
+(defun send-attack-long-range-event (attacker defender)
+  (when (able-to-see-mesh:other-visible-p attacker defender)
+    (let* ((ghost-atk    (entity:ghost attacker))
+	   (weapon       (character:worn-weapon ghost-atk))
+	   (weapon-type  (when weapon
+			   (cond
+			     ((character:bowp weapon)
+			      :bow)
+			     ((character:crossbowp weapon)
+			      :crossbow)
+			     (t
+			      nil))))
+	   (cost         (cond
+			   ((eq weapon-type :bow)
+			    +attack-long-range-bow-cost+)
+			   ((eq weapon-type :crossbow)
+			    +attack-long-range-crossbow-cost+)
+			   (t
+			    0.0))))
+      (when (and (> cost 0.0)
+		 (mesh:can-use-movement-points-p attacker :minimum cost))
+	(let ((msg (make-instance 'game-event:attack-long-range-event
+			      :id-origin       (identificable:id attacker)
+			      :id-destination  (identificable:id defender)
+			      :attacker-entity attacker)))
+	  (mesh:decrement-move-points attacker cost)
+	  (mesh:set-attack-status attacker)
+	  (game-event:send-refresh-toolbar-event)
+	  (game-event:propagate-attack-long-range-event msg))))))
+
+(defun defend-from-attack-long-range (event)
+  (let* ((attacker (game-event:attacker-entity event))
+	 (defender (game-state:find-entity-by-id (entity:state attacker)
+						 (game-event:id-destination event))))
+    (assert (and attacker defender))
+    (let* ((ghost-atk    (entity:ghost attacker))
+	   (ghost-defend (entity:ghost defender))
+	   (weapon       (character:worn-weapon ghost-atk))
+	   (weapon-level (if weapon
+			     (character:level weapon)
+			     0.0))
+	   (weapon-type  (when weapon
+			   (cond
+			     ((character:bowp weapon)
+			      :bow)
+			     ((character:crossbowp weapon)
+			      :crossbow)
+			     (t
+			      nil))))
+	   (attack-dmg        (character:actual-range-attack-damage ghost-atk))
+	   (attack-chance     (character:actual-range-attack-chance ghost-atk)))
+      (cond
+	((typep (entity:ghost defender) 'character:player-character)
+	 (let* ((armor-level  (cond
+				((character:armorp (character:armor ghost-defend))
+				 (character:level  (character:armor ghost-defend)))
+				(t
+				 nil)))
+		(shield-level (cond
+				((character:shieldp (character:left-hand ghost-atk))
+				 (character:level (character:left-hand ghost-atk)))
+				((character:shieldp (character:right-hand ghost-atk))
+				 (character:level (character:right-hand ghost-atk)))
+				(t
+				 nil)))
+		(dodge-chance         (character:actual-dodge-chance ghost-defend))
+		(ambushp              (and (vec~ (entity:dir attacker)
+						 (entity:dir defender))
+					   (pass-d100.0 (character:actual-ambush-attack-chance
+							 ghost-atk))))
+		(chance-decrement  (cond
+				     ((eq weapon-type :crossbow)
+				      +attack-long-range-crossbow-chance-decrement+)
+				     ((eq weapon-type :bow)
+				      +attack-long-range-bow-chance-decrement+)
+				     (t
+				      0.0)))
+		(dist              (vec-length (vec- (entity:pos attacker)
+						     (entity:pos defender))))
+		(actual-attack-chance (max 0.0 (d+ (num:d* chance-decrement dist)
+						   attack-chance))))
+	   (if weapon
+	       (let ((dmg (attack-damage attack-dmg 0.0
+					 actual-attack-chance 0.0
+					 weapon-level
+					 dodge-chance
+					 shield-level
+					 armor-level
+					 ambushp)))
+		 (if dmg
+		   (progn
+		     (send-effects-after-attack attacker defender)
+		     (values dmg ambushp))
+		   (values nil nil))))))
+	((typep (entity:ghost defender) 'character:np-character)
+	 (values (attack-damage attack-dmg  0.0
+				attack-chance 0.0
+				weapon-level
+				0.0
+				0.0
+				(character:level ghost-defend)
+				nil)
+		 nil))))))

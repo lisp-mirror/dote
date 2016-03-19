@@ -1081,7 +1081,7 @@
 			:normalize t :range-0->1 range-01)))
       (values
        (let* ((pixmap (make-pixmap-frame size size 4))
-	      (branch (lcg-next-in-range 2.0 6.0))
+	      (branch (lcg-next-in-range 5.0 7.0))
 	      (fun-t
 	       #'(lambda (x y)
 		   (let ((x (d- x 0.5))
@@ -1957,9 +1957,9 @@
 
 (alexandria:define-constant +skydome-height+ 1350 :test #'=)
 
-;; (alexandria:define-constant +skydome-width+  360  :test #'=)
+;;(alexandria:define-constant +skydome-width+  180  :test #'=)
 
-;; (alexandria:define-constant +skydome-height+ 135 :test #'=)
+;;(alexandria:define-constant +skydome-height+ 67 :test #'=)
 
 (defun hour->act-hour (h)
   (d- (desired h) 6.0))

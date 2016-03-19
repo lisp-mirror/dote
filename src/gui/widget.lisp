@@ -16,15 +16,19 @@
 
 (in-package :widget)
 
-(alexandria:define-constant +texture-unit-overlay+             1           :test #'=)
+(alexandria:define-constant +texture-unit-overlay+             1                   :test #'=)
 
-(alexandria:define-constant +portrait-size+                   64.0         :test #'=)
+(alexandria:define-constant +portrait-size+                   64.0                 :test #'=)
 
-(alexandria:define-constant +slots-per-page-side-size+         4           :test #'=)
+(alexandria:define-constant +slots-per-page-side-size+         4                   :test #'=)
 
-(alexandria:define-constant +action-move+                      :move       :test #'eq)
+(alexandria:define-constant +action-move+                      :move               :test #'eq)
 
-(alexandria:define-constant +action-attack-short-range+        :attack-srg :test #'eq)
+(alexandria:define-constant +action-attack-short-range+        :attack-srg         :test #'eq)
+
+(alexandria:define-constant +action-attack-long-range+         :attack-lrg :test #'eq)
+
+(alexandria:define-constant +action-attack-long-range-imprecise+ :attack-lrg-imp :test #'eq)
 
 (defparameter *square-button-size* (d/ (d *window-w*) 10.0))
 
@@ -1925,6 +1929,22 @@
       (when bound-player
 	(setf selected-action +action-attack-short-range+)))))
 
+(defun toolbar-attack-long-range-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (toolbar) w
+    (with-accessors ((bound-player bound-player)
+		     (selected-action selected-action)) toolbar
+      (when bound-player
+	(setf selected-action +action-attack-long-range+)))))
+
+(defun toolbar-attack-long-range-imprecise-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (toolbar) w
+    (with-accessors ((bound-player bound-player)
+		     (selected-action selected-action)) toolbar
+      (when bound-player
+	(setf selected-action +action-attack-long-range-imprecise+)))))
+
 (defun toolbar-zoom-in-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
@@ -2037,7 +2057,7 @@
 				       *small-square-button-size*)
 				  *small-square-button-size*
 				  +attack-long-range-overlay-texture-name+
-				  nil ;; TODO callback
+				  #'toolbar-attack-long-range-cb
 				  :small t)
     :initarg  :b-attack-long
     :accessor b-attack-long)
@@ -2046,7 +2066,7 @@
 				      (d* 2.0 *small-square-button-size*))
 				  *small-square-button-size*
 				  +attack-long-range-imprecise-overlay-texture-name+
-				  nil ;; TODO callback
+				  #'toolbar-attack-long-range-imprecise-cb
 				  :small t)
     :initarg  :b-attack-long-imprecise
     :accessor b-attack-long-imprecise)

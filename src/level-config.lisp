@@ -352,8 +352,7 @@
 	*chair-s*                    nil
 	*chair-e*                    nil
 	*chair-w*                    nil
-	*floor*                      nil)
-  (tg:gc :full t))
+	*floor*                      nil))
 
 (defmacro define-level (&body body)
   (ensure-cache-running

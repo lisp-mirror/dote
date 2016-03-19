@@ -66,6 +66,10 @@
    :+rotate-entity-cost-cost+
    :+wear-object-entity-cost-cost+
    :+attack-melee-cost+
+   :+attack-long-range-bow-cost+
+   :+attack-long-range-crossbow-cost+
+   :+attack-long-range-bow-chance-decrement+
+   :+attack-long-range-crossbow-chance-decrement+
    :+default-size+
    :+map-max-size+
    :+pi+
@@ -2169,6 +2173,10 @@
    :register-for-attack-melee-event
    :unregister-for-attack-melee-event
    :propagate-attack-melee-event
+   :attack-long-range-event
+   :register-for-attack-long-range-event
+   :unregister-for-attack-long-range-event
+   :propagate-attack-long-range-event
    :check-event-targeted-to-me))
 
 (defpackage :basic-interaction-parameters
@@ -2488,6 +2496,8 @@
    :potionp
    :fountainp
    :weaponp
+   :bowp
+   :crossbowp
    :armorp
    :containerp
    :keyp
@@ -2818,6 +2828,10 @@
   (:import-from :game-event :on-game-event)
   (:export
    :camera
+   :projection-matrix
+   :frustum-fov
+   :frustum-near
+   :frustum-far
    :frustum-aabb
    :frustum-sphere
    :frustum-cone
@@ -3047,6 +3061,7 @@
    :furniture-mesh-shell
    :setup-projective-texture
    :calculate-decrement-move-points-entering-tile
+   :decrement-move-points
    :decrement-move-points-rotate
    :decrement-move-points-entering-tile
    :decrement-move-points-wear
@@ -3211,6 +3226,8 @@
    :+recover-from-faint-dmg-fraction+
    :send-attack-melee-event
    :defend-from-attack-short-range
+   :send-attack-long-range-event
+   :defend-from-attack-long-range
    :attack-damage))
 
 ;; UI
@@ -3360,6 +3377,8 @@
   (:export
    :+action-move+
    :+action-attack-short-range+
+   :+action-attack-long-range+
+   :+action-attack-long-range-imprecise+
    :widget
    :x
    :y

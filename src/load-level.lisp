@@ -50,22 +50,30 @@
 
 (defun setup-trees (world map)
   (let ((tree-bag-sorted nil))
-    (loop for i from 0 below (length (trees-bag world)) do
-	 (let ((tree (elt (trees-bag world) i))
-	       (camera (camera world)))
-	 (setf (compiled-shaders tree) (compiled-shaders world))
-	 (setf (entity:pos tree) +zero-vec+)
-	 (mesh:reset-aabb  tree)
-	 (camera:fit-to-aabb camera (mesh:aabb tree))
-	 (let ((impostor-mesh (billboard:make-impostor-mesh
-			       (mesh:aabb tree)
-			       (billboard:make-impostor-texture world tree))))
-	   (interfaces:prepare-for-rendering impostor-mesh)
-	   (setf (compiled-shaders impostor-mesh) (compiled-shaders world))
-	   (setf (mesh:impostor tree) impostor-mesh))))
-	   ;; (pixmap:save-pixmap (billboard:make-impostor-pixmap world tree)
-	   ;; 		       (fs:file-in-package
-	   ;; 			(format nil  "impostor-~a.tga" i)))))
+    (let* ((camera (camera world))
+	   (c-fov  (camera:frustum-fov  camera))
+	   (c-near (camera:frustum-near camera))
+	   (c-far  (camera:frustum-far  camera)))
+      (transformable:build-projection-matrix world 5.0 200.0 30.0
+					     (num:desired (/ *window-w* *window-h*)))
+      (loop for i from 0 below (length (trees-bag world)) do
+	   (let ((tree (elt (trees-bag world) i))
+		 (camera (camera world)))
+	     (setf (compiled-shaders tree) (compiled-shaders world))
+	     (setf (entity:pos tree) +zero-vec+)
+	     (mesh:reset-aabb  tree)
+	     (camera:fit-to-aabb camera (mesh:aabb tree))
+	     (let ((impostor-mesh (billboard:make-impostor-mesh
+				   (mesh:aabb tree)
+				   (billboard:make-impostor-texture world tree))))
+	       (interfaces:prepare-for-rendering impostor-mesh)
+	       (setf (compiled-shaders impostor-mesh) (compiled-shaders world))
+	       (setf (mesh:impostor tree) impostor-mesh))))
+	       ;; (pixmap:save-pixmap (billboard:make-impostor-pixmap world tree)
+	       ;; 			   (fs:file-in-package
+	       ;; 			    (format nil  "impostor-~a.tga" i))))))
+      (transformable:build-projection-matrix world c-near c-far c-fov
+					     (num:desired (/ *window-w* *window-h*))))
     (loop for tree-pos in (random-terrain:trees map) do
 	 (let* ((tree-data (num:random-select-by-frequency
 			    (trees-bag world)

@@ -426,6 +426,18 @@
 				       (cons (_ "Ok")
 					     #'widget:hide-and-remove-parent-cb)))
 		       (world:reset-toolbar-selected-action world))))
+		  ((eq (world:toolbar-selected-action world)
+		       widget:+action-attack-long-range+)
+		   (let ((attacked (world:pick-any-entity world world x y)))
+		     (when attacked
+		       (if (character:worn-weapon (entity:ghost selected-pc))
+			   (battle-utils:send-attack-long-range-event selected-pc attacked)
+			   (world:post-entity-message world selected-pc
+				       (format nil
+					       (_"You have not got a weapon"))
+				       (cons (_ "Ok")
+					     #'widget:hide-and-remove-parent-cb)))
+		       (world:reset-toolbar-selected-action world))))
 		  (t
 		   (world:pick-player-entity world world x y :bind t))))
 	      (when (not (widget:on-mouse-released (world:gui world) gui-event))

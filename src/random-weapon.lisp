@@ -110,8 +110,7 @@
 (defun calculate-decay-points (weapon-level)
   (multiple-value-bind (sigma mean)
       (decay-params (1- weapon-level))
-    (truncate (max +minimum-decay+ (gaussian-probability sigma mean)))
-    2.0))
+    (d (truncate (max +minimum-decay+ (gaussian-probability sigma mean))))))
 
 (defun calculate-decay (object-level decay-points)
   (make-instance 'decay-parameters

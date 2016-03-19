@@ -118,6 +118,15 @@
 	(apply-damage object damage))
       t)))
 
+(defmethod on-game-event ((object md2-mesh) (event attack-long-range-event))
+  (check-event-targeted-to-me (object event)
+    (multiple-value-bind (damage ambush)
+	(battle-utils:defend-from-attack-long-range event)
+      (declare (ignore ambush))
+      (when damage
+	(apply-damage object damage))
+      t)))
+
 (defmethod on-game-event ((object md2-mesh) (event update-visibility))
   (with-accessors ((state state)
 		   (id id)) object
@@ -1384,6 +1393,25 @@
     (clean-effects sword)
     sword))
 
+(defun forged-bow ()
+  (let ((bow (random-weapon:generate-weapon 10 :bow))
+	(effect-modifier  (make-instance 'basic-interaction-parameters:effect-parameters
+					 :trigger basic-interaction-parameters:+effect-when-worn+
+					 :duration basic-interaction-parameters:+duration-unlimited+
+					 :modifier 5.0))
+	(poisoning        (make-instance 'basic-interaction-parameters:poison-effect-parameters
+					 :chance 0.9
+					 :target basic-interaction-parameters:+target-other+
+					 :points-per-turn 2.0)))
+    (n-setf-path-value (basic-interaction-params bow)
+		       '(:effects :melee-attack-chance)
+		       effect-modifier)
+    (n-setf-path-value (basic-interaction-params bow)
+		       '(:healing-effects :cause-poison)
+		       poisoning)
+    (clean-effects bow)
+    bow))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -1412,19 +1440,21 @@
 	    (forged-potion-cure-dmg     (forged-potion-cure-dmg))
 	    (forged-potion-cure-berserk (forged-potion-cure-berserk))
 	    (forged-ring                (forged-ring))
-	    (forged-sword               (forged-sword)))
+	    (forged-weapon              (forged-bow)))
 	(game-event:register-for-end-turn forged-potion)
 	(game-event:register-for-end-turn forged-potion-cure-dmg)
 	(game-event:register-for-end-turn forged-potion-cure-berserk)
 	(game-event:register-for-end-turn forged-ring)
-	(game-event:register-for-end-turn forged-sword)
+	(game-event:register-for-end-turn forged-weapon)
 	(add-to-inventory (ghost body) forged-potion)
 	(add-to-inventory (ghost body) forged-potion-cure-dmg)
 	(add-to-inventory (ghost body) forged-potion-cure-berserk)
 	(add-to-inventory (ghost body) forged-ring)
-	(add-to-inventory (ghost body) forged-sword)
+	(add-to-inventory (ghost body) forged-weapon)
 	(setf (movement-points (ghost body)) 100.0)
-	(wear-item body forged-sword))
+	;; note:   wear-item-event  will   not  be   catched  as   the
+	;; registration happens when the entity is added to world
+	(wear-item body forged-weapon))
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       body))
 

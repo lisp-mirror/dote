@@ -279,6 +279,12 @@
     :initarg  :attacker-entity
     :accessor attacker-entity)))
 
+(defevent attack-long-range-event (game-event-w-destination)
+  ((attacker-entity
+    :initform nil
+    :initarg  :attacker-entity
+    :accessor attacker-entity)))
+
 (defmacro check-event-targeted-to-me ((entity event) &body body)
   `(if (= (identificable:id ,entity) (id-destination ,event))
 	 (progn

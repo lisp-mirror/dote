@@ -60,7 +60,7 @@
     :initarg  :duration
     :accessor duration)
    (gravity
-    :initform 1.0
+    :initform (num:lcg-next-in-range 1.0 2.0)
     :initarg  :gravity
     :accessor gravity)
    (font-type
@@ -125,9 +125,10 @@
     (declare (list triangles))
     (with-camera-view-matrix (camera-vw-matrix renderer)
       (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+	(gl:disable :depth-test)
 	(gl:depth-mask :false)
 	(cl-gl-utils:with-blending
-	  (gl:blend-func :src-alpha :one-minus-src-alpha)
+	  (gl:blend-func :src-alpha :one)
 	  (use-program compiled-shaders :tooltip)
 	  (gl:active-texture :texture0)
 	  (texture:bind-texture texture-object)
@@ -150,13 +151,14 @@
 	  (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
 	  (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
 	  (gl:draw-arrays :triangles 0 (* 3 (length triangles))))
-	(gl:depth-mask :true)))))
+	(gl:depth-mask :true)
+	(gl:enable :depth-test)))))
 
 (defun make-tooltip (label pos shaders
 		     &key
 		       (color +damage-color+)
 		       (font-type gui:+default-font-handle+)
-		       (gravity 1.0))
+		       (gravity (num:lcg-next-in-range 1.0 24.0)))
   (let ((tooltip (make-instance 'billboard:tooltip
 				:animation-speed 1.0
 				:font-color      color
@@ -170,34 +172,31 @@
 
 (defgeneric apply-tooltip (object label &key color))
 
-(let ((scale 0.0))
-  (defmethod apply-tooltip ((object mesh:triangle-mesh) label
+
+(defmethod apply-tooltip ((object mesh:triangle-mesh) label
 			    &key
 			      (color +damage-color+)
 			      (font-type gui:+default-font-handle+)
 			      (gravity 1.0))
-    (with-accessors ((ghost ghost)
-		     (id id)
-		     (state state)) object
-      (with-accessors ((recurrent-effects recurrent-effects)
-		       (immune-poison-status immune-poison-status)
-		       (status status)) ghost
-	(setf scale (d+ scale 0.01))
-	(when (d> scale 2.0)
-	  (setf scale 0.0))
-	(game-state:with-world (world state)
-	  (let* ((camera             (camera world))
-		 (camera-pos         (pos camera))
-		 (mesh-pos           (aabb-top-center (aabb object)))
-		 (mesh-to-camera-vec (normalize (vec- camera-pos mesh-pos)))
-		 (displ              (vec* mesh-to-camera-vec scale))
-		 (tooltip (billboard:make-tooltip label
-						  (vec+ mesh-pos displ)
-						  (compiled-shaders object)
-						  :color color
-						  :font-type font-type
-						  :gravity   gravity)))
-	    (world:push-entity world tooltip)))))))
+  (with-accessors ((ghost ghost)
+		   (id id)
+		   (state state)) object
+    (with-accessors ((recurrent-effects recurrent-effects)
+		     (immune-poison-status immune-poison-status)
+		     (status status)) ghost
+      (game-state:with-world (world state)
+	(let* ((camera             (camera world))
+	       (camera-pos         (pos camera))
+	       (mesh-pos           (aabb-top-center (aabb object)))
+	       (mesh-to-camera-vec (normalize (vec- camera-pos mesh-pos)))
+	       (displ              mesh-to-camera-vec scale)
+	       (tooltip (billboard:make-tooltip label
+						(vec+ mesh-pos displ)
+						(compiled-shaders object)
+						:color color
+						:font-type font-type
+						:gravity   gravity)))
+	  (world:push-entity world tooltip))))))
 
 (defun get-bitmap-min-x-opaque (pixmap)
   (let ((min (matrix:width pixmap)))

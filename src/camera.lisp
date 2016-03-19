@@ -18,7 +18,7 @@
 
 (alexandria:define-constant +drag-camera-ends-threshold+ 0.1 :test #'=)
 
-(alexandria:define-constant +fit-to-aabb-offset+         0.1 :test #'=)
+(alexandria:define-constant +fit-to-aabb-offset+         0.01 :test #'=)
 
 (alexandria:define-constant +fit-to-aabb-scale-pos+      2.0 :test #'=)
 

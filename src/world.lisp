@@ -415,7 +415,7 @@
     (when (and (typep entity 'terrain-chunk:terrain-chunk)
 	       (insidep (aabb entity) (vec x +zero-height+ z)))
       (return-from pick-height-terrain (terrain-chunk:approx-terrain-height entity x z))))
-  (break))
+  0.0)
 
 (defmethod highlight-tile-screenspace ((object world) renderer x y)
   "Coordinates in screen space"
@@ -772,6 +772,7 @@
   (game-event:register-for-update-visibility                 player)
   ;; attack
   (game-event:register-for-attack-melee-event                player)
+  (game-event:register-for-attack-long-range-event           player)
   ;; events registration ends here
   (game-state:place-player-on-map (main-state object)        player faction pos)
   (push-interactive-entity object                            player faction :occlude))
@@ -866,4 +867,5 @@
 	(texture:prepare-for-rendering portrait-texture)
 	(setf (character:model-origin-dir ghost) dir)
 	(setf (portrait (entity:ghost model)) portrait-texture)
+	(setf (renderp  model) nil)
 	(world:place-player-on-map object  model game-state:+npc-type+ #(0 0))))))

@@ -66,11 +66,19 @@
   (define-constant +open-terrain-cost+                2.0              :test #'=))
 
 (define-constant +rotate-entity-cost-cost+  (/ +open-terrain-cost+
-					       2.0)                   :test #'=)
+					       2.0)                    :test #'=)
 
-(define-constant +wear-object-entity-cost-cost+       1.0             :test #'=)
+(define-constant +wear-object-entity-cost-cost+       1.0              :test #'=)
 
-(define-constant +attack-melee-cost+                  3.0             :test #'=)
+(define-constant +attack-melee-cost+                  3.0              :test #'=)
+
+(define-constant +attack-long-range-bow-cost+         5.0              :test #'=)
+
+(define-constant +attack-long-range-crossbow-cost+    7.0              :test #'=)
+
+(define-constant +attack-long-range-bow-chance-decrement+      -1.6    :test #'=)
+
+(define-constant +attack-long-range-crossbow-chance-decrement+ -0.8    :test #'=)
 
 (define-constant +default-size+                     256                :test '=)
 

@@ -88,9 +88,9 @@
 
 (define-constant +can-pierce+                  :can-pierce                  :test #'eq)
 
-(define-constant +can-launch-bolt+             :can-lauch-bolt              :test #'eq)
+(define-constant +can-launch-bolt+             :can-launch-bolt             :test #'eq)
 
-(define-constant +can-launch-arrow+            :can-lauch-arrow             :test #'eq)
+(define-constant +can-launch-arrow+            :can-launch-arrow            :test #'eq)
 
 (define-constant +mounted-on-pole+             :mounted-on-pole             :test #'eq)
 

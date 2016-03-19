@@ -350,7 +350,15 @@
 (gen-interaction-predicate (weapon)
   (or (lookup-basic-interaction object +can-cut+)
       (lookup-basic-interaction object +can-smash+)
-      (lookup-basic-interaction object +can-pierce+)))
+      (lookup-basic-interaction object +can-pierce+)
+      (bowp object)
+      (crossbowp object)))
+
+(gen-interaction-predicate (bow)
+  (lookup-basic-interaction object +can-launch-arrow+))
+
+(gen-interaction-predicate (crossbow)
+  (lookup-basic-interaction object +can-launch-bolt+))
 
 (gen-interaction-predicate (armor)
   (and (lookup-basic-interaction object +can-intercept-attacks+)
@@ -1091,7 +1099,9 @@
 	   ((character:shoesp item)
 	    'character:shoes)
 	   ((or (character:weaponp item)
-		(character:shieldp item))
+		(character:shieldp item)
+		(character:bowp item)
+		(character:crossbowp item))
 	    (if (null left-hand)
 		'character:left-hand
 		(if (null right-hand)

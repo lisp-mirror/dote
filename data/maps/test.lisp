@@ -1,7 +1,7 @@
 (in-package :level-config)
 
 (define-level
-  set seed "t"
+  set seed "hello world!"
   set clouds random (clear cloudy covered)
   set buildings-level (random (0 1 2))
 
@@ -158,15 +158,18 @@
   with trees-rate                   (0.05)
   with trees-sparseness             (0.7)
 
-  generate tree                  from script "general/dead-tree.lsys"
-  with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
-
   generate tree                  from script "temperate/fir.lsys"
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
-  ;; obj file format is supported only
-  generate tree                  from file   "temperate/pine/pine.obj"
+  generate tree                  from script "temperate/cypress.lsys"
+  with normalmap-parameters      (ka 1.0 kd .2 ks .1 roughness 0.0 shininess 256.0)
+
+  generate tree                  from script "general/dead-tree.lsys"
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
+
+  ;; ;; obj file format is supported only
+  ;; generate tree                  from file   "temperate/pine/pine.obj"
+  ;; with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
   ;; again, only obj file format
   generate magic-furniture       from file   "fountain/model.obj"
