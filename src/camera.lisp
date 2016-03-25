@@ -65,15 +65,19 @@
     :initform (quat 0.0 0.0 0.0 1.0))
    (previous-pos
      :accessor previous-pos
-     :initarg  previous-pos
+     :initarg  :previous-pos
      :initform +zero-vec+)
+   (followed-entity
+     :accessor followed-entity
+     :initarg  :followed-entity
+     :initform nil)
    (drag-target-pos
      :accessor drag-target-pos
-     :initarg  drag-target-pos
+     :initarg  :drag-target-pos
      :initform +zero-vec+)
    (drag-equilibrium-pos
     :accessor drag-equilibrium-pos
-    :initarg  drag-equilibrium-pos
+    :initarg  :drag-equilibrium-pos
     :initform +zero-vec+)
    (drag-interpolator
     :accessor drag-interpolator
@@ -168,6 +172,8 @@
      (%draw-orbit-mode object dt))
     (:drag
      (%draw-drag-mode object dt))
+    (:follow
+     (%draw-follow-mode object dt))
     (:otherwise
      t)))
 
@@ -180,6 +186,8 @@
 (defgeneric %draw-orbit-mode (object dt))
 
 (defgeneric %draw-drag-mode (object dt))
+
+(defgeneric %draw-follow-mode (object dt))
 
 (defgeneric look-at* (object))
 
@@ -245,6 +253,19 @@
       (when (vec~ offset +zero-vec+ +drag-camera-ends-threshold+)
 	;;(setf (euler:elapsed-time (drag-interpolator object)) 0.0)
 	(game-event:propagate-camera-drag-ends (make-instance 'game-event:camera-drag-ends))))))
+
+(defmethod %draw-follow-mode ((object camera) dt)
+  (with-accessors ((target target)
+		   (pos pos)
+		   (followed-entity followed-entity)) object
+    (when followed-entity
+      (let* ((pos-saved    (copy-vec pos))
+	     (pos-followed (pos followed-entity)))
+	(setf pos (vec (d- (elt  pos-followed 0) (d* +terrain-chunk-tile-size+ 2.0))
+		       (elt pos-saved 1)
+		       (d- (elt pos-followed 2)  (d* +terrain-chunk-tile-size+ 2.0)))
+	      target   pos-followed)
+	(look-at* object)))))
 
 (defmethod look-at* ((object camera))
   (setf (dir object) (normalize (vec- (target object) (pos object))))

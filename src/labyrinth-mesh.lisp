@@ -339,6 +339,9 @@
     :initarg  :chair-w-instanced
     :accessor chair-w-instanced)))
 
+(defun labyrinth-mesh-p (a)
+  (typep a 'mesh:labyrinth-mesh))
+
 (defmethod aabb ((object labyrinth-mesh))
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (with-slots (aabb) object

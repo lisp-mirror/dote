@@ -120,7 +120,7 @@
 	     (when leaf
 	       (loop for d across (quad-tree:data leaf) do
 		    (cond
-		      ((typep d 'terrain-chunk:terrain-chunk)
+		      ((terrain-chunk:terrain-chunk-p d)
 		       (let* ((x-chunk (elt ends 0))
 			      (z-chunk (elt ends 2))
 			      (y   (game-state:approx-terrain-height@pos state
@@ -128,10 +128,10 @@
 									 z-chunk)))
 			 (when (and y (< (elt ends 1) y))
 			   (return-from nonlabyrinth-element-hitted-by-ray nil))))
-		      ((typep d 'mesh:labyrinth-mesh)
+		      ((labyrinth-mesh-p d)
 		       ;;does nothing, continue to the next iteration
 		       )
-		      ((typep d 'mesh:tree-mesh-shell)
+		      ((tree-mesh-shell-p d)
 		       ;;(misc:dbg "tree trunk ~%~a ~a -> ~a" (tree-trunk-aabb d)
 		       ;;	 ends (insidep (tree-trunk-aabb d) ends))
 		       (when (and (insidep (aabb d) ends)

@@ -97,6 +97,7 @@
    :+maps-resource+
    :+shaders-resource+
    :+models-resource+
+   :+arrows-resource+
    :+human-player-models-resource+
    :+ai-player-models-resource+
    :+textures-resource+
@@ -915,6 +916,7 @@
    :max-x
    :max-y
    :max-z
+   :overlapp
    :bounding-sphere
    :sphere-center
    :sphere-radius
@@ -2829,6 +2831,7 @@
   (:export
    :camera
    :projection-matrix
+   :followed-entity
    :frustum-fov
    :frustum-near
    :frustum-far
@@ -3006,6 +3009,7 @@
    :triangle
    :triangle-mesh-shell
    :tree-mesh-shell
+   :tree-mesh-shell-p
    :tree-trunk-aabb
    :fill-mesh-data
    :fill-shell-from-mesh
@@ -3042,6 +3046,7 @@
    :door-mesh-shell
    :instanced-mesh
    :labyrinth-mesh
+   :labyrinth-mesh-p
    :parent-labyrinth
    :wall-instanced
    :window-instanced
@@ -3226,6 +3231,7 @@
    :+recover-from-faint-dmg-fraction+
    :send-attack-melee-event
    :defend-from-attack-short-range
+   :attack-long-range-animation
    :send-attack-long-range-event
    :defend-from-attack-long-range
    :attack-damage))
@@ -3607,6 +3613,7 @@
   (:export
    :+pick-color-lerp-weight+
    :terrain-chunk
+   :terrain-chunk-p
    :heightmap
    :decal-weights
    :build-mesh-dbg
@@ -3642,6 +3649,29 @@
    :make-blood-level-2
    :make-blood-death
    :make-debris))
+
+(defpackage :arrows
+  (:use :cl
+	:config
+	:constants
+	:sb-cga
+	:sb-cga-utils
+	:num-utils
+	:misc
+	:cl-gl-utils
+	:shaders-utils
+	:identificable
+	:transformable
+	:entity
+	:interfaces
+	:mesh)
+  (:export
+   :+default-arrow-name+
+   :+default-bolt-name+
+   :clean-db
+   :get-arrow
+   :launch-ray
+   :launch-arrow))
 
 (defpackage :md2-mesh
   (:nicknames :md2)

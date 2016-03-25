@@ -2717,6 +2717,9 @@
 
 (defclass tree-mesh-shell (triangle-mesh-shell) ())
 
+(defun tree-mesh-shell-p (a)
+  (typep a 'mesh:tree-mesh-shell))
+
 (defmethod initialize-instance :after ((object tree-mesh-shell) &key &allow-other-keys)
   (setf (start-time object) (d (lcg-next-upto 5))))
 

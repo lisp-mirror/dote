@@ -114,8 +114,7 @@
     (multiple-value-bind (damage ambush)
 	(battle-utils:defend-from-attack-short-range event)
       (declare (ignore ambush))
-      (when damage
-	(apply-damage object damage))
+      (apply-damage object damage)
       t)))
 
 (defmethod on-game-event ((object md2-mesh) (event attack-long-range-event))
@@ -123,8 +122,7 @@
     (multiple-value-bind (damage ambush)
 	(battle-utils:defend-from-attack-long-range event)
       (declare (ignore ambush))
-      (when damage
-	(apply-damage object damage))
+      (apply-damage object damage)
       t)))
 
 (defmethod on-game-event ((object md2-mesh) (event update-visibility))

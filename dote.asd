@@ -128,6 +128,7 @@
 	       (:file "world")
 	       (:file "terrain-chunk")
 	       (:file "particles")
+	       (:file "arrows")
 	       (:file "md2-mesh-normal-lut")
 	       (:file "md2-mesh")
 	       (:file "obj-mesh")

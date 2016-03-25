@@ -102,6 +102,9 @@
     :initform nil
     :reader decal-weights)))
 
+(defun terrain-chunk-p (a)
+  (typep a 'terrain-chunk:terrain-chunk))
+
 (defmethod marshal:class-persistant-slots ((object terrain-chunk))
   (append '()
 	  (call-next-method)))

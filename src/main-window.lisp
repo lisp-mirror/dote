@@ -235,6 +235,7 @@
 	(interfaces:destroy (world w))
 	(interfaces:destroy (compiled-shaders w))
 	(texture:clean-db)
+	(arrows:clean-db)
 	(gui:clean-font-db)
 	(game-event:clean-all-events-vectors)
 	(lparallel:end-kernel :wait t)
@@ -431,7 +432,12 @@
 		   (let ((attacked (world:pick-any-entity world world x y)))
 		     (when attacked
 		       (if (character:worn-weapon (entity:ghost selected-pc))
-			   (battle-utils:send-attack-long-range-event selected-pc attacked)
+			   (progn
+			     (battle-utils:attack-long-range-animation selected-pc attacked)
+			     (arrows:launch-arrow arrows:+default-arrow-name+
+						  world
+						  selected-pc
+						  attacked))
 			   (world:post-entity-message world selected-pc
 				       (format nil
 					       (_"You have not got a weapon"))

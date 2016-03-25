@@ -269,7 +269,7 @@
 
 (defgeneric set-window-accepts-input (object value))
 
-(defgeneric move-entity (object entity from))
+(defgeneric move-entity (object entity from &key update-costs))
 
 (defgeneric toolbar-selected-action (object))
 
@@ -699,20 +699,21 @@
 (defmethod move-map-state-entity ((object world) entity from)
   (game-state:move-map-state-entity (main-state object) entity from))
 
-(defmethod move-entity ((object world) entity from)
+(defmethod move-entity ((object world) entity from &key (update-costs t))
   (with-accessors ((entities entities)
 		   (main-state main-state)) object
     ;; update quadtree
     (remove-entity-by-id entities (id entity))
     (push-entity object entity)
-    ;; set minimum cost for leaved tile
-    (game-state:set-minimum-cost-player-layer@ main-state (elt from 0) (elt from 1))
-    ;; set maximum cost for entered tile
-    (let ((cost-pos-target (mesh:calculate-cost-position entity)))
-      (game-state:set-invalicable-cost-player-layer@ main-state
-						     (elt cost-pos-target 0)
-						     (elt cost-pos-target 1)))
-    (game-state:move-map-state-entity object entity from)))
+    (when update-costs
+      ;; set minimum cost for leaved tile
+      (game-state:set-minimum-cost-player-layer@ main-state (elt from 0) (elt from 1))
+      ;; set maximum cost for entered tile
+      (let ((cost-pos-target (mesh:calculate-cost-position entity)))
+	(game-state:set-invalicable-cost-player-layer@ main-state
+						       (elt cost-pos-target 0)
+						       (elt cost-pos-target 1)))
+      (game-state:move-map-state-entity object entity from))))
 
 (defmethod toolbar-selected-action ((object world))
   (widget:selected-action (toolbar object)))

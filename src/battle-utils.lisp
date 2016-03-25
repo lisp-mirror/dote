@@ -222,6 +222,29 @@
 				    nil)
 	       nil))))))
 
+(defun attack-long-range-animation (attacker defender)
+  (when (able-to-see-mesh:other-visible-p attacker defender)
+    (let* ((ghost-atk    (entity:ghost attacker))
+	   (weapon       (character:worn-weapon ghost-atk))
+	   (weapon-type  (when weapon
+			   (cond
+			     ((character:bowp weapon)
+			      :bow)
+			     ((character:crossbowp weapon)
+			      :crossbow)
+			     (t
+			      nil))))
+	   (cost         (cond
+			   ((eq weapon-type :bow)
+			    +attack-long-range-bow-cost+)
+			   ((eq weapon-type :crossbow)
+			    +attack-long-range-crossbow-cost+)
+			   (t
+			    0.0))))
+      (when (and (> cost 0.0)
+		 (mesh:can-use-movement-points-p attacker :minimum cost))
+	(mesh:set-attack-status attacker)))))
+
 (defun send-attack-long-range-event (attacker defender)
   (when (able-to-see-mesh:other-visible-p attacker defender)
     (let* ((ghost-atk    (entity:ghost attacker))
@@ -252,6 +275,35 @@
 	  (game-event:send-refresh-toolbar-event)
 	  (game-event:propagate-attack-long-range-event msg))))))
 
+(defun actual-chance-long-range-attack (attacker defender)
+    (assert (and attacker defender))
+    (let* ((ghost-atk    (entity:ghost attacker))
+	   (weapon       (character:worn-weapon ghost-atk))
+	   (weapon-type  (when weapon
+			   (cond
+			     ((character:bowp weapon)
+			      :bow)
+			     ((character:crossbowp weapon)
+			      :crossbow)
+			     (t
+			      nil))))
+
+	   (attack-chance     (character:actual-range-attack-chance ghost-atk))
+	   (chance-decrement  (cond
+				((eq weapon-type :crossbow)
+				      +attack-long-range-crossbow-chance-decrement+)
+				     ((eq weapon-type :bow)
+				      +attack-long-range-bow-chance-decrement+)
+				     (t
+				      0.0)))
+	   (dist              (vec-length (vec- (entity:pos attacker)
+						(entity:pos defender))))
+	   (actual-attack-chance (max 0.0 (d+ (num:d* chance-decrement dist)
+					      attack-chance))))
+      (if weapon-type
+	  actual-attack-chance
+	  0.0)))
+
 (defun defend-from-attack-long-range (event)
   (let* ((attacker (game-event:attacker-entity event))
 	 (defender (game-state:find-entity-by-id (entity:state attacker)
@@ -263,16 +315,7 @@
 	   (weapon-level (if weapon
 			     (character:level weapon)
 			     0.0))
-	   (weapon-type  (when weapon
-			   (cond
-			     ((character:bowp weapon)
-			      :bow)
-			     ((character:crossbowp weapon)
-			      :crossbow)
-			     (t
-			      nil))))
-	   (attack-dmg        (character:actual-range-attack-damage ghost-atk))
-	   (attack-chance     (character:actual-range-attack-chance ghost-atk)))
+	   (attack-dmg        (character:actual-range-attack-damage ghost-atk)))
       (cond
 	((typep (entity:ghost defender) 'character:player-character)
 	 (let* ((armor-level  (cond
@@ -292,17 +335,7 @@
 						 (entity:dir defender))
 					   (pass-d100.0 (character:actual-ambush-attack-chance
 							 ghost-atk))))
-		(chance-decrement  (cond
-				     ((eq weapon-type :crossbow)
-				      +attack-long-range-crossbow-chance-decrement+)
-				     ((eq weapon-type :bow)
-				      +attack-long-range-bow-chance-decrement+)
-				     (t
-				      0.0)))
-		(dist              (vec-length (vec- (entity:pos attacker)
-						     (entity:pos defender))))
-		(actual-attack-chance (max 0.0 (d+ (num:d* chance-decrement dist)
-						   attack-chance))))
+		(actual-attack-chance (actual-chance-long-range-attack attacker defender)))
 	   (if weapon
 	       (let ((dmg (attack-damage attack-dmg 0.0
 					 actual-attack-chance 0.0
@@ -318,7 +351,7 @@
 		   (values nil nil))))))
 	((typep (entity:ghost defender) 'character:np-character)
 	 (values (attack-damage attack-dmg  0.0
-				attack-chance 0.0
+				(actual-chance-long-range-attack attacker defender) 0.0
 				weapon-level
 				0.0
 				0.0

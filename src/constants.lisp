@@ -140,6 +140,8 @@
 
 (define-constant +furnitures-resource+  '("models" "furnitures")               :test #'equalp)
 
+(define-constant +arrows-resource+      '("models" "weapons" "arrows")         :test #'equalp)
+
 (define-constant +human-player-models-resource+  '("models" "human-player")    :test #'equalp)
 
 (define-constant +ai-player-models-resource+  '("models" "ai")                 :test #'equalp)
@@ -220,7 +222,7 @@
 
 (define-constant +model-move-speed+               0.02                            :test #'=)
 
-(define-constant +gui-zoom-entity+                30.0                            :test #'=)
+(define-constant +gui-zoom-entity+                15.0                            :test #'=)
 
 (define-constant +visibility-cone-half-hangle+    0.5235988                       :test #'=)
 
