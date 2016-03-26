@@ -124,6 +124,10 @@
     :initarg :main-state
     :initform nil
     :allocation :class)
+   (cached-aabb
+    :initarg :cached-aabb
+    :initform nil
+    :reader   cached-aabb)
    (frame-window
     :accessor frame-window
     :initarg :frame-window
@@ -280,6 +284,8 @@
 (defgeneric point-camera-to-entity (object entity))
 
 (defgeneric add-ai-opponent (object type gender))
+
+(defgeneric world-aabb (object))
 
 (defmethod iterate-quad-tree ((object world) function probe)
   (quad-tree:iterate-nodes-intersect (entities object)
@@ -870,3 +876,13 @@
 	(setf (portrait (entity:ghost model)) portrait-texture)
 	(setf (renderp  model) nil)
 	(world:place-player-on-map object  model game-state:+npc-type+ #(0 0))))))
+
+(defmethod world-aabb ((object world))
+  (if (cached-aabb object)
+      (cached-aabb object)
+      (let ((res (make-instance 'aabb)))
+	(walk-quad-tree-anyway (object)
+	  (expand res (aabb-p1 (aabb entity)))
+	  (expand res (aabb-p2 (aabb entity))))
+	(setf (slot-value object 'cached-aabb) res)
+	res)))

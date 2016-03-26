@@ -3581,7 +3581,8 @@
    :post-entity-message
    :point-to-entity-and-hide-cb
    :point-camera-to-entity
-   :add-ai-opponent))
+   :add-ai-opponent
+   :world-aabb))
 
 (defpackage :terrain-chunk
   (:use :cl

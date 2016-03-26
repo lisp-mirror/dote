@@ -1081,7 +1081,7 @@
 			:normalize t :range-0->1 range-01)))
       (values
        (let* ((pixmap (make-pixmap-frame size size 4))
-	      (branch (lcg-next-in-range 5.0 7.0))
+	      (branch (lcg-next-in-range 5.0 10.0))
 	      (fun-t
 	       #'(lambda (x y)
 		   (let ((x (d- x 0.5))

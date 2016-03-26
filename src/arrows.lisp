@@ -63,25 +63,33 @@
 		   (launcher-entity launcher-entity)) object
     (when (not hittedp)
       (game-state:with-world (world state)
-	(let ((camera (world:camera world))
-	      (intersected-entity (arrow-collision-p object)))
-	  (if (and intersected-entity
-		   (not (= (id intersected-entity)
-			   (id launcher-entity))))
+	(let ((camera (world:camera world)))
+	  (if (not (3d-utils:insidep (world:world-aabb world)
+				     pos))
 	      (progn
-		;; send attack event
-		(battle-utils:send-attack-long-range-event launcher-entity intersected-entity)
-		;; remove from world (quadtree)
 		(remove-entity-by-id (world:entities world) (id object))
 		;; TODO remove from rb-tree of game-state
-		(setf (hitted object) t)
+		(setf (hitted object) nil)
 		(setf (camera:followed-entity camera) nil)
 		(setf (camera:mode camera) :fp))
-	      (progn
-		(incf (displacement trajectory) +arrow-speed+)
-		(setf pos (ray-ends trajectory pos))
-		;; update quadtree
-		(world:move-entity world object nil :update-costs nil))))))))
+	      (let ((intersected-entity (arrow-collision-p object)))
+		(if (and intersected-entity
+			 (not (= (id intersected-entity)
+				 (id launcher-entity))))
+		    (progn
+		      ;; send attack event
+		      (battle-utils:send-attack-long-range-event launcher-entity intersected-entity)
+		      ;; remove from world (quadtree)
+		      (remove-entity-by-id (world:entities world) (id object))
+		      ;; TODO remove from rb-tree of game-state
+		      (setf (hitted object) t)
+		      (setf (camera:followed-entity camera) nil)
+		      (setf (camera:mode camera) :fp))
+		    (progn
+		      (incf (displacement trajectory) +arrow-speed+)
+		      (setf pos (ray-ends trajectory pos))
+		      ;; update quadtree
+		      (world:move-entity world object nil :update-costs nil))))))))))
 
 (defstruct arrow-db-entry id mesh)
 
@@ -129,9 +137,11 @@
 	    (setf (ray-direction ray)
 		  (transform-direction (ray-direction ray)
 				       (rotate-around +y-axe+
-						      (if (eq weapon-type :bow)
-							  (lcg-next-in-range 0.05 1.0)
-							  (lcg-next-in-range 0.01 0.5))))))
+						      (d* (dexpt -1.0
+								 (d (lcg-next-in-range 1 3)))
+							  (if (eq weapon-type :bow)
+							      (lcg-next-in-range 0.05 1.0)
+							      (lcg-next-in-range 0.01 0.5)))))))
 	  ray)
 	nil)))
 
