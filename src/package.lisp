@@ -3804,6 +3804,31 @@
    :memorize
    :recall))
 
+(defpackage :keyboard-config
+  (:use :cl
+	:alexandria
+	:config
+	:constants
+	:sb-cga
+	:num-utils
+	:interfaces
+	:camera
+	:world)
+  (:shadowing-import-from :sb-cga :rotate)
+  (:export
+   :*forward*
+   :*back*
+   :*left*
+   :*right*
+   :*upward*
+   :*downward*
+   :slide-forward
+   :slide-back
+   :slide-left
+   :slide-right
+   :slide-upward
+   :slide-downward))
+
 (defpackage :main-window
   (:use :cl
 	:config
@@ -3818,6 +3843,7 @@
 	:transformable
 	:camera
 	:game-state
+	:keyboard-config
 	:world
 	:sdl2.kit
 	:shaders-utils

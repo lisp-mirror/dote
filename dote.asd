@@ -136,6 +136,7 @@
 	       (:file "load-level")
 	       (:file "id3")
 	       (:file "ann")
+	       (:file "keyboard-config")
 	       (:file "main-window")
 	       (:module tests
                         :components ((:file "package")
