@@ -85,7 +85,7 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
      for kanren-trs.
 
    Moreover  you  will  need  a Opengl  implementation  with  hardware
-   acceleration.  tested  only  with  Mesa library  with  Intel(R)  HD
+   acceleration.  Tested  only  with  Mesa library  with  Intel(R)  HD
    Graphics 2500 GPU.
 
 * Issues

@@ -275,6 +275,12 @@
 	  (game-event:send-refresh-toolbar-event)
 	  (game-event:propagate-attack-long-range-event msg))))))
 
+(defun height-variation-chance-fn (h-atk h-defend)
+  (if (d> h-atk h-defend)
+      (funcall (num:gaussian-function 20.0 5.0 20.0)
+	       (d- h-atk h-defend))
+      -10.0))
+
 (defun actual-chance-long-range-attack (attacker defender)
     (assert (and attacker defender))
     (let* ((ghost-atk    (entity:ghost attacker))
@@ -298,7 +304,10 @@
 				      0.0)))
 	   (dist              (vec-length (vec- (entity:pos attacker)
 						(entity:pos defender))))
+	   (chance-by-h       (height-variation-chance-fn (elt (entity:pos attacker) 1)
+							  (elt (entity:pos defender) 1)))
 	   (actual-attack-chance (max 0.0 (d+ (num:d* chance-decrement dist)
+					      chance-by-h
 					      attack-chance))))
       (if weapon-type
 	  actual-attack-chance
