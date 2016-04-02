@@ -145,6 +145,15 @@
 	:all-test)
   (:export :kd-tree-suite))
 
+(defpackage :rb-tree-test
+  (:use :cl
+	:clunit
+	:bs-tree
+	:rb-tree
+	:all-test)
+  (:shadowing-import-from :bs-tree :search :map)
+  (:export :rb-tree-suite))
+
 (defpackage :random-terrain-test
   (:use :cl
 	:clunit

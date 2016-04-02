@@ -220,7 +220,7 @@
    (all-entities
     :accessor all-entities
     :initarg  :all-entities
-    :initform (rb-tree:make-root-rb-node nil :red))
+    :initform (rb-tree:make-root-rb-node nil rb-tree:+rb-red+))
    (level-difficult
     :accessor level-difficult
     :initarg  :level-difficult

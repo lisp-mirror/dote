@@ -301,6 +301,7 @@
    :cosstep-interpolate
    :hermite-polynomial
    :bidimensional-gaussian
+   :gaussian-probability-distribution
    :gaussian
    :gaussian-function
    :damped-impulse
@@ -1022,12 +1023,14 @@
    :with-insert-local-function
    :insert
    :leafp
+   :all-children-leaf-p
    :map
    :map-node
    :walk
    :bstp
    :node->dot
    :reconstruct-parent
+   :find-max-node
    :to-sexp
    :from-sexp))
 
@@ -1038,6 +1041,9 @@
    :bs-tree)
   (:shadowing-import-from :bs-tree :search :map)
   (:export
+   :+rb-red+
+   :+rb-black+
+   :+rb-color+
    :rb-node
    :color
    :make-rb-node
@@ -1051,9 +1057,11 @@
    :search-opt
    :with-insert-local-function
    :insert
+   :remove-node
    :leafp
    :map
    :map-node
+   :balancedp
    :walk
    :bstp
    :node->dot

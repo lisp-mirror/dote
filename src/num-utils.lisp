@@ -21,7 +21,10 @@
     (declare (optimize (debug 0) (safety 0) (speed 3)))
     (declare ((simple-array fixnum) primes))
     (declare (fixnum pos))
-    (let ((start (position-if #'(lambda (a) (> a 0)) primes :start (1+ pos))))
+    (let ((start (position-if #'(lambda (a)
+				  (declare (fixnum a))
+				  (> a 0))
+			      primes :start (1+ pos))))
       (if start
 	  (progn
 	    (do ((pos-m (+ start (elt primes start)) (+ pos-m (elt primes start))))
@@ -378,11 +381,14 @@
 		     (d/ (expt (d- y mu-y) (d 2)) (expt sigma-y (d 2)))
 		     (d- (d/ (d* (d 2) correlation (d- x mu-x) (d- y mu-y)) sigma-xy))))))))
 
-(defun gaussian (x sigma &optional (mu 0))
+(defun gaussian-probability-distribution (x sigma &optional (mu 0))
   (declare (optimize (debug 3) (safety 0) (speed 3)))
   (d* (d/ (d 1) (d* sigma (sqrt (d* (d 2) constants:+pi+))))
       (dexp (d- (d/ (dexpt (d- x mu) (d 2))
 		    (d* (d 2) (dexpt sigma (d 2))))))))
+
+(defun gaussian (x amplitude sigma mean)
+  (d* amplitude (dexp (d- (d/ (expt (d- x mean) 2.0) (d* 2.0 (dexpt sigma 2.0)))))))
 
 (defun enzyme-kinetics (max k x)
   (declare (optimize (debug 3) (safety 0) (speed 3)))
@@ -390,7 +396,7 @@
 
 (defun gaussian-function (amplitude sigma mean)
   #'(lambda (x)
-      (* amplitude (exp (- (/ (expt (- x mean) 2) (* 2 (expt sigma 2))))))))
+      (gaussian x amplitude sigma mean)))
 
 (defun damped-impulse (x freq)
   (declare (optimize (debug 3) (safety 0) (speed 3)))

@@ -155,6 +155,7 @@
 				     (:file "interpolation-test")
 				     (:file "quad-tree-test")
 				     (:file "kd-tree-test")
+				     (:file "rb-tree-test")
 				     (:file "random-terrain-test")
 				     (:file "random-labyrinth-test")
 				     (:file "pixmap-test")

@@ -44,6 +44,8 @@
 
 (defgeneric leafp (object))
 
+(defgeneric all-children-leaf-p (object))
+
 (defgeneric map (object function))
 
 (defgeneric map-node (object function))
@@ -57,6 +59,8 @@
 (defgeneric node->dot (object))
 
 (defgeneric reconstruct-parent (object &optional parent))
+
+(defgeneric find-max-node (object))
 
 (defmethod data ((object (eql nil)))
   nil)
@@ -73,19 +77,23 @@
 (defmethod node->string ((object node))
   (if (null (data object))
       ""
-      (format nil "~a ~% [~a] [~a]" 
-	      (data object) 
+      (format nil "~a ~% [~a] [~a]"
+	      (data object)
 	      (node->string (left object))
 	      (node->string (right object)))))
 
 (defmethod leafp ((object node))
   (null (data object)))
 
-(defmethod search ((object node) datum  &key (key #'identity) 
+(defmethod all-children-leaf-p ((object  node))
+  (and (leafp (left object))
+       (leafp (right object))))
+
+(defmethod search ((object node) datum  &key (key #'identity)
 		     (key-datum #'identity) (compare #'<) (equal #'=))
   (if (leafp object)
       nil
-      (cond 
+      (cond
 	((funcall equal (%key key (data object)) (%key key-datum datum))
 	 object)
 	((funcall compare (%key key-datum datum) (%key key (data object)))
@@ -95,14 +103,14 @@
 	 (search (right object) datum :key key :key-datum key-datum
 		   :compare compare :equal equal)))))
 
-(defmethod search-opt ((object node) datum  &key (key #'identity) 
+(defmethod search-opt ((object node) datum  &key (key #'identity)
 		     (key-datum #'identity) (compare #'<) (equal #'=)
 		   (candidate nil))
   (if (leafp object)
       (if (and candidate (funcall equal (%key key (data candidate)) (%key key-datum datum)))
 	  candidate
 	  nil)
-      (cond 
+      (cond
 	((funcall compare (%key key (data object)) (%key key-datum datum))
 	  (search-opt (left object) datum :key key :key-datum key-datum
 		    :compare compare :equal equal :candidate candidate))
@@ -112,7 +120,7 @@
 
 (defun make-node (data left right parent)
   (make-instance 'node :left left :right right :data data :parent parent))
-  
+
 (defun make-leaf (parent)
   (make-instance 'node :parent parent :left nil :right nil))
 
@@ -128,7 +136,7 @@
   (funcall key-fn a))
 
 (defun render-tree (file tree)
-  (s-dot:render-s-dot file "ps" 
+  (s-dot:render-s-dot file "ps"
 		      (append '(:graph ()) (node->dot tree))))
 
 (alexandria:define-constant +data+ :data :test #'eq)
@@ -159,13 +167,13 @@
 
 (defmacro %make-new-node (make-node-fn node data left right parent args)
   `(,make-node-fn ,data ,left ,right ,parent
-		  ,@(loop for i in args collect 
+		  ,@(loop for i in args collect
 			 `(,i ,node))))
 
 (defmacro with-insert-local-function ((make-left-node-fn
 				       make-right-node-fn
 				       make-leaf-node-fn
-				       make-leaf-fn 
+				       make-leaf-fn
 				       left-descend-fn
 				       right-descend-fn)
 				      &body body)
@@ -180,15 +188,15 @@
 			  (left new-node) l-leaf
 			  (right new-node) r-leaf)
 		    new-node)
-		  (cond 
+		  (cond
 		    ((funcall equal (%key key (data node)) (%key key-datum datum))
 		     node)
 		    ((funcall compare (%key key-datum datum) (%key key (data node)))
 		     ,(let ((a `(let ((new-node (,make-left-node-fn
 						      (data node)
-						      (,insert-fn (left node) datum key 
-							       key-datum compare equal) 
-						      (right node) 
+						      (,insert-fn (left node) datum key
+							       key-datum compare equal)
+						      (right node)
 						      (parent node))))
 				      (setf (parent (right new-node)) new-node
 					    (parent (left new-node)) new-node)
@@ -200,8 +208,8 @@
 		     ,(let ((a `(let ((new-node (,make-right-node-fn
 						    (data node)
 						    (left node)
-						    (,insert-fn (right node) datum key 
-							     key-datum compare equal) 
+						    (,insert-fn (right node) datum key
+							     key-datum compare equal)
 						    (parent node))))
 				  (setf (parent (right new-node)) new-node
 					(parent (left new-node)) new-node)
@@ -220,15 +228,15 @@
   (with-accessors ((data data) (left left) (right right)) object
     (if (leafp object)
 	(make-leaf nil)
-	(make-node (funcall function data) (map left function) 
+	(make-node (funcall function data) (map left function)
 		   (map right function) nil))))
 
 (defmethod map-node ((object node) function)
   (with-accessors ((color color) (data data) (left left) (right right)) object
     (if (leafp object)
 	(funcall function object (make-leaf object))
-	(funcall function object (make-node data 
-					    (map-node left function) 
+	(funcall function object (make-node data
+					    (map-node left function)
 					    (map-node right function) nil)))))
 
 (defmethod %walk ((object node) function args)
@@ -276,21 +284,27 @@
 		     (cond
 		       ((and (null left-children) (null right-children))
 			t);; leaf node, always balanced
-		       ((and
-			 (every #'(lambda (a) (funcall comp-fn (funcall key a) pivot)) 
+		       ((and left-children right-children)
+			(and
+			 (every #'(lambda (a) (funcall comp-fn (funcall key a) pivot))
 				left-children)
-			 (every #'(lambda (a) (funcall comp-fn pivot (funcall key a))) 
-				     right-children))
-			'a)
-		       ((or (null left-children) (null right-children))
-			t)
-		       (t nil)))
+			 (every #'(lambda (a) (funcall comp-fn pivot (funcall key a)))
+				     right-children)
+			 'a))
+		       ((null left-children)
+			(and (every #'(lambda (a) (funcall comp-fn pivot (funcall key a)))
+			       right-children))
+			'l)
+		       ((null right-children)
+			(every #'(lambda (a) (funcall comp-fn (funcall key a) pivot))
+			       left-children)
+			'r)))
 		   (misc:dbg "leaf root ~a" (data node))))))
     (let ((res nil))
-      (walk object #'(lambda (n) (push 
+      (walk object #'(lambda (n) (push
 				  (cons (data n) (or (balanced n) '(nil)))
 				  res)))
-      res)))
+      (every #'cdr res))))
 
 (defmethod node->dot ((object node))
   (labels ((nodes ()
@@ -310,19 +324,19 @@
 		 `(:node ((:id ,(format nil "nil-r~a" (data object)))
 			  (:label "nil")))))))
 	   (edges ()
-	     (append 
+	     (append
 	      (if (data (left object))
-		(list `(:edge 
+		(list `(:edge
 			((:from ,(format nil "~a" (data object)))
 			 (:to ,(format nil "~a" (data (left object)))))))
-		(list `(:edge 
+		(list `(:edge
 			((:from ,(format nil "~a" (data object)))
 			 (:to ,(format nil "nil-l~a" (data object)))))))
 	      (if (data (right object))
-		(list `(:edge 
+		(list `(:edge
 			((:from ,(format nil "~a" (data object)))
 			 (:to ,(format nil "~a" (data (right object)))))))
-		(list `(:edge 
+		(list `(:edge
 			((:from ,(format nil "~a" (data object)))
 			 (:to ,(format nil "nil-r~a" (data object))))))))))
     (append (nodes) (edges))))
@@ -332,6 +346,11 @@
   (with-accessors ((data data) (left left) (right right)) object
     (if (leafp object)
 	(make-leaf parent)
-	(make-node data 
-		   (reconstruct-parent left object) 
+	(make-node data
+		   (reconstruct-parent left object)
 		   (reconstruct-parent right object) parent))))
+
+(defmethod find-max-node ((object node))
+  (if (leafp (right object))
+      object
+      (find-max-node (right object))))
