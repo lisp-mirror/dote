@@ -215,10 +215,24 @@
 				     (event game-event:update-highlight-path))
   (highlight-path-costs-space object object (game-event:tile-pos event)))
 
+(defmethod remove-entity-if ((object world) predicate)
+  (with-accessors ((main-state main-state)) object
+    (let* ((ids '())
+	   (fn  #'(lambda (a)
+		    (if (funcall predicate a)
+			(progn
+			  (push (id a) ids)
+			  t)
+			nil))))
+      (remove-entity-if (entities object) fn)
+      (loop for id in ids do
+	   (game-state:remove-entity-by-id main-state id))
+      object)))
+
 (defmethod game-event:on-game-event ((object world) (event game-event:end-turn))
   (with-accessors ((main-state main-state)) object
     (misc:dbg " end turn ~a ~a" (type-of object) (type-of event))
-    (remove-entity-if (entities object) #'(lambda (a) (typep a 'billboard:tooltip)))
+    (remove-all-tooltips object)
     (remove-entity-if (entities object) #'(lambda (a)
 					    (and (typep a 'particles:particles-cluster)
 						 (removeable-from-world a))))
@@ -229,6 +243,10 @@
     (maphash #'(lambda (k v) (declare (ignore k)) (mesh:process-postponed-messages v))
 	     (game-state:ai-entities main-state))
     nil))
+
+(defmethod remove-entity-by-id ((object world) id)
+  (remove-entity-by-id (main-state object) id) ;; remove from game state (logic)
+  (remove-entity-by-id (entities object)   id)) ;; remove from rendering
 
 (defgeneric (setf main-state) (new-state object))
 
@@ -286,6 +304,8 @@
 (defgeneric add-ai-opponent (object type gender))
 
 (defgeneric world-aabb (object))
+
+(defgeneric remove-all-tooltips (object))
 
 (defmethod iterate-quad-tree ((object world) function probe)
   (quad-tree:iterate-nodes-intersect (entities object)
@@ -886,3 +906,6 @@
 	  (expand res (aabb-p2 (aabb entity))))
 	(setf (slot-value object 'cached-aabb) res)
 	res)))
+
+(defmethod remove-all-tooltips ((object world))
+  (remove-entity-if (entities object) #'(lambda (a) (typep a 'billboard:tooltip))))

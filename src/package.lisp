@@ -979,6 +979,7 @@
 	:config
 	:sb-cga
 	:sb-cga-utils
+	:num-utils
 	:interfaces
 	:identificable)
   (:shadowing-import-from :sb-cga :rotate)
@@ -990,12 +991,16 @@
    :scaling
    :up
    :ghost
+   :tooltip-count
    :state
    :aabb-2d
    :find-entity-by-id
    :remove-entity-by-id
    :remove-entity-if
-   :entity-dead-p))
+   :entity-dead-p
+   :incf-tooltip-ct
+   :decf-tooltip-ct
+   :reset-tooltip-ct))
 
 (defpackage :bs-tree
   (:use
@@ -1685,10 +1690,13 @@
 	:alexandria
 	:constants
 	:config
+	:sb-cga
 	:misc
+	:num
 	:ivec2
 	:vec2)
   (:shadowing-import-from :misc :random-elt :shuffle)
+  (:shadowing-import-from :sb-cga :rotate)
   (:export
    :facingp
    :pos-entity-chunk->cost-pos))
@@ -1946,6 +1954,7 @@
    :push-entity
    :push-labyrinth-entity
    :find-labyrinth-by-id
+   :remove-entity-by-id
    :add-to-player-entities
    :add-to-ai-entities
    :fetch-from-player-entities
@@ -2571,7 +2580,10 @@
    :params->np-character
    :item->player-character-slot
    :item->available-player-character-slot
-   :worn-weapon))
+   :worn-weapon
+   :weapon-type
+   :weapon-type-long-range
+   :weapon-type-short-range))
 
 (defpackage :random-armor
   (:use :cl
@@ -3590,7 +3602,8 @@
    :point-to-entity-and-hide-cb
    :point-camera-to-entity
    :add-ai-opponent
-   :world-aabb))
+   :world-aabb
+   :remove-all-tooltips))
 
 (defpackage :terrain-chunk
   (:use :cl

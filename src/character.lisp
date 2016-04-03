@@ -937,6 +937,12 @@
 
 (defgeneric worn-weapon (object))
 
+(defgeneric weapon-type (object))
+
+(defgeneric weapon-type-short-range (object))
+
+(defgeneric weapon-type-long-range (object))
+
 (defmethod random-fill-slots ((object player-character) capital characteristics)
   (loop for charact in characteristics do
        (when (> capital 0)
@@ -1116,6 +1122,36 @@
      (right-hand object))
     (t
      nil)))
+
+(defmethod weapon-type ((object player-character))
+  (or (weapon-type-long-range  object)
+      (weapon-type-short-range object)))
+
+(defmethod weapon-type-short-range ((object player-character))
+ (let* ((weapon       (worn-weapon object))
+	(weapon-type  (when weapon
+			(cond
+			  ((can-cut-p weapon)
+			   :edge)
+			  ((can-smash-p weapon)
+			   :impact)
+			  ((mounted-on-pole-p weapon)
+			   :pole)
+			  (t
+			   nil)))))
+   weapon-type))
+
+(defmethod weapon-type-long-range ((object player-character))
+ (let* ((weapon       (worn-weapon object))
+	(weapon-type  (when weapon
+			(cond
+			  ((bowp weapon)
+			   :bow)
+			  ((crossbowp weapon)
+			   :crossbow)
+			  (t
+			   nil)))))
+   weapon-type))
 
 (defmacro gen-actual-characteristic (name)
   (let ((fn       (format-fn-symbol t "actual-~a" name))

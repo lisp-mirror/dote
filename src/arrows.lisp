@@ -67,8 +67,8 @@
 	  (if (not (3d-utils:insidep (world:world-aabb world)
 				     pos))
 	      (progn
-		(remove-entity-by-id (world:entities world) (id object))
-		;; TODO remove from rb-tree of game-state
+		;; remove from world
+		(remove-entity-by-id world (id object))
 		(setf (hitted object) nil)
 		(setf (camera:followed-entity camera) nil)
 		(setf (camera:mode camera) :fp))
@@ -79,9 +79,8 @@
 		    (progn
 		      ;; send attack event
 		      (battle-utils:send-attack-long-range-event launcher-entity intersected-entity)
-		      ;; remove from world (quadtree)
-		      (remove-entity-by-id (world:entities world) (id object))
-		      ;; TODO remove from rb-tree of game-state
+		      ;; remove from world
+		      (remove-entity-by-id world (id object))
 		      (setf (hitted object) t)
 		      (setf (camera:followed-entity camera) nil)
 		      (setf (camera:mode camera) :fp))

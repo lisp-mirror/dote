@@ -446,6 +446,15 @@
 				  :key       #'id
 				  :key-datum #'identity))))
 
+(defmethod remove-entity-by-id ((object game-state) id)
+  (with-accessors ((all-entities all-entities)) object
+    (setf all-entities (rb-tree:remove-node all-entities
+					    id
+					    :equal     #'=
+					    :compare   #'<
+					    :key       #'id
+					    :key-datum #'identity))))
+
 (defmethod map-level ((object game-state))
   (truncate (/ (+ (level-difficult object)
 		  (1+ (* 8 (num:smoothstep-interpolate (d +minimium-map-size+)

@@ -22,6 +22,12 @@
 
 (define-constant +attack-max-sigma+               80.0  :test #'=)
 
+(define-constant +weapon-combination-bonus+        0.1  :test #'=)
+
+(define-constant +weapon-pole-range+                 2  :test #'=)
+
+(define-constant +weapon-melee-range+                1  :test #'=)
+
 (defun 2d-gaussian (x y sigma h)
   (d* h (dexp (d- (d+ (d/ (dexpt x 2.0) (d* 2.0 (dexpt sigma 2.0)))
 		      (d/ (dexpt y 2.0) (d* 2.0 (dexpt sigma 2.0))))))))
@@ -109,6 +115,34 @@
 	(fmt-comment "Hit with damage below than 20%: ~,2@f~%"
 		     (count-less-than all-damages 0.2))))))
 
+(defgeneric bonus-attack-weapon-combination (weapon-atk weapon-def))
+
+(defmethod bonus-attack-weapon-combination (weapon-atk weapon-def)
+  0.0)
+
+(defmethod bonus-attack-weapon-combination ((weapon-atk (eql :impact)) (weapon-def (eql :edge)))
+  +weapon-combination-bonus+)
+
+(defmethod bonus-attack-weapon-combination ((weapon-atk (eql :edge)) (weapon-def (eql :bow)))
+  +weapon-combination-bonus+)
+
+(defmethod bonus-attack-weapon-combination ((weapon-atk (eql :edge)) (weapon-def (eql :crossbow)))
+  +weapon-combination-bonus+)
+
+(defmethod bonus-attack-weapon-combination ((weapon-atk (eql :bow)) (weapon-def (eql :impact)))
+  +weapon-combination-bonus+)
+
+(defmethod bonus-attack-weapon-combination ((weapon-atk (eql :crossbow)) (weapon-def (eql :impact)))
+  +weapon-combination-bonus+)
+
+(defgeneric bonus-defense-weapon-combination (weapon-atk weapon-def))
+
+(defmethod bonus-defense-weapon-combination (weapon-atk weapon-def)
+  0.0)
+
+(defmethod bonus-defense-weapon-combination (weapon-atk (weapon-def (eql :pole)))
+  (d- +weapon-combination-bonus+))
+
 (defun send-effects-after-attack (attacker defender)
   (let* ((weapon            (character:worn-weapon (entity:ghost attacker)))
 	 (effects-to-others (remove-if
@@ -125,19 +159,24 @@
     (random-object-messages:propagate-effects-msg weapon defender effects-to-others)))
 
 (defun send-attack-melee-event (attacker defender)
-  (when (and (mesh:can-use-movement-points-p attacker :minimum +attack-melee-cost+)
-	     (game-state:entity-next-p (entity:state attacker) attacker defender)
-	     (map-utils:facingp (mesh:calculate-cost-position attacker)
-				(entity:dir attacker)
-				(mesh:calculate-cost-position defender)))
-    (let ((msg (make-instance 'game-event:attack-melee-event
-			      :id-origin       (identificable:id attacker)
-			      :id-destination  (identificable:id defender)
-			      :attacker-entity attacker)))
-      (mesh:decrement-move-points-attack-melee attacker)
-      (mesh:set-attack-status attacker)
-      (game-event:send-refresh-toolbar-event)
-      (game-event:propagate-attack-melee-event msg))))
+  (let* ((weapon-type  (character:weapon-type-short-range (entity:ghost attacker)))
+	 (max-dist-atk (if (eq weapon-type :pole)
+			   +weapon-pole-range+
+			   +weapon-melee-range+)))
+    (when (and (mesh:can-use-movement-points-p attacker :minimum +attack-melee-cost+)
+	       ;(game-state:entity-next-p (entity:state attacker) attacker defender)
+	       (map-utils:facingp (mesh:calculate-cost-position attacker)
+				  (entity:dir attacker)
+				  (mesh:calculate-cost-position defender)
+				  :max-distance max-dist-atk))
+      (let ((msg (make-instance 'game-event:attack-melee-event
+				:id-origin       (identificable:id attacker)
+				:id-destination  (identificable:id defender)
+				:attacker-entity attacker)))
+	(mesh:decrement-move-points-attack-melee attacker)
+	(mesh:set-attack-status attacker)
+	(game-event:send-refresh-toolbar-event)
+	(game-event:propagate-attack-melee-event msg)))))
 
 (defun defend-from-attack-short-range (event)
   (let* ((attacker (game-event:attacker-entity event))
@@ -150,16 +189,7 @@
 	   (weapon-level (if weapon
 			     (character:level weapon)
 			     0.0))
-	   (weapon-type  (when weapon
-			   (cond
-			     ((character:can-cut-p weapon)
-			      :edge)
-			     ((character:can-smash-p weapon)
-			      :impact)
-			     ((character:mounted-on-pole-p weapon)
-			      :pole)
-			     (t
-			      nil))))
+	   (weapon-type  (character:weapon-type-short-range ghost-atk))
 	   (attack-dmg        (character:actual-melee-attack-damage ghost-atk))
 	   (bonus-attack-dmg  (cond
 				((eq weapon-type :edge)
@@ -171,15 +201,21 @@
 				(t
 				 0.0)))
 	   (attack-chance        (character:actual-melee-attack-chance ghost-atk))
-	   (bonus-attack-chance  (cond
-				   ((eq weapon-type :edge)
-				    (character:actual-edge-weapons-chance-bonus ghost-atk))
-				   ((eq weapon-type :impact)
-				    (character:actual-impact-weapons-chance-bonus ghost-atk))
-				   ((eq weapon-type :pole)
-				    (character:actual-pole-weapons-chance-bonus ghost-atk))
-				   (t
-				    0.0))))
+	   (bonus-attack-chance  (d+ (bonus-attack-weapon-combination
+				      weapon-type
+				      (character:weapon-type ghost-defend))
+				     (bonus-defense-weapon-combination
+				      weapon-type
+				      (character:weapon-type ghost-defend))
+				     (cond
+				       ((eq weapon-type :edge)
+					(character:actual-edge-weapons-chance-bonus ghost-atk))
+				       ((eq weapon-type :impact)
+					(character:actual-impact-weapons-chance-bonus ghost-atk))
+				       ((eq weapon-type :pole)
+					(character:actual-pole-weapons-chance-bonus ghost-atk))
+				       (t
+					0.0)))))
     (cond
       ((typep (entity:ghost defender) 'character:player-character)
        (let* ((armor-level  (cond
@@ -199,7 +235,7 @@
 					       (entity:dir defender))
 					 (pass-d100.0 (character:actual-ambush-attack-chance
 						       ghost-atk)))))
-	 (if weapon
+	 (if weapon-type
 	     (let ((dmg (attack-damage attack-dmg bonus-attack-dmg
 				       attack-chance bonus-attack-chance
 				       weapon-level
@@ -214,26 +250,18 @@
 		   (values nil nil))))))
       ((typep (entity:ghost defender) 'character:np-character)
        (values (attack-damage attack-dmg bonus-attack-dmg
-				    attack-chance bonus-attack-chance
-				    weapon-level
-				    0.0
-				    0.0
-				    (character:level ghost-defend)
-				    nil)
+			      attack-chance bonus-attack-chance
+			      weapon-level
+			      0.0
+			      0.0
+			      (character:level ghost-defend)
+			      nil)
 	       nil))))))
 
 (defun attack-long-range-animation (attacker defender)
   (when (able-to-see-mesh:other-visible-p attacker defender)
     (let* ((ghost-atk    (entity:ghost attacker))
-	   (weapon       (character:worn-weapon ghost-atk))
-	   (weapon-type  (when weapon
-			   (cond
-			     ((character:bowp weapon)
-			      :bow)
-			     ((character:crossbowp weapon)
-			      :crossbow)
-			     (t
-			      nil))))
+	   (weapon-type  (character:weapon-type-long-range ghost-atk))
 	   (cost         (cond
 			   ((eq weapon-type :bow)
 			    +attack-long-range-bow-cost+)
@@ -248,15 +276,7 @@
 (defun send-attack-long-range-event (attacker defender)
   (when (able-to-see-mesh:other-visible-p attacker defender)
     (let* ((ghost-atk    (entity:ghost attacker))
-	   (weapon       (character:worn-weapon ghost-atk))
-	   (weapon-type  (when weapon
-			   (cond
-			     ((character:bowp weapon)
-			      :bow)
-			     ((character:crossbowp weapon)
-			      :crossbow)
-			     (t
-			      nil))))
+	   (weapon-type  (character:weapon-type-long-range ghost-atk))
 	   (cost         (cond
 			   ((eq weapon-type :bow)
 			    +attack-long-range-bow-cost+)
@@ -284,16 +304,8 @@
 (defun actual-chance-long-range-attack (attacker defender)
     (assert (and attacker defender))
     (let* ((ghost-atk    (entity:ghost attacker))
-	   (weapon       (character:worn-weapon ghost-atk))
-	   (weapon-type  (when weapon
-			   (cond
-			     ((character:bowp weapon)
-			      :bow)
-			     ((character:crossbowp weapon)
-			      :crossbow)
-			     (t
-			      nil))))
-
+	   (ghost-defend (entity:ghost defender))
+	   (weapon-type  (character:weapon-type-long-range ghost-atk))
 	   (attack-chance     (character:actual-range-attack-chance ghost-atk))
 	   (chance-decrement  (cond
 				((eq weapon-type :crossbow)
@@ -308,7 +320,13 @@
 							  (elt (entity:pos defender) 1)))
 	   (actual-attack-chance (max 0.0 (d+ (num:d* chance-decrement dist)
 					      chance-by-h
-					      attack-chance))))
+					      attack-chance
+					      (d+ (bonus-attack-weapon-combination
+						   weapon-type
+						   (character:weapon-type ghost-defend))
+						  (bonus-defense-weapon-combination
+						   weapon-type
+						   (character:weapon-type ghost-defend)))))))
       (if weapon-type
 	  actual-attack-chance
 	  0.0)))
@@ -321,6 +339,7 @@
     (let* ((ghost-atk    (entity:ghost attacker))
 	   (ghost-defend (entity:ghost defender))
 	   (weapon       (character:worn-weapon ghost-atk))
+	   (weapon-type  (character:weapon-type-long-range ghost-atk))
 	   (weapon-level (if weapon
 			     (character:level weapon)
 			     0.0))
@@ -345,7 +364,7 @@
 					   (pass-d100.0 (character:actual-ambush-attack-chance
 							 ghost-atk))))
 		(actual-attack-chance (actual-chance-long-range-attack attacker defender)))
-	   (if weapon
+	   (if weapon-type
 	       (let ((dmg (attack-damage attack-dmg 0.0
 					 actual-attack-chance 0.0
 					 weapon-level

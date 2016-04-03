@@ -113,7 +113,11 @@
   (check-event-targeted-to-me (object event)
     (multiple-value-bind (damage ambush)
 	(battle-utils:defend-from-attack-short-range event)
-      (declare (ignore ambush))
+      (when ambush
+	(billboard:apply-tooltip object
+				 billboard:+tooltip-surprise-attack-char+
+				 :color     billboard:+damage-color+
+				 :font-type gui:+tooltip-font-handle+))
       (apply-damage object damage)
       t)))
 
@@ -121,7 +125,12 @@
   (check-event-targeted-to-me (object event)
     (multiple-value-bind (damage ambush)
 	(battle-utils:defend-from-attack-long-range event)
-      (declare (ignore ambush))
+      (when ambush
+	(billboard:apply-tooltip object
+				 billboard:+tooltip-surprise-attack-char+
+				 :color     billboard:+damage-color+
+				 :font-type gui:+tooltip-font-handle+))
+
       (apply-damage object damage)
       t)))
 
@@ -560,7 +569,8 @@
 	  t)
 	nil)))
 
-(defmethod on-game-event ((object md2-mesh) (event end-turn))
+(defmethod on-game-event :after ((object md2-mesh) (event end-turn))
+  (misc:dbg "end turn md2mesh tooltip ct ~a" (tooltip-count object))
   (with-accessors ((ghost ghost)
 		   (state state)) object
     (game-state:with-world (world state)
@@ -1438,21 +1448,23 @@
 	    (forged-potion-cure-dmg     (forged-potion-cure-dmg))
 	    (forged-potion-cure-berserk (forged-potion-cure-berserk))
 	    (forged-ring                (forged-ring))
-	    (forged-weapon              (forged-bow)))
+	    (forged-sword               (forged-sword))
+	    (forged-bow                 (forged-bow)))
 	(game-event:register-for-end-turn forged-potion)
 	(game-event:register-for-end-turn forged-potion-cure-dmg)
 	(game-event:register-for-end-turn forged-potion-cure-berserk)
 	(game-event:register-for-end-turn forged-ring)
-	(game-event:register-for-end-turn forged-weapon)
+	(game-event:register-for-end-turn forged-bow)
 	(add-to-inventory (ghost body) forged-potion)
 	(add-to-inventory (ghost body) forged-potion-cure-dmg)
 	(add-to-inventory (ghost body) forged-potion-cure-berserk)
 	(add-to-inventory (ghost body) forged-ring)
-	(add-to-inventory (ghost body) forged-weapon)
+	(add-to-inventory (ghost body) forged-bow)
+	(add-to-inventory (ghost body) forged-sword)
 	(setf (movement-points (ghost body)) 100.0)
 	;; note:   wear-item-event  will   not  be   catched  as   the
 	;; registration happens when the entity is added to world
-	(wear-item body forged-weapon))
+	(wear-item body forged-sword))
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       body))
 

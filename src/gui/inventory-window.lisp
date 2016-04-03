@@ -16,7 +16,6 @@
 
 (in-package :widget)
 
-
 (defclass inventory-slot-button (check-button)
   ((contained-entity
     :initform nil
@@ -132,6 +131,7 @@
 				      available-slot
 				      (ghost owner)
 				      c-slot)
+		    (character:add-to-inventory (ghost owner) worn-item)
 		    ;; events
 		    (let ((all-effects (remove-if
 					(random-object-messages:untrigged-effect-p-fn

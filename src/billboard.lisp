@@ -172,12 +172,11 @@
 
 (defgeneric apply-tooltip (object label &key color))
 
-
 (defmethod apply-tooltip ((object mesh:triangle-mesh) label
-			    &key
-			      (color +damage-color+)
-			      (font-type gui:+default-font-handle+)
-			      (gravity 1.0))
+			  &key
+			    (color +damage-color+)
+			    (font-type gui:+default-font-handle+)
+			    (gravity 1.0))
   (with-accessors ((ghost ghost)
 		   (id id)
 		   (state state)) object
@@ -185,17 +184,19 @@
 		     (immune-poison-status immune-poison-status)
 		     (status status)) ghost
       (game-state:with-world (world state)
-	(let* ((camera             (camera world))
-	       (camera-pos         (pos camera))
-	       (mesh-pos           (aabb-top-center (aabb object)))
-	       (mesh-to-camera-vec (normalize (vec- camera-pos mesh-pos)))
-	       (displ              mesh-to-camera-vec scale)
-	       (tooltip (billboard:make-tooltip label
-						(vec+ mesh-pos displ)
-						(compiled-shaders object)
-						:color color
-						:font-type font-type
-						:gravity   gravity)))
+	(let* ((mesh-pos       (aabb-top-center (aabb object)))
+	       (tooltip-count  (tooltip-count   object))
+	       (tooltip        (billboard:make-tooltip label
+						       (vec+ mesh-pos
+							     (vec* (vec 0.0
+									(d* 1.5 +tooltip-h+)
+									0.0)
+								   tooltip-count))
+						       (compiled-shaders object)
+						       :color color
+						       :font-type font-type
+						       :gravity   gravity)))
+	  (incf-tooltip-ct object)
 	  (world:push-entity world tooltip))))))
 
 (defun get-bitmap-min-x-opaque (pixmap)

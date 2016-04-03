@@ -578,7 +578,8 @@
 	   (call-next-method)))
 
 (defmethod game-event:on-game-event ((object triangle-mesh) (event game-event:end-turn))
-  (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
+  (misc:dbg "mesh end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
+  (reset-tooltip-ct object)
   nil)
 
 (defmethod game-event:on-game-event ((object triangle-mesh)
@@ -2709,7 +2710,7 @@
 	    (let ((cost-pos (map-utils:pos-entity-chunk->cost-pos pos)))
 	      (clean-map-state-entity state cost-pos)
 	      (game-state:with-world (world state)
-		(remove-entity-by-id (world:entities world) id))
+		(remove-entity-by-id world id))
 	      (set-minimum-cost-map-layer@ state (elt cost-pos 0) (elt cost-pos 1))
 	      (setf (renderp object) nil)
 	      (when (parent-labyrinth object)
