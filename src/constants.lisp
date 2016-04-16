@@ -170,65 +170,69 @@
 
 (define-constant +default-character-armor-dir+     '("characters" "armor")     :test #'equalp)
 
-(define-constant +default-character-container-dir+ '("characters" "container")    :test #'equalp)
+(define-constant +default-character-container-dir+ '("characters" "container") :test #'equalp)
 
-(define-constant +default-character-elm-dir+       '("characters" "elm")          :test #'equalp)
+(define-constant +default-character-elm-dir+       '("characters" "elm")       :test #'equalp)
 
-(define-constant +default-character-fountain-dir+  '("characters" "fountain")     :test #'equalp)
+(define-constant +default-character-fountain-dir+  '("characters" "fountain")  :test #'equalp)
 
-(define-constant +default-character-key-dir+       '("characters" "key")          :test #'equalp)
+(define-constant +default-character-key-dir+       '("characters" "key")       :test #'equalp)
 
-(define-constant +default-character-elm-dir+       '("characters" "elm")          :test #'equalp)
+(define-constant +default-character-elm-dir+       '("characters" "elm")       :test #'equalp)
 
-(define-constant +default-character-potion-dir+    '("characters" "potion")       :test #'equalp)
+(define-constant +default-character-potion-dir+    '("characters" "potion")    :test #'equalp)
 
-(define-constant +default-character-ring-dir+      '("characters" "ring")         :test #'equalp)
+(define-constant +default-character-ring-dir+      '("characters" "ring")      :test #'equalp)
 
-(define-constant +default-character-shield-dir+    '("characters" "shield")       :test #'equalp)
+(define-constant +default-character-shield-dir+    '("characters" "shield")    :test #'equalp)
 
-(define-constant +default-character-shoes-dir+     '("characters" "shoes")        :test #'equalp)
+(define-constant +default-character-shoes-dir+     '("characters" "shoes")     :test #'equalp)
 
-(define-constant +default-character-food-dir+      '("characters" "food")         :test #'equalp)
+(define-constant +default-character-food-dir+      '("characters" "food")      :test #'equalp)
 
-(define-constant +default-character-misc-dir+      '("characters" "misc")         :test #'equalp)
+(define-constant +default-character-misc-dir+      '("characters" "misc")      :test #'equalp)
 
-(define-constant +default-character-inert-obj-dir+ '("characters" "inert")        :test #'equalp)
+(define-constant +default-character-inert-obj-dir+ '("characters" "inert")     :test #'equalp)
 
-(define-constant +default-character-filename+      "character.lisp"               :test #'string=)
+(define-constant +default-character-filename+      "character.lisp"            :test #'string=)
 
-(define-constant +default-interaction-filename+    "interaction.lisp"             :test #'string=)
+(define-constant +default-interaction-filename+    "interaction.lisp"          :test #'string=)
 
-(define-constant +default-furniture-templates-dir+ "furniture-templates"          :test #'string=)
+(define-constant +default-furniture-templates-dir+ "furniture-templates"       :test #'string=)
 
-(define-constant +gui-static-text-delim+           "§"                            :test #'string=)
+(define-constant +gui-static-text-delim+           "§"                         :test #'string=)
 
-(define-constant +gui-static-text-nbsp+            "¬"                            :test #'string=)
+(define-constant +gui-static-text-nbsp+            "¬"                         :test #'string=)
 
-(define-constant +standard-float-print-format+     "~,2@f"                        :test #'string=)
+(define-constant +standard-float-print-format+     "~,2@f"                     :test #'string=)
 
-(define-constant +container-capacity+              3                              :test #'=)
+(define-constant +container-capacity+              3                           :test #'=)
 
-(define-constant +model-preview-warrior-re+       "preview-warrior"               :test #'string=)
+(define-constant +model-preview-warrior-re+       "preview-warrior"            :test #'string=)
 
-(define-constant +model-preview-archer-re+        "preview-archer"                :test #'string=)
+(define-constant +model-preview-archer-re+        "preview-archer"             :test #'string=)
 
-(define-constant +model-preview-wizard-re+        "preview-wizard"                :test #'string=)
+(define-constant +model-preview-wizard-re+        "preview-wizard"             :test #'string=)
 
-(define-constant +model-preview-healer-re+        "preview-healer"                :test #'string=)
+(define-constant +model-preview-healer-re+        "preview-healer"             :test #'string=)
 
-(define-constant +model-preview-ranger-re+        "preview-healer"                :test #'string=)
+(define-constant +model-preview-ranger-re+        "preview-healer"             :test #'string=)
 
-(define-constant +model-preview-ext-re+           "\\.tga$"                       :test #'string=)
+(define-constant +model-preview-ext-re+           "\\.tga$"                    :test #'string=)
 
-(define-constant +model-move-speed+               0.02                            :test #'=)
+(define-constant +model-move-speed+               0.02                         :test #'=)
 
-(define-constant +gui-zoom-entity+                15.0                            :test #'=)
+(define-constant +gui-zoom-entity+                15.0                         :test #'=)
 
-(define-constant +visibility-cone-half-hangle+    0.5235988                       :test #'=)
+(define-constant +visibility-cone-half-hangle+    0.5235988                    :test #'=)
 
 (define-constant +visibility-cone-height+         (sb-cga:vec 0.0 0.0 40.0)
-  :test #'sb-cga:vec~)
+                                                                               :test #'sb-cga:vec~)
 
-(define-constant +visibility-ray-displ-incr+      0.01                            :test #'=)
+(define-constant +visibility-ray-displ-incr+      0.01                         :test #'=)
 
-(define-constant +camera-drag-spring-k+           10.0                            :test #'=)
+(define-constant +camera-drag-spring-k+           10.0                         :test #'=)
+
+(define-constant +default-arrow-name+             "bow"                        :test #'string=)
+
+(define-constant +default-bolt-name+              "crossbow"                   :test #'string=)

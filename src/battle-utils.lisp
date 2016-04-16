@@ -259,7 +259,7 @@
 	       nil))))))
 
 (defun attack-long-range-animation (attacker defender)
-  (when (able-to-see-mesh:other-visible-p attacker defender)
+  (when (renderp defender) ;; does it means: "is visible for someone?"
     (let* ((ghost-atk    (entity:ghost attacker))
 	   (weapon-type  (character:weapon-type-long-range ghost-atk))
 	   (cost         (cond
@@ -274,7 +274,7 @@
 	(mesh:set-attack-status attacker)))))
 
 (defun send-attack-long-range-event (attacker defender)
-  (when (able-to-see-mesh:other-visible-p attacker defender)
+  (when (renderp defender) ;; does it means: "is visible for someone?"
     (let* ((ghost-atk    (entity:ghost attacker))
 	   (weapon-type  (character:weapon-type-long-range ghost-atk))
 	   (cost         (cond
@@ -386,3 +386,34 @@
 				(character:level ghost-defend)
 				nil)
 		 nil))))))
+
+(defun attack-short-range (world attacker defender)
+  "This is the most high level attack routine"
+  (when defender
+    (if (character:worn-weapon (entity:ghost attacker))
+	(progn
+	  (world:remove-all-tooltips world)
+	  (battle-utils:send-attack-melee-event attacker defender))
+	(make-tooltip-no-weapon-error world attacker))
+    (entity:reset-tooltip-ct defender)
+    (world:reset-toolbar-selected-action world)))
+
+(defun attack-long-range (world attacker defender)
+  (if (character:worn-weapon (entity:ghost attacker))
+      (progn
+	(world:remove-all-tooltips world)
+	(battle-utils:attack-long-range-animation attacker defender)
+	(arrows:launch-arrow +default-arrow-name+
+			     world
+			     attacker
+			     defender))
+      (make-tooltip-no-weapon-error world attacker))
+  (entity:reset-tooltip-ct defender)
+  (world:reset-toolbar-selected-action world))
+
+(defun make-tooltip-no-weapon-error (world attacker)
+  (world:post-entity-message world attacker
+			     (format nil
+				     (_"You have not got a weapon"))
+			     (cons (_ "Ok")
+				   #'widget:hide-and-remove-parent-cb)))

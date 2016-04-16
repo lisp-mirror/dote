@@ -20,10 +20,6 @@
 
 (alexandria:define-constant +arrow-model-name+   "model.obj" :test #'string=)
 
-(alexandria:define-constant +default-arrow-name+ "bow"       :test #'string=)
-
-(alexandria:define-constant +default-bolt-name+  "crossbow"  :test #'string=)
-
 (defclass arrow-mesh (triangle-mesh)
   ((trajectory
     :initform nil
@@ -35,7 +31,7 @@
     :accessor launcher-entity)
    (hitted
     :initform nil
-    :initarg  :launcher-entity
+    :initarg  :hitted
     :reader   hittedp
     :writer   (setf hitted))))
 
@@ -130,7 +126,10 @@
 	 (ray               (make-instance 'ray
 					   :ray-direction ray-dir
 					   :displacement +arrow-speed+)))
-    (if weapon-type
+    (if (and weapon-type
+	     (d< (dabs (dacos (dot-product (dir attacker)
+					   ray-dir)))
+		 +visibility-cone-half-hangle+))
 	(progn
 	  (when (not (die-utils:pass-d100.0 attack-chance))
 	    (setf (ray-direction ray)

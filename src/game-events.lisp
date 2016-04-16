@@ -12,8 +12,9 @@
 
 (defun clean-all-events-vectors ()
   (maphash #'(lambda (k v)
-	       (declare (ignore k))
-	       (loop for i from 0 below (length v) do (setf (elt v i) nil)))
+	       (loop for i from 0 below (length v) do (setf (elt v i) nil))
+	       (setf (gethash k *all-events-container*)
+		     (make-fresh-array 0 nil 'entity:entity)))
 	   *all-events-container*))
 
 (defclass generic-game-event ()
@@ -74,7 +75,7 @@
 	 (vector-push-extend el (,get-vector-symbol)))
        (defun ,unregister-symbol (el)
 	 (setf (,get-vector-symbol)
-	       (remove el (,get-vector-symbol) :test #'= :key #'identificable:id)))
+	       (delete (identificable:id el) (,get-vector-symbol) :test #'= :key #'identificable:id)))
        (defun ,propagate-symbol (event)
 	 (loop for ent across (,get-vector-symbol) do
 	      (when (on-game-event ent event)
@@ -279,11 +280,27 @@
     :initarg  :attacker-entity
     :accessor attacker-entity)))
 
+(defevent end-attack-melee-event (game-event-w-destination) ())
+
+(defun send-end-attack-melee-event (dest)
+  (propagate-end-attack-melee-event (make-instance 'end-attack-melee-event
+						   :id-destination (identificable:id dest))))
+
 (defevent attack-long-range-event (game-event-w-destination)
   ((attacker-entity
     :initform nil
     :initarg  :attacker-entity
     :accessor attacker-entity)))
+
+(defevent end-attack-long-range-event (game-event-w-destination)
+  ((attacker-entity
+    :initform nil
+    :initarg  :attacker-entity
+    :accessor attacker-entity)))
+
+(defun send-end-attack-long-range-event (dest)
+  (propagate-end-attack-long-range-event (make-instance 'end-attack-long-range-event
+							:id-destination (identificable:id dest))))
 
 (defmacro check-event-targeted-to-me ((entity event) &body body)
   `(if (= (identificable:id ,entity) (id-destination ,event))

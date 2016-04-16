@@ -34,13 +34,24 @@
     :initform (vec 1.0 1.0 1.0))
    (up
     :accessor up
-    :initarg :up
+    :initarg  :up
     :initform +entity-up-direction+)
    (ghost
     :accessor ghost
-    :initarg :ghost
+    :initarg  :ghost
     :initform nil
     :type (or character:np-character character:player-character))
+   (attacked-by-entity
+    :accessor attacked-by-entity
+    :initarg  :attacked-by-entity
+    :initform nil
+    :type     entity)
+   (reply-attack
+    :writer   (setf reply-attack)
+    :reader   reply-attack-p
+    :initarg  :attacked-by-entity
+    :initform nil
+    :type     entity)
    (tooltip-count
     :accessor tooltip-count
     :initarg  :tooltip-count

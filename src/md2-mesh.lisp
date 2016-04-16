@@ -119,7 +119,46 @@
 				 :color     billboard:+damage-color+
 				 :font-type gui:+tooltip-font-handle+))
       (apply-damage object damage)
+      (setf (attacked-by-entity object) (attacker-entity event))
+      (game-event:register-for-end-attack-melee-event object)
       t)))
+
+(defmacro with-end-attack-event ((object event attacked-by-entity) &body body)
+  `(check-event-targeted-to-me (,object ,event)
+    (with-accessors ((,attacked-by-entity attacked-by-entity)) ,object
+      ,@body
+      ;; this will ensure unregistering and setting attacker to nil
+      (call-next-method))
+    t))
+
+(defmacro with-maybe-reply-attack ((object attacked-by-entity) &body body)
+  (alexandria:with-gensyms (ghost chance state world weapon-short-range weapon-long-range)
+    `(with-accessors ((,state state)) ,object
+       (let* ((,ghost (ghost ,object))
+	      (,chance (actual-reply-attack-chance ,ghost)))
+	 (when (and (not (entity:reply-attack-p ,attacked-by-entity))
+		    (or t
+			(dice:pass-d1.0 ,chance)))
+	   ;; attack!
+	   (game-state:with-world (,world ,state)
+	     (let ((,weapon-short-range (character:weapon-type-short-range ,ghost))
+		   (,weapon-long-range  (character:weapon-type-long-range  ,ghost)))
+	       (cond
+		 (,weapon-short-range
+		  (setf (entity:reply-attack ,object) t)
+		  (battle-utils:attack-short-range ,world ,object ,attacked-by-entity))
+		 (,weapon-long-range
+		  (setf (entity:reply-attack ,object) t)
+		  (battle-utils:attack-long-range ,world ,object ,attacked-by-entity)))
+	       ,@body)))))))
+
+(defmethod on-game-event ((object md2-mesh) (event end-attack-melee-event))
+  (with-end-attack-event (object event attacked-by-entity)
+    (with-maybe-reply-attack (object attacked-by-entity))))
+
+(defmethod on-game-event ((object md2-mesh) (event end-attack-long-range-event))
+  (with-end-attack-event (object event attacked-by-entity)
+    (with-maybe-reply-attack (object attacked-by-entity))))
 
 (defmethod on-game-event ((object md2-mesh) (event attack-long-range-event))
   (check-event-targeted-to-me (object event)
@@ -132,6 +171,8 @@
 				 :font-type gui:+tooltip-font-handle+))
 
       (apply-damage object damage)
+      (setf (attacked-by-entity object) (attacker-entity event))
+      (game-event:register-for-end-attack-long-range-event object)
       t)))
 
 (defmethod on-game-event ((object md2-mesh) (event update-visibility))
@@ -1169,7 +1210,9 @@
 	 (setf cycle-animation t)
 	 (setf stop-animation nil)
 	 (set-animation object :stand :recalculate nil)
-	 (setf (current-action object) :stand))))
+	 (setf (current-action object) :stand)
+	 (send-end-attack-melee-event object)
+	 (send-end-attack-long-range-event object))))
     (unless stop-animation
       (let ((next-time (+ current-animation-time dt))
 	    (frames-numbers (the fixnum (1+ (- end-frame starting-frame))))

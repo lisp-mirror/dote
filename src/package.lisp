@@ -145,7 +145,9 @@
    :+visibility-cone-half-hangle+
    :+visibility-cone-height+
    :+visibility-ray-displ-incr+
-   :+camera-drag-spring-k+))
+   :+camera-drag-spring-k+
+   :+default-arrow-name+
+   :+default-bolt-name+))
 
 (defpackage :profiling
   (:use :cl)
@@ -992,6 +994,9 @@
    :up
    :ghost
    :tooltip-count
+   :attacked-by-entity
+   :reply-attack
+   :reply-attack-p
    :state
    :aabb-2d
    :find-entity-by-id
@@ -2196,6 +2201,16 @@
    :register-for-attack-long-range-event
    :unregister-for-attack-long-range-event
    :propagate-attack-long-range-event
+   :end-attack-long-range-event
+   :register-for-end-attack-long-range-event
+   :unregister-for-end-attack-long-range-event
+   :propagate-end-attack-long-range-event
+   :send-end-attack-long-range-event
+   :end-attack-melee-event
+   :register-for-end-attack-melee-event
+   :unregister-for-end-attack-melee-event
+   :propagate-end-attack-melee-event
+   :send-end-attack-melee-event
    :check-event-targeted-to-me))
 
 (defpackage :basic-interaction-parameters
@@ -3254,7 +3269,10 @@
    :attack-long-range-animation
    :send-attack-long-range-event
    :defend-from-attack-long-range
-   :attack-damage))
+   :attack-damage
+   ;; high level routines
+   :attack-short-range
+   :attack-long-range))
 
 ;; UI
 
@@ -3688,8 +3706,6 @@
 	:interfaces
 	:mesh)
   (:export
-   :+default-arrow-name+
-   :+default-bolt-name+
    :clean-db
    :get-arrow
    :launch-ray

@@ -592,6 +592,23 @@
 				     (event game-event:move-entity-entered-in-tile-event))
   nil)
 
+
+(defmethod on-game-event ((object triangle-mesh) (event game-event:end-attack-melee-event))
+  (game-event:check-event-targeted-to-me (object event)
+    (with-accessors ((attacked-by-entity attacked-by-entity)) object
+      (game-event:unregister-for-end-attack-melee-event object)
+      (setf (entity:reply-attack attacked-by-entity) nil)
+      (setf attacked-by-entity nil))
+    t))
+
+(defmethod on-game-event ((object triangle-mesh) (event game-event:end-attack-long-range-event))
+  (game-event:check-event-targeted-to-me (object event)
+    (with-accessors ((attacked-by-entity attacked-by-entity)) object
+      (game-event:unregister-for-end-attack-long-range-event object)
+      (setf (entity:reply-attack attacked-by-entity) nil)
+      (setf attacked-by-entity nil))
+    t))
+
 (defgeneric aabb (object))
 
 (defgeneric reset-aabb (object))

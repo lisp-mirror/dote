@@ -423,37 +423,12 @@
 		  ((eq (world:toolbar-selected-action world)
 		       widget:+action-attack-short-range+)
 		   (let ((attacked (world:pick-any-entity world world x y)))
-		     (when attacked
-		       (if (character:worn-weapon (entity:ghost selected-pc))
-			   (progn
-			     (world:remove-all-tooltips world)
-			     (battle-utils:send-attack-melee-event selected-pc attacked))
-			   (world:post-entity-message world selected-pc
-				       (format nil
-					       (_"You have not got a weapon"))
-				       (cons (_ "Ok")
-					     #'widget:hide-and-remove-parent-cb)))
-		       (entity:reset-tooltip-ct attacked)
-		       (world:reset-toolbar-selected-action world))))
+		     (battle-utils:attack-short-range world selected-pc attacked)))
 		  ((eq (world:toolbar-selected-action world)
 		       widget:+action-attack-long-range+)
 		   (let ((attacked (world:pick-any-entity world world x y)))
 		     (when attacked
-		       (if (character:worn-weapon (entity:ghost selected-pc))
-			   (progn
-			     (world:remove-all-tooltips world)
-			     (battle-utils:attack-long-range-animation selected-pc attacked)
-			     (arrows:launch-arrow arrows:+default-arrow-name+
-						  world
-						  selected-pc
-						  attacked))
-			   (world:post-entity-message world selected-pc
-				       (format nil
-					       (_"You have not got a weapon"))
-				       (cons (_ "Ok")
-					     #'widget:hide-and-remove-parent-cb)))
-		       (entity:reset-tooltip-ct attacked)
-		       (world:reset-toolbar-selected-action world))))
+		       (battle-utils:attack-long-range world selected-pc attacked))))
 		  (t
 		   (world:pick-player-entity world world x y :bind t))))
 	      (when (not (widget:on-mouse-released (world:gui world) gui-event))
