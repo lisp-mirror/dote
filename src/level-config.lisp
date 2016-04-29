@@ -468,27 +468,28 @@
 	    (:magic-furniture
 	     (setf offset (generate-magic-furniture (subseq body 1))))
 	    (otherwise
-	     (gen-simple-texture-generator  (alexandria:make-keyword (second body))
-					    offset
-					    :+smoke-tray+
-					    :+brick-wall+
-					    :+dry-stone-wall+
-					    :+grass+
-					    :+grass-stones-floor+
-					    :+stone-floor-road+
-					    :+soil+
-					    :+dry-soil+
-					    :+wood-wall+
-					    :+luxurious-floor-1+
-					    :+luxurious-floor-2+
-					    :+decal-wall-1+
-					    :+decal-wall-2+
-					    :+blood-splat+
-					    :+blood-particle+
-					    :+rock-1+
-					    :+rock-2+
-					    :+sand+
-					    :+snow+)))
+	     (gen-simple-texture-generator (alexandria:make-keyword (second body))
+					   offset
+					   :+smoke-tray+
+					   :+brick-wall+
+					   :+dry-stone-wall+
+					   :+grass+
+					   :+grass-stones-floor+
+					   :+stone-floor-road+
+					   :+soil+
+					   :+dry-soil+
+					   :+wood-wall+
+					   :+luxurious-floor-1+
+					   :+luxurious-floor-2+
+					   :+decal-wall-1+
+					   :+decal-wall-2+
+					   :+blood-splat+
+					   :+blood-particle+
+					   :+fire-particle+
+					   :+rock-1+
+					   :+rock-2+
+					   :+sand+
+					   :+snow+)))
 	  (branch-generate (subseq body offset)))
 	(need-keyword-if ((first body) :set)
 	  (branch-key-value body)

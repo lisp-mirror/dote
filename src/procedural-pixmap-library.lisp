@@ -1136,6 +1136,36 @@
       (write-sequence (pixmap->tga-file pixmap) stream))
     t))
 
+(defun fire-particle (size &key (color §cbd1312ff))
+  (with-random-perlin-gradient-offset
+    (labels ((noise (x y range-01)
+	       (gen-fbm x y 6 1.0 1.0 0.5 2.0
+			:normalize t :range-0->1 range-01)))
+      (let* ((pixmap (with-standard-generated-pixmap-square (pixmap size)
+		       (let* ((x-noise (d+ x (d* 0.5 (noise (d* x 8.1) (d* y 8.1) t))))
+			      (y-noise (d+ y (d* 0.5 (noise (d* x 8.1) (d* y 8.1) t))))
+			      (dist    (vec2-length (vec2- (vec2 x-noise y-noise)
+							   (vec2 0.5 0.5))))
+			      (dist-frame (vec2-length (vec2- (vec2 x y)
+							      (vec2 0.5 0.5))))
+			      (alpha   (d- 1.0 (dlerp (smoothstep-interpolate 0.0 1.0 dist)
+						      0.0 1.0)))
+			      (alpha-frame (d- 1.0 (dlerp (smoothstep-interpolate 0.0
+										  0.5
+										  dist-frame)
+							  0.0 1.0))))
+			 (multiply-color (multiply-color color (vec4 1.0 1.0 1.0 alpha))
+					 (vec4 1.0 1.0 1.0 alpha-frame))))))
+	(values pixmap "fire-particle")))))
+
+(defun test-fire-particle (&optional (size +default-size-pixmap-library+))
+  (let ((pixmap (fire-particle size)))
+    (with-open-file (stream (fs:file-in-package "fire-particle.tga") :direction :output
+ 			    :if-exists :supersede :if-does-not-exist :create
+ 			    :element-type +targa-stream-element-type+)
+      (write-sequence (pixmap->tga-file pixmap) stream))
+    t))
+
 (defun test-blood-splat (&optional (size +default-size-pixmap-library+))
   (let ((pixmap (blood-splat size)))
     (with-open-file (stream (fs:file-in-package "blood-splat.tga") :direction :output

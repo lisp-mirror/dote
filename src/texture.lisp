@@ -52,6 +52,8 @@
 
 (alexandria:define-constant +blood-particle+               "blood-particle"  :test #'string=)
 
+(alexandria:define-constant +fire-particle+                "fire-particle"   :test #'string=)
+
 (alexandria:define-constant +rock-1+                       "rock-1"          :test #'string=)
 
 (alexandria:define-constant +rock-2+                       "rock-2"          :test #'string=)

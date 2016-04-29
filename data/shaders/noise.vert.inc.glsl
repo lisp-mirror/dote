@@ -19,10 +19,10 @@
 //    3. This notice may not be removed or altered from any source
 //    distribution.
 
-uniform int noise_seed;
+uniform int noise_seed = 1;
 
 float noise_hash (int x) {
-  x = x * 1235167 + gl_VertexID * 948737 + seed * 9284365;
+  x = x * 1235167 + gl_VertexID * 948737 + noise_seed * 9284365;
   x = (x >> 13) ^ x;
   return ((x * (x * x * 60493 + 19990303) + 1376312589) & 0x7fffffff) / float(0x7fffffff-1);
 }

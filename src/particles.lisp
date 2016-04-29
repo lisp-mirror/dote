@@ -32,21 +32,41 @@
 
 (alexandria:define-constant +attribute-scaling-location+         5 :test #'=)
 
+(alexandria:define-constant +attribute-alpha-location+           6 :test #'=)
+
 (alexandria:define-constant +transform-vbo-count+                9 :test #'=)
 
-(alexandria:define-constant +appended-vbo-count+                 4 :test #'=)
+(alexandria:define-constant +appended-vbo-count+                 5 :test #'=)
 
 (defstruct particle
   (mass      1.0               :type desired-type)
+  (saved-v0  nil               :type vec)
   (v0        (vec 0.0 0.0 0.0) :type vec)
+  (saved-position nil             :type vec)
   (position  (vec 0.0 0.0 0.0) :type vec)
+  (saved-life nil              :type function)
   (life      10.0              :type desired-type)
+  (saved-delay nil             :type function)
   (delay     10.0              :type desired-type)
+  (saved-scaling  nil          :type function)
   (scaling   #'(lambda (particle dt)
 		 (declare (ignore particle dt))
 		 1.0)
-	                       :type function)
-  (respawn   nil)) ; not used
+	     :type function)
+  (saved-alpha nil             :type function)
+  (alpha   #'(lambda (particle dt)
+	       (declare (ignore particle dt))
+	       1.0)
+	   :type function)
+  (respawn   nil))
+
+(defun respawn-particle (p)
+  (setf (particle-v0       p) (copy-vec (particle-saved-v0       p))
+	(particle-position p) (copy-vec (particle-saved-position p))
+	(particle-life     p) (funcall  (particle-saved-life     p))
+	(particle-delay    p) (funcall  (particle-saved-delay    p))
+	(particle-scaling  p) (funcall  (particle-saved-scaling  p))
+	(particle-alpha    p) (funcall  (particle-saved-alpha    p))))
 
 (defclass particles-cluster (triangle-mesh inner-animation renderizable)
   ((integrator-shader
@@ -85,6 +105,11 @@
     :initform nil
     :initarg  :particles-scaling
     :accessor particles-scaling
+    :type gl-array)
+   (particles-alpha
+    :initform nil
+    :initarg  :particles-alpha
+    :accessor particles-alpha
     :type gl-array)
    (particles-v0
     :initform nil
@@ -125,7 +150,12 @@
     :initform nil
     :initarg  :particles
     :accessor particles
-    :type     (simple-array particles (*)))))
+    :type     (simple-array particles (*)))
+   (mark-for-remove
+    :initform nil
+    :initarg  :mark-for-remove
+    :reader   mark-for-remove-p
+    :writer  (setf mark-for-remove))))
 
 (defmacro gen-populate-array-vec (slot-array slot-struct)
   (let ((fn-name (format-fn-symbol t "populate-~a-array" slot-array)))
@@ -180,7 +210,9 @@
 
 (defgeneric populate-particles-life-array (object))
 
-(defgeneric populate-particles-scaling-array (object dt))
+(defgeneric populate-particles-scaling-array (object dt &key force))
+
+(defgeneric populate-particles-alpha-array (object dt &key force))
 
 (defgeneric bind-computational-buffers (object))
 
@@ -194,7 +226,6 @@
 			    (length particles)
 			    3
 			    6)))
-
 
 (defmethod populate-particles-delay-array ((object particles-cluster))
   (with-accessors ((particles particles)
@@ -216,16 +247,31 @@
 	      (setf (fast-glaref particles-life (+ ct i))
 		    (particle-life particle))))))
 
-(defmethod populate-particles-scaling-array ((object particles-cluster) dt)
+(defmethod populate-particles-scaling-array ((object particles-cluster) dt &key (force nil))
   (with-accessors ((particles particles)
 		   (particles-scaling particles-scaling)) object
     (loop
        for particle across particles
        for ct from 0 by 6          do
-	 (let ((scaling (funcall (particle-scaling particle) particle dt)))
-	   (loop for i from 0 below 6 by 1 do
-		(setf (fast-glaref particles-scaling (+ ct i))
-		      scaling))))))
+	 (when (or force
+		   (< (particle-delay particle) 0.0))
+	   (let ((scaling (funcall (particle-scaling particle) particle dt)))
+	     (loop for i from 0 below 6 by 1 do
+		  (setf (fast-glaref particles-scaling (+ ct i))
+			scaling)))))))
+
+(defmethod populate-particles-alpha-array ((object particles-cluster) dt &key (force nil))
+  (with-accessors ((particles particles)
+		   (particles-alpha particles-alpha)) object
+    (loop
+       for particle across particles
+       for ct from 0 by 6          do
+	 (when (or force
+		   (< (particle-delay particle) 0.0))
+	   (let ((alpha (funcall (particle-alpha particle) particle dt)))
+	     (loop for i from 0 below 6 by 1 do
+		  (setf (fast-glaref particles-alpha (+ ct i))
+			alpha)))))))
 
 (defmethod removeable-from-world ((object particles-cluster))
   (loop for p across (particles object) do
@@ -250,6 +296,7 @@
 		   (particles-delay particles-delay)
 		   (particles-life  particles-life)
 		   (particles-scaling particles-scaling)
+		   (particles-alpha particles-alpha)
 		   (transform-vao transform-vao)
 		   (transform-vbo-input transform-vbo-input)
 		   (transform-vbo-output transform-vbo-output)) object
@@ -263,6 +310,7 @@
 	  particles-delay            nil
 	  particles-life             nil
 	  particles-scaling          nil
+	  particles-alpha            nil
 	  particles-output-positions nil
 	  transform-vao              nil
 	  transform-vbo-input        nil
@@ -277,6 +325,7 @@
 		   (particles-delay            particles-delay)
 		   (particles-life             particles-life)
 		   (particles-scaling          particles-scaling)
+		   (particles-alpha            particles-alpha)
 		   (particles-output-positions particles-output-positions)
 		   (transform-vao              transform-vao)
 		   (transform-vbo-input        transform-vbo-input)
@@ -291,6 +340,7 @@
     (setf particles-delay            (gl:alloc-gl-array :float (* 6 (length particles))))
     (setf particles-life             (gl:alloc-gl-array :float (* 6 (length particles))))
     (setf particles-scaling          (gl:alloc-gl-array :float (* 6 (length particles))))
+    (setf particles-alpha            (gl:alloc-gl-array :float (* 6 (length particles))))
     (populate-particles-positions-array        object)
     (populate-particles-output-positions-array object)
     (populate-particles-v0-array               object)
@@ -299,7 +349,8 @@
     (populate-particles-delay-feedback-array   object)
     (populate-particles-delay-array            object)
     (populate-particles-life-array             object)
-    (populate-particles-scaling-array          object 0.0)
+    (populate-particles-scaling-array          object 0.0 :force t)
+    (populate-particles-alpha-array            object 0.0 :force t)
     ;; setup finalizer
     (let ((id             (slot-value object 'id))
 	  (pos-in         (slot-value object 'particles-positions))
@@ -310,6 +361,7 @@
 	  (delay          (slot-value object 'particles-delay))
 	  (life           (slot-value object 'particles-life))
 	  (scaling        (slot-value object 'particles-scaling))
+	  (alpha          (slot-value object 'particles-alpha))
 	  (pos-out        (slot-value object 'particles-output-positions))
 	  (vao            (slot-value object 'transform-vao))
 	  (vbo-in         (slot-value object 'transform-vbo-input))
@@ -325,6 +377,7 @@
 						  delay
 						  life
 						  scaling
+						  alpha
 						  pos-out)
 					    (append vbo-in vbo-out)
 					    vao)
@@ -336,6 +389,7 @@
 				    delay          nil
 				    life           nil
 				    scaling        nil
+				    alpha          nil
 				    pos-out        nil))))))
 
 (defun vbo-masses-buffer-handle (vbo)
@@ -355,6 +409,9 @@
 
 (defun vbo-delay-feedback-buffer-handle (vbo)
   (elt vbo 5))
+
+(defun vbo-alpha-buffer-handle (vbo)
+  (elt vbo (- (length vbo) 5)))
 
 (defun vbo-scaling-buffer-handle (vbo)
   (elt vbo (- (length vbo) 4)))
@@ -423,6 +480,7 @@
 		   (particles-delay            particles-delay)
 		   (particles-life             particles-life)
 		   (particles-scaling          particles-scaling)
+		   (particles-alpha            particles-alpha)
 		   (particles-positions        particles-positions)
 		   (particles-output-positions particles-output-positions)
 		   (particles-v0               particles-v0)
@@ -464,77 +522,130 @@
       (gl:buffer-data :array-buffer :dynamic-draw particles-scaling)
       (gl:vertex-attrib-pointer +attribute-scaling-location+ 1 :float 0 0 (mock-null-pointer))
       (gl:enable-vertex-attrib-array +attribute-scaling-location+)
+      ;; alpha
+      (gl:bind-buffer :array-buffer (vbo-alpha-buffer-handle vbo))
+      (gl:buffer-data :array-buffer :dynamic-draw particles-alpha)
+      (gl:vertex-attrib-pointer +attribute-alpha-location+ 1 :float 0 0 (mock-null-pointer))
+      (gl:enable-vertex-attrib-array +attribute-alpha-location+)
       object)))
 
+(defmacro with-feedback-calculate ((object dt) &body body)
+  (alexandria:with-gensyms (integrator-shader
+			    compiled-shaders
+			    transform-vao
+			    particle-min-y
+			    vbo
+			    particles
+			    particles-positions
+			    particles-output-positions
+			    particles-v0
+			    particles-vt
+			    particles-delay-feedback
+			    particles-delay
+			    particles-life
+			    particles-scaling
+			    particles-alpha
+			    transform-vbo-input
+			    res-array
+			    particle
+			    part-ct)
+    `(with-accessors ((,integrator-shader          integrator-shader)
+		      (,compiled-shaders           compiled-shaders)
+		      (,transform-vao              transform-vao)
+		      (,particle-min-y             particle-min-y)
+		      (,vbo                        vbo)
+		      (,particles                  particles)
+		      (,particles-positions        particles-positions)
+		      (,particles-output-positions particles-output-positions)
+		      (,particles-v0               particles-v0)
+		      (,particles-vt               particles-vt)
+		      (,particles-delay-feedback   particles-delay-feedback)
+		      (,particles-delay            particles-delay)
+		      (,particles-life             particles-life)
+		      (,particles-scaling          particles-scaling)
+		      (,particles-alpha            particles-alpha)
+		      (,transform-vbo-input        transform-vbo-input)) object
+       (bubbleup-modelmatrix ,object)
+       (with-unbind-vao
+	 (bind-computational-buffers ,object)
+	 (use-program compiled-shaders ,integrator-shader)
+	 (uniformf compiled-shaders :dt   dt)
+	 ,@body
+	 (cl-gl-utils:with-rasterizer-discard
+	   (%gl:bind-buffer-base :transform-feedback-buffer
+				 0
+				 (vbo-out-position-buffer-handle ,transform-vbo-input))
+	   (cl-gl-utils:with-transform-feedback (:points)
+	     (gl:bind-vertex-array (elt ,transform-vao 0))
+	     (gl:draw-arrays :points 0 (length ,particles)))
+	   (gl:flush)
+	   (cffi:with-foreign-object (,res-array :float (* 6 (length ,particles)))
+	     (%gl:get-buffer-sub-data :transform-feedback-buffer
+				      0
+				      (feedback-output-array-size ,object)
+				      ,res-array)
+	     (loop for i from 0 below (* 6 (length ,particles)) by 6 do
+		;; setting position
+		  (setf (cl-gl-utils:fast-glaref ,particles-positions (/ i 2))
+			(cffi:mem-aref ,res-array :float i))
+		  (setf (cl-gl-utils:fast-glaref ,particles-positions (+ (/ i 2) 1))
+			(cffi:mem-aref ,res-array :float (+ i 1)))
+		  (setf (cl-gl-utils:fast-glaref ,particles-positions (+ (/ i 2) 2))
+			(cffi:mem-aref ,res-array :float (+ i 2)))
+		;; setting velocity
+		  (setf (cl-gl-utils:fast-glaref ,particles-v0 (/ i 2))
+			(cffi:mem-aref ,res-array :float (+ i 3) ))
+		  (setf (cl-gl-utils:fast-glaref ,particles-v0 (+ (/ i 2) 1))
+			(cffi:mem-aref ,res-array :float (+ i 4)))
+		  (setf (cl-gl-utils:fast-glaref ,particles-v0 (+ (/ i 2) 2))
+			(cffi:mem-aref ,res-array :float (+ i 5)))))))
+       (populate-particles-output-positions-array ,object)
+       (populate-particles-delay-feedback-array   ,object)
+       (populate-particles-delay-array            ,object)
+       (populate-particles-life-array             ,object)
+       (populate-particles-scaling-array          ,object ,dt :force nil)
+       (populate-particles-alpha-array            ,object ,dt :force nil)
+       (gl:bind-buffer :array-buffer (vbo-center-position-buffer-handle ,vbo))
+       (gl:buffer-sub-data :array-buffer  ,particles-output-positions)
+       (gl:bind-buffer :array-buffer (vbo-delay-feedback-buffer-handle ,vbo))
+       (gl:buffer-sub-data :array-buffer  ,particles-delay-feedback)
+       (gl:bind-buffer :array-buffer (vbo-delay-buffer-handle ,vbo))
+       (gl:buffer-sub-data :array-buffer  ,particles-delay)
+       (gl:bind-buffer :array-buffer (vbo-life-buffer-handle ,vbo))
+       (gl:buffer-sub-data :array-buffer  ,particles-life)
+       (gl:bind-buffer :array-buffer (vbo-scaling-buffer-handle ,vbo))
+       (gl:buffer-sub-data :array-buffer  ,particles-scaling)
+       (gl:bind-buffer :array-buffer (vbo-alpha-buffer-handle ,vbo))
+       (gl:buffer-sub-data :array-buffer  ,particles-alpha)
+       (loop
+	  for ,particle across ,particles
+	  for ,part-ct  from 0 by 3         do
+	    (decf (particle-delay ,particle) ,dt)
+	    (when (< (particle-delay ,particle) 0.0)
+	      (decf (particle-life  ,particle) dt))
+	    (when (and (particle-respawn ,particle)
+		       (d< (particle-life  ,particle) 0.0))
+	      (respawn-particle ,particle)
+	      (setf (cl-gl-utils:fast-glaref ,particles-positions ,part-ct)
+		    (elt (particle-position ,particle) 0))
+	      (setf (cl-gl-utils:fast-glaref ,particles-positions (f+ ,part-ct 1))
+		    (elt (particle-position ,particle) 1))
+	      (setf (cl-gl-utils:fast-glaref ,particles-positions (f+ ,part-ct 2))
+		    (elt (particle-position ,particle) 2))
+	      (setf (cl-gl-utils:fast-glaref ,particles-v0 ,part-ct)
+		    (elt (particle-v0 ,particle) 0))
+	      (setf (cl-gl-utils:fast-glaref ,particles-v0 (f+ ,part-ct 1))
+		    (elt (particle-v0 ,particle) 1))
+	      (setf (cl-gl-utils:fast-glaref ,particles-v0 (f+ ,part-ct 2))
+		    (elt (particle-v0 ,particle) 2)))))))
+
+
 (defmethod calculate ((object particles-cluster) dt)
-  (with-accessors ((integrator-shader integrator-shader)
-		   (compiled-shaders           compiled-shaders)
-		   (transform-vao              transform-vao)
-		   (particle-min-y             particle-min-y)
-		   (vbo                        vbo)
-		   (particles                  particles)
-		   (particles-positions        particles-positions)
-		   (particles-output-positions particles-output-positions)
-		   (particles-v0               particles-v0)
-		   (particles-vt               particles-vt)
-		   (particles-delay-feedback   particles-delay-feedback)
-		   (particles-delay            particles-delay)
-		   (particles-life             particles-life)
-		   (particles-scaling          particles-scaling)
-		   (transform-vbo-input        transform-vbo-input)) object
-    (bubbleup-modelmatrix object)
-    (with-unbind-vao
-      (bind-computational-buffers object)
-      (use-program compiled-shaders integrator-shader)
+  (with-accessors ((compiled-shaders           compiled-shaders)
+		   (particle-min-y             particle-min-y)) object
+    (with-feedback-calculate (object dt)
       (uniformf compiled-shaders :dt   dt)
-      (uniformf compiled-shaders :min-y particle-min-y)
-      (cl-gl-utils:with-rasterizer-discard
-	(%gl:bind-buffer-base :transform-feedback-buffer
-			      0
-			      (vbo-out-position-buffer-handle transform-vbo-input))
-	(cl-gl-utils:with-transform-feedback (:points)
-	  (gl:bind-vertex-array (elt transform-vao 0))
-	  (gl:draw-arrays :points 0 (length particles)))
-	(gl:flush)
-	(cffi:with-foreign-object (res-array :float (* 6 (length particles)))
-	  (%gl:get-buffer-sub-data :transform-feedback-buffer
-	   			   0
-	   			   (feedback-output-array-size object)
-	   			   res-array)
-	  (loop for i from 0 below (* 6 (length particles)) by 6 do
-	       ;; setting position
-	       (setf (cl-gl-utils:fast-glaref particles-positions (/ i 2))
-		     (cffi:mem-aref res-array :float i))
-	       (setf (cl-gl-utils:fast-glaref particles-positions (+ (/ i 2) 1))
-		     (cffi:mem-aref res-array :float (+ i 1)))
-	       (setf (cl-gl-utils:fast-glaref particles-positions (+ (/ i 2) 2))
-		     (cffi:mem-aref res-array :float (+ i 2)))
-	       ;; setting velocity
-	       (setf (cl-gl-utils:fast-glaref particles-v0 (/ i 2))
-		     (cffi:mem-aref res-array :float (+ i 3) ))
-	       (setf (cl-gl-utils:fast-glaref particles-v0 (+ (/ i 2) 1))
-		     (cffi:mem-aref res-array :float (+ i 4)))
-	       (setf (cl-gl-utils:fast-glaref particles-v0 (+ (/ i 2) 2))
-		     (cffi:mem-aref res-array :float (+ i 5)))))))
-    (populate-particles-output-positions-array object)
-    (populate-particles-delay-feedback-array   object)
-    (populate-particles-delay-array            object)
-    (populate-particles-life-array             object)
-    (populate-particles-scaling-array          object dt)
-    (gl:bind-buffer :array-buffer (vbo-center-position-buffer-handle vbo))
-    (gl:buffer-sub-data :array-buffer  particles-output-positions)
-    (gl:bind-buffer :array-buffer (vbo-delay-feedback-buffer-handle vbo))
-    (gl:buffer-sub-data :array-buffer  particles-delay-feedback)
-    (gl:bind-buffer :array-buffer (vbo-delay-buffer-handle vbo))
-    (gl:buffer-sub-data :array-buffer  particles-delay)
-    (gl:bind-buffer :array-buffer (vbo-life-buffer-handle vbo))
-    (gl:buffer-sub-data :array-buffer  particles-life)
-    (gl:bind-buffer :array-buffer (vbo-scaling-buffer-handle vbo))
-    (gl:buffer-sub-data :array-buffer  particles-scaling)
-    (loop for particle across particles do
-	 (decf (particle-delay particle) dt)
-	 (when (< (particle-delay particle) 0.0)
-	   (decf (particle-life  particle) dt)))))
+      (uniformf compiled-shaders :min-y particle-min-y))))
 
 (defclass blood (particles-cluster) ())
 
@@ -612,20 +723,38 @@
 				 (position-fn #'(lambda () (vec 0.0 0.1 0.0)))
 				 (life-fn     #'(lambda () 10.1))
 				 (delay-fn    #'(lambda () 10.0))
-				 (scaling-fn  #'(lambda (particle dt)
-						  (declare (ignore particle dt))
-						  1.0))
+
+				 (scaling-fn  #'(lambda ()
+						  #'(lambda (particle dt)
+						      (declare (ignore particle dt))
+						      1.0)))
+				 (alpha-fn  #'(lambda ()
+						#'(lambda (particle dt)
+						    (declare (ignore particle dt))
+						    1.0)))
 				 (width       1.0)
 				 (height      1.0)
 				 (pos         +zero-vec+)
-				 (min-y       0.0))
+				 (min-y       0.0)
+				 (force       +zero-vec+)
+				 (respawn     nil))
   (let* ((particles (loop repeat particles-count collect
-			 (make-particle :mass     (funcall mass-fn)
-					:v0       (funcall v0-fn)
-					:position (funcall position-fn)
-					:scaling  scaling-fn
-					:life     (funcall life-fn)
-					:delay    (funcall delay-fn))))
+			 (let ((starting-velo  (funcall v0-fn))
+			       (starting-pos (funcall position-fn)))
+			   (make-particle :mass     (funcall mass-fn)
+					  :v0       starting-velo
+					  :saved-v0 (copy-vec starting-velo)
+					  :position starting-pos
+					  :saved-position (copy-vec starting-pos)
+					  :scaling  (funcall scaling-fn)
+					  :saved-scaling     scaling-fn
+					  :alpha    (funcall alpha-fn)
+					  :saved-alpha       alpha-fn
+					  :life     (funcall life-fn)
+					  :saved-life        life-fn
+					  :respawn  respawn
+					  :delay    (funcall delay-fn)
+					  :saved-delay  delay-fn))))
 	 (cluster  (make-instance class
 				  :texture           texture
 				  :pos               pos
@@ -633,7 +762,8 @@
 				  :compiled-shaders  shaders-dict
 				  :particle-width    width
 				  :particle-height   height
-				  :particles         (list->simple-array particles nil 'particle))))
+				  :particles         (list->simple-array particles nil 'particle)
+				  :force             force)))
     (prepare-for-rendering cluster)))
 
 (defun make-blood-level-0 (pos dir compiled-shaders)
@@ -681,10 +811,10 @@
 				    :mass-fn  #'(lambda () 1.0)
 				    :life-fn  (gaussian-distribution-fn 12.0 5.0)
 				    :delay-fn (gaussian-distribution-fn 0.0 1.1)
-				    :scaling-fn #'(lambda (p dt)
-						    (declare (ignore p dt))
-						    1.0)
-
+				    :scaling-fn #'(lambda ()
+						    #'(lambda (p dt)
+							(declare (ignore p dt))
+							1.0))
 				    :width  .1
 				    :height .1))
 
@@ -701,10 +831,10 @@
 				    :mass-fn  (gaussian-distribution-fn 1.0 .1)
 				    :life-fn  (gaussian-distribution-fn 12.0 5.0)
 				    :delay-fn (gaussian-distribution-fn 0.0 1.1)
-				    :scaling-fn #'(lambda (p dt)
-						    (declare (ignore p dt))
-						    1.0)
-
+				    :scaling-fn #'(lambda ()
+						    #'(lambda (p dt)
+							(declare (ignore p dt))
+							1.0))
 				    :width  .1
 				    :height .1))
 
@@ -722,9 +852,158 @@
 				    :mass-fn  (gaussian-distribution-fn 1.0 1.0)
 				    :life-fn  (gaussian-distribution-fn 12.0 5.0)
 				    :delay-fn (gaussian-distribution-fn 0.0 .0001)
-				    :scaling-fn #'(lambda (p dt)
-						    (declare (ignore p dt))
-						    1.0)
+				    :scaling-fn #'(lambda ()
+						    #'(lambda (p dt)
+							(declare (ignore p dt))
+							1.0))
 
 				    :width  .1
 				    :height .1))
+
+(defclass fire-dart (particles-cluster)
+  ((force
+    :initform +zero-vec+
+    :initarg  :force
+    :accessor force)))
+
+(defmethod initialize-instance :after ((object fire-dart)
+				       &key
+					 (texture (texture:get-texture
+						   texture:+fire-particle+))
+					 &allow-other-keys)
+  (setf (use-blending-p object) t)
+  (setf (integrator-shader object) :fire-dart-integrator)
+  (setf (texture-object object) texture))
+
+(defmethod calculate ((object fire-dart) dt)
+  (with-accessors ((compiled-shaders compiled-shaders)
+		   (force            force)
+		   (el-time          el-time)) object
+    (setf el-time
+	  (d+ (start-time object)
+	      (d* (animation-speed object) (current-time object))))
+    (with-feedback-calculate (object dt)
+      (uniformf  compiled-shaders :dt    dt)
+      (uniformfv compiled-shaders :force force))))
+
+(defmethod render ((object fire-dart) renderer)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((vbo vbo)
+		   (vao vao)
+		   (texture-object texture-object)
+		   (projection-matrix projection-matrix)
+		   (model-matrix model-matrix)
+		   (view-matrix view-matrix)
+		   (compiled-shaders compiled-shaders)
+		   (triangles triangles)
+		   (el-time el-time)) object
+    (declare (texture:texture texture-object))
+    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
+    (declare (list triangles vao vbo))
+    (when (> (length triangles) 0)
+      (with-camera-view-matrix (camera-vw-matrix renderer)
+	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+	  (with-depth-disabled
+	    (cl-gl-utils:with-blending
+	      (gl:blend-equation :func-add)
+	      (gl:blend-func :src-alpha :one)
+	      (use-program compiled-shaders :particles-fire-dart)
+	      (gl:active-texture :texture0)
+	      (texture:bind-texture texture-object)
+	      (uniformf  compiled-shaders :time  el-time)
+	      (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+	      (uniform-matrix compiled-shaders :modelview-matrix 4
+			      (vector (matrix* camera-vw-matrix
+					       (elt view-matrix 0)
+					       (elt model-matrix 0)))
+			      nil)
+	      (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
+	      (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+	      (gl:draw-arrays :triangles 0 (* 3 (length triangles)))
+	      (gl:blend-equation :func-add))))))))
+
+(defmethod removeable-from-world ((object fire-dart))
+  (mark-for-remove-p object))
+
+(defun %uniform-scaling-clsr (m)
+    #'(lambda ()
+	(let ((time 0.0))
+	  #'(lambda (p dt)
+	      (declare (ignore p))
+	      (incf time dt)
+	      (d+ 1.0 (d* m time))))))
+
+(defun %uniform-alpha-fading-clsr (max)
+  #'(lambda ()
+      (let ((time 0.0))
+	#'(lambda (p dt)
+	    (declare (ignore p))
+	    (incf time dt)
+	    (d- 1.0 (dlerp (smoothstep-interpolate 0.0 max time) 0.0 1.0))))))
+
+(defun make-fire-dart (pos dir compiled-shaders)
+  (particles:make-particles-cluster 'fire-dart
+				    1500
+				    compiled-shaders
+				    :texture (texture:get-texture texture:+fire-particle+)
+				    :pos     pos
+				    :v0-fn  (gaussian-velocity-distribution-fn dir
+									       1.0
+									       .1
+									       (d/ +pi/2+ 5.0))
+				    :mass-fn  (gaussian-distribution-fn 1.0 .1)
+				    :life-fn  (gaussian-distribution-fn 5.0 1.1)
+				    :delay-fn (gaussian-distribution-fn 0.0 10.1)
+				    :force    (vec-negate dir)
+				    :scaling-fn  #'(lambda ()
+						     #'(lambda (p dt)
+							 (declare (ignore p dt))
+							 1.0))
+				    :alpha-fn   (%uniform-alpha-fading-clsr 7.0)
+				    :width  1.0
+				    :height 1.0
+				    :respawn t))
+
+
+(defun make-fire-dart-level-1 (pos dir compiled-shaders)
+  (particles:make-particles-cluster 'fire-dart
+				    1500
+				    compiled-shaders
+				    :texture (texture:get-texture texture:+fire-particle+)
+				    :pos     pos
+				    :v0-fn  (gaussian-velocity-distribution-fn dir
+									       1.0
+									       .1
+									       (d/ +pi/2+ 5.0))
+				    :mass-fn  (gaussian-distribution-fn 1.0 .1)
+				    :life-fn  (gaussian-distribution-fn 5.0 1.1)
+				    :delay-fn (gaussian-distribution-fn 0.0 10.1)
+				    :force    (vec-negate dir)
+				    :scaling-fn  #'(lambda ()
+						     #'(lambda (p dt)
+							 (declare (ignore p dt))
+							 1.0))
+				    :alpha-fn   (%uniform-alpha-fading-clsr 7.0)
+				    :width  1.0
+				    :height 1.0
+				    :respawn t))
+
+(defun make-fire-dart-level-0 (pos dir compiled-shaders)
+  (particles:make-particles-cluster 'fire-dart
+				    1500
+				    compiled-shaders
+				    :texture (texture:get-texture texture:+fire-particle+)
+				    :pos     pos
+				    :v0-fn  (gaussian-velocity-distribution-fn dir
+									       .8
+									       .01
+									       (d/ +pi/2+ 5.0))
+				    :mass-fn  (gaussian-distribution-fn 1.0 .1)
+				    :life-fn  (gaussian-distribution-fn 5.0 1.1)
+				    :delay-fn (gaussian-distribution-fn 0.0 10.1)
+				    :force    (vec-negate dir)
+				    :scaling-fn (%uniform-scaling-clsr 1.0)
+				    :alpha-fn   (%uniform-alpha-fading-clsr 5.0)
+				    :width  .1
+				    :height .1
+				    :respawn t))

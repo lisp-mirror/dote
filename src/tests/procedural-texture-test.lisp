@@ -106,7 +106,7 @@
     "starfish.tga"))
 
 (defun test-blood-splat (&optional (size pixmap::+default-size-pixmap-library+))
-  (let ((pixmap (pixmap::blood-splat size)))
+  (let ((pixmap (pixmap:blood-splat size)))
     (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "blood-splat.tga")
 			    :direction :output
  			    :if-exists :supersede :if-does-not-exist :create
@@ -115,13 +115,22 @@
     "blood-splat.tga"))
 
 (defun test-blood-particle (&optional (size pixmap::+default-size-pixmap-library+))
-  (let ((pixmap (pixmap::blood-particle size)))
+  (let ((pixmap (pixmap:blood-particle size)))
     (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "blood-particle.tga")
 			    :direction :output
  			    :if-exists :supersede :if-does-not-exist :create
  			    :element-type +targa-stream-element-type+)
       (write-sequence (pixmap->tga-file pixmap) stream))
     "blood-particle.tga"))
+
+(defun test-fire-particle (&optional (size pixmap::+default-size-pixmap-library+))
+  (let ((pixmap (pixmap:fire-particle size)))
+    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "fire-particle.tga")
+			    :direction :output
+ 			    :if-exists :supersede :if-does-not-exist :create
+ 			    :element-type +targa-stream-element-type+)
+      (write-sequence (pixmap->tga-file pixmap) stream))
+    "fire-particle.tga"))
 
 (defun test-half-moon ()
   (let ((pixmap (half-moon)))
@@ -376,6 +385,7 @@
 		      test-glass-tile
 		      test-blood-splat
 		      test-blood-particle
+		      test-fire-particle
 		      test-perlin-3d-ref
 		      test-clouds
 		      test-wood-wall)))

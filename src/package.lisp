@@ -1517,6 +1517,7 @@
    :soil
    :blood-splat
    :blood-particle
+   :fire-particle
    :voronoized-starfish
    :voronoized-graal
    :glass-tile
@@ -1644,6 +1645,7 @@
    :with-rasterizer-discard
    :with-transform-feedback
    :with-blending
+   :with-depth-disabled
    :mock-null-pointer
    :fast-glaref
    :seq->gl-array
@@ -1758,6 +1760,7 @@
    :+decal-wall-2+
    :+blood-splat+
    :+blood-particle+
+   :+fire-particle+
    :+rock-1+
    :+rock-2+
    :+sand+
@@ -3680,6 +3683,8 @@
 	:mesh)
   (:export
    :particles-cluster
+   :mark-for-remove
+   :mark-for-remove-p
    :blood
    :gaussian-velocity-distribution-fn
    :gaussian-delay-distribution-fn
@@ -3688,7 +3693,9 @@
    :make-blood-level-1
    :make-blood-level-2
    :make-blood-death
-   :make-debris))
+   :make-debris
+   :make-fire-dart-level-0
+   :make-fire-dart-level-1))
 
 (defpackage :arrows
   (:use :cl

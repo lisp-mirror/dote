@@ -756,7 +756,7 @@
       (game-state:with-world (world state)
 	(world:push-entity world
 			   (particles:make-blood-death (aabb-center aabb)
-						       +y-axe+
+						       (dir object)
 						       compiled-shaders))))))
 
 (defmethod set-attack-status ((object md2-mesh))
@@ -1493,11 +1493,11 @@
 	    (forged-ring                (forged-ring))
 	    (forged-sword               (forged-sword))
 	    (forged-bow                 (forged-bow)))
-	(game-event:register-for-end-turn forged-potion)
-	(game-event:register-for-end-turn forged-potion-cure-dmg)
-	(game-event:register-for-end-turn forged-potion-cure-berserk)
-	(game-event:register-for-end-turn forged-ring)
-	(game-event:register-for-end-turn forged-bow)
+	;; (game-event:register-for-end-turn forged-potion)
+	;; (game-event:register-for-end-turn forged-potion-cure-dmg)
+	;; (game-event:register-for-end-turn forged-potion-cure-berserk)
+	;; (game-event:register-for-end-turn forged-ring)
+	;; (game-event:register-for-end-turn forged-bow)
 	(add-to-inventory (ghost body) forged-potion)
 	(add-to-inventory (ghost body) forged-potion-cure-dmg)
 	(add-to-inventory (ghost body) forged-potion-cure-berserk)

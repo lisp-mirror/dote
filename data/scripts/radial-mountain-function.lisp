@@ -3,8 +3,9 @@
 (in-package :level-config)
 
 (defun radial-mountain-z-height-function (&optional
-					    (sigma-function 
-					     #'(lambda (map-size) (/ map-size 4)))
+					    (sigma-function
+					     #'(lambda (map-size)
+						 (num:d (/ map-size 4))))
 					    (minimum-z +zero-height+)
 					    (maximum-z +maximum-mountain-height+))
   #'(lambda (map x y iteration)
@@ -12,15 +13,14 @@
       (let* ((map-maximum-linear-size (max (matrix:width  (matrix map))
 					   (matrix:height (matrix map))))
 	     (center (2d-utils:center-aabb2 (aabb map)))
-	     (dist (2d-utils:2d-vector-magn 
+	     (dist (2d-utils:2d-vector-magn
 		    (2d-utils:2d-vector-diff center (list x y))))
-	     (gaussian-function (gaussian-function maximum-z 
-						   (funcall 
-						    sigma-function 
+	     (gaussian-function (gaussian-function maximum-z
+						   (funcall
+						    sigma-function
 						    map-maximum-linear-size)
-						   0))
+						   0.0))
 	     (z (alexandria:clamp
 		 (abs (gaussian-probability 1 (funcall gaussian-function dist)))
 		 minimum-z maximum-z)))
 	z)))
-

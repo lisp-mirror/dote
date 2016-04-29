@@ -125,34 +125,31 @@
     (declare (list triangles))
     (with-camera-view-matrix (camera-vw-matrix renderer)
       (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	(gl:disable :depth-test)
-	(gl:depth-mask :false)
-	(cl-gl-utils:with-blending
-	  (gl:blend-func :src-alpha :one)
-	  (use-program compiled-shaders :tooltip)
-	  (gl:active-texture :texture0)
-	  (texture:bind-texture texture-object)
-	  (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
-	  (uniformf  compiled-shaders :duration duration)
-	  (uniformf  compiled-shaders :vert-displacement-speed +tooltip-v-speed+)
-	  (uniformf  compiled-shaders :time   el-time)
-	  (uniformf  compiled-shaders :gravity gravity)
-	  (uniformfv compiled-shaders :mult-color font-color)
-	  (uniform-matrix compiled-shaders
-			  :post-scaling 4
-			  (vector (scale scaling))
-			  nil)
-	  (uniform-matrix compiled-shaders
-			  :modelview-matrix 4
-			  (vector (matrix* camera-vw-matrix
-					   (elt view-matrix  0)
-					   (elt model-matrix 0)))
-			  nil)
-	  (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
-	  (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-	  (gl:draw-arrays :triangles 0 (* 3 (length triangles))))
-	(gl:depth-mask :true)
-	(gl:enable :depth-test)))))
+	(cl-gl-utils:with-depth-disabled
+	  (cl-gl-utils:with-blending
+	    (gl:blend-func :src-alpha :one)
+	    (use-program compiled-shaders :tooltip)
+	    (gl:active-texture :texture0)
+	    (texture:bind-texture texture-object)
+	    (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+	    (uniformf  compiled-shaders :duration duration)
+	    (uniformf  compiled-shaders :vert-displacement-speed +tooltip-v-speed+)
+	    (uniformf  compiled-shaders :time   el-time)
+	    (uniformf  compiled-shaders :gravity gravity)
+	    (uniformfv compiled-shaders :mult-color font-color)
+	    (uniform-matrix compiled-shaders
+			    :post-scaling 4
+			    (vector (scale scaling))
+			    nil)
+	    (uniform-matrix compiled-shaders
+			    :modelview-matrix 4
+			    (vector (matrix* camera-vw-matrix
+					     (elt view-matrix  0)
+					     (elt model-matrix 0)))
+			    nil)
+	    (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+	    (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+	    (gl:draw-arrays :triangles 0 (* 3 (length triangles)))))))))
 
 (defun make-tooltip (label pos shaders
 		     &key

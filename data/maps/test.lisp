@@ -135,6 +135,11 @@
   with tags ("blood-particle")
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
+  generate fire-particle         from function pixmap:fire-particle
+  with parameters (128)
+  with tags ("fire-particle")
+  with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
+
   generate map
   ;;with size                        (random (tiny small medium large))
   with size                         (random (tiny))

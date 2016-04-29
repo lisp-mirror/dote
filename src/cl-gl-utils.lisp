@@ -49,11 +49,19 @@
      ,@body
      (%gl:end-transform-feedback)))
 
-(defmacro with-blending ( &body body)
+(defmacro with-blending (&body body)
   `(progn
      (gl:enable :blend)
      ,@body
      (gl:disable :blend)))
+
+(defmacro with-depth-disabled (&body body)
+  `(progn
+     (gl:disable :depth-test)
+     (gl:depth-mask :false)
+     ,@body
+     (gl:enable :depth-test)
+     (gl:depth-mask :true)))
 
 (definline fast-glaref (v offset)
   (cffi:mem-aref (gl::gl-array-pointer v) :float offset))

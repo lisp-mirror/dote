@@ -994,6 +994,7 @@
   (setf (current-magic-points object) (magic-points object)))
 
 (defmethod add-to-inventory ((object player-character) item)
+  (game-event:register-for-end-turn item)
   (push item (character:inventory object)))
 
 (defmethod remove-decayed-items ((object player-character) turn-count)
