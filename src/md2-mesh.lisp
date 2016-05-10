@@ -756,7 +756,7 @@
       (game-state:with-world (world state)
 	(world:push-entity world
 			   (particles:make-blood-death (aabb-center aabb)
-						       (dir object)
+						       +y-axe+
 						       compiled-shaders))))))
 
 (defmethod set-attack-status ((object md2-mesh))

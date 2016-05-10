@@ -32,7 +32,7 @@
   (setf *has-errors* t)
   (push the-error *parsing-errors*))
 
-(defclass parsed-file (buffered-input-file) 
+(defclass parsed-file (buffered-input-file)
   ((comment-line
     :initform nil
     :initarg :comment-line
@@ -44,7 +44,7 @@
 
 (defgeneric peek-token-suppress-errors (object &optional test))
 
-(defgeneric parse-comment-line (object ))
+(defgeneric parse-comment-line (object))
 
 (defgeneric is-comment-line-p (object line))
 
@@ -68,7 +68,7 @@
 
 (defmacro with-no-errors* (&body forms)
   (when forms
-    `(with-no-errors 
+    `(with-no-errors
        ,(first forms)
        (with-no-errors* ,@(rest forms)))))
 
@@ -100,10 +100,10 @@
 	  (if token
 	      (seek *file* start-token)))))))
 
-(defmethod peek-token* ((object parsed-file) &key 
+(defmethod peek-token* ((object parsed-file) &key
 			(test #'identity) (hook-to-stringpos t)
 			(predicate-sort-tokens  #'(lambda (a b)
-						    (> (length (first a)) 
+						    (> (length (first a))
 						       (length (first b))))))
   (with-no-errors
     (with-valid-stream
@@ -115,7 +115,6 @@
 	  (if token
 	      (seek *file* start-token)))))))
 
-  
 (defmethod peek-token-suppress-errors ((object parsed-file) &optional (test #'identity))
   (with-no-errors
     (multiple-value-bind (token start-token)
@@ -164,8 +163,8 @@
   (alexandria:with-gensyms (str)
     `(progn
        ,@(mapcar #'(lambda (op)
-		    `(defun ,(alexandria:format-symbol t "IS-~:@(~a~)-P" 
-						       (cl-ppcre:regex-replace-all "\\+" (symbol-name op) "")) 
+		    `(defun ,(alexandria:format-symbol t "IS-~:@(~a~)-P"
+						       (cl-ppcre:regex-replace-all "\\+" (symbol-name op) ""))
 			 (,str)
 		       (and (stringp ,str) (,test ,op ,str))))
 		operators))))
@@ -229,11 +228,11 @@
       `(let ((,scanner (cl-ppcre:create-scanner ,(concatenate-regexps regexps))))
 	 (defmethod next-token-simple ((object ,class-name) &key (,no-more-token-error t))
 	   (declare (optimize (speed 3) (debug 0) (safety 0)))
-	   (multiple-value-bind (,register-number ,line-start ,line-length ,match ,start-re 
+	   (multiple-value-bind (,register-number ,line-start ,line-length ,match ,start-re
 						  ,end-re)
 	       (regex-scan-line-simple object ,scanner)
 	     (declare (ignore ,line-start))
-	     (declare ((signed-byte 64) ,register-number ,line-start ,line-length 
+	     (declare ((signed-byte 64) ,register-number ,line-start ,line-length
 	      	       ,start-re ,end-re))
 	     (declare (simple-string ,match))
 	       (if (>= ,register-number 0)
@@ -244,15 +243,15 @@
 			  (if ,no-more-token-error
 			      (progn
 				(setf *has-errors* t)
-				(push "Error: stream ended without valid token found" 
+				(push "Error: stream ended without valid token found"
 				      *parsing-errors*))
 			      nil)
 			  (progn
 			    (seek *file* ,line-length)
 			    (char@1+)
-			    (next-token-simple object 
+			    (next-token-simple object
 					       :no-more-token-error ,no-more-token-error))))))))))
-		 
+
 (defmacro define-tokenizer ((classname &rest regexps) &body other-cond-clause)
   (alexandria:with-gensyms (scan tokens sorted-matches max-match)
     (let ((class-name (alexandria:format-symbol t "~@:(~a~)" classname)))
@@ -267,8 +266,8 @@
 		 (t
 		  (block token-matching
 		    ,@(loop for r in regexps collect
-			   `(let ((,scan (multiple-value-list 
-					  (regex-scan *file* 
+			   `(let ((,scan (multiple-value-list
+					  (regex-scan *file*
 						      ,r
 						      hook-to-stringpos))))
 			      (when (first ,scan)
@@ -296,9 +295,9 @@
 			    (push "Error: stream ended without valid token found" *parsing-errors*)
 			    (string (char@))
 			    nil)
-			  (progn 
+			  (progn
 			    (setf *has-errors* t)
-			    (push (format nil 
+			    (push (format nil
 					  "Error: stream ended without valid token found starting from ~s"
 					  (regex-scan *file* ,(format nil ".{~a}"
 								      +peek-length-tokenizer-on-error+) :sticky nil))
@@ -310,14 +309,13 @@
   `(defun ,(alexandria:format-symbol t "~:@(~a~)" name) (,@args)
      ,@(let ((user-rest (eq (caar body) 'declare)))
 	    (append
-	     (if user-rest 
+	     (if user-rest
 		 (list (car body))
 		 nil)
 	     (list
 	      `(when (peek-valid-stream)
 		 (parse-comment-line *file*)))
 	     (list
-	      (if user-rest 
+	      (if user-rest
 		  `(progn ,@(rest body))
 		  `(progn ,@body)))))))
-
