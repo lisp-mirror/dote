@@ -16,53 +16,57 @@
 
 (in-package :texture)
 
-(alexandria:define-constant +skydome-bg+                   "skydome-bg"      :test #'string=)
+(alexandria:define-constant +skydome-bg+                "skydome-bg"         :test #'string=)
 
-(alexandria:define-constant +cloud-1+                      "cloud-1"         :test #'string=)
+(alexandria:define-constant +cloud-1+                   "cloud-1"            :test #'string=)
 
-(alexandria:define-constant +cloud-2+                      "cloud-2"         :test #'string=)
+(alexandria:define-constant +cloud-2+                   "cloud-2"            :test #'string=)
 
-(alexandria:define-constant +cloud-3+                      "cloud-3"         :test #'string=)
+(alexandria:define-constant +cloud-3+                   "cloud-3"            :test #'string=)
 
-(alexandria:define-constant +smoke-tray+                   "smoke-tray"      :test #'string=)
+(alexandria:define-constant +smoke-tray+                "smoke-tray"         :test #'string=)
 
-(alexandria:define-constant +brick-wall+                   "brick-wall"      :test #'string=)
+(alexandria:define-constant +brick-wall+                "brick-wall"         :test #'string=)
 
-(alexandria:define-constant +dry-stone-wall+               "dry-stone-wall"  :test #'string=)
+(alexandria:define-constant +dry-stone-wall+            "dry-stone-wall"     :test #'string=)
 
 (alexandria:define-constant +stone-floor-road+          "stone-floor-road"   :test #'string=)
 
 (alexandria:define-constant +grass-stones-floor+        "grass-stones-floor" :test #'string=)
 
-(alexandria:define-constant +soil+                         "soil"            :test #'string=)
+(alexandria:define-constant +soil+                      "soil"               :test #'string=)
 
-(alexandria:define-constant +dry-soil+                     "dry-soil"        :test #'string=)
+(alexandria:define-constant +dry-soil+                  "dry-soil"           :test #'string=)
 
-(alexandria:define-constant +wood-wall+                    "wood-wall"       :test #'string=)
+(alexandria:define-constant +wood-wall+                 "wood-wall"          :test #'string=)
 
 (alexandria:define-constant +luxurious-floor-1+         "floor-1"            :test #'string=)
 
 (alexandria:define-constant +luxurious-floor-2+         "floor-2"            :test #'string=)
 
-(alexandria:define-constant +decal-wall-1+                 "decal-wall-1"    :test #'string=)
+(alexandria:define-constant +decal-wall-1+              "decal-wall-1"       :test #'string=)
 
-(alexandria:define-constant +decal-wall-2+                 "decal-wall-2"    :test #'string=)
+(alexandria:define-constant +decal-wall-2+              "decal-wall-2"       :test #'string=)
 
-(alexandria:define-constant +blood-splat+                  "blood-splat"     :test #'string=)
+(alexandria:define-constant +blood-splat+               "blood-splat"        :test #'string=)
 
-(alexandria:define-constant +blood-particle+               "blood-particle"  :test #'string=)
+(alexandria:define-constant +blood-particle+            "blood-particle"     :test #'string=)
 
-(alexandria:define-constant +fire-particle+                "fire-particle"   :test #'string=)
+(alexandria:define-constant +fire-particle+             "fire-particle"      :test #'string=)
 
-(alexandria:define-constant +rock-1+                       "rock-1"          :test #'string=)
+(alexandria:define-constant +smoke-particle+            "smoke-particle"     :test #'string=)
 
-(alexandria:define-constant +rock-2+                       "rock-2"          :test #'string=)
+(alexandria:define-constant +cross-particle+            "cross-particle"     :test #'string=)
 
-(alexandria:define-constant +sand+                         "sand"            :test #'string=)
+(alexandria:define-constant +rock-1+                    "rock-1"             :test #'string=)
 
-(alexandria:define-constant +grass+                        "grass"           :test #'string=)
+(alexandria:define-constant +rock-2+                    "rock-2"             :test #'string=)
 
-(alexandria:define-constant +snow+                         "snow"            :test #'string=)
+(alexandria:define-constant +sand+                      "sand"               :test #'string=)
+
+(alexandria:define-constant +grass+                     "grass"              :test #'string=)
+
+(alexandria:define-constant +snow+                      "snow"               :test #'string=)
 
 (alexandria:define-constant +texture-tag-wall-level-1+     "wall-level-1"
   :test #'string= )

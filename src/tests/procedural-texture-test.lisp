@@ -277,6 +277,17 @@
       (write-sequence (pixmap->tga-file pixmap) stream))
     "grass.tga"))
 
+(defun test-smoke-particle (&optional (size pixmap::+default-size-pixmap-library+))
+  (let ((pixmap (pixmap:smoke-particle size)))
+    (dump-pixmap pixmap +texture-dir-tmp+ "smoke-particle.tga")
+    "smoke-particle.tga"))
+
+(defun test-blurred-circled-cross (&optional (size pixmap::+default-size-pixmap-library+))
+  (let* ((name "blurred-circled-cross.tga")
+	 (pixmap (pixmap:blurred-circled-cross size)))
+    (dump-pixmap pixmap +texture-dir-tmp+ name)
+    name))
+
 (defun test-dry-soil ()
   (let ((texture (dry-soil 256)))
     (dump-pixmap texture +texture-dir-tmp+ "dry-soil.tga")
@@ -386,6 +397,8 @@
 		      test-blood-splat
 		      test-blood-particle
 		      test-fire-particle
+		      test-smoke-particle
+		      test-blurred-circled-cross
 		      test-perlin-3d-ref
 		      test-clouds
 		      test-wood-wall)))

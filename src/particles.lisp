@@ -32,11 +32,75 @@
 
 (alexandria:define-constant +attribute-scaling-location+         5 :test #'=)
 
+(alexandria:define-constant +attribute-rotation-location+        7 :test #'=)
+
 (alexandria:define-constant +attribute-alpha-location+           6 :test #'=)
 
 (alexandria:define-constant +transform-vbo-count+                9 :test #'=)
 
-(alexandria:define-constant +appended-vbo-count+                 5 :test #'=)
+(alexandria:define-constant +appended-vbo-count+                 6 :test #'=)
+
+(alexandria:define-constant +particle-gravity+                   (vec 0.0 -9.0 0.0)
+  :test #'vec~)
+
+(defun %uniform-rotation-clsr (m)
+    #'(lambda ()
+	(let ((time 0.0))
+	  #'(lambda (p dt)
+	      (declare (ignore p))
+	      (incf time dt)
+	      (d+ 1.0 (d* m time))))))
+
+(defun %uniform-scaling-clsr (m)
+    #'(lambda ()
+	(let ((time 0.0))
+	  #'(lambda (p dt)
+	      (declare (ignore p))
+	      (incf time dt)
+	      (d+ 1.0 (d* m time))))))
+
+(defun %uniform-alpha-fading-clsr (max)
+  #'(lambda ()
+      (let ((time 0.0))
+	#'(lambda (p dt)
+	    (declare (ignore p))
+	    (incf time dt)
+	    (d- 1.0 (dlerp (smoothstep-interpolate 0.0 max time) 0.0 1.0))))))
+
+(defun gaussian-velocity-distribution-fn (dir max delta max-opening)
+  "Assuming dir normalized"
+  (assert (let ((*default-epsilon* 1e-3))
+	    (epsilon= 1.0 (vec-length dir))))
+  #'(lambda ()
+      (let* ((scale (gaussian-probability delta max))
+	     (rotation-y (rotate-around +y-axe+
+					(num:lcg-next-upto (d* 2.0 +pi+))))
+	     (rotation-x (rotate-around +x-axe+
+					(num:lcg-next-upto max-opening)))
+	     (reorient-axe      (if (vec~ (cross-product dir +y-axe+) +zero-vec+)
+				    +y-axe+
+				    (cross-product +y-axe+ dir)))
+	     (reorient-angle    (acos (dot-product +y-axe+ dir)))
+	     (rotation-reorient (rotate-around reorient-axe reorient-angle)))
+	(vec* (normalize (transform-direction +y-axe+
+					      (matrix* rotation-reorient rotation-y rotation-x)))
+	      scale))))
+
+(defun gaussian-velocity-constant-fn (dir intensity)
+  "Assuming dir normalized"
+  (let ((velo (vec* dir intensity)))
+    #'(lambda () velo)))
+
+(defun gaussian-distribution-fn (max delta)
+  #'(lambda ()
+      (max 0.0 (gaussian-probability delta max))))
+
+(defun constant-delay-distribution-fn (delay &key (global-delay 0.0))
+  (let ((ct global-delay))
+    #'(lambda ()
+	(prog1
+	    ct
+	  (setf ct (d+ ct delay))))))
 
 (defstruct particle
   (mass      1.0               :type desired-type)
@@ -53,6 +117,11 @@
 		 (declare (ignore particle dt))
 		 1.0)
 	     :type function)
+  (saved-rotation  nil          :type function)
+  (rotation   #'(lambda (particle dt)
+		 (declare (ignore particle dt))
+		 0.0)
+	     :type function)
   (saved-alpha nil             :type function)
   (alpha   #'(lambda (particle dt)
 	       (declare (ignore particle dt))
@@ -66,6 +135,7 @@
 	(particle-life     p) (funcall  (particle-saved-life     p))
 	(particle-delay    p) (funcall  (particle-saved-delay    p))
 	(particle-scaling  p) (funcall  (particle-saved-scaling  p))
+	(particle-rotation p) (funcall  (particle-saved-rotation p))
 	(particle-alpha    p) (funcall  (particle-saved-alpha    p))))
 
 (defclass particles-cluster (triangle-mesh inner-animation renderizable)
@@ -105,6 +175,11 @@
     :initform nil
     :initarg  :particles-scaling
     :accessor particles-scaling
+    :type gl-array)
+   (particles-rotation
+    :initform nil
+    :initarg  :particles-rotation
+    :accessor particles-rotation
     :type gl-array)
    (particles-alpha
     :initform nil
@@ -212,6 +287,8 @@
 
 (defgeneric populate-particles-scaling-array (object dt &key force))
 
+(defgeneric populate-particles-rotation-array (object dt &key force))
+
 (defgeneric populate-particles-alpha-array (object dt &key force))
 
 (defgeneric bind-computational-buffers (object))
@@ -260,6 +337,19 @@
 		  (setf (fast-glaref particles-scaling (+ ct i))
 			scaling)))))))
 
+(defmethod populate-particles-rotation-array ((object particles-cluster) dt &key (force nil))
+  (with-accessors ((particles particles)
+		   (particles-rotation particles-rotation)) object
+    (loop
+       for particle across particles
+       for ct from 0 by 6          do
+	 (when (or force
+		   (< (particle-delay particle) 0.0))
+	   (let ((rotation (funcall (particle-rotation particle) particle dt)))
+	     (loop for i from 0 below 6 by 1 do
+		  (setf (fast-glaref particles-rotation (+ ct i))
+			rotation)))))))
+
 (defmethod populate-particles-alpha-array ((object particles-cluster) dt &key (force nil))
   (with-accessors ((particles particles)
 		   (particles-alpha particles-alpha)) object
@@ -296,6 +386,7 @@
 		   (particles-delay particles-delay)
 		   (particles-life  particles-life)
 		   (particles-scaling particles-scaling)
+		   (particles-rotation particles-rotation)
 		   (particles-alpha particles-alpha)
 		   (transform-vao transform-vao)
 		   (transform-vbo-input transform-vbo-input)
@@ -310,6 +401,7 @@
 	  particles-delay            nil
 	  particles-life             nil
 	  particles-scaling          nil
+	  particles-rotation         nil
 	  particles-alpha            nil
 	  particles-output-positions nil
 	  transform-vao              nil
@@ -325,6 +417,7 @@
 		   (particles-delay            particles-delay)
 		   (particles-life             particles-life)
 		   (particles-scaling          particles-scaling)
+		   (particles-rotation         particles-rotation)
 		   (particles-alpha            particles-alpha)
 		   (particles-output-positions particles-output-positions)
 		   (transform-vao              transform-vao)
@@ -340,6 +433,7 @@
     (setf particles-delay            (gl:alloc-gl-array :float (* 6 (length particles))))
     (setf particles-life             (gl:alloc-gl-array :float (* 6 (length particles))))
     (setf particles-scaling          (gl:alloc-gl-array :float (* 6 (length particles))))
+    (setf particles-rotation         (gl:alloc-gl-array :float (* 6 (length particles))))
     (setf particles-alpha            (gl:alloc-gl-array :float (* 6 (length particles))))
     (populate-particles-positions-array        object)
     (populate-particles-output-positions-array object)
@@ -350,6 +444,7 @@
     (populate-particles-delay-array            object)
     (populate-particles-life-array             object)
     (populate-particles-scaling-array          object 0.0 :force t)
+    (populate-particles-rotation-array         object 0.0 :force t)
     (populate-particles-alpha-array            object 0.0 :force t)
     ;; setup finalizer
     (let ((id             (slot-value object 'id))
@@ -361,6 +456,7 @@
 	  (delay          (slot-value object 'particles-delay))
 	  (life           (slot-value object 'particles-life))
 	  (scaling        (slot-value object 'particles-scaling))
+	  (rotation       (slot-value object 'particles-rotation))
 	  (alpha          (slot-value object 'particles-alpha))
 	  (pos-out        (slot-value object 'particles-output-positions))
 	  (vao            (slot-value object 'transform-vao))
@@ -377,6 +473,7 @@
 						  delay
 						  life
 						  scaling
+						  rotation
 						  alpha
 						  pos-out)
 					    (append vbo-in vbo-out)
@@ -389,6 +486,7 @@
 				    delay          nil
 				    life           nil
 				    scaling        nil
+				    rotation       nil
 				    alpha          nil
 				    pos-out        nil))))))
 
@@ -412,6 +510,9 @@
 
 (defun vbo-alpha-buffer-handle (vbo)
   (elt vbo (- (length vbo) 5)))
+
+(defun vbo-rotation-buffer-handle (vbo)
+  (elt vbo (- (length vbo) 6)))
 
 (defun vbo-scaling-buffer-handle (vbo)
   (elt vbo (- (length vbo) 4)))
@@ -480,14 +581,19 @@
 		   (particles-delay            particles-delay)
 		   (particles-life             particles-life)
 		   (particles-scaling          particles-scaling)
+		   (particles-rotation         particles-rotation)
 		   (particles-alpha            particles-alpha)
 		   (particles-positions        particles-positions)
 		   (particles-output-positions particles-output-positions)
 		   (particles-v0               particles-v0)
 		   (particles-masses           particles-masses)) object
     ;; calculation
-    (loop repeat (length particles) do
-	 (quad object particle-width particle-height 0.0 0.0 1.0 1.0 +zero-vec+ nil nil))
+    (let ((w/2 (d* particle-width 0.5))
+	  (h/2 (d* particle-height 0.5)))
+      (loop repeat (length particles) do
+	   (quad object particle-width particle-height
+		 0.0 0.0 1.0 1.0
+		 (vec (d- w/2) (d- h/2) 0.0) nil nil)))
     (call-next-method)
     (setf vbo (append vbo (gl:gen-buffers +appended-vbo-count+)))
     (setf transform-vbo-input  (gl:gen-buffers +transform-vbo-count+)
@@ -522,6 +628,11 @@
       (gl:buffer-data :array-buffer :dynamic-draw particles-scaling)
       (gl:vertex-attrib-pointer +attribute-scaling-location+ 1 :float 0 0 (mock-null-pointer))
       (gl:enable-vertex-attrib-array +attribute-scaling-location+)
+      ;; rotation
+      (gl:bind-buffer :array-buffer (vbo-rotation-buffer-handle vbo))
+      (gl:buffer-data :array-buffer :dynamic-draw particles-rotation)
+      (gl:vertex-attrib-pointer +attribute-rotation-location+ 1 :float 0 0 (mock-null-pointer))
+      (gl:enable-vertex-attrib-array +attribute-rotation-location+)
       ;; alpha
       (gl:bind-buffer :array-buffer (vbo-alpha-buffer-handle vbo))
       (gl:buffer-data :array-buffer :dynamic-draw particles-alpha)
@@ -544,6 +655,7 @@
 			    particles-delay
 			    particles-life
 			    particles-scaling
+			    particles-rotation
 			    particles-alpha
 			    transform-vbo-input
 			    res-array
@@ -563,13 +675,14 @@
 		      (,particles-delay            particles-delay)
 		      (,particles-life             particles-life)
 		      (,particles-scaling          particles-scaling)
+		      (,particles-rotation         particles-rotation)
 		      (,particles-alpha            particles-alpha)
 		      (,transform-vbo-input        transform-vbo-input)) object
        (bubbleup-modelmatrix ,object)
        (with-unbind-vao
 	 (bind-computational-buffers ,object)
 	 (use-program compiled-shaders ,integrator-shader)
-	 (uniformf compiled-shaders :dt   dt)
+	 (uniformf compiled-shaders :dt dt)
 	 ,@body
 	 (cl-gl-utils:with-rasterizer-discard
 	   (%gl:bind-buffer-base :transform-feedback-buffer
@@ -604,6 +717,7 @@
        (populate-particles-delay-array            ,object)
        (populate-particles-life-array             ,object)
        (populate-particles-scaling-array          ,object ,dt :force nil)
+       (populate-particles-rotation-array         ,object ,dt :force nil)
        (populate-particles-alpha-array            ,object ,dt :force nil)
        (gl:bind-buffer :array-buffer (vbo-center-position-buffer-handle ,vbo))
        (gl:buffer-sub-data :array-buffer  ,particles-output-positions)
@@ -615,6 +729,8 @@
        (gl:buffer-sub-data :array-buffer  ,particles-life)
        (gl:bind-buffer :array-buffer (vbo-scaling-buffer-handle ,vbo))
        (gl:buffer-sub-data :array-buffer  ,particles-scaling)
+       (gl:bind-buffer :array-buffer (vbo-rotation-buffer-handle ,vbo))
+       (gl:buffer-sub-data :array-buffer  ,particles-rotation)
        (gl:bind-buffer :array-buffer (vbo-alpha-buffer-handle ,vbo))
        (gl:buffer-sub-data :array-buffer  ,particles-alpha)
        (loop
@@ -639,15 +755,13 @@
 	      (setf (cl-gl-utils:fast-glaref ,particles-v0 (f+ ,part-ct 2))
 		    (elt (particle-v0 ,particle) 2)))))))
 
+(defclass  cluster-w-gravity (particles-cluster)
+  ((gravity
+   :initform +particle-gravity+
+   :initarg :gravity
+   :accessor gravity)))
 
-(defmethod calculate ((object particles-cluster) dt)
-  (with-accessors ((compiled-shaders           compiled-shaders)
-		   (particle-min-y             particle-min-y)) object
-    (with-feedback-calculate (object dt)
-      (uniformf compiled-shaders :dt   dt)
-      (uniformf compiled-shaders :min-y particle-min-y))))
-
-(defclass blood (particles-cluster) ())
+(defclass blood (cluster-w-gravity) ())
 
 (defmethod initialize-instance :after ((object blood)
 				       &key
@@ -658,10 +772,19 @@
   (setf (integrator-shader object) :blood-integrator)
   (setf (texture-object object) texture))
 
+(defmethod calculate ((object blood) dt)
+  (with-accessors ((compiled-shaders compiled-shaders)
+		   (particle-min-y   particle-min-y)
+		   (gravity          gravity)) object
+    (with-feedback-calculate (object dt)
+      (uniformfv compiled-shaders :gravity gravity)
+      (uniformf  compiled-shaders :min-y   particle-min-y))))
+
 (defmethod render ((object blood) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((vbo vbo)
 		   (vao vao)
+		   (el-time el-time)
 		   (texture-object texture-object)
 		   (projection-matrix projection-matrix)
 		   (model-matrix model-matrix)
@@ -680,6 +803,7 @@
 	    (use-program compiled-shaders :particles-blood)
 	    (gl:active-texture :texture0)
 	    (texture:bind-texture texture-object)
+	    (uniformf  compiled-shaders :time  el-time)
 	    (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
 	    (uniform-matrix compiled-shaders :modelview-matrix 4
 			    (vector (matrix* camera-vw-matrix
@@ -691,29 +815,6 @@
 	    (gl:draw-arrays :triangles 0 (* 3 (length triangles)))
 	    (gl:blend-equation :func-add)))))))
 
-(defun gaussian-velocity-distribution-fn (dir max delta max-opening)
-  "Assuming dir normalized"
-  (assert (let ((*default-epsilon* 1e-3))
-	    (epsilon= 1.0 (vec-length dir))))
-  #'(lambda ()
-      (let* ((scale (gaussian-probability delta max))
-	     (rotation-y (rotate-around +y-axe+
-					(num:lcg-next-upto (d* 2.0 +pi+))))
-	     (rotation-x (rotate-around +x-axe+
-					(num:lcg-next-upto max-opening)))
-	     (reorient-axe      (if (vec~ (cross-product dir +y-axe+) +zero-vec+)
-				    +y-axe+
-				    (cross-product +y-axe+ dir)))
-	     (reorient-angle    (acos (dot-product +y-axe+ dir)))
-	     (rotation-reorient (rotate-around reorient-axe reorient-angle)))
-	(vec* (normalize (transform-direction +y-axe+
-					      (matrix* rotation-reorient rotation-y rotation-x)))
-	      scale))))
-
-(defun gaussian-distribution-fn (max delta)
-  #'(lambda ()
-      (max 0.0 (gaussian-probability delta max))))
-
 (defun make-particles-cluster (class particles-count shaders-dict
 			       &key
 				 (texture     (texture:get-texture
@@ -723,11 +824,14 @@
 				 (position-fn #'(lambda () (vec 0.0 0.1 0.0)))
 				 (life-fn     #'(lambda () 10.1))
 				 (delay-fn    #'(lambda () 10.0))
-
 				 (scaling-fn  #'(lambda ()
 						  #'(lambda (particle dt)
 						      (declare (ignore particle dt))
 						      1.0)))
+				 (rotation-fn #'(lambda ()
+						  #'(lambda (particle dt)
+						      (declare (ignore particle dt))
+						      0.0)))
 				 (alpha-fn  #'(lambda ()
 						#'(lambda (particle dt)
 						    (declare (ignore particle dt))
@@ -736,7 +840,7 @@
 				 (height      1.0)
 				 (pos         +zero-vec+)
 				 (min-y       0.0)
-				 (force       +zero-vec+)
+				 (gravity     +zero-vec+)
 				 (respawn     nil))
   (let* ((particles (loop repeat particles-count collect
 			 (let ((starting-velo  (funcall v0-fn))
@@ -748,6 +852,8 @@
 					  :saved-position (copy-vec starting-pos)
 					  :scaling  (funcall scaling-fn)
 					  :saved-scaling     scaling-fn
+					  :rotation  (funcall rotation-fn)
+					  :saved-rotation     rotation-fn
 					  :alpha    (funcall alpha-fn)
 					  :saved-alpha       alpha-fn
 					  :life     (funcall life-fn)
@@ -763,108 +869,199 @@
 				  :particle-width    width
 				  :particle-height   height
 				  :particles         (list->simple-array particles nil 'particle)
-				  :force             force)))
+				  :gravity           gravity)))
     (prepare-for-rendering cluster)))
 
 (defun make-blood-level-0 (pos dir compiled-shaders)
-  (particles:make-particles-cluster 'particles:blood
-				    100
-				    compiled-shaders
-				    :pos     pos
-				    :min-y   (d- +zero-height+ (elt pos 1))
-				    :v0-fn   (gaussian-velocity-distribution-fn dir
-										2.0
-										1.0
-										(d/ +pi/2+ 2.0))
-				    :mass-fn  #'(lambda () 1.0)
-				    :life-fn  (gaussian-distribution-fn .2 0.05)
-				    :delay-fn (gaussian-distribution-fn 0.0 .1)
-				    :width  0.1
-				    :height 0.1))
+  (make-particles-cluster 'blood
+			  100
+			  compiled-shaders
+			  :pos     pos
+			  :min-y   (d- +zero-height+ (elt pos 1))
+			  :v0-fn   (gaussian-velocity-distribution-fn dir
+								      2.0
+								      1.0
+								      (d/ +pi/2+ 2.0))
+			  :mass-fn  #'(lambda () 1.0)
+			  :life-fn  (gaussian-distribution-fn .2 0.05)
+			  :delay-fn (gaussian-distribution-fn 0.0 .1)
+			  :gravity +particle-gravity+
+			  :width  0.1
+			  :height 0.1))
 
 (defun make-blood-level-1 (pos dir compiled-shaders)
-  (particles:make-particles-cluster 'particles:blood
-				    100
-				    compiled-shaders
-				    :pos     pos
-				    :min-y   (d- +zero-height+ (elt pos 1))
-				    :v0-fn   (gaussian-velocity-distribution-fn dir
-										2.0
-										1.0
-										(d/ +pi/2+ 3.0))
-				    :mass-fn  #'(lambda () 1.0)
-				    :life-fn  (gaussian-distribution-fn 1.1 0.1)
-				    :delay-fn (gaussian-distribution-fn 0.0 .1)
-				    :width  0.1
-				    :height 0.1))
+  (make-particles-cluster 'blood
+			  100
+			  compiled-shaders
+			  :pos     pos
+			  :min-y   (d- +zero-height+ (elt pos 1))
+			  :v0-fn   (gaussian-velocity-distribution-fn dir
+								      2.0
+								      1.0
+								      (d/ +pi/2+ 3.0))
+			  :mass-fn  #'(lambda () 1.0)
+			  :life-fn  (gaussian-distribution-fn 1.1 0.1)
+			  :delay-fn (gaussian-distribution-fn 0.0 .1)
+			  :gravity +particle-gravity+
+			  :width  0.1
+			  :height 0.1))
 
 (defun make-blood-level-2 (pos dir compiled-shaders)
-  (particles:make-particles-cluster 'particles:blood
-				    500
-				    compiled-shaders
-				    :pos     pos
-				    :min-y   (d- +zero-height+ (elt pos 1))
-				    :v0-fn   (gaussian-velocity-distribution-fn dir
-										3.0
-										1.0
-										(d/ +pi/2+ 6.0))
-				    :mass-fn  #'(lambda () 1.0)
-				    :life-fn  (gaussian-distribution-fn 12.0 5.0)
-				    :delay-fn (gaussian-distribution-fn 0.0 1.1)
-				    :scaling-fn #'(lambda ()
-						    #'(lambda (p dt)
-							(declare (ignore p dt))
-							1.0))
-				    :width  .1
-				    :height .1))
+  (make-particles-cluster 'blood
+			  500
+			  compiled-shaders
+			  :pos     pos
+			  :min-y   (d- +zero-height+ (elt pos 1))
+			  :v0-fn   (gaussian-velocity-distribution-fn dir
+								      3.0
+								      1.0
+								      (d/ +pi/2+ 6.0))
+			  :mass-fn  #'(lambda () 1.0)
+			  :life-fn  (gaussian-distribution-fn 12.0 5.0)
+			  :delay-fn (gaussian-distribution-fn 0.0 1.1)
+			  :scaling-fn #'(lambda ()
+					  #'(lambda (p dt)
+					      (declare (ignore p dt))
+					      1.0))
+			  :gravity +particle-gravity+
+			  :width  .1
+			  :height .1))
 
 (defun make-blood-death (pos dir compiled-shaders)
-  (particles:make-particles-cluster 'particles:blood
-				    1500
-				    compiled-shaders
-				    :pos     pos
-				    :min-y   (d- +zero-height+ (elt pos 1))
-				    :v0-fn   (gaussian-velocity-distribution-fn dir
-										3.0
-										1.0
-										(d/ +pi/2+ 3.0))
-				    :mass-fn  (gaussian-distribution-fn 1.0 .1)
-				    :life-fn  (gaussian-distribution-fn 12.0 5.0)
-				    :delay-fn (gaussian-distribution-fn 0.0 1.1)
-				    :scaling-fn #'(lambda ()
-						    #'(lambda (p dt)
-							(declare (ignore p dt))
-							1.0))
-				    :width  .1
-				    :height .1))
+  (make-particles-cluster 'blood
+			  1500
+			  compiled-shaders
+			  :pos     pos
+			  :min-y   (d- +zero-height+ (elt pos 1))
+			  :v0-fn   (gaussian-velocity-distribution-fn dir
+								      3.0
+								      1.0
+								      (d/ +pi/2+ 3.0))
+			  :mass-fn  (gaussian-distribution-fn 1.0 .1)
+			  :life-fn  (gaussian-distribution-fn 12.0 5.0)
+			  :delay-fn (gaussian-distribution-fn 0.0 1.1)
+			  :scaling-fn #'(lambda ()
+					  #'(lambda (p dt)
+					      (declare (ignore p dt))
+					      1.0))
+			  :gravity +particle-gravity+
+			  :width  .1
+			  :height .1))
 
 (defun make-debris (pos dir num texture compiled-shaders)
-  (particles:make-particles-cluster 'particles:blood
-				    num
-				    compiled-shaders
-				    :texture texture
-				    :pos     pos
-				    :min-y   (d- +zero-height+ (elt pos 1))
-				    :v0-fn   (gaussian-velocity-distribution-fn dir
-										3.0
-										1.0
-										(d/ +pi/2+ 3.0))
-				    :mass-fn  (gaussian-distribution-fn 1.0 1.0)
-				    :life-fn  (gaussian-distribution-fn 12.0 5.0)
-				    :delay-fn (gaussian-distribution-fn 0.0 .0001)
-				    :scaling-fn #'(lambda ()
-						    #'(lambda (p dt)
-							(declare (ignore p dt))
-							1.0))
+  (make-particles-cluster 'blood
+			  num
+			  compiled-shaders
+			  :texture texture
+			  :pos     pos
+			  :min-y   (d- +zero-height+ (elt pos 1))
+			  :v0-fn   (gaussian-velocity-distribution-fn dir
+								      3.0
+								      1.0
+								      (d/ +pi/2+ 3.0))
+			  :mass-fn  (gaussian-distribution-fn 1.0 1.0)
+			  :life-fn  (gaussian-distribution-fn 12.0 5.0)
+			  :delay-fn (gaussian-distribution-fn 0.0 .0001)
+			  :scaling-fn #'(lambda ()
+					  #'(lambda (p dt)
+					      (declare (ignore p dt))
+					      1.0))
 
-				    :width  .1
-				    :height .1))
+			  :width  .1
+			  :height .1))
 
-(defclass fire-dart (particles-cluster)
-  ((force
-    :initform +zero-vec+
-    :initarg  :force
-    :accessor force)))
+(defclass smoke-puff (cluster-w-gravity) ())
+
+(defmethod initialize-instance :after ((object smoke-puff)
+				       &key
+					 (texture (texture:get-texture
+						   texture:+blood-particle+))
+					 &allow-other-keys)
+  (setf (use-blending-p object) t)
+  (setf (integrator-shader object) :blood-integrator)
+  (setf (texture-object object) texture))
+
+(defmethod calculate ((object smoke-puff) dt)
+  (with-accessors ((compiled-shaders compiled-shaders)
+		   (particle-min-y   particle-min-y)
+		   (gravity          gravity)) object
+    (with-feedback-calculate (object dt)
+      (uniformfv compiled-shaders :gravity gravity)
+      (uniformf  compiled-shaders :min-y   particle-min-y))))
+
+(defmethod render ((object smoke-puff) renderer)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((vbo vbo)
+		   (vao vao)
+		   (el-time el-time)
+		   (texture-object texture-object)
+		   (projection-matrix projection-matrix)
+		   (model-matrix model-matrix)
+		   (view-matrix view-matrix)
+		   (compiled-shaders compiled-shaders)
+		   (triangles triangles)) object
+    (declare (texture:texture texture-object))
+    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
+    (declare (list triangles vao vbo))
+    (when (> (length triangles) 0)
+      (with-camera-view-matrix (camera-vw-matrix renderer)
+	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+	  (with-depth-disabled
+	    (cl-gl-utils:with-blending
+	      (gl:blend-equation :func-add)
+	      (gl:blend-func :src-alpha :one-minus-src-alpha)
+	      (use-program compiled-shaders :particles-blood)
+	    (gl:active-texture :texture0)
+	    (texture:bind-texture texture-object)
+	    (uniformf  compiled-shaders :time  el-time)
+	    (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+	    (uniform-matrix compiled-shaders :modelview-matrix 4
+			    (vector (matrix* camera-vw-matrix
+					     (elt view-matrix 0)
+					     (elt model-matrix 0)))
+			    nil)
+	    (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
+	    (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+	    (gl:draw-arrays :triangles 0 (* 3 (length triangles)))
+	    (gl:blend-equation :func-add))))))))
+
+(defun make-smoke-level-0 (pos dir compiled-shaders)
+  (make-particles-cluster 'smoke-puff
+			  100
+			  compiled-shaders
+			  :texture (texture:get-texture texture:+smoke-particle+)
+			  :pos     pos
+			  :v0-fn    (gaussian-velocity-constant-fn dir 1.0)
+			  :mass-fn  (gaussian-distribution-fn 1.0 0.001)
+			  :life-fn  (gaussian-distribution-fn 70.0 0.001)
+			  :delay-fn (constant-delay-distribution-fn 1.0)
+			  :scaling-fn  (%uniform-scaling-clsr 10.0)
+			  :rotation-fn (%uniform-rotation-clsr 1.0)
+			  :alpha-fn    (%uniform-alpha-fading-clsr 10.0)
+			  :gravity   +zero-vec+
+			  :width  .1
+			  :height .1
+			  :respawn nil))
+
+(defun make-smoke-level-1 (pos dir compiled-shaders)
+  (make-particles-cluster 'smoke-puff
+			  1000
+			  compiled-shaders
+			  :texture (texture:get-texture texture:+smoke-particle+)
+			  :pos     pos
+			  :v0-fn    (gaussian-velocity-constant-fn dir 1.0)
+			  :mass-fn  (gaussian-distribution-fn 1.0 0.001)
+			  :life-fn  (gaussian-distribution-fn 200.0 0.001)
+			  :delay-fn (constant-delay-distribution-fn .5)
+			  :scaling-fn  (%uniform-scaling-clsr  (lcg-next-in-range 2.5 3.5))
+			  :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range 1.0 2.0))
+			  :alpha-fn    (%uniform-alpha-fading-clsr 18.0)
+			  :gravity   +zero-vec+
+			  :width  .2
+			  :height .2
+			  :respawn nil))
+
+(defclass fire-dart (cluster-w-gravity) ())
 
 (defmethod initialize-instance :after ((object fire-dart)
 				       &key
@@ -877,14 +1074,13 @@
 
 (defmethod calculate ((object fire-dart) dt)
   (with-accessors ((compiled-shaders compiled-shaders)
-		   (force            force)
+		   (gravity          gravity)
 		   (el-time          el-time)) object
     (setf el-time
 	  (d+ (start-time object)
 	      (d* (animation-speed object) (current-time object))))
     (with-feedback-calculate (object dt)
-      (uniformf  compiled-shaders :dt    dt)
-      (uniformfv compiled-shaders :force force))))
+      (uniformfv compiled-shaders :gravity gravity))))
 
 (defmethod render ((object fire-dart) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -925,85 +1121,88 @@
 (defmethod removeable-from-world ((object fire-dart))
   (mark-for-remove-p object))
 
-(defun %uniform-scaling-clsr (m)
-    #'(lambda ()
-	(let ((time 0.0))
-	  #'(lambda (p dt)
-	      (declare (ignore p))
-	      (incf time dt)
-	      (d+ 1.0 (d* m time))))))
-
-(defun %uniform-alpha-fading-clsr (max)
-  #'(lambda ()
-      (let ((time 0.0))
-	#'(lambda (p dt)
-	    (declare (ignore p))
-	    (incf time dt)
-	    (d- 1.0 (dlerp (smoothstep-interpolate 0.0 max time) 0.0 1.0))))))
-
 (defun make-fire-dart (pos dir compiled-shaders)
-  (particles:make-particles-cluster 'fire-dart
-				    1500
-				    compiled-shaders
-				    :texture (texture:get-texture texture:+fire-particle+)
-				    :pos     pos
-				    :v0-fn  (gaussian-velocity-distribution-fn dir
-									       1.0
-									       .1
-									       (d/ +pi/2+ 5.0))
-				    :mass-fn  (gaussian-distribution-fn 1.0 .1)
-				    :life-fn  (gaussian-distribution-fn 5.0 1.1)
-				    :delay-fn (gaussian-distribution-fn 0.0 10.1)
-				    :force    (vec-negate dir)
-				    :scaling-fn  #'(lambda ()
-						     #'(lambda (p dt)
-							 (declare (ignore p dt))
-							 1.0))
-				    :alpha-fn   (%uniform-alpha-fading-clsr 7.0)
-				    :width  1.0
-				    :height 1.0
-				    :respawn t))
-
+  (make-particles-cluster 'fire-dart
+			  1500
+			  compiled-shaders
+			  :texture (texture:get-texture texture:+fire-particle+)
+			  :pos     pos
+			  :v0-fn  (gaussian-velocity-distribution-fn dir
+								     1.0
+								     .1
+								     (d/ +pi/2+ 5.0))
+			  :mass-fn  (gaussian-distribution-fn 1.0 .1)
+			  :life-fn  (gaussian-distribution-fn 5.0 1.1)
+			  :delay-fn (gaussian-distribution-fn 0.0 10.1)
+			  :gravity  (vec-negate dir)
+			  :scaling-fn  #'(lambda ()
+					   #'(lambda (p dt)
+					       (declare (ignore p dt))
+					       1.0))
+			  :alpha-fn   (%uniform-alpha-fading-clsr 7.0)
+			  :width  1.0
+			  :height 1.0
+			  :respawn t))
 
 (defun make-fire-dart-level-1 (pos dir compiled-shaders)
-  (particles:make-particles-cluster 'fire-dart
-				    1500
-				    compiled-shaders
-				    :texture (texture:get-texture texture:+fire-particle+)
-				    :pos     pos
-				    :v0-fn  (gaussian-velocity-distribution-fn dir
-									       1.0
-									       .1
-									       (d/ +pi/2+ 5.0))
-				    :mass-fn  (gaussian-distribution-fn 1.0 .1)
-				    :life-fn  (gaussian-distribution-fn 5.0 1.1)
-				    :delay-fn (gaussian-distribution-fn 0.0 10.1)
-				    :force    (vec-negate dir)
-				    :scaling-fn  #'(lambda ()
-						     #'(lambda (p dt)
-							 (declare (ignore p dt))
-							 1.0))
-				    :alpha-fn   (%uniform-alpha-fading-clsr 7.0)
-				    :width  1.0
-				    :height 1.0
-				    :respawn t))
+  (make-particles-cluster 'fire-dart
+			  1500
+			  compiled-shaders
+			  :texture (texture:get-texture texture:+fire-particle+)
+			  :pos     pos
+			  :v0-fn  (gaussian-velocity-distribution-fn dir
+								     1.0
+								     .1
+								     (d/ +pi/2+ 5.0))
+			  :mass-fn  (gaussian-distribution-fn 1.0 .1)
+			  :life-fn  (gaussian-distribution-fn 5.0 1.1)
+			  :delay-fn (gaussian-distribution-fn 0.0 10.1)
+			  :gravity    (vec-negate dir)
+			  :scaling-fn  #'(lambda ()
+					   #'(lambda (p dt)
+					       (declare (ignore p dt))
+					       1.0))
+			  :alpha-fn   (%uniform-alpha-fading-clsr 7.0)
+			  :width  1.0
+			  :height 1.0
+			  :respawn t))
 
 (defun make-fire-dart-level-0 (pos dir compiled-shaders)
-  (particles:make-particles-cluster 'fire-dart
-				    1500
-				    compiled-shaders
-				    :texture (texture:get-texture texture:+fire-particle+)
-				    :pos     pos
-				    :v0-fn  (gaussian-velocity-distribution-fn dir
-									       .8
-									       .01
-									       (d/ +pi/2+ 5.0))
-				    :mass-fn  (gaussian-distribution-fn 1.0 .1)
-				    :life-fn  (gaussian-distribution-fn 5.0 1.1)
-				    :delay-fn (gaussian-distribution-fn 0.0 10.1)
-				    :force    (vec-negate dir)
-				    :scaling-fn (%uniform-scaling-clsr 1.0)
-				    :alpha-fn   (%uniform-alpha-fading-clsr 5.0)
-				    :width  .1
-				    :height .1
-				    :respawn t))
+  (make-particles-cluster 'fire-dart
+			  1500
+			  compiled-shaders
+			  :texture (texture:get-texture texture:+fire-particle+)
+			  :pos     pos
+			  :v0-fn  (gaussian-velocity-distribution-fn dir
+								     .8
+								     .01
+								     (d/ +pi/2+ 5.0))
+			  :mass-fn  (gaussian-distribution-fn 1.0 .1)
+			  :life-fn  (gaussian-distribution-fn 5.0 1.1)
+			  :delay-fn (gaussian-distribution-fn 0.0 10.1)
+			  :gravity    (vec-negate dir)
+			  :scaling-fn (%uniform-scaling-clsr 1.0)
+			  :alpha-fn   (%uniform-alpha-fading-clsr 5.0)
+			  :width  .1
+			  :height .1
+			  :respawn t))
+
+(defun make-fire-bulb (pos dir compiled-shaders)
+  (make-particles-cluster 'fire-dart
+			  700
+			  compiled-shaders
+			  :texture (texture:get-texture texture:+fire-particle+)
+			  :pos     pos
+			  :v0-fn  (gaussian-velocity-distribution-fn dir
+								     .1
+								     .1
+								     (d/ +pi/2+ 5.0))
+			  :mass-fn  (gaussian-distribution-fn 1.0 .1)
+			  :life-fn  (gaussian-distribution-fn 7.0 1.1)
+			  :delay-fn (gaussian-distribution-fn 0.0 10.1)
+			  :gravity    (vec-negate dir)
+			  :scaling-fn (%uniform-scaling-clsr 5.0)
+			  :alpha-fn   (%uniform-alpha-fading-clsr 7.0)
+			  :width  1.0
+			  :height 1.0
+			  :respawn nil))

@@ -121,7 +121,6 @@
 	   (push (alexandria:make-keyword (elt l 0)) output)
 	   (setf l (rest l)))))))
 
-
 (defparameter *main-window* nil)
 
 (defparameter *renderer*    nil)
@@ -470,26 +469,28 @@
 	    (otherwise
 	     (gen-simple-texture-generator (alexandria:make-keyword (second body))
 					   offset
-					   :+smoke-tray+
-					   :+brick-wall+
-					   :+dry-stone-wall+
-					   :+grass+
-					   :+grass-stones-floor+
-					   :+stone-floor-road+
-					   :+soil+
-					   :+dry-soil+
-					   :+wood-wall+
-					   :+luxurious-floor-1+
-					   :+luxurious-floor-2+
-					   :+decal-wall-1+
-					   :+decal-wall-2+
-					   :+blood-splat+
-					   :+blood-particle+
-					   :+fire-particle+
-					   :+rock-1+
-					   :+rock-2+
-					   :+sand+
-					   :+snow+)))
+					   +smoke-tray+
+					   +brick-wall+
+					   +dry-stone-wall+
+					   +grass+
+					   +grass-stones-floor+
+					   +stone-floor-road+
+					   +soil+
+					   +dry-soil+
+					   +wood-wall+
+					   +luxurious-floor-1+
+					   +luxurious-floor-2+
+					   +decal-wall-1+
+					   +decal-wall-2+
+					   +blood-splat+
+					   +blood-particle+
+					   +fire-particle+
+					   +smoke-particle+
+					   +cross-particle+
+					   +rock-1+
+					   +rock-2+
+					   +sand+
+					   +snow+)))
 	  (branch-generate (subseq body offset)))
 	(need-keyword-if ((first body) :set)
 	  (branch-key-value body)

@@ -164,7 +164,9 @@
     `(progn
        ,@(mapcar #'(lambda (op)
 		    `(defun ,(alexandria:format-symbol t "IS-~:@(~a~)-P"
-						       (cl-ppcre:regex-replace-all "\\+" (symbol-name op) ""))
+						       (cl-ppcre:regex-replace-all "\\+|\\*"
+										   (symbol-name op)
+										   ""))
 			 (,str)
 		       (and (stringp ,str) (,test ,op ,str))))
 		operators))))
@@ -246,7 +248,10 @@
 				(push "Error: stream ended without valid token found"
 				      *parsing-errors*))
 			      nil)
-			  (progn
+			  (handler-bind ((conditions:out-of-bounds
+					  #'(lambda (c)
+					      (declare (ignore c))
+					      (invoke-restart 'ignore-error))))
 			    (seek *file* ,line-length)
 			    (char@1+)
 			    (next-token-simple object
@@ -299,8 +304,9 @@
 			    (setf *has-errors* t)
 			    (push (format nil
 					  "Error: stream ended without valid token found starting from ~s"
-					  (regex-scan *file* ,(format nil ".{~a}"
-								      +peek-length-tokenizer-on-error+) :sticky nil))
+					  (regex-scan *file* ,(format nil "(?s).{~a}"
+								      +peek-length-tokenizer-on-error+)
+						      :sticky nil))
 				  *parsing-errors*)
 			    nil))))))
 	     nil)))))

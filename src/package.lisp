@@ -1518,6 +1518,10 @@
    :blood-splat
    :blood-particle
    :fire-particle
+   :smoke-particle
+   :blurred-circle
+   :blurred-cross
+   :blurred-circled-cross
    :voronoized-starfish
    :voronoized-graal
    :glass-tile
@@ -1761,6 +1765,8 @@
    :+blood-splat+
    :+blood-particle+
    :+fire-particle+
+   :+smoke-particle+
+   :+cross-particle+
    :+rock-1+
    :+rock-2+
    :+sand+
@@ -3695,7 +3701,9 @@
    :make-blood-death
    :make-debris
    :make-fire-dart-level-0
-   :make-fire-dart-level-1))
+   :make-fire-dart-level-1
+   :make-smoke-level-0
+   :make-smoke-level-1))
 
 (defpackage :arrows
   (:use :cl

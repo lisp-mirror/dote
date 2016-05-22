@@ -566,24 +566,26 @@ active program (set by sdk2.kit:use-program)."
     (:particles-blood
      (:uniforms :modelview-matrix
 		:proj-matrix
-		:texture-object)
-      (:shaders :vertex-shader   ,(get-shader-source "particle-blood.vert")
+		:texture-object
+		:time)
+      (:shaders :vertex-shader   ,(get-shader-source "generic-particle.vert")
 		:fragment-shader ,(get-shader-source "particle-blood.frag")))
     (:particles-fire-dart
      (:uniforms :modelview-matrix
 		:proj-matrix
 		:texture-object
 		:time)
-      (:shaders :vertex-shader   ,(get-shader-source "particle-fire-dart.vert")
+      (:shaders :vertex-shader   ,(get-shader-source "generic-particle.vert")
 		:fragment-shader ,(get-shader-source "particle-fire-dart.frag")))
     ;;;;; transform feedback
     (:blood-integrator
      (:uniforms :dt
+		:gravity
 		:min-y)
      (:feedback-shaders :vertex-shader ,(get-shader-source "particle-blood-feedback.vert")))
     (:fire-dart-integrator
      (:uniforms :dt
-		:force)
+		:gravity)
      (:feedback-shaders :vertex-shader ,(get-shader-source "particle-fire-dart-feedback.vert")))))
 
 (defun compile-library ()

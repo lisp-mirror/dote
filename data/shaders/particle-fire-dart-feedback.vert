@@ -10,7 +10,7 @@ layout (location = 3) in float delay;
 
 uniform float dt = 1.0;
 
-uniform vec3 force = vec3(0.0, -9.0, 0.0);
+uniform vec3 gravity = vec3(0.0, -9.0, 0.0);
 
 uniform float min_y =   0.0;
 
@@ -31,7 +31,7 @@ void main() {
   vec3 dv    = vec3(0.0);
   vec3 displ = vec3(0.0);
   if (delay < 0.0){
-    integrate(force, v0, mass, dt, // in
+    integrate(gravity, v0, mass, dt, // in
 	      dv, displ);           // out
     new_position = position + displ;
     new_velocity = dv;

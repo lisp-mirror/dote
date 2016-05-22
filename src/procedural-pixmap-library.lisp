@@ -1166,6 +1166,17 @@
       (write-sequence (pixmap->tga-file pixmap) stream))
     t))
 
+(defun smoke-particle (size &key (color §c050505ff))
+  (fire-particle size :color color))
+
+(defun test-smoke-particle (&optional (size +default-size-pixmap-library+))
+  (let ((pixmap (smoke-particle size)))
+    (with-open-file (stream (fs:file-in-package "smoke-particle.tga") :direction :output
+ 			    :if-exists :supersede :if-does-not-exist :create
+ 			    :element-type +targa-stream-element-type+)
+      (write-sequence (pixmap->tga-file pixmap) stream))
+    t))
+
 (defun test-blood-splat (&optional (size +default-size-pixmap-library+))
   (let ((pixmap (blood-splat size)))
     (with-open-file (stream (fs:file-in-package "blood-splat.tga") :direction :output
@@ -1365,8 +1376,82 @@
 			(smoothstep-interpolate 0.5 1.0
 						(sample@ grains x y)))))))
 
-
       (values pixmap "soil"))))
+
+(defun blurred-circle (size &key
+			      (radius 0.15)
+			      (thickness 0.4)
+			      (gradient (make-instance 'gradient
+							  :colors
+							  (list
+							   (make-gradient-color 0.0 §cffffff00)
+							   (make-gradient-color 0.8 §cffffffff)))))
+  (let* ((pixmap (with-standard-generated-pixmap-square (pixmap size)
+		   (let* ((dist   (vec2-length (vec2- (vec2 x y) (vec2 0.5 0.5))))
+			  (value1 (d- 1.0 (dlerp (smoothstep-interpolate (d+ 0.2 radius)
+									 (d+ 0.3 radius)
+									 dist)
+						   0.0 1.0)))
+			  (value2 (dlerp (smoothstep-interpolate 0.1 thickness dist)
+					 0.0 1.0))
+			  (color  (pick-color gradient (d* value2 value1))))
+		     color))))
+    (values pixmap "blurred-circle")))
+
+(defun test-blurred-circle (&optional (size +default-size-pixmap-library+))
+  (let ((pixmap (blurred-circle size)))
+    (with-open-file (stream (fs:file-in-package "blurred-circle.tga") :direction :output
+ 			    :if-exists :supersede :if-does-not-exist :create
+ 			    :element-type +targa-stream-element-type+)
+      (write-sequence (pixmap->tga-file pixmap) stream))
+    t))
+
+(defun blurred-cross (size &key
+			     (scaling-x 0.11)
+			     (scaling-y 0.11)
+			     (gradient (make-instance 'gradient
+						      :colors
+						      (list
+						       (make-gradient-color 0.0 §cffffff00)
+						       (make-gradient-color 0.8 §cffffffff)))))
+  (let* ((fn     #'(lambda (x y)
+		     (d- 1.0 (d* (datan x)
+				 (datan y)
+				 (datan (d* x +pi+))
+				 (datan (d* y +pi+))))))
+	 (frame (fuzzy-circular-frame size
+				      0.35 0.5 §cffffffff §cffffff00 0.0))
+	 (pixmap (with-standard-generated-pixmap-square (pixmap size)
+		   (let* ((value-fn (dlerp (smoothstep-interpolate 0.0 1.0
+								   (funcall fn
+									    (d/ (d- x 0.5)
+										scaling-x)
+									    (d/ (d- y 0.5)
+										scaling-y)))
+					   0.0 1.0))
+			  (color  (multiply-color (byte-vector->vec4 (sample@ frame x y))
+						  (pick-color gradient value-fn))))
+		     color))))
+    (values pixmap "blurred-cross")))
+
+(defun test-blurred-cross (&optional (size +default-size-pixmap-library+))
+  (let ((pixmap (blurred-cross size)))
+    (with-open-file (stream (fs:file-in-package "blurred-cross.tga") :direction :output
+ 			    :if-exists :supersede :if-does-not-exist :create
+ 			    :element-type +targa-stream-element-type+)
+      (write-sequence (pixmap->tga-file pixmap) stream))
+    t))
+
+(defun blurred-circled-cross (size)
+  (let ((circle (blurred-circle size))
+	(cross  (blurred-cross  size)))
+    (blit circle cross 0 0 0 0 :function-blend (blit-blend-lerp-fn))
+    cross))
+
+(defun test-blurred-circled-cross (&optional (size +default-size-pixmap-library+))
+  (let ((pixmap (blurred-circled-cross size)))
+    (save-pixmap pixmap (fs:file-in-package "blurred-circled-cross.tga")))
+  t)
 
 (defun rock-1 (size &key (gradient-base (make-instance 'gradient
 						:colors
