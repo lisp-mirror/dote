@@ -18,16 +18,18 @@
 
 (defsuite rb-tree-suite (all-suite))
 
+(defun %compare-fn (a b) (< (car a) (car b)))
+
 (defun make-test-tree (&optional (ct 100))
   (let ((time (get-universal-time))
-	(key-fn     #'identity)
+	(key-fn     #'car)
 	(equal-fn   #'=)
 	(compare-fn #'<)
 	(tree       (make-root-rb-node nil +rb-red+)))
     (num:with-lcg-seed (time)
       (loop repeat ct do
 	 (setf tree (rb-tree:insert tree
-				    (num:lcg-next-upto ct)
+				    (cons (num:lcg-next-upto ct) nil)
 				    :equal     equal-fn
 				    :compare   compare-fn
 				    :key-datum key-fn
@@ -43,30 +45,32 @@
 	    `(assert-true
 		 (progn
 		   (sleep 1)
-		   (let* ((count   1000)
-			  (tree    (make-test-tree count))
-			  (key-fn  #'identity)
-			  (equal-fn   #'=)
-			  (cmp-fn #'<))
+		   (let* ((count         1000)
+			  (tree          (make-test-tree count))
+			  (key-datum-fn  #'identity)
+			  (key-fn        #'car)
+			  (equal-fn      #'=)
+			  (cmp-fn        #'%compare-fn))
 		     (num:with-lcg-seed ((get-universal-time))
 		       (every #'(lambda (a) a)
 			      (loop repeat (floor (/ count 5)) collect
 				   (let ((datum (num:lcg-next-upto count))
-					 (balanced-before-remove-p (bstp tree)))
+					 (balanced-before-remove-p (bstp tree
+									 :comp-fn cmp-fn)))
 				     (setf tree (remove-node tree
 							     datum
 							     :equal     equal-fn
-							     :compare   cmp-fn
-							     :key-datum key-fn
+							     :compare   #'<
+							     :key-datum key-datum-fn
 							     :key       key-fn))
 				     (and balanced-before-remove-p
-					  (bstp tree)
+					  (bstp tree :comp-fn cmp-fn)
 					  (balancedp tree)
 					  (not (search tree
 						       datum
 						       :equal     equal-fn
-						       :compare   cmp-fn
-						       :key-datum key-fn
+						       :compare   #'<
+						       :key-datum key-datum-fn
 						       :key       key-fn)))))))))))))
 
 (deftest test-remove (rb-tree-suite)

@@ -1128,6 +1128,9 @@
   (or (weapon-type-long-range  object)
       (weapon-type-short-range object)))
 
+(defmethod weapon-type (object)
+  nil)
+
 (defmethod weapon-type-short-range ((object player-character))
  (let* ((weapon       (worn-weapon object))
 	(weapon-type  (when weapon

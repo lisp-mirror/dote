@@ -394,7 +394,7 @@
 				max-data
 				(remove-max-node (left object)
 						 key
-						 key-datum
+						 key
 						 compare
 						 equal)
 				(right object)

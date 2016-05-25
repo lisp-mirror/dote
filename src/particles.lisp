@@ -232,6 +232,10 @@
     :reader   mark-for-remove-p
     :writer  (setf mark-for-remove))))
 
+(defmacro do-particles ((object particle) &body body)
+  `(loop for ,particle across (particles ,object) do
+	,@body))
+
 (defmacro gen-populate-array-vec (slot-array slot-struct)
   (let ((fn-name (format-fn-symbol t "populate-~a-array" slot-array)))
     `(progn
@@ -370,11 +374,33 @@
   t)
 
 (defmethod aabb ((object particles-cluster))
-  (with-accessors ((particles particles)) object
-    (let ((res (make-instance 'aabb)))
-      (loop for particle across particles do
-	   (expand res (particle-position particle)))
-      res)))
+  (with-slots (aabb) object
+    (with-accessors ((model-matrix model-matrix)
+		     (particles particles)
+		     (particles-positions particles-positions)
+		     (bounding-sphere bounding-sphere)) object
+      (declare ((simple-vector 1) model-matrix))
+      (let ((res (make-instance 'aabb)))
+	(if particles-positions
+	    (loop for i from 0 below (length particles) by 3 do
+		 (expand res (transform-point (vec (fast-glaref particles-positions    i)
+						   (fast-glaref particles-positions (+ i 1))
+						   (fast-glaref particles-positions (+ i 2)))
+					      (elt model-matrix 0))))
+	    (do-particles (object particle)
+	      (expand res (transform-point (particle-position particle)
+					   (elt model-matrix 0)))))
+	(do-children-mesh (i object)
+	  (let ((child (aabb i)))
+	    (expand res (aabb-p1 child))
+	    (expand res (aabb-p2 child))))
+	(setf bounding-sphere (aabb->bounding-sphere res))
+	(setf aabb res)
+	aabb))))
+
+(defmethod reset-aabb ((object particles-cluster))
+  "Recreate the aabb from object space vertices"
+  (aabb object))
 
 (defmethod destroy :after ((object particles-cluster))
   (with-accessors ((particles-positions particles-positions)
@@ -755,6 +781,14 @@
 	      (setf (cl-gl-utils:fast-glaref ,particles-v0 (f+ ,part-ct 2))
 		    (elt (particle-v0 ,particle) 2)))))))
 
+(defmethod calculate ((object particles-cluster) dt)
+  (do-children-mesh (i object)
+    (calculate i dt)))
+
+(defmethod render ((object particles-cluster) renderer)
+  (do-children-mesh (c object)
+    (render c renderer)))
+
 (defclass  cluster-w-gravity (particles-cluster)
   ((gravity
    :initform +particle-gravity+
@@ -966,7 +1000,7 @@
 					  #'(lambda (p dt)
 					      (declare (ignore p dt))
 					      1.0))
-
+			  :gravity +particle-gravity+
 			  :width  .1
 			  :height .1))
 
