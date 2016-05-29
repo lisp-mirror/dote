@@ -44,20 +44,28 @@
   :test #'vec~)
 
 (defun %uniform-rotation-clsr (m)
-    #'(lambda ()
-	(let ((time 0.0))
-	  #'(lambda (p dt)
-	      (declare (ignore p))
-	      (incf time dt)
-	      (d+ 1.0 (d* m time))))))
+  #'(lambda ()
+      (let ((time 0.0))
+	#'(lambda (p dt)
+	    (declare (ignore p))
+	    (incf time dt)
+	    (d+ 1.0 (d* m time))))))
 
 (defun %uniform-scaling-clsr (m)
-    #'(lambda ()
-	(let ((time 0.0))
-	  #'(lambda (p dt)
-	      (declare (ignore p))
+  #'(lambda ()
+      (let ((time 0.0))
+	#'(lambda (p dt)
+	    (declare (ignore p))
+	    (incf time dt)
+	    (d+ 1.0 (d* m time))))))
+
+(defun %limited-scaling-clsr (rate max)
+  #'(lambda ()
+      (let ((time 0.0))
+	#'(lambda (p dt)
+	    (declare (ignore p))
 	      (incf time dt)
-	      (d+ 1.0 (d* m time))))))
+	      (num:enzyme-kinetics max rate time)))))
 
 (defun %uniform-alpha-fading-clsr (max)
   #'(lambda ()
@@ -812,7 +820,8 @@
 		   (gravity          gravity)) object
     (with-feedback-calculate (object dt)
       (uniformfv compiled-shaders :gravity gravity)
-      (uniformf  compiled-shaders :min-y   particle-min-y))))
+      (uniformf  compiled-shaders :min-y   particle-min-y)))
+  (call-next-method)) ;; calculate children too
 
 (defmethod render ((object blood) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -847,7 +856,8 @@
 	    (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
 	    (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
 	    (gl:draw-arrays :triangles 0 (* 3 (length triangles)))
-	    (gl:blend-equation :func-add)))))))
+	    (gl:blend-equation :func-add)))))
+    (call-next-method))) ;; render children too
 
 (defun make-particles-cluster (class particles-count shaders-dict
 			       &key
@@ -904,7 +914,8 @@
 				  :particle-height   height
 				  :particles         (list->simple-array particles nil 'particle)
 				  :gravity           gravity)))
-    (prepare-for-rendering cluster)))
+    (prepare-for-rendering cluster)
+    cluster))
 
 (defun make-blood-level-0 (pos dir compiled-shaders)
   (make-particles-cluster 'blood
@@ -982,8 +993,10 @@
 			  :width  .1
 			  :height .1))
 
+(defclass debris (blood) ())
+
 (defun make-debris (pos dir num texture compiled-shaders)
-  (make-particles-cluster 'blood
+  (make-particles-cluster 'debris
 			  num
 			  compiled-shaders
 			  :texture texture
@@ -993,7 +1006,7 @@
 								      3.0
 								      1.0
 								      (d/ +pi/2+ 3.0))
-			  :mass-fn  (gaussian-distribution-fn 1.0 1.0)
+			  :mass-fn  (gaussian-distribution-fn 0.1 0.05)
 			  :life-fn  (gaussian-distribution-fn 12.0 5.0)
 			  :delay-fn (gaussian-distribution-fn 0.0 .0001)
 			  :scaling-fn #'(lambda ()
@@ -1094,6 +1107,89 @@
 			  :width  .2
 			  :height .2
 			  :respawn nil))
+
+(defun make-smoke-trail-element (pos compiled-shaders &key
+							(max-scaling    15.0)
+							(scaling-rate   0.8)
+							(scaling-sigma  1.0)
+							(rate-sigma     0.05))
+  (make-particles-cluster 'smoke-puff
+			  1
+			  compiled-shaders
+			  :texture (texture:get-texture texture:+smoke-particle+)
+			  :pos     pos
+			  :v0-fn    (gaussian-velocity-constant-fn +y-axe+ 0.0)
+			  :mass-fn  (gaussian-distribution-fn 1.0 0.001)
+			  :life-fn  (gaussian-distribution-fn 200.0 1.0)
+			  :delay-fn (constant-delay-distribution-fn 0.0)
+			  :scaling-fn (%limited-scaling-clsr (gaussian-probability rate-sigma
+										   scaling-rate)
+							     (gaussian-probability scaling-sigma
+										   max-scaling))
+			  :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range .2 0.1))
+			  :alpha-fn    (%uniform-alpha-fading-clsr 15.0)
+			  :gravity   (vec 0.0 0.01 0.0)
+			  :width  .2
+			  :height .2
+			  :respawn nil))
+
+(defclass smoke-trail (blood)
+  ((frequency-smoke
+    :initform 30
+    :initarg  :frequency-smoke
+    :accessor frequency-smoke)
+   (smoke-ct
+    :initform 0
+    :initarg  :smoke-ct
+    :accessor smoke-ct)))
+
+(defmethod calculate ((object smoke-trail) dt)
+  (with-accessors ((frequency-smoke frequency-smoke)
+		   (smoke-ct smoke-ct)
+		   (children children)
+		   (particles particles)
+		   (pos pos)
+		   (particles-positions particles-positions)
+		   (particle-min-y particle-min-y)
+		   (compiled-shaders compiled-shaders)
+		   (el-time el-time)) object
+    (when (and (= (rem smoke-ct frequency-smoke) 0)
+	       (not (removeable-from-world object)))
+      (loop
+	 for particle across particles
+	 for i from 0 by 3             do
+	   (let ((smoke-pos (vec (fast-glaref particles-positions i)
+				 (fast-glaref particles-positions (+ i 1))
+				 (fast-glaref particles-positions (+ i 2)))))
+	     (when (and (> (particle-life particle) 0.0)
+			(d> (elt smoke-pos 1) 0.0))
+	       (mtree:add-child object (make-smoke-trail-element smoke-pos compiled-shaders))))))
+    (setf smoke-ct (1+ smoke-ct))
+    (call-next-method)))
+
+(defun make-smoke-trail (pos dir num texture compiled-shaders &key (smoke-frequency 40))
+  (let ((res (make-particles-cluster 'smoke-trail
+				     num
+				     compiled-shaders
+				     :texture texture
+				     :pos     pos
+				     :min-y   (d- +zero-height+ (elt pos 1))
+				     :v0-fn   (gaussian-velocity-distribution-fn dir
+										 3.0
+										 1.0
+										 (d/ +pi/2+ 3.0))
+				     :mass-fn  (gaussian-distribution-fn 1.0 1.0)
+				     :life-fn  (gaussian-distribution-fn 12.0 5.0)
+				     :delay-fn (gaussian-distribution-fn 0.0 .0001)
+				     :scaling-fn #'(lambda ()
+						     #'(lambda (p dt)
+							 (declare (ignore p dt))
+							 1.0))
+				     :gravity (vec* +particle-gravity+ 0.1)
+				     :width  .1
+				     :height .1)))
+    (setf (frequency-smoke res) smoke-frequency)
+    res))
 
 (defclass fire-dart (cluster-w-gravity) ())
 

@@ -3703,7 +3703,8 @@
    :make-fire-dart-level-0
    :make-fire-dart-level-1
    :make-smoke-level-0
-   :make-smoke-level-1))
+   :make-smoke-level-1
+   :make-smoke-trail))
 
 (defpackage :arrows
   (:use :cl

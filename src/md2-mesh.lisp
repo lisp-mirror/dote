@@ -631,7 +631,7 @@
 	(send-refresh-toolbar-event)
 	nil))))
 
-(defun blood-splill-level (damage max-damage)
+(defun blood-spill-level (damage max-damage)
   (cond
     ((< (/ damage max-damage) 0.2)
      #'particles:make-blood-level-0)
@@ -665,7 +665,8 @@
 		(setf current-damage-points (d- current-damage-points damage))
 		(if (entity-dead-p object)
 		    (set-death-status object)
-		    (let ((blood (funcall (blood-splill-level damage (character:actual-damage-points ghost))
+		    (let ((blood (funcall (blood-spill-level damage
+							     (character:actual-damage-points ghost))
 					  (aabb-center aabb)
 					  dir
 					  compiled-shaders)))
