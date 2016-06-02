@@ -1812,6 +1812,9 @@
    :+texture-tag-soil-terrain-level-1+
    :+texture-tag-soil-terrain-level-2+
    :+texture-tag-soil-terrain-level-3+
+   :+texture-tag-smoke-particle+
+   :+texture-tag-decals-explosion+
+   :+texture-tag-decals-circular-wave+
    :texture
    :free-memory
    :interpolation-type
@@ -3681,6 +3684,7 @@
 	:num-utils
 	:misc
 	:cl-gl-utils
+	:texture
 	:shaders-utils
 	:identificable
 	:transformable
@@ -3704,7 +3708,11 @@
    :make-fire-dart-level-1
    :make-smoke-level-0
    :make-smoke-level-1
-   :make-smoke-trail))
+   :make-smoke-trail
+   :make-radial-expanding-level-1
+   :make-radial-expanding-level-0
+   :make-smoke-confusion
+   :make-spell-decal))
 
 (defpackage :arrows
   (:use :cl

@@ -63,7 +63,6 @@
 						(*perlin-gradient-random-offset* *max-dist-to-store* *lcg-seed*))
      ,@body))
 
-
 (defgeneric gen-normal-map (object &key roughness))
 
 (defmethod gen-normal-map ((object pixmap) &key (roughness 1.0))

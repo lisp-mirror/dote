@@ -266,7 +266,7 @@
 			       *upward* *downward*
 			       "o" "i" "u" "d" "V" "B"
 			       "n" "N" "V" "v" "U" "D"
-			       "L")
+			       "L" "p")
 		    :test #'string=)
 	  (when (string= text *forward*)
 	    (slide-forward (world object)))
@@ -296,10 +296,22 @@
 	  (when (string= text "N")
 	    (misc:dbg "n ~a" *near*)
 	    (incf *near* -.1))
+	  (when (string= text "p")
+	    (world:push-entity (world object)
+	     		       (particles:make-smoke-trail
+	     			(vec (misc:coord-map->chunk 0.0)
+	     			     (d+ +zero-height+ 0.0)
+	     			     (misc:coord-map->chunk 0.0))
+				+y-axe+
+				10
+				(random-elt (texture:list-of-texture-by-tag
+					     texture:+texture-tag-decals-circular-wave+))
+	     			(compiled-shaders object))))
+
 	  (when (string= text "L")
-	      (load-map object)
-	      ;; gui
-	      (setf (world:gui (world object))
+	    (load-map object)
+	    ;; gui
+	    (setf (world:gui (world object))
 		    (make-instance 'widget:widget
 				   :x 0.0 :y 0.0
 				   :width  *window-w*

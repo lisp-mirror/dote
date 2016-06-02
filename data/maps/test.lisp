@@ -145,9 +145,14 @@
   with tags ("smoke-particle")
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
-  generate cross-particle        from function pixmap:blurred-circled-cross
+  generate particle              from function pixmap:blurred-circled-cross
   with parameters (128)
-  with tags ("spell-particle")
+  with tags ("decals-explosion-particle")
+  with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
+
+  generate particle              from function pixmap:blurred-circle
+  with parameters (128)
+  with tags ("decals-circular-wave")
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
   generate map

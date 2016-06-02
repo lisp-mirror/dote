@@ -16,6 +16,15 @@
 
 (in-package :level-config)
 
+(alexandria:define-constant +particle-name-prefix+ "particle-" :test #'string=)
+
+(defparameter *particle-names* 0)
+
+(defun gen-particle-name ()
+  (prog1
+      (format nil "~a~a.tga" +particle-name-prefix+ *particle-names*)
+    (incf *particle-names*)))
+
 (alexandria:define-constant +error-wrong-type+ "Expected a ~s got ~s (a ~a) instead"
   :test #'string=)
 
@@ -328,7 +337,8 @@
      (setf *floor* mesh)))
 
 (defun clean-global-wars ()
-  (setf *progress*                   0.0
+  (setf *particle-names*             0
+	*progress*                   0.0
         *main-window*                nil
 	*renderer*                   nil
         *map*                        nil
@@ -417,7 +427,7 @@
 	    (err "error input ~a" body))))))
 
 (defmacro gen-simple-texture-generator (case-test offset &rest keywords)
-  `(case , case-test
+  `(case ,case-test
      ,@(loop for i in keywords collect
 	    (let* ((raw-var (cl-ppcre:regex-replace-all "\\+" (symbol-name i) ""))
 		   (keyword (alexandria:make-keyword raw-var)))
@@ -466,6 +476,9 @@
 	     (setf offset (generate-walkable-furniture (subseq body 1))))
 	    (:magic-furniture
 	     (setf offset (generate-magic-furniture (subseq body 1))))
+	    (:particle ;; generic-particle
+	     (setf offset
+		   (generate-texture (subseq body 1) :particle (gen-particle-name))))
 	    (otherwise
 	     (gen-simple-texture-generator (alexandria:make-keyword (second body))
 					   offset

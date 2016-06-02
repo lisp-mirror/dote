@@ -67,13 +67,42 @@
 	      (incf time dt)
 	      (num:enzyme-kinetics max rate time)))))
 
-(defun %uniform-alpha-fading-clsr (max)
+(defun %smooth-alpha-fading-clsr (max)
   #'(lambda ()
       (let ((time 0.0))
 	#'(lambda (p dt)
 	    (declare (ignore p))
 	    (incf time dt)
 	    (d- 1.0 (dlerp (smoothstep-interpolate 0.0 max time) 0.0 1.0))))))
+
+(defun %exp-alpha-fading-clsr (m)
+  #'(lambda ()
+      (let ((time 0.0))
+	#'(lambda (p dt)
+	    (declare (ignore p))
+	    (incf time dt)
+	    (max 0.0 (d+ 1.0 (d* (d- m) (dexpt time 2.0))))))))
+
+(defun %sin-alpha-fading-clsr (freq)
+  #'(lambda ()
+      (let ((time 0.0))
+	#'(lambda (p dt)
+	    (declare (ignore p))
+	    (incf time dt)
+	    (dsin (d* freq time))))))
+
+(defun %uniform-from-clsr (lower-treshold starting-time m)
+  #'(lambda ()
+      (let ((time        0.0)
+	    (actual-time 0.0))
+	#'(lambda (p dt)
+	    (declare (ignore p))
+	    (incf time dt)
+	    (if (d> time starting-time)
+		(prog1
+		    (d+ lower-treshold (d* m actual-time))
+		  (incf actual-time dt))
+		(d+ lower-treshold (d* (d* m 10.0) time)))))))
 
 (defun gaussian-velocity-distribution-fn (dir max delta max-opening)
   "Assuming dir normalized"
@@ -239,6 +268,18 @@
     :initarg  :mark-for-remove
     :reader   mark-for-remove-p
     :writer  (setf mark-for-remove))))
+
+(defmethod initialize-instance :after ((object particles-cluster) &key &allow-other-keys)
+  (with-accessors ((particles particles)
+		   (particle-width particle-width)
+		   (particle-height particle-height)) object
+    (let ((w/2 (d* particle-width 0.5))
+	  (h/2 (d* particle-height 0.5)))
+      (loop repeat (length particles) do
+	   (quad object particle-width particle-height
+		 0.0 0.0 1.0 1.0
+		 (vec (d- w/2) (d- h/2) 0.0) ; centering
+		 nil nil)))))
 
 (defmacro do-particles ((object particle) &body body)
   `(loop for ,particle across (particles ,object) do
@@ -621,13 +662,6 @@
 		   (particles-output-positions particles-output-positions)
 		   (particles-v0               particles-v0)
 		   (particles-masses           particles-masses)) object
-    ;; calculation
-    (let ((w/2 (d* particle-width 0.5))
-	  (h/2 (d* particle-height 0.5)))
-      (loop repeat (length particles) do
-	   (quad object particle-width particle-height
-		 0.0 0.0 1.0 1.0
-		 (vec (d- w/2) (d- h/2) 0.0) nil nil)))
     (call-next-method)
     (setf vbo (append vbo (gl:gen-buffers +appended-vbo-count+)))
     (setf transform-vbo-input  (gl:gen-buffers +transform-vbo-count+)
@@ -855,7 +889,7 @@
 			    nil)
 	    (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
 	    (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-	    (gl:draw-arrays :triangles 0 (* 3 (length triangles)))
+	    (gl:draw-arrays :triangles 0 (f* 3 (length triangles)))
 	    (gl:blend-equation :func-add)))))
     (call-next-method))) ;; render children too
 
@@ -888,7 +922,7 @@
 				 (respawn     nil))
   (let* ((particles (loop repeat particles-count collect
 			 (let ((starting-velo  (funcall v0-fn))
-			       (starting-pos (funcall position-fn)))
+			       (starting-pos   (funcall position-fn)))
 			   (make-particle :mass     (funcall mass-fn)
 					  :v0       starting-velo
 					  :saved-v0 (copy-vec starting-velo)
@@ -1076,7 +1110,7 @@
   (make-particles-cluster 'smoke-puff
 			  100
 			  compiled-shaders
-			  :texture (texture:get-texture texture:+smoke-particle+)
+			  :texture (random-elt (list-of-texture-by-tag +smoke-particle+))
 			  :pos     pos
 			  :v0-fn    (gaussian-velocity-constant-fn dir 1.0)
 			  :mass-fn  (gaussian-distribution-fn 1.0 0.001)
@@ -1084,7 +1118,7 @@
 			  :delay-fn (constant-delay-distribution-fn 1.0)
 			  :scaling-fn  (%uniform-scaling-clsr 10.0)
 			  :rotation-fn (%uniform-rotation-clsr 1.0)
-			  :alpha-fn    (%uniform-alpha-fading-clsr 10.0)
+			  :alpha-fn    (%smooth-alpha-fading-clsr 10.0)
 			  :gravity   +zero-vec+
 			  :width  .1
 			  :height .1
@@ -1094,7 +1128,7 @@
   (make-particles-cluster 'smoke-puff
 			  1000
 			  compiled-shaders
-			  :texture (texture:get-texture texture:+smoke-particle+)
+			  :texture (random-elt (list-of-texture-by-tag +smoke-particle+))
 			  :pos     pos
 			  :v0-fn    (gaussian-velocity-constant-fn dir 1.0)
 			  :mass-fn  (gaussian-distribution-fn 1.0 0.001)
@@ -1102,11 +1136,115 @@
 			  :delay-fn (constant-delay-distribution-fn .5)
 			  :scaling-fn  (%uniform-scaling-clsr  (lcg-next-in-range 2.5 3.5))
 			  :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range 1.0 2.0))
-			  :alpha-fn    (%uniform-alpha-fading-clsr 18.0)
+			  :alpha-fn    (%smooth-alpha-fading-clsr 18.0)
 			  :gravity   +zero-vec+
 			  :width  .2
 			  :height .2
 			  :respawn nil))
+
+(defun %radial-v0-fn (num intensity)
+  (let ((angle 0.0)
+	(angle-incr (d/ +2pi+ num)))
+    #'(lambda ()
+	(let ((dir +x-axe+))
+	  (prog1
+	      (vec* (transform-direction dir (rotate-around +y-axe+ angle))
+		    intensity)
+	    (setf angle (d+ angle angle-incr)))))))
+
+(defun make-radial-expanding-level-1 (pos compiled-shaders
+				      &key
+					(texture (random-elt (list-of-texture-by-tag +smoke-particle+)))
+					(num 6)
+					(life-fn (gaussian-distribution-fn 20.0 0.001))
+					(v0-intensity 8.0))
+  (make-particles-cluster 'smoke-puff
+			  num
+			  compiled-shaders
+			  :texture texture
+			  :pos     pos
+			  :v0-fn    (%radial-v0-fn (d num) v0-intensity)
+			  :mass-fn  (gaussian-distribution-fn 1.0 0.001)
+			  :life-fn  life-fn
+			  :delay-fn (constant-delay-distribution-fn 0.0)
+			  :scaling-fn  (%uniform-scaling-clsr 200.0)
+			  :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range 1.0 2.0))
+			  :alpha-fn    (%smooth-alpha-fading-clsr 2.0)
+			  :gravity   +zero-vec+
+			  :width  .1
+			  :height .1
+			  :respawn nil))
+
+(defun make-radial-expanding-level-0 (pos compiled-shaders
+				      &key
+					(texture (random-elt (list-of-texture-by-tag +smoke-particle+)))
+					(num 7)
+					(life-fn (gaussian-distribution-fn 10.0 1.0))
+					(v0-intensity 6.0))
+  (make-particles-cluster 'smoke-puff
+			  num
+			  compiled-shaders
+			  :texture texture
+			  :pos     pos
+			  :v0-fn    (%radial-v0-fn (d num) v0-intensity)
+			  :mass-fn  (gaussian-distribution-fn 10.0 0.5)
+			  :life-fn  life-fn
+			  :delay-fn (constant-delay-distribution-fn 0.0)
+			  :scaling-fn  (%uniform-scaling-clsr 50.0)
+			  :rotation-fn (%uniform-rotation-clsr 10.0)
+			  :alpha-fn    (%smooth-alpha-fading-clsr .5)
+			  :gravity   +zero-vec+
+			  :width  .1
+			  :height .1
+			  :respawn nil))
+
+(defun make-radial-expanding (pos compiled-shaders
+			      &key
+				(texture (random-elt (list-of-texture-by-tag +smoke-particle+)))
+				(num 4)
+				(life-fn (gaussian-distribution-fn 70.0 0.001))
+				(v0-intensity 4.0))
+  (make-particles-cluster 'smoke-puff
+			  num
+			  compiled-shaders
+			  :texture texture
+			  :pos     pos
+			  :v0-fn    (%radial-v0-fn (d num) v0-intensity)
+			  :mass-fn  (gaussian-distribution-fn 1.0 0.001)
+			  :life-fn  life-fn
+			  :delay-fn (constant-delay-distribution-fn 0.0)
+			  :scaling-fn  (%uniform-scaling-clsr 10.0)
+			  :rotation-fn (%uniform-rotation-clsr 0.0)
+			  :alpha-fn    (%smooth-alpha-fading-clsr 10.0)
+			  :gravity   +zero-vec+
+			  :width  .1
+			  :height .1
+			  :respawn nil))
+
+(defun make-smoke-confusion (pos compiled-shaders
+			     &key
+			       (texture
+				(random-elt (list-of-texture-by-tag +smoke-particle+)))
+			       (num 7)
+			       (life-fn (gaussian-distribution-fn 150.0 10.0))
+			       (v0-intensity 2.0))
+  (make-particles-cluster 'smoke-puff
+			  num
+			  compiled-shaders
+			  :texture texture
+			  :pos     pos
+			  :v0-fn    (%radial-v0-fn (d num) v0-intensity)
+			  :mass-fn  (gaussian-distribution-fn 10.0 0.5)
+			  :life-fn  life-fn
+			  :delay-fn (constant-delay-distribution-fn 0.0)
+			  :scaling-fn  (%uniform-scaling-clsr 100.0)
+			  :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range 8.0 15.0))
+			  :alpha-fn    (%smooth-alpha-fading-clsr 2.0)
+			  :gravity   +zero-vec+
+			  :width  .1
+			  :height .1
+			  :respawn nil))
+
 
 (defun make-smoke-trail-element (pos compiled-shaders &key
 							(max-scaling    15.0)
@@ -1127,7 +1265,7 @@
 							     (gaussian-probability scaling-sigma
 										   max-scaling))
 			  :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range .2 0.1))
-			  :alpha-fn    (%uniform-alpha-fading-clsr 15.0)
+			  :alpha-fn    (%smooth-alpha-fading-clsr 15.0)
 			  :gravity   (vec 0.0 0.01 0.0)
 			  :width  .2
 			  :height .2
@@ -1264,12 +1402,12 @@
 			  :mass-fn  (gaussian-distribution-fn 1.0 .1)
 			  :life-fn  (gaussian-distribution-fn 5.0 1.1)
 			  :delay-fn (gaussian-distribution-fn 0.0 10.1)
-			  :gravity  (vec-negate dir)
+			  :gravity  dir
 			  :scaling-fn  #'(lambda ()
 					   #'(lambda (p dt)
 					       (declare (ignore p dt))
 					       1.0))
-			  :alpha-fn   (%uniform-alpha-fading-clsr 7.0)
+			  :alpha-fn   (%smooth-alpha-fading-clsr 7.0)
 			  :width  1.0
 			  :height 1.0
 			  :respawn t))
@@ -1287,12 +1425,12 @@
 			  :mass-fn  (gaussian-distribution-fn 1.0 .1)
 			  :life-fn  (gaussian-distribution-fn 5.0 1.1)
 			  :delay-fn (gaussian-distribution-fn 0.0 10.1)
-			  :gravity    (vec-negate dir)
+			  :gravity  dir
 			  :scaling-fn  #'(lambda ()
 					   #'(lambda (p dt)
 					       (declare (ignore p dt))
 					       1.0))
-			  :alpha-fn   (%uniform-alpha-fading-clsr 7.0)
+			  :alpha-fn   (%smooth-alpha-fading-clsr 7.0)
 			  :width  1.0
 			  :height 1.0
 			  :respawn t))
@@ -1310,9 +1448,9 @@
 			  :mass-fn  (gaussian-distribution-fn 1.0 .1)
 			  :life-fn  (gaussian-distribution-fn 5.0 1.1)
 			  :delay-fn (gaussian-distribution-fn 0.0 10.1)
-			  :gravity    (vec-negate dir)
+			  :gravity  dir
 			  :scaling-fn (%uniform-scaling-clsr 1.0)
-			  :alpha-fn   (%uniform-alpha-fading-clsr 5.0)
+			  :alpha-fn   (%smooth-alpha-fading-clsr 5.0)
 			  :width  .1
 			  :height .1
 			  :respawn t))
@@ -1330,9 +1468,135 @@
 			  :mass-fn  (gaussian-distribution-fn 1.0 .1)
 			  :life-fn  (gaussian-distribution-fn 7.0 1.1)
 			  :delay-fn (gaussian-distribution-fn 0.0 10.1)
-			  :gravity    (vec-negate dir)
+			  :gravity  dir
 			  :scaling-fn (%uniform-scaling-clsr 5.0)
-			  :alpha-fn   (%uniform-alpha-fading-clsr 7.0)
+			  :alpha-fn   (%smooth-alpha-fading-clsr 7.0)
 			  :width  1.0
 			  :height 1.0
 			  :respawn nil))
+
+(defclass spell-decal (blood) ())
+
+(defmethod initialize-instance :after ((object spell-decal)
+				       &key
+					 (texture (texture:get-texture
+						   texture:+blood-particle+))
+					 &allow-other-keys)
+  (setf (use-blending-p object) t)
+  (setf (integrator-shader object) :blood-integrator)
+  (setf (texture-object object) texture)
+  (transform-vertices object (rotate-around +x-axe+ +pi/2+)))
+
+(defmethod render ((object spell-decal) renderer)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((vbo vbo)
+		   (vao vao)
+		   (texture-object texture-object)
+		   (projection-matrix projection-matrix)
+		   (model-matrix model-matrix)
+		   (view-matrix view-matrix)
+		   (compiled-shaders compiled-shaders)
+		   (triangles triangles)
+		   (el-time el-time)) object
+    (declare (texture:texture texture-object))
+    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
+    (declare (list triangles vao vbo))
+    (when (> (length triangles) 0)
+      (with-camera-view-matrix (camera-vw-matrix renderer)
+	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+	  (with-blending
+	    (with-no-cull-face
+	      (gl:blend-equation :func-add)
+	      (gl:blend-func :src-alpha :one)
+	      (use-program compiled-shaders :particles-spell-decals)
+	      (gl:active-texture :texture0)
+	      (texture:bind-texture texture-object)
+	      (uniformf  compiled-shaders :time  el-time)
+	      (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+	      (uniform-matrix compiled-shaders :modelview-matrix 4
+			      (vector (matrix* camera-vw-matrix
+					       (elt view-matrix 0)
+					       (elt model-matrix 0)))
+			      nil)
+	      (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
+	      (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+	      (gl:draw-arrays :triangles 0 (* 3 (length triangles)))
+	      (gl:blend-equation :func-add))))))))
+
+(defun make-spell-decal (pos compiled-shaders
+			 &key
+			   (texture (random-elt (list-of-texture-by-tag +texture-tag-decals-explosion+))))
+
+  (make-particles-cluster 'spell-decal
+			  1
+			  compiled-shaders
+			  :texture texture
+			  :pos     pos
+			  :v0-fn  (constantly +zero-vec+)
+			  :mass-fn  (gaussian-distribution-fn 1.0 .1)
+			  :life-fn  (gaussian-distribution-fn 30.0 0.0)
+			  :delay-fn (gaussian-distribution-fn 1.0 0.01)
+			  :gravity    (vec 0.0 -1e-5 0.0)
+			  :rotation-fn #'(lambda ()
+					   (let ((fn-enz (funcall (%limited-scaling-clsr .6 20.0)))
+						 (fn-lin (funcall (%uniform-scaling-clsr .2))))
+
+					     #'(lambda (p dt)
+						 (d+ (funcall fn-lin p dt)
+						     (funcall fn-enz p dt)))))
+			  :scaling-fn  (%limited-scaling-clsr .4 120.0)
+			  :alpha-fn   (%sin-alpha-fading-clsr .20)
+			  :width  .1
+			  :height .1
+			  :respawn nil))
+
+(defun make-circular-wave (pos compiled-shaders
+			   &key
+			     (fading-rate 10.8)
+			     (scaling-rate 400.0)
+			     (texture (random-elt (list-of-texture-by-tag +texture-tag-decals-circular-wave+))))
+
+  (make-particles-cluster 'spell-decal
+			  1
+			  compiled-shaders
+			  :texture texture
+			  :pos     pos
+			  :v0-fn  (constantly +zero-vec+)
+			  :mass-fn  (gaussian-distribution-fn 1.0 .1)
+			  :life-fn  (gaussian-distribution-fn 10.0 0.0)
+			  :delay-fn (gaussian-distribution-fn 1.0 0.01)
+			  :gravity    (vec 0.0 -1e-5 0.0)
+			  :rotation-fn #'(lambda ()
+					   #'(lambda (p dt)
+					       (declare (ignore p dt))
+					       0.0))
+			  :scaling-fn  (%uniform-scaling-clsr scaling-rate)
+			  :alpha-fn    (%exp-alpha-fading-clsr fading-rate)
+			  :width  .1
+			  :height .1
+			  :respawn nil))
+
+
+(defun make-circular-wave-level-2 (pos compiled-shaders)
+  (let ((texture (random-elt (list-of-texture-by-tag +texture-tag-decals-circular-wave+))))
+    (make-circular-wave pos
+			compiled-shaders
+			:fading-rate 2.0
+			:scaling-rate 4000.0
+			:texture texture)))
+
+(defun make-circular-wave-level-1 (pos compiled-shaders)
+  (let ((texture (random-elt (list-of-texture-by-tag +texture-tag-decals-circular-wave+))))
+    (make-circular-wave pos
+			compiled-shaders
+			:fading-rate 10.8
+			:scaling-rate 800.0
+			:texture texture)))
+
+(defun make-circular-wave-level-0 (pos compiled-shaders)
+  (let ((texture (random-elt (list-of-texture-by-tag +texture-tag-decals-circular-wave+))))
+    (make-circular-wave pos
+			compiled-shaders
+			:fading-rate 100.2
+			:scaling-rate 800.0
+			:texture texture)))

@@ -577,6 +577,13 @@ active program (set by sdk2.kit:use-program)."
 		:time)
       (:shaders :vertex-shader   ,(get-shader-source "generic-particle.vert")
 		:fragment-shader ,(get-shader-source "particle-fire-dart.frag")))
+    (:particles-spell-decals
+     (:uniforms :modelview-matrix
+		:proj-matrix
+		:texture-object
+		:time)
+      (:shaders :vertex-shader   ,(get-shader-source "spell-decal.vert")
+		:fragment-shader ,(get-shader-source "particle-fire-dart.frag")))
     ;;;;; transform feedback
     (:blood-integrator
      (:uniforms :dt

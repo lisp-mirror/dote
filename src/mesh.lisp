@@ -2808,7 +2808,7 @@
 				  nil))
 		(uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
 		(gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-		(gl:draw-arrays :triangles 0 (* 3 (length triangles))))))
+		(gl:draw-arrays :triangles 0 (f* 3 (length triangles))))))
 	  (render-debug object renderer)))))
 
 (defgeneric tree-trunk-aabb (object))
