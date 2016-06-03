@@ -3682,6 +3682,7 @@
 	:sb-cga
 	:sb-cga-utils
 	:num-utils
+	:vec4
 	:misc
 	:cl-gl-utils
 	:texture
@@ -3712,7 +3713,10 @@
    :make-radial-expanding-level-1
    :make-radial-expanding-level-0
    :make-smoke-confusion
-   :make-spell-decal))
+   :make-spell-decal
+   :make-circular-wave-level-0
+   :make-circular-wave-level-1
+   :make-circular-wave-level-2))
 
 (defpackage :arrows
   (:use :cl

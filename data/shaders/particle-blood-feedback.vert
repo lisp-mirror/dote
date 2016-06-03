@@ -14,9 +14,13 @@ uniform vec3 gravity = vec3(0.0, -9.0, 0.0);
 
 uniform float min_y =   0.0;
 
+uniform float noise_scale = 0.0;
+
 out vec3 new_position;
 
 out vec3 new_velocity;
+
+%include noise.vert.inc.glsl
 
 void integrate (in vec3 force, in vec3 velo, in float mass, in float dt,
 		out vec3 dv, out vec3 displ){
@@ -33,7 +37,7 @@ void main() {
     if (delay < 0.0){
       integrate(gravity, v0, mass, dt, // in
 		dv, displ);           // out
-      new_position = position + displ;
+      new_position = position + displ + noise_scale * snoise(position);
       new_velocity = dv;
     }else{
       new_position = position;

@@ -14,6 +14,8 @@ layout (location = 6) in float alpha;
 
 layout (location = 7) in float rotation;
 
+layout (location = 8) in vec4  color;
+
 layout (location = 12) in vec2 texture_coord;
 
 uniform mat4 modelview_matrix;
@@ -32,6 +34,8 @@ out vec2 frag_text_coord;
 
 out float alpha_val;
 
+out vec4 additional_color;
+
 void main () {
   mat4 scale       = make_scale(scaling, scaling, scaling);
   mat4 rotate      = make_rotate_z(rotation);
@@ -42,9 +46,9 @@ void main () {
 					   center_position.z));
   remove_rotation(modelview);
 
-  frag_text_coord = texture_coord;
-
-  alpha_val       = alpha;
+  frag_text_coord  = texture_coord;
+  alpha_val        = alpha;
+  additional_color = color;
 
   if (delay < 0.0 && life > 0.0){
     gl_Position = proj_matrix * modelview *  scale  * rotated_pos;

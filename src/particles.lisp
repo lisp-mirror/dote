@@ -32,16 +32,33 @@
 
 (alexandria:define-constant +attribute-scaling-location+         5 :test #'=)
 
+(alexandria:define-constant +attribute-alpha-location+           6 :test #'=)
+
 (alexandria:define-constant +attribute-rotation-location+        7 :test #'=)
 
-(alexandria:define-constant +attribute-alpha-location+           6 :test #'=)
+(alexandria:define-constant +attribute-color-location+           8 :test #'=)
 
 (alexandria:define-constant +transform-vbo-count+                9 :test #'=)
 
-(alexandria:define-constant +appended-vbo-count+                 6 :test #'=)
+(alexandria:define-constant +appended-vbo-count+                 7 :test #'=)
 
 (alexandria:define-constant +particle-gravity+                   (vec 0.0 -9.0 0.0)
   :test #'vec~)
+
+(defun %constant-color-clsr (color)
+  #'(lambda ()
+      #'(lambda (particle dt)
+	  (declare (ignore particle dt))
+	  color)))
+
+(defun %gradient-color-clsr (gradient scale)
+  #'(lambda ()
+      (let ((time 0.0))
+	#'(lambda (particle dt)
+	    (declare (ignore particle))
+	    (prog1
+		(color-utils:pick-color gradient (d* time scale))
+	      (incf time dt))))))
 
 (defun %uniform-rotation-clsr (m)
   #'(lambda ()
@@ -154,7 +171,7 @@
 		 (declare (ignore particle dt))
 		 1.0)
 	     :type function)
-  (saved-rotation  nil          :type function)
+  (saved-rotation  nil         :type function)
   (rotation   #'(lambda (particle dt)
 		 (declare (ignore particle dt))
 		 0.0)
@@ -163,6 +180,11 @@
   (alpha   #'(lambda (particle dt)
 	       (declare (ignore particle dt))
 	       1.0)
+	   :type function)
+  (saved-color nil             :type function)
+  (color   #'(lambda (particle dt)
+	       (declare (ignore particle dt))
+	       (vec4 1.0 1.0 1.0 1.0))
 	   :type function)
   (respawn   nil))
 
@@ -173,7 +195,8 @@
 	(particle-delay    p) (funcall  (particle-saved-delay    p))
 	(particle-scaling  p) (funcall  (particle-saved-scaling  p))
 	(particle-rotation p) (funcall  (particle-saved-rotation p))
-	(particle-alpha    p) (funcall  (particle-saved-alpha    p))))
+	(particle-alpha    p) (funcall  (particle-saved-alpha    p))
+	(particle-color    p) (funcall  (particle-color          p))))
 
 (defclass particles-cluster (triangle-mesh inner-animation renderizable)
   ((integrator-shader
@@ -257,6 +280,11 @@
     :initform nil
     :initarg  particles-life
     :accessor particles-life
+    :type gl-array)
+   (particles-color
+    :initform nil
+    :initarg  particles-color
+    :accessor particles-color
     :type gl-array)
    (particles
     :initform nil
@@ -344,6 +372,8 @@
 
 (defgeneric populate-particles-alpha-array (object dt &key force))
 
+(defgeneric populate-particles-color-array (object dt &key force))
+
 (defgeneric bind-computational-buffers (object))
 
 (defgeneric feedback-output-array-size (object))
@@ -416,6 +446,21 @@
 		  (setf (fast-glaref particles-alpha (+ ct i))
 			alpha)))))))
 
+(defmethod populate-particles-color-array ((object particles-cluster) dt &key (force nil))
+  (with-accessors ((particles particles)
+		   (particles-color particles-color)) object
+    (loop
+       for particle across particles
+       for ct from 0 by 24          do
+	 (when (or force
+		   (< (particle-delay particle) 0.0))
+	   (let ((color (funcall (particle-color particle) particle dt)))
+	     (loop for i from 0 below 24 by 4 do
+		  (setf (fast-glaref particles-color (+ ct i))   (elt color 0))
+		  (setf (fast-glaref particles-color (+ ct i 1)) (elt color 1))
+		  (setf (fast-glaref particles-color (+ ct i 2)) (elt color 2))
+		  (setf (fast-glaref particles-color (+ ct i 3)) (elt color 3))))))))
+
 (defmethod removeable-from-world ((object particles-cluster))
   (loop for p across (particles object) do
        (when (> (particle-life p) 0.0)
@@ -463,6 +508,7 @@
 		   (particles-scaling particles-scaling)
 		   (particles-rotation particles-rotation)
 		   (particles-alpha particles-alpha)
+		   (particles-color particles-color)
 		   (transform-vao transform-vao)
 		   (transform-vbo-input transform-vbo-input)
 		   (transform-vbo-output transform-vbo-output)) object
@@ -478,6 +524,7 @@
 	  particles-scaling          nil
 	  particles-rotation         nil
 	  particles-alpha            nil
+	  particles-color            nil
 	  particles-output-positions nil
 	  transform-vao              nil
 	  transform-vbo-input        nil
@@ -494,22 +541,24 @@
 		   (particles-scaling          particles-scaling)
 		   (particles-rotation         particles-rotation)
 		   (particles-alpha            particles-alpha)
+		   (particles-color            particles-color)
 		   (particles-output-positions particles-output-positions)
 		   (transform-vao              transform-vao)
 		   (transform-vbo-input        transform-vbo-input)
 		   (particles                  particles)) object
     ;; initialize arrays
-    (setf particles-positions        (gl:alloc-gl-array :float (* 3 (length particles))))
+    (setf particles-positions        (gl:alloc-gl-array :float (* 3  (length particles))))
     (setf particles-output-positions (gl:alloc-gl-array :float (* 18 (length particles))))
-    (setf particles-v0               (gl:alloc-gl-array :float (* 3 (length particles))))
-    (setf particles-vt               (gl:alloc-gl-array :float (* 3 (length particles))))
+    (setf particles-v0               (gl:alloc-gl-array :float (* 3  (length particles))))
+    (setf particles-vt               (gl:alloc-gl-array :float (* 3  (length particles))))
     (setf particles-masses           (gl:alloc-gl-array :float (length particles)))
     (setf particles-delay-feedback   (gl:alloc-gl-array :float (length particles)))
-    (setf particles-delay            (gl:alloc-gl-array :float (* 6 (length particles))))
-    (setf particles-life             (gl:alloc-gl-array :float (* 6 (length particles))))
-    (setf particles-scaling          (gl:alloc-gl-array :float (* 6 (length particles))))
-    (setf particles-rotation         (gl:alloc-gl-array :float (* 6 (length particles))))
-    (setf particles-alpha            (gl:alloc-gl-array :float (* 6 (length particles))))
+    (setf particles-delay            (gl:alloc-gl-array :float (* 6  (length particles))))
+    (setf particles-life             (gl:alloc-gl-array :float (* 6  (length particles))))
+    (setf particles-scaling          (gl:alloc-gl-array :float (* 6  (length particles))))
+    (setf particles-rotation         (gl:alloc-gl-array :float (* 6  (length particles))))
+    (setf particles-alpha            (gl:alloc-gl-array :float (* 6  (length particles))))
+    (setf particles-color            (gl:alloc-gl-array :float (* 24 (length particles))))
     (populate-particles-positions-array        object)
     (populate-particles-output-positions-array object)
     (populate-particles-v0-array               object)
@@ -521,6 +570,7 @@
     (populate-particles-scaling-array          object 0.0 :force t)
     (populate-particles-rotation-array         object 0.0 :force t)
     (populate-particles-alpha-array            object 0.0 :force t)
+    (populate-particles-color-array            object 0.0 :force t)
     ;; setup finalizer
     (let ((id             (slot-value object 'id))
 	  (pos-in         (slot-value object 'particles-positions))
@@ -533,6 +583,7 @@
 	  (scaling        (slot-value object 'particles-scaling))
 	  (rotation       (slot-value object 'particles-rotation))
 	  (alpha          (slot-value object 'particles-alpha))
+	  (color          (slot-value object 'particles-color))
 	  (pos-out        (slot-value object 'particles-output-positions))
 	  (vao            (slot-value object 'transform-vao))
 	  (vbo-in         (slot-value object 'transform-vbo-input))
@@ -550,6 +601,7 @@
 						  scaling
 						  rotation
 						  alpha
+						  color
 						  pos-out)
 					    (append vbo-in vbo-out)
 					    vao)
@@ -563,6 +615,7 @@
 				    scaling        nil
 				    rotation       nil
 				    alpha          nil
+				    color          nil
 				    pos-out        nil))))))
 
 (defun vbo-masses-buffer-handle (vbo)
@@ -583,11 +636,14 @@
 (defun vbo-delay-feedback-buffer-handle (vbo)
   (elt vbo 5))
 
-(defun vbo-alpha-buffer-handle (vbo)
-  (elt vbo (- (length vbo) 5)))
+(defun vbo-color-buffer-handle (vbo)
+  (elt vbo (- (length vbo) 7)))
 
 (defun vbo-rotation-buffer-handle (vbo)
   (elt vbo (- (length vbo) 6)))
+
+(defun vbo-alpha-buffer-handle (vbo)
+  (elt vbo (- (length vbo) 5)))
 
 (defun vbo-scaling-buffer-handle (vbo)
   (elt vbo (- (length vbo) 4)))
@@ -658,6 +714,7 @@
 		   (particles-scaling          particles-scaling)
 		   (particles-rotation         particles-rotation)
 		   (particles-alpha            particles-alpha)
+		   (particles-color            particles-color)
 		   (particles-positions        particles-positions)
 		   (particles-output-positions particles-output-positions)
 		   (particles-v0               particles-v0)
@@ -706,6 +763,11 @@
       (gl:buffer-data :array-buffer :dynamic-draw particles-alpha)
       (gl:vertex-attrib-pointer +attribute-alpha-location+ 1 :float 0 0 (mock-null-pointer))
       (gl:enable-vertex-attrib-array +attribute-alpha-location+)
+      ;; color
+      (gl:bind-buffer :array-buffer (vbo-color-buffer-handle vbo))
+      (gl:buffer-data :array-buffer :dynamic-draw particles-color)
+      (gl:vertex-attrib-pointer +attribute-color-location+ 4 :float 0 0 (mock-null-pointer))
+      (gl:enable-vertex-attrib-array +attribute-color-location+)
       object)))
 
 (defmacro with-feedback-calculate ((object dt) &body body)
@@ -725,6 +787,7 @@
 			    particles-scaling
 			    particles-rotation
 			    particles-alpha
+			    particles-color
 			    transform-vbo-input
 			    res-array
 			    particle
@@ -745,6 +808,7 @@
 		      (,particles-scaling          particles-scaling)
 		      (,particles-rotation         particles-rotation)
 		      (,particles-alpha            particles-alpha)
+		      (,particles-color            particles-color)
 		      (,transform-vbo-input        transform-vbo-input)) object
        (bubbleup-modelmatrix ,object)
        (with-unbind-vao
@@ -787,6 +851,7 @@
        (populate-particles-scaling-array          ,object ,dt :force nil)
        (populate-particles-rotation-array         ,object ,dt :force nil)
        (populate-particles-alpha-array            ,object ,dt :force nil)
+       (populate-particles-color-array            ,object ,dt :force nil)
        (gl:bind-buffer :array-buffer (vbo-center-position-buffer-handle ,vbo))
        (gl:buffer-sub-data :array-buffer  ,particles-output-positions)
        (gl:bind-buffer :array-buffer (vbo-delay-feedback-buffer-handle ,vbo))
@@ -801,6 +866,8 @@
        (gl:buffer-sub-data :array-buffer  ,particles-rotation)
        (gl:bind-buffer :array-buffer (vbo-alpha-buffer-handle ,vbo))
        (gl:buffer-sub-data :array-buffer  ,particles-alpha)
+       (gl:bind-buffer :array-buffer (vbo-color-buffer-handle ,vbo))
+       (gl:buffer-sub-data :array-buffer  ,particles-color)
        (loop
 	  for ,particle across ,particles
 	  for ,part-ct  from 0 by 3         do
@@ -837,7 +904,11 @@
    :initarg :gravity
    :accessor gravity)))
 
-(defclass blood (cluster-w-gravity) ())
+(defclass blood (cluster-w-gravity)
+  ((noise-scale
+    :initform 0.0
+    :initarg :noise-scale
+    :accessor noise-scale)))
 
 (defmethod initialize-instance :after ((object blood)
 				       &key
@@ -851,9 +922,11 @@
 (defmethod calculate ((object blood) dt)
   (with-accessors ((compiled-shaders compiled-shaders)
 		   (particle-min-y   particle-min-y)
-		   (gravity          gravity)) object
+		   (gravity          gravity)
+		   (noise-scale      noise-scale)) object
     (with-feedback-calculate (object dt)
       (uniformfv compiled-shaders :gravity gravity)
+      (uniformf  compiled-shaders :noise-scale  noise-scale)
       (uniformf  compiled-shaders :min-y   particle-min-y)))
   (call-next-method)) ;; calculate children too
 
@@ -914,6 +987,10 @@
 						#'(lambda (particle dt)
 						    (declare (ignore particle dt))
 						    1.0)))
+				 (color-fn  #'(lambda ()
+						#'(lambda (particle dt)
+						    (declare (ignore particle dt))
+						    (vec4 1.0 1.0 1.0 1.0))))
 				 (width       1.0)
 				 (height      1.0)
 				 (pos         +zero-vec+)
@@ -936,6 +1013,8 @@
 					  :saved-alpha       alpha-fn
 					  :life     (funcall life-fn)
 					  :saved-life        life-fn
+					  :color    (funcall color-fn)
+					  :saved-color       color-fn
 					  :respawn  respawn
 					  :delay    (funcall delay-fn)
 					  :saved-delay  delay-fn))))
@@ -1068,6 +1147,7 @@
 		   (gravity          gravity)) object
     (with-feedback-calculate (object dt)
       (uniformfv compiled-shaders :gravity gravity)
+      (uniformf  compiled-shaders :noise-scale  0.0)
       (uniformf  compiled-shaders :min-y   particle-min-y))))
 
 (defmethod render ((object smoke-puff) renderer)
@@ -1247,10 +1327,10 @@
 
 
 (defun make-smoke-trail-element (pos compiled-shaders &key
-							(max-scaling    15.0)
+							(max-scaling    8.0)
 							(scaling-rate   0.8)
 							(scaling-sigma  1.0)
-							(rate-sigma     0.05))
+							(rate-sigma     0.1))
   (make-particles-cluster 'smoke-puff
 			  1
 			  compiled-shaders
@@ -1267,8 +1347,8 @@
 			  :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range .2 0.1))
 			  :alpha-fn    (%smooth-alpha-fading-clsr 15.0)
 			  :gravity   (vec 0.0 0.01 0.0)
-			  :width  .2
-			  :height .2
+			  :width  .5
+			  :height .5
 			  :respawn nil))
 
 (defclass smoke-trail (blood)
@@ -1299,13 +1379,13 @@
 	   (let ((smoke-pos (vec (fast-glaref particles-positions i)
 				 (fast-glaref particles-positions (+ i 1))
 				 (fast-glaref particles-positions (+ i 2)))))
-	     (when (and (> (particle-life particle) 0.0)
+	     (when (and (d> (particle-life particle) 0.0)
 			(d> (elt smoke-pos 1) 0.0))
 	       (mtree:add-child object (make-smoke-trail-element smoke-pos compiled-shaders))))))
     (setf smoke-ct (1+ smoke-ct))
     (call-next-method)))
 
-(defun make-smoke-trail (pos dir num texture compiled-shaders &key (smoke-frequency 40))
+(defun make-smoke-trail (pos dir num texture compiled-shaders &key (smoke-frequency 10))
   (let ((res (make-particles-cluster 'smoke-trail
 				     num
 				     compiled-shaders
@@ -1313,20 +1393,21 @@
 				     :pos     pos
 				     :min-y   (d- +zero-height+ (elt pos 1))
 				     :v0-fn   (gaussian-velocity-distribution-fn dir
-										 3.0
+										 4.5
 										 1.0
-										 (d/ +pi/2+ 3.0))
-				     :mass-fn  (gaussian-distribution-fn 1.0 1.0)
-				     :life-fn  (gaussian-distribution-fn 12.0 5.0)
+										 (d/ +pi/2+ 2.0))
+				     :mass-fn  (gaussian-distribution-fn 1.0 0.1)
+				     :life-fn  (gaussian-distribution-fn 10.0 5.0)
 				     :delay-fn (gaussian-distribution-fn 0.0 .0001)
 				     :scaling-fn #'(lambda ()
 						     #'(lambda (p dt)
 							 (declare (ignore p dt))
 							 1.0))
-				     :gravity (vec* +particle-gravity+ 0.1)
+				     :gravity (vec* +particle-gravity+ 0.3)
 				     :width  .1
 				     :height .1)))
     (setf (frequency-smoke res) smoke-frequency)
+    (setf (noise-scale     res) 0.01)
     res))
 
 (defclass fire-dart (cluster-w-gravity) ())
@@ -1525,8 +1606,8 @@
 
 (defun make-spell-decal (pos compiled-shaders
 			 &key
-			   (texture (random-elt (list-of-texture-by-tag +texture-tag-decals-explosion+))))
-
+			   (texture (random-elt (list-of-texture-by-tag +texture-tag-decals-explosion+)))
+			   (color-fn (%constant-color-clsr §cffffffff)))
   (make-particles-cluster 'spell-decal
 			  1
 			  compiled-shaders
@@ -1546,6 +1627,7 @@
 						     (funcall fn-enz p dt)))))
 			  :scaling-fn  (%limited-scaling-clsr .4 120.0)
 			  :alpha-fn   (%sin-alpha-fading-clsr .20)
+			  :color-fn   color-fn
 			  :width  .1
 			  :height .1
 			  :respawn nil))
@@ -1554,8 +1636,11 @@
 			   &key
 			     (fading-rate 10.8)
 			     (scaling-rate 400.0)
-			     (texture (random-elt (list-of-texture-by-tag +texture-tag-decals-circular-wave+))))
-
+			     (texture (random-elt (list-of-texture-by-tag +texture-tag-decals-circular-wave+)))
+			     (delay-fn (constantly 0.0))
+			     (gradient (color-utils:make-gradient
+					(color-utils:make-gradient-color 0.0 §cffffffff)
+					(color-utils:make-gradient-color 1.0 §cff0000ff))))
   (make-particles-cluster 'spell-decal
 			  1
 			  compiled-shaders
@@ -1564,7 +1649,7 @@
 			  :v0-fn  (constantly +zero-vec+)
 			  :mass-fn  (gaussian-distribution-fn 1.0 .1)
 			  :life-fn  (gaussian-distribution-fn 10.0 0.0)
-			  :delay-fn (gaussian-distribution-fn 1.0 0.01)
+			  :delay-fn delay-fn
 			  :gravity    (vec 0.0 -1e-5 0.0)
 			  :rotation-fn #'(lambda ()
 					   #'(lambda (p dt)
@@ -1572,10 +1657,10 @@
 					       0.0))
 			  :scaling-fn  (%uniform-scaling-clsr scaling-rate)
 			  :alpha-fn    (%exp-alpha-fading-clsr fading-rate)
+			  :color-fn    (%gradient-color-clsr gradient 2.0)
 			  :width  .1
 			  :height .1
 			  :respawn nil))
-
 
 (defun make-circular-wave-level-2 (pos compiled-shaders)
   (let ((texture (random-elt (list-of-texture-by-tag +texture-tag-decals-circular-wave+))))

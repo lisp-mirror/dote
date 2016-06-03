@@ -583,10 +583,11 @@ active program (set by sdk2.kit:use-program)."
 		:texture-object
 		:time)
       (:shaders :vertex-shader   ,(get-shader-source "spell-decal.vert")
-		:fragment-shader ,(get-shader-source "particle-fire-dart.frag")))
+		:fragment-shader ,(get-shader-source "spell-decal.frag")))
     ;;;;; transform feedback
     (:blood-integrator
      (:uniforms :dt
+		:noise-scale
 		:gravity
 		:min-y)
      (:feedback-shaders :vertex-shader ,(get-shader-source "particle-blood-feedback.vert")))
