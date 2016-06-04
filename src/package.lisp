@@ -1814,6 +1814,7 @@
    :+texture-tag-soil-terrain-level-3+
    :+texture-tag-smoke-particle+
    :+texture-tag-decals-explosion+
+   :+texture-tag-decals-cure+
    :+texture-tag-decals-circular-wave+
    :texture
    :free-memory

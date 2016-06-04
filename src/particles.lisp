@@ -1606,7 +1606,7 @@
 
 (defun make-spell-decal (pos compiled-shaders
 			 &key
-			   (texture (random-elt (list-of-texture-by-tag +texture-tag-decals-explosion+)))
+			   (texture (random-elt (list-of-texture-by-tag +texture-tag-decals-cure+)))
 			   (color-fn (%constant-color-clsr §cffffffff)))
   (make-particles-cluster 'spell-decal
 			  1

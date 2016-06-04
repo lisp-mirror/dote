@@ -298,14 +298,14 @@
 	    (incf *near* -.1))
 	  (when (string= text "p")
 	    (world:push-entity (world object)
-	     		       (particles:make-smoke-trail
+	     		       (particles:make-spell-decal
 	     			(vec (misc:coord-map->chunk 0.0)
 	     			     (d+ +zero-height+ 0.0)
 	     			     (misc:coord-map->chunk 0.0))
-				+y-axe+
-				10
-				(random-elt (texture:list-of-texture-by-tag
-					     texture:+texture-tag-decals-circular-wave+))
+				;; +y-axe+
+				;; 10
+				;; (random-elt (texture:list-of-texture-by-tag
+				;; 	     texture:+texture-tag-decals-circular-wave+))
 	     			(compiled-shaders object))))
 
 	  (when (string= text "L")

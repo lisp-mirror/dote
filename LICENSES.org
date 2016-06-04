@@ -507,6 +507,24 @@
 
   https://creativecommons.org/licenses/by/4.0/
 
+- data/textures/spells/auras/blue.tga
+- data/textures/spells/auras/green.tga
+- data/textures/spells/auras/purple.tga
+- data/textures/spells/auras/red.tga
+
+  derived from
+  © 2010 Luke.RUSTLTD
+  released under CC0 1.0
+  https://creativecommons.org/publicdomain/zero/1.0/
+  according to http://opengameart.org/content/4-summoning-circles
+  and
+
+  © 2010 johndh
+  released under CC-BY-3.0
+  http://creativecommons.org/licenses/by/3.0
+
+  according to: http://opengameart.org/content/colored-summoning-circles
+
 ** Source code
 
 - src/mesh.lisp use codes from cl-opengl

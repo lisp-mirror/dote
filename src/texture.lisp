@@ -115,6 +115,9 @@
 (alexandria:define-constant +texture-tag-decals-explosion+ "decals-explosion-particle"
   :test #'string=)
 
+(alexandria:define-constant +texture-tag-decals-cure+      "decals-cure-particle"
+  :test #'string=)
+
 (alexandria:define-constant +texture-tag-decals-circular-wave+ "decals-circular-wave"
   :test #'string=)
 

@@ -7,6 +7,8 @@
 
   load "radial-mountain-function.lisp"
 
+  ;; Textures
+
   generate cloud-1               from function pixmap:clouds
   with parameters (512)
   with tags ("general")
@@ -130,6 +132,8 @@
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0) and
   with postprocess pixmap:tileize
 
+  ;; particles texture
+
   generate blood-particle         from function pixmap:blood-particle
   with parameters (128)
   with tags ("blood-particle")
@@ -145,15 +149,22 @@
   with tags ("smoke-particle")
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
+  generate particle              from function pixmap:blurred-circle
+  with parameters (128)
+  with tags ("decals-circular-wave")
+  with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
+
+  ;; files are allowed too (24bit TGA format only)
+  generate particle              from file "spells/auras/green.tga"
+  with tags ("decals-cure-particle")
+  with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
+
   generate particle              from function pixmap:blurred-circled-cross
   with parameters (128)
   with tags ("decals-explosion-particle")
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
-  generate particle              from function pixmap:blurred-circle
-  with parameters (128)
-  with tags ("decals-circular-wave")
-  with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
+  ;; Map generation
 
   generate map
   ;;with size                        (random (tiny small medium large))
@@ -178,6 +189,8 @@
   with trees-rate                   (0.05)
   with trees-sparseness             (0.7)
 
+  ;; Mesh
+
   generate tree                  from script "temperate/fir.lsys"
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
@@ -190,6 +203,8 @@
   ;; ;; obj file format is supported only
   ;; generate tree                  from file   "temperate/pine/pine.obj"
   ;; with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
+
+  ;; Furnitures
 
   ;; again, only obj file format
   generate magic-furniture       from file   "fountain/model.obj"
@@ -218,6 +233,5 @@
 
   generate wall-decoration       from file   "torch/model.obj"
   with normalmap-parameters      (ka 0.0 kd 0.64 ks 0.5 roughness 0.0 shininess 256.0)
-
 
 )
