@@ -24,6 +24,8 @@
 
 (alexandria:define-constant +attribute-delay-feedback-location+  3 :test #'=)
 
+(alexandria:define-constant +attribute-force-feedback-location+  4 :test #'=)
+
 (alexandria:define-constant +attribute-center-pos-location+      1 :test #'=)
 
 (alexandria:define-constant +attribute-delay-location+           3 :test #'=)
@@ -156,36 +158,48 @@
 	    ct
 	  (setf ct (d+ ct delay))))))
 
+(defun constant-force-clsr (f)
+  ;; - cluster: the particle cluster;
+  ;; - particle: this particle;
+  ;; - index: index of particle in cluster (useful to retrive position);
+  ;; - dt time elapsed from last call"
+  #'(lambda ()
+      #'(lambda (cluster particle index dt)
+	  (declare (ignore cluster particle index dt))
+	  f)))
+
 (defstruct particle
-  (mass      1.0               :type desired-type)
-  (saved-v0  nil               :type vec)
-  (v0        (vec 0.0 0.0 0.0) :type vec)
-  (saved-position nil             :type vec)
-  (position  (vec 0.0 0.0 0.0) :type vec)
-  (saved-life nil              :type function)
-  (life      10.0              :type desired-type)
-  (saved-delay nil             :type function)
-  (delay     10.0              :type desired-type)
-  (saved-scaling  nil          :type function)
+  (forces    (vector (funcall (constant-force-clsr (vec 0.0 0.0 0.0)))) :type vector)
+  (saved-forces  (vector (constant-force-clsr (vec 0.0 0.0 0.0)))       :type vector)
+  (mass      1.0                                                        :type desired-type)
+  (saved-v0  nil                                                        :type vec)
+  (v0        (vec 0.0 0.0 0.0)                                          :type vec)
+  (saved-position nil                                                   :type vec)
+  (position  (vec 0.0 0.0 0.0)                                          :type vec)
+  (saved-life nil                                                       :type function)
+  (life      10.0                                                       :type desired-type)
+  (saved-delay nil                                                      :type function)
+  (delay     10.0                                                       :type desired-type)
+  (saved-scaling  nil                                                   :type function)
   (scaling   #'(lambda (particle dt)
 		 (declare (ignore particle dt))
 		 1.0)
-	     :type function)
-  (saved-rotation  nil         :type function)
+                                                                        :type function)
+  (saved-rotation  nil                                                  :type function)
   (rotation   #'(lambda (particle dt)
 		 (declare (ignore particle dt))
 		 0.0)
-	     :type function)
-  (saved-alpha nil             :type function)
+                                                                        :type function)
+  (saved-alpha nil                                                      :type function)
   (alpha   #'(lambda (particle dt)
 	       (declare (ignore particle dt))
 	       1.0)
-	   :type function)
-  (saved-color nil             :type function)
+                                                                        :type function)
+  (saved-color nil                                                      :type function)
   (color   #'(lambda (particle dt)
 	       (declare (ignore particle dt))
 	       (vec4 1.0 1.0 1.0 1.0))
-	   :type function)
+                                                                        :type function)
   (respawn   nil))
 
 (defun respawn-particle (p)
@@ -196,7 +210,8 @@
 	(particle-scaling  p) (funcall  (particle-saved-scaling  p))
 	(particle-rotation p) (funcall  (particle-saved-rotation p))
 	(particle-alpha    p) (funcall  (particle-saved-alpha    p))
-	(particle-color    p) (funcall  (particle-color          p))))
+	(particle-color    p) (funcall  (particle-saved-color    p))
+	(particle-forces   p) (map 'vector #'funcall (particle-saved-forces p))))
 
 (defclass particles-cluster (triangle-mesh inner-animation renderizable)
   ((integrator-shader
@@ -260,6 +275,11 @@
     :initform nil
     :initarg  :particles-masses
     :accessor particles-masses
+    :type gl-array)
+   (particles-forces-feedback
+    :initform nil
+    :initarg  particles-forces-feedback
+    :accessor particles-forces-feedback
     :type gl-array)
    (particles-output-positions
     :initform nil
@@ -377,6 +397,8 @@
 (defgeneric bind-computational-buffers (object))
 
 (defgeneric feedback-output-array-size (object))
+
+(defgeneric gather-forces (object dt))
 
 (defmethod populate-particles-output-positions-array ((object particles-cluster))
   (with-accessors ((particles particles)
@@ -501,6 +523,7 @@
 		   (particles-v0 particles-v0)
 		   (particles-vt particles-vt)
 		   (particles-masses particles-masses)
+		   (particles-forces-feedback particles-forces-feedback)
 		   (particles-output-positions particles-output-positions)
 		   (particles-delay-feedback particles-delay-feedback)
 		   (particles-delay particles-delay)
@@ -518,6 +541,7 @@
 	  particles-v0               nil
 	  particles-vt               nil
 	  particles-masses           nil
+	  particles-forces-feedback  nil
 	  particles-delay-feedback   nil
 	  particles-delay            nil
 	  particles-life             nil
@@ -535,6 +559,7 @@
 		   (particles-v0               particles-v0)
 		   (particles-vt               particles-vt)
 		   (particles-masses           particles-masses)
+		   (particles-forces-feedback  particles-forces-feedback)
 		   (particles-delay-feedback   particles-delay-feedback)
 		   (particles-delay            particles-delay)
 		   (particles-life             particles-life)
@@ -552,6 +577,7 @@
     (setf particles-v0               (gl:alloc-gl-array :float (* 3  (length particles))))
     (setf particles-vt               (gl:alloc-gl-array :float (* 3  (length particles))))
     (setf particles-masses           (gl:alloc-gl-array :float (length particles)))
+    (setf particles-forces-feedback  (gl:alloc-gl-array :float (* 3  (length particles))))
     (setf particles-delay-feedback   (gl:alloc-gl-array :float (length particles)))
     (setf particles-delay            (gl:alloc-gl-array :float (* 6  (length particles))))
     (setf particles-life             (gl:alloc-gl-array :float (* 6  (length particles))))
@@ -559,6 +585,7 @@
     (setf particles-rotation         (gl:alloc-gl-array :float (* 6  (length particles))))
     (setf particles-alpha            (gl:alloc-gl-array :float (* 6  (length particles))))
     (setf particles-color            (gl:alloc-gl-array :float (* 24 (length particles))))
+    (gather-forces object 0.0)
     (populate-particles-positions-array        object)
     (populate-particles-output-positions-array object)
     (populate-particles-v0-array               object)
@@ -577,6 +604,7 @@
 	  (velo-t0        (slot-value object 'particles-v0))
 	  (velo-t         (slot-value object 'particles-vt))
 	  (masses         (slot-value object 'particles-masses))
+	  (forces         (slot-value object 'particles-forces-feedback))
 	  (delay-feedback (slot-value object 'particles-delay-feedback))
 	  (delay          (slot-value object 'particles-delay))
 	  (life           (slot-value object 'particles-life))
@@ -595,6 +623,7 @@
 						  velo-t0
 						  velo-t
 						  masses
+						  forces
 						  delay-feedback
 						  delay
 						  life
@@ -609,6 +638,7 @@
 				    velo-t0        nil
 				    velo-t         nil
 			      	    masses         nil
+				    forces         nil
 				    delay-feedback nil
 				    delay          nil
 				    life           nil
@@ -635,6 +665,9 @@
 
 (defun vbo-delay-feedback-buffer-handle (vbo)
   (elt vbo 5))
+
+(defun vbo-forces-buffer-handle (vbo)
+  (elt vbo 6))
 
 (defun vbo-color-buffer-handle (vbo)
   (elt vbo (- (length vbo) 7)))
@@ -666,7 +699,8 @@
 		   (particles-v0               particles-v0)
 		   (particles-vt               particles-vt)
 		   (particles-delay-feedback   particles-delay-feedback)
-		   (particles-masses           particles-masses)) object
+		   (particles-masses           particles-masses)
+		   (particles-forces-feedback  particles-forces-feedback)) object
     (with-unbind-vao
       (gl:bind-vertex-array (elt transform-vao 0))
       ;; input-position
@@ -684,10 +718,17 @@
       (gl:buffer-data :array-buffer :static-draw particles-v0)
       (gl:vertex-attrib-pointer +attribute-v0-location+ 3 :float 0 0 (mock-null-pointer))
       (gl:enable-vertex-attrib-array +attribute-v0-location+)
+      ;; input forces
+      (gl:bind-buffer :array-buffer (vbo-forces-buffer-handle transform-vbo-input))
+      (gl:buffer-data :array-buffer :static-draw particles-forces-feedback)
+      (gl:vertex-attrib-pointer +attribute-force-feedback-location+ 3 :float 0 0
+				(mock-null-pointer))
+      (gl:enable-vertex-attrib-array +attribute-force-feedback-location+)
       ;; input-delay
       (gl:bind-buffer :array-buffer (vbo-delay-feedback-buffer-handle transform-vbo-input))
       (gl:buffer-data :array-buffer :static-draw particles-delay-feedback)
-      (gl:vertex-attrib-pointer +attribute-delay-feedback-location+ 1 :float 0 0 (mock-null-pointer))
+      (gl:vertex-attrib-pointer +attribute-delay-feedback-location+ 1 :float 0 0
+				(mock-null-pointer))
       (gl:enable-vertex-attrib-array +attribute-delay-feedback-location+)
       ;; output
       (gl:bind-buffer :array-buffer (vbo-out-position-buffer-handle transform-vbo-input))
@@ -699,6 +740,20 @@
 		   (particles-positions particles-positions)) object
     (+ (gl:gl-array-byte-size particles-positions)
        (gl:gl-array-byte-size particles-vt))))
+
+(defmethod gather-forces ((object particles-cluster) dt)
+  (with-accessors ((particles particles)
+		   (particles-forces-feedback particles-forces-feedback)
+		   (gravity gravity)) object
+    (loop
+       for particle across particles
+	 for i from 0                do
+	 (let ((force (reduce #'(lambda (a b) (vec+ a (funcall b object particle i dt)))
+			      (particle-forces particle)
+			      :initial-value +zero-vec+)))
+	   (setf (fast-glaref particles-forces-feedback       (f* i 3))  (elt force 0)
+		 (fast-glaref particles-forces-feedback (f+ 1 (f* i 3))) (elt force 1)
+		 (fast-glaref particles-forces-feedback (f+ 2 (f* i 3))) (elt force 2))))))
 
 (defmethod prepare-for-rendering ((object particles-cluster))
   (with-accessors ((vao                        vao)
@@ -781,6 +836,7 @@
 			    particles-output-positions
 			    particles-v0
 			    particles-vt
+			    particles-forces-feedback
 			    particles-delay-feedback
 			    particles-delay
 			    particles-life
@@ -802,6 +858,7 @@
 		      (,particles-output-positions particles-output-positions)
 		      (,particles-v0               particles-v0)
 		      (,particles-vt               particles-vt)
+		      (,particles-forces-feedback  particles-forces-feedback)
 		      (,particles-delay-feedback   particles-delay-feedback)
 		      (,particles-delay            particles-delay)
 		      (,particles-life             particles-life)
@@ -852,8 +909,11 @@
        (populate-particles-rotation-array         ,object ,dt :force nil)
        (populate-particles-alpha-array            ,object ,dt :force nil)
        (populate-particles-color-array            ,object ,dt :force nil)
+       (gather-forces                             ,object ,dt)
        (gl:bind-buffer :array-buffer (vbo-center-position-buffer-handle ,vbo))
        (gl:buffer-sub-data :array-buffer  ,particles-output-positions)
+       (gl:bind-buffer :array-buffer (vbo-forces-buffer-handle ,vbo))
+       (gl:buffer-sub-data :array-buffer  ,particles-forces-feedback)
        (gl:bind-buffer :array-buffer (vbo-delay-feedback-buffer-handle ,vbo))
        (gl:buffer-sub-data :array-buffer  ,particles-delay-feedback)
        (gl:bind-buffer :array-buffer (vbo-delay-buffer-handle ,vbo))
@@ -968,8 +1028,8 @@
 
 (defun make-particles-cluster (class particles-count shaders-dict
 			       &key
-				 (texture     (texture:get-texture
-					       texture:+blood-particle+))
+				 (texture     (texture:get-texture texture:+blood-particle+))
+				 (forces      (vector (constant-force-clsr (vec 0.0 0.0 0.0))))
 				 (v0-fn       #'(lambda () (vec 0.0 40.0 0.0)))
 				 (mass-fn     #'(lambda () 1.0))
 				 (position-fn #'(lambda () (vec 0.0 0.1 0.0)))
@@ -1000,7 +1060,9 @@
   (let* ((particles (loop repeat particles-count collect
 			 (let ((starting-velo  (funcall v0-fn))
 			       (starting-pos   (funcall position-fn)))
-			   (make-particle :mass     (funcall mass-fn)
+			   (make-particle :forces (map 'vector #'funcall forces)
+					  :saved-forces forces
+					  :mass     (funcall mass-fn)
 					  :v0       starting-velo
 					  :saved-v0 (copy-vec starting-velo)
 					  :position starting-pos

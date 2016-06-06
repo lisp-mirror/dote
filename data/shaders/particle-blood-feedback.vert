@@ -8,6 +8,8 @@ layout (location = 2) in vec3 v0;
 
 layout (location = 3) in float delay;
 
+layout (location = 4) in vec3 force;
+
 uniform float dt = 1.0;
 
 uniform vec3 gravity = vec3(0.0, -9.0, 0.0);
@@ -35,8 +37,8 @@ void main() {
   vec3 displ = vec3(0.0);
   if (position.y > min_y){
     if (delay < 0.0){
-      integrate(gravity, v0, mass, dt, // in
-		dv, displ);           // out
+      integrate(gravity + force, v0, mass, dt, // in
+		dv, displ);                   // out
       new_position = position + displ + noise_scale * snoise(position);
       new_velocity = dv;
     }else{

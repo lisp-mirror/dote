@@ -1650,6 +1650,7 @@
    :with-transform-feedback
    :with-blending
    :with-depth-disabled
+   :with-depth-mask-disabled
    :mock-null-pointer
    :fast-glaref
    :seq->gl-array
