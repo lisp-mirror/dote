@@ -720,7 +720,7 @@
       (gl:enable-vertex-attrib-array +attribute-v0-location+)
       ;; input forces
       (gl:bind-buffer :array-buffer (vbo-forces-buffer-handle transform-vbo-input))
-      (gl:buffer-data :array-buffer :static-draw particles-forces-feedback)
+      (gl:buffer-data :array-buffer :dynamic-draw particles-forces-feedback)
       (gl:vertex-attrib-pointer +attribute-force-feedback-location+ 3 :float 0 0
 				(mock-null-pointer))
       (gl:enable-vertex-attrib-array +attribute-force-feedback-location+)
@@ -910,10 +910,12 @@
        (populate-particles-alpha-array            ,object ,dt :force nil)
        (populate-particles-color-array            ,object ,dt :force nil)
        (gather-forces                             ,object ,dt)
+       ;; transform feedback
+       (gl:bind-buffer :array-buffer (vbo-forces-buffer-handle ,transform-vbo-input))
+       (gl:buffer-sub-data :array-buffer  ,particles-forces-feedback)
+       ;; rendering
        (gl:bind-buffer :array-buffer (vbo-center-position-buffer-handle ,vbo))
        (gl:buffer-sub-data :array-buffer  ,particles-output-positions)
-       (gl:bind-buffer :array-buffer (vbo-forces-buffer-handle ,vbo))
-       (gl:buffer-sub-data :array-buffer  ,particles-forces-feedback)
        (gl:bind-buffer :array-buffer (vbo-delay-feedback-buffer-handle ,vbo))
        (gl:buffer-sub-data :array-buffer  ,particles-delay-feedback)
        (gl:bind-buffer :array-buffer (vbo-delay-buffer-handle ,vbo))
@@ -1230,7 +1232,7 @@
       (with-camera-view-matrix (camera-vw-matrix renderer)
 	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
 	  (with-depth-disabled
-	    (cl-gl-utils:with-blending
+	    (with-blending
 	      (gl:blend-equation :func-add)
 	      (gl:blend-func :src-alpha :one-minus-src-alpha)
 	      (use-program compiled-shaders :particles-blood)
@@ -1538,7 +1540,7 @@
 			  compiled-shaders
 			  :texture (texture:get-texture texture:+fire-particle+)
 			  :pos     pos
-			  :v0-fn  (gaussian-velocity-distribution-fn dir
+			  :v0-fn  (gaussian-velocity-distribution-fn (vec-negate dir)
 								     1.0
 								     .1
 								     (d/ +pi/2+ 5.0))
@@ -1561,7 +1563,7 @@
 			  compiled-shaders
 			  :texture (texture:get-texture texture:+fire-particle+)
 			  :pos     pos
-			  :v0-fn  (gaussian-velocity-distribution-fn dir
+			  :v0-fn  (gaussian-velocity-distribution-fn (vec-negate dir)
 								     1.0
 								     .1
 								     (d/ +pi/2+ 5.0))
@@ -1584,7 +1586,7 @@
 			  compiled-shaders
 			  :texture (texture:get-texture texture:+fire-particle+)
 			  :pos     pos
-			  :v0-fn  (gaussian-velocity-distribution-fn dir
+			  :v0-fn  (gaussian-velocity-distribution-fn (vec-negate dir)
 								     .8
 								     .01
 								     (d/ +pi/2+ 5.0))

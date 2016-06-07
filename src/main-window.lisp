@@ -208,8 +208,7 @@
 		(decf fdt actual-dt)
 		(interfaces:calculate world (d actual-dt)))))
 	  ;; rendering
-	  (gl:clear :color-buffer)
-	  (gl:clear :depth-buffer)
+	  (gl:clear :color-buffer :depth-buffer)
 	  (interfaces:render world world)
 	  ;; gui
 	  (with-gui (world)
@@ -220,8 +219,7 @@
 	(progn
 	  ;; rendering
 	  (gl:clear-color 0 0 0 1)
-	  (gl:clear :color-buffer)
-	  (gl:clear :depth-buffer)
+	  (gl:clear :color-buffer :depth-buffer)
 	  (with-gui (world)
 	    (world:render-gui world))))))
 
@@ -298,11 +296,11 @@
 	    (incf *near* -.1))
 	  (when (string= text "p")
 	    (world:push-entity (world object)
-	     		       (particles:make-spell-decal
-	     			(vec (misc:coord-map->chunk 0.0)
+	     		       (particles::make-fire-dart
+	     			(vec (misc:coord-map->chunk 5.0)
 	     			     (d+ +zero-height+ 0.0)
-	     			     (misc:coord-map->chunk 0.0))
-				;; +y-axe+
+	     			     (misc:coord-map->chunk 5.0))
+				(vec-negate +z-axe+)
 				;; 10
 				;; (random-elt (texture:list-of-texture-by-tag
 				;; 	     texture:+texture-tag-decals-circular-wave+))
