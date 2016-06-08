@@ -2878,53 +2878,51 @@
     (when (> (length triangles) 0)
       (with-camera-view-matrix (camera-vw-matrix renderer)
 	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	  (gl:disable :depth-test)
-	  (gl:depth-mask :false)
-	  (use-program compiled-shaders :skydome)
-	  (uniformi compiled-shaders :weather-type
-			     (if (eq weather-type :foggy-night-clear-day)
-				 1
-				 0))
-	  (gl:active-texture :texture0)
-	  (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
-	  (texture:bind-texture texture-object)
-	  (gl:active-texture :texture1)
-	  (texture:bind-texture (elt texture-clouds 0))
-	  (uniformi compiled-shaders :texture-clouds-1 +texture-unit-clouds-1+)
-	  (gl:active-texture :texture2)
-	  (texture:bind-texture (elt texture-clouds 1))
-	  (uniformi compiled-shaders :texture-clouds-2 +texture-unit-clouds-2+)
-	  (gl:active-texture :texture3)
-	  (texture:bind-texture (elt texture-clouds 2))
-	  ;; smoke
-	  (uniformi compiled-shaders :texture-smoke +texture-unit-projector+)
-	  (gl:active-texture :texture4)
-	  (texture:bind-texture texture-projector)
-	  (uniformi compiled-shaders :texture-clouds-3 +texture-unit-clouds-3+)
-	  (uniformf compiled-shaders :traslation-clouds-speed el-time)
-	  ;; comment out the line below to get rid of camera following effect
-	  (setf (model-matrix object) (translate (get-camera-pos renderer)))
-	  (setf (model-matrix object) (matrix* (elt model-matrix 0)
-					       (translate (vec 0.0 -20.0 0.0))))
-	  (uniformi  compiled-shaders :texture-object +texture-unit-diffuse+)
-	  (uniformfv compiled-shaders :sky-color (the vec4 (sky-bg-color state)))
-	  (uniform-matrix compiled-shaders :modelview-matrix 4
-				   (vector (matrix* camera-vw-matrix
-						    (elt view-matrix 0)
-						    (elt model-matrix 0)))
-				   nil)
-	  (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
-	  ;; smoke projection matrix
-	  (uniform-matrix compiled-shaders :proj-texture-matrix 4
-				   (vector (matrix* +projective-scale-bias+
-						    (elt camera-proj-matrix 0)
-						    projector))
+	  (with-depth-disabled
+	    (with-depth-mask-disabled
+	      (use-program compiled-shaders :skydome)
+	      (uniformi compiled-shaders :weather-type
+			(if (eq weather-type :foggy-night-clear-day)
+			    1
+			    0))
+	      (gl:active-texture :texture0)
+	      (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+	      (texture:bind-texture texture-object)
+	      (gl:active-texture :texture1)
+	      (texture:bind-texture (elt texture-clouds 0))
+	      (uniformi compiled-shaders :texture-clouds-1 +texture-unit-clouds-1+)
+	      (gl:active-texture :texture2)
+	      (texture:bind-texture (elt texture-clouds 1))
+	      (uniformi compiled-shaders :texture-clouds-2 +texture-unit-clouds-2+)
+	      (gl:active-texture :texture3)
+	      (texture:bind-texture (elt texture-clouds 2))
+	      ;; smoke
+	      (uniformi compiled-shaders :texture-smoke +texture-unit-projector+)
+	      (gl:active-texture :texture4)
+	      (texture:bind-texture texture-projector)
+	      (uniformi compiled-shaders :texture-clouds-3 +texture-unit-clouds-3+)
+	      (uniformf compiled-shaders :traslation-clouds-speed el-time)
+	      ;; comment out the line below to get rid of camera following effect
+	      (setf (model-matrix object) (translate (get-camera-pos renderer)))
+	      (setf (model-matrix object) (matrix* (elt model-matrix 0)
+						   (translate (vec 0.0 -20.0 0.0))))
+	      (uniformi  compiled-shaders :texture-object +texture-unit-diffuse+)
+	      (uniformfv compiled-shaders :sky-color (the vec4 (sky-bg-color state)))
+	      (uniform-matrix compiled-shaders :modelview-matrix 4
+			      (vector (matrix* camera-vw-matrix
+					       (elt view-matrix 0)
+					       (elt model-matrix 0)))
+			      nil)
+	      (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
+	      ;; smoke projection matrix
+	      (uniform-matrix compiled-shaders :proj-texture-matrix 4
+			      (vector (matrix* +projective-scale-bias+
+					       (elt camera-proj-matrix 0)
+					       projector))
 					;(elt model-matrix 0)))
-				   nil)
-	  (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-	  (gl:draw-arrays :triangles 0 (* 3 (length triangles)))
-	  (gl:depth-mask :true)
-	  (gl:enable :depth-test))))))
+			      nil)
+	      (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+	      (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))))))
 
 (defun put-simple-plane-vertex (plane x y z inc-x inc-z &key (normal +y-axe+))
   (normal-v plane normal)

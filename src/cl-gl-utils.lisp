@@ -58,16 +58,14 @@
 (defmacro with-depth-disabled (&body body)
   `(progn
      (gl:disable :depth-test)
-     (gl:depth-mask :false)
      ,@body
-     (gl:enable :depth-test)
-     (gl:depth-mask :true)))
+     (gl:enable :depth-test)))
 
 (defmacro with-depth-mask-disabled (&body body)
   `(progn
-     (gl:depth-mask :false)
+     (gl:depth-mask nil)
      ,@body
-     (gl:depth-mask :true)))
+     (gl:depth-mask t)))
 
 (definline fast-glaref (v offset)
   (cffi:mem-aref (gl::gl-array-pointer v) :float offset))

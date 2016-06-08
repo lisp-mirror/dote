@@ -14,5 +14,8 @@ out vec4 color;
 
 void main () {
   vec4  c = texture2D(texture_object,frag_text_coord);
-  color   = vec4(c.rgb, c.a * alpha_val);
+  color   = vec4(c.r * alpha_val,
+		 c.g * alpha_val,
+		 c.b * alpha_val,
+		 1.0);
 }

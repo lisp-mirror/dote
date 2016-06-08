@@ -1231,7 +1231,7 @@
     (when (> (length triangles) 0)
       (with-camera-view-matrix (camera-vw-matrix renderer)
 	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	  (with-depth-disabled
+	  (with-depth-mask-disabled
 	    (with-blending
 	      (gl:blend-equation :func-add)
 	      (gl:blend-func :src-alpha :one-minus-src-alpha)
@@ -1449,7 +1449,10 @@
     (setf smoke-ct (1+ smoke-ct))
     (call-next-method)))
 
-(defun make-smoke-trail (pos dir num texture compiled-shaders &key (smoke-frequency 10))
+(defun make-smoke-trail (pos dir num compiled-shaders
+			 &key
+			   (smoke-frequency 10)
+			   (texture (texture:get-texture texture:+smoke-particle+)))
   (let ((res (make-particles-cluster 'smoke-trail
 				     num
 				     compiled-shaders
@@ -1512,10 +1515,10 @@
     (when (> (length triangles) 0)
       (with-camera-view-matrix (camera-vw-matrix renderer)
 	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	  (with-depth-disabled
+	  (with-depth-mask-disabled
 	    (cl-gl-utils:with-blending
 	      (gl:blend-equation :func-add)
-	      (gl:blend-func :src-alpha :one)
+	      (gl:blend-func :one :one)
 	      (use-program compiled-shaders :particles-fire-dart)
 	      (gl:active-texture :texture0)
 	      (texture:bind-texture texture-object)

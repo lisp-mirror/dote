@@ -1147,14 +1147,15 @@
 							   (vec2 0.5 0.5))))
 			      (dist-frame (vec2-length (vec2- (vec2 x y)
 							      (vec2 0.5 0.5))))
-			      (alpha   (d- 1.0 (dlerp (smoothstep-interpolate 0.0 1.0 dist)
+			      (color-bg   (d- 1.0 (dlerp (smoothstep-interpolate 0.0 1.0 dist)
 						      0.0 1.0)))
-			      (alpha-frame (d- 1.0 (dlerp (smoothstep-interpolate 0.0
+			      (color-frame (d- 1.0 (dlerp (smoothstep-interpolate 0.0
 										  0.5
 										  dist-frame)
 							  0.0 1.0))))
-			 (multiply-color (multiply-color color (vec4 1.0 1.0 1.0 alpha))
-					 (vec4 1.0 1.0 1.0 alpha-frame))))))
+			 (multiply-color (multiply-color color
+							 (vec4 color-bg color-bg color-bg 1.0))
+					 (vec4 color-frame color-frame color-frame 1.0))))))
 	(values pixmap "fire-particle")))))
 
 (defun test-fire-particle (&optional (size +default-size-pixmap-library+))
@@ -1166,7 +1167,27 @@
     t))
 
 (defun smoke-particle (size &key (color §c050505ff))
-  (fire-particle size :color color))
+  (with-random-perlin-gradient-offset
+    (labels ((noise (x y range-01)
+	       (gen-fbm x y 6 1.0 1.0 0.5 2.0
+			:normalize t :range-0->1 range-01)))
+      (let* ((pixmap (with-standard-generated-pixmap-square (pixmap size)
+		       (let* ((x-noise (d+ x (d* 0.5 (noise (d* x 8.1) (d* y 8.1) t))))
+			      (y-noise (d+ y (d* 0.5 (noise (d* x 8.1) (d* y 8.1) t))))
+			      (dist    (vec2-length (vec2- (vec2 x-noise y-noise)
+							   (vec2 0.5 0.5))))
+			      (dist-frame (vec2-length (vec2- (vec2 x y)
+							      (vec2 0.5 0.5))))
+			      (alpha-bg   (d- 1.0 (dlerp (smoothstep-interpolate 0.0 1.0 dist)
+						      0.0 1.0)))
+			      (alpha-frame (d- 1.0 (dlerp (smoothstep-interpolate 0.0
+										  0.5
+										  dist-frame)
+							  0.0 1.0))))
+			 (multiply-color (multiply-color color
+							 (vec4 1.0 1.0 1.0 alpha-bg))
+					 (vec4 1.0 1.0 1.0 alpha-frame))))))
+	(values pixmap "fire-particle")))))
 
 (defun test-smoke-particle (&optional (size +default-size-pixmap-library+))
   (let ((pixmap (smoke-particle size)))

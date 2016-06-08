@@ -176,12 +176,12 @@
        (unwind-protect
 	    (progn
 	      (gl:disable :depth-test)
-	      (gl:depth-mask :false)
+	      (gl:depth-mask :nil)
 	      (setf (projection-matrix ,world)
 		    (ortho 0.0 (num:d *window-w*) 0.0 (num:d *window-h*) -1.0 1.0))
 	      (setf (view-matrix (camera ,world)) (identity-matrix))
 	      ,@body)
-	 (gl:depth-mask :true)
+	 (gl:depth-mask t)
 	 (gl:enable :depth-test)
 	 (setf (projection-matrix ,world)    ,3d-projection-matrix
 	       (view-matrix (camera ,world)) ,3d-view-matrix)))))
@@ -296,12 +296,12 @@
 	    (incf *near* -.1))
 	  (when (string= text "p")
 	    (world:push-entity (world object)
-	     		       (particles::make-fire-dart
+	     		       (particles:make-smoke-trail
 	     			(vec (misc:coord-map->chunk 5.0)
-	     			     (d+ +zero-height+ 0.0)
+	     			     (d+ +zero-height+ 5.0)
 	     			     (misc:coord-map->chunk 5.0))
-				(vec-negate +z-axe+)
-				;; 10
+				+y-axe+
+				10
 				;; (random-elt (texture:list-of-texture-by-tag
 				;; 	     texture:+texture-tag-decals-circular-wave+))
 	     			(compiled-shaders object))))
