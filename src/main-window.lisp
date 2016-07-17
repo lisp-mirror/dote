@@ -533,7 +533,6 @@
   (setf identificable:*entity-id-counter* +start-id-counter+)
   (player-messages-text:init-player-messages-db)
   (setf *map-loaded-p* nil)
-  (pixmap::test-aerial-explosion-particle 256)
   (start)
   (sdl2:gl-set-attr :context-profile-mask  1)
   (sdl2:gl-set-attr :context-major-version 3)
