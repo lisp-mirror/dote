@@ -1519,6 +1519,7 @@
    :blood-particle
    :fire-particle
    :smoke-particle
+   :aerial-explosion-particle
    :blurred-circle
    :blurred-cross
    :blurred-circled-cross
@@ -1814,6 +1815,7 @@
    :+texture-tag-soil-terrain-level-2+
    :+texture-tag-soil-terrain-level-3+
    :+texture-tag-smoke-particle+
+   :+texture-tag-aerial-expl-particle+
    :+texture-tag-decals-explosion+
    :+texture-tag-decals-cure+
    :+texture-tag-decals-circular-wave+
@@ -3718,7 +3720,8 @@
    :make-spell-decal
    :make-circular-wave-level-0
    :make-circular-wave-level-1
-   :make-circular-wave-level-2))
+   :make-circular-wave-level-2
+   :make-aerial-explosion))
 
 (defpackage :arrows
   (:use :cl

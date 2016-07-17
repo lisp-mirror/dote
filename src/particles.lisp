@@ -62,6 +62,17 @@
 		(color-utils:pick-color gradient (d* time scale))
 	      (incf time dt))))))
 
+(defun %smooth-gradient-color-clsr (gradient duration)
+  #'(lambda ()
+      (let ((time 0.0))
+	#'(lambda (particle dt)
+	    (declare (ignore particle))
+	    (prog1
+		(color-utils:pick-color gradient
+					(dlerp (smoothstep-interpolate 0 duration time)
+					       0.0 1.0))
+	      (incf time dt))))))
+
 (defun %uniform-rotation-clsr (m)
   #'(lambda ()
       (let ((time 0.0))
@@ -158,16 +169,6 @@
 	    ct
 	  (setf ct (d+ ct delay))))))
 
-(defun constant-force-clsr (f)
-  ;; - cluster: the particle cluster;
-  ;; - particle: this particle;
-  ;; - index: index of particle in cluster (useful to retrive position);
-  ;; - dt time elapsed from last call"
-  #'(lambda ()
-      #'(lambda (cluster particle index dt)
-	  (declare (ignore cluster particle index dt))
-	  f)))
-
 (defstruct particle
   (forces    (vector (funcall (constant-force-clsr (vec 0.0 0.0 0.0)))) :type vector)
   (saved-forces  (vector (constant-force-clsr (vec 0.0 0.0 0.0)))       :type vector)
@@ -212,6 +213,32 @@
 	(particle-alpha    p) (funcall  (particle-saved-alpha    p))
 	(particle-color    p) (funcall  (particle-saved-color    p))
 	(particle-forces   p) (map 'vector #'funcall (particle-saved-forces p))))
+
+(defun constant-force-clsr (f)
+  "- cluster: the particle cluster;
+   - particle: this particle;
+   - index: index of particle in cluster (useful to retrive position);
+   - dt time elapsed from last call"
+  #'(lambda ()
+      #'(lambda (cluster particle index dt)
+	  (declare (ignore cluster particle index dt))
+	  f)))
+
+(defun friction-force-clsr (friction-constant)
+  "- cluster: the particle cluster;
+   - particle: this particle;
+   - index: index of particle in cluster (useful to retrive position);
+   - dt time elapsed from last call"
+  #'(lambda ()
+      #'(lambda (cluster particle index dt)
+	  (declare (ignore dt))
+	  (let* ((i      (* index 3))
+		 (all-vs (particles-v0 cluster))
+		 (v (vec (d- (cl-gl-utils:fast-glaref all-vs i))
+			 (d- (cl-gl-utils:fast-glaref all-vs (+ i 1)))
+			 (d- (cl-gl-utils:fast-glaref all-vs (+ i 2)))))
+		 (m (particle-mass particle)))
+	    (vec* v (d* m friction-constant))))))
 
 (defclass particles-cluster (triangle-mesh inner-animation renderizable)
   ((integrator-shader
@@ -1389,7 +1416,6 @@
 			  :height .1
 			  :respawn nil))
 
-
 (defun make-smoke-trail-element (pos compiled-shaders &key
 							(max-scaling    8.0)
 							(scaling-rate   0.8)
@@ -1671,6 +1697,53 @@
 	      (gl:draw-arrays :triangles 0 (* 3 (length triangles)))
 	      (gl:blend-equation :func-add))))))))
 
+(defclass aerial-explosion (blood) ())
+
+(defmethod initialize-instance :after ((object aerial-explosion)
+ 				       &key
+ 					 (texture (texture:get-texture
+ 						   texture:+cross-particle+))
+ 					 &allow-other-keys)
+   (setf (use-blending-p object) t)
+   (setf (integrator-shader object) :blood-integrator)
+   (setf (texture-object object) texture))
+
+(defmethod render ((object aerial-explosion) renderer)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((vbo vbo)
+		   (vao vao)
+		   (el-time el-time)
+		   (texture-object texture-object)
+		   (projection-matrix projection-matrix)
+		   (model-matrix model-matrix)
+		   (view-matrix view-matrix)
+		   (compiled-shaders compiled-shaders)
+		   (triangles triangles)) object
+    (declare (texture:texture texture-object))
+    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
+    (declare (list triangles vao vbo))
+    (when (> (length triangles) 0)
+      (with-camera-view-matrix (camera-vw-matrix renderer)
+	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+	  (with-depth-mask-disabled
+	    (with-blending
+	      (gl:blend-equation :func-add)
+	      (gl:blend-func :src-alpha :one-minus-src-alpha)
+	      (use-program compiled-shaders :particles-aerial-explosion)
+	      (gl:active-texture :texture0)
+	      (texture:bind-texture texture-object)
+	      (uniformf  compiled-shaders :time  el-time)
+	      (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+	      (uniform-matrix compiled-shaders :modelview-matrix 4
+			      (vector (matrix* camera-vw-matrix
+					       (elt view-matrix 0)
+					       (elt model-matrix 0)))
+			      nil)
+	      (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
+	      (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+	      (gl:draw-arrays :triangles 0 (* 3 (length triangles)))
+	      (gl:blend-equation :func-add))))))))
+
 (defun make-spell-decal (pos compiled-shaders
 			 &key
 			   (texture (random-elt (list-of-texture-by-tag +texture-tag-decals-cure+)))
@@ -1752,3 +1825,33 @@
 			:fading-rate 100.2
 			:scaling-rate 800.0
 			:texture texture)))
+
+(defun make-aerial-explosion (pos compiled-shaders)
+  (let ((texture  (random-elt (list-of-texture-by-tag +texture-tag-aerial-expl-particle+)))
+	(gradient (color-utils:make-gradient
+		   (color-utils:make-gradient-color 0.0  §cffffffff)
+		   (color-utils:make-gradient-color 0.2  §cffd403ff)
+		   (color-utils:make-gradient-color 0.5  §cff1403ff)
+		   (color-utils:make-gradient-color 1.0  §c494949f0))))
+    (pixmap::dump-gradient gradient)
+    (make-particles-cluster 'aerial-explosion
+			    100
+			    compiled-shaders
+			    :forces (vector (friction-force-clsr 3.6))
+			    :texture texture
+			    :pos     pos
+			    :v0-fn  (gaussian-velocity-distribution-fn +y-axe+
+								       10.8
+								       5.0
+								       +2pi+)
+			    :mass-fn  (gaussian-distribution-fn 1.0 .2)
+			    :life-fn  (gaussian-distribution-fn 20.0 5.1)
+			    :delay-fn (gaussian-distribution-fn 0.5 .1)
+			    :gravity    (vec 0.0 -1e-5 0.0)
+			    :scaling-fn (%limited-scaling-clsr 0.2 70.0)
+			    :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range -2.0 2.0))
+			    :alpha-fn   (%smooth-alpha-fading-clsr 5.0)
+			    :color-fn   (%smooth-gradient-color-clsr gradient 1.0)
+			    :width  .1
+			    :height .1
+			    :respawn nil)))

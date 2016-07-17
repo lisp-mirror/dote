@@ -112,6 +112,9 @@
 
 (alexandria:define-constant +texture-tag-smoke-particle+   "smoke-particle"   :test #'string= )
 
+(alexandria:define-constant +texture-tag-aerial-expl-particle+ "aerial-explosion-particle"
+   :test #'string= )
+
 (alexandria:define-constant +texture-tag-decals-explosion+ "decals-explosion-particle"
   :test #'string=)
 

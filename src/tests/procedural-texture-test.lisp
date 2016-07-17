@@ -132,6 +132,15 @@
       (write-sequence (pixmap->tga-file pixmap) stream))
     "fire-particle.tga"))
 
+(defun test-aerial-explosion-particle (&optional (size pixmap::+default-size-pixmap-library+))
+  (let ((pixmap (pixmap:aerial-explosion-particle size)))
+    (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "aerial-explosion-particle.tga")
+			    :direction :output
+ 			    :if-exists :supersede :if-does-not-exist :create
+ 			    :element-type +targa-stream-element-type+)
+      (write-sequence (pixmap->tga-file pixmap) stream))
+    "aerial-explosion-particle.tga"))
+
 (defun test-half-moon ()
   (let ((pixmap (half-moon)))
     (with-open-file (stream (format nil "~a~a" +texture-dir-tmp+ "half-moon.tga")
@@ -397,6 +406,7 @@
 		      test-blood-splat
 		      test-blood-particle
 		      test-fire-particle
+		      test-aerial-explosion-particle
 		      test-smoke-particle
 		      test-blurred-circled-cross
 		      test-perlin-3d-ref

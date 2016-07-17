@@ -296,12 +296,12 @@
 	    (incf *near* -.1))
 	  (when (string= text "p")
 	    (world:push-entity (world object)
-	     		       (particles:make-smoke-trail
+	     		       (particles:make-aerial-explosion
 	     			(vec (misc:coord-map->chunk 5.0)
 	     			     (d+ +zero-height+ 5.0)
 	     			     (misc:coord-map->chunk 5.0))
-				+y-axe+
-				10
+				;+y-axe+
+				;10
 				;; (random-elt (texture:list-of-texture-by-tag
 				;; 	     texture:+texture-tag-decals-circular-wave+))
 	     			(compiled-shaders object))))
@@ -533,6 +533,7 @@
   (setf identificable:*entity-id-counter* +start-id-counter+)
   (player-messages-text:init-player-messages-db)
   (setf *map-loaded-p* nil)
+  (pixmap::test-aerial-explosion-particle 256)
   (start)
   (sdl2:gl-set-attr :context-profile-mask  1)
   (sdl2:gl-set-attr :context-major-version 3)

@@ -164,6 +164,11 @@
   with tags ("decals-explosion-particle")
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
+  generate particle              from function pixmap:aerial-explosion-particle
+  with parameters (128)
+  with tags ("aerial-explosion-particle")
+  with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
+
   ;; Map generation
 
   generate map

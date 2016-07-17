@@ -1110,6 +1110,14 @@
 	 pixmap)
        "blood-splat"))))
 
+(defun test-blood-splat (&optional (size +default-size-pixmap-library+))
+  (let ((pixmap (blood-splat size)))
+    (with-open-file (stream (fs:file-in-package "blood-splat.tga") :direction :output
+ 			    :if-exists :supersede :if-does-not-exist :create
+ 			    :element-type +targa-stream-element-type+)
+      (write-sequence (pixmap->tga-file pixmap) stream))
+    t))
+
 (defun blood-particle (size &key (gradient
 				  (make-gradient
 				   (make-gradient-color 0.0 #(0.58 0.0 0.0 .5))
@@ -1197,9 +1205,12 @@
       (write-sequence (pixmap->tga-file pixmap) stream))
     t))
 
-(defun test-blood-splat (&optional (size +default-size-pixmap-library+))
-  (let ((pixmap (blood-splat size)))
-    (with-open-file (stream (fs:file-in-package "blood-splat.tga") :direction :output
+(defun aerial-explosion-particle (size &key (color §cffffffff))
+  (smoke-particle size :color color))
+
+(defun test-aerial-explosion-particle (&optional (size +default-size-pixmap-library+))
+  (let ((pixmap (aerial-explosion-particle size)))
+    (with-open-file (stream (fs:file-in-package "aerial-explosion.tga") :direction :output
  			    :if-exists :supersede :if-does-not-exist :create
  			    :element-type +targa-stream-element-type+)
       (write-sequence (pixmap->tga-file pixmap) stream))
