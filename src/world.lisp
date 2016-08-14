@@ -242,6 +242,7 @@
 	     (game-state:player-entities main-state))
     (maphash #'(lambda (k v) (declare (ignore k)) (mesh:process-postponed-messages v))
 	     (game-state:ai-entities main-state))
+    (tg:gc :full t)
     nil))
 
 (defmethod remove-entity-by-id ((object world) id)

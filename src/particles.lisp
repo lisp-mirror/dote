@@ -73,13 +73,24 @@
 					       0.0 1.0))
 	      (incf time dt))))))
 
-(defun %uniform-rotation-clsr (m)
+(defgeneric %uniform-rotation-clsr (m))
+
+(defmethod %uniform-rotation-clsr ((m number))
   #'(lambda ()
       (let ((time 0.0))
 	#'(lambda (p dt)
 	    (declare (ignore p))
 	    (incf time dt)
 	    (d+ 1.0 (d* m time))))))
+
+(defmethod %uniform-rotation-clsr ((m function))
+  #'(lambda ()
+      (let ((time  0.0)
+	    (coeff (funcall m)))
+	#'(lambda (p dt)
+	    (declare (ignore p))
+	    (incf time dt)
+	    (d+ 1.0 (d* coeff time))))))
 
 (defun %uniform-scaling-clsr (m)
   #'(lambda ()
@@ -426,6 +437,8 @@
 (defgeneric feedback-output-array-size (object))
 
 (defgeneric gather-forces (object dt))
+
+(defgeneric set-respawn   (object value))
 
 (defmethod populate-particles-output-positions-array ((object particles-cluster))
   (with-accessors ((particles particles)
@@ -782,6 +795,10 @@
 		 (fast-glaref particles-forces-feedback (f+ 1 (f* i 3))) (elt force 1)
 		 (fast-glaref particles-forces-feedback (f+ 2 (f* i 3))) (elt force 2))))))
 
+(defmethod set-respawn ((object particles-cluster) value)
+  (do-particles (object particle)
+    (setf (particle-respawn particle) value)))
+
 (defmethod prepare-for-rendering ((object particles-cluster))
   (with-accessors ((vao                        vao)
 		   (vbo                        vbo)
@@ -993,6 +1010,18 @@
    :initarg :gravity
    :accessor gravity)))
 
+(defclass cluster-w-global-life (particles-cluster)
+  ((global-life
+    :initform 1000
+    :initarg  :global-life
+    :accessor global-life)))
+
+(defmethod calculate :before ((object cluster-w-global-life) dt)
+  (with-accessors ((global-life global-life)) object
+    (decf global-life)
+    (when (< global-life 0)
+      (set-respawn object nil))))
+
 (defclass blood (cluster-w-gravity)
   ((noise-scale
     :initform 0.0
@@ -1199,13 +1228,48 @@
 
 (defclass debris (blood) ())
 
+(defmethod render ((object debris) renderer)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((vbo vbo)
+		   (vao vao)
+		   (el-time el-time)
+		   (texture-object texture-object)
+		   (projection-matrix projection-matrix)
+		   (model-matrix model-matrix)
+		   (view-matrix view-matrix)
+		   (compiled-shaders compiled-shaders)
+		   (triangles triangles)) object
+    (declare (texture:texture texture-object))
+    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
+    (declare (list triangles vao vbo))
+    (when (> (length triangles) 0)
+      (with-camera-view-matrix (camera-vw-matrix renderer)
+	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+	  (cl-gl-utils:with-blending
+	    (gl:blend-equation :func-add)
+	    (gl:blend-func :src-alpha :one)
+	    (use-program compiled-shaders :particles-blood)
+	    (gl:active-texture :texture0)
+	    (texture:bind-texture texture-object)
+	    (uniformf  compiled-shaders :time  el-time)
+	    (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+	    (uniform-matrix compiled-shaders :modelview-matrix 4
+			    (vector (matrix* camera-vw-matrix
+					     (elt view-matrix 0)
+					     (elt model-matrix 0)))
+			    nil)
+	    (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
+	    (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+	    (gl:draw-arrays :triangles 0 (f* 3 (length triangles)))
+	    (gl:blend-equation :func-add)))))))
+
 (defun make-debris (pos dir num texture compiled-shaders)
   (make-particles-cluster 'debris
 			  num
 			  compiled-shaders
 			  :texture texture
 			  :pos     pos
-			  :min-y   (d- +zero-height+ (elt pos 1))
+			  :min-y   0.0
 			  :v0-fn   (gaussian-velocity-distribution-fn dir
 								      3.0
 								      1.0
@@ -1416,11 +1480,7 @@
 			  :height .1
 			  :respawn nil))
 
-(defun make-smoke-trail-element (pos compiled-shaders &key
-							(max-scaling    8.0)
-							(scaling-rate   0.8)
-							(scaling-sigma  1.0)
-							(rate-sigma     0.1))
+(defun make-smoke-trail-element (pos compiled-shaders)
   (make-particles-cluster 'smoke-puff
 			  1
 			  compiled-shaders
@@ -1430,13 +1490,16 @@
 			  :mass-fn  (gaussian-distribution-fn 1.0 0.001)
 			  :life-fn  (gaussian-distribution-fn 200.0 1.0)
 			  :delay-fn (constant-delay-distribution-fn 0.0)
-			  :scaling-fn (%limited-scaling-clsr (gaussian-probability rate-sigma
-										   scaling-rate)
-							     (gaussian-probability scaling-sigma
-										   max-scaling))
-			  :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range .2 0.1))
-			  :alpha-fn    (%smooth-alpha-fading-clsr 15.0)
-			  :gravity   (vec 0.0 0.01 0.0)
+			  :scaling-fn (%uniform-scaling-clsr (lcg-next-in-range 3.0 4.5))
+
+			  ;; (%limited-scaling-clsr (gaussian-probability rate-sigma
+			  ;; 							   scaling-rate)
+			  ;; 				     (gaussian-probability scaling-sigma
+			  ;; 							   max-scaling))
+			  :rotation-fn (%uniform-rotation-clsr #'(lambda ()
+								   (lcg-next-in-range -0.25 0.25)))
+			  :alpha-fn    (%smooth-alpha-fading-clsr 5.5)
+			  :gravity   (vec 0.0 0.02 0.0)
 			  :width  .5
 			  :height .5
 			  :respawn nil))
@@ -1472,30 +1535,32 @@
 	     (when (and (d> (particle-life particle) 0.0)
 			(d> (elt smoke-pos 1) 0.0))
 	       (mtree:add-child object (make-smoke-trail-element smoke-pos compiled-shaders))))))
-    (setf smoke-ct (1+ smoke-ct))
-    (call-next-method)))
+    (setf smoke-ct (1+ smoke-ct)))
+  (call-next-method))
 
 (defun make-smoke-trail (pos dir num compiled-shaders
 			 &key
 			   (smoke-frequency 10)
-			   (texture (texture:get-texture texture:+smoke-particle+)))
+			   (texture (texture:get-texture texture:+smoke-particle+))
+			   (v0-fn   (gaussian-velocity-distribution-fn dir
+								       4.5
+								       1.0
+								       (d/ +pi/2+ 2.0)))
+			   (scaling-clsr  #'(lambda ()
+						     #'(lambda (p dt)
+							 (declare (ignore p dt))
+							 1.0))))
   (let ((res (make-particles-cluster 'smoke-trail
 				     num
 				     compiled-shaders
 				     :texture texture
 				     :pos     pos
-				     :min-y   (d- +zero-height+ (elt pos 1))
-				     :v0-fn   (gaussian-velocity-distribution-fn dir
-										 4.5
-										 1.0
-										 (d/ +pi/2+ 2.0))
+				     :min-y   0.0
+				     :v0-fn   v0-fn
 				     :mass-fn  (gaussian-distribution-fn 1.0 0.1)
 				     :life-fn  (gaussian-distribution-fn 10.0 5.0)
 				     :delay-fn (gaussian-distribution-fn 0.0 .0001)
-				     :scaling-fn #'(lambda ()
-						     #'(lambda (p dt)
-							 (declare (ignore p dt))
-							 1.0))
+				     :scaling-fn scaling-clsr
 				     :gravity (vec* +particle-gravity+ 0.3)
 				     :width  .1
 				     :height .1)))
@@ -1678,24 +1743,25 @@
     (when (> (length triangles) 0)
       (with-camera-view-matrix (camera-vw-matrix renderer)
 	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	  (with-blending
-	    (with-no-cull-face
-	      (gl:blend-equation :func-add)
-	      (gl:blend-func :src-alpha :one)
-	      (use-program compiled-shaders :particles-spell-decals)
-	      (gl:active-texture :texture0)
-	      (texture:bind-texture texture-object)
-	      (uniformf  compiled-shaders :time  el-time)
-	      (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
-	      (uniform-matrix compiled-shaders :modelview-matrix 4
-			      (vector (matrix* camera-vw-matrix
-					       (elt view-matrix 0)
-					       (elt model-matrix 0)))
-			      nil)
-	      (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
-	      (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-	      (gl:draw-arrays :triangles 0 (* 3 (length triangles)))
-	      (gl:blend-equation :func-add))))))))
+	  (with-depth-mask-disabled
+	    (with-blending
+	      (with-no-cull-face
+		(gl:blend-equation :func-add)
+		(gl:blend-func :src-alpha :one)
+		(use-program compiled-shaders :particles-spell-decals)
+		(gl:active-texture :texture0)
+		(texture:bind-texture texture-object)
+		(uniformf  compiled-shaders :time  el-time)
+		(uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+		(uniform-matrix compiled-shaders :modelview-matrix 4
+				(vector (matrix* camera-vw-matrix
+						 (elt view-matrix 0)
+						 (elt model-matrix 0)))
+				nil)
+		(uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
+		(gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+		(gl:draw-arrays :triangles 0 (* 3 (length triangles)))
+		(gl:blend-equation :func-add)))))))))
 
 (defclass aerial-explosion (blood) ())
 
@@ -1742,7 +1808,9 @@
 	      (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
 	      (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
 	      (gl:draw-arrays :triangles 0 (* 3 (length triangles)))
-	      (gl:blend-equation :func-add))))))))
+	      (gl:blend-equation :func-add))))))
+    (do-children-mesh (c object)
+      (render c renderer))))
 
 (defun make-spell-decal (pos compiled-shaders
 			 &key
@@ -1780,7 +1848,8 @@
 			     (delay-fn (constantly 0.0))
 			     (gradient (color-utils:make-gradient
 					(color-utils:make-gradient-color 0.0 §cffffffff)
-					(color-utils:make-gradient-color 1.0 §cff0000ff))))
+					(color-utils:make-gradient-color 1.0 §cff0000ff)))
+			     (life-fn   (gaussian-distribution-fn 10.0 0.0)))
   (make-particles-cluster 'spell-decal
 			  1
 			  compiled-shaders
@@ -1788,7 +1857,7 @@
 			  :pos     pos
 			  :v0-fn  (constantly +zero-vec+)
 			  :mass-fn  (gaussian-distribution-fn 1.0 .1)
-			  :life-fn  (gaussian-distribution-fn 10.0 0.0)
+			  :life-fn  life-fn
 			  :delay-fn delay-fn
 			  :gravity    (vec 0.0 -1e-5 0.0)
 			  :rotation-fn #'(lambda ()
@@ -1816,24 +1885,204 @@
 			compiled-shaders
 			:fading-rate 10.8
 			:scaling-rate 800.0
+			:life-fn (gaussian-distribution-fn 3.0 0.0)
 			:texture texture)))
 
 (defun make-circular-wave-level-0 (pos compiled-shaders)
   (let ((texture (random-elt (list-of-texture-by-tag +texture-tag-decals-circular-wave+))))
     (make-circular-wave pos
 			compiled-shaders
-			:fading-rate 100.2
-			:scaling-rate 800.0
+			:fading-rate 10.2
+			:scaling-rate 200.0
 			:texture texture)))
 
-(defun make-aerial-explosion (pos compiled-shaders)
+(defun make-fireball-level-2 (pos dir compiled-shaders)
+  (let* ((texture  (random-elt (list-of-texture-by-tag +texture-tag-aerial-expl-particle+)))
+	 (gradient-ball (color-utils:make-gradient
+			 (color-utils:make-gradient-color 0.0  §cffffffff)
+			 (color-utils:make-gradient-color 0.2  §cffd403ff)
+			 (color-utils:make-gradient-color 0.5  §cff1403ff)
+			 (color-utils:make-gradient-color 1.0  §c494949f0)))
+	 (gradient-trail (color-utils:make-gradient
+			  (color-utils:make-gradient-color 0.0  §cffffff00)
+			  (color-utils:make-gradient-color 0.5  §cffd403ff)
+			  (color-utils:make-gradient-color 0.7  §cff1403ff)
+			  (color-utils:make-gradient-color 1.0  §c494949f0)))
+	 (ball (make-particles-cluster 'aerial-explosion
+				       100
+				       compiled-shaders
+				       :forces (vector (friction-force-clsr 3.6))
+				       :texture texture
+				       :pos     pos
+				       :v0-fn  (gaussian-velocity-distribution-fn +y-axe+
+										  3.8
+										  3.0
+										  +2pi+)
+				       :mass-fn  (gaussian-distribution-fn 1.0 .2)
+				       :life-fn  (gaussian-distribution-fn 3.0 1.1)
+				       :delay-fn (constantly 0.0)
+				       :gravity    (vec 0.0 -1e-5 0.0)
+				       :scaling-fn (%limited-scaling-clsr 0.2 70.0)
+				       :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range -2.0
+											       2.0))
+				       :alpha-fn   (%smooth-alpha-fading-clsr 5.0)
+				       :color-fn   (%gradient-color-clsr gradient-ball .15)
+				       :width  .1
+				       :height .1
+				       :respawn t))
+	 (trail (make-particles-cluster 'aerial-explosion
+					10
+					compiled-shaders
+					:forces     (vector (constant-force-clsr +x-axe+))
+					:texture    texture
+					:pos        +zero-vec+
+					:v0-fn      (gaussian-velocity-distribution-fn dir
+										       1.0
+										       0.1
+										       (d/ +pi+
+											   5.0))
+					:mass-fn     (gaussian-distribution-fn 1.0 .2)
+					:life-fn     (constantly 5.0)
+					:delay-fn    (gaussian-distribution-fn 5.0 1.0)
+					:gravity     (vec 0.0 -1e-5 0.0)
+					:scaling-fn  (%uniform-scaling-clsr 3.0)
+					:rotation-fn (%uniform-rotation-clsr (lcg-next-in-range -2.0
+												2.0))
+					:alpha-fn   (%smooth-alpha-fading-clsr 8.0)
+					:color-fn   (%gradient-color-clsr gradient-trail 0.15)
+					:width      .5
+					:height     .5
+					:respawn    t)))
+    (mtree:add-child ball trail)
+    ball))
+
+(defun make-fireball-level-1 (pos dir compiled-shaders)
+  (let* ((texture  (random-elt (list-of-texture-by-tag +texture-tag-aerial-expl-particle+)))
+	 (gradient-ball (color-utils:make-gradient
+			 (color-utils:make-gradient-color 0.0  §cffffffff)
+			 (color-utils:make-gradient-color 0.2  §cffd403ff)
+			 (color-utils:make-gradient-color 0.5  §cff1403ff)
+			 (color-utils:make-gradient-color 1.0  §c494949f0)))
+	 (gradient-trail (color-utils:make-gradient
+			  (color-utils:make-gradient-color 0.0  §cffffff00)
+			  (color-utils:make-gradient-color 0.5  §cffd403ff)
+			  (color-utils:make-gradient-color 0.7  §cff1403ff)
+			  (color-utils:make-gradient-color 1.0  §c494949f0)))
+	 (ball (make-particles-cluster 'aerial-explosion
+				       50
+				       compiled-shaders
+				       :forces (vector (friction-force-clsr 4.6))
+				       :texture texture
+				       :pos     pos
+				       :v0-fn  (gaussian-velocity-distribution-fn +y-axe+
+										  1.8
+										  0.5
+										  +2pi+)
+				       :mass-fn  (gaussian-distribution-fn 1.0 .2)
+				       :life-fn  (gaussian-distribution-fn 3.0 1.1)
+				       :delay-fn (constantly 0.0)
+				       :gravity    (vec 0.0 -1e-5 0.0)
+				       :scaling-fn (%limited-scaling-clsr 0.2 70.0)
+				       :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range -2.0
+											       2.0))
+				       :alpha-fn   (%smooth-alpha-fading-clsr 5.0)
+				       :color-fn   (%gradient-color-clsr gradient-ball .15)
+				       :width  .03
+				       :height .03
+				       :respawn t))
+	 (trail (make-particles-cluster 'aerial-explosion
+					100
+					compiled-shaders
+					:forces     (vector (constant-force-clsr +x-axe+))
+					:texture    texture
+					:pos        +zero-vec+
+					:v0-fn      (gaussian-velocity-distribution-fn dir
+										       1.0
+										       0.1
+										       (d/ +pi+
+											   5.0))
+					:mass-fn     (gaussian-distribution-fn 1.0 .2)
+					:life-fn     (constantly 5.0)
+					:delay-fn    (gaussian-distribution-fn 5.0 1.0)
+					:gravity     (vec 0.0 -1e-5 0.0)
+					:scaling-fn  (%uniform-scaling-clsr 1.5)
+					:rotation-fn (%uniform-rotation-clsr (lcg-next-in-range -2.0
+												2.0))
+					:alpha-fn   (%smooth-alpha-fading-clsr 5.0)
+					:color-fn   (%gradient-color-clsr gradient-trail 0.15)
+					:width      .035
+					:height     .035
+					:respawn    t)))
+    (mtree:add-child ball trail)
+    ball))
+
+(defun make-fireball-level-0 (pos dir compiled-shaders)
+  (let* ((texture  (random-elt (list-of-texture-by-tag +texture-tag-aerial-expl-particle+)))
+	 (gradient-ball (color-utils:make-gradient
+			 (color-utils:make-gradient-color 0.0  §cffffffff)
+			 (color-utils:make-gradient-color 0.2  §cffd403ff)
+			 (color-utils:make-gradient-color 0.5  §cff1403ff)
+			 (color-utils:make-gradient-color 1.0  §c494949f0)))
+	 (gradient-trail (color-utils:make-gradient
+			  (color-utils:make-gradient-color 0.0  §cffffff00)
+			  (color-utils:make-gradient-color 0.5  §cffd403ff)
+			  (color-utils:make-gradient-color 0.7  §cff1403ff)
+			  (color-utils:make-gradient-color 1.0  §c494949f0)))
+	 (ball (make-particles-cluster 'aerial-explosion
+				       20
+				       compiled-shaders
+				       :forces (vector (friction-force-clsr 8.6))
+				       :texture texture
+				       :pos     pos
+				       :v0-fn  (gaussian-velocity-distribution-fn +y-axe+
+										  1.8
+										  0.5
+										  +2pi+)
+				       :mass-fn  (gaussian-distribution-fn 1.0 .2)
+				       :life-fn  (gaussian-distribution-fn 5.0 0.1)
+				       :delay-fn (gaussian-distribution-fn 0.0 1.1)
+				       :gravity    (vec 0.0 -1e-5 0.0)
+				       :scaling-fn (%limited-scaling-clsr 0.01 70.0)
+				       :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range -2.0
+											       2.0))
+				       :alpha-fn   (%smooth-alpha-fading-clsr 5.0)
+				       :color-fn   (%gradient-color-clsr gradient-ball .15)
+				       :width  .01
+				       :height .01
+				       :respawn t))
+	 (trail (make-particles-cluster 'aerial-explosion
+					50
+					compiled-shaders
+					:forces     (vector (constant-force-clsr +x-axe+))
+					:texture    texture
+					:pos        +zero-vec+
+					:v0-fn      (gaussian-velocity-distribution-fn dir
+										       1.0
+										       0.1
+										       (d/ +pi+
+											   5.0))
+					:mass-fn     (gaussian-distribution-fn 1.0 .2)
+					:life-fn     (constantly 5.0)
+					:delay-fn    (gaussian-distribution-fn 5.0 1.0)
+					:gravity     (vec 0.0 -1e-5 0.0)
+					:scaling-fn  (%uniform-scaling-clsr 1.5)
+					:rotation-fn (%uniform-rotation-clsr (lcg-next-in-range -2.0
+												2.0))
+					:alpha-fn   (%smooth-alpha-fading-clsr 5.0)
+					:color-fn   (%gradient-color-clsr gradient-trail 0.15)
+					:width      .02
+					:height     .02
+					:respawn    t)))
+    (mtree:add-child ball trail)
+    ball))
+
+(defun make-burning-cloud (pos compiled-shaders)
   (let ((texture  (random-elt (list-of-texture-by-tag +texture-tag-aerial-expl-particle+)))
 	(gradient (color-utils:make-gradient
 		   (color-utils:make-gradient-color 0.0  §cffffffff)
 		   (color-utils:make-gradient-color 0.2  §cffd403ff)
 		   (color-utils:make-gradient-color 0.5  §cff1403ff)
 		   (color-utils:make-gradient-color 1.0  §c494949f0))))
-    (pixmap::dump-gradient gradient)
     (make-particles-cluster 'aerial-explosion
 			    100
 			    compiled-shaders
@@ -1846,12 +2095,196 @@
 								       +2pi+)
 			    :mass-fn  (gaussian-distribution-fn 1.0 .2)
 			    :life-fn  (gaussian-distribution-fn 20.0 5.1)
-			    :delay-fn (gaussian-distribution-fn 0.5 .1)
+			    :delay-fn (gaussian-distribution-fn 0.0 .01)
 			    :gravity    (vec 0.0 -1e-5 0.0)
 			    :scaling-fn (%limited-scaling-clsr 0.2 70.0)
 			    :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range -2.0 2.0))
 			    :alpha-fn   (%smooth-alpha-fading-clsr 5.0)
-			    :color-fn   (%smooth-gradient-color-clsr gradient 1.0)
+			    :color-fn   (%smooth-gradient-color-clsr gradient .1)
 			    :width  .1
 			    :height .1
+			    :respawn t)))
+
+(defun make-aerial-explosion-level-0 (pos compiled-shaders)
+  (let ((texture  (random-elt (list-of-texture-by-tag +texture-tag-aerial-expl-particle+)))
+	(gradient (color-utils:make-gradient
+		   (color-utils:make-gradient-color 0.0  §cffffffff)
+		   (color-utils:make-gradient-color 0.2  §cffd403ff)
+		   (color-utils:make-gradient-color 0.5  §cff1403ff)
+		   (color-utils:make-gradient-color 1.0  §c494949f0))))
+    (make-particles-cluster 'aerial-explosion
+			    10
+			    compiled-shaders
+			    :forces (vector (friction-force-clsr 3.6))
+			    :texture texture
+			    :pos     pos
+			    :v0-fn  (gaussian-velocity-distribution-fn +y-axe+
+								       5.8
+								       5.0
+								       +2pi+)
+			    :mass-fn  (gaussian-distribution-fn 1.0 .2)
+			    :life-fn  (gaussian-distribution-fn 20.0 5.1)
+			    :delay-fn (gaussian-distribution-fn 0.5 .1)
+			    :gravity    (vec 0.0 -1e-5 0.0)
+			    :scaling-fn (%limited-scaling-clsr 0.2 70.0)
+			    :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range -1.0 1.0))
+			    :alpha-fn   (%smooth-alpha-fading-clsr 5.0)
+			    :color-fn   (%smooth-gradient-color-clsr gradient 1.0)
+			    :width  .01
+			    :height .01
 			    :respawn nil)))
+
+(defun make-aerial-explosion-level-1 (pos compiled-shaders)
+  (let* ((texture  (random-elt (list-of-texture-by-tag +texture-tag-aerial-expl-particle+)))
+	 (gradient (color-utils:make-gradient
+		    (color-utils:make-gradient-color 0.0 §cffffffff)
+		    (color-utils:make-gradient-color 0.2 §cffd403ff)
+		    (color-utils:make-gradient-color 0.5 §cff1403ff)
+		    (color-utils:make-gradient-color 1.0 §c494949f0)))
+	 (flame     (make-particles-cluster 'aerial-explosion
+			    20
+			    compiled-shaders
+			    :forces (vector (friction-force-clsr 3.6))
+			    :texture texture
+			    :pos     pos
+			    :v0-fn  (gaussian-velocity-distribution-fn +y-axe+
+								       4.8
+								       5.0
+								       +2pi+)
+			    :mass-fn  (gaussian-distribution-fn 1.0 .2)
+			    :life-fn  (gaussian-distribution-fn 20.0 5.1)
+			    :delay-fn (gaussian-distribution-fn 0.5 .1)
+			    :gravity    (vec 0.0 -1e-5 0.0)
+			    :scaling-fn (%limited-scaling-clsr 0.2 70.0)
+			    :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range -1.0 1.0))
+			    :alpha-fn   (%smooth-alpha-fading-clsr 5.0)
+			    :color-fn   (%smooth-gradient-color-clsr gradient 1.0)
+			    :width  .03
+			    :height .03
+			    :respawn nil)))
+    (game-state:with-world (world (state flame))
+      (world:push-entity world (make-circular-wave-level-0 pos compiled-shaders))
+      (world:push-entity world (make-smoke-trail pos +y-axe+ 1 compiled-shaders)))
+    flame))
+
+(defun make-aerial-explosion-level-2 (pos compiled-shaders)
+  (let* ((texture  (random-elt (list-of-texture-by-tag +texture-tag-aerial-expl-particle+)))
+	 (gradient (color-utils:make-gradient
+		    (color-utils:make-gradient-color 0.0  §cffffffff)
+		    (color-utils:make-gradient-color 0.2  §cffd403ff)
+		    (color-utils:make-gradient-color 0.5  §cff1403ff)
+		    (color-utils:make-gradient-color 1.0  §c494949f0)))
+	 (flame (make-particles-cluster 'aerial-explosion
+					100
+					compiled-shaders
+					:forces (vector (friction-force-clsr 3.6))
+					:texture texture
+					:pos     pos
+					:v0-fn  (gaussian-velocity-distribution-fn +y-axe+
+										   10.8
+										   5.0
+										   +2pi+)
+					:mass-fn  (gaussian-distribution-fn 1.0 .2)
+					:life-fn  (gaussian-distribution-fn 20.0 5.1)
+					:delay-fn (gaussian-distribution-fn 0.5 .1)
+					:gravity    (vec 0.0 -1e-5 0.0)
+					:scaling-fn (%limited-scaling-clsr 0.2 70.0)
+					:rotation-fn (%uniform-rotation-clsr (lcg-next-in-range -2.0
+												2.0))
+					:alpha-fn   (%smooth-alpha-fading-clsr 5.0)
+					:color-fn   (%smooth-gradient-color-clsr gradient 1.0)
+					:width  .1
+					:height .1
+					:respawn nil))
+	 (v0-fn-smoke (gaussian-velocity-distribution-fn +y-axe+ 9.0
+							 1.0
+							 (d/ +pi/2+ 2.0))))
+    (mtree:add-child flame (make-smoke-trail +zero-vec+ +y-axe+ 3 compiled-shaders
+					     :v0-fn v0-fn-smoke))
+    (mtree:add-child flame (make-circular-wave-level-1 +zero-vec+ compiled-shaders))
+    flame))
+
+(defun make-aerial-explosion-level-3 (pos compiled-shaders)
+  (let* ((texture  (random-elt (list-of-texture-by-tag +texture-tag-aerial-expl-particle+)))
+	 (gradient (color-utils:make-gradient
+		    (color-utils:make-gradient-color 0.0  §cffffffff)
+		    (color-utils:make-gradient-color 0.2  §cffd403ff)
+		    (color-utils:make-gradient-color 0.5  §cff1403ff)
+		    (color-utils:make-gradient-color 1.0  §c494949f0)))
+	 (flame (make-particles-cluster 'aerial-explosion
+					100
+					compiled-shaders
+					:forces (vector (friction-force-clsr 1.6))
+					:texture texture
+					:pos     pos
+					:v0-fn  (gaussian-velocity-distribution-fn +y-axe+
+										   25.8
+										   5.0
+										   +2pi+)
+					:mass-fn  (gaussian-distribution-fn 1.0 .2)
+					:life-fn  (gaussian-distribution-fn 20.0 5.1)
+					:delay-fn (gaussian-distribution-fn 0.25 .1)
+					:gravity    (vec 0.0 -1e-5 0.0)
+					:scaling-fn (%limited-scaling-clsr 0.1 50.0)
+					:rotation-fn (%uniform-rotation-clsr (lcg-next-in-range -2.0
+												2.0))
+					:alpha-fn   (%smooth-alpha-fading-clsr 5.0)
+					:color-fn   (%smooth-gradient-color-clsr gradient 1.0)
+					:width  .2
+					:height .2
+					:respawn nil))
+	 (debris (make-particles-cluster 'debris
+			  100
+			  compiled-shaders
+			  :texture (random-elt (list-of-texture-by-tag
+						+texture-tag-explosion-debris+))
+			  :pos     +zero-vec+
+			  :min-y   (d- (d- (elt pos 1) +zero-height+))
+			  :v0-fn   (gaussian-velocity-distribution-fn +y-axe+
+								      70.0
+								      1.0
+								      (d/ +pi/2+ 2.0))
+			  :mass-fn  (gaussian-distribution-fn 0.1 0.05)
+			  :life-fn  (gaussian-distribution-fn 12.0 5.0)
+			  :delay-fn (gaussian-distribution-fn 0.0 .0001)
+			  :scaling-fn  #'(lambda ()
+					   (let ((time 0.0))
+					     #'(lambda (p dt)
+						 (declare (ignore p))
+						 (incf time dt)
+						 (dmax 0.0 (d+ 1.0 (d* -0.2 time))))))
+
+			  :gravity +particle-gravity+
+			  :width  .22
+			  :height .22))
+	 (flame2 (make-particles-cluster 'aerial-explosion
+					 100
+					 compiled-shaders
+					 :forces (vector (friction-force-clsr 1.6))
+					 :texture texture
+					 :pos     +zero-vec+
+					 :v0-fn  (gaussian-velocity-distribution-fn +y-axe+
+										    20.8
+										    5.0
+										    +2pi+)
+					 :mass-fn  (gaussian-distribution-fn 1.0 .2)
+					 :life-fn  (gaussian-distribution-fn 20.0 5.1)
+					 :delay-fn (gaussian-distribution-fn .6 .1)
+					 :gravity    (vec 0.0 -1e-5 0.0)
+					 :scaling-fn (%limited-scaling-clsr 0.1 70.0)
+					 :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range -2.0
+												 2.0))
+					 :alpha-fn   (%smooth-alpha-fading-clsr 5.0)
+					 :color-fn   (%smooth-gradient-color-clsr gradient 1.0)
+					 :width  .2
+					 :height .2
+					 :respawn nil))
+	 (v0-fn-smoke (gaussian-velocity-distribution-fn +y-axe+ 11.0
+							 1.0
+							 (d/ +pi/2+ 2.0))))
+    (mtree:add-child flame (make-smoke-trail +zero-vec+ +y-axe+ 5 compiled-shaders
+     					     :v0-fn v0-fn-smoke))
+    (mtree:add-child flame debris)
+    (mtree:add-child flame flame2)
+    (mtree:add-child flame (make-circular-wave-level-2 +zero-vec+ compiled-shaders))
+    flame))

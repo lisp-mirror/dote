@@ -124,6 +124,9 @@
 (alexandria:define-constant +texture-tag-decals-circular-wave+ "decals-circular-wave"
   :test #'string=)
 
+(alexandria:define-constant +texture-tag-explosion-debris+     "explosion-debris"
+  :test #'string=)
+
 (alexandria:define-constant +texture-tag-soil-terrain-level-1+ "soil-level-1" :test #'string= )
 
 (alexandria:define-constant +texture-tag-soil-terrain-level-2+ "soil-level-2" :test #'string= )

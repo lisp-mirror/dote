@@ -1520,6 +1520,7 @@
    :fire-particle
    :smoke-particle
    :aerial-explosion-particle
+   :blurred-ring
    :blurred-circle
    :blurred-cross
    :blurred-circled-cross
@@ -1817,6 +1818,7 @@
    :+texture-tag-smoke-particle+
    :+texture-tag-aerial-expl-particle+
    :+texture-tag-decals-explosion+
+   :+texture-tag-explosion-debris+
    :+texture-tag-decals-cure+
    :+texture-tag-decals-circular-wave+
    :texture
@@ -3721,7 +3723,13 @@
    :make-circular-wave-level-0
    :make-circular-wave-level-1
    :make-circular-wave-level-2
-   :make-aerial-explosion))
+   :make-fireball-level-2
+   :make-fireball-level-1
+   :make-fireball-level-0
+   :make-aerial-explosion-level-0
+   :make-aerial-explosion-level-1
+   :make-aerial-explosion-level-2
+   :make-aerial-explosion-level-3))
 
 (defpackage :arrows
   (:use :cl

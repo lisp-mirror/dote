@@ -1409,7 +1409,7 @@
 
       (values pixmap "soil"))))
 
-(defun blurred-circle (size &key
+(defun blurred-ring (size &key
 			      (radius 0.15)
 			      (thickness 0.4)
 			      (gradient (make-instance 'gradient
@@ -1426,6 +1426,32 @@
 			  (value2 (dlerp (smoothstep-interpolate 0.1 thickness dist)
 					 0.0 1.0))
 			  (color  (pick-color gradient (d* value2 value1))))
+		     color))))
+    (values pixmap "blurred-ring")))
+
+(defun test-blurred-ring (&optional (size +default-size-pixmap-library+))
+  (let ((pixmap (blurred-ring size)))
+    (with-open-file (stream (fs:file-in-package "blurred-ring.tga") :direction :output
+ 			    :if-exists :supersede :if-does-not-exist :create
+ 			    :element-type +targa-stream-element-type+)
+      (write-sequence (pixmap->tga-file pixmap) stream))
+    t))
+
+(defun blurred-circle (size &key
+			      (start-blur  .1)
+			      (end-blur   0.45)
+			      (gradient (make-instance 'gradient
+							  :colors
+							  (list
+							   (make-gradient-color 0.0 §cffffffff)
+							   (make-gradient-color 0.8 §cffffff00)))))
+  (let* ((pixmap (with-standard-generated-pixmap-square (pixmap size)
+		   (let* ((dist   (vec2-length (vec2- (vec2 x y) (vec2 0.5 0.5))))
+			  (value  (dlerp (smoothstep-interpolate start-blur
+								 end-blur
+								 dist)
+						   0.0 1.0))
+			  (color  (pick-color gradient value)))
 		     color))))
     (values pixmap "blurred-circle")))
 
@@ -1474,7 +1500,7 @@
     t))
 
 (defun blurred-circled-cross (size)
-  (let ((circle (blurred-circle size))
+  (let ((circle (blurred-ring size))
 	(cross  (blurred-cross  size)))
     (blit circle cross 0 0 0 0 :function-blend (blit-blend-lerp-fn))
     cross))

@@ -149,7 +149,7 @@
   with tags ("smoke-particle")
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
-  generate particle              from function pixmap:blurred-circle
+  generate particle              from function pixmap:blurred-ring
   with parameters (128)
   with tags ("decals-circular-wave")
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
@@ -167,6 +167,11 @@
   generate particle              from function pixmap:aerial-explosion-particle
   with parameters (128)
   with tags ("aerial-explosion-particle")
+  with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
+
+  generate particle              from function pixmap:blurred-circle
+  with parameters (64 start-blur 0.3 end-blur 0.45)
+  with tags ("explosion-debris")
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
   ;; Map generation
