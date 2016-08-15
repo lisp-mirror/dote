@@ -296,11 +296,11 @@
 	    (incf *near* -.1))
 	  (when (string= text "p")
 	    (world:push-entity (world object)
-	     		       (particles:make-fireball-level-2
-	     			(vec (misc:coord-map->chunk 5.0)
-	     			     (d+ +zero-height+ 8.0)
-	     			     (misc:coord-map->chunk 5.0))
-				+x-axe+
+	     		       (particles:make-poison-level-0
+	     			(vec (misc:coord-map->chunk 2.0)
+	     			     (d+ +zero-height+ 0.0)
+	     			     (misc:coord-map->chunk 2.0))
+				;+x-axe+
 				;10
 				;; (random-elt (texture:list-of-texture-by-tag
 				;; 	     texture:+texture-tag-decals-circular-wave+))

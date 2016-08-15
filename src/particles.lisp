@@ -92,6 +92,12 @@
 	    (incf time dt)
 	    (d+ 1.0 (d* coeff time))))))
 
+(defun %no-rotation-clrs ()
+  #'(lambda ()
+      #'(lambda (p dt)
+	  (declare (ignore p dt))
+	  0.0)))
+
 (defun %uniform-scaling-clsr (m)
   #'(lambda ()
       (let ((time 0.0))
@@ -251,6 +257,22 @@
 		 (m (particle-mass particle)))
 	    (vec* v (d* m friction-constant))))))
 
+(defun attraction-force-clsr (scale &optional (target +zero-vec+))
+  "- cluster: the particle cluster;
+   - particle: this particle;
+   - index: index of particle in cluster (useful to retrive position);
+   - dt time elapsed from last call"
+  #'(lambda ()
+      #'(lambda (cluster particle index dt)
+	  (declare (ignore particle dt))
+	  (let* ((i      (* index 3))
+		 (all-pos (particles-positions cluster))
+		 (p (vec- target
+			  (vec (cl-gl-utils:fast-glaref all-pos i)
+			       (cl-gl-utils:fast-glaref all-pos (+ i 1))
+			       (cl-gl-utils:fast-glaref all-pos (+ i 2))))))
+	    (vec* (normalize p) scale)))))
+
 (defclass particles-cluster (triangle-mesh inner-animation renderizable)
   ((integrator-shader
     :initarg  :integrator-shader
@@ -349,27 +371,55 @@
     :initarg  :particles
     :accessor particles
     :type     (simple-array particles (*)))
+   (remove-starting-delay
+    :initform nil
+    :initarg  :remove-starting-delay-p
+    :accessor remove-starting-delay-p)
    (mark-for-remove
     :initform nil
     :initarg  :mark-for-remove
     :reader   mark-for-remove-p
     :writer  (setf mark-for-remove))))
 
-(defmethod initialize-instance :after ((object particles-cluster) &key &allow-other-keys)
-  (with-accessors ((particles particles)
-		   (particle-width particle-width)
-		   (particle-height particle-height)) object
-    (let ((w/2 (d* particle-width 0.5))
-	  (h/2 (d* particle-height 0.5)))
-      (loop repeat (length particles) do
-	   (quad object particle-width particle-height
-		 0.0 0.0 1.0 1.0
-		 (vec (d- w/2) (d- h/2) 0.0) ; centering
-		 nil nil)))))
-
 (defmacro do-particles ((object particle) &body body)
   `(loop for ,particle across (particles ,object) do
 	,@body))
+
+(defmethod initialize-instance :after ((object particles-cluster)
+				       &key
+					 (particle-pos-fn    nil)
+					 (particle-width-fn  nil)
+					 (particle-height-fn nil)
+					 &allow-other-keys)
+  (with-accessors ((particles particles)
+		   (particle-width particle-width)
+		   (particle-height particle-height)
+		   (remove-starting-delay remove-starting-delay)) object
+    (loop repeat (length particles) do
+	 (let* ((actual-w (if particle-width-fn
+			      (funcall particle-width-fn object)
+			      particle-width))
+		(actual-h (cond
+			    ((and (not particle-width-fn)
+				  (not particle-height-fn))
+			     particle-height)
+			    ((and particle-width-fn
+				  (not particle-height-fn))
+			     actual-w)
+			    (t
+			     (funcall particle-height-fn object))))
+		(w/2 (d* actual-w 0.5))
+		(h/2 (d* actual-h 0.5)))
+	   (quad object actual-w actual-h
+		 0.0 0.0 1.0 1.0
+		 (vec (d- w/2) (d- h/2) 0.0) ; centering
+		 nil nil)))
+    (when particle-pos-fn
+      (do-particles (object particle)
+	(let ((pos (funcall particle-pos-fn object)))
+	  (setf (particle-position       particle) pos
+		(particle-saved-position particle) pos))))
+    (remove-staring-delay object)))
 
 (defmacro gen-populate-array-vec (slot-array slot-struct)
   (let ((fn-name (format-fn-symbol t "populate-~a-array" slot-array)))
@@ -439,6 +489,8 @@
 (defgeneric gather-forces (object dt))
 
 (defgeneric set-respawn   (object value))
+
+(defgeneric remove-staring-delay (object))
 
 (defmethod populate-particles-output-positions-array ((object particles-cluster))
   (with-accessors ((particles particles)
@@ -799,6 +851,15 @@
   (do-particles (object particle)
     (setf (particle-respawn particle) value)))
 
+(defmethod remove-staring-delay ((object particles-cluster))
+  (with-accessors ((remove-starting-delay-p remove-starting-delay-p)
+		   (particles particles)) object
+    (when remove-starting-delay-p
+      (let ((min-delay (find-min (map 'list #'particle-delay particles))))
+	(do-particles (object particle)
+	  (setf (particle-delay       particle)
+		(d- (particle-delay particle) min-delay)))))))
+
 (defmethod prepare-for-rendering ((object particles-cluster))
   (with-accessors ((vao                        vao)
 		   (vbo                        vbo)
@@ -1093,6 +1154,7 @@
 				 (position-fn #'(lambda () (vec 0.0 0.1 0.0)))
 				 (life-fn     #'(lambda () 10.1))
 				 (delay-fn    #'(lambda () 10.0))
+				 (remove-starting-delay nil)
 				 (scaling-fn  #'(lambda ()
 						  #'(lambda (particle dt)
 						      (declare (ignore particle dt))
@@ -1111,7 +1173,10 @@
 						    (vec4 1.0 1.0 1.0 1.0))))
 				 (width       1.0)
 				 (height      1.0)
+				 (particle-width-fn  nil)
+				 (particle-height-fn nil)
 				 (pos         +zero-vec+)
+				 (particle-pos-fn nil)
 				 (min-y       0.0)
 				 (gravity     +zero-vec+)
 				 (respawn     nil))
@@ -1139,12 +1204,16 @@
 					  :delay    (funcall delay-fn)
 					  :saved-delay  delay-fn))))
 	 (cluster  (make-instance class
-				  :texture           texture
-				  :pos               pos
-				  :particle-min-y    min-y
-				  :compiled-shaders  shaders-dict
-				  :particle-width    width
-				  :particle-height   height
+				  :remove-starting-delay-p remove-starting-delay
+				  :texture            texture
+				  :pos                pos
+				  :particle-pos-fn    particle-pos-fn
+				  :particle-min-y     min-y
+				  :compiled-shaders   shaders-dict
+				  :particle-width     width
+				  :particle-height    height
+				  :particle-width-fn  particle-width-fn
+				  :particle-height-fn particle-height-fn
 				  :particles         (list->simple-array particles nil 'particle)
 				  :gravity           gravity)))
     (prepare-for-rendering cluster)
@@ -1815,7 +1884,8 @@
 (defun make-spell-decal (pos compiled-shaders
 			 &key
 			   (texture (random-elt (list-of-texture-by-tag +texture-tag-decals-cure+)))
-			   (color-fn (%constant-color-clsr §cffffffff)))
+			   (color-fn (%constant-color-clsr §cffffffff))
+			   (delay-fn (gaussian-distribution-fn 1.0 0.01)))
   (make-particles-cluster 'spell-decal
 			  1
 			  compiled-shaders
@@ -1824,7 +1894,7 @@
 			  :v0-fn  (constantly +zero-vec+)
 			  :mass-fn  (gaussian-distribution-fn 1.0 .1)
 			  :life-fn  (gaussian-distribution-fn 30.0 0.0)
-			  :delay-fn (gaussian-distribution-fn 1.0 0.01)
+			  :delay-fn delay-fn
 			  :gravity    (vec 0.0 -1e-5 0.0)
 			  :rotation-fn #'(lambda ()
 					   (let ((fn-enz (funcall (%limited-scaling-clsr .6 20.0)))
@@ -2288,3 +2358,347 @@
     (mtree:add-child flame flame2)
     (mtree:add-child flame (make-circular-wave-level-2 +zero-vec+ compiled-shaders))
     flame))
+
+(defclass cure-spark (blood cluster-w-global-life) ())
+
+(defmethod initialize-instance :after ((object cure-spark) &key &allow-other-keys)
+  (setf (noise-scale object) 0.01))
+
+(defmethod render ((object cure-spark) renderer)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((vbo vbo)
+		   (vao vao)
+		   (el-time el-time)
+		   (texture-object texture-object)
+		   (projection-matrix projection-matrix)
+		   (model-matrix model-matrix)
+		   (view-matrix view-matrix)
+		   (compiled-shaders compiled-shaders)
+		   (triangles triangles)) object
+    (declare (texture:texture texture-object))
+    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
+    (declare (list triangles vao vbo))
+    (when (> (length triangles) 0)
+      (with-camera-view-matrix (camera-vw-matrix renderer)
+	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+	  (with-depth-mask-disabled
+	    (cl-gl-utils:with-blending
+	      (gl:blend-equation :func-add)
+	      (gl:blend-func :src-alpha :one)
+	      (use-program compiled-shaders :particles-aerial-explosion)
+	      (gl:active-texture :texture0)
+	      (texture:bind-texture texture-object)
+	      (uniformf  compiled-shaders :time  el-time)
+	      (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+	      (uniform-matrix compiled-shaders :modelview-matrix 4
+			      (vector (matrix* camera-vw-matrix
+					       (elt view-matrix 0)
+					       (elt model-matrix 0)))
+			      nil)
+	      (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
+	      (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+	      (gl:draw-arrays :triangles 0 (f* 3 (length triangles)))
+	      (gl:blend-equation :func-add))))))
+    (do-children-mesh (c object)
+      (render c renderer))))
+
+(defun make-cure-level-2 (pos compiled-shaders)
+  (let* ((min-y (d- (d- (elt pos 1) +zero-height+)))
+	 (texture  (random-elt (list-of-texture-by-tag +texture-tag-cure-particle+)))
+	 (size-fn  #'(lambda (c)
+		       (declare (ignore c))
+		       (max 0.0 (gaussian-probability .05 .1))))
+	 (gradient (color-utils:make-gradient
+		    (color-utils:make-gradient-color 0.0 billboard:+healing-color+)
+		    (color-utils:make-gradient-color 0.5 §cc99ff99ff)
+		    (color-utils:make-gradient-color 1.0 §cc99ffccff)))
+	 (spark (make-particles-cluster 'cure-spark
+					400
+					compiled-shaders
+					:remove-starting-delay t
+					:forces   #()
+					:texture  texture
+					:pos      pos
+					:min-y   min-y
+					:particle-pos-fn #'(lambda (cluster)
+							     (let ((xy (elt (bivariate-sampling (d/ +terrain-chunk-tile-size+ 2.0)
+												(d/ +terrain-chunk-tile-size+ 2.0)
+												1)
+									    0)))
+							       (vec (elt xy 0)
+								    (particle-height cluster)
+								    (elt xy 1))))
+					:v0-fn    (gaussian-velocity-distribution-fn +y-axe+
+										     2.0
+										     1.0
+										     (d/ +pi/2+
+											 5.0))
+					:mass-fn  (gaussian-distribution-fn 0.8 .2)
+					:life-fn  (gaussian-distribution-fn 2.0 0.2)
+					:delay-fn (gaussian-distribution-fn 10.00 2.50)
+					:gravity    (vec 0.0 1.1 0.0)
+					:scaling-fn (%limited-scaling-clsr 0.1 10.0)
+					:rotation-fn (%no-rotation-clrs)
+					:alpha-fn   (%smooth-alpha-fading-clsr 2.0)
+					:color-fn   (%smooth-gradient-color-clsr gradient 3.0)
+					:width  .2
+					:height .2
+					:particle-height-fn nil    ;; will use particle-width-fn
+					:particle-width-fn  size-fn
+					:respawn t))
+	 (decal (make-spell-decal +zero-vec+
+				  compiled-shaders
+				  :texture (random-elt (list-of-texture-by-tag +texture-tag-decals-cure+))
+				  :color-fn (%constant-color-clsr §cc99ff99ff)
+				  :delay-fn (gaussian-distribution-fn 1.0 0.1))))
+
+    (mtree:add-child spark decal)
+    (setf (global-life spark) 200)
+    spark))
+
+(defun make-cure-level-1 (pos compiled-shaders)
+  (let* ((min-y (d- (d- (elt pos 1) +zero-height+)))
+	 (texture  (random-elt (list-of-texture-by-tag +texture-tag-cure-particle+)))
+	 (size-fn  #'(lambda (c)
+		       (declare (ignore c))
+		       (max 0.0 (gaussian-probability .05 .005))))
+	 (gradient (color-utils:make-gradient
+		    (color-utils:make-gradient-color 0.0 billboard:+healing-color+)
+		    (color-utils:make-gradient-color 0.5 §cc99ff99ff)
+		    (color-utils:make-gradient-color 1.0 §cc99ffccff)))
+	 (spark (make-particles-cluster 'cure-spark
+					400
+					compiled-shaders
+					:remove-starting-delay t
+					:forces   #()
+					:texture  texture
+					:pos      pos
+					:min-y   min-y
+					:particle-pos-fn #'(lambda (cluster)
+							     (let ((xy (elt (bivariate-sampling (d/ +terrain-chunk-tile-size+ 3.5)
+												(d/ +terrain-chunk-tile-size+ 3.5)
+												1)
+									    0)))
+							       (vec (elt xy 0)
+								    (particle-height cluster)
+								    (elt xy 1))))
+					:v0-fn    (gaussian-velocity-distribution-fn +y-axe+
+										     2.0
+										     1.0
+										     (d/ +pi/2+
+											 5.0))
+					:mass-fn  (gaussian-distribution-fn 0.8 .2)
+					:life-fn  (gaussian-distribution-fn 2.0 0.2)
+					:delay-fn (gaussian-distribution-fn 10.5 1.0)
+					:gravity    (vec 0.0 1.1 0.0)
+					:scaling-fn (%limited-scaling-clsr 0.1 10.0)
+					:rotation-fn (%no-rotation-clrs)
+					:alpha-fn   (%smooth-alpha-fading-clsr 3.0)
+					:color-fn   (%smooth-gradient-color-clsr gradient 3.0)
+					:width  .2
+					:height .2
+					:particle-height-fn nil    ;; will use particle-width-fn
+					:particle-width-fn  size-fn
+					:respawn t)))
+    (setf (global-life spark) 200)
+    spark))
+
+(defun make-cure-level-0 (pos compiled-shaders)
+  (let* ((min-y (d- (d- (elt pos 1) +zero-height+)))
+	 (texture  (random-elt (list-of-texture-by-tag +texture-tag-cure-particle+)))
+	 (size-fn  #'(lambda (c)
+		       (declare (ignore c))
+		       (max 0.0 (gaussian-probability .02 .001))))
+	 (gradient (color-utils:make-gradient
+		    (color-utils:make-gradient-color 0.0 billboard:+healing-color+)
+		    (color-utils:make-gradient-color 0.5 §cc99ff99ff)
+		    (color-utils:make-gradient-color 1.0 §cc99ffccff)))
+	 (spark (make-particles-cluster 'cure-spark
+					20
+					compiled-shaders
+					:forces   #()
+					:texture  texture
+					:pos      pos
+					:min-y   min-y
+					:particle-pos-fn #'(lambda (cluster)
+							     (let ((xy (elt (bivariate-sampling (d/ +terrain-chunk-tile-size+ 4.0)
+												(d/ +terrain-chunk-tile-size+ 4.0)
+												1)
+									    0)))
+							       (vec (elt xy 0)
+								    (particle-height cluster)
+								    (elt xy 1))))
+					:v0-fn    (gaussian-velocity-distribution-fn +y-axe+
+										     2.0
+										     1.0
+										     (d/ +pi/2+
+											 5.0))
+					:mass-fn  (gaussian-distribution-fn 0.8 .2)
+					:life-fn  (gaussian-distribution-fn 1.0 0.2)
+					:delay-fn (gaussian-distribution-fn 0.05 .001)
+					:gravity    (vec 0.0 1.1 0.0)
+					:scaling-fn (%limited-scaling-clsr 0.1 10.0)
+					:rotation-fn (%no-rotation-clrs)
+					:alpha-fn   (%smooth-alpha-fading-clsr 2.0)
+					:color-fn   (%smooth-gradient-color-clsr gradient 3.0)
+					:width  .2
+					:height .2
+					:particle-height-fn nil    ;; will use particle-width-fn
+					:particle-width-fn  size-fn
+					:respawn t)))
+    (setf (global-life spark) 300)
+    spark))
+
+(defun make-poison-level-2 (pos compiled-shaders)
+  (let* ((min-y (d- (d- (elt pos 1) +zero-height+)))
+	 (texture  (random-elt (list-of-texture-by-tag +texture-tag-poison-particle+)))
+	 (size-fn  #'(lambda (c)
+		       (declare (ignore c))
+		       (max 0.0 (gaussian-probability .05 .1))))
+	 (gradient (color-utils:make-gradient
+		    (color-utils:make-gradient-color 0.0 billboard:+poison-damage-color+)
+		    (color-utils:make-gradient-color 0.2 §c7000a8ff)
+		    (color-utils:make-gradient-color 1.0 §c380054ff)))
+	 (spark (make-particles-cluster 'cure-spark
+					400
+					compiled-shaders
+					:remove-starting-delay t
+					:forces   (vector (attraction-force-clsr 10.0))
+					:texture  texture
+					:pos      pos
+					:min-y   min-y
+					:particle-pos-fn #'(lambda (cluster)
+							     (let ((xy (elt (bivariate-sampling (d/ +terrain-chunk-tile-size+ 1.5)
+												(d/ +terrain-chunk-tile-size+ 1.5)
+												1)
+									    0)))
+							       (vec (elt xy 0)
+								    (d* (particle-height cluster)
+									(lcg-next-upto (d* (particle-height cluster)
+											   50.0)))
+								    (elt xy 1))))
+					:v0-fn    (gaussian-velocity-distribution-fn +y-axe+
+										     2.0
+										     1.0
+										     (d/ +pi/2+
+											 5.0))
+					:mass-fn  (gaussian-distribution-fn 0.8 .2)
+					:life-fn  (gaussian-distribution-fn 2.0 0.2)
+					:delay-fn (gaussian-distribution-fn 10.00 2.50)
+					:gravity    (vec 0.0 1e-5 0.0)
+					:scaling-fn (%limited-scaling-clsr 0.1 10.0)
+					:rotation-fn (%no-rotation-clrs)
+					:alpha-fn   (%smooth-alpha-fading-clsr 2.0)
+					:color-fn   (%smooth-gradient-color-clsr gradient 3.0)
+					:width  .2
+					:height .2
+					:particle-height-fn nil    ;; will use particle-width-fn
+					:particle-width-fn  size-fn
+					:respawn t))
+	 (decal (make-spell-decal +zero-vec+
+				  compiled-shaders
+				  :texture (random-elt (list-of-texture-by-tag +texture-tag-decals-poison+))
+				  :color-fn (%constant-color-clsr billboard:+poison-damage-color+)
+				  :delay-fn (gaussian-distribution-fn 1.0 0.1))))
+
+    (mtree:add-child spark decal)
+    (setf (global-life spark) 200)
+    spark))
+
+(defun make-poison-level-1 (pos compiled-shaders)
+  (let* ((min-y (d- (d- (elt pos 1) +zero-height+)))
+	 (texture  (random-elt (list-of-texture-by-tag +texture-tag-poison-particle+)))
+	 (size-fn  #'(lambda (c)
+		       (declare (ignore c))
+		       (max 0.0 (gaussian-probability .05 .005))))
+	 (gradient (color-utils:make-gradient
+		    (color-utils:make-gradient-color 0.0 billboard:+poison-damage-color+)
+		    (color-utils:make-gradient-color 0.2 §c7000a8ff)
+		    (color-utils:make-gradient-color 1.0 §c380054ff)))
+	 (spark (make-particles-cluster 'cure-spark
+					400
+					compiled-shaders
+					:remove-starting-delay t
+					:forces   (vector (attraction-force-clsr 10.0))
+					:texture  texture
+					:pos      pos
+					:min-y   min-y
+					:particle-pos-fn #'(lambda (cluster)
+							     (let ((xy (elt (bivariate-sampling (d/ +terrain-chunk-tile-size+ 3.0)
+												(d/ +terrain-chunk-tile-size+ 3.0)
+												1)
+									    0)))
+							       (vec (elt xy 0)
+								    (d* (particle-height cluster)
+									(lcg-next-upto (d* (particle-height cluster)
+											   60.0)))
+								    (elt xy 1))))
+					:v0-fn    (gaussian-velocity-distribution-fn +y-axe+
+										     3.0
+										     1.0
+										     (d/ +pi/2+
+											 5.0))
+					:mass-fn  (gaussian-distribution-fn 0.8 .2)
+					:life-fn  (gaussian-distribution-fn 2.0 0.2)
+					:delay-fn (gaussian-distribution-fn 10.00 2.50)
+					:gravity    (vec 0.0 1e-5 0.0)
+					:scaling-fn (%limited-scaling-clsr 0.1 10.0)
+					:rotation-fn (%no-rotation-clrs)
+					:alpha-fn   (%smooth-alpha-fading-clsr 2.0)
+					:color-fn   (%smooth-gradient-color-clsr gradient 3.0)
+					:width  .2
+					:height .2
+					:particle-height-fn nil    ;; will use particle-width-fn
+					:particle-width-fn  size-fn
+					:respawn t)))
+    (setf (global-life spark) 200)
+    spark))
+
+(defun make-poison-level-0 (pos compiled-shaders)
+  (let* ((min-y (d- (d- (elt pos 1) +zero-height+)))
+	 (texture  (random-elt (list-of-texture-by-tag +texture-tag-poison-particle+)))
+	 (size-fn  #'(lambda (c)
+		       (declare (ignore c))
+		       (max 0.0 (gaussian-probability .02 .005))))
+	 (gradient (color-utils:make-gradient
+		    (color-utils:make-gradient-color 0.0 billboard:+poison-damage-color+)
+		    (color-utils:make-gradient-color 0.2 §c7000a8ff)
+		    (color-utils:make-gradient-color 1.0 §c380054ff)))
+	 (spark (make-particles-cluster 'cure-spark
+					400
+					compiled-shaders
+					:remove-starting-delay t
+					:forces   (vector (attraction-force-clsr 10.0))
+					:texture  texture
+					:pos      pos
+					:min-y   min-y
+					:particle-pos-fn #'(lambda (cluster)
+							     (let ((xy (elt (bivariate-sampling (d/ +terrain-chunk-tile-size+ 3.5)
+												(d/ +terrain-chunk-tile-size+ 3.5)
+												1)
+									    0)))
+							       (vec (elt xy 0)
+								    (d* (particle-height cluster)
+									(lcg-next-upto (d* (particle-height cluster)
+											   60.0)))
+								    (elt xy 1))))
+					:v0-fn    (gaussian-velocity-distribution-fn +y-axe+
+										     2.0
+										     1.0
+										     (d/ +pi/2+
+											 5.0))
+					:mass-fn  (gaussian-distribution-fn 0.8 .2)
+					:life-fn  (gaussian-distribution-fn 2.0 0.2)
+					:delay-fn (gaussian-distribution-fn 10.00 2.50)
+					:gravity    (vec 0.0 1e-5 0.0)
+					:scaling-fn (%limited-scaling-clsr 0.1 10.0)
+					:rotation-fn (%no-rotation-clrs)
+					:alpha-fn   (%smooth-alpha-fading-clsr 2.0)
+					:color-fn   (%smooth-gradient-color-clsr gradient 3.0)
+					:width  .2
+					:height .2
+					:particle-height-fn nil    ;; will use particle-width-fn
+					:particle-width-fn  size-fn
+					:respawn t)))
+    (setf (global-life spark) 200)
+    spark))

@@ -1820,6 +1820,9 @@
    :+texture-tag-decals-explosion+
    :+texture-tag-explosion-debris+
    :+texture-tag-decals-cure+
+   :+texture-tag-cure-particle+
+   :+texture-tag-decals-poison+
+   :+texture-tag-poison-particle+
    :+texture-tag-decals-circular-wave+
    :texture
    :free-memory
@@ -3729,7 +3732,13 @@
    :make-aerial-explosion-level-0
    :make-aerial-explosion-level-1
    :make-aerial-explosion-level-2
-   :make-aerial-explosion-level-3))
+   :make-aerial-explosion-level-3
+   :make-cure-level-2
+   :make-cure-level-1
+   :make-cure-level-0
+   :make-poison-level-2
+   :make-poison-level-1
+   :make-poison-level-0))
 
 (defpackage :arrows
   (:use :cl
