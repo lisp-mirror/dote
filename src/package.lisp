@@ -1820,6 +1820,7 @@
    :+texture-tag-decals-explosion+
    :+texture-tag-explosion-debris+
    :+texture-tag-decals-cure+
+   :+texture-tag-decals-heal+
    :+texture-tag-cure-particle+
    :+texture-tag-decals-poison+
    :+texture-tag-poison-particle+
@@ -3738,7 +3739,11 @@
    :make-cure-level-0
    :make-poison-level-2
    :make-poison-level-1
-   :make-poison-level-0))
+   :make-poison-level-0
+   :make-heal-level-2
+   :make-heal-level-1
+   :make-heal-level-0
+   :make-level-up))
 
 (defpackage :arrows
   (:use :cl

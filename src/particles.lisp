@@ -114,6 +114,12 @@
 	      (incf time dt)
 	      (num:enzyme-kinetics max rate time)))))
 
+(defun %no-scaling-clsr ()
+  #'(lambda ()
+      #'(lambda (p dt)
+	  (declare (ignore p dt))
+	  1.0)))
+
 (defun %smooth-alpha-fading-clsr (max)
   #'(lambda ()
       (let ((time 0.0))
@@ -256,6 +262,34 @@
 			 (d- (cl-gl-utils:fast-glaref all-vs (+ i 2)))))
 		 (m (particle-mass particle)))
 	    (vec* v (d* m friction-constant))))))
+
+(defun rotation-force-clsr ()
+  "- cluster: the particle cluster;
+   - particle: this particle;
+   - index: index of particle in cluster (useful to retrive position);
+   - dt time elapsed from last call"
+  #'(lambda ()
+      #'(lambda (cluster particle index dt)
+	  (declare (ignore dt))
+	  (let* ((i      (* index 3))
+		 (m (particle-mass particle))
+		 (all-vs  (particles-v0 cluster))
+		 (all-pos (particles-positions cluster))
+		 (v (vec (cl-gl-utils:fast-glaref all-vs i)
+			 (cl-gl-utils:fast-glaref all-vs (+ i 1))
+			 (cl-gl-utils:fast-glaref all-vs (+ i 2))))
+		 (p (vec- (vec 0.0
+			       (cl-gl-utils:fast-glaref all-pos (+ i 1))
+			       0.0)
+			  (vec (cl-gl-utils:fast-glaref all-pos i)
+			       (cl-gl-utils:fast-glaref all-pos (+ i 1))
+			       (cl-gl-utils:fast-glaref all-pos (+ i 2))))))
+	    (vec* (normalize p)
+		  (d* m
+		      (d/ (dexpt (vec-length v) 2.0)
+			  (vec-length (vec (cl-gl-utils:fast-glaref all-pos i)
+					   (cl-gl-utils:fast-glaref all-pos (+ i 1))
+					   (cl-gl-utils:fast-glaref all-pos (+ i 2)))))))))))
 
 (defun attraction-force-clsr (scale &optional (target +zero-vec+))
   "- cluster: the particle cluster;
@@ -2602,7 +2636,7 @@
 				  :delay-fn (gaussian-distribution-fn 1.0 0.1))))
 
     (mtree:add-child spark decal)
-    (setf (global-life spark) 200)
+    (setf (global-life spark) 150)
     spark))
 
 (defun make-poison-level-1 (pos compiled-shaders)
@@ -2702,3 +2736,206 @@
 					:respawn t)))
     (setf (global-life spark) 200)
     spark))
+
+(defun make-heal-level-2 (pos compiled-shaders)
+  (incf (elt pos 1) 20.0)
+  (let* ((min-y (d- (d- (elt pos 1) (d- +zero-height+ 10.0))))
+	 (texture  (random-elt (list-of-texture-by-tag +texture-tag-poison-particle+)))
+	 (size-fn  #'(lambda (c)
+		       (declare (ignore c))
+		       (max 0.0 (gaussian-probability .05 .1))))
+	 (gradient (color-utils:make-gradient
+		    (color-utils:make-gradient-color 0.0 billboard:+blessing-color+)
+		    (color-utils:make-gradient-color 1.0 §cffffff)))
+	 	 (spark (make-particles-cluster 'cure-spark
+					400
+					compiled-shaders
+					:remove-starting-delay t
+					:forces   #()
+					:texture  texture
+					:pos      pos
+					:min-y   min-y
+					:particle-pos-fn #'(lambda (cluster)
+							     (declare (ignore cluster))
+							     (let ((xy (elt (bivariate-sampling (d/ +terrain-chunk-tile-size+ 1.5)
+												(d/ +terrain-chunk-tile-size+ 1.5)
+												1)
+									    0)))
+							       (vec (elt xy 0)
+								    0.0
+								    (elt xy 1))))
+					:v0-fn    (gaussian-velocity-distribution-fn +y-axe+
+										     0.0
+										     0.1
+										     (d/ +pi/2+
+											 5.0))
+					:mass-fn  (gaussian-distribution-fn 0.8 .2)
+					:life-fn  (gaussian-distribution-fn 4.0 0.2)
+					:delay-fn (gaussian-distribution-fn 10.00 2.50)
+					:gravity    (vec 0.0 -1.5 0.0)
+					:scaling-fn (%limited-scaling-clsr 0.1 10.0)
+					:rotation-fn (%no-rotation-clrs)
+					:alpha-fn   (%smooth-alpha-fading-clsr 5.0)
+					:color-fn   (%smooth-gradient-color-clsr gradient 3.0)
+					:width  .2
+					:height .2
+					:particle-height-fn nil    ;; will use particle-width-fn
+					:particle-width-fn  size-fn
+					:respawn t))
+	 (decal (make-spell-decal (vec 0.0 (d- (d- (elt pos 1) +zero-height+)) 0.0)
+				  compiled-shaders
+				  :texture (random-elt (list-of-texture-by-tag +texture-tag-decals-heal+))
+				  :color-fn (%constant-color-clsr billboard:+blessing-color+)
+				  :delay-fn (gaussian-distribution-fn 1.0 0.1))))
+    (mtree:add-child spark decal)
+    (bubbleup-modelmatrix spark)
+    (billboard:apply-tooltip spark
+			     billboard:+tooltip-revive-char+
+			     :color     billboard:+blessing-color+
+			     :font-type gui:+tooltip-font-handle+)
+    (setf (global-life spark) 200)
+    spark))
+
+(defun make-heal-level-1 (pos compiled-shaders)
+  (incf (elt pos 1) 10.0)
+  (let* ((min-y (d- (d- (elt pos 1) (d- +zero-height+ 10.0))))
+	 (texture  (random-elt (list-of-texture-by-tag +texture-tag-poison-particle+)))
+	 (size-fn  #'(lambda (c)
+		       (declare (ignore c))
+		       (max 0.0 (gaussian-probability .025 .05))))
+	 (gradient (color-utils:make-gradient
+		    (color-utils:make-gradient-color 0.0 billboard:+blessing-color+)
+		    (color-utils:make-gradient-color 1.0 §cffffff)))
+	 (spark (make-particles-cluster 'cure-spark
+					50
+					compiled-shaders
+					:remove-starting-delay t
+					:forces   #()
+					:texture  texture
+					:pos      pos
+					:min-y   min-y
+					:particle-pos-fn #'(lambda (cluster)
+							     (declare (ignore cluster))
+							     (let ((xy (elt (bivariate-sampling (d/ +terrain-chunk-tile-size+ 3.0)
+												(d/ +terrain-chunk-tile-size+ 3.0)
+												1)
+									    0)))
+							       (vec (elt xy 0)
+								    0.0
+								    (elt xy 1))))
+					:v0-fn    (gaussian-velocity-distribution-fn +y-axe+
+										     0.0
+										     0.1
+										     (d/ +pi/2+
+											 5.0))
+					:mass-fn  (gaussian-distribution-fn 0.8 .2)
+					:life-fn  (gaussian-distribution-fn 2.0 0.2)
+					:delay-fn (gaussian-distribution-fn 5.00 1.50)
+					:gravity    (vec 0.0 -1.5 0.0)
+					:scaling-fn (%limited-scaling-clsr 0.1 10.0)
+					:rotation-fn (%no-rotation-clrs)
+					:alpha-fn   (%smooth-alpha-fading-clsr 4.0)
+					:color-fn   (%smooth-gradient-color-clsr gradient 3.0)
+					:width  .2
+					:height .2
+					:particle-height-fn nil    ;; will use particle-width-fn
+					:particle-width-fn  size-fn
+					:respawn t)))
+    (setf (global-life spark) 100)
+    spark))
+
+(defun make-heal-level-0 (pos compiled-shaders)
+  (incf (elt pos 1) 10.0)
+  (let* ((min-y (d- (d- (elt pos 1) (d- +zero-height+ 10.0))))
+	 (texture  (random-elt (list-of-texture-by-tag +texture-tag-poison-particle+)))
+	 (size-fn  #'(lambda (c)
+		       (declare (ignore c))
+		       (max 0.0 (gaussian-probability .0125 .025))))
+	 (gradient (color-utils:make-gradient
+		    (color-utils:make-gradient-color 0.0 billboard:+blessing-color+)
+		    (color-utils:make-gradient-color 1.0 §cffffff)))
+	 (spark (make-particles-cluster 'cure-spark
+					20
+					compiled-shaders
+					:remove-starting-delay t
+					:forces   #()
+					:texture  texture
+					:pos      pos
+					:min-y   min-y
+					:particle-pos-fn #'(lambda (cluster)
+							     (declare (ignore cluster))
+							     (let ((xy (elt (bivariate-sampling (d/ +terrain-chunk-tile-size+ 3.0)
+												(d/ +terrain-chunk-tile-size+ 3.0)
+												1)
+									    0)))
+							       (vec (elt xy 0)
+								    0.0
+								    (elt xy 1))))
+					:v0-fn    (gaussian-velocity-distribution-fn +y-axe+
+										     0.0
+										     0.1
+										     (d/ +pi/2+
+											 5.0))
+					:mass-fn  (gaussian-distribution-fn 0.8 .2)
+					:life-fn  (gaussian-distribution-fn 2.0 0.2)
+					:delay-fn (gaussian-distribution-fn 5.00 1.50)
+					:gravity    (vec 0.0 -1.5 0.0)
+					:scaling-fn (%limited-scaling-clsr 0.1 10.0)
+					:rotation-fn (%no-rotation-clrs)
+					:alpha-fn   (%smooth-alpha-fading-clsr 4.0)
+					:color-fn   (%smooth-gradient-color-clsr gradient 3.0)
+					:width  .2
+					:height .2
+					:particle-height-fn nil    ;; will use particle-width-fn
+					:particle-width-fn  size-fn
+					:respawn t)))
+    (setf (global-life spark) 100)
+    spark))
+
+(defun make-level-up (pos compiled-shaders)
+  (let* ((texture  (random-elt (list-of-texture-by-tag +texture-tag-aerial-expl-particle+)))
+	 (gradient (color-utils:make-gradient
+		    (color-utils:make-gradient-color 0.0  §cffffffff)
+		    (color-utils:make-gradient-color 0.2  §cffff00ff)
+		    (color-utils:make-gradient-color 0.5  §cff00ffff)))
+
+	 (size-fn  #'(lambda (c)
+		       (declare (ignore c))
+		       (max 0.0 (gaussian-probability .4 .1))))
+	 (flame (make-particles-cluster 'cure-spark
+					2000
+					compiled-shaders
+					:min-y -300
+					:remove-starting-delay t
+					:forces (vector (rotation-force-clsr))
+					:texture texture
+					:pos     pos
+					:particle-pos-fn #'(lambda (cluster)
+							     (declare (ignore cluster))
+							     (vec (lcg-next-in-range (d* +terrain-chunk-tile-size+
+											 .1)
+										     (d* 1.2
+											 +terrain-chunk-tile-size+))
+								  0.0
+								  0.0))
+
+					:v0-fn  #'(lambda ()
+						    (vec 0.0
+							 0.0
+							 (lcg-next-in-range 11.0 1.2)))
+					:mass-fn  (gaussian-distribution-fn 10.0 5.0)
+					:life-fn  (gaussian-distribution-fn 15.0 1.5)
+					:delay-fn (gaussian-distribution-fn 10.1 2.0)
+					:gravity    (vec 0.0 20.0 0.0)
+					:scaling-fn (%limited-scaling-clsr 1.0 2.0)
+					:rotation-fn (%uniform-rotation-clsr 5.5)
+					:alpha-fn   (%smooth-alpha-fading-clsr 10.0)
+					:color-fn   (%smooth-gradient-color-clsr gradient 4.8)
+					:particle-height-fn nil    ;; will use particle-width-fn
+					:particle-width-fn  size-fn
+					:width  1.1
+					:height 1.1
+					:respawn t)))
+    (setf (noise-scale flame) 0.05)
+    (setf (global-life flame) 400)
+    flame))

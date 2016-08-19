@@ -121,6 +121,9 @@
 (alexandria:define-constant +texture-tag-decals-cure+      "decals-cure-particle"
   :test #'string=)
 
+(alexandria:define-constant +texture-tag-decals-heal+      "decals-heal-particle"
+  :test #'string=)
+
 (alexandria:define-constant +texture-tag-cure-particle+    "cure-particle"    :test #'string=)
 
 (alexandria:define-constant +texture-tag-decals-poison+      "decals-poison-particle"

@@ -163,6 +163,10 @@
   with tags ("decals-poison-particle")
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
+  generate particle              from file "spells/auras/blue.tga"
+  with tags ("decals-heal-particle")
+  with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
+
   generate particle              from function pixmap:blurred-circle
   with parameters (64 start-blur 0.2 end-blur 0.5)
   with tags ("cure-particle" "poison-particle")
