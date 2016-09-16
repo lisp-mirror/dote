@@ -386,6 +386,7 @@
   data/gui/default/up-arrow-overlay.tga
   data/gui/default/use-overlay.tga
   data/gui/default/wear-overlay.tga
+  data/gui/default/spell-book-overlay.tga
   data/gui/ui_big_pieces_0.png
 
   derived from http://opengameart.org/content/golden-ui-bigger-than-ever-edition
@@ -524,6 +525,41 @@
   http://creativecommons.org/licenses/by/3.0
 
   according to: http://opengameart.org/content/colored-summoning-circles
+
+- data/textures/spells/attack/firearrow-lvl2.tga
+- data/textures/spells/attack/firearrow-lvl3.tga
+- data/textures/spells/attack/firearrow.tga
+- data/textures/spells/attack/fireball_2.tga
+- data/textures/spells/attack/fireburst.tga
+- data/textures/spells/attack/firecircle.tga
+- data/textures/spells/attack/  © 2016 Warlock's Gauntlet team
+
+  released under released under CC-BY-3.0
+  http://creativecommons.org/licenses/by/3.0
+
+  according to http://opengameart.org/content/spell-icon-collection-part-1
+  and          http://opengameart.org/content/spell-icon-collection-part-2
+
+
+- data/textures/spells/attack/cure-1.tga
+- data/textures/spells/attack/cure-2.tga
+- data/textures/spells/attack/cure-3.tga
+
+  released under released under CC-BY-3.0
+  http://creativecommons.org/licenses/by/3.0
+
+  according to: http://opengameart.org/content/painterly-spell-icons-part-2
+
+
+- data/textures/spells/attack/heal-1.tga
+- data/textures/spells/attack/heal-2.tga
+- data/textures/spells/attack/heal-3.tga
+
+  released under released under CC-BY-3.0
+  http://creativecommons.org/licenses/by/3.0
+
+  according to: http://opengameart.org/content/painterly-spell-icons-part-1
+
 
 ** Source code
 

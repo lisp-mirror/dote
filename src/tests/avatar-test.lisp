@@ -20,13 +20,20 @@
 
 (alexandria:define-constant +avatar-path+ "data/avatars/" :test #'string=)
 
+(alexandria:define-constant +texture-dir-tmp+ (concatenate 'string (test-dir) "tmp/")
+  :test #'string=)
+
 (defun %gen-avatar ()
   (num:with-lcg-seed (1)
     (build-avatar "m")))
 
 (deftest test-generation (avatar-suite)
   (assert-true
-      (let ((generated (%gen-avatar)))
-	(equalp
-	 (pixmap:data (load-test-tga (concatenate 'string +avatar-path+ "avatar0.tga")))
-	 (pixmap:data generated)))))
+      (let* ((generated (%gen-avatar))
+	     (res (equalp
+		   (pixmap:data (load-test-tga (concatenate 'string +avatar-path+
+							    "avatar0.tga")))
+		   (pixmap:data generated))))
+	(when (not res)
+	  (dump-pixmap generated +texture-dir-tmp+ "avatar0.tga"))
+	res)))

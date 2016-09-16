@@ -82,6 +82,30 @@
 		 (d- 100.0 (lcg-next-upto 100.0)))) ; defender
       nil))
 
+(defun attack-spell-damage (attack-dmg dodge-chance
+			    &optional
+			      (shield-level nil)
+			      (armor-level  nil)
+			      (ambush       nil))
+  (if (not (pass-d100.0 dodge-chance))
+      (let* ((actual-shield-level (and shield-level
+				       (if ambush
+					   (max 0.0 (d- shield-level 1.0))
+					   shield-level)))
+	     (actual-armor-level (and armor-level
+				      (if ambush
+					  (max 0.0 (d- armor-level 1.0))
+					  armor-level)))
+	     (gaussian-fn (attack-gaussian-fn attack-dmg
+					      0.0
+					      9.0
+					      actual-shield-level
+					      actual-armor-level)))
+	(funcall gaussian-fn
+		 (d- 100.0 (lcg-next-upto 100.0))   ; attacker
+		 (d- 100.0 (lcg-next-upto 100.0)))) ; defender
+      nil))
+
 (defun dump-gaussian (producer-fn)
   (loop for x from -0.0 below 100.0 by 1.0 do
        (loop for y from -0.0 below 100.0 by 1.0 do
@@ -143,9 +167,9 @@
 (defmethod bonus-defense-weapon-combination (weapon-atk (weapon-def (eql :pole)))
   (d- +weapon-combination-bonus+))
 
-(defun send-effects-after-attack (attacker defender)
-  (let* ((weapon            (character:worn-weapon (entity:ghost attacker)))
-	 (effects-to-others (remove-if
+(defun send-effects-after-attack (attacker defender
+				  &key (weapon (character:worn-weapon (entity:ghost attacker))))
+  (let* ((effects-to-others (remove-if
 			     #'(lambda (a)
 				 (and (funcall ;; only "when-"used" triggered effects
 				       (random-object-messages:untrigged-effect-p-fn
@@ -269,31 +293,67 @@
 			    +attack-long-range-crossbow-cost+)
 			   (t
 			    0.0))))
-      (when (and (> cost 0.0)
-		 (mesh:can-use-movement-points-p attacker :minimum cost))
-	(mesh:set-attack-status attacker)))))
+      (if (and (> cost 0.0)
+	       (mesh:can-use-movement-points-p attacker :minimum cost))
+	  (progn
+	    (mesh:set-attack-status attacker)
+	    t)
+	  nil))))
+
+(defun attack-spell-animation (attacker defender)
+  (when (renderp defender) ;; does it means: "is visible for someone?"
+    (let* ((ghost-atk    (entity:ghost attacker))
+	   (spell        (character:spell-loaded ghost-atk))
+	   (cost         (if spell
+			     (spell:cost spell)
+			     0.0)))
+      (if (and (> cost 0.0)
+	       (mesh:can-use-spell-points-p attacker :minimum cost))
+	  (progn
+	    (mesh:set-attack-spell-status attacker)
+	    t)
+	  nil))))
+
+(defun long-range-attack-cost (attacker)
+  (let* ((ghost-atk    (entity:ghost attacker))
+	 (weapon-type  (character:weapon-type-long-range ghost-atk))
+	 (cost         (cond
+			 ((eq weapon-type :bow)
+			  +attack-long-range-bow-cost+)
+			 ((eq weapon-type :crossbow)
+			  +attack-long-range-crossbow-cost+)
+			 (t
+			  0.0))))
+    cost))
 
 (defun send-attack-long-range-event (attacker defender)
   (when (renderp defender) ;; does it means: "is visible for someone?"
-    (let* ((ghost-atk    (entity:ghost attacker))
-	   (weapon-type  (character:weapon-type-long-range ghost-atk))
-	   (cost         (cond
-			   ((eq weapon-type :bow)
-			    +attack-long-range-bow-cost+)
-			   ((eq weapon-type :crossbow)
-			    +attack-long-range-crossbow-cost+)
-			   (t
-			    0.0))))
+    (let* ((cost         (long-range-attack-cost attacker)))
       (when (and (> cost 0.0)
 		 (mesh:can-use-movement-points-p attacker :minimum cost))
 	(let ((msg (make-instance 'game-event:attack-long-range-event
 			      :id-origin       (identificable:id attacker)
 			      :id-destination  (identificable:id defender)
 			      :attacker-entity attacker)))
-	  (mesh:decrement-move-points attacker cost)
-	  (mesh:set-attack-status attacker)
 	  (game-event:send-refresh-toolbar-event)
 	  (game-event:propagate-attack-long-range-event msg))))))
+
+(defun send-attack-spell-event (attacker defender)
+    (when (renderp defender) ;; does it means: "is visible for someone?"
+      (let* ((ghost-atk    (entity:ghost attacker))
+	     (spell        (character:spell-loaded ghost-atk))
+	     (cost         (if spell
+			       (spell:cost spell)
+			       0.0)))
+	(when (and (> cost 0.0)
+		   (mesh:can-use-spell-points-p attacker :minimum cost))
+	  (let ((msg (make-instance 'game-event:attack-spell-event
+	   			    :id-origin       (identificable:id attacker)
+	   			    :id-destination  (identificable:id defender)
+	   			    :attacker-entity attacker
+				    :spell           spell)))
+	    (game-event:send-refresh-toolbar-event)
+	    (game-event:propagate-attack-spell-event msg))))))
 
 (defun height-variation-chance-fn (h-atk h-defend)
   (if (d> h-atk h-defend)
@@ -387,6 +447,54 @@
 				nil)
 		 nil))))))
 
+(defun defend-from-attack-spell (event)
+ (let* ((attacker (game-event:attacker-entity event))
+	(defender (game-state:find-entity-by-id (entity:state attacker)
+						(game-event:id-destination event))))
+    (assert (and attacker defender))
+    (let* ((ghost-atk     (entity:ghost     attacker))
+	   (ghost-defend  (entity:ghost     defender))
+	   (spell         (game-event:spell event))
+	   (attack-dmg    (lcg-next-upto (spell:damage-inflicted spell))))
+      (cond
+	((typep (entity:ghost defender) 'character:player-character)
+	 (let* ((armor-level  (cond
+				((character:armorp (character:armor ghost-defend))
+				 (character:level  (character:armor ghost-defend)))
+				(t
+				 nil)))
+		(shield-level (cond
+				((character:shieldp (character:left-hand ghost-atk))
+				 (character:level (character:left-hand ghost-atk)))
+				((character:shieldp (character:right-hand ghost-atk))
+				 (character:level (character:right-hand ghost-atk)))
+				(t
+				 nil)))
+		(dodge-chance         (character:actual-dodge-chance ghost-defend))
+		(ambushp              (and (vec~ (entity:dir attacker)
+						 (entity:dir defender))
+					   (pass-d100.0 (character:actual-ambush-attack-chance
+							 ghost-atk)))))
+	   (let ((dmg (attack-spell-damage attack-dmg
+					   dodge-chance
+					   shield-level
+					   armor-level
+					   ambushp)))
+	     (if dmg
+		 (progn
+		   (send-effects-after-attack attacker
+					      defender
+					      :weapon spell)
+		   (values dmg ambushp))
+		 (values nil nil)))))
+	((typep (entity:ghost defender) 'character:np-character)
+	 (values (attack-spell-damage attack-dmg
+				      0.0
+				      nil
+				      nil
+				      nil)
+		 nil))))))
+
 (defun attack-short-range (world attacker defender)
   "This is the most high level attack routine"
   (when defender
@@ -400,16 +508,18 @@
 
 (defun attack-long-range (world attacker defender)
   (if (character:worn-weapon (entity:ghost attacker))
-      (progn
+      (let ((cost (long-range-attack-cost attacker)))
 	(world:remove-all-tooltips world)
-	(battle-utils:attack-long-range-animation attacker defender)
-	(arrows:launch-arrow +default-arrow-name+
-			     world
-			     attacker
-			     defender))
+	(when (attack-long-range-animation attacker defender)
+	  (mesh:decrement-move-points attacker cost)
+	  (arrows:launch-arrow +default-arrow-name+
+			       world
+			       attacker
+			       defender)))
       (make-tooltip-no-weapon-error world attacker))
   (entity:reset-tooltip-ct defender)
-  (world:reset-toolbar-selected-action world))
+  (world:reset-toolbar-selected-action world)
+  (game-event:send-refresh-toolbar-event))
 
 (defun make-tooltip-no-weapon-error (world attacker)
   (world:post-entity-message world attacker
@@ -417,3 +527,25 @@
 				     (_"You have not got a weapon"))
 			     (cons (_ "Ok")
 				   #'widget:hide-and-remove-parent-cb)))
+
+(defun make-tooltip-no-spell-error (world attacker)
+  (world:post-entity-message world attacker
+			     (format nil
+				     (_"You have not loaded a spell"))
+			     (cons (_ "Ok")
+				   #'widget:hide-and-remove-parent-cb)))
+
+(defun attack-launch-spell (world attacker defender)
+  (if (character:spell-loaded (entity:ghost attacker))
+      (let ((cost (spell:cost (character:spell-loaded (entity:ghost attacker)))))
+	(world:remove-all-tooltips world)
+	(when (attack-spell-animation attacker defender)
+	  (mesh:decrement-spell-points attacker cost)
+	  (arrows:launch-attack-spell (character:spell-loaded (entity:ghost attacker))
+				      world
+				      attacker
+				      defender)))
+      (make-tooltip-no-spell-error world attacker))
+  (entity:reset-tooltip-ct defender)
+  (world:reset-toolbar-selected-action world)
+  (game-event:send-refresh-toolbar-event))

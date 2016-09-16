@@ -73,6 +73,8 @@
 
 (defgeneric flatten-to-aabb2-xz (object))
 
+(defgeneric flatten-to-aabb2-xz-positive (object))
+
 (defgeneric reset (object))
 
 (defgeneric aabb-center (object))
@@ -169,7 +171,15 @@
        (d< (max-z a) (min-z b)))))
 
 (defmethod flatten-to-aabb2-xz ((object aabb))
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
   (vec4 (min-x object) (min-z object) (max-x object) (max-z object)))
+
+(defmethod flatten-to-aabb2-xz-positive ((object aabb))
+  "flatten to 2d aabb but cut negative number to 0.0"
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+    (map 'vec4:vec4
+	 #'(lambda (a) (dmax 0.0 a))
+	 (the vec4 (flatten-to-aabb2-xz object))))
 
 (defmethod reset ((object aabb))
   (declare (optimize (debug 0) (safety 0) (speed 3)))

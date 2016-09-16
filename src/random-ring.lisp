@@ -168,7 +168,7 @@
 (defun %generate-ring (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
-    (with-interaction-parameters (template interaction-file)
+    (with-interaction-parameters-file (template interaction-file)
       (let* ((ring-level       (calculate-level map-level))
 	     (ring-decay       (calculate-decay-points ring-level))
 	     (effects-no         (number-of-effects ring-level))

@@ -163,7 +163,7 @@
 (defun %generate-armor (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
-    (with-interaction-parameters (template interaction-file)
+    (with-interaction-parameters-file (template interaction-file)
       (let* ((armor-level       (calculate-level map-level))
 	     (armor-decay       (calculate-decay-points armor-level))
 	     (effects-no         (number-of-effects armor-level))

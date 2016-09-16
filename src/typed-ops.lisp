@@ -26,16 +26,16 @@
 				    (find-class 'single-float)))
 
   (defmacro class-of-desired-type () `(find-class 'single-float))
-      
+
   (deftype desired-type () 'single-float)
-  
+
   (declaim (inline desired))
-  
+
   (defun desired (arg)
     (coerce arg 'desired-type))
-  
+
   (declaim (inline d))
-  
+
   (defun d (a)
     (desired a)))
 
@@ -112,6 +112,11 @@
   (declare (optimize (debug 0) (safety 0) (speed 3))
 	   (type desired-type v))
   (d+ a (d* v (d- b a))))
+
+(defun secure-dacos (a)
+  (declare (optimize (speed 3) (debug 0) (safety 0)))
+  (declare (desired-type a))
+  (dacos (dmin 1.0 a)))
 
 ;;;; constants
 

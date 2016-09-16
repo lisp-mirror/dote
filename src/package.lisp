@@ -105,6 +105,8 @@
    :+furnitures-resource+
    :+fonts-resource+
    :+gui-resource+
+   :+attack-spell-texture-dir+
+   :+attack-spell-dir+
    :+default-gui-inventory-items+
    :+default-gui-resource+
    :+default-character-weapon-dir+
@@ -344,6 +346,7 @@
    :dsinh
    :dtanh
    :dacos
+   :secure-dacos
    :dasin
    :datan
    :dexp
@@ -538,6 +541,12 @@
    :animation-speed
    :fading-away-fn
    :standard-tremor-fn
+   :end-life-trigger
+   :repeat-trigger
+   :repeat-trigger-p
+   :triggered
+   :triggered-p
+   :end-of-life-callback
    :removeable-from-world
    :apply-damage))
 
@@ -908,6 +917,7 @@
    :expand
    :insidep
    :flatten-to-aabb2-xz
+   :flatten-to-aabb2-xz-positive
    :reset
    :aabb-center
    :aabb-top-center
@@ -2228,6 +2238,16 @@
    :unregister-for-end-attack-long-range-event
    :propagate-end-attack-long-range-event
    :send-end-attack-long-range-event
+   :attack-spell-event
+   :spell
+   :register-for-attack-spell-event
+   :unregister-for-attack-spell-event
+   :propagate-attack-spell-event
+   :end-attack-spell-event
+   :register-for-end-attack-spell-event
+   :unregister-for-end-attack-spell-event
+   :propagate-end-attack-spell-event
+   :send-end-attack-spell-event
    :end-attack-melee-event
    :register-for-end-attack-melee-event
    :unregister-for-end-attack-melee-event
@@ -2245,6 +2265,7 @@
 	:identificable)
   (:nicknames :interaction)
   (:export
+   :*interaction-parameters*
    :effect-unlimited-p
    :healing-effect-cure-p
    :+decay-by-use+
@@ -2356,7 +2377,8 @@
    :define-poison-effect
    :define-character
    :define-interaction
-   :with-interaction-parameters))
+   :with-interaction-parameters
+   :with-interaction-parameters-file))
 
 (defpackage :player-messages-text
   (:use :cl
@@ -2428,6 +2450,7 @@
    :+race+
    :+level+
    :+exp-points+
+   :interactive-entity
    :np-character
    :clean-effects
    :restart-age
@@ -2507,6 +2530,7 @@
    :left-hand
    :right-hand
    :ring
+   :spell-loaded
    :inventory
    :inventory-slot-pages-number
    :player-gender->gender-description
@@ -2740,6 +2764,8 @@
 	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
+   :calculate-modifier
+   :calculate-healing-fx-params-chance
    :generate-weapon))
 
 (defpackage :random-fountain
@@ -3002,6 +3028,7 @@
    :aabb
    :reset-aabb
    :renderp
+   :calculatep
    :use-blending-p
    :bounding-sphere
    :transform-vertices
@@ -3082,12 +3109,14 @@
    :process-postponed-messages
    :set-death-status
    :set-attack-status
+   :set-attack-spell-status
    :skydome
    :texture-clouds
    :texture-smoke
    :weather-type
    :water
    :water-mesh-p
+   :blocker-render-children
    :cylinder
    :cube
    :parallelepiped
@@ -3124,11 +3153,13 @@
    :setup-projective-texture
    :calculate-decrement-move-points-entering-tile
    :decrement-move-points
+   :decrement-spell-points
    :decrement-move-points-rotate
    :decrement-move-points-entering-tile
    :decrement-move-points-wear
    :decrement-move-points-attack-melee
    :can-use-movement-points-p
+   :can-use-spell-points-p
    :calculate-cost-position))
 
 (defpackage :able-to-see-mesh
@@ -3289,12 +3320,16 @@
    :send-attack-melee-event
    :defend-from-attack-short-range
    :attack-long-range-animation
+   :attack-spell-animation
    :send-attack-long-range-event
+   :send-attack-spell-event
    :defend-from-attack-long-range
+   :defend-from-attack-spell
    :attack-damage
    ;; high level routines
    :attack-short-range
-   :attack-long-range))
+   :attack-long-range
+   :attack-launch-spell))
 
 ;; UI
 
@@ -3366,6 +3401,7 @@
    :+left-overlay-texture-name+
    :+right-overlay-texture-name+
    :+wear-overlay-texture-name+
+   :+spell-book-overlay-texture-name+
    :+use-overlay-texture-name+
    :+use-item-overlay-texture-name+
    :+plus-overlay-texture-name+
@@ -3445,6 +3481,7 @@
    :+action-attack-short-range+
    :+action-attack-long-range+
    :+action-attack-long-range-imprecise+
+   :+action-launch-spell+
    :widget
    :x
    :y
@@ -3491,6 +3528,7 @@
    :make-player-generator
    :inventory-window
    :make-inventory-window
+   :make-spell-window
    :player-report
    :make-player-report-win
    :message-window
@@ -3545,6 +3583,7 @@
    :+tooltip-revive-char+
    :+tooltip-surprise-attack-char+
    :tooltip
+   :activate-tooltip
    :duration
    :make-tooltip
    :apply-tooltip
@@ -3643,7 +3682,8 @@
    :point-camera-to-entity
    :add-ai-opponent
    :world-aabb
-   :remove-all-tooltips))
+   :remove-all-tooltips
+   :activate-all-tooltips))
 
 (defpackage :terrain-chunk
   (:use :cl
@@ -3695,6 +3735,7 @@
 	:vec4
 	:misc
 	:cl-gl-utils
+	:interfaces
 	:texture
 	:shaders-utils
 	:identificable
@@ -3704,6 +3745,7 @@
 	:mesh)
   (:export
    :particles-cluster
+   :particles-cluster-p
    :mark-for-remove
    :mark-for-remove-p
    :blood
@@ -3761,10 +3803,64 @@
 	:interfaces
 	:mesh)
   (:export
+   :arrowp
    :clean-db
    :get-arrow
    :launch-ray
-   :launch-arrow))
+   :launch-arrow
+   :launch-attack-spell))
+
+(defpackage :spell
+  (:use :cl
+	:config
+	:constants
+	:sb-cga
+	:sb-cga-utils
+	:num-utils
+	:misc
+	:cl-gl-utils
+	:shaders-utils
+	:identificable
+	:transformable
+	:entity
+	:interfaces
+	:basic-interaction-parameters
+	:character
+	:arrows
+	:mesh)
+  (:export
+   :db
+   :clean-db
+   :load-db
+   :get-spell
+   :remove-spell
+   :spell
+   :identifier
+   :target
+   :gui-texture
+   :cost
+   :visual-effect-self
+   :range
+   :effective-range
+   :damage-inflicted
+   :arrow
+   :visual-effect-target))
+
+(defclass attack-spell (spell)
+  ((element
+    :initform :fire
+    :initarg :element
+    :accessor element
+    :type (or :fire :ice :electricity))
+   (damage-inflicted
+    :initform 0.0
+    :initarg :damage-inflicted
+    :accessor damage-inflicted)
+   (arrow
+    :initform 0.0
+    :initarg :arrow
+    :accessor arrow)))
+
 
 (defpackage :md2-mesh
   (:nicknames :md2)

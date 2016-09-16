@@ -141,6 +141,7 @@
 (defun set-poison-effect (effect-path potion-level interaction)
   (let ((effect-object (make-instance 'poison-effect-parameters
 				      :target          +target-self+
+				      :chance (calculate-healing-fx-params-chance potion-level)
 				      :points-per-turn (calculate-modifier potion-level))))
     (n-setf-path-value interaction effect-path effect-object)))
 
@@ -166,7 +167,7 @@
 (defun %generate-potion (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
-    (with-interaction-parameters (template interaction-file)
+    (with-interaction-parameters-file (template interaction-file)
       (let* ((potion-level       (calculate-potion-level map-level))
 	     (healing-effects-no (number-of-healing-effects potion-level 0))
 	     (healing-effects    (%get-healing-fx-shuffled template healing-effects-no))

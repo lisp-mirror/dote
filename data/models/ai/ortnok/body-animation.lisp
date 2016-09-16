@@ -1,6 +1,8 @@
 ((:stand      95  96  1)
  (:move       97 112  8)
  (:attack    138 142 10)
+ (:attack-spell 138 142 10)
+ (:spell        138 142 10)
  (:bored     189 190 1)
  (:pain      370 371 1)
  (:death       0  30 8)

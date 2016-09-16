@@ -186,7 +186,7 @@
 (defun %generate-weapon (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
-    (with-interaction-parameters (template interaction-file)
+    (with-interaction-parameters-file (template interaction-file)
       (let* ((weapon-level       (calculate-level map-level))
 	     (weapon-decay       (calculate-decay-points weapon-level))
 	     (effects-no         (number-of-effects weapon-level))
@@ -284,6 +284,7 @@
 
 (defun set-poison-effect (effect-path weapon-level interaction)
   (let ((effect-object (make-instance 'poison-effect-parameters
+				      :chance (calculate-healing-fx-params-chance weapon-level)
 				      :target          +target-other+
 				      :points-per-turn (calculate-modifier
 							weapon-level))))

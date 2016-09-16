@@ -22,13 +22,15 @@
 
 (alexandria:define-constant +slots-per-page-side-size+         4                   :test #'=)
 
-(alexandria:define-constant +action-move+                      :move               :test #'eq)
+(alexandria:define-constant +action-move+                        :move             :test #'eq)
 
-(alexandria:define-constant +action-attack-short-range+        :attack-srg         :test #'eq)
+(alexandria:define-constant +action-attack-short-range+          :attack-srg       :test #'eq)
 
-(alexandria:define-constant +action-attack-long-range+         :attack-lrg :test #'eq)
+(alexandria:define-constant +action-attack-long-range+           :attack-lrg       :test #'eq)
 
-(alexandria:define-constant +action-attack-long-range-imprecise+ :attack-lrg-imp :test #'eq)
+(alexandria:define-constant +action-attack-long-range-imprecise+ :attack-lrg-imp   :test #'eq)
+
+(alexandria:define-constant +action-launch-spell+                :launch-spell     :test #'eq)
 
 (defparameter *square-button-size* (d/ (d *window-w*) 10.0))
 
@@ -1945,6 +1947,14 @@
       (when bound-player
 	(setf selected-action +action-attack-long-range-imprecise+)))))
 
+(defun toolbar-launch-spell-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (toolbar) w
+    (with-accessors ((bound-player bound-player)
+		     (selected-action selected-action)) toolbar
+      (when bound-player
+	(setf selected-action +action-launch-spell+)))))
+
 (defun toolbar-zoom-in-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
@@ -2075,7 +2085,7 @@
 				      (d* 3.0 *small-square-button-size*))
 				  *small-square-button-size*
 				  +conversation-overlay-texture-name+
-				  nil ;; TODO callback
+				  nil
 				  :small t)
     :initarg  :b-conversation
     :accessor b-conversation)
@@ -2173,7 +2183,7 @@
 
 				  0.0
 				  +magic-staff-overlay-texture-name+
-				  nil ;; TODO callback
+				  #'toolbar-launch-spell-cb
 				  :small t)
     :initarg  :b-spell
     :accessor b-spell)

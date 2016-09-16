@@ -163,7 +163,7 @@
 (defun %generate-shield (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
-    (with-interaction-parameters (template interaction-file)
+    (with-interaction-parameters-file (template interaction-file)
       (let* ((shield-level       (calculate-level map-level))
 	     (shield-decay       (calculate-decay-points shield-level))
 	     (effects-no         (number-of-effects shield-level))

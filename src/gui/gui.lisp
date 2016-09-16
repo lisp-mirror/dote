@@ -257,6 +257,11 @@
 		    (setf (s-wrap-mode  bg) :clamp-to-border)
 		    (setf (t-wrap-mode  bg) :clamp-to-border)
 		    (setf (border-color bg) §c00000000))
+		   (spell-book-overlay.tga
+		    +default-gui-resource+
+		    (setf (s-wrap-mode  bg) :clamp-to-border)
+		    (setf (t-wrap-mode  bg) :clamp-to-border)
+		    (setf (border-color bg) §c00000000))
 		   (use-overlay.tga
 		    +default-gui-resource+
 		    (setf (s-wrap-mode  bg) :clamp-to-border)
@@ -508,6 +513,7 @@
   (setup-bg-up-arrow-overlay)
   (setup-bg-down-arrow-overlay)
   (setup-bg-wear-overlay)
+  (setup-bg-spell-book-overlay)
   (setup-bg-use-overlay)
   (setup-bg-use-item-overlay)
   (setup-bg-plus-overlay)

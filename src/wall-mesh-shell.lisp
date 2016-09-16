@@ -97,7 +97,8 @@
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (world:cone-aabb-intersects-p renderer object))
 
-(defmethod apply-damage :after ((object wall-mesh-shell) damage)
+(defmethod apply-damage :after ((object wall-mesh-shell) damage
+				&key &allow-other-keys)
   (with-accessors ((state state)
 		   (pos pos)
 		   (dir dir)

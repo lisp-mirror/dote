@@ -160,7 +160,7 @@
 			      (keychain (misc:make-fresh-array 0 nil t nil)))
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
-    (with-interaction-parameters (template interaction-file)
+    (with-interaction-parameters-file (template interaction-file)
       (let* ((container-level       (calculate-container-level map-level))
 	     (healing-effects-no    (number-of-healing-effects container-level 0))
 	     (healing-effects       (%get-healing-fx-shuffled template healing-effects-no)))

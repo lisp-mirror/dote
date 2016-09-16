@@ -155,7 +155,7 @@
 (defun %generate-elm (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
-    (with-interaction-parameters (template interaction-file)
+    (with-interaction-parameters-file (template interaction-file)
       (let* ((elm-level       (calculate-level map-level))
 	     (elm-decay       (calculate-decay-points elm-level))
 	     (effects-no         (number-of-effects elm-level))

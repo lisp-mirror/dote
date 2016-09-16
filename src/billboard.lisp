@@ -81,16 +81,16 @@
   (time
    (with-accessors ((children children)
 		    (font-type font-type)) host
-    (with-slots (label) host
-      (declare (simple-string label))
-      (loop
-	 for c across new-label
-	 for i from   0.0  by 1.0  do
-	   (let* ((mesh (clone (gui:get-char-mesh font-type c))))
-	     (when mesh
-	       (transform-vertices mesh (translate (vec i 0.0 0.0)))
-	       (setf (texture-object host) (texture-object mesh))
-	       (merge-mesh host mesh :manifold nil))))))))
+     (with-slots (label) host
+       (declare (simple-string label))
+       (loop
+	  for c across new-label
+	  for i from   0.0  by 1.0  do
+	    (let* ((mesh (clone (gui:get-char-mesh font-type c))))
+	      (when mesh
+		(transform-vertices mesh (translate (vec i 0.0 0.0)))
+		(setf (texture-object host) (texture-object mesh))
+		(merge-mesh host mesh :manifold nil))))))))
 
 (defmethod (setf label) (new-label (object tooltip))
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -103,8 +103,10 @@
       (setf (elt pos 0) (d+ (elt pos 0) w-tooltip/2)))))
 
 (defmethod calculate ((object tooltip) dt)
-  (incf (el-time object) (d* dt (animation-speed object)))
-  (bubbleup-modelmatrix object))
+  (with-accessors ((calculatep calculatep)) object
+    (when calculatep
+      (incf (el-time object) (d* dt (animation-speed object)))
+      (bubbleup-modelmatrix object))))
 
 (defmethod render ((object tooltip) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -119,48 +121,60 @@
 		   (scaling scaling)
 		   (texture-object texture-object)
 		   (vao vao)
-		   (view-matrix view-matrix)) object
+		   (view-matrix view-matrix)
+		   (renderp renderp)) object
     (declare (vec4 font-color))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles))
-    (with-camera-view-matrix (camera-vw-matrix renderer)
-      (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	(cl-gl-utils:with-depth-disabled
-	  (cl-gl-utils:with-blending
-	    (gl:blend-func :src-alpha :one)
-	    (use-program compiled-shaders :tooltip)
-	    (gl:active-texture :texture0)
-	    (texture:bind-texture texture-object)
-	    (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
-	    (uniformf  compiled-shaders :duration duration)
-	    (uniformf  compiled-shaders :vert-displacement-speed +tooltip-v-speed+)
-	    (uniformf  compiled-shaders :time   el-time)
-	    (uniformf  compiled-shaders :gravity gravity)
-	    (uniformfv compiled-shaders :mult-color font-color)
-	    (uniform-matrix compiled-shaders
-			    :post-scaling 4
-			    (vector (scale scaling))
-			    nil)
-	    (uniform-matrix compiled-shaders
-			    :modelview-matrix 4
-			    (vector (matrix* camera-vw-matrix
-					     (elt view-matrix  0)
-					     (elt model-matrix 0)))
-			    nil)
-	    (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
-	    (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-	    (gl:draw-arrays :triangles 0 (* 3 (length triangles)))))))))
+    (when renderp
+      (with-camera-view-matrix (camera-vw-matrix renderer)
+	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+	  (cl-gl-utils:with-depth-disabled
+	    (cl-gl-utils:with-blending
+	      (gl:blend-func :src-alpha :one)
+	      (use-program compiled-shaders :tooltip)
+	      (gl:active-texture :texture0)
+	      (texture:bind-texture texture-object)
+	      (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+	      (uniformf  compiled-shaders :duration duration)
+	      (uniformf  compiled-shaders :vert-displacement-speed +tooltip-v-speed+)
+	      (uniformf  compiled-shaders :time   el-time)
+	      (uniformf  compiled-shaders :gravity gravity)
+	      (uniformfv compiled-shaders :mult-color font-color)
+	      (uniform-matrix compiled-shaders
+			      :post-scaling 4
+			      (vector (scale scaling))
+			      nil)
+	      (uniform-matrix compiled-shaders
+			      :modelview-matrix 4
+			      (vector (matrix* camera-vw-matrix
+					       (elt view-matrix  0)
+					       (elt model-matrix 0)))
+			      nil)
+	      (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+	      (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+	      (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))))))
+
+(defgeneric activate-tooltip (object))
+
+(defmethod activate-tooltip ((object tooltip))
+  (setf (renderp    object) t
+	(calculatep object) t))
 
 (defun make-tooltip (label pos shaders
 		     &key
 		       (color +damage-color+)
 		       (font-type gui:+default-font-handle+)
-		       (gravity (num:lcg-next-in-range 1.0 24.0)))
+		       (gravity (num:lcg-next-in-range 1.0 24.0))
+		       (activep t))
+
   (let ((tooltip (make-instance 'billboard:tooltip
 				:animation-speed 1.0
 				:font-color      color
 				:font-type       font-type
-				:gravity         gravity)))
+				:gravity         gravity
+				:renderp         activep
+				:calculatep      activep)))
     (setf (interfaces:compiled-shaders tooltip) shaders)
     (setf (entity:pos tooltip) pos)
     (setf (label tooltip) label)
@@ -171,9 +185,10 @@
 
 (defmethod apply-tooltip ((object mesh:triangle-mesh) label
 			  &key
-			    (color +damage-color+)
+			    (color     +damage-color+)
 			    (font-type gui:+default-font-handle+)
-			    (gravity 1.0))
+			    (gravity   1.0)
+			    (activep    t))
   (with-accessors ((ghost ghost)
 		   (id id)
 		   (state state)) object
@@ -190,9 +205,10 @@
 									0.0)
 								   tooltip-count))
 						       (compiled-shaders object)
-						       :color color
-						       :font-type font-type
-						       :gravity   gravity)))
+						       :color      color
+						       :font-type  font-type
+						       :gravity    gravity
+						       :activep    activep)))
 	  (incf-tooltip-ct object)
 	  (world:push-entity world tooltip))))))
 

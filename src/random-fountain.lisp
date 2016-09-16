@@ -188,7 +188,7 @@
 (defun %generate-fountain (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
-    (with-interaction-parameters (template interaction-file)
+    (with-interaction-parameters-file (template interaction-file)
       (let* ((fountain-level        (calculate-level map-level))
 	     (healing-effects-no    (number-of-healing-effects fountain-level 0))
 	     (fountain-decay-points (calculate-decay-points fountain-level))

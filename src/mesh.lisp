@@ -460,6 +460,10 @@
     :initform t
     :initarg :renderp
     :accessor renderp)
+   (calculatep
+    :initform t
+    :initarg :calculatep
+    :accessor calculatep)
    (use-blending-p
     :initform nil
     :initarg  :use-blending-p
@@ -609,6 +613,14 @@
       (setf attacked-by-entity nil))
     t))
 
+(defmethod on-game-event ((object triangle-mesh) (event game-event:end-attack-spell-event))
+  (game-event:check-event-targeted-to-me (object event)
+    (with-accessors ((attacked-by-entity attacked-by-entity)) object
+      (game-event:unregister-for-end-attack-spell-event object)
+      (setf (entity:reply-attack attacked-by-entity) nil)
+      (setf attacked-by-entity nil))
+    t))
+
 (defgeneric aabb (object))
 
 (defgeneric reset-aabb (object))
@@ -730,6 +742,8 @@
 
 (defgeneric decrement-move-points (object how-much))
 
+(defgeneric decrement-spell-points (object how-much))
+
 (defgeneric decrement-move-points-entering-tile (object))
 
 (defgeneric decrement-move-points-rotate (object))
@@ -739,6 +753,8 @@
 (defgeneric decrement-move-points-attack-melee (object))
 
 (defgeneric can-use-movement-points-p (object &key minimum))
+
+(defgeneric can-use-spell-points-p (object &key minimum))
 
 (defgeneric calculate-cost-position (object))
 
@@ -753,6 +769,8 @@
 (defgeneric set-death-status (object))
 
 (defgeneric set-attack-status (object))
+
+(defgeneric set-attack-spell-status (object))
 
 (defmethod remove-mesh-data ((object triangle-mesh))
   (setf (normals       object) nil
@@ -897,6 +915,11 @@
      (decf (character:current-movement-points (ghost object))
 	   how-much)))
 
+(defmethod decrement-spell-points ((object triangle-mesh) how-much)
+   (when (> (character:current-magic-points (ghost object)) 0)
+     (decf (character:current-magic-points (ghost object))
+	   how-much)))
+
 (defmethod decrement-move-points-entering-tile ((object triangle-mesh))
   (when (> (character:current-movement-points (ghost object)) 0)
     (decf (character:current-movement-points (ghost object))
@@ -920,6 +943,10 @@
 (defmethod can-use-movement-points-p ((object triangle-mesh) &key (minimum 0))
   (and (character:current-movement-points (ghost object))
        (> (character:current-movement-points (ghost object)) minimum)))
+
+(defmethod can-use-spell-points-p ((object triangle-mesh) &key (minimum 0))
+  (and (character:current-magic-points (ghost object))
+       (> (character:current-magic-points (ghost object)) minimum)))
 
 (defmethod calculate-cost-position ((object triangle-mesh))
   (with-accessors ((pos pos)) object
@@ -2710,7 +2737,8 @@
 	(apply-damage object damage))
       t)))
 
-(defmethod apply-damage ((object triangle-mesh-shell) damage)
+(defmethod apply-damage ((object triangle-mesh-shell) damage
+			 &key &allow-other-keys)
   (with-accessors ((ghost ghost)
 		   (id id)
 		   (state state)
@@ -3209,6 +3237,25 @@
 			    nil)
 	    (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
 	    (gl:draw-arrays :triangles 0 (* 3 (length triangles)))))))))
+
+(defclass blocker-render-children (triangle-mesh) ())
+
+(defmethod render ((object blocker-render-children) renderer)
+  (with-accessors ((parent parent)
+		   (renderp renderp)) object
+    (when (and parent
+	       (not (renderp parent)))
+      (do-children-mesh (child object)
+	(render child renderer)))))
+
+(defmethod calculate ((object blocker-render-children) dt)
+  (with-accessors ((parent parent)
+		   (renderp renderp)) object
+    (when (and parent
+	       (not (renderp parent)))
+      (bubbleup-modelmatrix object)
+      (do-children-mesh (child object)
+	(calculate child dt)))))
 
 (defun cylinder-section (mesh radius height divisions
 			 texture-sstart texture-tstart

@@ -53,6 +53,7 @@
   (let ((actual-path (join-with-srings* *directory-sep*
 					(shared-datadir)
 					(construct-path file))))
+    ;;(break)
     (if (or
 	 (uiop:directory-exists-p actual-path)
 	 (uiop:file-exists-p actual-path))

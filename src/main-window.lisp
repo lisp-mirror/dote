@@ -148,6 +148,8 @@
     (gl:clear-color 0.039215688 0.17254902 0.08235294 1.0)
     (gl:clear-depth 1.0)
     (setf compiled-shaders (compile-library))
+    ;; we need a valid opengl context to load spells database
+    (spell:load-db)
     (gui:setup-gui compiled-shaders)
     ;; set up world
     (setf world (make-instance 'world :frame-window object))
@@ -234,6 +236,7 @@
 	(interfaces:destroy (compiled-shaders w))
 	(texture:clean-db)
 	(arrows:clean-db)
+	(spell:clean-db)
 	(gui:clean-font-db)
 	(game-event:clean-all-events-vectors)
 	(lparallel:end-kernel :wait t)
@@ -296,11 +299,11 @@
 	    (incf *near* -.1))
 	  (when (string= text "p")
 	    (world:push-entity (world object)
-	     		       (particles:make-level-up
-	     			(vec (misc:coord-map->chunk 1.0)
-	     			     (d+ +zero-height+ 0.0)
-	     			     (misc:coord-map->chunk 1.0))
-				;+x-axe+
+	     		       (particles:make-aerial-explosion-level-3
+	     			(vec (misc:coord-map->chunk 5.0)
+	     			     (d+ +zero-height+ 5.0)
+	     			     (misc:coord-map->chunk 5.0))
+				;(vec-negate +z-axe+)
 				;10
 				;; (random-elt (texture:list-of-texture-by-tag
 				;; 	     texture:+texture-tag-decals-circular-wave+))
@@ -433,7 +436,12 @@
 		  ((eq (world:toolbar-selected-action world)
 		       widget:+action-attack-short-range+)
 		   (let ((attacked (world:pick-any-entity world world x y)))
-		     (battle-utils:attack-short-range world selected-pc attacked)))
+		     (battle-utils:attack-short-range  world selected-pc attacked)))
+		  ((eq (world:toolbar-selected-action world)
+		       widget:+action-launch-spell+)
+		   (when (character:spell-loaded (entity:ghost selected-pc))
+		     (let ((attacked (world:pick-any-entity world world x y)))
+		       (battle-utils:attack-launch-spell world selected-pc attacked))))
 		  ((eq (world:toolbar-selected-action world)
 		       widget:+action-attack-long-range+)
 		   (let ((attacked (world:pick-any-entity world world x y)))

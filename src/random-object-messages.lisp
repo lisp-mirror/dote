@@ -492,6 +492,7 @@
       ((typep effect 'cancel-immune-faint-msg)
        (game-event:propagate-cancel-immune-faint-event
 	(game-event:make-cancel-immune-faint-event sender target effect)))
+      ;; heal dmg
       ((typep effect 'heal-damage-msg)
        (game-event:propagate-heal-damage-event
 	(game-event:make-heal-damage-event sender target effect)))

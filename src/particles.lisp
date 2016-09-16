@@ -415,6 +415,9 @@
     :reader   mark-for-remove-p
     :writer  (setf mark-for-remove))))
 
+(defun particles-cluster-p (a)
+  (typep a 'particles-cluster))
+
 (defmacro do-particles ((object particle) &body body)
   `(loop for ,particle across (particles ,object) do
 	,@body))
@@ -453,7 +456,7 @@
 	(let ((pos (funcall particle-pos-fn object)))
 	  (setf (particle-position       particle) pos
 		(particle-saved-position particle) pos))))
-    (remove-staring-delay object)))
+    (remove-starting-delay object)))
 
 (defmacro gen-populate-array-vec (slot-array slot-struct)
   (let ((fn-name (format-fn-symbol t "populate-~a-array" slot-array)))
@@ -524,7 +527,7 @@
 
 (defgeneric set-respawn   (object value))
 
-(defgeneric remove-staring-delay (object))
+(defgeneric remove-starting-delay (object))
 
 (defmethod populate-particles-output-positions-array ((object particles-cluster))
   (with-accessors ((particles particles)
@@ -885,7 +888,7 @@
   (do-particles (object particle)
     (setf (particle-respawn particle) value)))
 
-(defmethod remove-staring-delay ((object particles-cluster))
+(defmethod remove-starting-delay ((object particles-cluster))
   (with-accessors ((remove-starting-delay-p remove-starting-delay-p)
 		   (particles particles)) object
     (when remove-starting-delay-p
@@ -1583,7 +1586,10 @@
 			  :height .1
 			  :respawn nil))
 
-(defun make-smoke-trail-element (pos compiled-shaders)
+(defun make-smoke-trail-element (pos compiled-shaders
+				 &key
+				   (scaling-clsr (%uniform-scaling-clsr (lcg-next-in-range 3.0
+											   4.5))))
   (make-particles-cluster 'smoke-puff
 			  1
 			  compiled-shaders
@@ -1593,12 +1599,7 @@
 			  :mass-fn  (gaussian-distribution-fn 1.0 0.001)
 			  :life-fn  (gaussian-distribution-fn 200.0 1.0)
 			  :delay-fn (constant-delay-distribution-fn 0.0)
-			  :scaling-fn (%uniform-scaling-clsr (lcg-next-in-range 3.0 4.5))
-
-			  ;; (%limited-scaling-clsr (gaussian-probability rate-sigma
-			  ;; 							   scaling-rate)
-			  ;; 				     (gaussian-probability scaling-sigma
-			  ;; 							   max-scaling))
+			  :scaling-fn scaling-clsr
 			  :rotation-fn (%uniform-rotation-clsr #'(lambda ()
 								   (lcg-next-in-range -0.25 0.25)))
 			  :alpha-fn    (%smooth-alpha-fading-clsr 5.5)
@@ -1612,6 +1613,10 @@
     :initform 30
     :initarg  :frequency-smoke
     :accessor frequency-smoke)
+   (scaling-trail-clsr
+    :initform (%uniform-scaling-clsr (lcg-next-in-range 3.0 4.5))
+    :initarg  :scaling-trail-clsr
+    :accessor scaling-trail-clsr)
    (smoke-ct
     :initform 0
     :initarg  :smoke-ct
@@ -1626,6 +1631,7 @@
 		   (particles-positions particles-positions)
 		   (particle-min-y particle-min-y)
 		   (compiled-shaders compiled-shaders)
+		   (scaling-trail-clsr scaling-trail-clsr)
 		   (el-time el-time)) object
     (when (and (= (rem smoke-ct frequency-smoke) 0)
 	       (not (removeable-from-world object)))
@@ -1637,7 +1643,10 @@
 				 (fast-glaref particles-positions (+ i 2)))))
 	     (when (and (d> (particle-life particle) 0.0)
 			(d> (elt smoke-pos 1) 0.0))
-	       (mtree:add-child object (make-smoke-trail-element smoke-pos compiled-shaders))))))
+	       (mtree:add-child object (make-smoke-trail-element smoke-pos
+								 compiled-shaders
+								 :scaling-clsr
+								 scaling-trail-clsr))))))
     (setf smoke-ct (1+ smoke-ct)))
   (call-next-method))
 
@@ -1649,10 +1658,8 @@
 								       4.5
 								       1.0
 								       (d/ +pi/2+ 2.0)))
-			   (scaling-clsr  #'(lambda ()
-						     #'(lambda (p dt)
-							 (declare (ignore p dt))
-							 1.0))))
+			   (scaling-trail-clsr (%uniform-scaling-clsr (lcg-next-in-range 3.0 4.5)))
+			   (scaling-clsr       (%no-scaling-clsr)))
   (let ((res (make-particles-cluster 'smoke-trail
 				     num
 				     compiled-shaders
@@ -1667,6 +1674,7 @@
 				     :gravity (vec* +particle-gravity+ 0.3)
 				     :width  .1
 				     :height .1)))
+    (setf (scaling-trail-clsr res)  scaling-trail-clsr)
     (setf (frequency-smoke res) smoke-frequency)
     (setf (noise-scale     res) 0.01)
     res))
@@ -1690,7 +1698,9 @@
 	  (d+ (start-time object)
 	      (d* (animation-speed object) (current-time object))))
     (with-feedback-calculate (object dt)
-      (uniformfv compiled-shaders :gravity gravity))))
+      (uniformfv compiled-shaders :gravity gravity))
+    (do-children-mesh (i object)
+      (calculate i dt))))
 
 (defmethod render ((object fire-dart) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -1702,11 +1712,13 @@
 		   (view-matrix view-matrix)
 		   (compiled-shaders compiled-shaders)
 		   (triangles triangles)
-		   (el-time el-time)) object
+		   (el-time el-time)
+		   (renderp renderp)) object
     (declare (texture:texture texture-object))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
-    (when (> (length triangles) 0)
+    (when (and renderp
+	       (> (length triangles) 0))
       (with-camera-view-matrix (camera-vw-matrix renderer)
 	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
 	  (with-depth-mask-disabled
@@ -1726,10 +1738,12 @@
 	      (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
 	      (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
 	      (gl:draw-arrays :triangles 0 (* 3 (length triangles)))
-	      (gl:blend-equation :func-add))))))))
+	      (gl:blend-equation :func-add))))))
+    (do-children-mesh (c object)
+      (render c renderer))))
 
-(defmethod removeable-from-world ((object fire-dart))
-  (mark-for-remove-p object))
+;; (defmethod removeable-from-world ((object fire-dart))
+;;   (mark-for-remove-p object))
 
 (defun make-fire-dart (pos dir compiled-shaders)
   (make-particles-cluster 'fire-dart
@@ -1866,16 +1880,30 @@
 		(gl:draw-arrays :triangles 0 (* 3 (length triangles)))
 		(gl:blend-equation :func-add)))))))))
 
-(defclass aerial-explosion (blood) ())
+(defclass aerial-explosion (blood end-life-trigger)
+  ())
 
 (defmethod initialize-instance :after ((object aerial-explosion)
  				       &key
  					 (texture (texture:get-texture
  						   texture:+cross-particle+))
  					 &allow-other-keys)
-   (setf (use-blending-p object) t)
-   (setf (integrator-shader object) :blood-integrator)
-   (setf (texture-object object) texture))
+  (game-state:with-world (world (state object))
+    (setf (use-blending-p object) t)
+    (setf (integrator-shader object) :blood-integrator)
+    (setf (texture-object object) texture)
+    (setf (end-of-life-callback object) #'(lambda () (world:activate-all-tooltips world)))))
+
+(defmethod calculate :after ((object aerial-explosion) dt)
+  (with-accessors ((triggered-p triggered-p)
+		   (end-of-life-callback end-of-life-callback)
+		   (repeat-trigger-p repeat-trigger-p)) object
+    (when (and (removeable-from-world object)
+	       (or repeat-trigger-p
+		   (not triggered-p)))
+      (and end-of-life-callback
+	   (funcall end-of-life-callback))
+      (setf (triggered object) t))))
 
 (defmethod render ((object aerial-explosion) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -2219,6 +2247,7 @@
     (make-particles-cluster 'aerial-explosion
 			    10
 			    compiled-shaders
+			    :remove-starting-delay t
 			    :forces (vector (friction-force-clsr 3.6))
 			    :texture texture
 			    :pos     pos
@@ -2227,7 +2256,7 @@
 								       5.0
 								       +2pi+)
 			    :mass-fn  (gaussian-distribution-fn 1.0 .2)
-			    :life-fn  (gaussian-distribution-fn 20.0 5.1)
+			    :life-fn  (gaussian-distribution-fn 2.5  0.75)
 			    :delay-fn (gaussian-distribution-fn 0.5 .1)
 			    :gravity    (vec 0.0 -1e-5 0.0)
 			    :scaling-fn (%limited-scaling-clsr 0.2 70.0)
@@ -2246,29 +2275,35 @@
 		    (color-utils:make-gradient-color 0.5 §cff1403ff)
 		    (color-utils:make-gradient-color 1.0 §c494949f0)))
 	 (flame     (make-particles-cluster 'aerial-explosion
-			    20
-			    compiled-shaders
-			    :forces (vector (friction-force-clsr 3.6))
-			    :texture texture
-			    :pos     pos
-			    :v0-fn  (gaussian-velocity-distribution-fn +y-axe+
-								       4.8
-								       5.0
-								       +2pi+)
-			    :mass-fn  (gaussian-distribution-fn 1.0 .2)
-			    :life-fn  (gaussian-distribution-fn 20.0 5.1)
-			    :delay-fn (gaussian-distribution-fn 0.5 .1)
-			    :gravity    (vec 0.0 -1e-5 0.0)
-			    :scaling-fn (%limited-scaling-clsr 0.2 70.0)
-			    :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range -1.0 1.0))
-			    :alpha-fn   (%smooth-alpha-fading-clsr 5.0)
-			    :color-fn   (%smooth-gradient-color-clsr gradient 1.0)
-			    :width  .03
-			    :height .03
-			    :respawn nil)))
-    (game-state:with-world (world (state flame))
-      (world:push-entity world (make-circular-wave-level-0 pos compiled-shaders))
-      (world:push-entity world (make-smoke-trail pos +y-axe+ 1 compiled-shaders)))
+					    20
+					    compiled-shaders
+					    :remove-starting-delay t
+					    :forces (vector (friction-force-clsr 3.6))
+					    :texture texture
+					    :pos     pos
+					    :v0-fn  (gaussian-velocity-distribution-fn +y-axe+
+										       4.8
+										       5.0
+										       +2pi+)
+					    :mass-fn  (gaussian-distribution-fn 1.0 .2)
+					    :life-fn  (gaussian-distribution-fn 2.5 0.75)
+					    :delay-fn (gaussian-distribution-fn 0.5 .1)
+					    :gravity    (vec 0.0 -1e-5 0.0)
+					    :scaling-fn (%limited-scaling-clsr 0.2 70.0)
+					    :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range -1.0 1.0))
+					    :alpha-fn   (%smooth-alpha-fading-clsr 5.0)
+					    :color-fn   (%smooth-gradient-color-clsr gradient 1.0)
+					    :width  .03
+					    :height .03
+					    :respawn nil)))
+    (mtree:add-child flame (make-smoke-trail +zero-vec+
+					     +y-axe+
+					     3
+					     compiled-shaders
+					     :scaling-trail-clsr
+					     (%uniform-scaling-clsr (lcg-next-in-range .5
+										       0.2))))
+    (mtree:add-child flame (make-circular-wave-level-0 +zero-vec+ compiled-shaders))
     flame))
 
 (defun make-aerial-explosion-level-2 (pos compiled-shaders)
@@ -2289,7 +2324,7 @@
 										   5.0
 										   +2pi+)
 					:mass-fn  (gaussian-distribution-fn 1.0 .2)
-					:life-fn  (gaussian-distribution-fn 20.0 5.1)
+					:life-fn  (gaussian-distribution-fn 3.0 1.0)
 					:delay-fn (gaussian-distribution-fn 0.5 .1)
 					:gravity    (vec 0.0 -1e-5 0.0)
 					:scaling-fn (%limited-scaling-clsr 0.2 70.0)
@@ -2304,7 +2339,10 @@
 							 1.0
 							 (d/ +pi/2+ 2.0))))
     (mtree:add-child flame (make-smoke-trail +zero-vec+ +y-axe+ 3 compiled-shaders
-					     :v0-fn v0-fn-smoke))
+					     :v0-fn v0-fn-smoke
+					     :scaling-trail-clsr
+					     (%uniform-scaling-clsr (lcg-next-in-range .7
+										       0.2))))
     (mtree:add-child flame (make-circular-wave-level-1 +zero-vec+ compiled-shaders))
     flame))
 
@@ -2326,7 +2364,7 @@
 										   5.0
 										   +2pi+)
 					:mass-fn  (gaussian-distribution-fn 1.0 .2)
-					:life-fn  (gaussian-distribution-fn 20.0 5.1)
+					:life-fn  (gaussian-distribution-fn 3.0 1.5)
 					:delay-fn (gaussian-distribution-fn 0.25 .1)
 					:gravity    (vec 0.0 -1e-5 0.0)
 					:scaling-fn (%limited-scaling-clsr 0.1 50.0)
@@ -2387,7 +2425,10 @@
 							 1.0
 							 (d/ +pi/2+ 2.0))))
     (mtree:add-child flame (make-smoke-trail +zero-vec+ +y-axe+ 5 compiled-shaders
-     					     :v0-fn v0-fn-smoke))
+					     :v0-fn v0-fn-smoke
+					     :scaling-trail-clsr
+					     (%uniform-scaling-clsr (lcg-next-in-range 3.0
+										       4.5))))
     (mtree:add-child flame debris)
     (mtree:add-child flame flame2)
     (mtree:add-child flame (make-circular-wave-level-2 +zero-vec+ compiled-shaders))

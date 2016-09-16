@@ -176,6 +176,25 @@
 					 0.0))
 	   duration)))))
 
+(defclass end-life-trigger ()
+  ((repeat-trigger
+    :initform nil
+    :initarg  :repeat-trigger
+    :reader   repeat-trigger-p
+    :writer (setf repeat-trigger))
+   (triggered
+    :initform nil
+    :initarg  :triggered
+    :reader   triggered-p
+    :writer (setf triggered))
+   (end-of-life-callback
+    :initform nil
+    :initarg  :end-of-life-callback
+    :accessor end-of-life-callback)))
+
 (defgeneric removeable-from-world (object))
 
-(defgeneric apply-damage (object damage))
+(defmethod  removeable-from-world ((object t))
+  nil)
+
+(defgeneric apply-damage (object damage &key &allow-other-keys))

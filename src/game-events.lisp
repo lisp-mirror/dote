@@ -307,3 +307,27 @@
 	 (progn
 	   ,@body)
 	 nil))
+
+(defevent attack-spell-event (game-event-w-destination)
+  ((attacker-entity
+    :initform nil
+    :initarg  :attacker-entity
+    :accessor attacker-entity)
+   (spell
+    :initform nil
+    :initarg  :spell
+    :accessor spell)))
+
+(defevent end-attack-spell-event (game-event-w-destination)
+  ((attacker-entity
+    :initform nil
+    :initarg  :attacker-entity
+    :accessor attacker-entity)
+   (spell
+    :initform nil
+    :initarg  :spell
+    :accessor spell)))
+
+(defun send-end-attack-spell-event (dest)
+  (propagate-end-attack-spell-event (make-instance 'end-attack-spell-event
+						   :id-destination (identificable:id dest))))

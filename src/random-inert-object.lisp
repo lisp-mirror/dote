@@ -50,7 +50,7 @@
 (defun %generate-inert-object (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
-    (with-interaction-parameters (template interaction-file)
+    (with-interaction-parameters-file (template interaction-file)
       (let ((object-level (calculate-level map-level)))
 	(n-setf-path-value char-template (list +level+) (d object-level))
 	(setf template (remove-generate-symbols template))

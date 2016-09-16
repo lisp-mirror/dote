@@ -1581,6 +1581,7 @@ data/gui/default/up-arrow-overlay.tga                    \
 data/gui/default/up-overlay.tga                          \
 data/gui/default/use-overlay.tga                         \
 data/gui/default/wear-overlay.tga                        \
+data/gui/default/spell-book-overlay.tga                  \
 data/gui/default/window-button-pressed.tga               \
 data/gui/default/window-button.tga                       \
 data/gui/default/window.tga                              \
@@ -1591,6 +1592,19 @@ data/gui/default/message-16-help.tga                     \
 data/gui/default/message-16-info.tga                     \
 data/gui/default/message-16-ok.tga                       \
 data/gui/default/message-16-warning.tga                  \
+data/spells/attack/firebolt-1.lisp                       \
+data/textures/spells/attack/firearrow-lvl2.tga           \
+data/textures/spells/attack/firearrow-lvl3.tga           \
+data/textures/spells/attack/firearrow.tga                \
+data/textures/spells/attack/fireball-2.tga               \
+data/textures/spells/attack/fireburst.tga                \
+data/textures/spells/attack/firecircle.tga               \
+data/textures/spells/attack/cure-1.tga                   \
+data/textures/spells/attack/cure-2.tga                   \
+data/textures/spells/attack/cure-3.tga                   \
+data/textures/spells/attack/heal-1.tga                   \
+data/textures/spells/attack/heal-2.tga                   \
+data/textures/spells/attack/heal-3.tga                   \
 data/furniture-templates/carpet.tga                      \
 data/furniture-templates/corr-e.tga                      \
 data/furniture-templates/corr-n.tga                      \

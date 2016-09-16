@@ -606,8 +606,12 @@
 					     (cadr i)
 					     (cdr i))))))))
 
-(defmacro with-interaction-parameters ((params file) &body body)
+(defmacro with-interaction-parameters-file ((params file) &body body)
   `(let* ((*interaction-parameters* nil))
      (load ,file)
      (let ((,params *interaction-parameters*))
        ,@body)))
+
+(defmacro with-interaction-parameters (&body body)
+  `(let ((*interaction-parameters* '()))
+     ,@body))

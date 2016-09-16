@@ -37,15 +37,17 @@
 (alexandria:define-constant +size-vertex-struct+ 4               :test #'=)
 
 (alexandria:define-constant +default-animation-table+
-    '((stand 0 39 20) ; name starting-frame ending-frame fps
-      (move 40 45 20)
-      (attack 46 53 20)
-      (bored 123 134 20)
-      (pain 54 65 20)
-      (death 178 197 20)
-      (critical 160 168 20)
-      (critical2 84 94 20)
-      (critical3 72 83))
+    '((:stand 0 39 20) ; name starting-frame ending-frame fps
+      (:move 40 45 20)
+      (:attack 46 53 20)
+      (:attack-spell 138 142 10)
+      (:spell        138 142 10)
+      (:bored 123 134 20)
+      (:pain 54 65 20)
+      (:death 178 197 20)
+      (:critical 160 168 20)
+      (:critical2 84 94 20)
+      (:critical3 72 83))
   :test #'equalp)
 
 (defmacro define-header-offsets ((&rest names))
@@ -160,6 +162,9 @@
   (with-end-attack-event (object event attacked-by-entity)
     (with-maybe-reply-attack (object attacked-by-entity))))
 
+(defmethod on-game-event ((object md2-mesh) (event end-attack-spell-event))
+  (with-end-attack-event (object event attacked-by-entity))) ;; no reply to spell
+
 (defmethod on-game-event ((object md2-mesh) (event attack-long-range-event))
   (check-event-targeted-to-me (object event)
     (multiple-value-bind (damage ambush)
@@ -173,6 +178,22 @@
       (apply-damage object damage)
       (setf (attacked-by-entity object) (attacker-entity event))
       (game-event:register-for-end-attack-long-range-event object)
+      t)))
+
+(defmethod on-game-event ((object md2-mesh) (event attack-spell-event))
+  (check-event-targeted-to-me (object event)
+    (multiple-value-bind (damage ambush)
+	(battle-utils:defend-from-attack-spell event)
+      (when ambush
+	(billboard:apply-tooltip object
+				 billboard:+tooltip-surprise-attack-char+
+				 :color     billboard:+damage-color+
+				 :font-type gui:+tooltip-font-handle+
+				 :activep   nil))
+
+      (apply-damage object damage :tooltip-active-p nil)
+      (setf (attacked-by-entity object) (attacker-entity event))
+      (game-event:register-for-end-attack-spell-event object)
       t)))
 
 (defmethod on-game-event ((object md2-mesh) (event update-visibility))
@@ -580,6 +601,7 @@
 					 (random-object-messages:untrigged-effect-p-fn
 					  basic-interaction-parameters:+effect-when-worn+)
 					 messages))
+		  ;; all effects targeted to self are managed by modifier-object-event
 		  (all-effects-to-other (remove-if-not
 					 (random-object-messages:to-other-target-effect-p-fn)
 					 messages)))
@@ -640,48 +662,49 @@
     ((> (/ damage max-damage) 0.7)
      #'particles:make-blood-level-2)))
 
-(defmethod apply-damage ((object md2-mesh) damage)
-    (with-accessors ((ghost ghost)
-		     (id id)
-		     (state state)
-		     (pos pos)
-		     (dir dir)
-		     (aabb aabb)
-		     (compiled-shaders compiled-shaders)
-		     (current-action current-action)
-		     (cycle-animation cycle-animation)
-		     (stop-animation stop-animation)) object
-      (with-accessors ((recurrent-effects recurrent-effects)
-		       (status status)
-		       (current-damage-points current-damage-points)) ghost
-	(when (not (entity-dead-p object))
-	  (if (null damage)
+(defmethod apply-damage ((object md2-mesh) damage &key (tooltip-active-p t))
+  (with-accessors ((ghost ghost)
+		   (id id)
+		   (state state)
+		   (pos pos)
+		   (dir dir)
+		   (aabb aabb)
+		   (compiled-shaders compiled-shaders)
+		   (current-action current-action)
+		   (cycle-animation cycle-animation)
+		   (stop-animation stop-animation)) object
+    (with-accessors ((recurrent-effects recurrent-effects)
+		     (status status)
+		     (current-damage-points current-damage-points)) ghost
+      (when (not (entity-dead-p object))
+	(if (null damage)
+	    (billboard:apply-tooltip object
+				     (format nil "miss")
+				     :color     billboard:+damage-color+
+				     :font-type gui:+tooltip-font-handle+
+				     :activep   tooltip-active-p)
+	    (progn
+	      (setf current-damage-points (d- current-damage-points damage))
+	      (if (entity-dead-p object)
+		  (set-death-status object)
+		  (let ((blood (funcall (blood-spill-level damage
+							   (character:actual-damage-points ghost))
+					(aabb-center aabb)
+					dir
+					compiled-shaders)))
+		    (game-state:with-world (world state)
+		      (world:push-entity world blood))
+		    (setf current-action  :pain)
+		    (set-animation object :pain)
+		    (setf stop-animation nil)
+		    (setf cycle-animation nil)))
 	      (billboard:apply-tooltip object
-	       			   (format nil "miss")
-	       			   :color billboard:+damage-color+
-	       			   :font-type gui:+tooltip-font-handle+)
-
-	      (progn
-		(setf current-damage-points (d- current-damage-points damage))
-		(if (entity-dead-p object)
-		    (set-death-status object)
-		    (let ((blood (funcall (blood-spill-level damage
-							     (character:actual-damage-points ghost))
-					  (aabb-center aabb)
-					  dir
-					  compiled-shaders)))
-		      (game-state:with-world (world state)
-			(world:push-entity world blood))
-		      (setf current-action  :pain)
-		      (set-animation object :pain)
-		      (setf stop-animation nil)
-		      (setf cycle-animation nil)))
-		(billboard:apply-tooltip object
-					 (format nil
-						 +standard-float-print-format+
-						 (d- damage))
-					 :color billboard:+damage-color+
-					 :font-type gui:+tooltip-font-handle+)))))))
+				       (format nil
+					       +standard-float-print-format+
+					       (d- damage))
+				       :color     billboard:+damage-color+
+				       :font-type gui:+tooltip-font-handle+
+				       :activep   tooltip-active-p)))))))
 
 (defmethod traverse-recurrent-effects ((object md2-mesh))
   (with-accessors ((ghost ghost)
@@ -769,6 +792,18 @@
 		     (current-damage-points current-damage-points)) ghost
       (setf current-action  :attack)
       (set-animation object :attack)
+      (setf stop-animation nil)
+      (setf cycle-animation nil))))
+
+(defmethod set-attack-spell-status ((object md2-mesh))
+  (with-accessors ((ghost ghost)
+		   (current-action current-action)
+		   (cycle-animation cycle-animation)
+		   (stop-animation stop-animation)) object
+    (with-accessors ((status status)
+		     (current-damage-points current-damage-points)) ghost
+      (setf current-action  :attack-spell)
+      (set-animation object :attack-spell)
       (setf stop-animation nil)
       (setf cycle-animation nil))))
 
@@ -1201,6 +1236,12 @@
 	 (setf stop-animation nil)
 	 (set-animation object :stand :recalculate nil)
 	 (setf (current-action object) :stand)))
+      (:attack-spell
+       (when stop-animation
+	 (setf cycle-animation t)
+	 (setf stop-animation nil)
+	 (set-animation object :stand :recalculate nil)
+	 (setf (current-action object) :stand)))
       (:rotate
        (update-visibility-cone object))
       (:move
@@ -1213,7 +1254,8 @@
 	 (set-animation object :stand :recalculate nil)
 	 (setf (current-action object) :stand)
 	 (send-end-attack-melee-event object)
-	 (send-end-attack-long-range-event object))))
+	 (send-end-attack-long-range-event object)
+	 (send-end-attack-spell-event object))))
     (unless stop-animation
       (let ((next-time (+ current-animation-time dt))
 	    (frames-numbers (the fixnum (1+ (- end-frame starting-frame))))
@@ -1506,6 +1548,7 @@
 	(add-to-inventory (ghost body) forged-bow)
 	(add-to-inventory (ghost body) forged-sword)
 	(setf (movement-points (ghost body)) 100.0)
+	(setf (magic-points    (ghost body)) 5.0)
 	;; note:   wear-item-event  will   not  be   catched  as   the
 	;; registration happens when the entity is added to world
 	(wear-item body forged-sword))

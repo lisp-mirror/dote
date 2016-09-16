@@ -89,6 +89,7 @@ src/random-shoes.lisp
 src/random-weapon.lisp
 src/basic-interaction-parameters.lisp
 src/player-messages-text.lisp
+src/spell.lisp
 # GUI
 src/gui/gui-events.lisp
 src/gui/gui.lisp

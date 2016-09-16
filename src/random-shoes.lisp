@@ -119,7 +119,7 @@
 (defun %generate-shoes (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
-    (with-interaction-parameters (template interaction-file)
+    (with-interaction-parameters-file (template interaction-file)
       (let* ((shoes-level (calculate-level map-level))
 	     (shoes-decay (calculate-decay-points shoes-level))
 	     (effects-no  (number-of-effects shoes-level))

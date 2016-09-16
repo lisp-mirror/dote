@@ -104,68 +104,12 @@
 
 (defparameter *standard-capital-characteristic* 200)
 
-(defclass np-character (identificable m-tree)
-  ((first-name
-    :initform ""
-    :initarg :first-name
-    :accessor first-name
-    :type string)
-   (last-name
-    :initform ""
-    :initarg :last-name
-    :accessor last-name
-    :type string)
-   (description
-    :initform ""
-    :initarg :description
-    :accessor description
-    :type string)
-   (portrait
-    :initform nil
-    :initarg :portrait
-    :accessor portrait
-    :type texture:texture)
-   (weight
-    :initarg :weight
-    :initform 35
-    :accessor weight
-    :type integer)
-   (damage-points
-    :initarg :damage-points
-    :initform 0.0
-    :accessor damage-points
-    :type integer)
-   (current-damage-points
-    :initarg :current-damage-points
-    :initform 0.0
-    :accessor current-damage-points
-    :type integer)
-   (level
-    :initarg :level
-    :initform 1
-    :accessor level)
-   (age
-    :initarg :age
-    :initform 0
-    :accessor age)
-   (basic-interaction-params
+(defclass interactive-entity ()
+  ((basic-interaction-params
     :initform nil
     :initarg  :basic-interaction-params
     :accessor basic-interaction-params)))
 
-(defmethod marshal:class-persistant-slots ((object np-character))
-  (append  '(first-name
-	     last-name
-	     description
-	     portrait
-	     weight
-	     damage-points
-	     current-damage-points
-	     level
-	     age
-	     basic-interaction-params)
-	   (call-next-method)))
-;;;; interaction
 
 (defgeneric lookup-basic-interaction (object key))
 
@@ -175,11 +119,9 @@
 
 (defgeneric clean-effects (object))
 
-(defgeneric restart-age (object))
-
 (defgeneric description-type (object))
 
-(defmethod lookup-basic-interaction ((object np-character) key)
+(defmethod lookup-basic-interaction ((object interactive-entity) key)
   (cdr (assoc key (basic-interaction-params object))))
 
 (defmacro gen-interaction-predicate ((name) &body body)
@@ -191,20 +133,20 @@
     `(progn
        (defgeneric ,name-fn (object))
        (defmethod  ,name-fn ((object t)) nil)
-       (defmethod  ,name-fn ((object np-character))
+       (defmethod  ,name-fn ((object interactive-entity))
 	 (progn ,@body)))))
 
 (defmacro gen-trivial-interaction-path (name &rest vars)
   (let ((name-fn (format-symbol t "~:@(interaction-~a~)" name)))
     `(progn
        (defgeneric ,name-fn (object))
-       (defmethod  ,name-fn ((object np-character))
+       (defmethod  ,name-fn ((object interactive-entity))
 	 (let ((path (build-assocs-chain ,(reverse vars) (basic-interaction-params object))))
 	    path)))))
 
 ;; events
 
-(defmethod game-event:on-game-event ((object np-character) (event game-event:end-turn))
+(defmethod game-event:on-game-event ((object interactive-entity) (event game-event:end-turn))
   (misc:dbg " end turn character ~a(~a) ~a" (type-of object) (id object) (type-of event))
   (incf (age object))
   nil)
@@ -297,7 +239,7 @@
 
 (gen-trivial-interaction-path get-magic-effect                +magic-effects+)
 
-(gen-trivial-plist-predicates np-character
+(gen-trivial-plist-predicates interactive-entity
 			      (lambda (v k) (lookup-basic-interaction v k))
 			      +can-talk+
 			      +can-be-opened+
@@ -328,7 +270,7 @@
 			      +healing-effects+
 			      +magic-effects+)
 
-(gen-trivial-plist-gets np-character
+(gen-trivial-plist-gets interactive-entity
 			(lambda (v k) (lookup-basic-interaction v k))
 			fetch
 			+can-open+
@@ -395,7 +337,7 @@
       (lookup-basic-interaction object +can-be-worn-body+)
       (lookup-basic-interaction object +can-be-worn-hand+)))
 
-(defmethod object-keycode ((object np-character))
+(defmethod object-keycode ((object interactive-entity))
   (or (and (lookup-basic-interaction object +can-be-opened+)
 	   (stringp (lookup-basic-interaction object +can-be-opened+))
 	   (lookup-basic-interaction object +can-be-opened+))
@@ -403,8 +345,8 @@
 	   (stringp (lookup-basic-interaction object +can-open+))
 	   (lookup-basic-interaction object +can-open+))))
 
-(defmethod import-interaction-from-definition ((object np-character) file)
-  (with-interaction-parameters (parameters file)
+(defmethod import-interaction-from-definition ((object interactive-entity) file)
+  (with-interaction-parameters-file (parameters file)
     (setf (basic-interaction-params object) parameters)
     object))
 
@@ -414,7 +356,7 @@
 	  label
 	  +gui-static-text-delim+))
 
-(defmethod description-type ((object np-character))
+(defmethod description-type ((object interactive-entity))
   (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~] ~a ~a")
 	   (can-cut-p   object)
 	   (can-smash-p object)
@@ -430,22 +372,8 @@
 	   (last-name  object)
 	   +gui-static-text-delim+))
 
-(defmethod description-for-humans ((object np-character))
+(defmethod description-for-humans ((object interactive-entity))
   (strcat
-   (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~] ~a ~a~a")
-	   (can-cut-p   object)
-	   (can-smash-p object)
-	   (can-launch-bolt-p object)
-	   (can-launch-arrow-p object)
-	   (fountainp  object)
-	   (potionp    object)
-	   (elmp       object)
-	   (armorp     object)
-	   (ringp      object)
-	   (shoesp     object)
-	   (first-name object)
-	   (last-name  object)
-	   +gui-static-text-delim+)
    (format nil (prepare-format-description (_ "~a strength"))
 	   (description-for-humans
 	    (interaction-get-strength object)))
@@ -537,7 +465,7 @@
 	(n-setf-path-value interaction-params path1 nil)
 	(n-setf-path-value interaction-params path2 nil))))
 
-(defmethod clean-effects ((object np-character))
+(defmethod clean-effects ((object interactive-entity))
   (with-accessors ((basic-interaction-params basic-interaction-params)) object
     (clean-single-contradiction basic-interaction-params
 				(list +healing-effects+ +immune-berserk+)
@@ -564,6 +492,85 @@
 				(list +healing-effects+ +cause-poison+)
 				(list +healing-effects+ +heal-poison+))
     object))
+
+(defclass np-character (identificable interactive-entity m-tree)
+  ((first-name
+    :initform ""
+    :initarg :first-name
+    :accessor first-name
+    :type string)
+   (last-name
+    :initform ""
+    :initarg :last-name
+    :accessor last-name
+    :type string)
+   (description
+    :initform ""
+    :initarg :description
+    :accessor description
+    :type string)
+   (portrait
+    :initform nil
+    :initarg :portrait
+    :accessor portrait
+    :type texture:texture)
+   (weight
+    :initarg :weight
+    :initform 35
+    :accessor weight
+    :type integer)
+   (damage-points
+    :initarg :damage-points
+    :initform 0.0
+    :accessor damage-points
+    :type integer)
+   (current-damage-points
+    :initarg :current-damage-points
+    :initform 0.0
+    :accessor current-damage-points
+    :type integer)
+   (level
+    :initarg :level
+    :initform 1
+    :accessor level)
+   (age
+    :initarg :age
+    :initform 0
+    :accessor age)))
+
+(defmethod marshal:class-persistant-slots ((object np-character))
+  (append  '(first-name
+	     last-name
+	     description
+	     portrait
+	     weight
+	     damage-points
+	     current-damage-points
+	     level
+	     age
+	     basic-interaction-params)
+	   (call-next-method)))
+;;;; interaction
+
+(defmethod description-for-humans :around ((object np-character))
+  (strcat
+   (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~] ~a ~a~a")
+	   (can-cut-p   object)
+	   (can-smash-p object)
+	   (can-launch-bolt-p object)
+	   (can-launch-arrow-p object)
+	   (fountainp  object)
+	   (potionp    object)
+	   (elmp       object)
+	   (armorp     object)
+	   (ringp      object)
+	   (shoesp     object)
+	   (first-name object)
+	   (last-name  object)
+	   +gui-static-text-delim+)
+   (call-next-method)))
+
+(defgeneric restart-age (object))
 
 (defmethod restart-age ((object np-character))
   (setf (age object) 0.0))
@@ -790,6 +797,10 @@
     :initarg :ring
     :initform nil
     :accessor ring)
+   (spell-loaded
+    :initarg  :spell-loaded
+    :initform nil
+    :accessor spell-loaded)
    (inventory
     :initarg :inventory
     :initform '()
@@ -2062,7 +2073,7 @@
     (and item-set-p dependencies)))
 
 (defun validate-interaction-file (file)
-  (with-interaction-parameters (params file)
+  (with-interaction-parameters-file (params file)
     (values (find-if #'(lambda (a) (not (null a)))
 		     (loop for i in *relations* collect (conflictp params i)))
 	    (find-if #'(lambda (a) (not (null a)))

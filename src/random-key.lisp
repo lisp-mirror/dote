@@ -161,7 +161,7 @@
 (defun generate-key* (interaction-file character-file map-level keycode)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
-    (with-interaction-parameters (template interaction-file)
+    (with-interaction-parameters-file (template interaction-file)
       (let* ((key-level          (calculate-level map-level))
 	     (healing-effects-no (number-of-healing-effects key-level 0))
 	     (healing-effects    (%get-healing-fx-shuffled template healing-effects-no)))

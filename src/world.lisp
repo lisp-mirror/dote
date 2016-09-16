@@ -233,9 +233,9 @@
   (with-accessors ((main-state main-state)) object
     (misc:dbg " end turn ~a ~a" (type-of object) (type-of event))
     (remove-all-tooltips object)
-    (remove-entity-if (entities object) #'(lambda (a)
-					    (and (typep a 'particles:particles-cluster)
-						 (removeable-from-world a))))
+    (remove-entity-if (entities object)
+		      #'(lambda (a)
+			  (removeable-from-world a)))
     (remove-entity-if (gui object) #'(lambda (a) (typep a 'widget:message-window)))
     (incf (game-turn (main-state object)))
     (maphash #'(lambda (k v) (declare (ignore k)) (mesh:process-postponed-messages v))
@@ -307,6 +307,8 @@
 (defgeneric world-aabb (object))
 
 (defgeneric remove-all-tooltips (object))
+
+(defgeneric activate-all-tooltips (object))
 
 (defmethod iterate-quad-tree ((object world) function probe)
   (quad-tree:iterate-nodes-intersect (entities object)
@@ -801,6 +803,8 @@
   ;; attack
   (game-event:register-for-attack-melee-event                player)
   (game-event:register-for-attack-long-range-event           player)
+  ;; attack spell
+  (game-event:register-for-attack-spell-event                player)
   ;; events registration ends here
   (game-state:place-player-on-map (main-state object)        player faction pos)
   (push-interactive-entity object                            player faction :occlude))
@@ -910,3 +914,9 @@
 
 (defmethod remove-all-tooltips ((object world))
   (remove-entity-if (entities object) #'(lambda (a) (typep a 'billboard:tooltip))))
+
+(defmethod activate-all-tooltips ((object world))
+  (walk-quad-tree-anyway (object)
+    (when (typep entity 'billboard:tooltip)
+      (setf (renderp    entity) t
+	    (calculatep entity) t))))
