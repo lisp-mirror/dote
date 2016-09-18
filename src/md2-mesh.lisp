@@ -165,6 +165,9 @@
 (defmethod on-game-event ((object md2-mesh) (event end-attack-spell-event))
   (with-end-attack-event (object event attacked-by-entity))) ;; no reply to spell
 
+(defmethod on-game-event ((object md2-mesh) (event end-spell-event))
+  (with-end-attack-event (object event attacked-by-entity))) ;; no reply to spell
+
 (defmethod on-game-event ((object md2-mesh) (event attack-long-range-event))
   (check-event-targeted-to-me (object event)
     (multiple-value-bind (damage ambush)
@@ -192,6 +195,13 @@
 				 :activep   nil))
 
       (apply-damage object damage :tooltip-active-p nil)
+      (setf (attacked-by-entity object) (attacker-entity event))
+      (game-event:register-for-end-attack-spell-event object)
+      t)))
+
+(defmethod on-game-event ((object md2-mesh) (event spell-event))
+  (check-event-targeted-to-me (object event)
+    (when (battle-utils:defend-from-spell event)
       (setf (attacked-by-entity object) (attacker-entity event))
       (game-event:register-for-end-attack-spell-event object)
       t)))
@@ -807,6 +817,18 @@
       (setf stop-animation nil)
       (setf cycle-animation nil))))
 
+(defmethod set-spell-status ((object md2-mesh))
+  (with-accessors ((ghost ghost)
+		   (current-action current-action)
+		   (cycle-animation cycle-animation)
+		   (stop-animation stop-animation)) object
+    (with-accessors ((status status)
+		     (current-damage-points current-damage-points)) ghost
+      (setf current-action  :spell)
+      (set-animation object :spell)
+      (setf stop-animation nil)
+      (setf cycle-animation nil))))
+
 (defgeneric push-errors (object the-error))
 
 (defgeneric load (object file))
@@ -1237,6 +1259,12 @@
 	 (set-animation object :stand :recalculate nil)
 	 (setf (current-action object) :stand)))
       (:attack-spell
+       (when stop-animation
+	 (setf cycle-animation t)
+	 (setf stop-animation nil)
+	 (set-animation object :stand :recalculate nil)
+	 (setf (current-action object) :stand)))
+      (:spell
        (when stop-animation
 	 (setf cycle-animation t)
 	 (setf stop-animation nil)

@@ -805,6 +805,8 @@
   (game-event:register-for-attack-long-range-event           player)
   ;; attack spell
   (game-event:register-for-attack-spell-event                player)
+  ;; spell
+  (game-event:register-for-spell-event                       player)
   ;; events registration ends here
   (game-state:place-player-on-map (main-state object)        player faction pos)
   (push-interactive-entity object                            player faction :occlude))

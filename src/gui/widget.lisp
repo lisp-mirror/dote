@@ -1302,10 +1302,10 @@
     (if (and (shown object)
 	     (mouse-over object (x-event event) (y-event event)))
 	(progn
-	  (loop for w across (children object) do
-	       (when (and (widgetp w)
-			  (on-mouse-pressed w event))
-		 (return-from on-mouse-pressed t)))
+	  (do-children-from-end (w object)
+	    (when (and (widgetp w)
+		       (on-mouse-pressed w event))
+	      (return-from on-mouse-pressed t)))
 	  nil)
 	nil)))
 
@@ -1313,7 +1313,7 @@
   (if (and (shown object)
 	   (mouse-over object (x-event event) (y-event event)))
       (progn
-	(loop for w across (children object) do
+	(do-children-from-end (w object)
 	     (when (and (widgetp w)
 			(on-mouse-released w event))
 	       (return-from on-mouse-released t)))

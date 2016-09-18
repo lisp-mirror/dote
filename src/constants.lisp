@@ -144,15 +144,17 @@
 
 (define-constant +human-player-models-resource+  '("models" "human-player")     :test #'equalp)
 
-(define-constant +ai-player-models-resource+  '("models" "ai")                  :test #'equalp)
+(define-constant +ai-player-models-resource+      '("models" "ai")              :test #'equalp)
 
-(define-constant +fonts-resource+       "fonts"                                 :test #'string=)
+(define-constant +fonts-resource+               "fonts"                         :test #'string=)
 
-(define-constant +gui-resource+         "gui"                                   :test #'string=)
+(define-constant +gui-resource+                 "gui"                           :test #'string=)
 
-(define-constant +attack-spell-texture-dir+     '("textures" "spells" "attack") :test #'equalp)
+(define-constant +spell-texture-dir+            '("textures" "spells")          :test #'equalp)
 
 (define-constant +attack-spell-dir+             '("spells" "attack")            :test #'equalp)
+
+(define-constant +spell-dir+                    '("spells")                     :test #'equalp)
 
 (define-constant +default-gui-resource+         '("gui" "default")              :test #'equalp)
 

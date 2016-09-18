@@ -772,6 +772,8 @@
 
 (defgeneric set-attack-spell-status (object))
 
+(defgeneric set-spell-status (object))
+
 (defmethod remove-mesh-data ((object triangle-mesh))
   (setf (normals       object) nil
 	(vertices      object) nil

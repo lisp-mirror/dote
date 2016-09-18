@@ -101,22 +101,22 @@
 		      ;; update quadtree
 		      (world:move-entity world object nil :update-costs nil))))))))))
 
-(defclass arrow-spell-mesh (triangle-mesh arrow) ())
+(defclass arrow-attack-spell-mesh (triangle-mesh arrow) ())
 
-(defmethod aabb-2d ((object arrow-spell-mesh))
+(defmethod aabb-2d ((object arrow-attack-spell-mesh))
   (flatten-to-aabb2-xz-positive (aabb object)))
 
-(defmethod render ((object arrow-spell-mesh) renderer)
+(defmethod render ((object arrow-attack-spell-mesh) renderer)
   (do-children-mesh (c object)
     (render c renderer)))
 
-(defmethod removeable-from-world ((object arrow-spell-mesh))
+(defmethod removeable-from-world ((object arrow-attack-spell-mesh))
   (misc:dbg "rem ~a ~a" (not (vector-empty-p (mtree:children object)))
 	    (removeable-from-world (elt (mtree:children object) 0)))
   (and (not (vector-empty-p (mtree:children object)))
        (removeable-from-world (elt (mtree:children object) 0))))
 
-(defmethod calculate :after ((object arrow-spell-mesh) dt)
+(defmethod calculate :after ((object arrow-attack-spell-mesh) dt)
   (with-accessors ((trajectory trajectory)
 		   (pos pos)
 		   (state state)
@@ -213,19 +213,23 @@
 	  ray)
 	nil)))
 
-(defun %common-launch-projectile (world attacker defender mesh attack-event-fn)
+(defun %common-launch-projectile (world attacker defender mesh attack-event-fn
+				  &key
+				    (position        (aabb-center (aabb attacker)))
+				    (camera-follow-p t))
   (let ((ray (launch-ray attacker defender)))
     (if ray
 	(progn
 	  (setf (hitted mesh) nil)
 	  (setf (attack-event-fn mesh) attack-event-fn)
-	  (setf (pos mesh) (aabb-center (aabb attacker)))
+	  (setf (pos mesh) position)
 	  (setf (trajectory mesh) ray)
 	  (setf (dir mesh) (normalize (vec-negate (ray-direction (trajectory mesh)))))
 	  (setf (launcher-entity mesh) attacker)
 	  (setf (compiled-shaders mesh) (compiled-shaders world))
-	  (setf (camera:followed-entity (world:camera world)) mesh)
-	  (setf (camera:mode (world:camera world)) :follow)
+	  (when camera-follow-p
+	    (setf (camera:followed-entity (world:camera world)) mesh)
+	    (setf (camera:mode (world:camera world)) :follow))
 	  t)
 	nil)))
 
@@ -235,17 +239,19 @@
 					      attacker
 					      defender
 					      mesh
-					      #'battle-utils:send-attack-long-range-event)))
+					      #'battle-utils:send-attack-long-range-event
+					      :camera-follow-p   t)))
     (when successp
       (world:push-entity world mesh))))
 
 (defun launch-attack-spell (spell world attacker defender &key (invisiblep nil))
-  (let* ((mesh (make-instance 'arrow-spell-mesh))
+  (let* ((mesh (make-instance 'arrow-attack-spell-mesh))
 	 (successp (%common-launch-projectile world
 					      attacker
 					      defender
 					      mesh
-					      #'battle-utils:send-attack-spell-event)))
+					      #'battle-utils:send-attack-spell-event
+					      :camera-follow-p   t)))
     (when successp
       (when (not invisiblep)
 	(let* ((shaders (compiled-shaders world))
@@ -261,3 +267,12 @@
 	  (mtree:add-child (elt (mtree:children mesh) 0) blocker)
 	  (mtree:add-child blocker target-effect)))
       (world:push-entity world mesh))))
+
+(defun launch-spell (spell world attacker defender)
+  (let* ((shaders (compiled-shaders world))
+	 (target-effect (funcall (spell:visual-effect-target spell)
+				 (copy-vec (aabb-center (aabb defender)))
+				 shaders)))
+    (setf (end-of-life-callback target-effect)
+	  #'(lambda () (battle-utils:send-spell-event attacker defender)))
+    (world:push-entity world target-effect)))

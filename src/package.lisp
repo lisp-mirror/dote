@@ -105,8 +105,9 @@
    :+furnitures-resource+
    :+fonts-resource+
    :+gui-resource+
-   :+attack-spell-texture-dir+
+   :+spell-texture-dir+
    :+attack-spell-dir+
+   :+spell-dir+
    :+default-gui-inventory-items+
    :+default-gui-resource+
    :+default-character-weapon-dir+
@@ -2248,6 +2249,16 @@
    :unregister-for-end-attack-spell-event
    :propagate-end-attack-spell-event
    :send-end-attack-spell-event
+   :spell-event
+   :spell
+   :register-for-spell-event
+   :unregister-for-spell-event
+   :propagate-spell-event
+   :end-spell-event
+   :register-for-end-spell-event
+   :unregister-for-end-spell-event
+   :propagate-end-spell-event
+   :send-end-spell-event
    :end-attack-melee-event
    :register-for-end-attack-melee-event
    :unregister-for-end-attack-melee-event
@@ -3110,6 +3121,7 @@
    :set-death-status
    :set-attack-status
    :set-attack-spell-status
+   :set-spell-status
    :skydome
    :texture-clouds
    :texture-smoke
@@ -3323,13 +3335,16 @@
    :attack-spell-animation
    :send-attack-long-range-event
    :send-attack-spell-event
+   :send-spell-event
    :defend-from-attack-long-range
    :defend-from-attack-spell
+   :defend-from-spell
    :attack-damage
    ;; high level routines
    :attack-short-range
    :attack-long-range
-   :attack-launch-spell))
+   :attack-launch-spell
+   :launch-spell))
 
 ;; UI
 
@@ -3808,7 +3823,8 @@
    :get-arrow
    :launch-ray
    :launch-arrow
-   :launch-attack-spell))
+   :launch-attack-spell
+   :launch-spell))
 
 (defpackage :spell
   (:use :cl
@@ -3835,6 +3851,8 @@
    :get-spell
    :remove-spell
    :spell
+   :attack-spell
+   :attack-spell-p
    :identifier
    :target
    :gui-texture

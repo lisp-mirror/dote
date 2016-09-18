@@ -2434,10 +2434,21 @@
     (mtree:add-child flame (make-circular-wave-level-2 +zero-vec+ compiled-shaders))
     flame))
 
-(defclass cure-spark (blood cluster-w-global-life) ())
+(defclass cure-spark (blood cluster-w-global-life end-life-trigger) ())
 
 (defmethod initialize-instance :after ((object cure-spark) &key &allow-other-keys)
   (setf (noise-scale object) 0.01))
+
+(defmethod calculate :after ((object cure-spark) dt)
+  (with-accessors ((triggered-p triggered-p)
+		   (end-of-life-callback end-of-life-callback)
+		   (repeat-trigger-p repeat-trigger-p)) object
+    (when (and (removeable-from-world object)
+	       (or repeat-trigger-p
+		   (not triggered-p)))
+      (and end-of-life-callback
+	   (funcall end-of-life-callback))
+      (setf (triggered object) t))))
 
 (defmethod render ((object cure-spark) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -2779,8 +2790,11 @@
     spark))
 
 (defun make-heal-level-2 (pos compiled-shaders)
-  (incf (elt pos 1) 20.0)
-  (let* ((min-y (d- (d- (elt pos 1) (d- +zero-height+ 10.0))))
+  (let* ((actual-pos (vec (elt pos 0)
+			  (d+ (elt pos 1)
+			      (d* 10.0 +terrain-chunk-tile-size+))
+			  (elt pos 2)))
+	 (min-y (d- (d- (elt actual-pos 1) (d- +zero-height+ 10.0))))
 	 (texture  (random-elt (list-of-texture-by-tag +texture-tag-poison-particle+)))
 	 (size-fn  #'(lambda (c)
 		       (declare (ignore c))
@@ -2794,8 +2808,8 @@
 					:remove-starting-delay t
 					:forces   #()
 					:texture  texture
-					:pos      pos
-					:min-y   min-y
+					:pos      actual-pos
+					:min-y    min-y
 					:particle-pos-fn #'(lambda (cluster)
 							     (declare (ignore cluster))
 							     (let ((xy (elt (bivariate-sampling (d/ +terrain-chunk-tile-size+ 1.5)
@@ -2805,25 +2819,25 @@
 							       (vec (elt xy 0)
 								    0.0
 								    (elt xy 1))))
-					:v0-fn    (gaussian-velocity-distribution-fn +y-axe+
-										     0.0
-										     0.1
-										     (d/ +pi/2+
-											 5.0))
-					:mass-fn  (gaussian-distribution-fn 0.8 .2)
-					:life-fn  (gaussian-distribution-fn 4.0 0.2)
-					:delay-fn (gaussian-distribution-fn 10.00 2.50)
+					:v0-fn      (gaussian-velocity-distribution-fn +y-axe+
+										       0.0
+										       0.1
+										       (d/ +pi/2+
+											   5.0))
+					:mass-fn    (gaussian-distribution-fn 0.8 .2)
+					:life-fn    (gaussian-distribution-fn 5.0 0.2)
+					:delay-fn   (gaussian-distribution-fn 10.00 2.50)
 					:gravity    (vec 0.0 -1.5 0.0)
 					:scaling-fn (%limited-scaling-clsr 0.1 10.0)
 					:rotation-fn (%no-rotation-clrs)
-					:alpha-fn   (%smooth-alpha-fading-clsr 5.0)
+					:alpha-fn   (%smooth-alpha-fading-clsr 6.5)
 					:color-fn   (%smooth-gradient-color-clsr gradient 3.0)
 					:width  .2
 					:height .2
 					:particle-height-fn nil    ;; will use particle-width-fn
 					:particle-width-fn  size-fn
 					:respawn t))
-	 (decal (make-spell-decal (vec 0.0 (d- (d- (elt pos 1) +zero-height+)) 0.0)
+	 (decal (make-spell-decal (vec 0.0 (d- (d- (elt actual-pos 1) +zero-height+)) 0.0)
 				  compiled-shaders
 				  :texture (random-elt (list-of-texture-by-tag +texture-tag-decals-heal+))
 				  :color-fn (%constant-color-clsr billboard:+blessing-color+)
@@ -2838,8 +2852,11 @@
     spark))
 
 (defun make-heal-level-1 (pos compiled-shaders)
-  (incf (elt pos 1) 10.0)
-  (let* ((min-y (d- (d- (elt pos 1) (d- +zero-height+ 10.0))))
+  (let* ((actual-pos (vec (elt pos 0)
+			  (d+ (elt pos 1)
+			      (d* 2.0 +terrain-chunk-tile-size+))
+			  (elt pos 2)))
+	 (min-y (d- (d- (elt actual-pos 1) (d- +zero-height+ 10.0))))
 	 (texture  (random-elt (list-of-texture-by-tag +texture-tag-poison-particle+)))
 	 (size-fn  #'(lambda (c)
 		       (declare (ignore c))
@@ -2853,8 +2870,8 @@
 					:remove-starting-delay t
 					:forces   #()
 					:texture  texture
-					:pos      pos
-					:min-y   min-y
+					:pos      actual-pos
+					:min-y    min-y
 					:particle-pos-fn #'(lambda (cluster)
 							     (declare (ignore cluster))
 							     (let ((xy (elt (bivariate-sampling (d/ +terrain-chunk-tile-size+ 3.0)
@@ -2886,8 +2903,11 @@
     spark))
 
 (defun make-heal-level-0 (pos compiled-shaders)
-  (incf (elt pos 1) 10.0)
-  (let* ((min-y (d- (d- (elt pos 1) (d- +zero-height+ 10.0))))
+  (let* ((actual-pos (vec (elt pos 0)
+			  (d+ (elt pos 1)
+			      +terrain-chunk-tile-size+)
+			  (elt pos 2)))
+	 (min-y (d- (d- (elt actual-pos 1) (d- +zero-height+ 10.0))))
 	 (texture  (random-elt (list-of-texture-by-tag +texture-tag-poison-particle+)))
 	 (size-fn  #'(lambda (c)
 		       (declare (ignore c))
@@ -2901,8 +2921,8 @@
 					:remove-starting-delay t
 					:forces   #()
 					:texture  texture
-					:pos      pos
-					:min-y   min-y
+					:pos      actual-pos
+					:min-y    min-y
 					:particle-pos-fn #'(lambda (cluster)
 							     (declare (ignore cluster))
 							     (let ((xy (elt (bivariate-sampling (d/ +terrain-chunk-tile-size+ 3.0)
@@ -2930,7 +2950,7 @@
 					:particle-height-fn nil    ;; will use particle-width-fn
 					:particle-width-fn  size-fn
 					:respawn t)))
-    (setf (global-life spark) 100)
+    (setf (global-life spark) 10)
     spark))
 
 (defun make-level-up (pos compiled-shaders)

@@ -16,15 +16,23 @@
 
 (in-package :spell)
 
-(alexandria:define-constant +maximum-level+     9       :test #'=)
+(alexandria:define-constant +maximum-level+             9
+  :test #'=)
 
-(alexandria:define-constant +chance-healing-fx-sigma+  #(.08 .1 .12 .18 .22 .23 .24 .25 .26 .28)
+(alexandria:define-constant +chance-healing-fx-sigma+   #(.08 .1 .12 .18 .22 .23 .24 .25 .26 .28)
   :test #'equalp)
 
-(alexandria:define-constant +chance-healing-fx-mean+   #(0.0 0.0 0.0 0.0 0.0 0.0 0.1 0.2 0.3 0.4)
+(alexandria:define-constant +chance-healing-fx-mean+    #(0.0 0.0 0.0 0.0 0.0 0.0 0.1 0.2 0.3 0.4)
   :test #'equalp)
 
-(alexandria:define-constant +minimum-chance-healing-fx+ 0.05       :test #'=)
+(alexandria:define-constant +minimum-chance-healing-fx+ 0.05
+  :test #'=)
+
+(alexandria:define-constant +modifier-sigma+            #(1.0 2.0 3.0 4.0 5.0 6.0 6.5 7.0 7.5 8.0)
+  :test #'equalp)
+
+(alexandria:define-constant +modifier-mean+             #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
+  :test #'equalp)
 
 (defparameter *spells-db* '())
 
@@ -45,8 +53,9 @@
   (push spell *spells-db*))
 
 (defun load-db ()
-  (let ((all-attack-spells (resources-utils:get-resource-files +attack-spell-dir+)))
-    (dolist (spell-file all-attack-spells)
+  (let ((all-attack-spells (resources-utils:get-resource-files +attack-spell-dir+))
+	(all-other-spells  (resources-utils:get-resource-files +spell-dir+)))
+    (dolist (spell-file (nconc all-attack-spells all-other-spells))
       (load spell-file))))
 
 (defun db ()
@@ -113,6 +122,9 @@
     :initarg :arrow
     :accessor arrow)))
 
+(defun attack-spell-p (a)
+  (typep a 'attack-spell))
+
 (defmethod description-for-humans :around ((object attack-spell))
   (text-utils:strcat
    (call-next-method)
@@ -125,7 +137,7 @@
 
 (defun make-gui-texture (f)
   (let ((texture (texture:get-texture (res:get-resource-file f
-							     +attack-spell-texture-dir+))))
+							     +spell-texture-dir+))))
     (setf (texture:border-color       texture) §c00000000)
     (setf (texture:s-wrap-mode        texture) :clamp-to-border)
     (setf (texture:t-wrap-mode        texture) :clamp-to-border)
@@ -142,6 +154,15 @@
       (healing-fx-params-chance (1- level))
     (max +minimum-chance-healing-fx+ (dabs (gaussian-probability sigma mean)))))
 
+(defun modifier-params (level)
+  (values (elt +modifier-sigma+ level)
+	  (elt +modifier-mean+  level)))
+
+(defun calculate-modifier (level)
+  (multiple-value-bind (sigma mean)
+      (modifier-params (1- level))
+    (abs (gaussian-probability sigma mean))))
+
 (defun set-healing-effect (effect-path level interaction)
   (let* ((effect-object (make-instance 'healing-effect-parameters
 				       :trigger  +effect-when-used+
@@ -151,6 +172,17 @@
 						level)
 				       :target +target-other+)))
     (n-setf-path-value interaction effect-path effect-object)))
+
+
+(defun set-healing-dmg-effect (path level interaction)
+  (let ((effect-object (make-instance 'heal-damage-points-effect-parameters
+				      :trigger +effect-when-used+
+				      :points  (calculate-modifier level)
+				      :chance  (calculate-healing-fx-params-chance
+						level)
+				      :target  +target-self+)))
+    (n-setf-path-value interaction path effect-object)))
+
 
 (defun set-poison-effect (effect-path level interaction)
   (let ((effect-object (make-instance 'poison-effect-parameters
@@ -166,7 +198,8 @@
     (loop for i in healing-effects do
 	 (cond
 	   ((eq i +heal-damage-points+)
-	    nil) ;; TODO
+	    (set-healing-dmg-effect (list +healing-effects+ i)
+				    level interaction))
 	   ((eq i +cause-poison+)
 	    (set-poison-effect (list +healing-effects+ i) level interaction))
 	   (t

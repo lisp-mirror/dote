@@ -314,6 +314,20 @@
 	    t)
 	  nil))))
 
+(defun spell-animation (attacker defender)
+  (when (renderp defender) ;; does it means: "is visible for someone?"
+    (let* ((ghost-atk    (entity:ghost attacker))
+	   (spell        (character:spell-loaded ghost-atk))
+	   (cost         (if spell
+			     (spell:cost spell)
+			     0.0)))
+      (if (and (> cost 0.0)
+	       (mesh:can-use-spell-points-p attacker :minimum cost))
+	  (progn
+	    (mesh:set-spell-status attacker)
+	    t)
+	  nil))))
+
 (defun long-range-attack-cost (attacker)
   (let* ((ghost-atk    (entity:ghost attacker))
 	 (weapon-type  (character:weapon-type-long-range ghost-atk))
@@ -335,6 +349,7 @@
 			      :id-origin       (identificable:id attacker)
 			      :id-destination  (identificable:id defender)
 			      :attacker-entity attacker)))
+	  (mesh:decrement-spell-points attacker cost)
 	  (game-event:send-refresh-toolbar-event)
 	  (game-event:propagate-attack-long-range-event msg))))))
 
@@ -352,8 +367,27 @@
 	   			    :id-destination  (identificable:id defender)
 	   			    :attacker-entity attacker
 				    :spell           spell)))
+	    (mesh:decrement-spell-points attacker cost)
 	    (game-event:send-refresh-toolbar-event)
 	    (game-event:propagate-attack-spell-event msg))))))
+
+(defun send-spell-event (attacker defender)
+  (when (renderp defender) ;; does it means: "is visible for someone?"
+    (let* ((ghost-atk    (entity:ghost attacker))
+	   (spell        (character:spell-loaded ghost-atk))
+	   (cost         (if spell
+			     (spell:cost spell)
+			     0.0)))
+      (when (and (> cost 0.0)
+		 (mesh:can-use-spell-points-p attacker :minimum cost))
+	(let ((msg (make-instance 'game-event:spell-event
+				  :id-origin       (identificable:id attacker)
+				  :id-destination  (identificable:id defender)
+				  :attacker-entity attacker
+				  :spell           spell)))
+	  (mesh:decrement-spell-points attacker cost)
+	  (game-event:send-refresh-toolbar-event)
+	  (game-event:propagate-spell-event msg))))))
 
 (defun height-variation-chance-fn (h-atk h-defend)
   (if (d> h-atk h-defend)
@@ -495,6 +529,21 @@
 				      nil)
 		 nil))))))
 
+(defun defend-from-spell (event)
+ (let* ((attacker (game-event:attacker-entity event))
+	(defender (game-state:find-entity-by-id (entity:state attacker)
+						(game-event:id-destination event))))
+    (assert (and attacker defender))
+    (let* ((spell         (game-event:spell event)))
+      (cond
+	((typep (entity:ghost defender) 'character:player-character)
+	 (send-effects-after-attack attacker
+				    defender
+				    :weapon spell)
+	 t)
+	((typep (entity:ghost defender) 'character:np-character)
+	 nil)))))
+
 (defun attack-short-range (world attacker defender)
   "This is the most high level attack routine"
   (when defender
@@ -508,10 +557,9 @@
 
 (defun attack-long-range (world attacker defender)
   (if (character:worn-weapon (entity:ghost attacker))
-      (let ((cost (long-range-attack-cost attacker)))
+      (progn
 	(world:remove-all-tooltips world)
 	(when (attack-long-range-animation attacker defender)
-	  (mesh:decrement-move-points attacker cost)
 	  (arrows:launch-arrow +default-arrow-name+
 			       world
 			       attacker
@@ -537,14 +585,27 @@
 
 (defun attack-launch-spell (world attacker defender)
   (if (character:spell-loaded (entity:ghost attacker))
-      (let ((cost (spell:cost (character:spell-loaded (entity:ghost attacker)))))
+      (progn
 	(world:remove-all-tooltips world)
 	(when (attack-spell-animation attacker defender)
-	  (mesh:decrement-spell-points attacker cost)
 	  (arrows:launch-attack-spell (character:spell-loaded (entity:ghost attacker))
 				      world
 				      attacker
 				      defender)))
+      (make-tooltip-no-spell-error world attacker))
+  (entity:reset-tooltip-ct defender)
+  (world:reset-toolbar-selected-action world)
+  (game-event:send-refresh-toolbar-event))
+
+(defun launch-spell (world attacker defender)
+  (if (character:spell-loaded (entity:ghost attacker))
+      (progn
+	(world:remove-all-tooltips world)
+	(when (spell-animation attacker defender)
+	  (arrows:launch-spell (character:spell-loaded (entity:ghost attacker))
+			       world
+			       attacker
+			       defender)))
       (make-tooltip-no-spell-error world attacker))
   (entity:reset-tooltip-ct defender)
   (world:reset-toolbar-selected-action world)
