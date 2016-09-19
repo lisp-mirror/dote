@@ -296,6 +296,7 @@
       (if (and (> cost 0.0)
 	       (mesh:can-use-movement-points-p attacker :minimum cost))
 	  (progn
+	    (mesh:decrement-move-points attacker cost)
 	    (mesh:set-attack-status attacker)
 	    t)
 	  nil))))
@@ -310,6 +311,7 @@
       (if (and (> cost 0.0)
 	       (mesh:can-use-spell-points-p attacker :minimum cost))
 	  (progn
+	    (mesh:decrement-spell-points attacker cost)
 	    (mesh:set-attack-spell-status attacker)
 	    t)
 	  nil))))
@@ -324,6 +326,7 @@
       (if (and (> cost 0.0)
 	       (mesh:can-use-spell-points-p attacker :minimum cost))
 	  (progn
+	    (mesh:decrement-spell-points attacker cost)
 	    (mesh:set-spell-status attacker)
 	    t)
 	  nil))))
@@ -342,52 +345,36 @@
 
 (defun send-attack-long-range-event (attacker defender)
   (when (renderp defender) ;; does it means: "is visible for someone?"
-    (let* ((cost         (long-range-attack-cost attacker)))
-      (when (and (> cost 0.0)
-		 (mesh:can-use-movement-points-p attacker :minimum cost))
-	(let ((msg (make-instance 'game-event:attack-long-range-event
+    (let ((msg (make-instance 'game-event:attack-long-range-event
 			      :id-origin       (identificable:id attacker)
 			      :id-destination  (identificable:id defender)
 			      :attacker-entity attacker)))
-	  (mesh:decrement-spell-points attacker cost)
-	  (game-event:send-refresh-toolbar-event)
-	  (game-event:propagate-attack-long-range-event msg))))))
+      (game-event:send-refresh-toolbar-event)
+      (game-event:propagate-attack-long-range-event msg))))
 
 (defun send-attack-spell-event (attacker defender)
-    (when (renderp defender) ;; does it means: "is visible for someone?"
-      (let* ((ghost-atk    (entity:ghost attacker))
-	     (spell        (character:spell-loaded ghost-atk))
-	     (cost         (if spell
-			       (spell:cost spell)
-			       0.0)))
-	(when (and (> cost 0.0)
-		   (mesh:can-use-spell-points-p attacker :minimum cost))
-	  (let ((msg (make-instance 'game-event:attack-spell-event
-	   			    :id-origin       (identificable:id attacker)
-	   			    :id-destination  (identificable:id defender)
-	   			    :attacker-entity attacker
-				    :spell           spell)))
-	    (mesh:decrement-spell-points attacker cost)
-	    (game-event:send-refresh-toolbar-event)
-	    (game-event:propagate-attack-spell-event msg))))))
+  (when (renderp defender) ;; does it means: "is visible for someone?"
+    (let* ((ghost-atk    (entity:ghost attacker))
+	   (spell        (character:spell-loaded ghost-atk))
+	   (msg (make-instance 'game-event:attack-spell-event
+			       :id-origin       (identificable:id attacker)
+			       :id-destination  (identificable:id defender)
+			       :attacker-entity attacker
+			       :spell           spell)))
+      (game-event:send-refresh-toolbar-event)
+      (game-event:propagate-attack-spell-event msg))))
 
 (defun send-spell-event (attacker defender)
   (when (renderp defender) ;; does it means: "is visible for someone?"
     (let* ((ghost-atk    (entity:ghost attacker))
 	   (spell        (character:spell-loaded ghost-atk))
-	   (cost         (if spell
-			     (spell:cost spell)
-			     0.0)))
-      (when (and (> cost 0.0)
-		 (mesh:can-use-spell-points-p attacker :minimum cost))
-	(let ((msg (make-instance 'game-event:spell-event
+	   (msg (make-instance 'game-event:spell-event
 				  :id-origin       (identificable:id attacker)
 				  :id-destination  (identificable:id defender)
 				  :attacker-entity attacker
 				  :spell           spell)))
-	  (mesh:decrement-spell-points attacker cost)
-	  (game-event:send-refresh-toolbar-event)
-	  (game-event:propagate-spell-event msg))))))
+      (game-event:send-refresh-toolbar-event)
+      (game-event:propagate-spell-event msg))))
 
 (defun height-variation-chance-fn (h-atk h-defend)
   (if (d> h-atk h-defend)

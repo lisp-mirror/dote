@@ -1776,17 +1776,31 @@
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
     (declare (fixnum normals-obj-space-vertex-count tangents-obj-space-vertex-count))
-    (when (> (length triangles) 0)
-      (with-camera-view-matrix (camera-vw-matrix renderer)
-	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+    (with-camera-view-matrix (camera-vw-matrix renderer)
+      (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+	(when (render-aabb object) ;; aabb
+	  (use-program compiled-shaders :mesh-debug)
+	  (uniformfv compiled-shaders :out-color +debug-aabb-color+)
+	  (uniform-matrix compiled-shaders :modelview-matrix  4
+			  (vector (matrix* camera-vw-matrix
+					   (elt view-matrix 0)))
+			  nil)
+	  (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
+	  (gl:bind-vertex-array (vao-aabb-object-space-buffer-handle vao))
+	  (gl:bind-buffer :array-buffer (vbo-aabb-object-space-buffer-handle vbo))
+	  (gl:vertex-attrib-pointer +attribute-position-location+ 3 :float 0 0
+				    (mock-null-pointer))
+	  (gl:enable-vertex-attrib-array +attribute-position-location+)
+	  (gl:draw-arrays :lines 0 +aabb-points-count+))
+	(when (> (length triangles) 0)
 	  (when (render-normals object)  ;;normal obj space
 	    (use-program compiled-shaders :mesh-debug)
 	    (uniformfv compiled-shaders :out-color +debug-normal-color+)
 	    (uniform-matrix compiled-shaders :modelview-matrix 4
-				     (vector (matrix* camera-vw-matrix
-						      (elt view-matrix 0)
-						      (elt model-matrix 0)))
-				     nil)
+			    (vector (matrix* camera-vw-matrix
+					     (elt view-matrix 0)
+					     (elt model-matrix 0)))
+			    nil)
 	    (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
 	    (gl:bind-vertex-array (vao-normals-object-space-buffer-handle vao))
 	    (gl:bind-buffer :array-buffer (vbo-normals-object-space-buffer-handle vbo))
@@ -1798,31 +1812,17 @@
 	    (use-program compiled-shaders :mesh-debug)
 	    (uniformfv compiled-shaders :out-color +debug-tangent-color+)
 	    (uniform-matrix compiled-shaders :modelview-matrix 4
-				     (vector (matrix* camera-vw-matrix
-						      (elt view-matrix 0)
-						      (elt model-matrix 0)))
-				     nil)
+			    (vector (matrix* camera-vw-matrix
+					     (elt view-matrix 0)
+					     (elt model-matrix 0)))
+			    nil)
 	    (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
 	    (gl:bind-vertex-array (vao-tangents-object-space-buffer-handle vao))
 	    (gl:bind-buffer :array-buffer (vbo-tangents-object-space-buffer-handle vbo))
 	    (gl:vertex-attrib-pointer +attribute-position-location+ 3
 				      :float 0 0 (mock-null-pointer))
 	    (gl:enable-vertex-attrib-array +attribute-position-location+)
-	    (gl:draw-arrays :lines 0 tangents-obj-space-vertex-count))
-	  (when (render-aabb object) ;; aabb
-	    (use-program compiled-shaders :mesh-debug)
-	    (uniformfv compiled-shaders :out-color +debug-aabb-color+)
-	    (uniform-matrix compiled-shaders :modelview-matrix  4
-				     (vector (matrix* camera-vw-matrix
-						      (elt view-matrix 0)))
-				     nil)
-	    (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
-	    (gl:bind-vertex-array (vao-aabb-object-space-buffer-handle vao))
-	    (gl:bind-buffer :array-buffer (vbo-aabb-object-space-buffer-handle vbo))
-	    (gl:vertex-attrib-pointer +attribute-position-location+ 3 :float 0 0
-				      (mock-null-pointer))
-	    (gl:enable-vertex-attrib-array +attribute-position-location+)
-	    (gl:draw-arrays :lines 0 +aabb-points-count+)))))))
+	    (gl:draw-arrays :lines 0 tangents-obj-space-vertex-count)))))))
 
 (defmacro with-new-triangle-candidate ((mesh triangle v1 v2 v3) &body body)
   (let ((v1->v2 (alexandria:format-symbol t "~:@(~a->~a~)" v1 v2))

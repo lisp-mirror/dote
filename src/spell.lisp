@@ -66,6 +66,10 @@
     :initform nil
     :initarg :identifier
     :accessor identifier)
+   (level
+    :initform 1
+    :initarg :level
+    :accessor level)
    (target
     :initform +target-self+
     :initarg  :target
@@ -212,66 +216,67 @@
 (defmacro define-attack-spell ((id) &body params)
   (alexandria:with-gensyms (spell)
     `(with-interaction-parameters
-	   (let ((,spell (make-instance 'attack-spell
-					:element                  ,(or (%get-param params :element)
-								       :fire)
+       (let ((,spell (make-instance 'attack-spell
+				    :level                ,(%get-param params :level)
+				    :element              ,(or (%get-param params :element)
+							       :fire)
 
-					:identifier               ,id
-					:target                   +target-other+
-					:gui-texture              ,(make-gui-texture (%get-param
-										      params
-										      :gui-texture))
-					:cost                     ,(%get-param params :cost)
-					:visual-effect-self       ,(and (%get-param
-									 params
-									 :visual-effect-self)
-									`(function (%get-param
-										    params
-										    :visual-effect-self)))
-					:range                    ,(%get-param params :range 0.0)
-					:effective-range          ,(%get-param params
-									       :effective-range
-									       +terrain-chunk-tile-size+)
-					:visual-effect-target     ,(and (%get-param
-									 params
-									 :visual-effect-target)
-									`(function ,(%get-param
-										     params
-										     :visual-effect-target)))
-					:damage-inflicted         ,(%get-param
-								    params
-								    :damage-inflicted 0.0)
-					:arrow                    ,(and (%get-param params :arrow)
-									`(function ,(%get-param
-										     params
-										     :arrow))))))
-
-	     ,(%get-param params :effects)
-	     (setf (basic-interaction-params ,spell)
-		   (generate-spell-common *interaction-parameters*
-					  ,(%get-param params :level)))
-	     (add-spell ,spell)))))
+				    :identifier           ,id
+				    :target               +target-other+
+				    :gui-texture          ,(make-gui-texture (%get-param
+										  params
+										  :gui-texture))
+				    :cost                 ,(%get-param params :cost)
+				    :visual-effect-self   ,(and (%get-param
+								 params
+								 :visual-effect-self)
+								`(function (%get-param
+									    params
+									    :visual-effect-self)))
+				    :range                ,(%get-param params :range 0.0)
+				    :effective-range      ,(%get-param params
+								       :effective-range
+								       +terrain-chunk-tile-size+)
+				    :visual-effect-target ,(and (%get-param
+								 params
+								 :visual-effect-target)
+								`(function ,(%get-param
+									     params
+									     :visual-effect-target)))
+				    :damage-inflicted     ,(%get-param
+							    params
+							    :damage-inflicted 0.0)
+				    :arrow                ,(and (%get-param params :arrow)
+								`(function ,(%get-param
+									     params
+									     :arrow))))))
+	 ,(%get-param params :effects)
+	 (setf (basic-interaction-params ,spell)
+	       (generate-spell-common *interaction-parameters*
+				      ,(%get-param params :level)))
+	 (add-spell ,spell)))))
 
 (defmacro define-spell ((id) &body params)
   (alexandria:with-gensyms (spell)
     `(with-interaction-parameters
        (let ((,spell (make-instance 'spell
-				    :identifier               ,id
-				    :target                   +target-other+
-				    :gui-texture           ,(make-gui-texture (%get-param
-									       params
-									       :gui-texture))
-				    :cost                     ,(%get-param params :cost)
-				    :visual-effect-self ,(and (%get-param params
-									  :visual-effect-self)
-							      `(function (%get-param
-									  params
-									  :visual-effect-self)))
-				    :range                    ,(%get-param params :range 0.0)
-				    :effective-range          ,(%get-param
-								params
-								:effective-range
-								+terrain-chunk-tile-size+)
+				    :level                ,(%get-param params :level)
+				    :identifier           ,id
+				    :target               +target-other+
+				    :gui-texture          ,(make-gui-texture (%get-param
+									      params
+									      :gui-texture))
+				    :cost                 ,(%get-param params :cost)
+				    :visual-effect-self   ,(and (%get-param params
+									    :visual-effect-self)
+								`(function (%get-param
+									    params
+									    :visual-effect-self)))
+				    :range                ,(%get-param params :range 0.0)
+				    :effective-range      ,(%get-param
+							    params
+							    :effective-range
+							    +terrain-chunk-tile-size+)
 				    :visual-effect-target ,(and (%get-param
 								 params
 								 :visual-effect-target)

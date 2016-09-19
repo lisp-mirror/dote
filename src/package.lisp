@@ -3851,6 +3851,7 @@
    :get-spell
    :remove-spell
    :spell
+   :level
    :attack-spell
    :attack-spell-p
    :identifier

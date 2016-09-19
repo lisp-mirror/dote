@@ -689,7 +689,7 @@
       (when (not (entity-dead-p object))
 	(if (null damage)
 	    (billboard:apply-tooltip object
-				     (format nil "miss")
+				     (format nil (_ "miss"))
 				     :color     billboard:+damage-color+
 				     :font-type gui:+tooltip-font-handle+
 				     :activep   tooltip-active-p)

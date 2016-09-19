@@ -63,7 +63,7 @@
 							      (not (= (id arrow) (id entity)))
 							      (overlapp (aabb entity) (aabb arrow)))
 						     (return-from arrow-collision-p entity))))
-					  (flatten-to-aabb2-xz (aabb arrow))))))
+					  (aabb-2d arrow)))))
 
 (defmethod calculate :after ((object arrow-mesh) dt)
   (with-accessors ((trajectory trajectory)
@@ -101,7 +101,27 @@
 		      ;; update quadtree
 		      (world:move-entity world object nil :update-costs nil))))))))))
 
-(defclass arrow-attack-spell-mesh (triangle-mesh arrow) ())
+(defclass arrow-attack-spell-mesh (triangle-mesh arrow)
+  ((aabb-size
+    :initarg  :aabb-size
+    :initform (d/ +terrain-chunk-tile-size+ 4.0)
+    :accessor aabb-size)))
+
+(defmethod aabb ((object arrow-attack-spell-mesh))
+  (with-slots (aabb bounding-sphere) object
+    (with-accessors ((model-matrix model-matrix)
+		     (aabb-size aabb-size)) object
+      (declare ((simple-vector 1) model-matrix))
+      (let* ((p1  (transform-point (vec     aabb-size   (d- aabb-size)   aabb-size)
+				   (elt model-matrix 0)))
+	     (p2  (transform-point (vec (d- aabb-size)  aabb-size       (d- aabb-size))
+				   (elt model-matrix 0)))
+	     (res (make-instance 'aabb)))
+	(expand res p1)
+	(expand res p2)
+	(setf bounding-sphere (aabb->bounding-sphere res)
+	      aabb            res)
+	res))))
 
 (defmethod aabb-2d ((object arrow-attack-spell-mesh))
   (flatten-to-aabb2-xz-positive (aabb object)))
@@ -111,10 +131,11 @@
     (render c renderer)))
 
 (defmethod removeable-from-world ((object arrow-attack-spell-mesh))
-  (misc:dbg "rem ~a ~a" (not (vector-empty-p (mtree:children object)))
-	    (removeable-from-world (elt (mtree:children object) 0)))
   (and (not (vector-empty-p (mtree:children object)))
        (removeable-from-world (elt (mtree:children object) 0))))
+
+;; (defmethod render :after ((object arrow-attack-spell-mesh) renderer)
+;;   (render-debug object renderer))
 
 (defmethod calculate :after ((object arrow-attack-spell-mesh) dt)
   (with-accessors ((trajectory trajectory)
@@ -139,7 +160,6 @@
 			 (not (= (id intersected-entity)
 				 (id launcher-entity))))
 		    (progn
-		      (misc:dbg "hitted ~a" (type-of intersected-entity))
 		      ;; send attack event
 		      (funcall attack-event-fn launcher-entity intersected-entity)
 		      (particles::set-respawn (elt (mtree:children object) 0) nil)
@@ -240,18 +260,24 @@
 					      defender
 					      mesh
 					      #'battle-utils:send-attack-long-range-event
-					      :camera-follow-p   t)))
+					      :camera-follow-p t)))
     (when successp
       (world:push-entity world mesh))))
 
 (defun launch-attack-spell (spell world attacker defender &key (invisiblep nil))
-  (let* ((mesh (make-instance 'arrow-attack-spell-mesh))
+  (let* ((mesh (make-instance 'arrow-attack-spell-mesh
+			      :aabb-size (d* (d/ +terrain-chunk-tile-size+ 8.0)
+					     (d (spell:level spell)))))
 	 (successp (%common-launch-projectile world
 					      attacker
 					      defender
 					      mesh
 					      #'battle-utils:send-attack-spell-event
-					      :camera-follow-p   t)))
+					      :camera-follow-p t)))
+    ;; testing aabb
+    ;; (prepare-for-rendering mesh)
+    ;; (setf (render-aabb mesh) t)
+    ;;end testing
     (when successp
       (when (not invisiblep)
 	(let* ((shaders (compiled-shaders world))
@@ -269,10 +295,16 @@
       (world:push-entity world mesh))))
 
 (defun launch-spell (spell world attacker defender)
-  (let* ((shaders (compiled-shaders world))
-	 (target-effect (funcall (spell:visual-effect-target spell)
-				 (copy-vec (aabb-center (aabb defender)))
-				 shaders)))
-    (setf (end-of-life-callback target-effect)
-	  #'(lambda () (battle-utils:send-spell-event attacker defender)))
-    (world:push-entity world target-effect)))
+  (if (die-utils:pass-d100.0 (character:actual-spell-chance (ghost attacker)))
+      (let* ((shaders (compiled-shaders world))
+	     (target-effect (funcall (spell:visual-effect-target spell)
+				     (copy-vec (aabb-center (aabb defender)))
+				     shaders)))
+	(setf (end-of-life-callback target-effect)
+	      #'(lambda () (battle-utils:send-spell-event attacker defender)))
+	(world:push-entity world target-effect))
+      (billboard:apply-tooltip attacker
+			       (format nil (_ "fail"))
+			       :color     billboard:+damage-color+
+			       :font-type gui:+tooltip-font-handle+
+			       :activep   t)))
