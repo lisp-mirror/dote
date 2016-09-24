@@ -522,14 +522,14 @@
 				  (%place-player i)))))))))
 	(%place-player pos)
 	(setf (entity:pos player)
-	      (sb-cga:vec (misc:coord-map->chunk (d (elt player-coordinates 0)))
+	      (sb-cga:vec (map-utils:coord-map->chunk (d (elt player-coordinates 0)))
 			  (num:d+ 1.5 ; hardcoded :(  to be removed soon
 				  (approx-terrain-height@pos object
-							     (misc:coord-map->chunk
+							     (map-utils:coord-map->chunk
 							      (d (elt player-coordinates 0)))
-							     (misc:coord-map->chunk
+							     (map-utils:coord-map->chunk
 							      (d (elt player-coordinates 1)))))
-			  (misc:coord-map->chunk (d (elt player-coordinates 1)))))
+			  (map-utils:coord-map->chunk (d (elt player-coordinates 1)))))
 	(set-invalicable-cost-player-layer@ object
 					    (elt player-coordinates 0)
 					    (elt player-coordinates 1))
@@ -564,8 +564,8 @@
 
 (defmethod setup-map-state-entity ((object game-state) entity type occlusion-value)
   (with-accessors ((pos pos) (id id)) entity
-    (let ((x-matrix (misc:coord-chunk->matrix (elt pos 0)))
-	  (y-matrix (misc:coord-chunk->matrix (elt pos 2))))
+    (let ((x-matrix (map-utils:coord-chunk->matrix (elt pos 0)))
+	  (y-matrix (map-utils:coord-chunk->matrix (elt pos 2))))
       (set-map-state-type      object x-matrix y-matrix type)
       (set-map-state-id        object x-matrix y-matrix id)
       (set-map-state-occlusion object x-matrix y-matrix occlusion-value))))

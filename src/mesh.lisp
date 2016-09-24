@@ -952,8 +952,8 @@
 
 (defmethod calculate-cost-position ((object triangle-mesh))
   (with-accessors ((pos pos)) object
-    (ivec2:ivec2 (misc:coord-chunk->costs (elt pos 0))
-		 (misc:coord-chunk->costs (elt pos 2)))))
+    (ivec2:ivec2 (map-utils:coord-chunk->costs (elt pos 0))
+		 (map-utils:coord-chunk->costs (elt pos 2)))))
 
 (defmethod rendering-needed-p ((object triangle-mesh) renderer)
   (declare (ignore object renderer))
@@ -3049,7 +3049,7 @@
 	      |      \-|      \-|
 	      +--------+--------+ ...
 "
-  (let* ((aabb   (map 'vector #'(lambda (a) (misc:coord-terrain->chunk a :tile-offset 0.0))
+  (let* ((aabb   (map 'vector #'(lambda (a) (map-utils:coord-terrain->chunk a :tile-offset 0.0))
 		      (vec4:vec4 (d- (elt (measures object) 0) +terrain-chunk-tile-size+)
 				 (d- (elt (measures object) 1) +terrain-chunk-tile-size+)
 				 (d+ (elt (measures object) 2) +terrain-chunk-tile-size+)

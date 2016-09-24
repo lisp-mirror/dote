@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dote 0.0.1\n"
 "Report-Msgid-Bugs-To: cage@katamail.com\n"
-"POT-Creation-Date: 2016-09-19 19:21+0200\n"
-"PO-Revision-Date: 2016-09-19 19:21+0200\n"
+"POT-Creation-Date: 2016-09-24 14:03+0200\n"
+"PO-Revision-Date: 2016-09-24 14:04+0200\n"
 "Last-Translator: cage <cage@katamail.com>\n"
 "Language-Team: Italian\n"
 "Language: it\n"
@@ -481,9 +481,13 @@ msgstr "~a~agittata: ~a raggio efficace: ~a costo: ~a~a"
 msgid "element: ~a~adamage: ~a~a"
 msgstr "elemento: ~a~adanno: ~a~a"
 
-#: src/arrows.lisp:307
+#: src/arrows.lisp:321
 msgid "fail"
 msgstr "fallito"
+
+#: src/arrows.lisp:326
+msgid "too far"
+msgstr "lontano"
 
 #: src/gui/widget.lisp:1751
 msgid "Choose file"

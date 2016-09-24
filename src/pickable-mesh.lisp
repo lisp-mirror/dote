@@ -236,15 +236,15 @@
 	   (barycenter-first-triangle (3d-utils:triangle-centroid (elt first-triangle-vertices 0)
 								  (elt first-triangle-vertices 1)
 								  (elt first-triangle-vertices 2)))
-	   (row                       (coord-chunk->matrix (d- (elt barycenter-first-triangle 2)
-								  z-origin)))
-	   (column                    (coord-chunk->matrix (d- (elt barycenter-first-triangle 0)
-								  x-origin)))
-	   (element                   (make-instance 'pickable-tile
-						     :triangle-1 first-triangle
-						     :triangle-2 second-triangle
-						     :index-tr-1 first-triangle-index
-						     :index-tr-2 second-triangle-index)))
+	   (row     (map-utils:coord-chunk->matrix (d- (elt barycenter-first-triangle 2)
+						       z-origin)))
+	   (column  (map-utils:coord-chunk->matrix (d- (elt barycenter-first-triangle 0)
+						       x-origin)))
+	   (element (make-instance 'pickable-tile
+				   :triangle-1 first-triangle
+				   :triangle-2 second-triangle
+				   :index-tr-1 first-triangle-index
+				   :index-tr-2 second-triangle-index)))
       (declare (uivec first-triangle-indices))
       (declare (vec barycenter-first-triangle))
       (setf (matrix:matrix-elt lookup-tile-triangle row column) element)
@@ -276,15 +276,15 @@
 	   (barycenter-first-triangle (3d-utils:triangle-centroid (elt first-triangle-vertices 0)
 								  (elt first-triangle-vertices 1)
 								  (elt first-triangle-vertices 2)))
-	   (row                       (coord-chunk->matrix (d- (elt barycenter-first-triangle 2)
-								  z-origin)))
-	   (column                    (coord-chunk->matrix (d- (elt barycenter-first-triangle 0)
-								  x-origin)))
-	   (element                   (make-instance 'pickable-tile
-						     :triangle-1 first-triangle
-						     :triangle-2 second-triangle
-						     :index-tr-1 first-triangle-index
-						     :index-tr-2 second-triangle-index)))
+	   (row     (map-utils:coord-chunk->matrix (d- (elt barycenter-first-triangle 2)
+						       z-origin)))
+	   (column  (map-utils:coord-chunk->matrix (d- (elt barycenter-first-triangle 0)
+						       x-origin)))
+	   (element (make-instance 'pickable-tile
+				   :triangle-1 first-triangle
+				   :triangle-2 second-triangle
+				   :index-tr-1 first-triangle-index
+				   :index-tr-2 second-triangle-index)))
       (declare (uivec first-triangle-indices))
       (declare (vec barycenter-first-triangle))
       (setf (matrix:matrix-elt lookup-tile-triangle row column) element)
@@ -324,10 +324,12 @@
 					    *window-w* *window-h*))
 	       (x-origin (elt origin-offset 0))
 	       (z-origin (elt origin-offset 2))
-	       (cost-matrix-position (uivec2 (coord-chunk->matrix (elt raw-position 0))
-					     (coord-chunk->matrix (elt raw-position 2))))
-	       (column             (coord-chunk->matrix (d- (elt raw-position 0) x-origin)))
-	       (row                (coord-chunk->matrix (d- (elt raw-position 2) z-origin)))
+	       (cost-matrix-position (uivec2 (map-utils:coord-chunk->matrix (elt raw-position 0))
+					     (map-utils:coord-chunk->matrix (elt raw-position 2))))
+	       (column             (map-utils:coord-chunk->matrix (d- (elt raw-position 0)
+								      x-origin)))
+	       (row                (map-utils:coord-chunk->matrix (d- (elt raw-position 2)
+								      z-origin)))
 	       (matrix-position (uivec2 column row)))
 	  (handler-bind ((pickable-mesh:null-tile-element
 			  #'(lambda(e)
@@ -355,15 +357,15 @@
     (let* ((x-origin (elt origin-offset 0))
 	   (z-origin (elt origin-offset 2)))
       (declare (desired-type x-origin z-origin))
-      (uivec2 (f+ column (the fixnum (coord-chunk->matrix x-origin)))
-	      (f+ row    (the fixnum (coord-chunk->matrix z-origin)))))))
+      (uivec2 (f+ column (the fixnum (map-utils:coord-chunk->matrix x-origin)))
+	      (f+ row    (the fixnum (map-utils:coord-chunk->matrix z-origin)))))))
 
 (defmethod cost-coord->lookup-tile ((object pickable-mesh) row column)
   (with-accessors ((origin-offset origin-offset)) object
     (let* ((x-origin (elt origin-offset 0))
 	   (z-origin (elt origin-offset 2)))
-      (uivec2 (f- column (coord-chunk->matrix x-origin))
-	      (f- row    (coord-chunk->matrix z-origin))))))
+      (uivec2 (f- column (map-utils:coord-chunk->matrix x-origin))
+	      (f- row    (map-utils:coord-chunk->matrix z-origin))))))
 
 (defmethod set-tile-highlight ((object pickable-mesh) row column
 			       &key

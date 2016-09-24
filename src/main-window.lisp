@@ -123,9 +123,9 @@
 			 :flatten t))
     (setf (interfaces:compiled-shaders *placeholder*) compiled-shaders)
     (setf (entity:pos *placeholder*)
-	  (vec (misc:coord-map->chunk 1.0)
+	  (vec (map-utils:coord-map->chunk 1.0)
 	       +zero-height+
-	       (misc:coord-map->chunk 1.0)))
+	       (map-utils:coord-map->chunk 1.0)))
     (world:push-entity world *placeholder*)
     (camera:look-at (world:camera world)
 		    *xpos* *ypos* *zpos* *xeye* *yeye* *zeye* *xup* *yup* *zup*)
@@ -300,9 +300,9 @@
 	  (when (string= text "p")
 	    (world:push-entity (world object)
 	     		       (particles:make-aerial-explosion-level-3
-	     			(vec (misc:coord-map->chunk 5.0)
+	     			(vec (map-utils:coord-map->chunk 5.0)
 	     			     (d+ +zero-height+ 5.0)
-	     			     (misc:coord-map->chunk 5.0))
+	     			     (map-utils:coord-map->chunk 5.0))
 				;(vec-negate +z-axe+)
 				;10
 				;; (random-elt (texture:list-of-texture-by-tag
@@ -366,17 +366,17 @@
 	      (when (eq :scancode-f1 scancode)
 		(misc:dbg "position ~a costs ~a, ~a cost: ~a what ~a id ~a~% approx h ~a"
 			  old-pos
-			  (misc:coord-chunk->costs (elt old-pos 0))
-			  (misc:coord-chunk->costs (elt old-pos 2))
+			  (map-utils:coord-chunk->costs (elt old-pos 0))
+			  (map-utils:coord-chunk->costs (elt old-pos 2))
 			  (get-cost       (game-state object)
-					  (misc:coord-chunk->costs (elt old-pos 0))
-					  (misc:coord-chunk->costs (elt old-pos 2)))
+					  (map-utils:coord-chunk->costs (elt old-pos 0))
+					  (map-utils:coord-chunk->costs (elt old-pos 2)))
 			  (el-type-in-pos   (game-state object)
-					    (misc:coord-chunk->costs (elt old-pos 0))
-					    (misc:coord-chunk->costs (elt old-pos 2)))
+					    (map-utils:coord-chunk->costs (elt old-pos 0))
+					    (map-utils:coord-chunk->costs (elt old-pos 2)))
 			  (entity-id-in-pos (game-state object)
-					    (misc:coord-chunk->costs (elt old-pos 0))
-					    (misc:coord-chunk->costs (elt old-pos 2)))
+					    (map-utils:coord-chunk->costs (elt old-pos 0))
+					    (map-utils:coord-chunk->costs (elt old-pos 2)))
 			  (approx-terrain-height@pos (game-state object)
 					    (elt old-pos 0)
 					    (elt old-pos 2))))
@@ -461,8 +461,8 @@
     (with-accessors ((selected-pc selected-pc)
 		     (main-state main-state)) world
       (let* ((player-position       (entity:pos selected-pc))
-	     (cost-player-position  (ivec2 (misc:coord-chunk->costs (elt player-position 0))
-					   (misc:coord-chunk->costs (elt player-position 2))))
+	     (cost-player-position  (ivec2 (map-utils:coord-chunk->costs (elt player-position 0))
+					   (map-utils:coord-chunk->costs (elt player-position 2))))
 	     (cost-pointer-position (world:pick-pointer-position world world x y))
 	     (cost-pointer          (or (and cost-pointer-position
 					     (game-state:get-cost main-state
@@ -474,8 +474,8 @@
 		   (not (path-same-ends-p main-state
 					  cost-player-position
 					  cost-pointer-position)))
-	  (let ((min-cost               (misc:map-manhattam-distance cost-pointer-position
-								     cost-player-position))
+	  (let ((min-cost      (map-utils:map-manhattam-distance-cost cost-pointer-position
+								      cost-player-position))
 		(player-movement-points (character:current-movement-points ghost)))
 	    (when (and (>= player-movement-points +open-terrain-cost+)
 		       (<= min-cost player-movement-points)

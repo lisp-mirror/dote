@@ -11,12 +11,13 @@ tactical game.
   - trees;
   - labyrinths;
   - combat units;
-  - game object (potions, weapons etc..);
+  - game object (potions, weapons, etc..);
+  - spells;
   - most of the textures.
 - supported mesh  in obj and MD2  file format, tags supported  for the
   latter;
 - simple caching system for levels;
-- Opengl GUI (work in progress).
+- Opengl GUI (minimal).
 
 * Current status
 
@@ -76,13 +77,12 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
    - cl-opengl;
    - sdl2kit;
    - s-dot;
-   - kanren-trs.
+   - cl-kanren.
 
    Please note that s-dot and kanren-trs from  quicklisp will *not* work, you should
    download              the               versions              hosted below
-   - [[https://github.com/cage2/s-dot2][https://github.com/cage2/s-dot2]], for s-dot;
-   - [[https://github.com/Inaimathi/cl-kanren-trs][https://github.com/Inaimathi/cl-kanren-trs]],
-     for kanren-trs.
+   - [[https://github.com/cage2/s-dot2][https://github.com/cage2/s-dot2]],   for s-dot;
+   - [[https://github.com/cage2/cl-kanren][https://github.com/cage2/cl-kanren]] for kanren-trs.
 
    Moreover  you  will  need  a Opengl  implementation  with  hardware
    acceleration.  Tested  only  with  Mesa library  with  Intel(R)  HD

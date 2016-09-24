@@ -222,5 +222,5 @@
 	:clunit
 	:all-test
 	:alexandria
-	:kanren-trs
+	:cl-kanren
 	:kanren-utils))

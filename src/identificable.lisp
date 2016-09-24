@@ -43,5 +43,5 @@
     (setf (id to) (id from)))
   to)
 
-(defmethod kanren-trs:equivp ((lhs identificable) (rhs identificable))
+(defmethod cl-kanren:equivp ((lhs identificable) (rhs identificable))
   (= (id lhs) (id rhs)))

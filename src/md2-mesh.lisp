@@ -1188,8 +1188,8 @@
   (with-accessors ((ghost ghost)
 		   (pos pos)
 		   (dir dir)) object
-    (let* ((x-chunk (coord-map->chunk (elt (elt (character:current-path ghost) 1) 0)))
-	   (z-chunk (coord-map->chunk (elt (elt (character:current-path ghost) 1) 1)))
+    (let* ((x-chunk (map-utils:coord-map->chunk (elt (elt (character:current-path ghost) 1) 0)))
+	   (z-chunk (map-utils:coord-map->chunk (elt (elt (character:current-path ghost) 1) 1)))
 	   (y       (d+ 1.5 ; hardcoded :(  to be removed soon
 			(game-state:approx-terrain-height@pos (state object) x-chunk z-chunk)))
 	   (end (vec x-chunk y z-chunk))

@@ -239,12 +239,6 @@
    :gen-trivial-plist-predicate
    :gen-trivial-plist-get
    :gen-trivial-plist-gets
-   :coord-map->chunk
-   :coord-terrain->chunk
-   :coord-chunk->costs
-   :coord-chunk->matrix
-   :coord-layer->map-state
-   :map-manhattam-distance
    :make-null-pointer))
 
 (defpackage :base64
@@ -1303,7 +1297,7 @@
 (defpackage :kanren-utils
   (:use :cl
 	:alexandria
-	:kanren-trs)
+	:cl-kanren)
   (:export
    :facts))
 
@@ -1724,7 +1718,14 @@
   (:shadowing-import-from :sb-cga :rotate)
   (:export
    :facingp
-   :pos-entity-chunk->cost-pos))
+   :pos-entity-chunk->cost-pos
+   :coord-map->chunk
+   :coord-terrain->chunk
+   :coord-chunk->costs
+   :coord-chunk->matrix
+   :coord-layer->map-state
+   :map-manhattam-distance
+   :map-manhattam-distance-cost))
 
 (defpackage :transformable
   (:use :cl)
@@ -3943,7 +3944,7 @@
 
 (defpackage :load-level
   (:use :cl
-	:kanren-trs
+	:cl-kanren
 	:config
 	:constants
 	:misc

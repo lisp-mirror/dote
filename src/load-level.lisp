@@ -90,9 +90,9 @@
 					    'billboard:tree-impostor-shell))
 	   (setf (compiled-shaders tree) (compiled-shaders world))
 	   (setf (entity:pos tree)
-		 (vec (coord-terrain->chunk (elt tree-pos 0))
+		 (vec (map-utils:coord-terrain->chunk (elt tree-pos 0))
 		      +zero-height+
-		      (coord-terrain->chunk (elt tree-pos 1))))
+		      (map-utils:coord-terrain->chunk (elt tree-pos 1))))
 	   (setf (entity:pos (mesh:impostor tree))
 		 (entity:pos tree))
 	   ;; to ensure the tree lies in a leaf node of the quadtree...
@@ -133,10 +133,10 @@
     ;; set the mesh
     (setf (entity:pos door-shell)
 	  (vec (d+ (d* +terrain-chunk-size-scale+ min-x)
-		   (coord-map->chunk (d (+ x min-x))))
+		   (map-utils:coord-map->chunk (d (+ x min-x))))
 	       +zero-height+
 	       (d+ (d* +terrain-chunk-size-scale+ min-y)
-		   (coord-map->chunk (d (+ y min-y))))))
+		   (map-utils:coord-map->chunk (d (+ y min-y))))))
     ;; the character
     (setf (entity:ghost door-shell)
 	  (random-inert-object:generate-inert-object (game-state:map-level (main-state world))))
@@ -187,9 +187,9 @@
 	   (shell          (mesh:fill-shell-from-mesh choosen
 						      (furniture-type->shell-type furniture-type)))
 	   (mesh-x         (d+ (d* +terrain-chunk-size-scale+ min-x)
-			       (coord-map->chunk (d (+ x min-x)))))
+			       (map-utils:coord-map->chunk (d (+ x min-x)))))
 	   (mesh-y         (d+ (d* +terrain-chunk-size-scale+ min-y)
-			       (coord-map->chunk (d (+ y min-y))))))
+			       (map-utils:coord-map->chunk (d (+ y min-y))))))
       (setf (compiled-shaders shell)  (compiled-shaders world)
             (entity:pos shell)	      (vec mesh-x +zero-height+ mesh-y)
 	    (entity:dir shell)        (random-elt (vector (vec  1.0 0.0  0.0)
@@ -212,16 +212,16 @@
       (push-interactive-entity world shell furniture-type nil))))
 
 (defun %relative-coord-furniture->cood-mat-state (min rel-coord)
-  (truncate (+ (coord-layer->map-state min) rel-coord)))
+  (truncate (+ (map-utils:coord-layer->map-state min) rel-coord)))
 
 (defun common-setup-furniture (world bag min-x min-y x y)
   "Note: will add ghost as well"
   (let* ((choosen  (random-elt bag))
 	 (shell    (mesh:fill-shell-from-mesh-w-renderer-data choosen 'mesh:furniture-mesh-shell))
 	 (mesh-x   (d+ (d* +terrain-chunk-size-scale+ min-x)
-		       (coord-map->chunk (d (+ x min-x)))))
+		       (map-utils:coord-map->chunk (d (+ x min-x)))))
 	 (mesh-y   (d+ (d* +terrain-chunk-size-scale+ min-y)
-		       (coord-map->chunk (d (+ y min-y))))))
+		       (map-utils:coord-map->chunk (d (+ y min-y))))))
     (setf (compiled-shaders shell) (compiled-shaders world)
 	  (entity:pos shell)	   (vec mesh-x +zero-height+ mesh-y))
     (setf (entity:ghost shell)
@@ -276,9 +276,9 @@
     (let* ((x-world     (%relative-coord-furniture->cood-mat-state min-x x))
 	   (y-world     (%relative-coord-furniture->cood-mat-state min-y y))
 	   (mesh-x      (d+ (d* +terrain-chunk-size-scale+ min-x)
-			    (coord-map->chunk (d (+ x min-x)))))
+			    (map-utils:coord-map->chunk (d (+ x min-x)))))
 	   (mesh-y      (d+ (d* +terrain-chunk-size-scale+ min-y)
-			    (coord-map->chunk (d (+ y min-y)))))
+			    (map-utils:coord-map->chunk (d (+ y min-y)))))
 	   (table-near  (find-next-by-type world x-world y-world +table-type+))
 	   (orientation (if table-near ; choose orientation
 			    (let* ((dx (truncate (- (elt table-near 0) x-world)))
@@ -360,10 +360,10 @@
     (setf (compiled-shaders shell) (compiled-shaders world))
     (setf (entity:pos shell)
 	  (vec (d+ (d* +terrain-chunk-size-scale+ min-x)
-		   (coord-map->chunk (d (+ x min-x))))
+		   (map-utils:coord-map->chunk (d (+ x min-x))))
 	       +zero-height+
 	       (d+ (d* +terrain-chunk-size-scale+ min-y)
-		   (coord-map->chunk (d (+ y min-y))))))
+		   (map-utils:coord-map->chunk (d (+ y min-y))))))
     (setf (entity:ghost shell)
 	  (random-inert-object:generate-inert-object (game-state:map-level (main-state world))))
     ;; events
@@ -397,10 +397,10 @@
     (setf (compiled-shaders shell) (compiled-shaders world))
     (setf (entity:pos shell)
 	  (vec (d+ (d* +terrain-chunk-size-scale+ min-x)
-		   (coord-map->chunk (d (+ x min-x))))
+		   (map-utils:coord-map->chunk (d (+ x min-x))))
 	       +zero-height+
 	       (d+ (d* +terrain-chunk-size-scale+ min-y)
-		   (coord-map->chunk (d (+ y min-y))))))
+		   (map-utils:coord-map->chunk (d (+ y min-y))))))
     (setf (entity:ghost shell)
 	  (random-inert-object:generate-inert-object (game-state:map-level (main-state world))))
     (game-event:register-for-end-turn shell)
@@ -681,11 +681,11 @@
 	 (w/2             (d/ w 2.0))
 	 (h/2             (d/ h 2.0))
 	 (actual-x        (d+ (d* +terrain-chunk-size-scale+ min-x)
-			      (coord-map->chunk min-x :tile-offset 0.0)
-			      (coord-map->chunk (d/ w 2.0) :tile-offset 0.0)))
+			      (map-utils:coord-map->chunk min-x :tile-offset 0.0)
+			      (map-utils:coord-map->chunk (d/ w 2.0) :tile-offset 0.0)))
 	 (actual-z        (d+ (d* +terrain-chunk-size-scale+ min-y)
-			      (coord-map->chunk min-y :tile-offset 0.0)
-			      (coord-map->chunk (d/ h 2.0) :tile-offset 0.0)))
+			      (map-utils:coord-map->chunk min-y :tile-offset 0.0)
+			      (map-utils:coord-map->chunk (d/ h 2.0) :tile-offset 0.0)))
 	 (transformation  (sb-cga:matrix*
 			   (sb-cga:translate (vec actual-x +zero-height+ actual-z))
 			   (sb-cga:translate (3d-utils:vec-negate (sb-cga:vec w/2 0.0 h/2)))))
@@ -705,8 +705,8 @@
     (loop for x from 0.0 below (d/ w +terrain-chunk-size-scale+) do
 	 (loop for y from 0.0 below (d/ h +terrain-chunk-size-scale+) do
 	      (world:setup-map-state-tile world
-					  (truncate (+ x (coord-layer->map-state min-x)))
-					  (truncate (+ y (coord-layer->map-state min-y)))
+					  (truncate (+ x (map-utils:coord-layer->map-state min-x)))
+					  (truncate (+ y (map-utils:coord-layer->map-state min-y)))
 					  +floor-type+
 					  (Identificable:id mesh)
 					  nil)))
@@ -745,12 +745,12 @@
     (setf (compiled-shaders mesh) (compiled-shaders world))
     (setf (entity:pos mesh)
 	  (vec (d+ (d* +terrain-chunk-size-scale+ min-x)
-		   (coord-map->chunk min-x :tile-offset 0.0)
-		   (coord-map->chunk (d/ w 2.0) :tile-offset 0.0))
+		   (map-utils:coord-map->chunk min-x :tile-offset 0.0)
+		   (map-utils:coord-map->chunk (d/ w 2.0) :tile-offset 0.0))
 	       +zero-height+
 	       (d+ (d* +terrain-chunk-size-scale+ min-y)
-		   (coord-map->chunk min-y :tile-offset 0.0)
-		   (coord-map->chunk (d/ h 2.0) :tile-offset 0.0))))
+		   (map-utils:coord-map->chunk min-y :tile-offset 0.0)
+		   (map-utils:coord-map->chunk (d/ h 2.0) :tile-offset 0.0))))
     mesh))
 
 (defun setup-floor (world map)
@@ -829,7 +829,8 @@
 	 (terrain-chunk:nclip-with-aabb whole
 					(map 'vector
 					     #'(lambda (a)
-						 (coord-terrain->chunk a :tile-offset 0.0))
+						 (map-utils:coord-terrain->chunk a
+										 :tile-offset 0.0))
 					     aabb)
 					:remove-orphaned-vertices nil
 					:regenerate-rendering-data nil

@@ -295,16 +295,31 @@
       (world:push-entity world mesh))))
 
 (defun launch-spell (spell world attacker defender)
-  (if (die-utils:pass-d100.0 (character:actual-spell-chance (ghost attacker)))
-      (let* ((shaders (compiled-shaders world))
-	     (target-effect (funcall (spell:visual-effect-target spell)
-				     (copy-vec (aabb-center (aabb defender)))
-				     shaders)))
-	(setf (end-of-life-callback target-effect)
-	      #'(lambda () (battle-utils:send-spell-event attacker defender)))
-	(world:push-entity world target-effect))
-      (billboard:apply-tooltip attacker
-			       (format nil (_ "fail"))
-			       :color     billboard:+damage-color+
-			       :font-type gui:+tooltip-font-handle+
-			       :activep   t)))
+  (let* ((range        (spell:range spell))
+	 (pos-attacker (pos attacker))
+	 (x-attacker   (map-utils:coord-chunk->matrix (elt pos-attacker 0)))
+	 (z-attacker   (map-utils:coord-chunk->matrix (elt pos-attacker 2)))
+	 (pos-defender (pos defender))
+	 (x-defender   (map-utils:coord-chunk->matrix (elt pos-defender 0)))
+	 (z-defender   (map-utils:coord-chunk->matrix (elt pos-defender 2)))
+	 (dist         (map-utils:map-manhattam-distance (ivec2:ivec2 x-attacker z-attacker)
+							 (ivec2:ivec2 x-defender z-defender))))
+    (if (<= dist range)
+	(if (die-utils:pass-d100.0 (character:actual-spell-chance (ghost attacker)))
+	    (let* ((shaders (compiled-shaders world))
+		   (target-effect (funcall (spell:visual-effect-target spell)
+					   (copy-vec (aabb-center (aabb defender)))
+					   shaders)))
+	      (setf (end-of-life-callback target-effect)
+		    #'(lambda () (battle-utils:send-spell-event attacker defender)))
+	      (world:push-entity world target-effect))
+	    (billboard:apply-tooltip attacker
+				     (format nil (_ "fail"))
+				     :color     billboard:+damage-color+
+				     :font-type gui:+tooltip-font-handle+
+				     :activep   t))
+	(billboard:apply-tooltip attacker
+				 (format nil (_ "too far"))
+				 :color     billboard:+damage-color+
+				 :font-type gui:+tooltip-font-handle+
+				 :activep   t))))

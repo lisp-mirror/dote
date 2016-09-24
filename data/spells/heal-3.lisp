@@ -4,10 +4,10 @@
   :level                 10
   :element               :fire
   :gui-texture           "heal/heal-3.tga"
-  :cost                   10.0
+  :cost                  10.0
   :visual-effect-self    nil
-  :range                 20.0
-  :effective-range        5.0
+  :range                 20  ;; in tile units
+  :effective-range        5  ;; in tile units
   :visual-effect-target  particles:make-heal-level-2
   :effects               (define-interaction
 			   effects         (define-effects)

@@ -22,7 +22,7 @@
 	       :sb-cga
 	       :cl-opengl
 	       :sdl2kit
-	       :kanren-trs
+	       :cl-kanren
 	       :s-dot)
   :components ((:file "package")
 	       (:file "config")
