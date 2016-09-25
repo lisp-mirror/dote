@@ -609,7 +609,8 @@
   (game-event:check-event-targeted-to-me (object event)
     (with-accessors ((attacked-by-entity attacked-by-entity)) object
       (game-event:unregister-for-end-attack-long-range-event object)
-      (setf (entity:reply-attack attacked-by-entity) nil)
+      (when attacked-by-entity
+	(setf (entity:reply-attack attacked-by-entity) nil))
       (setf attacked-by-entity nil))
     t))
 
@@ -617,7 +618,8 @@
   (game-event:check-event-targeted-to-me (object event)
     (with-accessors ((attacked-by-entity attacked-by-entity)) object
       (game-event:unregister-for-end-attack-spell-event object)
-      (setf (entity:reply-attack attacked-by-entity) nil)
+      (when attacked-by-entity
+	(setf (entity:reply-attack attacked-by-entity) nil))
       (setf attacked-by-entity nil))
     t))
 

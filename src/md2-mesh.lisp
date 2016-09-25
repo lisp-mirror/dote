@@ -139,8 +139,7 @@
        (let* ((,ghost (ghost ,object))
 	      (,chance (actual-reply-attack-chance ,ghost)))
 	 (when (and (not (entity:reply-attack-p ,attacked-by-entity))
-		    (or t
-			(dice:pass-d1.0 ,chance)))
+		    (dice:pass-d1.0 ,chance))
 	   ;; attack!
 	   (game-state:with-world (,world ,state)
 	     (let ((,weapon-short-range (character:weapon-type-short-range ,ghost))
@@ -1576,7 +1575,7 @@
 	(add-to-inventory (ghost body) forged-bow)
 	(add-to-inventory (ghost body) forged-sword)
 	(setf (movement-points (ghost body)) 100.0)
-	(setf (magic-points    (ghost body)) 5.0)
+	(setf (magic-points    (ghost body)) 50.0)
 	;; note:   wear-item-event  will   not  be   catched  as   the
 	;; registration happens when the entity is added to world
 	(wear-item body forged-sword))

@@ -260,7 +260,7 @@
 		   (followed-entity followed-entity)) object
     (when followed-entity
       (let* ((pos-saved    (copy-vec pos))
-	     (pos-followed (pos followed-entity)))
+	     (pos-followed (pos      followed-entity)))
 	(setf pos (vec (d- (elt  pos-followed 0) (d* +terrain-chunk-tile-size+ 2.0))
 		       (elt pos-saved 1)
 		       (d- (elt pos-followed 2)  (d* +terrain-chunk-tile-size+ 2.0)))

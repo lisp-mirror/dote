@@ -1713,7 +1713,8 @@
 	:misc
 	:num
 	:ivec2
-	:vec2)
+	:vec2
+	:entity)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:shadowing-import-from :sb-cga :rotate)
   (:export
@@ -1725,7 +1726,8 @@
    :coord-chunk->matrix
    :coord-layer->map-state
    :map-manhattam-distance
-   :map-manhattam-distance-cost))
+   :map-manhattam-distance-cost
+   :pos->game-state-pos))
 
 (defpackage :transformable
   (:use :cl)

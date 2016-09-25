@@ -264,6 +264,33 @@
     (when successp
       (world:push-entity world mesh))))
 
+(defun send-attack-spell-events-fn (spell)
+  #'(lambda (attacker defender)
+      (let* ((state            (state attacker))
+	     (range            (spell:effective-range           spell))
+	     (pos-defender     (map-utils:pos->game-state-pos   defender))
+	     (accetable-type   (list game-state:+empty-type+
+				     game-state:+unknown-type+))
+	     (neighborhood     (game-state:get-neighborhood state
+							    (elt pos-defender 1)
+							    (elt pos-defender 0)
+							    #'(lambda (el pos)
+								(declare (ignore pos))
+								(not (find (game-state:el-type el)
+									   accetable-type
+									   :test #'eq)))
+							    :w-offset range
+							    :h-offset range)))
+	(loop for map-element across neighborhood do
+	     (let* ((id-entity (game-state:entity-id (car map-element)))
+		    (entity    (game-state:find-entity-by-id state id-entity))
+		    (pos       (map-utils:pos->game-state-pos entity))
+		    (dist      (map-utils:map-manhattam-distance pos-defender pos)))
+	       (when (<= dist range)
+		 (battle-utils:send-attack-spell-event attacker entity))))
+	(battle-utils:send-attack-spell-event attacker defender))))
+
+
 (defun launch-attack-spell (spell world attacker defender &key (invisiblep nil))
   (let* ((mesh (make-instance 'arrow-attack-spell-mesh
 			      :aabb-size (d* (d/ +terrain-chunk-tile-size+ 8.0)
@@ -272,7 +299,7 @@
 					      attacker
 					      defender
 					      mesh
-					      #'battle-utils:send-attack-spell-event
+					      (send-attack-spell-events-fn spell)
 					      :camera-follow-p t)))
     ;; testing aabb
     ;; (prepare-for-rendering mesh)
@@ -294,6 +321,40 @@
 	  (mtree:add-child blocker target-effect)))
       (world:push-entity world mesh))))
 
+(defun send-spell-events-fn (spell attacker defender)
+  #'(lambda ()
+      (let* ((state            (state attacker))
+	     (range            (spell:effective-range           spell))
+	     (pos-defender     (map-utils:pos->game-state-pos   defender))
+	     (neighborhood-pc  (game-state:neighborhood-by-type state
+								(elt pos-defender 1)
+								(elt pos-defender 0)
+								game-state:+pc-type+
+								:h-offset range
+								:w-offset range))
+	     (neighborhood-npc (game-state:neighborhood-by-type state
+								(elt pos-defender 1)
+								(elt pos-defender 0)
+								game-state:+npc-type+
+								:h-offset range
+								:w-offset range))
+	     (neighborhood     (concatenate 'vector neighborhood-npc neighborhood-pc)))
+	(loop for map-element across neighborhood do
+	     (let* ((id-entity (game-state:entity-id (car map-element)))
+		    (entity    (game-state:find-entity-by-id state id-entity))
+		    (pos       (map-utils:pos->game-state-pos entity))
+		    (dist      (map-utils:map-manhattam-distance pos-defender pos)))
+	     (when (<= dist range)
+	       (battle-utils:send-spell-event attacker entity))))
+	(battle-utils:send-spell-event attacker defender))))
+
+(defun %apply-tooltip (entity message)
+  (billboard:apply-tooltip entity
+			   message
+			   :color     billboard:+damage-color+
+			   :font-type gui:+tooltip-font-handle+
+			   :activep   t))
+
 (defun launch-spell (spell world attacker defender)
   (let* ((range        (spell:range spell))
 	 (pos-attacker (pos attacker))
@@ -305,21 +366,13 @@
 	 (dist         (map-utils:map-manhattam-distance (ivec2:ivec2 x-attacker z-attacker)
 							 (ivec2:ivec2 x-defender z-defender))))
     (if (<= dist range)
-	(if (die-utils:pass-d100.0 (character:actual-spell-chance (ghost attacker)))
+	(if (or t (die-utils:pass-d100.0 (character:actual-spell-chance (ghost attacker))))
 	    (let* ((shaders (compiled-shaders world))
 		   (target-effect (funcall (spell:visual-effect-target spell)
 					   (copy-vec (aabb-center (aabb defender)))
 					   shaders)))
 	      (setf (end-of-life-callback target-effect)
-		    #'(lambda () (battle-utils:send-spell-event attacker defender)))
+		    (send-spell-events-fn spell attacker defender))
 	      (world:push-entity world target-effect))
-	    (billboard:apply-tooltip attacker
-				     (format nil (_ "fail"))
-				     :color     billboard:+damage-color+
-				     :font-type gui:+tooltip-font-handle+
-				     :activep   t))
-	(billboard:apply-tooltip attacker
-				 (format nil (_ "too far"))
-				 :color     billboard:+damage-color+
-				 :font-type gui:+tooltip-font-handle+
-				 :activep   t))))
+	    (%apply-tooltip attacker (_ "fail")))
+	(%apply-tooltip attacker (_ "too far")))))

@@ -1,10 +1,10 @@
 (in-package :spell)
 
-(define-attack-spell (:firebolt-1)
+(define-attack-spell (:firebolt-venom-1)
   :level                 1
   :element               :fire
-  :gui-texture           "attack/firearrow.tga"
-  :cost                  2.0
+  :gui-texture           "attack/firearrow-venom-1.tga"
+  :cost                  7.0
   :visual-effect-self    nil
   :range                 20 ;; in tile units
   :effective-range       1  ;; in tile units
@@ -13,4 +13,5 @@
   :arrow                 particles:make-fire-dart-level-0
   :effects               (define-interaction
 			   effects         (define-effects)
-			   healing-effects (define-healing-effects)))
+			   healing-effects (define-healing-effects
+					       cause-poison generate)))

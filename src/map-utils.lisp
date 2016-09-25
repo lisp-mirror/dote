@@ -44,3 +44,10 @@
   (num:d+ (num:d* (num:desired a)
 		  (num:d+ +terrain-chunk-tile-size+ +terrain-chunk-size-scale+))
 	  tile-offset))
+
+(defgeneric pos->game-state-pos (object))
+
+(defmethod pos->game-state-pos ((object entity))
+  (with-accessors ((pos pos)) object
+    (ivec2 (coord-chunk->matrix (elt pos 0))
+	   (coord-chunk->matrix (elt pos 2)))))

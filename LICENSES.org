@@ -526,24 +526,43 @@
 
   according to: http://opengameart.org/content/colored-summoning-circles
 
+- data/textures/spells/poison/cause-poison-1.tga
+  © 2016  cage released under Creative  Commons Attribution-ShareAlike
+  3.0           Unported            (CC           BY-SA           3.0)
+  https://creativecommons.org/licenses/by-sa/3.0/
+
+
 - data/textures/spells/attack/firearrow-lvl2.tga
 - data/textures/spells/attack/firearrow-lvl3.tga
 - data/textures/spells/attack/firearrow.tga
 - data/textures/spells/attack/fireball_2.tga
 - data/textures/spells/attack/fireburst.tga
 - data/textures/spells/attack/firecircle.tga
-- data/textures/spells/attack/  © 2016 Warlock's Gauntlet team
+- data/textures/spells/attack/firearrow-venom-1.tga
+- data/textures/spells/attack/firearrow-venom-1.tga
+- data/textures/spells/poison/cause-poison-2.tga
+- data/textures/spells/poison/cause-poison-3.tga
 
+  derived from © 2016 Warlock's Gauntlet team
   released under released under CC-BY-3.0
   http://creativecommons.org/licenses/by/3.0
 
   according to http://opengameart.org/content/spell-icon-collection-part-1
-  and          http://opengameart.org/content/spell-icon-collection-part-2
+               http://opengameart.org/content/spell-icon-collection-part-2
+               http://opengameart.org/content/spell-icon-collection-part-3
 
 
-- data/textures/spells/attack/cure-1.tga
-- data/textures/spells/attack/cure-2.tga
-- data/textures/spells/attack/cure-3.tga
+- data/textures/spells/poison/cause-poison-3.tga
+
+  derived from © 2016 Jorge Avila
+  released under released under CC-BY-3.0
+  http://creativecommons.org/licenses/by/3.0
+
+  according to http://opengameart.org/content/poison-skull
+
+- data/textures/spells/cure/cure-1.tga
+- data/textures/spells/cure/cure-2.tga
+- data/textures/spells/cure/cure-3.tga
 
   released under released under CC-BY-3.0
   http://creativecommons.org/licenses/by/3.0
@@ -551,9 +570,9 @@
   according to: http://opengameart.org/content/painterly-spell-icons-part-2
 
 
-- data/textures/spells/attack/heal-1.tga
-- data/textures/spells/attack/heal-2.tga
-- data/textures/spells/attack/heal-3.tga
+- data/textures/spells/heal/heal-1.tga
+- data/textures/spells/heal/heal-2.tga
+- data/textures/spells/heal/heal-3.tga
 
   released under released under CC-BY-3.0
   http://creativecommons.org/licenses/by/3.0

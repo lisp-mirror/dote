@@ -1892,7 +1892,8 @@
     (setf (use-blending-p object) t)
     (setf (integrator-shader object) :blood-integrator)
     (setf (texture-object object) texture)
-    (setf (end-of-life-callback object) #'(lambda () (world:activate-all-tooltips world)))))
+    (setf (end-of-life-callback object)
+	  #'(lambda () (world:activate-all-tooltips world)))))
 
 (defmethod calculate :after ((object aerial-explosion) dt)
   (with-accessors ((triggered-p triggered-p)
@@ -2028,6 +2029,13 @@
 			:scaling-rate 200.0
 			:texture texture)))
 
+(defun %set-fireball-callback (ball trail)
+  (let ((saved-callback (end-of-life-callback ball)))
+    (setf (end-of-life-callback ball)
+	  #'(lambda ()
+	      (funcall saved-callback)
+	      (setf (triangles trail) '())))))
+
 (defun make-fireball-level-2 (pos dir compiled-shaders)
   (let* ((texture  (random-elt (list-of-texture-by-tag +texture-tag-aerial-expl-particle+)))
 	 (gradient-ball (color-utils:make-gradient
@@ -2086,6 +2094,7 @@
 					:height     .5
 					:respawn    t)))
     (mtree:add-child ball trail)
+    (%set-fireball-callback ball trail)
     ball))
 
 (defun make-fireball-level-1 (pos dir compiled-shaders)
@@ -2146,6 +2155,7 @@
 					:height     .035
 					:respawn    t)))
     (mtree:add-child ball trail)
+    (%set-fireball-callback ball trail)
     ball))
 
 (defun make-fireball-level-0 (pos dir compiled-shaders)
@@ -2206,6 +2216,7 @@
 					:height     .02
 					:respawn    t)))
     (mtree:add-child ball trail)
+    (%set-fireball-callback ball trail)
     ball))
 
 (defun make-burning-cloud (pos compiled-shaders)

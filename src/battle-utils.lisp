@@ -369,10 +369,10 @@
     (let* ((ghost-atk    (entity:ghost attacker))
 	   (spell        (character:spell-loaded ghost-atk))
 	   (msg (make-instance 'game-event:spell-event
-				  :id-origin       (identificable:id attacker)
-				  :id-destination  (identificable:id defender)
-				  :attacker-entity attacker
-				  :spell           spell)))
+			       :id-origin       (identificable:id attacker)
+			       :id-destination  (identificable:id defender)
+			       :attacker-entity attacker
+			       :spell           spell)))
       (game-event:send-refresh-toolbar-event)
       (game-event:propagate-spell-event msg))))
 
