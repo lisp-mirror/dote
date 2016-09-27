@@ -16,17 +16,17 @@
 
 (in-package :mesh)
 
-(alexandria:define-constant +vbo-count+ 7 :test #'=)
+(alexandria:define-constant +vbo-count+            7             :test #'=)
 
-(alexandria:define-constant +vao-count+ 5 :test #'=)
+(alexandria:define-constant +vao-count+            5             :test #'=)
 
-(alexandria:define-constant +aabb-vertex-count+ 72 :test #'=)
+(alexandria:define-constant +aabb-vertex-count+    72            :test #'=)
 
-(alexandria:define-constant +aabb-points-count+ 24 :test #'=)
+(alexandria:define-constant +aabb-points-count+    24            :test #'=)
 
-(alexandria:define-constant +tag-head-key+        "tag_head"     :test #'string=)
+(alexandria:define-constant +tag-head-key+         "tag_head"    :test #'string=)
 
-(alexandria:define-constant +tag-left-weapon-key+ "tag_lweapon"  :test #'string=)
+(alexandria:define-constant +tag-left-weapon-key+  "tag_lweapon" :test #'string=)
 
 (alexandria:define-constant +tag-right-weapon-key+ "tag_rweapon" :test #'string=)
 
@@ -86,7 +86,6 @@
 
 (defmethod clone ((object triangle))
   (with-simple-clone (object 'triangle)))
-
 
 (defmethod copy-flat-into :after ((from triangle) (to triangle))
   (setf (vertex-index              to) (vertex-index from)
@@ -2739,7 +2738,26 @@
       (misc:dbg "damage shell ~a ~a" damage (character:current-damage-points (ghost object)))
       (when damage
 	(apply-damage object damage))
+      (game-event:register-for-end-attack-melee-event object)
       t)))
+
+(defmethod on-game-event ((object triangle-mesh-shell) (event game-event:attack-long-range-event))
+  (game-event:check-event-targeted-to-me (object event)
+    (multiple-value-bind (damage ambush)
+	(battle-utils:defend-from-attack-long-range event)
+      (declare (ignore ambush))
+      (when damage
+	(apply-damage object damage))
+      (game-event:register-for-end-attack-long-range-event object)
+      t)))
+
+(defmethod on-game-event ((object triangle-mesh-shell) (event game-event:attack-spell-event))
+  (game-event:check-event-targeted-to-me (object event)
+    (multiple-value-bind (damage ambush)
+	(battle-utils:defend-from-attack-spell event)
+      (declare (ignore ambush))
+      (misc:dbg "damage shell ~a ~a" damage (character:current-damage-points (ghost object)))
+      (apply-damage object damage :tooltip-active-p nil))))
 
 (defmethod apply-damage ((object triangle-mesh-shell) damage
 			 &key &allow-other-keys)

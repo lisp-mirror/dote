@@ -512,7 +512,7 @@
 	 (values (attack-spell-damage attack-dmg
 				      0.0
 				      nil
-				      nil
+				      (character:level ghost-defend)
 				      nil)
 		 nil))))))
 
@@ -571,29 +571,33 @@
 				   #'widget:hide-and-remove-parent-cb)))
 
 (defun attack-launch-spell (world attacker defender)
-  (if (character:spell-loaded (entity:ghost attacker))
-      (progn
-	(world:remove-all-tooltips world)
-	(when (attack-spell-animation attacker defender)
-	  (arrows:launch-attack-spell (character:spell-loaded (entity:ghost attacker))
-				      world
-				      attacker
-				      defender)))
-      (make-tooltip-no-spell-error world attacker))
-  (entity:reset-tooltip-ct defender)
-  (world:reset-toolbar-selected-action world)
-  (game-event:send-refresh-toolbar-event))
+  (when (and attacker
+	     defender)
+    (if (character:spell-loaded (entity:ghost attacker))
+	(progn
+	  (world:remove-all-tooltips world)
+	  (when (attack-spell-animation attacker defender)
+	    (arrows:launch-attack-spell (character:spell-loaded (entity:ghost attacker))
+					world
+					attacker
+					defender)))
+	(make-tooltip-no-spell-error world attacker))
+    (entity:reset-tooltip-ct defender)
+    (world:reset-toolbar-selected-action world)
+    (game-event:send-refresh-toolbar-event)))
 
 (defun launch-spell (world attacker defender)
-  (if (character:spell-loaded (entity:ghost attacker))
-      (progn
-	(world:remove-all-tooltips world)
-	(when (spell-animation attacker defender)
-	  (arrows:launch-spell (character:spell-loaded (entity:ghost attacker))
-			       world
-			       attacker
-			       defender)))
-      (make-tooltip-no-spell-error world attacker))
-  (entity:reset-tooltip-ct defender)
-  (world:reset-toolbar-selected-action world)
-  (game-event:send-refresh-toolbar-event))
+  (when (and attacker
+	     defender)
+    (if (character:spell-loaded (entity:ghost attacker))
+	(progn
+	  (world:remove-all-tooltips world)
+	  (when (spell-animation attacker defender)
+	    (arrows:launch-spell (character:spell-loaded (entity:ghost attacker))
+				 world
+				 attacker
+				 defender)))
+	(make-tooltip-no-spell-error world attacker))
+    (entity:reset-tooltip-ct defender)
+    (world:reset-toolbar-selected-action world)
+    (game-event:send-refresh-toolbar-event)))

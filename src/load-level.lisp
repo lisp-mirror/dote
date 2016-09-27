@@ -103,7 +103,10 @@
 	     (push-interactive-entity world tree +tree-type+ :occlude)
 	     ;; events
 	     ;; attack
-	     (game-event:register-for-attack-melee-event tree)
+	     (game-event:register-for-attack-melee-event      tree)
+	     (game-event:register-for-attack-long-range-event tree)
+	     ;; attack-spell
+	     (game-event:register-for-attack-spell-event tree)
 	     (setf (mesh:aabb tree) saved-aabb)
 	     (setf (entity:ghost tree)
 		   (random-inert-object:generate-inert-object (height-tree->level tree))))))))
@@ -141,8 +144,13 @@
     (setf (entity:ghost door-shell)
 	  (random-inert-object:generate-inert-object (game-state:map-level (main-state world))))
     ;; events
-    (game-event:register-for-open-door-event door-shell)
-    (game-event:register-for-close-door-event door-shell)
+    (game-event:register-for-open-door-event    door-shell)
+    (game-event:register-for-close-door-event   door-shell)
+    ;; attack
+    (game-event:register-for-attack-melee-event      door-shell)
+    (game-event:register-for-attack-long-range-event door-shell)
+    ;; attack-spell
+    (game-event:register-for-attack-spell-event door-shell)
     (push-interactive-entity world door-shell door-type :occlude
 			     :add-to-gamestate t
 			     :add-to-world     nil)
@@ -208,7 +216,10 @@
 						    :keychain keychain))))
       ;; event
       ;; attack
-      (game-event:register-for-attack-melee-event shell)
+      (game-event:register-for-attack-melee-event      shell)
+      (game-event:register-for-attack-long-range-event shell)
+      ;; attack-spell
+      (game-event:register-for-attack-spell-event shell)
       (push-interactive-entity world shell furniture-type nil))))
 
 (defun %relative-coord-furniture->cood-mat-state (min rel-coord)
@@ -236,7 +247,10 @@
 			       :add-to-world     nil)
       ;; event
       ;; attack
-      (game-event:register-for-attack-melee-event shell)
+      (game-event:register-for-attack-melee-event      shell)
+      (game-event:register-for-attack-long-range-event shell)
+      ;; attack-spell
+      (game-event:register-for-attack-spell-event shell)
       (mtree:add-child (mesh:pillar-instanced labyrinth-mesh) shell))))
 
 (defun setup-walkable (world min-x min-y x y)
@@ -302,7 +316,10 @@
 			       :add-to-world     nil)
       ;; event
       ;; attack
-      (game-event:register-for-attack-melee-event shell)
+      (game-event:register-for-attack-melee-event      shell)
+      (game-event:register-for-attack-long-range-event shell)
+      ;; attack-spell
+      (game-event:register-for-attack-spell-event shell)
       (case orientation
 	(:n (mtree:add-child (mesh:chair-n-instanced labyrinth-mesh) shell))
 	(:s (mtree:add-child (mesh:chair-s-instanced labyrinth-mesh) shell))
@@ -319,7 +336,10 @@
 			       :add-to-world     nil)
       ;; event
       ;; attack
-      (game-event:register-for-attack-melee-event shell)
+      (game-event:register-for-attack-melee-event      shell)
+      (game-event:register-for-attack-long-range-event shell)
+      ;; attack-spell
+      (game-event:register-for-attack-spell-event shell)
       (mtree:add-child (mesh:table-instanced labyrinth-mesh) shell))))
 
 (defun setup-wall-decoration (world min-x min-y x y)
@@ -369,7 +389,10 @@
     ;; events
     (game-event:register-for-end-turn shell)
     ;; attack
-    (game-event:register-for-attack-melee-event shell)
+    (game-event:register-for-attack-melee-event      shell)
+    (game-event:register-for-attack-long-range-event shell)
+    ;; attack-spell
+    (game-event:register-for-attack-spell-event shell)
     (if (typep shell 'mesh:decorated-wall-mesh-shell)
 	(progn
 	  (setf (mesh:texture-projector shell)
@@ -408,7 +431,10 @@
 			     :add-to-gamestate t
 			     :add-to-world     nil)
     ;; attack
-    (game-event:register-for-attack-melee-event shell)
+    (game-event:register-for-attack-melee-event      shell)
+    (game-event:register-for-attack-long-range-event shell)
+    ;; attack spell
+    (game-event:register-for-attack-spell-event shell)
     (mtree:add-child (mesh:window-instanced labyrinth-mesh) shell)
     shell))
 

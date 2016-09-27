@@ -48,8 +48,9 @@
   (and
    (not (terrain-chunk:terrain-chunk-p entity))
    (not (particles:particles-cluster-p entity))
-   (not (arrowp entity))
-   (renderp entity)))
+   (not (water-mesh-p                  entity))
+   (not (arrowp                        entity))
+   (renderp                            entity)))
 
 (defun arrow-collision-p (arrow)
   (with-accessors ((trajectory trajectory)
@@ -106,6 +107,9 @@
     :initarg  :aabb-size
     :initform (d/ +terrain-chunk-tile-size+ 4.0)
     :accessor aabb-size)))
+
+(defmethod initialize-instance :after ((object arrow-attack-spell-mesh) &key &allow-other-keys)
+  (setf (use-blending-p object) t))
 
 (defmethod aabb ((object arrow-attack-spell-mesh))
   (with-slots (aabb bounding-sphere) object
@@ -366,7 +370,7 @@
 	 (dist         (map-utils:map-manhattam-distance (ivec2:ivec2 x-attacker z-attacker)
 							 (ivec2:ivec2 x-defender z-defender))))
     (if (<= dist range)
-	(if (or t (die-utils:pass-d100.0 (character:actual-spell-chance (ghost attacker))))
+	(if (die-utils:pass-d100.0 (character:actual-spell-chance (ghost attacker)))
 	    (let* ((shaders (compiled-shaders world))
 		   (target-effect (funcall (spell:visual-effect-target spell)
 					   (copy-vec (aabb-center (aabb defender)))
