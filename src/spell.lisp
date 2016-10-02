@@ -99,6 +99,14 @@
     :initarg  :visual-effect-target
     :accessor visual-effect-target)))
 
+(gen-type-p spell)
+
+(defmethod portrait ((object spell))
+  (gui-texture object))
+
+(defmethod (setf portrait) ((object spell) value)
+  (setf (gui-texture object) value))
+
 (defmethod description-for-humans :around ((object spell))
   (text-utils:strcat
    (format nil
@@ -126,8 +134,7 @@
     :initarg :arrow
     :accessor arrow)))
 
-(defun attack-spell-p (a)
-  (typep a 'attack-spell))
+(gen-type-p attack-spell)
 
 (defmethod description-for-humans :around ((object attack-spell))
   (text-utils:strcat

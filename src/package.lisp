@@ -224,6 +224,7 @@
    :defcached
    :defun-inline-function
    :format-fn-symbol
+   :gen-type-p
    :define-compiler-macros
    :defmethod-inline-function
    :nest-expressions
@@ -3854,6 +3855,7 @@
    :get-spell
    :remove-spell
    :spell
+   :spellp
    :level
    :attack-spell
    :attack-spell-p

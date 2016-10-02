@@ -47,8 +47,17 @@
   `(alexandria:format-symbol ,package ,(concatenate 'string "~:@(" format "~)")
 			     ,@format-args))
 
-
 ;; functions utils
+
+(defmacro gen-type-p (name)
+  (alexandria:with-gensyms (a)
+    (let ((fname (if (cl-ppcre:scan "-" (symbol-name name))
+		     (alexandria:format-symbol t "~:@(~a-p~)"
+					       (symbol-name name))
+		     (alexandria:format-symbol t "~:@(~ap~)"
+					       (symbol-name name)))))
+      `(defun ,fname (,a)
+	 (typep ,a ',name)))))
 
 (defmacro define-compiler-macros (name &body args)
   (let* ((function-name (alexandria:format-symbol t "~:@(~a~)" name))

@@ -23,17 +23,4 @@ AM_GNU_GETTEXT([external])
 AC_PATH_PROGS([LISP_COMPILER],[sbcl],[AC_MSG_ERROR([Can not find a Common Lisp compiler.])])
 
 AC_CONFIG_FILES([Makefile po/Makefile.in])
-AC_OUTPUT	
-
-
-
-
-
-
-
-
-
-
-
-
-
+AC_OUTPUT

@@ -45,6 +45,36 @@
 	      (setf (character:spell-loaded (ghost owner)) item))
 	    (setf (character:spell-loaded (ghost owner)) nil))))))
 
+(defun %sort-spell-predicate (a b)
+  (let* ((name-a (symbol-name (spell:identifier a)))
+	 (name-b (symbol-name (spell:identifier b)))
+	 (n-a  (parse-integer (cl-ppcre:scan-to-strings "[0-9]+$" name-a)))
+	 (n-b  (parse-integer (cl-ppcre:scan-to-strings "[0-9]+$" name-b)))
+	 (s-a  (subseq name-a 0 (- (cl-ppcre:scan "[0-9]+$" name-a) 2)))
+	 (s-b  (subseq name-b 0 (- (cl-ppcre:scan "[0-9]+$" name-b) 2))))
+    (if (string< s-a s-b)
+	t
+	(if (string= s-a s-b)
+	    (<= n-a n-b)
+	    nil))))
+
+(defun sort-spells (widget)
+  (let* ((slots            (remove-if #'(lambda (a)
+					  (null (contained-entity a)))
+				      (alexandria:flatten (slots-pages widget))))
+	 (sort-predicate   #'%sort-spell-predicate)
+	 (all              (mapcar #'contained-entity slots))
+	 (not-attack       (sort (remove-if #'spell:attack-spell-p all)     sort-predicate))
+	 (attack           (sort (set-difference all not-attack :test #'eq) sort-predicate))
+	 (sorted           (nconc attack not-attack)))
+    (map nil
+	 #'(lambda (a) (remove-containded-item a))
+	 slots)
+    (map nil
+	 #'(lambda (s i) (add-containded-item s i))
+	 (alexandria:flatten (slots-pages widget))
+	 sorted)))
+
 (defclass spell-window (table-paginated-window) ())
 
 (defun spell-window-width ()
@@ -73,4 +103,5 @@
        for spell  in (spell:db) do
 	 (setf (texture-overlay  button) (spell:gui-texture spell)
 	       (contained-entity button) spell))
+    (sort-spells window)
     window))
