@@ -4,7 +4,7 @@
   :level                 10
   :element               :fire
   :gui-texture           "attack/fireburst.tga"
-  :cost                  10.0
+  :cost                  20.0
   :visual-effect-self    nil
   :range                 20 ;; in tile units
   :effective-range       5  ;; in tile units

@@ -119,6 +119,10 @@
 	   +gui-static-text-delim+)
    (call-next-method)))
 
+(defun %default-effective-aabb-size (spell)
+  (d* (d/ +terrain-chunk-tile-size+ 8.0)
+      (d (level spell))))
+
 (defclass attack-spell (spell)
   ((element
     :initform :fire
@@ -132,7 +136,11 @@
    (arrow
     :initform nil
     :initarg :arrow
-    :accessor arrow)))
+    :accessor arrow)
+   (effective-aabb-size
+    :initform #'%default-effective-aabb-size
+    :initarg :effective-aabb-size
+    :accessor effective-aabb-size)))
 
 (gen-type-p attack-spell)
 
@@ -244,6 +252,9 @@
 				    :effective-range      ,(%get-param params
 								       :effective-range
 								       +terrain-chunk-tile-size+)
+				    :effective-aabb-size  ,(%get-param params
+								       :effective-aabb-size
+								        #'%default-effective-aabb-size)
 				    :visual-effect-target ,(and (%get-param
 								 params
 								 :visual-effect-target)

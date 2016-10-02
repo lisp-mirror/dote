@@ -3778,6 +3778,7 @@
    :make-debris
    :make-fire-dart-level-0
    :make-fire-dart-level-1
+   :make-fire-dart-level-2
    :make-smoke-level-0
    :make-smoke-level-1
    :make-smoke-trail
@@ -3866,6 +3867,7 @@
    :visual-effect-self
    :range
    :effective-range
+   :effective-aabb-size
    :damage-inflicted
    :arrow
    :visual-effect-target))

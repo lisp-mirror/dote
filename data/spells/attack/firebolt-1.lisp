@@ -9,6 +9,9 @@
   :range                 20 ;; in tile units
   :effective-range       1  ;; in tile units
   :visual-effect-target  particles:make-aerial-explosion-level-0
+  :effective-aabb-size  #'(lambda (spell)
+			    (declare (ignore spell))
+			    (d/ +terrain-chunk-tile-size+ 8.0))
   :damage-inflicted      10.0
   :arrow                 particles:make-fire-dart-level-0
   :effects               (define-interaction

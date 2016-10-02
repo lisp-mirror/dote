@@ -1768,6 +1768,29 @@
 			  :height 1.0
 			  :respawn t))
 
+(defun make-fire-dart-level-2 (pos dir compiled-shaders)
+  (make-particles-cluster 'fire-dart
+			  1500
+			  compiled-shaders
+			  :texture (texture:get-texture texture:+fire-particle+)
+			  :pos     pos
+			  :v0-fn  (gaussian-velocity-distribution-fn (vec-negate dir)
+								     1.0
+								     .1
+								     (d/ +pi/2+ 5.0))
+			  :mass-fn  (gaussian-distribution-fn 1.0 .1)
+			  :life-fn  (gaussian-distribution-fn 8.0 1.1)
+			  :delay-fn (gaussian-distribution-fn 0.0 10.1)
+			  :gravity  dir
+			  :scaling-fn  #'(lambda ()
+					   #'(lambda (p dt)
+					       (declare (ignore p dt))
+					       1.0))
+			  :alpha-fn   (%smooth-alpha-fading-clsr 10.0)
+			  :width  2.0
+			  :height 2.0
+			  :respawn t))
+
 (defun make-fire-dart-level-1 (pos dir compiled-shaders)
   (make-particles-cluster 'fire-dart
 			  1500

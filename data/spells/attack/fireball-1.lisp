@@ -4,7 +4,7 @@
   :level                 1
   :element               :fire
   :gui-texture           "attack/firecircle.tga"
-  :cost                   2.0
+  :cost                  2.0
   :visual-effect-self    nil
   :range                 20 ;; in tile units
   :effective-range       2  ;; in tile units

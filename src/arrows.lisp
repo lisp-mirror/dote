@@ -297,14 +297,13 @@
 
 (defun launch-attack-spell (spell world attacker defender &key (invisiblep nil))
   (let* ((mesh (make-instance 'arrow-attack-spell-mesh
-			      :aabb-size (d* (d/ +terrain-chunk-tile-size+ 8.0)
-					     (d (spell:level spell)))))
+			      :aabb-size (funcall (spell:effective-aabb-size spell) spell)))
 	 (successp (%common-launch-projectile world
 					      attacker
 					      defender
 					      mesh
 					      (send-attack-spell-events-fn spell)
-					      :camera-follow-p t)))
+					      :camera-follow-p nil)))
     ;; testing aabb
     ;; (prepare-for-rendering mesh)
     ;; (setf (render-aabb mesh) t)
