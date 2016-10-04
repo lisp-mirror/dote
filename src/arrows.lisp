@@ -76,8 +76,12 @@
     (when (not hittedp)
       (game-state:with-world (world state)
 	(let ((camera (world:camera world)))
-	  (if (not (3d-utils:insidep (world:world-aabb world)
-				     pos))
+	  (if (or (not (3d-utils:insidep (world:world-aabb world)
+					 pos))
+		  (d<= (elt pos 1)
+		       (game-state:approx-terrain-height@pos state
+							     (elt pos 0)
+							     (elt pos 2))))
 	      (progn
 		;; remove from world
 		(remove-entity-by-id world (id object))
@@ -151,8 +155,12 @@
     (when (not hittedp)
       (game-state:with-world (world state)
 	(let ((camera (world:camera world)))
-	  (if (not (3d-utils:insidep (world:world-aabb world)
-				     pos))
+	  (if (or (not (3d-utils:insidep (world:world-aabb world)
+					 pos))
+		  (d<= (elt pos 1)
+		       (game-state:approx-terrain-height@pos state
+							     (elt pos 0)
+							     (elt pos 2))))
 	      (progn
 		;; remove from world
 		(remove-entity-by-id world (id object))
@@ -303,7 +311,7 @@
 					      defender
 					      mesh
 					      (send-attack-spell-events-fn spell)
-					      :camera-follow-p nil)))
+					      :camera-follow-p t)))
     ;; testing aabb
     ;; (prepare-for-rendering mesh)
     ;; (setf (render-aabb mesh) t)

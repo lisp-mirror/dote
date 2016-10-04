@@ -2102,8 +2102,7 @@
 					:v0-fn      (gaussian-velocity-distribution-fn dir
 										       1.0
 										       0.1
-										       (d/ +pi+
-											   5.0))
+										       0.001)
 					:mass-fn     (gaussian-distribution-fn 1.0 .2)
 					:life-fn     (constantly 5.0)
 					:delay-fn    (gaussian-distribution-fn 5.0 1.0)
@@ -2163,8 +2162,7 @@
 					:v0-fn      (gaussian-velocity-distribution-fn dir
 										       1.0
 										       0.1
-										       (d/ +pi+
-											   5.0))
+										       0.001)
 					:mass-fn     (gaussian-distribution-fn 1.0 .2)
 					:life-fn     (constantly 5.0)
 					:delay-fn    (gaussian-distribution-fn 5.0 1.0)
@@ -2224,8 +2222,7 @@
 					:v0-fn      (gaussian-velocity-distribution-fn dir
 										       1.0
 										       0.1
-										       (d/ +pi+
-											   5.0))
+										       0.001)
 					:mass-fn     (gaussian-distribution-fn 1.0 .2)
 					:life-fn     (constantly 5.0)
 					:delay-fn    (gaussian-distribution-fn 5.0 1.0)
