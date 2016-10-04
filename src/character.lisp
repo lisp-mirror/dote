@@ -2097,6 +2097,12 @@
   (and (> num 0)
        (plist-path-value db (list +magic-effects+))))
 
+(defun cdr-eq-generate-p (i)
+  (eq :generate (cdr i)))
+
+(defun eq-generate-p (i)
+  (eq :generate i))
+
 (defun remove-generate-symbols (db)
   (if (null db)
       nil
@@ -2104,7 +2110,7 @@
        (loop for i in db collect
 	    (cons (car i)
 		  (cond
-		    ((eq :generate (cdr i))
+		    ((cdr-eq-generate-p i)
 		     nil)
 		    ((listp (cdr i))
 		     (remove-generate-symbols (cdr i)))

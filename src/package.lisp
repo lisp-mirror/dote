@@ -2648,6 +2648,8 @@
    :%get-normal-fx-shuffled
    :%get-healing-fx-shuffled
    :%get-magic-fx-shuffled
+   :cdr-eq-generate-p
+   :eq-generate-p
    :remove-generate-symbols
    :with-character-parameters
    :sum-effects-mod

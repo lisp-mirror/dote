@@ -538,10 +538,9 @@
     :accessor b-dismiss)
    (b-characteristics
     :initform (make-instance 'naked-button
-			     :x               (d* (d +slots-per-page-side-size+)
+			     :x               (d* (d (1+ +slots-per-page-side-size+))
 						  (small-square-button-size *reference-sizes*))
-			     :y               (d* 5.0
-						  (small-square-button-size *reference-sizes*))
+			     :y               (small-square-button-size *reference-sizes*)
 			     :width           (small-square-button-size *reference-sizes*)
 			     :height          (small-square-button-size *reference-sizes*)
 			     :texture-object  (get-texture +button-texture-name+)
@@ -552,9 +551,9 @@
     :accessor b-characteristics)
    (b-spell-book
     :initform (make-instance 'naked-button
-			     :x               (d* (d +slots-per-page-side-size+)
+			     :x               (d* (d (1+ +slots-per-page-side-size+))
 						  (small-square-button-size *reference-sizes*))
-			     :y               (d* 6.0
+			     :y               (d* 2.0
 						  (small-square-button-size *reference-sizes*))
 			     :width           (small-square-button-size *reference-sizes*)
 			     :height          (small-square-button-size *reference-sizes*)

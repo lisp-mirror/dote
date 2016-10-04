@@ -570,6 +570,30 @@
   according to: http://opengameart.org/content/painterly-spell-icons-part-2
 
 
+- data/textures/spells/cure/cure-coma.tga
+- data/textures/spells/cure/cure-berserk-1.tga
+- data/textures/spells/cure/cure-berserk-2.tga
+- data/textures/spells/cure/cure-berserk-3.tga
+- data/textures/spells/cure/cure-poison-1.tga
+- data/textures/spells/cure/cure-poison-2.tga
+- data/textures/spells/cure/cure-poison-3.tga
+- data/textures/spells/cure/cure-terror-1.tga
+- data/textures/spells/cure/cure-terror-2.tga
+- data/textures/spells/cure/cure-terror-3.tga
+  based on the works
+  © 2015
+  - Lorc;
+  released under released under Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+  https://creativecommons.org/licenses/by/3.0/
+  Downloaded from: http://game-icons.net/
+
+  and
+  http://opengameart.org/content/star
+
+  released under CC0 1.0 Universal (CC0 1.0) Public Domain Dedication
+  https://creativecommons.org/publicdomain/zero/1.0/
+  according to http://opengameart.org/content/star
+
 - data/textures/spells/heal/heal-1.tga
 - data/textures/spells/heal/heal-2.tga
 - data/textures/spells/heal/heal-3.tga

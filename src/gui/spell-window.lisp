@@ -78,13 +78,15 @@
 (defclass spell-window (table-paginated-window) ())
 
 (defun spell-window-width ()
-  (d+ (d* (d +slots-per-page-side-size+) (small-square-button-size *reference-sizes*))
+  (d+ (d* 3.0
+          (d +slots-per-page-side-size+)
+	  (small-square-button-size *reference-sizes*))
       (d* 2.0
 	  (d* (d* 4.0 (small-square-button-size *reference-sizes*))
 	      (left-frame-offset *reference-sizes*)))))
 
 (defun spell-window-height ()
-    (d+ (d* 10.0 (small-square-button-size *reference-sizes*))))
+  (d* 6.5 (small-square-button-size *reference-sizes*)))
 
 (defun make-spell-window (player)
   (let ((window (make-instance 'spell-window
@@ -95,9 +97,22 @@
 			       :height (spell-window-height)
 			       :label  (_ "Spells")
 			       :make-slot-button-fn #'make-spell-button
-			       :callback-slot-button #'select-spell-cb)))
-    (setf (width (text-description window))
-	  (d* 0.9 (spell-window-width)))
+			       :callback-slot-button #'select-spell-cb))
+	(new-text-desc (make-instance 'widget:static-text
+			     :height (d* 0.8
+					 (spell-window-height))
+			     :width  (d* 0.5 (spell-window-width))
+			     :x      (d+ (left-frame-offset *reference-sizes*)
+					 (d* (d +slots-per-page-side-size+)
+					 (small-square-button-size *reference-sizes*)))
+			     :y      0.0
+			     :font-size (d* 0.2 *square-button-size*)
+			     :label ""
+			     :justified t)))
+
+    (setf (text-description window) new-text-desc)
+    (mtree-utils:remove-child-if window #'(lambda (n) (typep n 'static-text)))
+    (add-child window new-text-desc)
     (loop
        for button in (alexandria:flatten (slots-pages window))
        for spell  in (spell:db) do

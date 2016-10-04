@@ -183,23 +183,27 @@
     (abs (gaussian-probability sigma mean))))
 
 (defun set-healing-effect (effect-path level interaction)
-  (let* ((effect-object (make-instance 'healing-effect-parameters
-				       :trigger  +effect-when-used+
-				       :duration (ceiling (max 1
-							       (- +maximum-level+ level)))
-				       :chance (calculate-healing-fx-params-chance
-						level)
-				       :target +target-other+)))
+  (let* ((effect-object (if (eq-generate-p (plist-path-value interaction effect-path))
+			    (make-instance 'healing-effect-parameters
+					   :trigger  +effect-when-used+
+					   :duration (ceiling (max 1
+								   (- +maximum-level+ level)))
+					   :chance (calculate-healing-fx-params-chance
+						    level)
+					   :target +target-other+)
+			    (plist-path-value interaction effect-path))))
     (n-setf-path-value interaction effect-path effect-object)))
 
 
 (defun set-healing-dmg-effect (path level interaction)
-  (let ((effect-object (make-instance 'heal-damage-points-effect-parameters
-				      :trigger +effect-when-used+
-				      :points  (calculate-modifier level)
-				      :chance  (calculate-healing-fx-params-chance
-						level)
-				      :target  +target-self+)))
+  (let ((effect-object  (if (eq-generate-p (plist-path-value interaction path))
+			    (make-instance 'heal-damage-points-effect-parameters
+					   :trigger +effect-when-used+
+					   :points  (calculate-modifier level)
+					   :chance  (calculate-healing-fx-params-chance
+						     level)
+					   :target  +target-self+)
+			    (plist-path-value interaction path))))
     (n-setf-path-value interaction path effect-object)))
 
 
@@ -213,7 +217,7 @@
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun generate-spell-common (interaction level)
-  (let* ((healing-effects (%get-healing-fx-shuffled interaction 1)))
+  (let* ((healing-effects (%get-healing-fx-shuffled interaction 10)))
     (loop for i in healing-effects do
 	 (cond
 	   ((eq i +heal-damage-points+)

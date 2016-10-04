@@ -69,7 +69,8 @@
       attack-spell-chance          none)
     healing-effects
     (define-healing-effects
-      heal-damage-points           (define-heal-dmg-effect (duration unlimited
+	heal-damage-points           (define-heal-dmg-effect (duration unlimited
+							      points    10.0
 				                            trigger when-used
 							    chance 0.1
 						            target other))
