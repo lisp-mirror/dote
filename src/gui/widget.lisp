@@ -1306,7 +1306,7 @@
 	    (when (and (widgetp w)
 		       (on-mouse-pressed w event))
 	      (return-from on-mouse-pressed t)))
-	  nil)
+	  t)
 	nil)))
 
 (defmethod on-mouse-released ((object window) event)
@@ -1317,7 +1317,7 @@
 	     (when (and (widgetp w)
 			(on-mouse-released w event))
 	       (return-from on-mouse-released t)))
-	nil)
+	t)
       nil))
 
 (defun other-window-dragging-mode-p (me)

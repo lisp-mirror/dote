@@ -580,6 +580,10 @@
 - data/textures/spells/cure/cure-terror-1.tga
 - data/textures/spells/cure/cure-terror-2.tga
 - data/textures/spells/cure/cure-terror-3.tga
+- data/textures/spells/cure/immune-berserk-1.tga
+- data/textures/spells/cure/immune-poison-1.tga
+- data/textures/spells/cure/immune-terror-1.tga
+
   based on the works
   © 2015
   - Lorc;

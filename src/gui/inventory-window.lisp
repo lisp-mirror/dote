@@ -178,15 +178,16 @@
 
 (defun open-spell-list-cb (w e)
   (declare (ignore e))
-  (with-parent-widget (win) w
-    (with-accessors ((owner owner)) win
-      (when owner
-	(with-accessors ((ghost ghost)) owner
-	  ;; lookup for chest
-	  (let* ((spell-list (make-spell-window owner)))
-	    (setf (compiled-shaders spell-list) (compiled-shaders win))
-	    (add-child win spell-list))))))
-  t)
+  (let ((root (find-root-widget w)))
+    (with-parent-widget (win) w
+      (with-accessors ((owner owner)) win
+	(when owner
+	  (with-accessors ((ghost ghost)) owner
+	    ;; lookup for chest
+	    (let* ((spell-list (make-spell-window owner)))
+	      (setf (compiled-shaders spell-list) (compiled-shaders win))
+	      (add-child root spell-list))))))
+    t))
 
 (defun next-slot-page-cb (w e)
   (declare (ignore e))
