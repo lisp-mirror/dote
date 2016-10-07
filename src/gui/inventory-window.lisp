@@ -156,16 +156,25 @@
     (with-accessors ((chest-slots chest-slots) (owner owner)) win
       (multiple-value-bind (slot item)
 	  (get-selected-item win)
-	(let ((available-chest-slot (loop
-				       named inner
-				       for slot in chest-slots do
-					 (when (empty-slot-p slot)
-					   (return-from inner slot)))))
-	  (when (and slot
-		     available-chest-slot)
-	    (add-containded-item available-chest-slot item)
-	    (add-child (chest win) item)
-	    (remove-item-from-inventory owner slot item)))))))
+	(when (and slot
+		   item
+		   owner)
+	  (with-accessors ((state state)) owner
+	    (if (chest win)
+		(let ((available-chest-slot (loop
+					       named inner
+					       for slot in chest-slots do
+						 (when (empty-slot-p slot)
+						   (return-from inner slot)))))
+		  (when (and slot
+			     available-chest-slot)
+		    (add-containded-item available-chest-slot item)
+		    (add-child (chest win) item)
+		    (remove-item-from-inventory owner slot item)))
+		(game-state:with-world (world state)
+		  (world:post-entity-message world
+					     owner
+					     (_ "There is not any chest here"))))))))))
 
 (defun open-characteristics-cb (w e)
   (declare (ignore e))

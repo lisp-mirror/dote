@@ -4150,18 +4150,25 @@
 
 (defun make-message-box* (text title type buttons-callbacks)
   "Car of each element of buttons-callbacks is the label, cdr the callback function"
-  (let* ((widget (make-instance 'message-window
-				:type    type
-				:label   title
-				:message text
-				:x       (d (- (/ *window-w* 2) (/ (message-window-w) 2.0)))
-				:y       (d (- (/ *window-h* 2) (/ (message-window-h) 2.0)))
-				:width   (message-window-w)
-				:height  (message-window-h)))
-	 (button-w (d/ (d* 0.8 (width widget)) (d (length buttons-callbacks)))))
+  (let* ((widget        (make-instance 'message-window
+				       :type    type
+				       :label   title
+				       :message text
+				       :x       (d (- (/ *window-w* 2) (/ (message-window-w) 2.0)))
+				       :y       (d (- (/ *window-h* 2) (/ (message-window-h) 2.0)))
+				       :width   (message-window-w)
+				       :height  (message-window-h)))
+	 (button-w      (dmin
+			 (d* 0.25 (width widget))
+			 (d/ (d* 0.8 (width widget)) (d (length buttons-callbacks)))))
+	 (all-buttons-w (d* (d (length buttons-callbacks)) button-w))
+	 (buttons-start  (d- (d/ (width widget) 2.0)
+			     (d/ all-buttons-w  2.0)
+			     (d* (left-frame-offset *reference-sizes*)
+				 (width widget)))))
     (loop
        for b-cb in buttons-callbacks
-       for x    from 0.0 by button-w do
+       for x    from buttons-start by button-w do
 	 (add-child widget
 		    (make-instance 'button
 				   :width    button-w
