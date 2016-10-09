@@ -356,3 +356,23 @@
 (defun send-end-spell-event (dest)
   (propagate-end-spell-event (make-instance 'end-spell-event
 					    :id-destination (identificable:id dest))))
+
+(defevent lock-object-event (game-event-w-destination) ())
+
+(defun send-lock-event (origin dest)
+  (propagate-lock-object-event (make-instance 'lock-object-event
+					      :id-origin      (identificable:id origin)
+					      :id-destination (identificable:id dest))))
+
+(defevent unlock-object-event (game-event-w-destination)
+  ((force-unlock
+    :initform nil
+    :initarg  :force-unlock
+    :reader force-unlock-p
+    :writer (setf force-unlock))))
+
+(defun send-unlock-event (origin dest &key (force nil))
+  (propagate-unlock-object-event (make-instance 'unlock-object-event
+						:id-origin      (identificable:id origin)
+						:id-destination (identificable:id dest)
+						:force-unlock   force)))

@@ -31,7 +31,6 @@
     healing-effects     (define-healing-effects
 			  heal-poison                generate
 			  heal-berserk               generate
-			  heal-faint                 generate
 			  heal-terror                generate
 			  cause-poison               generate
 			  cause-berserk              generate

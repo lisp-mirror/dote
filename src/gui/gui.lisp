@@ -407,7 +407,13 @@
 		    +default-gui-resource+
 		    (setf (s-wrap-mode  bg) :clamp-to-border)
 		    (setf (t-wrap-mode  bg) :clamp-to-border)
+		    (setf (border-color bg) §c00000000))
+		   (chest-closed-locked.tga
+		    +default-gui-resource+
+		    (setf (s-wrap-mode  bg) :clamp-to-border)
+		    (setf (t-wrap-mode  bg) :clamp-to-border)
 		    (setf (border-color bg) §c00000000)))
+
 
 (gen-simple-bg-setup frame
 		     +frame-texture-name+
@@ -551,4 +557,5 @@
   (setup-bg-zoom-overlay)
   (setup-bg-unzoom-overlay)
   (setup-bg-chest-closed)
+  (setup-bg-chest-closed-locked)
   (setup-bg-chest-opened))

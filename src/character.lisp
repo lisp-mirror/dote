@@ -311,6 +311,11 @@
   (and (not (lookup-basic-interaction object +can-be-picked+))
        (lookup-basic-interaction object +can-be-opened+)))
 
+(gen-interaction-predicate (locked)
+  (and (not (lookup-basic-interaction object +can-be-picked+))
+       (lookup-basic-interaction object +can-be-opened+)
+       (stringp (lookup-basic-interaction object +can-be-opened+))))
+
 (gen-interaction-predicate (key)
   (and (lookup-basic-interaction object +can-be-picked+)
        (lookup-basic-interaction object +can-open+)))

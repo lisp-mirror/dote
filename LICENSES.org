@@ -486,6 +486,45 @@
   Unported (CC BY-SA 3.0) license
   https://creativecommons.org/licenses/by-sa/3.0/
 
+- data/gui/default/padlock-overlay.tga
+
+  derived from © 2016 buch
+  according to http://opengameart.org/content/physica-assets-expansion
+  released under
+
+  Creative Commons Attribution 3.0 Unported License (CC BY 3.0)
+
+  https://creativecommons.org/licenses/by/3.0/
+
+- data/gui/default/chest-opened.tga
+  data/gui/default/chest-closed.tga
+
+  according to http://opengameart.org/content/496-pixel-art-icons-for-medievalfantasy-rpg
+  © 2015 Henrique Lazarini (a.k.a.: Ails) released under CC0 1.0
+  https://creativecommons.org/publicdomain/zero/1.0/
+
+- data/gui/default/chest-closed-locked.tga
+
+  derived from
+  according to http://opengameart.org/content/496-pixel-art-icons-for-medievalfantasy-rpg
+  © 2015 Henrique Lazarini (a.k.a.: Ails) released under CC0 1.0
+  https://creativecommons.org/publicdomain/zero/1.0/
+
+  and
+  derived from © 2016 buch
+  according to http://opengameart.org/content/physica-assets-expansion
+  released under
+
+  Creative Commons Attribution 3.0 Unported License (CC BY 3.0)
+
+  https://creativecommons.org/licenses/by/3.0/
+
+  this works is released under
+
+  Creative Commons Attribution 3.0 Unported License (CC BY 3.0)
+
+  https://creativecommons.org/licenses/by/3.0/
+
 - src/test/data/avatars/avatar0.tga
   derived from
   Licensed     under    CC-BY-3.0
@@ -580,6 +619,27 @@
 - data/textures/spells/cure/cure-terror-1.tga
 - data/textures/spells/cure/cure-terror-2.tga
 - data/textures/spells/cure/cure-terror-3.tga
+
+  based on the works
+  © 2015
+  - Lorc;
+  released under released under Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+  https://creativecommons.org/licenses/by/3.0/
+  Downloaded from: http://game-icons.net/
+
+  and © 2016 Écrivain
+
+  released under CC0 1.0 Universal (CC0 1.0) Public Domain Dedication
+  https://creativecommons.org/publicdomain/zero/1.0/
+  according to http://opengameart.org/content/star
+
+
+  this works is hence released under
+  Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+  https://creativecommons.org/licenses/by/3.0/
+  Downloaded from: http://game-icons.net/
+
+
 - data/textures/spells/cure/immune-berserk-1.tga
 - data/textures/spells/cure/immune-poison-1.tga
 - data/textures/spells/cure/immune-terror-1.tga
@@ -592,11 +652,18 @@
   Downloaded from: http://game-icons.net/
 
   and
-  http://opengameart.org/content/star
+  © 2016 qubodup
 
   released under CC0 1.0 Universal (CC0 1.0) Public Domain Dedication
   https://creativecommons.org/publicdomain/zero/1.0/
-  according to http://opengameart.org/content/star
+  according to http://opengameart.org/content/sword-and-shield-16x16
+
+
+  this works is hence released under
+  Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+  https://creativecommons.org/licenses/by/3.0/
+  Downloaded from: http://game-icons.net/
+
 
 - data/textures/spells/heal/heal-1.tga
 - data/textures/spells/heal/heal-2.tga

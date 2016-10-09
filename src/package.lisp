@@ -2268,6 +2268,18 @@
    :unregister-for-end-attack-melee-event
    :propagate-end-attack-melee-event
    :send-end-attack-melee-event
+   :lock-object-event
+   :send-lock-event
+   :register-for-lock-object-event
+   :unregister-for-lock-object-event
+   :propagate-lock-object-event
+   :unlock-object-event
+   :force-unlock
+   :force-unlock-p
+   :send-unlock-event
+   :register-for-unlock-object-event
+   :unregister-for-unlock-object-event
+   :propagate-unlock-object-event
    :check-event-targeted-to-me))
 
 (defpackage :basic-interaction-parameters
@@ -2601,6 +2613,7 @@
    :elmp
    :ringp
    :can-be-worn-p
+   :lockedp
    :interaction-get-strength
    :interaction-get-stamina
    :interaction-get-dexterity
@@ -2713,6 +2726,7 @@
 	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
+   :generate-keycode
    :generate-container))
 
 (defpackage :random-potion
@@ -3336,6 +3350,7 @@
   (:export
    :+recover-from-faint-dmg-fraction+
    :send-attack-melee-event
+   :defend-from-container-trap
    :defend-from-attack-short-range
    :attack-long-range-animation
    :attack-spell-animation
@@ -3407,6 +3422,7 @@
    :+inventory-slot-selected-texture-name+
    :+inventory-slot-texture-name+
    :+chest-closed-texture-name+
+   :+chest-closed-locked-texture-name+
    :+chest-opened-texture-name+
    :+transparent-texture-name+
    :+blue-h-bar+
@@ -3704,6 +3720,7 @@
    :add-ai-opponent
    :world-aabb
    :remove-all-tooltips
+   :remove-all-windows
    :activate-all-tooltips))
 
 (defpackage :terrain-chunk

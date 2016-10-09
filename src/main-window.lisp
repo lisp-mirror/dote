@@ -384,22 +384,26 @@
 		(setf (entity:pos *placeholder*)
 		      (vec (elt old-pos 0)
 			   0.0
-			   (num:d+ (elt old-pos 2) +terrain-chunk-tile-size+))))
+			   (num:d+ (elt old-pos 2) +terrain-chunk-tile-size+)))
+		(world:move-entity world *placeholder* nil :update-costs nil))
 	      (when (eq :scancode-down scancode)
 		(setf (entity:pos *placeholder*)
 		      (vec (elt old-pos 0)
 			   0.0
-			   (num:d- (elt old-pos 2) +terrain-chunk-tile-size+))))
+			   (num:d- (elt old-pos 2) +terrain-chunk-tile-size+)))
+		(world:move-entity world *placeholder* nil :update-costs nil))
 	      (when (eq :scancode-left scancode)
 		(setf (entity:pos *placeholder*)
 		      (vec (num:d+ (elt old-pos 0) +terrain-chunk-tile-size+)
 			   0.0
-			   (elt old-pos 2))))
+			   (elt old-pos 2)))
+		(world:move-entity world *placeholder* nil :update-costs nil))
 	      (when (eq :scancode-right scancode)
 		(setf (entity:pos *placeholder*)
 		      (vec (num:d- (elt old-pos 0) +terrain-chunk-tile-size+)
 			   0.0
-			   (elt old-pos 2)))))
+			   (elt old-pos 2)))
+		(world:move-entity world *placeholder* nil :update-costs nil)))
 	    (let ((height-terrain (world:pick-height-terrain world
 							      (elt (entity:pos *placeholder*) 0)
 							      (elt (entity:pos *placeholder*) 2))))

@@ -233,10 +233,11 @@
   (with-accessors ((main-state main-state)) object
     (misc:dbg " end turn ~a ~a" (type-of object) (type-of event))
     (remove-all-tooltips object)
+    (remove-all-windows  object)
     (remove-entity-if (entities object)
 		      #'(lambda (a)
 			  (removeable-from-world a)))
-    (remove-entity-if (gui object) #'(lambda (a) (typep a 'widget:message-window)))
+    ;;(remove-entity-if (gui object) #'(lambda (a) (typep a 'widget:message-window)))
     (incf (game-turn (main-state object)))
     (maphash #'(lambda (k v) (declare (ignore k)) (mesh:process-postponed-messages v))
 	     (game-state:player-entities main-state))
@@ -298,7 +299,7 @@
 
 (defgeneric (setf toolbar-selected-action) (val object))
 
-(defgeneric post-entity-message (object entity text &rest actions))
+(defgeneric post-entity-message (object entity text suppress-default-action &rest actions))
 
 (defgeneric point-camera-to-entity (object entity))
 
@@ -822,17 +823,21 @@
 (defmethod find-labyrinth-by-id ((object world) labyrinth-id)
   (game-state:find-labyrinth-by-id (main-state object) labyrinth-id))
 
-(defmethod post-entity-message ((object world) entity text &rest actions)
+(defmethod post-entity-message ((object world) entity text
+				suppress-default-action
+				&rest actions)
   (with-accessors ((gui gui)
 		   (compiled-shaders compiled-shaders)) object
     (with-accessors ((ghost ghost)) entity
       (with-accessors ((portrait portrait)) ghost
-	(let* ((image       (or (texture:handle portrait) :info))
-	       (all-actions (concatenate 'list
-					 (list
-					  (cons (_ "OK")
-						#'widget:hide-and-remove-parent-cb))
-					 actions))
+	(let* ((image          (or (texture:handle portrait) :info))
+	       (default-action (if (not suppress-default-action)
+				   (list (cons (_ "OK")
+					       #'widget:hide-and-remove-parent-cb))
+				   nil))
+	       (all-actions    (concatenate 'list
+					    default-action
+					    actions))
 	       (message-box (widget:make-message-box* text
 						      (_ "Message")
 						      image
@@ -916,6 +921,9 @@
 
 (defmethod remove-all-tooltips ((object world))
   (remove-entity-if (entities object) #'(lambda (a) (typep a 'billboard:tooltip))))
+
+(defmethod remove-all-windows ((object world))
+  (remove-entity-if (gui object) #'(lambda (a) (typep a 'widget:window))))
 
 (defmethod activate-all-tooltips ((object world))
   (walk-quad-tree-anyway (object)

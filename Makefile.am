@@ -1526,6 +1526,7 @@ data/gui/default/inventory/w-throw002.tga                \
 data/gui/default/inventory/w-throw003.tga                \
 data/gui/default/inventory/w-throw004.tga                \
 data/gui/default/inventory/w-throw05.tga                 \
+data/gui/default/padlock-overlay.tga                     \
 data/gui/default/splash-progress-gauge.tga               \
 data/gui/default/silhouette.tga                          \
 data/gui/default/attack-long-range-imprecise-overlay.tga \
@@ -1542,6 +1543,7 @@ data/gui/default/check-button-checked-green.tga          \
 data/gui/default/check-button-overlay.tga                \
 data/gui/default/check-button.tga                        \
 data/gui/default/chest-closed.tga                        \
+data/gui/default/chest-closed-locked.tga                 \
 data/gui/default/chest-opened.tga                        \
 data/gui/default/close-overlay.tga                       \
 data/gui/default/coma.tga                                \

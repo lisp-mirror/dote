@@ -41,15 +41,54 @@
 		 :contained-entity nil
 		 :callback         callback))
 
+(defun %unlock-cb (player chest)
+  #'(lambda (w e)
+      (declare (ignore w e))
+      (game-event:send-unlock-event player chest)))
+
+(defun %force-unlock-cb (player chest)
+  #'(lambda (w e)
+      (declare (ignore w e))
+      (let ((ghost-chest  (ghost chest))
+	    (ghost-player (ghost player))
+	    (state        (state player)))
+	(if (die-utils:pass-d1.0 (d/ (actual-unlock-chance ghost-player)
+				     (level                ghost-chest)))
+	    (game-event:send-unlock-event player chest :force t)
+	    (game-state:with-world (world state)
+	      (world:post-entity-message world
+					 player
+					 (_ "Unlocking failed")
+					 t))))))
+
+(defun %unlock-chest (world player chest)
+  (world:post-entity-message world
+			     player
+			     (_ "This chest is locked")
+			     t
+			     (cons (_ "force lock")
+				   (%force-unlock-cb player chest))
+			     (cons (_ "use key")
+				   (%unlock-cb player chest))))
+
 (defun show/hide-chest-slots-cb (w e)
   (declare (ignore e))
-  (let* ((parent (parent w))
-	 (chest-slots (chest-slots parent)))
-    (if (button-state w)
-	(loop for slot in chest-slots do
-	     (show slot))
-	(loop for slot in chest-slots do
-	     (hide slot)))))
+  (let* ((window (parent w))
+	 (chest-slots (chest-slots window))
+	 (chest       (chest window))
+	 (chest-ghost (and chest
+			   (ghost (chest window))))
+	 (player      (owner       window))
+	 (state       (state       player)))
+    (when chest
+      (if (lockedp chest-ghost)
+	  (game-state:with-world (world state)
+	    (%unlock-chest world player chest))
+	  (if (button-state w)
+	      (loop for slot in chest-slots do
+		   (show slot))
+	      (loop for slot in chest-slots do
+		   (hide slot)))))))
 
 (defun remove-inventory-page (window)
   (let ((current-slots-page (current-slots-page window)))
@@ -97,7 +136,7 @@
 	      (character:restart-age item)
 	      (add-containded-item     available-slot item)
 	      (remove-containded-item  chest-slot)
-	      (remove-child (chest win) item :test #'= :key #'id)
+	      (remove-child (ghost (chest win)) item :test #'= :key #'id)
 	      (character:add-to-inventory (ghost owner) item))))))))
 
 (defun find-available-slot (inventory-win)
@@ -153,28 +192,32 @@
 (defun dismiss-item-cb (w e)
   (declare (ignore e))
   (with-parent-widget (win) w
-    (with-accessors ((chest-slots chest-slots) (owner owner)) win
+    (with-accessors ((chest-slots chest-slots) (owner owner) (chest chest)) win
       (multiple-value-bind (slot item)
 	  (get-selected-item win)
 	(when (and slot
 		   item
 		   owner)
 	  (with-accessors ((state state)) owner
-	    (if (chest win)
-		(let ((available-chest-slot (loop
-					       named inner
-					       for slot in chest-slots do
-						 (when (empty-slot-p slot)
-						   (return-from inner slot)))))
-		  (when (and slot
-			     available-chest-slot)
-		    (add-containded-item available-chest-slot item)
-		    (add-child (chest win) item)
-		    (remove-item-from-inventory owner slot item)))
+	    (if chest
+		(if (lockedp (ghost chest))
+		    (game-state:with-world (world state)
+		      (%unlock-chest world owner chest))
+		    (let ((available-chest-slot (loop
+						   named inner
+						   for slot in chest-slots do
+						     (when (empty-slot-p slot)
+						       (return-from inner slot)))))
+		      (when (and slot
+				 available-chest-slot)
+			(add-containded-item available-chest-slot item)
+			(add-child (ghost chest) item)
+			(remove-item-from-inventory owner slot item))))
 		(game-state:with-world (world state)
 		  (world:post-entity-message world
 					     owner
-					     (_ "There is not any chest here"))))))))))
+					     (_ "There is not any chest here")
+					     nil)))))))))
 
 (defun open-characteristics-cb (w e)
   (declare (ignore e))
@@ -192,7 +235,6 @@
       (with-accessors ((owner owner)) win
 	(when owner
 	  (with-accessors ((ghost ghost)) owner
-	    ;; lookup for chest
 	    (let* ((spell-list (make-spell-window owner)))
 	      (setf (compiled-shaders spell-list) (compiled-shaders win))
 	      (add-child root spell-list))))))
@@ -455,11 +497,21 @@
       (add-child object text-description)
       (update-page-counts object current-slots-page-number))))
 
+(defun chest-texture (chest)
+  (cond
+    ((null chest)
+     (get-texture +transparent-texture-name+))
+    ((lockedp (ghost chest))
+     (get-texture +chest-closed-locked-texture-name+))
+    (t
+     (get-texture +chest-closed-texture-name+))))
+
 (defclass inventory-window (table-paginated-window)
   ((chest
     :initform nil
     :initarg  :chest
-    :accessor chest)
+    :accessor chest
+    :type     container-mesh-shell)
    (chest-slots
     :initform (loop for x from 1.0 to (d +container-capacity+) by 1.0 collect
 		   (make-inventory-slot-button (d* x (small-square-button-size *reference-sizes*))
@@ -656,6 +708,7 @@
 (defmethod initialize-instance :after ((object inventory-window) &key &allow-other-keys)
   (with-accessors ((slots-pages slots-pages) (current-slots-page current-slots-page)
 		   (owner owner) (b-use b-use)
+		   (chest chest)
 		   (b-sort b-sort)
 		   (b-wear b-wear)
 		   (b-pick b-pick)
@@ -671,6 +724,10 @@
 		   (armor-slot armor-slot) (left-hand-slot left-hand-slot)
 		   (right-hand-slot right-hand-slot) (ring-slot ring-slot)
 		   (b-remove-worn-item b-remove-worn-item))             object
+
+    (setf (texture-object  b-chest) (chest-texture chest))
+    (setf (current-texture b-chest) (chest-texture chest))
+    (setf (texture-pressed b-chest) (chest-texture chest))
     (let ((group-chest (make-check-group chest-slots)))
       (map nil
 	   #'(lambda (a) (setf (group a) group-chest))
@@ -766,37 +823,38 @@
 			 (left-hand  left-hand)
 			 (right-hand right-hand)
 			 (ring       ring)) ghost
-	(loop
-	   for slot in (alexandria:flatten slots-pages)
-	   for obj  in (character:inventory ghost) do
-	     (setf (contained-entity slot) obj
-		   (texture-overlay  slot) (character:portrait obj)))
-	(when elm
-	  (setf (contained-entity elm-slot) elm
-		(texture-overlay  elm-slot) (character:portrait elm)))
-	(when shoes
-	  (setf (contained-entity shoes-slot) shoes
-		   (texture-overlay  shoes-slot) (character:portrait shoes)))
-	(when armor
-	  (setf (contained-entity armor-slot) armor
-		(texture-overlay  armor-slot) (character:portrait armor)))
-	(when left-hand
-	  (setf (contained-entity left-hand-slot) left-hand
-		(texture-overlay  left-hand-slot) (character:portrait left-hand)))
-	(when right-hand
-	  (setf (contained-entity right-hand-slot) right-hand
-		(texture-overlay  right-hand-slot) (character:portrait right-hand)))
-	(when ring
-	  (setf (contained-entity ring-slot) ring
-		(texture-overlay  ring-slot) (character:portrait ring))))))
+	  (loop
+	     for slot in (alexandria:flatten slots-pages)
+	     for obj  in (character:inventory ghost) do
+	       (setf (contained-entity slot) obj
+		     (texture-overlay  slot) (character:portrait obj)))
+	  (when elm
+	    (setf (contained-entity elm-slot) elm
+		  (texture-overlay  elm-slot) (character:portrait elm)))
+	  (when shoes
+	    (setf (contained-entity shoes-slot) shoes
+		  (texture-overlay  shoes-slot) (character:portrait shoes)))
+	  (when armor
+	    (setf (contained-entity armor-slot) armor
+		  (texture-overlay  armor-slot) (character:portrait armor)))
+	  (when left-hand
+	    (setf (contained-entity left-hand-slot) left-hand
+		  (texture-overlay  left-hand-slot) (character:portrait left-hand)))
+	  (when right-hand
+	    (setf (contained-entity right-hand-slot) right-hand
+		  (texture-overlay  right-hand-slot) (character:portrait right-hand)))
+	  (when ring
+	    (setf (contained-entity ring-slot) ring
+		  (texture-overlay  ring-slot) (character:portrait ring))))))
     ;; display stuff inside the chest, if any
     (when chest
-      (assert (or (null (children chest))
-		  (<= (length (children chest)) 3)))
-      (loop for i from 0 below (length (children chest)) do
-	   (setf (contained-entity (elt chest-slots i)) (elt (children chest) i))
-	   (setf (texture-overlay  (elt chest-slots i))
-		 (character:portrait (elt (children chest) i)))))))
+      (let ((chest-ghost (ghost chest)))
+	(assert (or (null (children chest-ghost))
+		    (<= (length (children chest-ghost)) 3)))
+	(loop for i from 0 below (length (children chest-ghost)) do
+	     (setf (contained-entity (elt chest-slots i)) (elt (children chest-ghost) i))
+	     (setf (texture-overlay  (elt chest-slots i))
+		   (character:portrait (elt (children chest-ghost) i))))))))
 
 (defun inventory-window-width ()
   (d+ (d* 13.0 (small-square-button-size *reference-sizes*))

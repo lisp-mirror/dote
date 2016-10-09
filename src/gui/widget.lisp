@@ -1900,7 +1900,7 @@
     (when +debug-mode+
       (misc:dbg "chest pos ~a" chests-pos))
     (and chests-pos
-	 (ghost (%find-entity (state player) (first chests-pos))))))
+	 (%find-entity (state player) (first chests-pos)))))
 
 (defun toolbar-open-inventory-cb (w e)
   (declare (ignore e))

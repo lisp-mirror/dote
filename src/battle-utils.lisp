@@ -167,6 +167,9 @@
 (defmethod bonus-defense-weapon-combination (weapon-atk (weapon-def (eql :pole)))
   (d- +weapon-combination-bonus+))
 
+(defun defend-from-container-trap (opened opener)
+  (send-effects-after-attack opened opener :weapon (entity:ghost opened)))
+
 (defun send-effects-after-attack (attacker defender
 				  &key (weapon (character:worn-weapon (entity:ghost attacker))))
   (let* ((effects-to-others (remove-if
@@ -560,15 +563,13 @@
   (world:post-entity-message world attacker
 			     (format nil
 				     (_"You have not got a weapon"))
-			     (cons (_ "Ok")
-				   #'widget:hide-and-remove-parent-cb)))
+			     nil))
 
 (defun make-tooltip-no-spell-error (world attacker)
   (world:post-entity-message world attacker
 			     (format nil
 				     (_"You have not loaded a spell"))
-			     (cons (_ "Ok")
-				   #'widget:hide-and-remove-parent-cb)))
+			     nil))
 
 (defun attack-launch-spell (world attacker defender)
   (when (and attacker

@@ -479,6 +479,7 @@
 	     (game-state:with-world (world state)
 	       (world:post-entity-message world object
 					  (random-elt ,text-message-bag)
+					  nil
 					  (cons (_ "Move to")
 						(world:point-to-entity-and-hide-cb world object))))
 	     (setf ,immune-accessor nil)
@@ -657,6 +658,7 @@
 				       (format nil
 					       (_"~a broken")
 					       (description-type item))
+				       nil
 				       (cons (_ "Move to")
 					     (world:point-to-entity-and-hide-cb world object)))))
 	(send-refresh-toolbar-event)
@@ -1574,7 +1576,7 @@
 	(add-to-inventory (ghost body) forged-ring)
 	(add-to-inventory (ghost body) forged-bow)
 	(add-to-inventory (ghost body) forged-sword)
-	(setf (movement-points (ghost body)) 100.0)
+	(setf (movement-points (ghost body)) 1000.0)
 	(setf (magic-points    (ghost body)) 50.0)
 	;; note:   wear-item-event  will   not  be   catched  as   the
 	;; registration happens when the entity is added to world

@@ -212,6 +212,9 @@
 	      ((eq furniture-type +magic-furniture-type+)
 	       (random-fountain:generate-fountain (game-state:map-level (main-state world))))
 	      ((eq furniture-type +container-type+)
+	       ;; lock unlock event
+	       (game-event:register-for-lock-object-event   shell)
+	       (game-event:register-for-unlock-object-event shell)
 	       (random-container:generate-container (game-state:map-level (main-state world))
 						    :keychain keychain))))
       ;; event
