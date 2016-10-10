@@ -52,19 +52,26 @@
    (not (arrowp                        entity))
    (renderp                            entity)))
 
+(defun %quad-aabb-overlap-p-fn (node arrow)
+  (loop for entity across (quad-tree:data node) do
+       (when (and (hittable-by-arrow-p entity)
+		  (not (= (id arrow) (id entity)))
+		  (overlapp (actual-aabb-for-bullets entity)
+			    (aabb arrow)))
+	 (return-from %quad-aabb-overlap-p-fn entity)))
+  nil)
+
 (defun arrow-collision-p (arrow)
   (with-accessors ((trajectory trajectory)
 		   (pos pos)
 		   (state state)) arrow
-    (game-state:with-world (world state)
+    (with-world (world state)
       (quad-tree:iterate-nodes-intersect (world:entities world)
-					  #'(lambda (node)
-					      (loop for entity across (quad-tree:data node) do
-						   (when (and (hittable-by-arrow-p entity)
-							      (not (= (id arrow) (id entity)))
-							      (overlapp (aabb entity) (aabb arrow)))
-						     (return-from arrow-collision-p entity))))
-					  (aabb-2d arrow)))))
+					 #'(lambda (node)
+					     (let ((collided (%quad-aabb-overlap-p-fn node arrow)))
+					       (when collided
+						 (return-from arrow-collision-p collided))))
+					 (aabb-2d arrow)))))
 
 (defmethod calculate :after ((object arrow-mesh) dt)
   (with-accessors ((trajectory trajectory)
@@ -74,14 +81,14 @@
 		   (launcher-entity launcher-entity)
 		   (attack-event-fn attack-event-fn)) object
     (when (not hittedp)
-      (game-state:with-world (world state)
+      (with-world (world state)
 	(let ((camera (world:camera world)))
 	  (if (or (not (3d-utils:insidep (world:world-aabb world)
 					 pos))
 		  (d<= (elt pos 1)
-		       (game-state:approx-terrain-height@pos state
-							     (elt pos 0)
-							     (elt pos 2))))
+		       (approx-terrain-height@pos state
+						  (elt pos 0)
+						  (elt pos 2))))
 	      (progn
 		;; remove from world
 		(remove-entity-by-id world (id object))
@@ -153,14 +160,14 @@
 		   (launcher-entity launcher-entity)
 		   (attack-event-fn attack-event-fn)) object
     (when (not hittedp)
-      (game-state:with-world (world state)
+      (with-world (world state)
 	(let ((camera (world:camera world)))
 	  (if (or (not (3d-utils:insidep (world:world-aabb world)
 					 pos))
 		  (d<= (elt pos 1)
-		       (game-state:approx-terrain-height@pos state
-							     (elt pos 0)
-							     (elt pos 2))))
+		       (approx-terrain-height@pos state
+						  (elt pos 0)
+						  (elt pos 2))))
 	      (progn
 		;; remove from world
 		(remove-entity-by-id world (id object))
@@ -198,15 +205,15 @@
     (and res (arrow-db-entry-mesh res))))
 
 (defun get-arrow (name)
-   (let* ((path (text-utils:strcat name fs:*directory-sep* +arrow-model-name+))
-	  (id (res:get-resource-file path +arrows-resource+)))
-     (or (%get-arrow id)
-	 (let ((new-arrow (make-instance 'arrow-mesh))
-	       (raw-mesh  (obj-mesh:load id)))
-	   (clone-into raw-mesh new-arrow)
-	   (prepare-for-rendering new-arrow)
-	   (push (make-arrow-db-entry :id id :mesh new-arrow) *arrows-factory-db*)
-	   new-arrow))))
+  (let* ((path (text-utils:strcat name fs:*directory-sep* +arrow-model-name+))
+	 (id (res:get-resource-file path +arrows-resource+)))
+    (or (%get-arrow id)
+	(let ((new-arrow (make-instance 'arrow-mesh))
+	      (raw-mesh  (obj-mesh:load id)))
+	  (clone-into raw-mesh new-arrow)
+	  (prepare-for-rendering new-arrow)
+	  (push (make-arrow-db-entry :id id :mesh new-arrow) *arrows-factory-db*)
+	  new-arrow))))
 
 (defun launch-ray (attacker defender)
   (let* ((ghost-atk    (entity:ghost attacker))
@@ -223,8 +230,9 @@
 	 (attack-chance     (if (eq weapon-type :spell)
 				(character:actual-attack-spell-chance ghost-atk)
 				(character:actual-range-attack-chance ghost-atk)))
-	 (ray-dir           (normalize (vec- (aabb-center (aabb defender))
-					     (aabb-center (aabb attacker)))))
+	 (ray-dir           (normalize (vec- ;;(actual-aabb-for-bullets defender))
+					(aabb-center (aabb defender))
+					(aabb-center (aabb attacker)))))
 	 (ray               (make-instance 'ray
 					   :ray-direction ray-dir
 					   :displacement +arrow-speed+)))
@@ -233,7 +241,7 @@
 						  ray-dir)))
 		 +visibility-cone-half-hangle+))
 	(progn
-	  (when (not (die-utils:pass-d100.0 attack-chance))
+	  (when (not (die-utils:pass-d100.0 attack-chance)))
 	    (setf (ray-direction ray)
 		  (transform-direction (ray-direction ray)
 				       (rotate-around +y-axe+
@@ -262,7 +270,7 @@
 	  (when camera-follow-p
 	    (setf (camera:followed-entity (world:camera world)) mesh)
 	    (setf (camera:mode (world:camera world)) :follow))
-	  t)
+	  ray)
 	nil)))
 
 (defun launch-arrow (name world attacker defender)
@@ -281,21 +289,21 @@
       (let* ((state            (state attacker))
 	     (range            (spell:effective-range           spell))
 	     (pos-defender     (map-utils:pos->game-state-pos   defender))
-	     (accetable-type   (list game-state:+empty-type+
-				     game-state:+unknown-type+))
-	     (neighborhood     (game-state:get-neighborhood state
-							    (elt pos-defender 1)
-							    (elt pos-defender 0)
-							    #'(lambda (el pos)
-								(declare (ignore pos))
-								(not (find (game-state:el-type el)
-									   accetable-type
-									   :test #'eq)))
-							    :w-offset range
-							    :h-offset range)))
+	     (accetable-type   (list +empty-type+
+				     +unknown-type+))
+	     (neighborhood     (get-neighborhood state
+						 (elt pos-defender 1)
+						 (elt pos-defender 0)
+						 #'(lambda (el pos)
+						     (declare (ignore pos))
+						     (not (find (el-type el)
+								accetable-type
+								:test #'eq)))
+						 :w-offset range
+						 :h-offset range)))
 	(loop for map-element across neighborhood do
-	     (let* ((id-entity (game-state:entity-id (car map-element)))
-		    (entity    (game-state:find-entity-by-id state id-entity))
+	     (let* ((id-entity (entity-id (car map-element)))
+		    (entity    (find-entity-by-id state id-entity))
 		    (pos       (map-utils:pos->game-state-pos entity))
 		    (dist      (map-utils:map-manhattam-distance pos-defender pos)))
 	       (when (<= dist range)
@@ -318,12 +326,12 @@
     ;;end testing
     (when successp
       (when (not invisiblep)
-	(let* ((shaders (compiled-shaders world))
-	       (bullet  (funcall (spell:arrow spell)
-				 +zero-vec+
-				 +entity-forward-direction+
-				 shaders))
-	       (blocker (make-instance 'mesh:blocker-render-children))
+	(let* ((shaders       (compiled-shaders world))
+	       (bullet        (funcall (spell:arrow spell)
+				       +zero-vec+
+				       +entity-forward-direction+
+				       shaders))
+	       (blocker       (make-instance 'mesh:blocker-render-children))
 	       (target-effect (funcall (spell:visual-effect-target spell)
 				       +zero-vec+
 				       shaders)))
@@ -337,26 +345,26 @@
       (let* ((state            (state attacker))
 	     (range            (spell:effective-range           spell))
 	     (pos-defender     (map-utils:pos->game-state-pos   defender))
-	     (neighborhood-pc  (game-state:neighborhood-by-type state
-								(elt pos-defender 1)
-								(elt pos-defender 0)
-								game-state:+pc-type+
-								:h-offset range
-								:w-offset range))
-	     (neighborhood-npc (game-state:neighborhood-by-type state
-								(elt pos-defender 1)
-								(elt pos-defender 0)
-								game-state:+npc-type+
-								:h-offset range
-								:w-offset range))
+	     (neighborhood-pc  (neighborhood-by-type state
+						     (elt pos-defender 1)
+						     (elt pos-defender 0)
+						     +pc-type+
+						     :h-offset range
+						     :w-offset range))
+	     (neighborhood-npc (neighborhood-by-type state
+						     (elt pos-defender 1)
+						     (elt pos-defender 0)
+						     +npc-type+
+						     :h-offset range
+						     :w-offset range))
 	     (neighborhood     (concatenate 'vector neighborhood-npc neighborhood-pc)))
 	(loop for map-element across neighborhood do
-	     (let* ((id-entity (game-state:entity-id (car map-element)))
-		    (entity    (game-state:find-entity-by-id state id-entity))
+	     (let* ((id-entity (entity-id (car map-element)))
+		    (entity    (find-entity-by-id state id-entity))
 		    (pos       (map-utils:pos->game-state-pos entity))
 		    (dist      (map-utils:map-manhattam-distance pos-defender pos)))
-	     (when (<= dist range)
-	       (battle-utils:send-spell-event attacker entity))))
+	       (when (<= dist range)
+		 (battle-utils:send-spell-event attacker entity))))
 	(battle-utils:send-spell-event attacker defender))))
 
 (defun %apply-tooltip (entity message)

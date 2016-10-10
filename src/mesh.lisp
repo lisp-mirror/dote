@@ -624,6 +624,10 @@
 
 (defgeneric aabb (object))
 
+(defgeneric actual-aabb-for-bullets (object))
+
+(defgeneric actual-aabb-for-visibility (object))
+
 (defgeneric reset-aabb (object))
 
 (defgeneric prepare-for-rendering-normal-map (object))
@@ -873,6 +877,12 @@
 	      (expand res (aabb-p2 child))))
 	  (setf bounding-sphere (aabb->bounding-sphere res))
 	  res)))))
+
+(defmethod actual-aabb-for-bullets ((object triangle-mesh))
+  (aabb object))
+
+(defmethod actual-aabb-for-visibility ((object triangle-mesh))
+  (aabb object))
 
 (defmethod aabb-2d ((object triangle-mesh))
   (flatten-to-aabb2-xz (aabb object)))
@@ -2872,6 +2882,9 @@
 		   :aabb-p1 (vec+ pos (vec (d- (d/ +terrain-chunk-tile-size+ 2.0))
 					   0.0
 					   (d- (d/ +terrain-chunk-tile-size+ 2.0)))))))
+
+(defmethod actual-aabb-for-bullets ((object tree-mesh-shell))
+  (tree-trunk-aabb object))
 
 (alexandria:define-constant +clouds-levels+ 3 :test #'=)
 

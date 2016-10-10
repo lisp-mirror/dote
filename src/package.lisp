@@ -955,6 +955,8 @@
    :vec-average
    :vec-average*
    :clone-matrix
+   :remove-rotation
+   :nremove-rotation
    :transform-vec4
    :+projective-scale-bias+
    :ortho
@@ -3057,6 +3059,8 @@
    :render-tangents
    :render-aabb
    :aabb
+   :actual-aabb-for-bullets
+   :actual-aabb-for-visibility
    :reset-aabb
    :renderp
    :calculatep
@@ -3771,6 +3775,7 @@
 	:sb-cga-utils
 	:num-utils
 	:vec4
+	:quaternion
 	:misc
 	:cl-gl-utils
 	:interfaces
@@ -3840,6 +3845,7 @@
 	:transformable
 	:entity
 	:interfaces
+	:game-state
 	:mesh)
   (:export
    :arrowp

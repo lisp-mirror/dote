@@ -226,7 +226,7 @@
 
 (define-constant +model-preview-ext-re+           "\\.tga$"                     :test #'string=)
 
-(define-constant +model-move-speed+               0.02                          :test #'=)
+(define-constant +model-move-speed+               0.022                         :test #'=)
 
 (define-constant +gui-zoom-entity+                15.0                          :test #'=)
 

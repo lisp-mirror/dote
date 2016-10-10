@@ -460,6 +460,14 @@
 			`(copy-matrix-element ,matrix ,results ,r ,c))))
        ,results)))
 
+(definline nremove-rotation (m)
+  (setf (mref m 0 0) 1.0)
+  (setf (mref m 1 1) 1.0)
+  (setf (mref m 2 2) 1.0))
+
+(defun remove-rotation (m)
+  (nremove-rotation (clone-matrix m)))
+
 (alexandria:define-constant +projective-scale-bias+ (matrix 0.5 0.0 0.0 0.5
 							    0.0 0.5 0.0 0.5
 							    0.0 0.0 0.5 0.5

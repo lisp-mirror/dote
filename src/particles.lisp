@@ -1856,6 +1856,21 @@
 
 (defclass spell-decal (blood) ())
 
+(defmethod bubbleup-modelmatrix ((object spell-decal))
+  (let ((res      (matrix* (translate (pos     object))
+			   (scale     (scaling object))
+			   (quat->matrix (quat-rotate-to-vec +entity-forward-direction+
+							     (dir object)
+							     :fallback-axis +y-axe+))
+			   (quat->matrix (quat-rotate-to-vec +entity-up-direction+
+							     (up object)
+							     :fallback-axis +z-axe+))))
+	(par-mesh (mtree:parent object)))
+    (when par-mesh
+      (setf res (matrix* (elt (model-matrix par-mesh) 0) res)))
+    (nremove-rotation  res)
+    (setf (model-matrix object) res)))
+
 (defmethod initialize-instance :after ((object spell-decal)
 				       &key
 					 (texture (texture:get-texture
@@ -2086,8 +2101,8 @@
 				       :delay-fn (constantly 0.0)
 				       :gravity    (vec 0.0 -1e-5 0.0)
 				       :scaling-fn (%limited-scaling-clsr 0.2 70.0)
-				       :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range -2.0
-											       2.0))
+				       :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range -3.0
+											       3.0))
 				       :alpha-fn   (%smooth-alpha-fading-clsr 5.0)
 				       :color-fn   (%gradient-color-clsr gradient-ball .15)
 				       :width  .1
@@ -2096,7 +2111,7 @@
 	 (trail (make-particles-cluster 'aerial-explosion
 					10
 					compiled-shaders
-					:forces     (vector (constant-force-clsr +x-axe+))
+					:forces     (vector (constant-force-clsr dir))
 					:texture    texture
 					:pos        +zero-vec+
 					:v0-fn      (gaussian-velocity-distribution-fn dir
@@ -2156,13 +2171,13 @@
 	 (trail (make-particles-cluster 'aerial-explosion
 					100
 					compiled-shaders
-					:forces     (vector (constant-force-clsr +x-axe+))
+					:forces     (vector (constant-force-clsr dir))
 					:texture    texture
 					:pos        +zero-vec+
 					:v0-fn      (gaussian-velocity-distribution-fn dir
 										       1.0
-										       0.1
-										       0.001)
+										       0.001
+										       1.5)
 					:mass-fn     (gaussian-distribution-fn 1.0 .2)
 					:life-fn     (constantly 5.0)
 					:delay-fn    (gaussian-distribution-fn 5.0 1.0)
@@ -2206,23 +2221,23 @@
 				       :delay-fn (gaussian-distribution-fn 0.0 1.1)
 				       :gravity    (vec 0.0 -1e-5 0.0)
 				       :scaling-fn (%limited-scaling-clsr 0.01 70.0)
-				       :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range -2.0
-											       2.0))
+				       :rotation-fn (%uniform-rotation-clsr (lcg-next-in-range -12.0
+											       12.0))
 				       :alpha-fn   (%smooth-alpha-fading-clsr 5.0)
 				       :color-fn   (%gradient-color-clsr gradient-ball .15)
-				       :width  .01
-				       :height .01
+				       :width  .02
+				       :height .02
 				       :respawn t))
 	 (trail (make-particles-cluster 'aerial-explosion
 					50
 					compiled-shaders
-					:forces     (vector (constant-force-clsr +x-axe+))
+					:forces     (vector (constant-force-clsr dir))
 					:texture    texture
 					:pos        +zero-vec+
 					:v0-fn      (gaussian-velocity-distribution-fn dir
 										       1.0
 										       0.1
-										       0.001)
+										       0.01)
 					:mass-fn     (gaussian-distribution-fn 1.0 .2)
 					:life-fn     (constantly 5.0)
 					:delay-fn    (gaussian-distribution-fn 5.0 1.0)
