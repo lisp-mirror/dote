@@ -230,18 +230,16 @@
 	 (attack-chance     (if (eq weapon-type :spell)
 				(character:actual-attack-spell-chance ghost-atk)
 				(character:actual-range-attack-chance ghost-atk)))
-	 (ray-dir           (normalize (vec- ;;(actual-aabb-for-bullets defender))
-					(aabb-center (aabb defender))
-					(aabb-center (aabb attacker)))))
+	 (ray-dir           (normalize (vec- (actual-aabb-for-bullets defender)
+					     (aabb-center (aabb attacker)))))
 	 (ray               (make-instance 'ray
 					   :ray-direction ray-dir
 					   :displacement +arrow-speed+)))
-    (if (and weapon-type
-	     (d< (dabs (secure-dacos (dot-product (dir attacker)
-						  ray-dir)))
-		 +visibility-cone-half-hangle+))
+    (if (d< (dabs (secure-dacos (dot-product (dir attacker)
+					     ray-dir)))
+		 +visibility-cone-half-hangle+)
 	(progn
-	  (when (not (die-utils:pass-d100.0 attack-chance)))
+	  (when (not (die-utils:pass-d100.0 attack-chance))
 	    (setf (ray-direction ray)
 		  (transform-direction (ray-direction ray)
 				       (rotate-around +y-axe+
