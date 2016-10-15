@@ -223,6 +223,10 @@
       (game-event:register-for-attack-long-range-event shell)
       ;; attack-spell
       (game-event:register-for-attack-spell-event shell)
+      ;; if magic-furniture other interactions are possible
+      (cond
+	((eq furniture-type +magic-furniture-type+)
+	 (game-event:register-for-other-interaction-event shell)))
       (push-interactive-entity world shell furniture-type nil))))
 
 (defun %relative-coord-furniture->cood-mat-state (min rel-coord)

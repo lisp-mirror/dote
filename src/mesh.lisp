@@ -779,6 +779,8 @@
 
 (defgeneric set-spell-status (object))
 
+(defgeneric entity-facing (object))
+
 (defmethod remove-mesh-data ((object triangle-mesh))
   (setf (normals       object) nil
 	(vertices      object) nil
@@ -969,6 +971,23 @@
 (defmethod rendering-needed-p ((object triangle-mesh) renderer)
   (declare (ignore object renderer))
   t)
+
+(defmethod entity-facing ((object triangle-mesh))
+  (with-accessors ((state state)
+		   (pos pos)
+		   (dir dir)) object
+    (with-accessors ((map-state map-state)) state
+      (let* ((position-matrix (map-utils:facing-pos pos dir)))
+	(matrix:with-check-matrix-borders (map-state
+					   (elt position-matrix 0)
+					   (elt position-matrix 1))
+	  (let* ((entity-element (matrix:matrix-elt map-state
+						    (elt position-matrix 1)
+						    (elt position-matrix 0)))
+		 (entity-id      (entity-id entity-element)))
+	    (if (/= entity-id (invalid-entity-id-map-state))
+		(values (find-entity-by-id state entity-id) entity-element)
+		(values nil entity-element))))))))
 
 (defmethod get-first-near ((object triangle-mesh) vertex-index)
   (misc:do-while* ((first-face (find-triangle-by-vertex-index object vertex-index))

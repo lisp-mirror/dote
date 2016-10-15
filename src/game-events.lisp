@@ -376,3 +376,10 @@
 						:id-origin      (identificable:id origin)
 						:id-destination (identificable:id dest)
 						:force-unlock   force)))
+
+(defevent other-interaction-event (game-event-w-destination) ())
+
+(defun send-other-interaction-event (origin dest)
+  (propagate-other-interaction-event (make-instance 'other-interaction-event
+						    :id-origin      (identificable:id origin)
+						    :id-destination (identificable:id dest))))

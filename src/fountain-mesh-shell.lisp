@@ -22,6 +22,13 @@
   (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
   nil)
 
+(defmethod game-event:on-game-event ((object fountain-mesh-shell)
+				     (event game-event:other-interaction-event))
+  (game-event:check-event-targeted-to-me (object event)
+    (let ((player (find-entity-by-id (state object) (game-event:id-origin event))))
+      (when player
+	(battle-utils:defend-from-fountain-interaction object player)))))
+
 (defmethod rendering-needed-p ((object fountain-mesh-shell) renderer)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (world:cone-aabb-intersects-p renderer object))

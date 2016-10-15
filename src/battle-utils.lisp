@@ -170,6 +170,9 @@
 (defun defend-from-container-trap (opened opener)
   (send-effects-after-attack opened opener :weapon (entity:ghost opened)))
 
+(defun defend-from-fountain-interaction (fountain player)
+  (send-effects-after-attack fountain player :weapon (entity:ghost fountain)))
+
 (defun send-effects-after-attack (attacker defender
 				  &key (weapon (character:worn-weapon (entity:ghost attacker))))
   (let* ((effects-to-others (remove-if

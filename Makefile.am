@@ -572,6 +572,16 @@ data/gui/default/inventory/bow-immune-terror-07.tga      \
 data/gui/default/inventory/bow-immune-terror-08.tga      \
 data/gui/default/inventory/bow-immune-terror-09.tga      \
 data/gui/default/inventory/bow-immune-terror-10.tga      \
+data/gui/default/inventory/bow-immune-poison-01.tga      \
+data/gui/default/inventory/bow-immune-poison-02.tga      \
+data/gui/default/inventory/bow-immune-poison-03.tga      \
+data/gui/default/inventory/bow-immune-poison-04.tga      \
+data/gui/default/inventory/bow-immune-poison-05.tga      \
+data/gui/default/inventory/bow-immune-poison-06.tga      \
+data/gui/default/inventory/bow-immune-poison-07.tga      \
+data/gui/default/inventory/bow-immune-poison-08.tga      \
+data/gui/default/inventory/bow-immune-poison-09.tga      \
+data/gui/default/inventory/bow-immune-poison-10.tga      \
 data/gui/default/inventory/bow-normal-01.tga             \
 data/gui/default/inventory/bow-normal-02.tga             \
 data/gui/default/inventory/bow-normal-03.tga             \

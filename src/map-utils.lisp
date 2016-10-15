@@ -31,6 +31,26 @@
 	      max-distance)
 	 (epsilon= dot-product 1.0))))
 
+(defun facing-pos (pos dir)
+  "dir and pos are a 3d vector, pos a ivec2"
+  (let* ((pos-map    (pos-entity-chunk->cost-pos pos))
+	 (comp       (position-if #'(lambda (a) (not (epsilon= 0.0 a))) dir))
+	 (comp-2     (if (= comp 0)
+			 0
+			 1))
+	 (compl-comp (if (= comp-2 0)
+			  1
+			  0))
+	 (offset     (if (< (elt dir comp) 0)
+			 -1
+			 1))
+	 (res        (ivec2 0 0)))
+    (setf (elt res comp-2)
+	  (+ (elt pos-map comp-2) offset))
+    (setf (elt res compl-comp)
+	  (elt pos-map compl-comp))
+    res))
+
 (defun pos-entity-chunk->cost-pos (pos)
   (ivec2:ivec2 (coord-chunk->costs (elt pos 0))
 	       (coord-chunk->costs (elt pos 2))))

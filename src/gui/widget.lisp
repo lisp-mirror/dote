@@ -1947,6 +1947,19 @@
       (when bound-player
 	(setf selected-action +action-attack-long-range-imprecise+)))))
 
+(defun toolbar-conversation-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (toolbar) w
+    (with-accessors ((bound-player bound-player)
+		     (selected-action selected-action)) toolbar
+      (when bound-player
+	(multiple-value-bind (facing-entity map-element)
+	    (mesh:entity-facing bound-player)
+	  (when (and facing-entity
+		     (eq (game-state:el-type map-element)
+			 +magic-furniture-type+))
+	    (game-event:send-other-interaction-event bound-player facing-entity)))))))
+
 (defun toolbar-launch-spell-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
@@ -2085,7 +2098,7 @@
 				      (d* 3.0 *small-square-button-size*))
 				  *small-square-button-size*
 				  +conversation-overlay-texture-name+
-				  nil
+				  #'toolbar-conversation-cb
 				  :small t)
     :initarg  :b-conversation
     :accessor b-conversation)
@@ -3677,7 +3690,9 @@
 		(setf (character:model-origin-dir player) dir)
 		;(setf (entity:ghost model) player)
 		(setf (portrait (entity:ghost model)) portrait-texture)
-		(world:place-player-on-map world model game-state:+pc-type+ #(0 0)))
+		(world:place-player-on-map world model game-state:+pc-type+ #(61 109)))
+
+					   ;#(0 0)))
 	      ;; restore preview
 	      (setf (pixmap:data (get-texture +preview-unknown-texture-name+))
 		    backup-data-texture-preview)

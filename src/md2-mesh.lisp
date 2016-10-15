@@ -413,7 +413,7 @@
 				       billboard:+tooltip-heal-char+
 				       :color     billboard:+healing-color+
 				       :font-type gui:+tooltip-font-handle+)
-	      (setf status nil)
+	      (setf status nil) ;; note: the player can be affected only by one at a time
 	      (funcall action-fn mesh ghost)
 	      (send-refresh-toolbar-event)
 	      t)
@@ -1576,7 +1576,7 @@
 	(add-to-inventory (ghost body) forged-ring)
 	(add-to-inventory (ghost body) forged-bow)
 	(add-to-inventory (ghost body) forged-sword)
-	(setf (movement-points (ghost body)) 20.0)
+	(setf (movement-points (ghost body)) 200.0)
 	(setf (magic-points    (ghost body)) 50.0)
 	;; note:   wear-item-event  will   not  be   catched  as   the
 	;; registration happens when the entity is added to world

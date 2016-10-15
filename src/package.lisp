@@ -1722,6 +1722,7 @@
   (:shadowing-import-from :sb-cga :rotate)
   (:export
    :facingp
+   :facing-pos
    :pos-entity-chunk->cost-pos
    :coord-map->chunk
    :coord-terrain->chunk
@@ -2282,6 +2283,11 @@
    :register-for-unlock-object-event
    :unregister-for-unlock-object-event
    :propagate-unlock-object-event
+   :other-interaction-event
+   :send-other-interaction-event
+   :register-for-other-interaction-event
+   :unregister-for-other-interaction-event
+   :propagate-other-interaction-event
    :check-event-targeted-to-me))
 
 (defpackage :basic-interaction-parameters
@@ -3146,6 +3152,7 @@
    :set-attack-status
    :set-attack-spell-status
    :set-spell-status
+   :entity-facing
    :skydome
    :texture-clouds
    :texture-smoke
@@ -3355,6 +3362,7 @@
    :+recover-from-faint-dmg-fraction+
    :send-attack-melee-event
    :defend-from-container-trap
+   :defend-from-fountain-interaction
    :defend-from-attack-short-range
    :attack-long-range-animation
    :attack-spell-animation
