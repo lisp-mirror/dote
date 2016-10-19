@@ -1375,7 +1375,7 @@
 			  compiled-shaders
 			  :texture texture
 			  :pos     pos
-			  :min-y   0.0
+			  :min-y   (d- +zero-height+ (elt pos 1))
 			  :v0-fn   (gaussian-velocity-distribution-fn dir
 								      3.0
 								      1.0
