@@ -104,7 +104,8 @@
 	#'(lambda (p dt)
 	    (declare (ignore p))
 	    (incf time dt)
-	    (d+ 1.0 (d* m time))))))
+	    (dmax 1e-6
+		  (d+ 1.0 (d* m time)))))))
 
 (defun %limited-scaling-clsr (rate max)
   #'(lambda ()
@@ -1369,6 +1370,12 @@
 	    (gl:draw-arrays :triangles 0 (f* 3 (length triangles)))
 	    (gl:blend-equation :func-add)))))))
 
+(defun debris-particles-number (damage)
+  (alexandria:clamp (truncate (d* (dexpt damage
+					 2.0)))
+		    5
+		    150))
+
 (defun make-debris (pos dir num texture compiled-shaders)
   (make-particles-cluster 'debris
 			  num
@@ -1377,16 +1384,13 @@
 			  :pos     pos
 			  :min-y   (d- +zero-height+ (elt pos 1))
 			  :v0-fn   (gaussian-velocity-distribution-fn dir
-								      3.0
-								      1.0
+								      5.0
+								      2.0
 								      (d/ +pi/2+ 3.0))
-			  :mass-fn  (gaussian-distribution-fn 0.1 0.05)
+			  :mass-fn  (gaussian-distribution-fn 1.0 0.1)
 			  :life-fn  (gaussian-distribution-fn 12.0 5.0)
 			  :delay-fn (gaussian-distribution-fn 0.0 .0001)
-			  :scaling-fn #'(lambda ()
-					  #'(lambda (p dt)
-					      (declare (ignore p dt))
-					      1.0))
+			  :scaling-fn (%uniform-scaling-clsr -0.6)
 			  :gravity +particle-gravity+
 			  :width  .1
 			  :height .1))
@@ -1810,8 +1814,8 @@
 					       (declare (ignore p dt))
 					       1.0))
 			  :alpha-fn   (%smooth-alpha-fading-clsr 7.0)
-			  :width  1.0
-			  :height 1.0
+			  :width  .5
+			  :height .5
 			  :respawn t))
 
 (defun make-fire-dart-level-0 (pos dir compiled-shaders)

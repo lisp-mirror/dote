@@ -22,6 +22,9 @@
     :initarg :texture-coord-scaling
     :accessor texture-coord-scaling)))
 
+(defun building-floor-mesh-p (a)
+  (typep a 'building-floor-mesh))
+
 (defmethod vbo-pick-weights-handle ((object building-floor-mesh))
   (with-accessors ((vbo vbo)) object
     (alexandria:last-elt vbo)))

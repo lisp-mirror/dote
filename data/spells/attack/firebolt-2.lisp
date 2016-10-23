@@ -11,7 +11,7 @@
   :visual-effect-target  particles:make-aerial-explosion-level-1
   :effective-aabb-size  #'(lambda (spell)
 			    (declare (ignore spell))
-			    (d/ +terrain-chunk-tile-size+ 4.0))
+			    (d/ +terrain-chunk-tile-size+ 7.5))
   :damage-inflicted      15.0
   :arrow                 particles:make-fire-dart-level-1
   :effects               (define-interaction

@@ -722,11 +722,11 @@
 	 (transformation  (sb-cga:matrix*
 			   (sb-cga:translate (vec actual-x +zero-height+ actual-z))
 			   (sb-cga:translate (3d-utils:vec-negate (sb-cga:vec w/2 0.0 h/2)))))
-	 (mesh            (building-floor-mesh:floor-tile w h :wrapper-transformation
-							  transformation)))
+	 (mesh            (building-floor-mesh:floor-tile w h
+							  :wrapper-transformation transformation)))
     (setf (compiled-shaders mesh) (compiled-shaders world))
-    (setf (mesh:texture-object  mesh) (mesh:texture-object ref-mesh)
-	  (mesh:normal-map      mesh) (mesh:normal-map ref-mesh)
+    (setf (mesh:texture-object  mesh) (mesh:texture-object         ref-mesh)
+	  (mesh:normal-map      mesh) (mesh:normal-map             ref-mesh)
 	  (mesh:material-params mesh) (clone (mesh:material-params ref-mesh)))
     (prepare-for-rendering mesh)
     (mesh:reset-aabb mesh)
@@ -788,9 +788,12 @@
 
 (defun setup-floor (world map)
   (loop for aabb in (labyrinths-aabb map) do
-       (let ((mesh (setup-single-floor world aabb)))
+       (let ((mesh  (setup-single-floor world aabb))
+	     (state (main-state world)))
 	 (pickable-mesh:populate-lookup-triangle-matrix mesh)
-	 (push-entity world mesh))))
+	 (push-entity world mesh)
+	 (when (not (entity:find-entity-by-id state (identificable:id mesh)))
+	   (push-entity state mesh)))))
 
 (defun setup-ceiling (world map)
   (loop for aabb in (labyrinths-aabb map) do

@@ -3328,6 +3328,7 @@
 	:pickable-mesh)
   (:export
    :building-floor-mesh
+   :building-floor-mesh-p
    :setup-texture-coord-scaling
    :floor-tile))
 
@@ -3807,6 +3808,7 @@
    :make-blood-level-1
    :make-blood-level-2
    :make-blood-death
+   :debris-particles-number
    :make-debris
    :make-fire-dart-level-0
    :make-fire-dart-level-1

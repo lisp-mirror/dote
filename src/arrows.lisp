@@ -46,11 +46,12 @@
 
 (defun hittable-by-arrow-p (entity)
   (and
-   (not (terrain-chunk:terrain-chunk-p entity))
-   (not (particles:particles-cluster-p entity))
-   (not (water-mesh-p                  entity))
-   (not (arrowp                        entity))
-   (renderp                            entity)))
+   (not (terrain-chunk:terrain-chunk-p             entity))
+   (not (building-floor-mesh:building-floor-mesh-p entity))
+   (not (particles:particles-cluster-p             entity))
+   (not (water-mesh-p                              entity))
+   (not (arrowp                                    entity))
+   (renderp                                        entity)))
 
 (defun %overlap-labyrints-p (aabb-arrow vec-object)
   (when (not (vector-empty-p vec-object))
@@ -347,7 +348,6 @@
 	       (when (<= dist range)
 		 (battle-utils:send-attack-spell-event attacker entity))))
 	(battle-utils:send-attack-spell-event attacker defender))))
-
 
 (defun launch-attack-spell (spell world attacker defender &key (invisiblep nil))
   (let* ((mesh (make-instance 'arrow-attack-spell-mesh
