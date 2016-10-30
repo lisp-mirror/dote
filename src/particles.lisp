@@ -2801,7 +2801,7 @@
 		    (color-utils:make-gradient-color 0.2 §c7000a8ff)
 		    (color-utils:make-gradient-color 1.0 §c380054ff)))
 	 (spark (make-particles-cluster 'cure-spark
-					400
+					200
 					compiled-shaders
 					:remove-starting-delay t
 					:forces   (vector (attraction-force-clsr 10.0))
@@ -2836,7 +2836,7 @@
 					:particle-height-fn nil    ;; will use particle-width-fn
 					:particle-width-fn  size-fn
 					:respawn t)))
-    (setf (global-life spark) 200)
+    (setf (global-life spark) 150)
     spark))
 
 (defun make-heal-level-2 (pos compiled-shaders)

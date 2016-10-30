@@ -1643,6 +1643,8 @@ data/textures/spells/heal/heal-3.tga                     \
 data/textures/spells/poison/cause-poison-1.tga           \
 data/textures/spells/poison/cause-poison-2.tga           \
 data/textures/spells/poison/cause-poison-3.tga           \
+data/textures/spells/misc/vampire-1.tga                  \
+data/textures/spells/misc/vampire-2.tga                  \
 data/furniture-templates/carpet.tga                      \
 data/furniture-templates/corr-e.tga                      \
 data/furniture-templates/corr-n.tga                      \

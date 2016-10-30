@@ -3893,6 +3893,7 @@
    :spell
    :spellp
    :level
+   :use-custom-effects-p
    :attack-spell
    :attack-spell-p
    :identifier

@@ -530,9 +530,11 @@
     (let* ((spell         (game-event:spell event)))
       (cond
 	((typep (entity:ghost defender) 'character:player-character)
-	 (send-effects-after-attack attacker
-				    defender
-				    :weapon spell)
+	 (if (spell:use-custom-effects-p spell)
+	     (funcall (character:basic-interaction-params spell) attacker defender)
+	     (send-effects-after-attack attacker
+					defender
+					:weapon spell))
 	 t)
 	((typep (entity:ghost defender) 'character:np-character)
 	 nil)))))

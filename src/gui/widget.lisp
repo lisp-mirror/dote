@@ -273,7 +273,7 @@
     :initarg  :label-font-size
     :accessor label-font-size)
    (label-font-color
-    :initform §cffffffff
+    :initform §cffff00ff
     :initarg  :label-font-color
     :accessor label-font-color)
    (shown
@@ -3690,9 +3690,8 @@
 		(setf (character:model-origin-dir player) dir)
 		;(setf (entity:ghost model) player)
 		(setf (portrait (entity:ghost model)) portrait-texture)
-		(world:place-player-on-map world model game-state:+pc-type+ #(61 109)))
-
-					   ;#(0 0)))
+		(world:place-player-on-map world model game-state:+pc-type+ ;#(61 109)))
+					   #(0 0)))
 	      ;; restore preview
 	      (setf (pixmap:data (get-texture +preview-unknown-texture-name+))
 		    backup-data-texture-preview)

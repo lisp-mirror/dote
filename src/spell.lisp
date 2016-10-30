@@ -66,6 +66,10 @@
     :initform nil
     :initarg :identifier
     :accessor identifier)
+   (custom-description
+    :initform nil
+    :initarg :custom-description
+    :accessor custom-description)
    (level
     :initform 1
     :initarg :level
@@ -101,6 +105,8 @@
 
 (gen-type-p spell)
 
+(defgeneric use-custom-effects-p (object))
+
 (defmethod portrait ((object spell))
   (gui-texture object))
 
@@ -108,16 +114,26 @@
   (setf (gui-texture object) value))
 
 (defmethod description-for-humans :around ((object spell))
-  (text-utils:strcat
-   (format nil
-	   (_ "~a~arange: ~a effective range: ~a cost: ~a~a")
-	   (cl-ppcre:regex-replace-all "-" (string (identifier object)) " ")
-	   +gui-static-text-delim+
-	   (range           object)
-	   (effective-range object)
-	   (cost            object)
-	   +gui-static-text-delim+)
-   (call-next-method)))
+  (if (use-custom-effects-p object)
+      (custom-description object)
+      (progn
+	(text-utils:strcat
+	 (format nil
+		 (_ "~a~arange: ~a effective range: ~a cost: ~a~a")
+		 (cl-ppcre:regex-replace-all "-" (string (identifier object)) " ")
+		 +gui-static-text-delim+
+		 (range           object)
+		 (effective-range object)
+		 (cost            object)
+		 +gui-static-text-delim+)
+	 (call-next-method)))))
+
+(defun %use-custom-effects-p (fx)
+  (functionp fx))
+
+(defmethod use-custom-effects-p ((object spell))
+  (with-accessors ((basic-interaction-params basic-interaction-params)) object
+      (functionp basic-interaction-params)))
 
 (defun %default-effective-aabb-size (spell)
   (d* (d/ +terrain-chunk-tile-size+ 8.0)
@@ -284,6 +300,9 @@
        (let ((,spell (make-instance 'spell
 				    :level                ,(%get-param params :level)
 				    :identifier           ,id
+				    :custom-description   ,(%get-param params
+								       :description
+								       (_ "No description available"))
 				    :target               +target-other+
 				    :gui-texture          ,(make-gui-texture (%get-param
 									      params
@@ -305,8 +324,10 @@
 								`(function ,(%get-param
 									     params
 									     :visual-effect-target))))))
-	 ,(%get-param params :effects)
-	 (setf (basic-interaction-params ,spell)
-	       (generate-spell-common *interaction-parameters*
-				      ,(%get-param params :level)))
+	 (let ((effects ,(%get-param params :effects)))
+	   (if (%use-custom-effects-p effects)
+	       (setf (basic-interaction-params ,spell) effects)
+	       (setf (basic-interaction-params ,spell)
+		     (generate-spell-common *interaction-parameters*
+					    ,(%get-param params :level)))))
 	 (add-spell ,spell)))))
