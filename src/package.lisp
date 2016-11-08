@@ -408,6 +408,8 @@
    :with-anaphoric-temp-file
    :temp-file
    :file-can-write-p
+   :cached-directory-files
+   :directory-files
    :preprocess-include-file
    :preprocess
    :package-path
@@ -1859,6 +1861,7 @@
    :gen-name-and-inject-in-database
    :gen-name
    :clone
+   :initializedp
    :prepare-for-rendering
    :setup-texture-parameters
    :n-ka
@@ -3048,6 +3051,7 @@
    :renderer-data-normals
    :renderer-data-count-normals
    :renderer-data-tangents
+   :renderer-data-tangents-obj-space
    :renderer-data-count-tangents
    :renderer-data-normals-obj-space
    :renderer-data-aabb-obj-space
@@ -3084,6 +3088,7 @@
    :find-all-index-by-value
    :modelview-matrix
    :modelview-stack
+   :remove-mesh-data
    :vertex-v
    :vertex
    :texel-v
@@ -3137,6 +3142,7 @@
    :tree-mesh-shell-p
    :tree-trunk-aabb
    :fill-mesh-data
+   :fill-mesh-data-w-renderer-data
    :fill-shell-from-mesh
    :fill-shell-from-mesh-w-renderer-data
    :load-tag-file
@@ -3886,8 +3892,8 @@
 	:mesh)
   (:export
    :db
-   :clean-db
-   :load-db
+   :clean-spell-db
+   :load-spell-db
    :get-spell
    :remove-spell
    :spell
@@ -3923,7 +3929,6 @@
     :initarg :arrow
     :accessor arrow)))
 
-
 (defpackage :md2-mesh
   (:nicknames :md2)
   (:shadow :load)
@@ -3956,7 +3961,8 @@
    :load-md2-model
    :load-md2-player
    :tag-key-parent
-   :set-animation))
+   :set-animation
+   :clean-db))
 
 (defpackage :obj-mesh
   (:shadow :load)

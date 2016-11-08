@@ -309,6 +309,8 @@
 
 (defgeneric remove-all-tooltips (object))
 
+(defgeneric remove-all-windows (object))
+
 (defgeneric activate-all-tooltips (object))
 
 (defmethod iterate-quad-tree ((object world) function probe)
@@ -901,7 +903,7 @@
 					 (compiled-shaders object)
 					 +ai-player-models-resource+))
 	     (portrait-texture (texture:gen-name-and-inject-in-database
-					(texture:clone (texture:get-texture gui:+portrait-unknown-texture-name+)))))
+				(texture:clone (texture:get-texture gui:+portrait-unknown-texture-name+)))))
 	(pixmap:sync-data-to-bits portrait-texture)
 	(texture:prepare-for-rendering portrait-texture)
 	(setf (character:model-origin-dir ghost) dir)

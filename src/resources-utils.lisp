@@ -117,18 +117,18 @@
     (cond
       ((eq if-does-not-exists :error)
        (if home-path
-	   (uiop:directory-files home-path)
+	   (cached-directory-files home-path)
 	   (if shared-path
-	       (uiop:directory-files shared-path)
+	       (cached-directory-files shared-path)
 	       (error 'resource-not-found-error :pathname "." :resource resource))))
       ((eq if-does-not-exists :return-writable)
        (cond
 	 ((and home-path
 	       (file-can-write-p home-path))
-	  (uiop:directory-files home-path))
+	  (cached-directory-files home-path))
 	 ((and shared-path
 	       (file-can-write-p shared-path))
-	   (uiop:directory-files shared-path))
+	   (cached-directory-files shared-path))
 	 (t
 	  (error 'resource-not-writable-error :pathname "." :resource resource)))))))
 

@@ -210,6 +210,10 @@
     :initform 8.0
     :initarg  :button-label-max-size
     :accessor button-label-max-size)
+   (button-label-color
+    :initform §cff9c19ff
+    :initarg  :button-label-color
+    :accessor button-label-color)
    (checkbutton-h
     :initform 14.0
     :initarg  :checkbutton-h
@@ -273,7 +277,7 @@
     :initarg  :label-font-size
     :accessor label-font-size)
    (label-font-color
-    :initform §cffff00ff
+    :initform (button-label-color *reference-sizes*)
     :initarg  :label-font-color
     :accessor label-font-color)
    (shown
@@ -747,7 +751,8 @@
 (defclass button (naked-button) ())
 
 (defmethod initialize-instance :after ((object button) &key &allow-other-keys)
-  (setf (label-font-size object) (button-label-max-size *reference-sizes*))
+  (setf (label-font-size  object) (button-label-max-size *reference-sizes*))
+  (setf (label-font-color object) (button-label-color    *reference-sizes*))
   (with-slots (label) object
     (when label
       (setf (label object) label))))
@@ -1672,7 +1677,7 @@
 (defmethod regenerate-file-buttons ((object file-chooser))
   (remove-file-slot-button-by-label object)
   (setf (all-files object) (fchooser-init-dirs-file-slots))
-  (loop for d in (sort (uiop:directory-files (current-dir object))
+  (loop for d in (sort (fs:directory-files (current-dir object))
 		       #'string< :key #'uiop:native-namestring)    do
        (let ((phys-name (uiop:native-namestring d)))
 	 (when (or (display-hidden object)

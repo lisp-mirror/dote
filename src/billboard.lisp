@@ -78,8 +78,7 @@
 (defun setup-label-tooltip (host new-label)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (simple-string new-label))
-  (time
-   (with-accessors ((children children)
+  (with-accessors ((children children)
 		    (font-type font-type)) host
      (with-slots (label) host
        (declare (simple-string label))
@@ -90,7 +89,7 @@
 	      (when mesh
 		(transform-vertices mesh (translate (vec i 0.0 0.0)))
 		(setf (texture-object host) (texture-object mesh))
-		(merge-mesh host mesh :manifold nil))))))))
+		(merge-mesh host mesh :manifold nil)))))))
 
 (defmethod (setf label) (new-label (object tooltip))
   (declare (optimize (debug 0) (speed 3) (safety 0)))

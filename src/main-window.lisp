@@ -149,7 +149,7 @@
     (gl:clear-depth 1.0)
     (setf compiled-shaders (compile-library))
     ;; we need a valid opengl context to load spells database
-    (spell:load-db)
+    (spell:load-spell-db)
     (gui:setup-gui compiled-shaders)
     ;; set up world
     (setf world (make-instance 'world :frame-window object))
@@ -236,8 +236,9 @@
 	(interfaces:destroy (compiled-shaders w))
 	(texture:clean-db)
 	(arrows:clean-db)
-	(spell:clean-db)
+	(spell:clean-spell-db)
 	(gui:clean-font-db)
+	(md2:clean-db)
 	(game-event:clean-all-events-vectors)
 	(lparallel:end-kernel :wait t)
 	(tg:gc :full t)

@@ -57,8 +57,73 @@
 	  for start from 0 by 4 collect
 	    `(,name ,start 4))))
 
+(defclass md2-fs-res ()
+  ((dir
+    :initform nil
+    :initarg  :dir
+    :accessor dir)
+   (mesh-file
+    :initform "body01.md2"
+    :initarg  :mesh-file
+    :accessor mesh-file)
+   (animation-file
+    :initform "body-animation.lisp"
+    :initarg  :animation-file
+    :accessor animation-file)
+   (texture-file
+    :initform "body-texture.tga"
+    :initarg  :texture-file
+    :accessor texture-file)
+   (tags-file
+    :initform  "body01.tag"
+    :initarg   :tags-file
+    :accessor  tags-file)
+   (resource-path
+    :initform  nil
+    :initarg   :resource-path
+    :accessor  resource-path)))
+
+(defmethod marshal:class-persistant-slots ((object md2-fs-res))
+  '(dir
+    mesh-file
+    animation-file
+    texture-file
+    tags-file
+    resource-path))
+
+(defmethod clone-into :after ((from md2-fs-res) (to md2-fs-res))
+  (setf (dir            to) (copy-seq (dir            from))
+	(mesh-file      to) (copy-seq (mesh-file      from))
+	(animation-file to) (copy-seq (animation-file from))
+	(texture-file   to) (copy-seq (texture-file   from))
+	(tags-file      to) (copy-seq (tags-file      from))
+	(resource-path  to) (copy-seq (resource-path  from)))
+    to)
+
+(defmethod clone ((object md2-fs-res))
+  (with-simple-clone (object 'md2-fs-res)))
+
+(defun make-md2-fs-res (&key
+			  (dir            nil)
+			  (mesh-file      "body01.md2")
+			  (animation-file "body-animation.lisp")
+			  (texture-file   "body-texture.tga")
+			  (tags-file      "body01.tag")
+			  (resource-path  nil))
+  (make-instance 'md2-fs-res
+		 :dir             dir
+		 :mesh-file       mesh-file
+		 :animation-file  animation-file
+		 :texture-file    texture-file
+		 :tags-file       tags-file
+		 :resource-path   resource-path))
+
 (defclass md2-mesh (able-to-see-mesh)
-  ((frames
+  ((fs-resources
+    :initform (make-md2-fs-res)
+    :initarg  :fs-resources
+    :accessor fs-resources)
+   (frames
     :initform (misc:make-array-frame 0)
     :initarg :frames
     :accessor frames)
@@ -848,10 +913,11 @@
 
 (defgeneric wear-item      (object item))
 
-(defmethod destroy :after ((object md2-mesh))
+(defmethod destroy ((object md2-mesh))
   (when +debug-mode+
     (misc:dbg "destroy md2 mesh ~a ~a" (id object) (map 'list #'id (frames object))))
-  (map nil #'destroy (frames object)))
+  (map nil #'destroy (frames object))
+  (call-next-method))
 
 (define-header-offsets (magic-number
 			version
@@ -1033,6 +1099,29 @@
 					     gl-arr-aabb)
 				       vbos vaos)))))))
 
+;;;; NOTE just for testing purpose! ;;;;;;;;;;;;;;;;;;;;;
+(defun %%transform-model (model)
+  (warn "%%transform-model it's just for testing")
+  (let ((transf (matrix* (scale (vec 0.05 0.05 0.05))
+			 (quaternion:quat->matrix
+			  (quaternion:quat-rotate-to-vec
+			   +entity-forward-direction+
+			   (vec -1.0 0.0 0.0)
+			   :fallback-axis +y-axe+))
+			 (quaternion:quat->matrix
+			  (quaternion:quat-rotate-to-vec
+			   +entity-up-direction+
+			   (vec 0.0 0.0 -1.0)
+			   :fallback-axis +z-axe+)))))
+    (loop for tags in (tags-table model) do
+	 (loop for tag across (cdr tags) do
+	      (setf (elt tag 3)
+		    (transform-point (elt tag 3) transf))))
+    (loop for f across (frames model) do
+	 (transform-vertices f transf))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 (defmethod load ((object md2-mesh) file)
   (with-accessors ((renderer-data-vertices renderer-data-vertices)
 		   (renderer-data-count-vertices renderer-data-count-vertices)
@@ -1125,23 +1214,7 @@
 					 :compact-vertices nil))
 			  (setf (elt frames count) frame-mesh))))
 		    ;;;;; NOTE just for testing purpose! ;;;;;;;;;;;;;;;;;;;;;
-		    (let ((transf (matrix* (scale (vec 0.05 0.05 0.05))
-					   (quaternion:quat->matrix
-					    (quaternion:quat-rotate-to-vec
-					     +entity-forward-direction+
-					     (vec -1.0 0.0 0.0)
-					     :fallback-axis +y-axe+))
-					   (quaternion:quat->matrix
-					    (quaternion:quat-rotate-to-vec
-					     +entity-up-direction+
-					     (vec 0.0 0.0 -1.0)
-					     :fallback-axis +z-axe+)))))
-		      (loop for tags in (tags-table object) do
-			   (loop for tag across (cdr tags) do
-				(setf (elt tag 3)
-				      (transform-point (elt tag 3) transf))))
-		      (loop for f across (frames object) do
-			   (transform-vertices f transf)))
+		    (%%transform-model object)
 		    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		    (map nil #'prepare-for-rendering (frames object))
 		    (%alloc-arrays object))
@@ -1155,7 +1228,8 @@
     (if (null errors)
 	(progn
 	  (setf (texture-object object) texture)
-	  (texture:prepare-for-rendering (texture-object object))
+	  (when (not (texture:initializedp texture))
+	    (texture:prepare-for-rendering (texture-object object)))
 	  (loop for i across (frames object) do (setf (texture-object i) texture)))
 	(mapc #'(lambda (e) (push-errors object e)) errors))))
 
@@ -1419,6 +1493,19 @@
 	(when recalculate
 	  (calculate object 0.0))))))
 
+(defun %load-common-md2-parameters (model modeldir resource-path
+				    tags-file animation-file texture-file)
+  (load-texture model (res:get-resource-file (text-utils:strcat modeldir texture-file)
+					     resource-path
+					     :if-does-not-exists :error))
+  (load-animations model (res:get-resource-file (text-utils:strcat modeldir animation-file)
+						resource-path
+						:if-does-not-exists :error))
+  (when tags-file
+    (load-tags model (res:get-resource-file (text-utils:strcat modeldir tags-file)
+					    resource-path
+					    :if-does-not-exists :error))))
+
 (defun load-md2-model (modeldir &key
 				  (material (make-mesh-material .1 1.0 0.1 0.0 128.0))
 				  (mesh-file +model-filename+)
@@ -1426,25 +1513,23 @@
 				  (animation-file +model-animations-filename+)
 				  (tags-file      nil)
 				  (resource-path  +models-resource+))
-  (let ((model (make-instance 'md2-mesh :render-normals nil :render-aabb nil)))
+  (let ((model  (make-instance 'md2-mesh :render-normals nil :render-aabb nil))
+	(fs-res (make-md2-fs-res :dir             modeldir
+				 :mesh-file       mesh-file
+				 :animation-file  animation-file
+				 :texture-file    texture-file
+				 :tags-file       tags-file
+				 :resource-path   resource-path)))
+    (setf (fs-resources    model) fs-res)
     (setf (material-params model) material)
-    (load-texture model (res:get-resource-file (text-utils:strcat modeldir texture-file)
-					       resource-path
-					       :if-does-not-exists :error))
-    (load-animations model (res:get-resource-file (text-utils:strcat modeldir animation-file)
-						  resource-path
-						  :if-does-not-exists :error))
-    (when tags-file
-      (load-tags model (res:get-resource-file (text-utils:strcat modeldir tags-file)
-					      resource-path
-					      :if-does-not-exists :error)))
+    (%load-common-md2-parameters model modeldir resource-path tags-file animation-file texture-file)
     (load model (res:get-resource-file (text-utils:strcat modeldir mesh-file)
 				       resource-path
 				       :if-does-not-exists :error))
     (when +debug-mode+
       (misc:dbg "error md2 parsing ~a" (parsing-errors model)))
     (prepare-for-rendering model)
-    (map nil #'mesh::remove-mesh-data (frames model))
+    ;;(map nil #'mesh:remove-mesh-data (frames model))
     (set-animation model :stand)
     model))
 
@@ -1539,50 +1624,50 @@
 
 
 (defun load-md2-player (ghost dir compiled-shaders resource-path)
-  (let ((body (md2:load-md2-model dir
+  (let ((body (get-md2-shell      :dir            dir
 				  :mesh-file      "body01.md2"
 				  :animation-file "body-animation.lisp"
 				  :texture-file   "body-texture.tga"
 				  :tags-file      "body01.tag"
 				  :resource-path  resource-path))
-	(head (md2:load-md2-model dir
-				  :mesh-file      "head01.md2"
-				  :animation-file "head-animation.lisp"
-				  :texture-file   "head-texture.tga"
-				  :tags-file      nil
-				  :resource-path  resource-path)))
+	(head (get-md2-shell :dir            dir
+			     :mesh-file      "head01.md2"
+			     :animation-file "head-animation.lisp"
+			     :texture-file   "head-texture.tga"
+			     :tags-file      nil
+			     :resource-path  resource-path)))
     (setf (interfaces:compiled-shaders body) compiled-shaders
 	  (interfaces:compiled-shaders head) compiled-shaders)
-      (md2:set-animation body :stand)
-      (md2:set-animation head :stand)
-      (setf (md2:tag-key-parent head) md2:+tag-head-key+)
-      (mtree-utils:add-child body head)
-      (setf (ghost body) ghost)
+    (md2:set-animation body :stand)
+    (md2:set-animation head :stand)
+    (setf (md2:tag-key-parent head) md2:+tag-head-key+)
+    (mtree-utils:add-child body head)
+    (setf (ghost body) ghost)
       ;;;;;;;;;;;;;;;;;;;;;;;; testing
-      (let ((forged-potion              (forged-potion))
-	    (forged-potion-cure-dmg     (forged-potion-cure-dmg))
-	    (forged-potion-cure-berserk (forged-potion-cure-berserk))
-	    (forged-ring                (forged-ring))
-	    (forged-sword               (forged-sword))
-	    (forged-bow                 (forged-bow)))
-	;; (game-event:register-for-end-turn forged-potion)
-	;; (game-event:register-for-end-turn forged-potion-cure-dmg)
-	;; (game-event:register-for-end-turn forged-potion-cure-berserk)
-	;; (game-event:register-for-end-turn forged-ring)
-	;; (game-event:register-for-end-turn forged-bow)
-	(add-to-inventory (ghost body) forged-potion)
-	(add-to-inventory (ghost body) forged-potion-cure-dmg)
-	(add-to-inventory (ghost body) forged-potion-cure-berserk)
-	(add-to-inventory (ghost body) forged-ring)
-	(add-to-inventory (ghost body) forged-bow)
-	(add-to-inventory (ghost body) forged-sword)
-	(setf (movement-points (ghost body)) 200.0)
-	(setf (magic-points    (ghost body)) 50.0)
-	;; note:   wear-item-event  will   not  be   catched  as   the
-	;; registration happens when the entity is added to world
-	(wear-item body forged-sword))
+    (let ((forged-potion              (forged-potion))
+	  (forged-potion-cure-dmg     (forged-potion-cure-dmg))
+	  (forged-potion-cure-berserk (forged-potion-cure-berserk))
+	  (forged-ring                (forged-ring))
+	  (forged-sword               (forged-sword))
+	  (forged-bow                 (forged-bow)))
+      ;; (game-event:register-for-end-turn forged-potion)
+      ;; (game-event:register-for-end-turn forged-potion-cure-dmg)
+      ;; (game-event:register-for-end-turn forged-potion-cure-berserk)
+      ;; (game-event:register-for-end-turn forged-ring)
+      ;; (game-event:register-for-end-turn forged-bow)
+      (add-to-inventory (ghost body) forged-potion)
+      (add-to-inventory (ghost body) forged-potion-cure-dmg)
+      (add-to-inventory (ghost body) forged-potion-cure-berserk)
+      (add-to-inventory (ghost body) forged-ring)
+      (add-to-inventory (ghost body) forged-bow)
+      (add-to-inventory (ghost body) forged-sword)
+      (setf (movement-points (ghost body)) 200.0)
+      (setf (magic-points    (ghost body)) 50.0)
+      ;; note:   wear-item-event  will   not  be   catched  as   the
+      ;; registration happens when the entity is added to world
+      (wear-item body forged-sword))
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      body))
+    body))
 
 (alexandria:define-constant +magic-num-md2-tag-file '(74 68 80 50) :test #'equalp)
 
@@ -1613,3 +1698,124 @@
 (misc:define-parse-header-chunk (offset-tags +tag-offset-tags-offset+
 					      +tag-offset-tags-size+
 					      md2-tag nil))
+
+(defclass md2-mesh-shell (md2-mesh) ())
+
+(defmethod destroy ((object md2-mesh-shell))
+  (when +debug-mode+
+    (misc:dbg "destroy md2 mesh shell ~a ~a" (id object) (map 'list #'id (frames object))))
+  (setf (frames object) nil)) ; useless
+
+(defmethod prepare-for-rendering ((object md2-mesh-shell))
+  (with-accessors ((vbo vbo) (vao vao)
+		   (renderer-data-vertices renderer-data-vertices)
+		   (renderer-data-normals renderer-data-normals)
+		   (renderer-data-texture renderer-data-texture)
+		   (texture-object texture-object)) object
+    (setf vbo (gl:gen-buffers +vbo-count+)
+	  vao (gl:gen-vertex-arrays +vao-count+))
+    (%alloc-arrays object)
+    (bind-vbo object nil)))
+
+(defmethod fill-mesh-data ((object md2-mesh-shell) (source md2-mesh))
+  (with-accessors ((vao-host vao) (vbo-host vbo) (texture-host texture-object)
+		   (normal-map-host normal-map)  (triangles-host triangles)
+                   (children-host children)
+		   (material-params-host material-params)
+		   (compiled-shaders-host compiled-shaders)
+		   (frames frames)
+		   (triangles triangles)
+		   (animation-table animation-table)
+		   (material-params material-params)
+		   (aabb-host aabb)
+		   (tags-table     tags-table)
+		   (tags-matrices  tags-matrices)
+		   (tag-key-parent tag-key-parent)) object
+    (setf triangles             (triangles        source)
+	  frames                (frames           source)
+	  animation-table       (animation-table  source)
+	  vao-host              (vao              source)
+	  vbo-host              (vbo              source)
+	  texture-host          (texture-object   source)
+	  normal-map-host       (normal-map       source)
+	  triangles-host        (triangles        source)
+	  material-params-host  (material-params  source)
+	  compiled-shaders-host (compiled-shaders source)
+	  tags-table            (tags-table       source)
+	  tags-matrices         (tags-matrices    source)
+	  tag-key-parent        (tag-key-parent   source))
+    (do-children-mesh (child source)
+      (let ((new-child (make-instance 'md2-mesh-shell)))
+	(fill-mesh-data new-child child)
+	(mtree-utils:add-child object new-child)))
+      object))
+
+(defmethod fill-mesh-data-w-renderer-data ((object md2-mesh-shell) (source md2-mesh))
+  ;; md2-mesh has not rendering data on its own, in a sense.
+  ;; And we should not share them too.
+  (fill-mesh-data object source))
+
+(defmethod load-texture ((object md2-mesh-shell) file)
+  (multiple-value-bind (texture errors)
+      (texture:get-texture file)
+    (if (null errors)
+	(progn
+	  (setf (texture-object object) texture)
+	  (when (texture:initializedp texture)
+	    (texture:prepare-for-rendering (texture-object object)))
+	(mapc #'(lambda (e) (push-errors object e)) errors)))))
+
+(defparameter *md2-mesh-factory-db* '())
+
+(defun clean-db ()
+  (map 'nil #'destroy *md2-mesh-factory-db*)
+  (setf *md2-mesh-factory-db* nil))
+
+(defun %db-equal-fn (dir mesh-file resource-path)
+  #'(lambda (a)
+      (and
+       (string=    dir            (dir           (fs-resources a)))
+       (string=    mesh-file      (mesh-file     (fs-resources a)))
+       (tree-equal resource-path  (resource-path (fs-resources a)) :test #'string=))))
+
+(defun get-md2-shell (&key
+			(material       (make-mesh-material .1 1.0 0.1 0.0 128.0))
+			(dir            nil)
+			(mesh-file      "body01.md2")
+			(animation-file "body-animation.lisp")
+			(texture-file   "body-texture.tga")
+			(tags-file      "body01.tag")
+			(resource-path  nil))
+  (let* ((res (find-if (%db-equal-fn dir mesh-file resource-path) *md2-mesh-factory-db*)))
+    (if res
+	(let ((shell (fill-shell-from-mesh-w-renderer-data res 'md2-mesh-shell)))
+	  (setf (fs-resources shell)
+		(make-md2-fs-res :dir             dir
+				 :mesh-file       mesh-file
+				 :animation-file  animation-file
+				 :texture-file    texture-file
+				 :tags-file       tags-file
+				 :resource-path   resource-path))
+	  (setf (material-params shell) material)
+	  (%load-common-md2-parameters shell dir resource-path tags-file
+				       animation-file texture-file)
+          ;; NOTE just for testing purpose! ;;;;;;;;;;;;;;;;;;;;;
+	  (%%transform-model shell)
+	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	  (prepare-for-rendering shell)
+	  shell)
+	(let ((model (load-md2-model dir
+				     :material       material
+				     :mesh-file      mesh-file
+				     :texture-file   texture-file
+				     :animation-file animation-file
+				     :tags-file      tags-file
+				     :resource-path  resource-path)))
+	  (push model *md2-mesh-factory-db*)
+	  (get-md2-shell :dir            dir
+	                 :material       material
+			 :mesh-file      mesh-file
+			 :texture-file   texture-file
+			 :animation-file animation-file
+			 :tags-file      tags-file
+			 :resource-path  resource-path)))))

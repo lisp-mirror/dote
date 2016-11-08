@@ -36,7 +36,7 @@
 
 (defparameter *spells-db* '())
 
-(defun clean-db ()
+(defun clean-spell-db ()
   (setf *spells-db* nil))
 
 (defun get-spell (key)
@@ -52,10 +52,10 @@
   (remove-spell (identifier spell))
   (push spell *spells-db*))
 
-(defun load-db ()
+(defun load-spell-db ()
   (let ((all-attack-spells (resources-utils:get-resource-files +attack-spell-dir+))
 	(all-other-spells  (resources-utils:get-resource-files +spell-dir+)))
-    (dolist (spell-file (nconc all-attack-spells all-other-spells))
+    (dolist (spell-file (concatenate 'list all-attack-spells all-other-spells))
       (load spell-file))))
 
 (defun db ()

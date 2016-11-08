@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dote 0.0.1\n"
 "Report-Msgid-Bugs-To: cage@katamail.com\n"
-"POT-Creation-Date: 2016-10-09 12:24+0200\n"
-"PO-Revision-Date: 2016-10-30 14:24+0100\n"
+"POT-Creation-Date: 2016-11-04 14:40+0100\n"
+"PO-Revision-Date: 2016-11-04 14:40+0100\n"
 "Last-Translator: cage <cage@katamail.com>\n"
 "Language-Team: Italian\n"
 "Language: it\n"
@@ -268,24 +268,24 @@ msgstr "maschile"
 msgid "female"
 msgstr "femminile"
 
-#: src/world.lisp:835 src/gui/widget.lisp:3657
+#: src/world.lisp:837 src/gui/widget.lisp:3675
 msgid "OK"
 msgstr "OK"
 
-#: src/world.lisp:842
+#: src/world.lisp:844
 msgid "Message"
 msgstr "Messaggio"
 
-#: src/md2-mesh.lisp:458 src/md2-mesh.lisp:483 src/md2-mesh.lisp:662
+#: src/md2-mesh.lisp:523 src/md2-mesh.lisp:548 src/md2-mesh.lisp:727
 msgid "Move to"
 msgstr "Spostati"
 
-#: src/md2-mesh.lisp:659
+#: src/md2-mesh.lisp:724
 #, lisp-format
 msgid "~a broken"
 msgstr "~a rotto/a"
 
-#: src/md2-mesh.lisp:693
+#: src/md2-mesh.lisp:758
 msgid "miss"
 msgstr "mancato"
 
@@ -471,213 +471,217 @@ msgstr "Non sono piu' immune al terrore."
 msgid "I am immune to poisoning no more"
 msgstr "Non sono piu' immune all'avvelenamento."
 
-#: src/spell.lisp:113
+#: src/spell.lisp:122
 #, lisp-format
 msgid "~a~arange: ~a effective range: ~a cost: ~a~a"
 msgstr "~a~agittata: ~a raggio efficace: ~a costo: ~a~a"
 
-#: src/spell.lisp:151
+#: src/spell.lisp:167
 #, lisp-format
 msgid "element: ~a~adamage: ~a~a"
 msgstr "elemento: ~a~adanno: ~a~a"
 
-#: src/arrows.lisp:388
+#: src/spell.lisp:305
+msgid "No description available"
+msgstr "Nessuna descrizione disponibile"
+
+#: src/arrows.lisp:434
 msgid "fail"
 msgstr "fallito"
 
-#: src/arrows.lisp:389
+#: src/arrows.lisp:435
 msgid "too far"
 msgstr "lontano"
 
-#: src/gui/widget.lisp:1751
+#: src/gui/widget.lisp:1756
 msgid "Choose file"
 msgstr "Scegli un file"
 
-#: src/gui/widget.lisp:2624
+#: src/gui/widget.lisp:2642
 msgid "Class"
 msgstr "Classe"
 
-#: src/gui/widget.lisp:2637
+#: src/gui/widget.lisp:2655
 msgid "Warrior "
 msgstr "Guerriero "
 
-#: src/gui/widget.lisp:2648
+#: src/gui/widget.lisp:2666
 msgid "Wizard "
 msgstr "Mago "
 
-#: src/gui/widget.lisp:2659
+#: src/gui/widget.lisp:2677
 msgid "Healer "
 msgstr "Guaritore "
 
-#: src/gui/widget.lisp:2670
+#: src/gui/widget.lisp:2688
 msgid "Archer "
 msgstr "Arciere "
 
-#: src/gui/widget.lisp:2681
+#: src/gui/widget.lisp:2699
 msgid "Ranger "
 msgstr "Ranger "
 
-#: src/gui/widget.lisp:2688
+#: src/gui/widget.lisp:2706
 msgid "Gender"
 msgstr "Genere"
 
-#: src/gui/widget.lisp:2701
+#: src/gui/widget.lisp:2719
 msgid "Male "
 msgstr "Maschile "
 
-#: src/gui/widget.lisp:2712
+#: src/gui/widget.lisp:2730
 msgid "Female "
 msgstr "Femminile "
 
-#: src/gui/widget.lisp:2724
+#: src/gui/widget.lisp:2742
 msgid "Generate new"
 msgstr "Genera nuovo"
 
-#: src/gui/widget.lisp:2735
+#: src/gui/widget.lisp:2753
 msgid "Save"
 msgstr "Salva"
 
-#: src/gui/widget.lisp:2746
+#: src/gui/widget.lisp:2764
 msgid "Load"
 msgstr "Carica"
 
-#: src/gui/widget.lisp:2757
+#: src/gui/widget.lisp:2775
 msgid "Accept"
 msgstr "Accetta"
 
-#: src/gui/widget.lisp:2776 src/gui/player-report-window.lisp:102
+#: src/gui/widget.lisp:2794 src/gui/player-report-window.lisp:102
 msgid "Damage points: "
 msgstr "Punti danno: "
 
-#: src/gui/widget.lisp:2798 src/gui/player-report-window.lisp:112
+#: src/gui/widget.lisp:2816 src/gui/player-report-window.lisp:112
 msgid "Movement points: "
 msgstr "Punti movimento: "
 
-#: src/gui/widget.lisp:2820 src/gui/player-report-window.lisp:122
+#: src/gui/widget.lisp:2838 src/gui/player-report-window.lisp:122
 msgid "Magic points: "
 msgstr "Punti magia: "
 
-#: src/gui/widget.lisp:2842 src/gui/player-report-window.lisp:132
+#: src/gui/widget.lisp:2860 src/gui/player-report-window.lisp:132
 msgid "Dodge chance: "
 msgstr "Probabilita' di schivare: "
 
-#: src/gui/widget.lisp:2864 src/gui/player-report-window.lisp:142
+#: src/gui/widget.lisp:2882 src/gui/player-report-window.lisp:142
 msgid "Short range attack chance: "
 msgstr "Probabilita' attacchi a corto raggio: "
 
-#: src/gui/widget.lisp:2886 src/gui/player-report-window.lisp:152
+#: src/gui/widget.lisp:2904 src/gui/player-report-window.lisp:152
 msgid "Long range attack chance: "
 msgstr "Probabilita' attacchi a lungo raggio: "
 
-#: src/gui/widget.lisp:2908 src/gui/player-report-window.lisp:162
+#: src/gui/widget.lisp:2926 src/gui/player-report-window.lisp:162
 msgid "Short Range attack damage: "
 msgstr "Danno con attacchi a corto raggio: "
 
-#: src/gui/widget.lisp:2930 src/gui/player-report-window.lisp:172
+#: src/gui/widget.lisp:2948 src/gui/player-report-window.lisp:172
 msgid "Long Range attack damage: "
 msgstr "Danni con attacchi a lungo raggio:"
 
-#: src/gui/widget.lisp:2952 src/gui/player-report-window.lisp:182
+#: src/gui/widget.lisp:2970 src/gui/player-report-window.lisp:182
 msgid "Edge weapon chance bonus: "
 msgstr "Bonus probabilita' attacchi armi da taglio: "
 
-#: src/gui/widget.lisp:2974 src/gui/player-report-window.lisp:192
+#: src/gui/widget.lisp:2992 src/gui/player-report-window.lisp:192
 msgid "Edge weapon damage bonus: "
 msgstr "Bonus danni armi da taglio: "
 
-#: src/gui/widget.lisp:2996 src/gui/player-report-window.lisp:202
+#: src/gui/widget.lisp:3014 src/gui/player-report-window.lisp:202
 msgid "Impact weapon chance bonus: "
 msgstr "Bonus probabilita' attacchi armi ad impatto: "
 
-#: src/gui/widget.lisp:3018 src/gui/player-report-window.lisp:212
+#: src/gui/widget.lisp:3036 src/gui/player-report-window.lisp:212
 msgid "Impact weapon damage bonus: "
 msgstr "Bonus attacchi armi ad impatto: "
 
-#: src/gui/widget.lisp:3040 src/gui/player-report-window.lisp:222
+#: src/gui/widget.lisp:3058 src/gui/player-report-window.lisp:222
 msgid "Pole weapon chance bonus: "
 msgstr "Bonus probabilita' attacchi con lance: "
 
-#: src/gui/widget.lisp:3062 src/gui/player-report-window.lisp:232
+#: src/gui/widget.lisp:3080 src/gui/player-report-window.lisp:232
 msgid "Pole weapon damage bonus: "
 msgstr "Bonus danni attacchi con lance: "
 
-#: src/gui/widget.lisp:3084 src/gui/player-report-window.lisp:242
+#: src/gui/widget.lisp:3102 src/gui/player-report-window.lisp:242
 msgid "Unlock chance: "
 msgstr "Probabilita' scassinamento serrature: "
 
-#: src/gui/widget.lisp:3106 src/gui/player-report-window.lisp:252
+#: src/gui/widget.lisp:3124 src/gui/player-report-window.lisp:252
 msgid "Deactivate trap chance: "
 msgstr "Probabilita' disattiva trappole: "
 
-#: src/gui/widget.lisp:3128 src/gui/player-report-window.lisp:262
+#: src/gui/widget.lisp:3146 src/gui/player-report-window.lisp:262
 msgid "Reply to attack chance: "
 msgstr "Probabilita contrattacco: "
 
-#: src/gui/widget.lisp:3150 src/gui/player-report-window.lisp:272
+#: src/gui/widget.lisp:3168 src/gui/player-report-window.lisp:272
 msgid "Ambush attack chance: "
 msgstr "Probabilita' attacco di sorpresa: "
 
-#: src/gui/widget.lisp:3172 src/gui/player-report-window.lisp:282
+#: src/gui/widget.lisp:3190 src/gui/player-report-window.lisp:282
 msgid "Spell chance: "
 msgstr "Probabilita' incantesimo: "
 
-#: src/gui/widget.lisp:3194 src/gui/player-report-window.lisp:292
+#: src/gui/widget.lisp:3212 src/gui/player-report-window.lisp:292
 msgid "Attack spell chance: "
 msgstr "Probabilita incantesimo d'attacco: "
 
-#: src/gui/widget.lisp:3216 src/gui/player-report-window.lisp:302
+#: src/gui/widget.lisp:3234 src/gui/player-report-window.lisp:302
 msgid "Level: "
 msgstr "Livello: "
 
-#: src/gui/widget.lisp:3226 src/gui/player-report-window.lisp:312
+#: src/gui/widget.lisp:3244 src/gui/player-report-window.lisp:312
 msgid "Experience points: "
 msgstr "Punti esperienza: "
 
-#: src/gui/widget.lisp:3238
+#: src/gui/widget.lisp:3256
 msgid "Name"
 msgstr "Nome"
 
-#: src/gui/widget.lisp:3250
+#: src/gui/widget.lisp:3268
 msgid "Last name"
 msgstr "Cognome"
 
-#: src/gui/widget.lisp:3259 src/gui/player-report-window.lisp:334
+#: src/gui/widget.lisp:3277 src/gui/player-report-window.lisp:334
 msgid "STR: "
 msgstr "STR: "
 
-#: src/gui/widget.lisp:3269 src/gui/player-report-window.lisp:344
+#: src/gui/widget.lisp:3287 src/gui/player-report-window.lisp:344
 msgid "ST:  "
 msgstr "ST:  "
 
-#: src/gui/widget.lisp:3279 src/gui/player-report-window.lisp:354
+#: src/gui/widget.lisp:3297 src/gui/player-report-window.lisp:354
 msgid "DX:  "
 msgstr "DX:  "
 
-#: src/gui/widget.lisp:3289 src/gui/player-report-window.lisp:364
+#: src/gui/widget.lisp:3307 src/gui/player-report-window.lisp:364
 msgid "AG:  "
 msgstr "AG:  "
 
-#: src/gui/widget.lisp:3299 src/gui/player-report-window.lisp:374
+#: src/gui/widget.lisp:3317 src/gui/player-report-window.lisp:374
 msgid "SM:  "
 msgstr "SM:  "
 
-#: src/gui/widget.lisp:3309 src/gui/player-report-window.lisp:384
+#: src/gui/widget.lisp:3327 src/gui/player-report-window.lisp:384
 msgid "EM:  "
 msgstr "EM:  "
 
-#: src/gui/widget.lisp:3319 src/gui/player-report-window.lisp:394
+#: src/gui/widget.lisp:3337 src/gui/player-report-window.lisp:394
 msgid "WG:  "
 msgstr "WG:  "
 
-#: src/gui/widget.lisp:3341
+#: src/gui/widget.lisp:3359
 msgid "Next"
 msgstr "Successivo"
 
-#: src/gui/widget.lisp:3654
+#: src/gui/widget.lisp:3672
 msgid "Mesh not specified"
 msgstr "Modello non indicato"
 
-#: src/gui/widget.lisp:3971
+#: src/gui/widget.lisp:3990
 msgid "Generate character"
 msgstr "Genera personaggio"
 

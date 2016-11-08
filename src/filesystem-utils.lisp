@@ -183,8 +183,9 @@
 (defmacro with-anaphoric-temp-file ((stream &key (prefix nil) (unlink nil)) &body body)
   `(let ((temp-file (temporary-filename ,prefix))) ; anaphora
        (unwind-protect
-	    (with-open-file (,stream temp-file :direction :output
-				     :if-exists :error
+	    (with-open-file (,stream temp-file
+				     :direction         :output
+				     :if-exists         :error
 				     :if-does-not-exist :create)
 	      ,@body)
 	 ,(if unlink
@@ -196,6 +197,17 @@
 
 (defun file-can-write-p (file)
   (has-file-permission-p file :user-write))
+
+(misc:defcached cached-directory-files ((path) :test equal)
+  (declare (optimize (speed 0) (safety 3) (debug 3)))
+  (if (gethash path cache)
+      (gethash path cache)
+      (progn
+	(setf (gethash path cache) (uiop:directory-files path))
+	(cached-directory-files path))))
+
+(defun directory-files (path)
+  (uiop:directory-files path))
 
 (defun preprocess-include-file (line resource)
   (let ((included-filepath (second (cl-ppcre:split "\\p{Z}" line))))

@@ -2649,8 +2649,9 @@
 	(progn
 	  (setf tags-table (load-tag-file file))
 	  (when tags-table
-	    (loop for name in tags-table do
-		 (push (cons (car name) (sb-cga:identity-matrix)) tags-matrices))))
+	    (let ((matrices (loop for name in tags-table collect
+				 (cons (car name) (sb-cga:identity-matrix)))))
+	      (setf tags-matrices matrices))))
       (use-value (v) v))))
 
 (defmethod deserialize ((object triangle-mesh) place)
@@ -2701,7 +2702,10 @@
 		   (renderer-data-normals-obj-space renderer-data-normals-obj-space)
 		   (renderer-data-tangents-obj-space  renderer-data-tangents-obj-space)
 		   (renderer-data-aabb-obj-space      renderer-data-aabb-obj-space)
-		   (aabb-host aabb))  object
+		   (aabb-host aabb)
+		   (tags-table     tags-table)
+		   (tags-matrices  tags-matrices)
+		   (tag-key-parent tag-key-parent)) object
     (with-slots (aabb) source
       (setf vao-host                          (vao              source)
 	    vbo-host                          (vbo              source)
@@ -2710,6 +2714,9 @@
 	    triangles-host                    (triangles        source)
 	    material-params-host              (material-params  source)
 	    compiled-shaders-host             (compiled-shaders source)
+	    tags-table                        (tags-table       source)
+	    tags-matrices                     (tags-matrices    source)
+	    tag-key-parent                    (tag-key-parent   source)
 	    aabb-host                         aabb)
       (do-children-mesh (child source)
 	(let ((new-child (make-instance 'triangle-mesh-shell)))
