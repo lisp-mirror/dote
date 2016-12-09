@@ -198,3 +198,11 @@
   nil)
 
 (defgeneric apply-damage (object damage &key &allow-other-keys))
+
+(defgeneric faction-player-p (object &optional id-entity))
+
+(defgeneric faction-ai-p (object &optional id-entity))
+
+(defgeneric my-faction (object))
+
+(defgeneric (setf my-faction) (object value))

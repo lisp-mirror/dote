@@ -186,6 +186,12 @@
   © Danimal released under Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0) license
   according to: http://opengameart.org/content/pixel-dungeons-set1-props-and-stuff
 
+- data/models/objects/land-mine/model.obj
+  data/models/objects/land-mine/texture.tga
+  Copyright (c) 2006-2007 Michael Kurinnoy, Viewizard
+  released under GPLv3
+  according to http://opengameart.org/content/mines-astromenace
+
 - data/trees/temperate/pine/*
   yughues released under https://creativecommons.org/publicdomain/zero/1.0/
   according to http://opengameart.org/content/freebies-mundo-commissions
@@ -303,7 +309,7 @@
 
 - data/names/names.lisp
   is based on [[totro's][http://www.dwheeler.com/totro.html]]
-  output released under GPLv3 ol later
+  output released under GPLv3 or later
 
 - data/img/avatar-portrait
   All     files    enclosed     are    licensed     under    CC-BY-3.0
@@ -429,13 +435,19 @@
   https://creativecommons.org/licenses/by/3.0/
   Downloaded from: http://game-icons.net/
 
+- data/gui/default/drop-overlay.tga
+  based on the work
+  © 2015 sbed
+  released under released under Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+  https://creativecommons.org/licenses/by/3.0/
+  Downloaded from: http://game-icons.net/
+
 - data/gui/default/silhouette.tga
   according to:
   http://game-icons.net/lorc/originals/inner-self.html
   © 2015 Lorc released under Creative Commons
   Attribution 3.0 Unported (CC BY 3.0) License
   https://creativecommons.org/licenses/by/3.0/
-
 
 - data/gui/default/default/fantasy-tileset.png
   data/gui/default/magic-staff-overlay.tga
@@ -524,6 +536,23 @@
   Creative Commons Attribution 3.0 Unported License (CC BY 3.0)
 
   https://creativecommons.org/licenses/by/3.0/
+
+- data/gui/default/inventory/trap-1.tga
+- data/gui/default/inventory/trap-2.tga
+- data/gui/default/inventory/trap-3.tga
+- data/gui/default/inventory/trap-4.tga
+- data/gui/default/inventory/trap-5.tga
+- data/gui/default/inventory/trap-6.tga
+- data/gui/default/inventory/trap-7.tga
+- data/gui/default/inventory/trap-8.tga
+- data/gui/default/inventory/trap-9.tga
+- data/gui/default/inventory/trap-10.tga
+
+  © 2015 Lorc
+  released under released under Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+  https://creativecommons.org/licenses/by/3.0/
+  Downloaded from: http://game-icons.net/
+
 
 - src/test/data/avatars/avatar0.tga
   derived from

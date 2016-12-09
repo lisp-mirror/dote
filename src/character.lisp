@@ -110,7 +110,6 @@
     :initarg  :basic-interaction-params
     :accessor basic-interaction-params)))
 
-
 (defgeneric lookup-basic-interaction (object key))
 
 (defgeneric import-interaction-from-definition (object file))
@@ -255,6 +254,7 @@
 			      +can-be-drunk+
 			      +can-be-eaten+
 			      +can-be-picked+
+			      +can-be-dropped+
 			      +can-be-worn-arm+
 			      +can-be-worn-head+
 			      +can-be-worn-neck+
@@ -342,6 +342,11 @@
       (lookup-basic-interaction object +can-be-worn-body+)
       (lookup-basic-interaction object +can-be-worn-hand+)))
 
+(gen-interaction-predicate (trap)
+  (and (lookup-basic-interaction object +can-be-dropped+)
+       (not (lookup-basic-interaction object +can-attack+))
+       (lookup-basic-interaction object +magic-effects+)))
+
 (defmethod object-keycode ((object interactive-entity))
   (or (and (lookup-basic-interaction object +can-be-opened+)
 	   (stringp (lookup-basic-interaction object +can-be-opened+))
@@ -362,7 +367,7 @@
 	  +gui-static-text-delim+))
 
 (defmethod description-type ((object interactive-entity))
-  (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~] ~a ~a")
+  (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~]~:[~;Trap~] ~a ~a")
 	   (can-cut-p   object)
 	   (can-smash-p object)
 	   (can-launch-bolt-p object)
@@ -373,6 +378,7 @@
 	   (armorp     object)
 	   (ringp      object)
 	   (shoesp     object)
+	   (trapp      object)
 	   (first-name object)
 	   (last-name  object)
 	   +gui-static-text-delim+))
@@ -559,7 +565,7 @@
 
 (defmethod description-for-humans :around ((object np-character))
   (strcat
-   (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~] ~a ~a~a")
+   (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~]~:[~;Trap~] ~a ~a~a")
 	   (can-cut-p   object)
 	   (can-smash-p object)
 	   (can-launch-bolt-p object)
@@ -570,6 +576,7 @@
 	   (armorp     object)
 	   (ringp      object)
 	   (shoesp     object)
+	   (trapp      object)
 	   (first-name object)
 	   (last-name  object)
 	   +gui-static-text-delim+)
@@ -958,6 +965,23 @@
 (defgeneric weapon-type-short-range (object))
 
 (defgeneric weapon-type-long-range (object))
+
+(defmacro gen-player-class-test (name)
+  (let ((name-fn (format-symbol t "~:@(pclass-~a-p~)" name)))
+    `(progn
+       (defgeneric ,name-fn (object))
+       (defmethod  ,name-fn ((object player-character))
+	 (eq (player-class object) ,(alexandria:make-keyword name))))))
+
+(gen-player-class-test ranger)
+
+(gen-player-class-test warrior)
+
+(gen-player-class-test archer)
+
+(gen-player-class-test wizard)
+
+(gen-player-class-test healer)
 
 (defmethod random-fill-slots ((object player-character) capital characteristics)
   (loop for charact in characteristics do

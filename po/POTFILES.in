@@ -97,3 +97,7 @@ src/gui/gui.lisp
 src/gui/widget.lisp
 src/gui/player-report-window.lisp
 src/gui/inventory-window.lisp
+src/gui/spell-window.lisp
+# spells
+data/spells/vampire-1.lisp
+data/spells/vampire-2.lisp

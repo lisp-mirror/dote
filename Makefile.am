@@ -155,6 +155,8 @@ data/models/objects/gold-coin/model.mtl                  \
 data/models/objects/silver-coin/texture.tga              \
 data/models/objects/silver-coin/model.obj                \
 data/models/objects/silver-coin/model.mtl                \
+data/models/objects/land-mine/model.obj                  \
+data/models/objects/land-mine/texture.tga                \
 data/models/rat/texture.tga                              \
 data/models/rat/rat.obj                                  \
 data/models/furnitures/fountain/texture.tga              \
@@ -1536,6 +1538,17 @@ data/gui/default/inventory/w-throw002.tga                \
 data/gui/default/inventory/w-throw003.tga                \
 data/gui/default/inventory/w-throw004.tga                \
 data/gui/default/inventory/w-throw05.tga                 \
+data/gui/default/inventory/trap-1.tga                    \
+data/gui/default/inventory/trap-2.tga                    \
+data/gui/default/inventory/trap-3.tga                    \
+data/gui/default/inventory/trap-4.tga                    \
+data/gui/default/inventory/trap-5.tga                    \
+data/gui/default/inventory/trap-6.tga                    \
+data/gui/default/inventory/trap-7.tga                    \
+data/gui/default/inventory/trap-8.tga                    \
+data/gui/default/inventory/trap-9.tga                    \
+data/gui/default/inventory/trap-10.tga                   \
+data/gui/default/drop-overlay.tga                        \
 data/gui/default/padlock-overlay.tga                     \
 data/gui/default/splash-progress-gauge.tga               \
 data/gui/default/silhouette.tga                          \

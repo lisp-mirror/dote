@@ -232,6 +232,11 @@
 		   inventory-slot-selected.tga
 		   transparent.tga
 		   silhouette.tga
+		   (drop-overlay.tga
+		    +default-gui-resource+
+		    (setf (s-wrap-mode  bg) :clamp-to-border)
+		    (setf (t-wrap-mode  bg) :clamp-to-border)
+		    (setf (border-color bg) §c00000000))
 		   (bag.tga
 		    +default-gui-resource+
 		    (setf (s-wrap-mode  bg) :clamp-to-border)
@@ -509,6 +514,7 @@
   (setup-bg-blue-h-bar)
   (setup-bg-red-h-bar)
   (setup-bg-green-h-bar)
+  (setup-bg-drop-overlay)
   (setup-bg-check-button-overlay)
   (setup-bg-check-button-checked-green)
   (setup-bg-check-button)

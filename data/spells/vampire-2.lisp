@@ -3,7 +3,7 @@
 (define-spell (:vampire-2)
   :level                 5
   :element               :fire
-  :description           "Steals 10 dmg (maximum)."
+  :description           (_ "Steals 10 dmg (maximum).")
   :gui-texture           "misc/vampire-2.tga"
   :cost                  10.0
   :visual-effect-self    nil

@@ -745,6 +745,8 @@
 
 (defgeneric calculate-decrement-move-points-entering-tile (object))
 
+(defgeneric calculate-decrement-move-points-place-trap (object))
+
 (defgeneric decrement-move-points (object how-much))
 
 (defgeneric decrement-spell-points (object how-much))
@@ -756,6 +758,8 @@
 (defgeneric decrement-move-points-wear (object))
 
 (defgeneric decrement-move-points-attack-melee (object))
+
+(defgeneric decrement-move-points-place-trap (object))
 
 (defgeneric can-use-movement-points-p (object &key minimum))
 
@@ -780,6 +784,8 @@
 (defgeneric set-spell-status (object))
 
 (defgeneric entity-facing (object))
+
+(defgeneric trap-can-be-placed-p (object))
 
 (defmethod remove-mesh-data ((object triangle-mesh))
   (setf (normals       object) nil
@@ -925,35 +931,48 @@
 	    cost-dec)
 	  (d 0)))))
 
+(defmethod calculate-decrement-move-points-place-trap ((object triangle-mesh))
+  (with-accessors ((ghost ghost)) object
+    (if (not (character:pclass-ranger-p ghost))
+	+place-trap-cost+
+	(d/ +place-trap-cost+ 3.0))))
+
 (defmethod decrement-move-points ((object triangle-mesh) how-much)
-   (when (> (character:current-movement-points (ghost object)) 0)
-     (decf (character:current-movement-points (ghost object))
-	   how-much)))
+  (when (can-use-movement-points-p object :minimum how-much)
+    (decf (character:current-movement-points (ghost object))
+	  how-much)))
 
 (defmethod decrement-spell-points ((object triangle-mesh) how-much)
-   (when (> (character:current-magic-points (ghost object)) 0)
+   (when (can-use-movement-points-p object :minimum how-much)
      (decf (character:current-magic-points (ghost object))
 	   how-much)))
 
 (defmethod decrement-move-points-entering-tile ((object triangle-mesh))
-  (when (> (character:current-movement-points (ghost object)) 0)
-    (decf (character:current-movement-points (ghost object))
-	  (calculate-decrement-move-points-entering-tile object))))
+  (let ((cost (calculate-decrement-move-points-entering-tile object)))
+    (when (can-use-movement-points-p object :minimum cost)
+      (decf (character:current-movement-points (ghost object))
+	  cost))))
 
 (defmethod decrement-move-points-rotate ((object triangle-mesh))
-  (when (> (character:current-movement-points (ghost object)) 0)
+  (when (can-use-movement-points-p object :minimum +rotate-entity-cost-cost+)
     (decf (character:current-movement-points (ghost object))
 	  +rotate-entity-cost-cost+)))
 
 (defmethod decrement-move-points-wear ((object triangle-mesh))
-  (when (> (character:current-movement-points (ghost object)) 0)
+  (when (can-use-movement-points-p object :minimum +wear-object-entity-cost-cost+)
     (decf (character:current-movement-points (ghost object))
 	  +wear-object-entity-cost-cost+)))
 
 (defmethod decrement-move-points-attack-melee ((object triangle-mesh))
-  (when (> (character:current-movement-points (ghost object)) 0)
+  (when (can-use-movement-points-p object :minimum +attack-melee-cost+)
     (decf (character:current-movement-points (ghost object))
 	  +attack-melee-cost+)))
+
+(defmethod decrement-move-points-place-trap ((object triangle-mesh))
+  (let ((cost (calculate-decrement-move-points-place-trap object)))
+    (when (can-use-movement-points-p object :minimum cost)
+      (decf (character:current-movement-points (ghost object))
+	    cost))))
 
 (defmethod can-use-movement-points-p ((object triangle-mesh) &key (minimum 0))
   (and (character:current-movement-points (ghost object))
@@ -988,6 +1007,9 @@
 	    (if (/= entity-id (invalid-entity-id-map-state))
 		(values (find-entity-by-id state entity-id) entity-element)
 		(values nil entity-element))))))))
+
+(defmethod trap-can-be-placed-p ((object triangle-mesh))
+  (can-use-movement-points-p object :minimum (calculate-decrement-move-points-place-trap object)))
 
 (defmethod get-first-near ((object triangle-mesh) vertex-index)
   (misc:do-while* ((first-face (find-triangle-by-vertex-index object vertex-index))

@@ -52,6 +52,9 @@
   (remove-spell (identifier spell))
   (push spell *spells-db*))
 
+(defun filter-spell-db (remove-if-predicate)
+  (remove-if remove-if-predicate *spells-db*))
+
 (defun load-spell-db ()
   (let ((all-attack-spells (resources-utils:get-resource-files +attack-spell-dir+))
 	(all-other-spells  (resources-utils:get-resource-files +spell-dir+)))
@@ -209,7 +212,6 @@
 					   :target +target-other+)
 			    (plist-path-value interaction effect-path))))
     (n-setf-path-value interaction effect-path effect-object)))
-
 
 (defun set-healing-dmg-effect (path level interaction)
   (let ((effect-object  (if (eq-generate-p (plist-path-value interaction path))

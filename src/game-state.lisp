@@ -101,7 +101,8 @@
 	  walkable
 	  wall-decoration
 	  npc
-	  pc)
+	  pc
+	  trap)
 
 (defun invalid-entity-id-map-state ()
   (- +start-id-counter+ 1))
@@ -145,11 +146,28 @@
 
 (defgeneric get-neighborhood (object row column predicate &key w-offset h-offset))
 
+(defgeneric insert-state-chain-after (object idx entity type occlusion-value &optional ct))
+
 (defmethod map-element-empty-p ((object map-state-element))
   (or (eq (el-type object)
 	  +empty-type+)
       (eq (el-type object)
 	  +floor-type+)))
+
+(defmethod insert-state-chain-after ((object map-state-element)
+			  idx entity type occlusion-value
+			  &optional (ct 0))
+  (with-accessors ((old-state-element old-state-element)) object
+    (if (= ct idx)
+	(let ((new (make-instance 'map-state-element
+				  :entity-id         (id entity)
+				  :el-type           type
+				  :occlude           occlusion-value
+				  :old-state-element :stopper)))
+	  (setf (old-state-element new) (old-state-element object))
+	  (setf (old-state-element object) new))
+	(insert-state-chain-after (old-state-element object)
+				  idx entity type occlusion-value (1+ ct)))))
 
 (defclass movement-path ()
   ((tiles
@@ -274,6 +292,12 @@
 
 (defgeneric push-entity (object entity))
 
+(defgeneric push-trap-entity (object entity))
+
+(defgeneric pop-trap-entity (object entity))
+
+(defgeneric pop-map-state-entity (object entity))
+
 (defgeneric push-labyrinth-entity (object labyrinth))
 
 (defgeneric find-labyrinth-by-id (object labyrinth-id))
@@ -291,10 +315,6 @@
 (defgeneric map-player-entities (object function))
 
 (defgeneric map-ai-entities (object function))
-
-(defgeneric faction-player-p (object id-entity))
-
-(defgeneric faction-ai-p (object id-entity))
 
 (defgeneric terrain-height@pos (object x z))
 
@@ -329,6 +349,8 @@
 (defgeneric turn-off-fog (object))
 
 (defgeneric entity-next-p (object me other))
+
+(defgeneric faction-turn  (object))
 
 (defmethod fetch-render-window ((object game-state))
   (and (window-id object)
@@ -375,6 +397,12 @@
 		   (,fn (matrix-elt (map-state object) y x))))))))
 
 (gen-map-state-reader el-type entity-id occludep)
+
+(defgeneric element-mapstate@ (object x y))
+
+(defmethod element-mapstate@ ((object game-state) (x fixnum) (y fixnum))
+  (declare (optimize (speed 0) (safety 3) (debug 3)))
+  (matrix-elt (map-state object) y x))
 
 (defmethod prepare-map-state ((object game-state) (map random-terrain))
   (with-accessors ((map-state map-state)) object
@@ -431,6 +459,34 @@
 				       :key-datum #'id
 				       :key       #'id))))
 
+(defmethod push-trap-entity ((object game-state) entity)
+  (push-entity object entity)
+  (let* ((pos (map-utils:pos->game-state-pos entity))
+	 (map-state-element (element-mapstate@ object
+					       (elt pos 0)
+					       (elt pos 1))))
+    (insert-state-chain-after map-state-element
+			      0
+			      entity
+			      +trap-type+
+			      nil))) ;; nil as traps does not occlude the view
+
+(defmethod pop-trap-entity ((object game-state) entity)
+    (let* ((pos (map-utils:pos->game-state-pos entity))
+	   (map-state-element (element-mapstate@ object
+					       (elt pos 0)
+					       (elt pos 1))))
+      (setf (old-state-element map-state-element)
+	    (old-state-element (old-state-element map-state-element)))))
+
+(defmethod pop-map-state-entity ((object game-state) entity)
+  (let* ((pos (map-utils:pos->game-state-pos entity))
+	 (map-state-element (element-mapstate@ object
+					       (elt pos 0)
+					       (elt pos 1))))
+    (setf (matrix-elt (map-state object) (elt pos 1) (elt pos 0))
+	  (old-state-element map-state-element))))
+
 (defmethod push-labyrinth-entity ((object game-state) labyrinth)
   (setf (gethash (id labyrinth) (labyrinth-entities object)) labyrinth))
 
@@ -486,10 +542,12 @@
   (with-accessors ((ai-entities ai-entities)) object
     (maphash function ai-entities)))
 
-(defmethod faction-player-p ((object game-state) id-entity)
+(defmethod faction-player-p ((object game-state) &optional (id-entity nil))
+  (assert (numberp id-entity))
   (fetch-from-player-entities object id-entity))
 
-(defmethod faction-ai-p ((object game-state) id-entity)
+(defmethod faction-ai-p ((object game-state) &optional (id-entity nil))
+  (assert (numberp id-entity))
   (fetch-from-ai-entities object id-entity))
 
 (defmethod approx-terrain-height@pos ((object game-state) x z)
@@ -639,3 +697,9 @@
 						 #'(lambda (e p)
 						     (declare (ignore p))
 						     (= (entity-id e) (id other))))))))
+
+(defmethod faction-turn ((object game-state))
+  (with-accessors ((game-turn game-turn)) object
+    (if (= (rem game-turn 2) 0)
+	+pc-type+
+	+npc-type+)))

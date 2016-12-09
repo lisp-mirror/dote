@@ -211,7 +211,7 @@
     :initarg  :button-label-max-size
     :accessor button-label-max-size)
    (button-label-color
-    :initform §cff9c19ff
+    :initform §cffc400ff
     :initarg  :button-label-color
     :accessor button-label-color)
    (checkbutton-h

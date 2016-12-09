@@ -943,6 +943,7 @@
      (setf (tables-bag            world) *table-furnitures*)
      (setf (wall-decorations-bag  world) *wall-decoration-furnitures*)
      (setf (walkable-bag          world) *walkable-furnitures*)
+     (setf (traps-bag        world) *trap*)
      (setup-terrain               world  *map*)
      (update-progress 0.6)
      (setup-floor                 world  *map*)

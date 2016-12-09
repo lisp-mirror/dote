@@ -434,7 +434,7 @@
 
 (defgeneric propagate-effects-msg  (sender target all-effects))
 
-(defmethod  propagate-effects-msg  ((sender identificable) (target identificable) all-effects)
+(defmethod propagate-effects-msg  ((sender identificable) (target identificable) all-effects)
   (propagate-effects-msg (id sender) (id target) all-effects))
 
 (defmethod propagate-effects-msg ((sender number) (target number) all-effects)

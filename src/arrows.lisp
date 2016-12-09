@@ -349,9 +349,10 @@
 		 (battle-utils:send-attack-spell-event attacker entity))))
 	(battle-utils:send-attack-spell-event attacker defender))))
 
-(defun launch-attack-spell (spell world attacker defender &key (invisiblep nil))
-  (let* ((mesh (make-instance 'arrow-attack-spell-mesh
-			      :aabb-size (funcall (spell:effective-aabb-size spell) spell)))
+(defun launch-attack-spell (spell world attacker defender
+			    &key (invisiblep nil))
+  (let* ((mesh     (make-instance 'arrow-attack-spell-mesh
+				  :aabb-size (funcall (spell:effective-aabb-size spell) spell)))
 	 (successp (%common-launch-projectile world
 					      attacker
 					      defender
@@ -377,6 +378,19 @@
 	  (mtree:add-child (elt (mtree:children mesh) 0) blocker)
 	  (mtree:add-child blocker target-effect)))
       (world:push-entity world mesh))))
+
+(defun launch-attack-spell-trap (spell world attacker defender)
+  (let* ((mesh (make-instance 'arrow-attack-spell-mesh
+			      :aabb-size (funcall (spell:effective-aabb-size spell) spell)))
+	 (shaders       (compiled-shaders world))
+	 (target-effect (funcall (spell:visual-effect-target spell)
+				 +zero-vec+
+				 shaders)))
+    (setf (pos    mesh) (pos defender))
+    (setf (hitted mesh) t)
+    (battle-utils:send-attack-spell-event attacker defender)
+    (mtree:add-child mesh target-effect)
+    (world:push-entity world mesh)))
 
 (defun send-spell-events-fn (spell attacker defender)
   #'(lambda ()

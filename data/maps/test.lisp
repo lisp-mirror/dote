@@ -191,7 +191,7 @@
 
   generate map
   ;;with size                        (random (tiny small medium large))
-  with size                         (random (tiny))
+  with size                         (random (small))
   with mountain-rate                (random (0.1 0.2))
   ;; from load "radial-mountain-function.lisp"
   with mountain-z-height-function   radial-mountain-z-height-function
@@ -256,5 +256,10 @@
 
   generate wall-decoration       from file   "torch/model.obj"
   with normalmap-parameters      (ka 0.0 kd 0.64 ks 0.5 roughness 0.0 shininess 256.0)
+
+  ;; misc
+
+  generate trap                  from file   "land-mine/model.obj"
+  with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
 )

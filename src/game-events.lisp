@@ -368,8 +368,8 @@
   ((force-unlock
     :initform nil
     :initarg  :force-unlock
-    :reader force-unlock-p
-    :writer (setf force-unlock))))
+    :reader   force-unlock-p
+    :writer   (setf force-unlock))))
 
 (defun send-unlock-event (origin dest &key (force nil))
   (propagate-unlock-object-event (make-instance 'unlock-object-event
@@ -377,9 +377,23 @@
 						:id-destination (identificable:id dest)
 						:force-unlock   force)))
 
+(defevent trap-triggered-event (game-event-w-destination) ())
+
+(defun send-trap-triggered-event (origin dest)
+  (propagate-trap-triggered-event (make-instance 'trap-triggered-event
+						 :id-origin      (identificable:id origin)
+						 :id-destination (identificable:id dest))))
+
 (defevent other-interaction-event (game-event-w-destination) ())
 
 (defun send-other-interaction-event (origin dest)
   (propagate-other-interaction-event (make-instance 'other-interaction-event
 						    :id-origin      (identificable:id origin)
 						    :id-destination (identificable:id dest))))
+
+(defevent deactivate-trap-event (game-event-w-destination) ())
+
+(defun send-deactivate-trap-event (origin dest)
+  (propagate-deactivate-trap-event (make-instance 'deactivate-trap-event
+						  :id-origin      (identificable:id origin)
+						  :id-destination (identificable:id dest))))

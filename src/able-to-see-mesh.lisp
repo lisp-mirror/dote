@@ -134,6 +134,10 @@
 		      ((arrows:arrowp d)
 		       ;;does nothing, continue to the next iteration
 		       )
+		      ((trap-mesh-shell-p d)
+		       ;;does nothing, continue to the next iteration
+		       )
+
 		      ((tree-mesh-shell-p d)
 		       ;;(misc:dbg "tree trunk ~%~a ~a -> ~a" (tree-trunk-aabb d)
 		       ;;	 ends (insidep (tree-trunk-aabb d) ends))

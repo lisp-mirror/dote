@@ -22,6 +22,7 @@
     can-be-worn-hand    false
     can-be-held-in-hand false
     can-be-picked        false
+    can-be-dropped      false
     can-cut             true
     can-smash           false
     can-pierce          false

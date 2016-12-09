@@ -184,6 +184,10 @@
     :accessor walkable-bag
     :initarg  :walkable-bag
     :initform nil)
+   (traps-bag
+    :accessor traps-bag
+    :initarg  :traps-bag
+    :initform nil)
    (toolbar
     :accessor toolbar
     :initarg  :toolbar
@@ -709,12 +713,16 @@
 				      (add-to-gamestate t))
   "Use for any interactive entity (i.e. has a character)"
   (when add-to-world
-    (push-entity             object entity))  ; add to quadtree
+    (push-entity                  object  entity))  ; add to quadtree
   (when add-to-gamestate
     ;; add to entity tree of game-state
-    (push-entity (main-state object) entity)
+    (push-entity (main-state      object) entity)
     ;; add to game-state's matrix
-    (world:setup-map-state-entity  object  entity type occlusion-value)))
+    (world:setup-map-state-entity object  entity type occlusion-value)))
+
+(defmethod push-trap-entity ((object world) entity)
+  (push-entity object entity)  ; add to quadtree
+  (game-state:push-trap-entity (main-state object) entity))
 
 (defmethod set-map-state-type ((object world) x y type)
   (game-state:set-map-state-type (main-state object) x y type))
@@ -810,6 +818,8 @@
   (game-event:register-for-attack-spell-event                player)
   ;; spell
   (game-event:register-for-spell-event                       player)
+  ;; traps
+  (game-event:register-for-trap-triggered-event              player)
   ;; events registration ends here
   (game-state:place-player-on-map (main-state object)        player faction pos)
   (push-interactive-entity object                            player faction :occlude))

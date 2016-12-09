@@ -339,7 +339,8 @@
       (remove-if #'(lambda (a) (not (character:shoesp a))) all)
       (remove-if #'(lambda (a) (not (character:potionp a))) all)
       (remove-if #'(lambda (a) (not (character:ringp a))) all)
-      (remove-if #'(lambda (a) (not (character:keyp a))) all)))))
+      (remove-if #'(lambda (a) (not (character:keyp a))) all)
+      (remove-if #'(lambda (a) (not (character:trapp a))) all)))))
 
 (defun sort-items-enter-cb (w e)
   (declare (ignore e))
@@ -358,12 +359,17 @@
     (with-accessors ((owner owner)) win
       (multiple-value-bind (slot item)
 	  (get-selected-item win)
-	(when (and item
-		   (be-consumed-p item))
-	  (let ((all-effects (random-object-messages:params->effects-messages
-			      item)))
-	    (remove-item-from-inventory owner slot item)
-	    (random-object-messages:propagate-effects-msg item owner all-effects)))))))
+	(when item
+	  (cond
+	    ((be-consumed-p item)
+	     (let ((all-effects (random-object-messages:params->effects-messages
+				 item)))
+	       (remove-item-from-inventory owner slot item)
+	       (random-object-messages:propagate-effects-msg item owner all-effects)))
+	    ((trapp item)
+	     (when (mesh:trap-can-be-placed-p owner)
+	       (md2-mesh:place-trap owner item)
+	       (remove-item-from-inventory owner slot item)))))))))
 
 (defclass table-paginated-window (window)
   ((owner

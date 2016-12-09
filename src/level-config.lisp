@@ -188,6 +188,8 @@
 
 (defparameter *wall-decoration-furnitures* '())
 
+(defparameter *trap*                   nil)
+
 (defun limited-progress ()
   (setf *progress* (min +max-progress-slot+ (d+ *progress* +inc-progress-slot+)))
   (update-progress *progress*))
@@ -361,7 +363,8 @@
 	*chair-s*                    nil
 	*chair-e*                    nil
 	*chair-w*                    nil
-	*floor*                      nil))
+	*floor*                      nil
+	*trap*                  nil))
 
 (defmacro define-level (&body body)
   (ensure-cache-running
@@ -476,6 +479,8 @@
 	     (setf offset (generate-walkable-furniture (subseq body 1))))
 	    (:magic-furniture
 	     (setf offset (generate-magic-furniture (subseq body 1))))
+	    (:trap
+	     (setf offset (generate-trap (subseq body 1))))
 	    (:particle ;; generic-particle
 	     (setf offset
 		   (generate-texture (subseq body 1) :particle (gen-particle-name))))
@@ -875,55 +880,60 @@
 	 (setf offset 5)))
     offset)))
 
-
-(defmacro %generate-furniture (body bag error-message)
+(defmacro %load-mesh (body bag error-message &optional (res '+furnitures-resource+))
   (alexandria:with-gensyms (mesh)
     `(progn
        (if (filesystem-utils:has-extension (fourth ,body) +obj-mesh-file-extension+)
-	   (let* ((,mesh (load-obj-mesh constants:+furnitures-resource+
+	   (let* ((,mesh (load-obj-mesh ,res
 					(fourth ,body)
 					(elt ,body 6))))
 	     (push ,mesh ,bag))
 	   (err ,error-message (fourth ,body)))
        8)))
 
+(defun generate-trap (body)
+  (%load-mesh body
+	      *trap*
+	      "Land mine furniture mesh: file not supported: ~a"
+	      +model-objects-resource+))
+
 (defun generate-furniture (body)
-  (%generate-furniture body *furnitures* "Furniture mesh: file not supported: ~a"))
+  (%load-mesh body *furnitures* "Furniture mesh: file not supported: ~a"))
 
 (defun generate-container-furniture (body)
-  (%generate-furniture body
-		       *containers-furnitures*
-		       "Container furniture mesh: file not supported: ~a"))
+  (%load-mesh body
+	      *containers-furnitures*
+	      "Container furniture mesh: file not supported: ~a"))
 
 (defun generate-magic-furniture (body)
-  (%generate-furniture body
-		       *magic-furnitures*
-		       "Magic furniture mesh: file not supported: ~a"))
+  (%load-mesh body
+	      *magic-furnitures*
+	      "Magic furniture mesh: file not supported: ~a"))
 
 (defun generate-pillar-furniture (body)
-  (%generate-furniture body
-		       *pillar-furnitures*
-		       "Pillar furniture mesh: file not supported: ~a"))
+  (%load-mesh body
+	      *pillar-furnitures*
+	      "Pillar furniture mesh: file not supported: ~a"))
 
 (defun generate-chair-furniture (body)
-  (%generate-furniture body
-		       *chair-furnitures*
-		       "Chair furniture mesh: file not supported: ~a"))
+  (%load-mesh body
+	      *chair-furnitures*
+	      "Chair furniture mesh: file not supported: ~a"))
 
 (defun generate-table-furniture (body)
-  (%generate-furniture body
-		       *table-furnitures*
-		       "Table furniture mesh: file not supported: ~a"))
+  (%load-mesh body
+	      *table-furnitures*
+	      "Table furniture mesh: file not supported: ~a"))
 
 (defun generate-wall-decoration-furniture (body)
-  (%generate-furniture body
-		       *wall-decoration-furnitures*
-		       "Wall furniture mesh: file not supported: ~a"))
+  (%load-mesh body
+	      *wall-decoration-furnitures*
+	      "Wall furniture mesh: file not supported: ~a"))
 
 (defun generate-walkable-furniture (body)
-  (%generate-furniture body
-		       *walkable-furnitures*
-		       "Walkable furniture mesh: file not supported: ~a"))
+  (%load-mesh body
+	      *walkable-furnitures*
+	      "Walkable furniture mesh: file not supported: ~a"))
 
 (defun load-obj-mesh (resource file material)
   (let* ((normalmap-parameters (plist->normalmap-params

@@ -44,6 +44,8 @@
 
 (define-constant +can-be-picked+               :can-be-picked               :test #'eq)
 
+(define-constant +can-be-dropped+              :can-be-dropped              :test #'eq)
+
 (define-constant +can-open+                    :can-open                    :test #'eq)
 
 (define-constant +can-attack+                  :can-attack                  :test #'eq)
@@ -454,7 +456,7 @@
 				   :environment environment))
 
     (defmethod description-for-humans ((object magic-effect-parameters))
-      (format nil "~a" (spell-id object))))
+      (format nil "~a" (description-for-humans (spell:get-spell (spell-id object))))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass poison-effect-parameters (parameters-with-chance parameters-with-target)

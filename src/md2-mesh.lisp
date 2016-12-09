@@ -16,38 +16,38 @@
 
 (in-package :md2-mesh)
 
-(alexandria:define-constant +magic-number+ "IDP2"                :test #'string=)
+(alexandria:define-constant +magic-number+            "IDP2"             :test #'string=)
 
-(alexandria:define-constant +version+ 8                          :test #'=)
+(alexandria:define-constant +version+                 8                  :test #'=)
 
-(alexandria:define-constant +element-type+ '(unsigned-byte 8)    :test 'equalp)
+(alexandria:define-constant +element-type+            '(unsigned-byte 8) :test 'equalp)
 
-(alexandria:define-constant +size-elem-texture-coord+ 2          :test #'=)
+(alexandria:define-constant +size-elem-texture-coord+ 2                  :test #'=)
 
-(alexandria:define-constant +size-textures-struct+ 4             :test #'=)
+(alexandria:define-constant +size-textures-struct+    4                  :test #'=)
 
-(alexandria:define-constant +size-elem-triangles+ 2              :test #'=)
+(alexandria:define-constant +size-elem-triangles+     2                  :test #'=)
 
-(alexandria:define-constant +size-triangles-struct+ 12           :test #'=)
+(alexandria:define-constant +size-triangles-struct+  12                  :test #'=)
 
-(alexandria:define-constant +size-triangles-chunk+ 6             :test #'=)
+(alexandria:define-constant +size-triangles-chunk+    6                  :test #'=)
 
-(alexandria:define-constant +size-frame-name+ 16                 :test #'=)
+(alexandria:define-constant +size-frame-name+        16                  :test #'=)
 
-(alexandria:define-constant +size-vertex-struct+ 4               :test #'=)
+(alexandria:define-constant +size-vertex-struct+      4                  :test #'=)
 
 (alexandria:define-constant +default-animation-table+
-    '((:stand 0 39 20) ; name starting-frame ending-frame fps
-      (:move 40 45 20)
-      (:attack 46 53 20)
+    '((:stand          0  39 20) ; name starting-frame ending-frame fps
+      (:move          40  45 20)
+      (:attack        46  53 20)
       (:attack-spell 138 142 10)
       (:spell        138 142 10)
-      (:bored 123 134 20)
-      (:pain 54 65 20)
-      (:death 178 197 20)
-      (:critical 160 168 20)
-      (:critical2 84 94 20)
-      (:critical3 72 83))
+      (:bored        123 134 20)
+      (:pain          54  65 20)
+      (:death        178 197 20)
+      (:critical     160 168 20)
+      (:critical2     84  94 20)
+      (:critical3     72  83 20))
   :test #'equalp)
 
 (defmacro define-header-offsets ((&rest names))
@@ -257,7 +257,6 @@
 				 :color     billboard:+damage-color+
 				 :font-type gui:+tooltip-font-handle+
 				 :activep   nil))
-
       (apply-damage object damage :tooltip-active-p nil)
       (setf (attacked-by-entity object) (attacker-entity event))
       (game-event:register-for-end-attack-spell-event object)
@@ -278,7 +277,7 @@
 	     (when (find-if #'(lambda (a) (= id (id a))) (visible-players entity))
 	       (setf (renderp object) t)
 	       (return-from on-game-event nil))))
-      (when (game-state:faction-ai-p state id)
+      (when (faction-ai-p state id)
 	(setf (renderp object) nil))
       (game-state:map-player-entities state #'(lambda (k v)
 						(declare (ignore k))
@@ -310,6 +309,45 @@
 	    t)
 	  nil))))
 
+(defun %stop-movement (player &key (decrement-movement-points t))
+  (with-accessors ((ghost ghost)
+		   (dir dir)
+		   (id id)
+		   (state state)) player
+    (with-accessors ((current-path current-path)) ghost
+      (let ((end-event (make-instance 'move-entity-along-path-end-event
+				      :id-origin id
+				      :tile-pos  (alexandria:last-elt current-path))))
+	(when decrement-movement-points
+	  (decrement-move-points-entering-tile player))
+	(propagate-move-entity-along-path-end-event end-event)))))
+
+(defun %try-deactivate-trap-cb (world player trap)
+  #'(lambda (w e)
+      (declare (ignore w e))
+      (let ((ghost-trap  (ghost trap))
+	    (ghost-player (ghost player)))
+	(world:remove-all-windows world)
+	(if (die-utils:pass-d1.0 (d/ (actual-deactivate-trap-chance ghost-player)
+				     (level                         ghost-trap)))
+	    (send-deactivate-trap-event player trap)
+	    (send-trap-triggered-event trap player)))))
+
+(defun %try-deactivate-trap (world player trap)
+  (world:post-entity-message world
+			     player
+			     (format nil (_ "Trap found! deactivate (chance ~a)?")
+					   (d/ (actual-deactivate-trap-chance (ghost player))
+					       (level                         (ghost trap))))
+			     t
+			     (cons (_ "OK")
+				   (%try-deactivate-trap-cb world player trap))
+			     (cons (_ "No")
+				   #'(lambda (w e)
+				       (declare (ignore w e))
+				       (send-trap-triggered-event trap player)
+				       (world:remove-all-windows world)))))
+
 (defmethod on-game-event ((object md2-mesh) (event move-entity-entered-in-tile-event))
   (with-accessors ((ghost ghost)
 		   (dir dir)
@@ -320,22 +358,23 @@
 	(let ((leaving-tile (alexandria:first-elt current-path)))
 	  (setf current-path (subseq current-path 1))
 	  (if (= (length current-path) 1)
-	      (let ((end-event (make-instance 'move-entity-along-path-end-event
-					      :id-origin id
-					      :tile-pos  (alexandria:last-elt current-path))))
-		(decrement-move-points-entering-tile object)
-		(propagate-move-entity-along-path-end-event end-event))
+	      (%stop-movement object :decrement-movement-points t)
 	      (progn
 		(decrement-move-points-entering-tile object)
 		(setf dir (path->dir current-path :start-index 0))))
 	  (game-state:with-world (world state)
 	    ;; update state matrix and quadtree
-	    (world:move-entity world object leaving-tile))
-	  (propagate-update-highlight-path (make-instance 'update-highlight-path
-							  :tile-pos current-path))
-	  (update-visibility-cone object)
-	  (send-update-visibility-event object)
-	  (send-refresh-toolbar-event)))
+	    (world:move-entity world object leaving-tile)
+	    (propagate-update-highlight-path (make-instance 'update-highlight-path
+							    :tile-pos current-path))
+	    ;; traps
+	    (let ((trap-ostile (trap-ostile-p object)))
+	      (when trap-ostile
+		(%stop-movement object :decrement-movement-points nil)
+		(%try-deactivate-trap world object trap-ostile)))
+	    (update-visibility-cone object)
+	    (send-update-visibility-event object)
+	    (send-refresh-toolbar-event))))
       nil)))
 
 (defmethod on-game-event ((object md2-mesh) (event move-entity-along-path-end-event))
@@ -707,6 +746,23 @@
 	  t)
 	nil)))
 
+(defmethod on-game-event ((object md2-mesh) (event trap-triggered-event))
+  (check-event-targeted-to-me (object event)
+    (with-accessors ((ghost ghost) (id id) (state state)) object
+      (let* ((trap         (game-state:find-entity-by-id state (id-origin event)))
+	     (ghost-trap   (ghost trap))
+	     (magic-effect (interaction-get-magic-effect ghost-trap)))
+	(when magic-effect
+	  (game-state:with-world (world state)
+	    (let* ((spell-id (basic-interaction-parameters:spell-id magic-effect))
+		   (spell    (spell:get-spell spell-id)))
+	      (setf (spell-loaded ghost-trap) spell)
+	      (when (spell:attack-spell-p spell)
+		(arrows::launch-attack-spell-trap spell world trap object))
+	      (with-accessors ((modifiers-effects modifiers-effects)) ghost-trap
+		(let ((all-effects (random-object-messages:params->effects-messages ghost-trap)))
+		  (random-object-messages:propagate-effects-msg (id trap) id all-effects))))))))))
+
 (defmethod on-game-event :after ((object md2-mesh) (event end-turn))
   (misc:dbg "end turn md2mesh tooltip ct ~a" (tooltip-count object))
   (with-accessors ((ghost ghost)
@@ -728,6 +784,15 @@
 					     (world:point-to-entity-and-hide-cb world object)))))
 	(send-refresh-toolbar-event)
 	nil))))
+
+(defmethod my-faction ((object md2-mesh))
+  (with-accessors ((state state)
+		   (id id)) object
+    (cond
+      ((faction-player-p state id)
+       game-state:+pc-type+)
+      (t
+       game-state:+npc-type+))))
 
 (defun blood-spill-level (damage max-damage)
   (cond
@@ -912,6 +977,12 @@
 (defgeneric calculate-move (object dt))
 
 (defgeneric wear-item      (object item))
+
+(defgeneric step-in-trap-p (object))
+
+(defgeneric trap-ostile-p (object))
+
+(defgeneric place-trap (object trap-ghost))
 
 (defmethod destroy ((object md2-mesh))
   (when +debug-mode+
@@ -1620,6 +1691,9 @@
     (clean-effects bow)
     bow))
 
+(defun forged-trap ()
+  (random-trap:generate-trap 10))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -1649,7 +1723,8 @@
 	  (forged-potion-cure-berserk (forged-potion-cure-berserk))
 	  (forged-ring                (forged-ring))
 	  (forged-sword               (forged-sword))
-	  (forged-bow                 (forged-bow)))
+	  (forged-bow                 (forged-bow))
+	  (forged-trap                (forged-trap)))
       ;; (game-event:register-for-end-turn forged-potion)
       ;; (game-event:register-for-end-turn forged-potion-cure-dmg)
       ;; (game-event:register-for-end-turn forged-potion-cure-berserk)
@@ -1661,6 +1736,7 @@
       (add-to-inventory (ghost body) forged-ring)
       (add-to-inventory (ghost body) forged-bow)
       (add-to-inventory (ghost body) forged-sword)
+      (add-to-inventory (ghost body) forged-trap)
       (setf (movement-points (ghost body)) 200.0)
       (setf (magic-points    (ghost body)) 50.0)
       ;; note:   wear-item-event  will   not  be   catched  as   the
@@ -1765,6 +1841,59 @@
 	    (texture:prepare-for-rendering (texture-object object)))
 	(mapc #'(lambda (e) (push-errors object e)) errors)))))
 
+(defun %old-state (entity)
+  (with-accessors ((state state)) entity
+    (let* ((pos       (map-utils:pos->game-state-pos entity))
+	   (element   (matrix:matrix-elt (game-state:map-state state)
+					 (elt pos 1) ; row <-> y
+					 (elt pos 0)))
+	   (old-state (game-state:old-state-element element)))
+      (and old-state
+	   (typep old-state 'game-state:map-state-element)
+	   (game-state:old-state-element element)))))
+
+(defmethod step-in-trap-p ((object md2-mesh-shell))
+  (with-accessors ((state state)) object
+    (let* ((old-state (%old-state object)))
+      (and old-state
+	   (eq (game-state:el-type old-state)
+	       game-state:+trap-type+)
+	   old-state))))
+
+(defmethod trap-ostile-p ((object md2-mesh-shell))
+  (with-accessors ((state state)) object
+    (if (step-in-trap-p object)
+	(let* ((old-state (%old-state object))
+	       (trap      (and old-state
+			       (game-state:find-entity-by-id state
+							     (game-state:entity-id old-state)))))
+	  (and trap
+	       (not (eq (my-faction object)
+			(my-faction trap)))
+	       trap)))))
+
+(defmethod place-trap ((object md2-mesh-shell) trap-ghost)
+  (with-accessors ((state state)) object
+    (game-state:with-world (world state)
+      (when (trap-can-be-placed-p object)
+	(let* ((choosen   (random-elt (world:traps-bag world)))
+	       (shell     (mesh:fill-shell-from-mesh-w-renderer-data choosen
+								     'mesh:trap-mesh-shell))
+	       (h         (game-state:approx-terrain-height@pos state
+								(elt (pos object) 0)
+								(elt (pos object) 2)))
+	       (pos-shell (sb-cga:vec (elt (pos object) 0)
+				      h
+				      (elt (pos object) 2))))
+	  (setf (pos              shell) pos-shell
+		(my-faction       shell) (md2-mesh:my-faction object)
+		(ghost            shell) trap-ghost
+		(compiled-shaders shell) (compiled-shaders object))
+	  (game-event:register-for-deactivate-trap-event shell)
+	  (world:push-trap-entity world shell)
+	  (decrement-move-points-place-trap object)
+	  (send-refresh-toolbar-event))))))
+
 (defparameter *md2-mesh-factory-db* '())
 
 (defun clean-db ()
@@ -1774,9 +1903,9 @@
 (defun %db-equal-fn (dir mesh-file resource-path)
   #'(lambda (a)
       (and
-       (string=    dir            (dir           (fs-resources a)))
-       (string=    mesh-file      (mesh-file     (fs-resources a)))
-       (tree-equal resource-path  (resource-path (fs-resources a)) :test #'string=))))
+       (string=    dir           (dir           (fs-resources a)))
+       (string=    mesh-file     (mesh-file     (fs-resources a)))
+       (tree-equal resource-path (resource-path (fs-resources a)) :test #'string=))))
 
 (defun get-md2-shell (&key
 			(material       (make-mesh-material .1 1.0 0.1 0.0 128.0))

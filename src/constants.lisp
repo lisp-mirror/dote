@@ -80,6 +80,8 @@
 
 (define-constant +attack-long-range-crossbow-chance-decrement+ -0.8    :test #'=)
 
+(define-constant +place-trap-cost+                  3.0                :test #'=)
+
 (define-constant +default-size+                     256                :test '=)
 
 (define-constant +map-max-size+                     512                :test '=)
@@ -133,6 +135,8 @@
 (define-constant +shaders-resource+     "shaders"                               :test #'string=)
 
 (define-constant +models-resource+      "models"                                :test #'string=)
+
+(define-constant +model-objects-resource+  '("models" "objects")                :test #'equalp)
 
 (define-constant +textures-resource+    "textures"                              :test #'string=)
 
@@ -197,6 +201,8 @@
 (define-constant +default-character-food-dir+      '("characters" "food")       :test #'equalp)
 
 (define-constant +default-character-misc-dir+      '("characters" "misc")       :test #'equalp)
+
+(define-constant +default-character-trap-dir+      '("characters" "trap")       :test #'equalp)
 
 (define-constant +default-character-inert-obj-dir+ '("characters" "inert")      :test #'equalp)
 

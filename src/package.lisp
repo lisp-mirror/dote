@@ -70,6 +70,7 @@
    :+attack-long-range-crossbow-cost+
    :+attack-long-range-bow-chance-decrement+
    :+attack-long-range-crossbow-chance-decrement+
+   :+place-trap-cost+
    :+default-size+
    :+map-max-size+
    :+pi+
@@ -97,6 +98,7 @@
    :+maps-resource+
    :+shaders-resource+
    :+models-resource+
+   :+model-objects-resource+
    :+arrows-resource+
    :+human-player-models-resource+
    :+ai-player-models-resource+
@@ -125,6 +127,7 @@
    :+default-character-elm-dir+
    :+default-character-potion-dir+
    :+default-character-ring-dir+
+   :+default-character-trap-dir+
    :+default-character-shield-dir+
    :+default-character-shoes-dir+
    :+default-character-food-dir+
@@ -546,7 +549,10 @@
    :triggered-p
    :end-of-life-callback
    :removeable-from-world
-   :apply-damage))
+   :apply-damage
+   :faction-player-p
+   :faction-ai-p
+   :my-faction))
 
 (defpackage :ivec2
   (:use :cl
@@ -1905,6 +1911,7 @@
    :*table-furnitures*
    :*walkable-furnitures*
    :*wall-decoration-furnitures*
+   :*trap*
    :*window*
    :*door-n*
    :*door-s*
@@ -1946,11 +1953,13 @@
    :+chair-type+
    :+table-type+
    :+walkable-type+
+   :+trap-type+
    :+wall-decoration-type+
    :+npc-type+
    :+pc-type+
    :+floor-type+
    :+ceiling-type+
+   :insert-state-chain-after
    :movement-path
    :tiles
    :cost
@@ -1993,6 +2002,7 @@
    :el-type-in-pos
    :entity-id-in-pos
    :occludep-in-pos
+   :element-mapstate@
    :selected-pc
    :selected-path
    :build-movement-path
@@ -2000,6 +2010,9 @@
    :find-entity-by-id
    :map-level
    :push-entity
+   :push-trap-entity
+   :pop-trap-entity
+   :pop-map-state-entity
    :push-labyrinth-entity
    :find-labyrinth-by-id
    :remove-entity-by-id
@@ -2009,8 +2022,6 @@
    :fetch-from-ai-entities
    :map-player-entities
    :map-ai-entities
-   :faction-player-p
-   :faction-ai-p
    :approx-terrain-height@pos
    :place-player-on-map
    :set-invalicable-cost-player-layer@
@@ -2028,7 +2039,8 @@
    :path-same-ends-p
    :turn-on-fog
    :turn-off-fog
-   :entity-next-p))
+   :entity-next-p
+   :faction-turn))
 
 (defpackage :game-event
   (:use
@@ -2286,6 +2298,17 @@
    :register-for-unlock-object-event
    :unregister-for-unlock-object-event
    :propagate-unlock-object-event
+   :send-unlock-event
+   :trap-triggered-event
+   :register-for-trap-triggered-event
+   :unregister-for-trap-triggered-event
+   :propagate-trap-triggered-event
+   :send-trap-triggered-event
+   :deactivate-trap-event
+   :register-for-deactivate-trap-event
+   :unregister-for-deactivate-trap-event
+   :propagate-deactivate-trap-event
+   :send-deactivate-trap-event
    :other-interaction-event
    :send-other-interaction-event
    :register-for-other-interaction-event
@@ -2329,6 +2352,7 @@
    :+can-be-drunk+
    :+can-be-eaten+
    :+can-be-picked+
+   :+can-be-dropped+
    :+can-be-worn-arm+
    :+can-be-worn-head+
    :+can-be-worn-neck+
@@ -2401,6 +2425,7 @@
    :chance
    :healing-effect-parameters
    :magic-effect-parameters
+   :spell-id
    :poison-effect-parameters
    :heal-damage-points-effect-parameters
    :points-per-turn
@@ -2531,6 +2556,11 @@
    :reply-attack-chance
    :ambush-attack-chance
    :spell-chance
+   :pclass-ranger-p
+   :pclass-warrior-p
+   :pclass-archer-p
+   :pclass-wizard-p
+   :pclass-healer-p
    :attack-spell-chance
    :actual-damage-points
    :actual-movement-points
@@ -2625,6 +2655,7 @@
    :ringp
    :can-be-worn-p
    :lockedp
+   :trapp
    :interaction-get-strength
    :interaction-get-stamina
    :interaction-get-dexterity
@@ -2860,6 +2891,23 @@
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :generate-ring))
+
+(defpackage :random-trap
+  (:use :cl
+	:alexandria
+	:constants
+	:config
+	:num-utils
+	:misc-utils
+	:text-utils
+	:mtree-utils
+	:interfaces
+	:identificable
+	:basic-interaction-parameters
+	:character)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :generate-trap))
 
 (defpackage :random-inert-object
   (:use :cl
@@ -3159,6 +3207,7 @@
    :set-attack-spell-status
    :set-spell-status
    :entity-facing
+   :trap-can-be-placed-p
    :skydome
    :texture-clouds
    :texture-smoke
@@ -3179,6 +3228,8 @@
    :window-mesh-shell
    :decorated-wall-mesh-shell
    :door-mesh-shell
+   :trap-mesh-shell
+   :trap-mesh-shell-p
    :instanced-mesh
    :labyrinth-mesh
    :labyrinth-mesh-p
@@ -3201,12 +3252,14 @@
    :furniture-mesh-shell
    :setup-projective-texture
    :calculate-decrement-move-points-entering-tile
+   :calculate-decrement-move-points-place-trap
    :decrement-move-points
    :decrement-spell-points
    :decrement-move-points-rotate
    :decrement-move-points-entering-tile
    :decrement-move-points-wear
    :decrement-move-points-attack-melee
+   :decrement-move-points-place-trap
    :can-use-movement-points-p
    :can-use-spell-points-p
    :calculate-cost-position))
@@ -3467,6 +3520,7 @@
    :+option-overlay-texture-name+
    :+quit-overlay-texture-name+
    :+next-overlay-texture-name+
+   :+drop-overlay-texture-name+
    :+previous-overlay-texture-name+
    :+rotate-char-cw-overlay-texture-name+
    :+rotate-char-ccw-overlay-texture-name+
@@ -3698,11 +3752,13 @@
    :chairs-bag
    :wall-decorations-bag
    :walkable-bag
+   :traps-bag
    :windows-bag
    :gui
    :toolbar
    :render-for-reflection
    :push-entity
+   :push-trap-entity
    :get-window-size
    :main-light-pos
    :main-light-color
@@ -3896,6 +3952,7 @@
    :load-spell-db
    :get-spell
    :remove-spell
+   :filter-spell-db
    :spell
    :spellp
    :level
@@ -3962,6 +4019,8 @@
    :load-md2-player
    :tag-key-parent
    :set-animation
+   :my-faction
+   :place-trap
    :clean-db))
 
 (defpackage :obj-mesh
