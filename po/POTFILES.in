@@ -45,6 +45,7 @@ src/uivec4.lisp
 src/vec2.lisp
 src/vec4.lisp
 src/wall-mesh-shell.lisp
+src/trap-mesh-shell.lisp
 src/with-rgb-texture.lisp
 src/world.lisp
 src/xmls-utils.lisp

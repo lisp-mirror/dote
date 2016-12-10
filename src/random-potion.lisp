@@ -99,7 +99,6 @@
       (modifier-params (1- potion-level))
     (d (abs (gaussian-probability sigma mean)))))
 
-
 (defun calculate-decay (map-level)
   (make-instance 'decay-parameters
 		 :leaving-message (_ " exausted.")

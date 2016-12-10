@@ -227,10 +227,12 @@
     (with-maybe-reply-attack (object attacked-by-entity))))
 
 (defmethod on-game-event ((object md2-mesh) (event end-attack-spell-event))
-  (with-end-attack-event (object event attacked-by-entity))) ;; no reply to spell
+  (with-end-attack-event (object event attacked-by-entity) ;; no reply to spell
+    (setf (character:spell-loaded (entity:ghost object)) nil)))
 
 (defmethod on-game-event ((object md2-mesh) (event end-spell-event))
-  (with-end-attack-event (object event attacked-by-entity))) ;; no reply to spell
+  (with-end-attack-event (object event attacked-by-entity) ;; no reply to spell
+    (setf (character:spell-loaded (entity:ghost object)) nil)))
 
 (defmethod on-game-event ((object md2-mesh) (event attack-long-range-event))
   (check-event-targeted-to-me (object event)
@@ -579,7 +581,7 @@
   `(with-accessors ((ghost ghost) (id id) (state state)) ,object
      (with-accessors ((,immune-accessor ,immune-accessor)) ghost
        (if (= id (id-destination ,event))
-	   (progn
+	   (when ,immune-accessor
 	     (game-state:with-world (world state)
 	       (world:post-entity-message world object
 					  (random-elt ,text-message-bag)
@@ -711,18 +713,37 @@
     (with-accessors ((messages event-data)) event
       (with-accessors ((modifiers-effects modifiers-effects)) ghost
 	(if (= id (id-destination event))
-	    (let ((triggered            (remove-if
-					 (random-object-messages:untrigged-effect-p-fn
-					  basic-interaction-parameters:+effect-when-worn+)
-					 messages))
-		  ;; all effects targeted to self are managed by modifier-object-event
-		  (all-effects-to-other (remove-if-not
-					 (random-object-messages:to-other-target-effect-p-fn)
-					 messages)))
+	    (let* ((id-origin            (id-origin event))
+		   (triggered            (remove-if
+					  (random-object-messages:untrigged-effect-p-fn
+					   basic-interaction-parameters:+effect-when-worn+)
+					  messages))
+		   ;; all effects targeted to self are managed by modifier-object-event
+		   (all-effects-to-other (remove-if-not
+					  (random-object-messages:to-other-target-effect-p-fn)
+					  messages))
+		  (item         (find-entity-by-id ghost id-origin))
+		  (magic-effect (interaction-get-magic-effect item)))
 	      (decrement-move-points-wear object)
 	      (random-object-messages:propagate-effects-msg (id-origin event) id triggered)
 	      (dolist (effect all-effects-to-other)
 		(push effect modifiers-effects))
+	      ;; spells
+	      (when (and magic-effect
+			 (die-utils:pass-d1.0 (smoothstep-interpolate 0.0
+								      100.0
+								      (d (smartness ghost)))))
+		(let* ((spell-id (basic-interaction-parameters:spell-id magic-effect))
+		       (spell    (spell:get-spell spell-id)))
+		  (setf (spell-loaded ghost) spell)
+		  (game-state:with-world (world state)
+		    (let ((ident (spell:spell-id->string-for-human (spell:identifier spell))))
+		      (world:post-entity-message world
+						 object
+						 (format nil
+							 (_ "You can cast ~a!")
+							 ident)
+						 nil)))))
 	      (send-refresh-toolbar-event)
 	      t)
 	    nil)))))

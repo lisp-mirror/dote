@@ -247,12 +247,16 @@
       (magic-fx-params (1- shield-level))
     (truncate (max +minimum-magic-fx-level+ (gaussian-probability sigma mean)))))
 
-(defun random-spell-by-level (spell-level)
-  (and spell-level :fireball-1)) ;; TODO
-
 (defun set-magic-effect (shield-level interaction)
-  (let* ((spell-level (calculate-magic-fx-level shield-level))
-	 (spell-id    (random-spell-by-level spell-level))
+  (let* ((spell-level   (1+ shield-level))
+	 (spells        (spell:filter-spell-db #'(lambda (a)
+						   (or (not (spell:attack-spell-p a))
+							(> (spell:level a)
+							    spell-level)
+							(< (spell:level a)
+							   (max 0
+								(/ spell-level 4)))))))
+	 (spell-id      (spell:identifier (random-elt spells)))
 	 (effect-object (make-instance 'magic-effect-parameters
 				       :spell-id spell-id
 				       :trigger  +effect-until-held+)))

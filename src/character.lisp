@@ -946,6 +946,8 @@
 
 (defgeneric add-to-inventory (object item))
 
+(defgeneric find-item-in-inventory (object item))
+
 (defgeneric remove-decayed-items (object turn-count))
 
 (defgeneric remove-from-inventory (object item))
@@ -1036,6 +1038,25 @@
 (defmethod add-to-inventory ((object player-character) item)
   (game-event:register-for-end-turn item)
   (push item (character:inventory object)))
+
+(defmethod find-entity-by-id ((object player-character) id)
+  "Search everywhere"
+  (with-accessors ((elm        elm)
+		   (shoes      shoes)
+		   (armor      armor)
+		   (left-hand  left-hand)
+		   (right-hand right-hand)
+		   (ring       ring)) object
+    (or (find-item-in-inventory object id)
+	(and elm        (= (id elm)        id) elm)
+	(and shoes      (= (id shoes)      id) shoes)
+	(and armor      (= (id armor)      id) armor)
+	(and left-hand  (= (id left-hand)  id) left-hand)
+	(and right-hand (= (id right-hand) id) right-hand)
+	(and ring       (= (id ring)       id) ring))))
+
+(defmethod find-item-in-inventory ((object player-character) id)
+  (find id (inventory object) :key #'id :test #'=))
 
 (defmethod remove-decayed-items ((object player-character) turn-count)
   (with-accessors ((inventory inventory)

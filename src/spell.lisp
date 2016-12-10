@@ -116,6 +116,9 @@
 (defmethod (setf portrait) ((object spell) value)
   (setf (gui-texture object) value))
 
+(defun spell-id->string-for-human (id)
+  (cl-ppcre:regex-replace-all "-" (string id) " "))
+
 (defmethod description-for-humans :around ((object spell))
   (if (use-custom-effects-p object)
       (custom-description object)
@@ -123,7 +126,7 @@
 	(text-utils:strcat
 	 (format nil
 		 (_ "~a~arange: ~a effective range: ~a cost: ~a~a")
-		 (cl-ppcre:regex-replace-all "-" (string (identifier object)) " ")
+		 (spell-id->string-for-human (identifier object))
 		 +gui-static-text-delim+
 		 (range           object)
 		 (effective-range object)

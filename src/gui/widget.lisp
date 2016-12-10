@@ -1232,7 +1232,7 @@
 		   (width width)) object
     (declare (desired-type width height))
     (with-accessors ((bar-label-font-size label-font-size)
-		     (bar-children children))                  top-bar
+		     (bar-children children)) top-bar
       (declare (desired-type bar-label-font-size))
       (let ((top-bar-h (top-bar-h *reference-sizes*))
 	    (top-bar-relative-offset (top-bar-relative-offset *reference-sizes*)))

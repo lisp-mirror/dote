@@ -26,12 +26,14 @@
 	      (list #'(lambda (map-level) (random-weapon:generate-weapon map-level :spear)))
 	      (list #'(lambda (map-level) (random-weapon:generate-weapon map-level :staff)))
 	      (list #'(lambda (map-level) (random-weapon:generate-weapon map-level :sword))))
-	(list #'random-armor:generate-armor)
-	(list #'random-elm:generate-elm)
+	(list :clothes
+	      (list #'random-armor:generate-armor)
+	      (list #'random-elm:generate-elm)
+	      (list #'random-ring:generate-ring)
+	      (list #'random-shield:generate-shield)
+	      (list #'random-shoes:generate-shoes))
 	(list #'random-potion:generate-potion)
-	(list #'random-ring:generate-ring)
-	(list #'random-shield:generate-shield)
-	(list #'random-shoes:generate-shoes)))
+	(list #'random-trap:generate-trap)))
 
 (defun setup-water (world map)
   (loop for water-aabb in (random-terrain:lakes-aabb map) do

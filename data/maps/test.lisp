@@ -257,7 +257,7 @@
   generate wall-decoration       from file   "torch/model.obj"
   with normalmap-parameters      (ka 0.0 kd 0.64 ks 0.5 roughness 0.0 shininess 256.0)
 
-  ;; misc
+  ;; trap
 
   generate trap                  from file   "land-mine/model.obj"
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)

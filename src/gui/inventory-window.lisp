@@ -426,9 +426,9 @@
     :accessor current-slots-page-number)
    (text-description
     :initform (make-instance 'widget:static-text
-			     :height (d* 2.0
+			     :height (d* 3.0
 					 (small-square-button-size *reference-sizes*))
-			     :width  (d* 5.0
+			     :width  (d* 6.0
 					 (small-square-button-size *reference-sizes*))
 			     :x      0.0
 			     :y      (d+ (y-just-under-slot-page)
@@ -876,14 +876,14 @@
       (d* 3.0 (small-square-button-size *reference-sizes*))))
 
 (defun inventory-window-height ()
-    (d+ (d* 10.0 (small-square-button-size *reference-sizes*))))
+    (d+ (d* 12.0 (small-square-button-size *reference-sizes*))))
 
 (defun make-inventory-window (player &optional (chest nil))
   (make-instance 'inventory-window
 		 :owner  player
 		 :chest  chest
 		 :x      0.0
-		 :y      200.0
+		 :y      (d (- *window-h* (inventory-window-height)))
 		 :width  (inventory-window-width)
 		 :height (inventory-window-height)
 		 :label  (_ "Inventory")))

@@ -2465,6 +2465,7 @@
 	:misc-utils
 	:text-utils
 	:mtree-utils
+	:entity
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
@@ -2608,6 +2609,8 @@
    :remove-from-inventory
    :remove-from-modifiers
    :add-to-inventory
+   :find-item-in-inventory
+   :find-entity-by-id
    :sum-modifiers
    :player-class->class-description
    :basic-interaction-params
@@ -3969,7 +3972,8 @@
    :effective-aabb-size
    :damage-inflicted
    :arrow
-   :visual-effect-target))
+   :visual-effect-target
+   :spell-id->string-for-human))
 
 (defclass attack-spell (spell)
   ((element
