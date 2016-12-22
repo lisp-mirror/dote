@@ -300,12 +300,12 @@
 	    (incf *near* -.1))
 	  (when (string= text "p")
 	    (world:push-entity (world object)
-	     		       (particles:make-fireball-level-0
-	     			(vec (map-utils:coord-map->chunk 5.0)
-	     			     (d+ +zero-height+ 5.0)
+			       (particles:make-teleport
+				(vec (map-utils:coord-map->chunk 5.0)
+				     +zero-height+
 	     			     (map-utils:coord-map->chunk 5.0))
-				(vec-negate +z-axe+)
-				;10
+				;;(vec-negate +z-axe+)
+				;;10
 				;; (random-elt (texture:list-of-texture-by-tag
 				;; 	     texture:+texture-tag-decals-circular-wave+))
 	     			(compiled-shaders object))))

@@ -2538,6 +2538,62 @@
     (do-children-mesh (c object)
       (render c renderer))))
 
+(defclass teleport-particle (spell-decal cluster-w-global-life end-life-trigger) ())
+
+(defmethod calculate :after ((object teleport-particle) dt)
+  (with-accessors ((triggered-p triggered-p)
+		   (end-of-life-callback end-of-life-callback)
+		   (repeat-trigger-p repeat-trigger-p)) object
+    (when (and (removeable-from-world object)
+	       (or repeat-trigger-p
+		   (not triggered-p)))
+      (and end-of-life-callback
+	   (funcall end-of-life-callback))
+      (setf (triggered object) t))))
+
+(defun make-teleport (pos compiled-shaders)
+  (let* ((actual-pos (vec (elt pos 0)
+			  (d+ (elt pos 1)
+			      (d* 2.0 +terrain-chunk-tile-size+))
+			  (elt pos 2)))
+	 (min-y (d- (d- (elt actual-pos 1) (d- +zero-height+ 2.0))))
+	 (texture   (random-elt (list-of-texture-by-tag +texture-tag-teleport-particle+)))
+	 (size-fn   #'(lambda (c)
+		       (declare (ignore c))
+		       0.5))
+	 (gradient  (color-utils:make-gradient
+		     (color-utils:make-gradient-color 0.0 billboard:+healing-color+)
+		     (color-utils:make-gradient-color 0.5 §cc99ff99ff)
+		     (color-utils:make-gradient-color 1.0 §cc99ffccff)))
+	 (particles (make-particles-cluster 'teleport-particle
+					7
+					compiled-shaders
+					:remove-starting-delay nil
+					:forces                #()
+					:texture               texture
+					:pos                   actual-pos
+					:min-y                 min-y
+					:particle-pos-fn nil
+					:v0-fn           (gaussian-velocity-constant-fn
+						          (vec-negate +y-axe+)
+							  1.0)
+					:mass-fn         #'(lambda () 1.0)
+
+					:life-fn         (gaussian-distribution-fn 2.2 0.05)
+					:delay-fn        (constant-delay-distribution-fn 0.8)
+					:gravity         (vec 0.0 -1.1 0.0)
+					:scaling-fn      (%limited-scaling-clsr 0.1 10.0)
+					:rotation-fn     (%no-rotation-clrs)
+					:alpha-fn        (%smooth-alpha-fading-clsr 3.0)
+					:color-fn        (%smooth-gradient-color-clsr gradient 2.0)
+					:width           .2
+					:height          .2
+					:particle-height-fn nil    ;; will use particle-width-fn
+					:particle-width-fn  size-fn
+					:respawn t)))
+    (setf (global-life particles) 2)
+    particles))
+
 (defun make-cure-level-2 (pos compiled-shaders)
   (let* ((min-y (d- (d- (elt pos 1) +zero-height+)))
 	 (texture  (random-elt (list-of-texture-by-tag +texture-tag-cure-particle+)))

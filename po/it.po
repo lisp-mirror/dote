@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dote 0.0.1\n"
 "Report-Msgid-Bugs-To: cage@katamail.com\n"
-"POT-Creation-Date: 2016-12-10 18:23+0100\n"
-"PO-Revision-Date: 2016-12-10 18:23+0100\n"
+"POT-Creation-Date: 2016-12-22 15:38+0100\n"
+"PO-Revision-Date: 2016-12-22 15:57+0100\n"
 "Last-Translator: cage <cage@katamail.com>\n"
 "Language-Team: Italian\n"
 "Language: it\n"
@@ -767,3 +767,15 @@ msgstr "Ruba DMG (al massimo 3)"
 #: data/spells/vampire-2.lisp:6
 msgid "Steals 10 dmg (maximum)."
 msgstr "Ruba DMG (al massimo 10)"
+
+#: data/spells/teleport-1.lisp:6
+msgid "Teleport in a random location with maximum radius of ~6 tiles."
+msgstr "Teletrasporta in una posizione casuale (raggio massimo ~6 caselle)."
+
+#: data/spells/teleport-2.lisp:6
+msgid "Teleport in a random location with maximum radius of ~15 tiles."
+msgstr "Teletrasporta in una posizione casuale (raggio massimo ~15 caselle)."
+
+#: data/spells/teleport-3.lisp:6
+msgid "Teleport in a random location with maximum radius of ~27 tiles."
+msgstr "Teletrasporta in una posizione casuale (raggio massimo ~27 caselle)."

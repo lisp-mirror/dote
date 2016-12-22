@@ -16,120 +16,125 @@
 
 (in-package :texture)
 
-(alexandria:define-constant +skydome-bg+                "skydome-bg"         :test #'string=)
+(alexandria:define-constant +skydome-bg+                       "skydome-bg"         :test #'string=)
 
-(alexandria:define-constant +cloud-1+                   "cloud-1"            :test #'string=)
+(alexandria:define-constant +cloud-1+                          "cloud-1"            :test #'string=)
 
-(alexandria:define-constant +cloud-2+                   "cloud-2"            :test #'string=)
+(alexandria:define-constant +cloud-2+                          "cloud-2"            :test #'string=)
 
-(alexandria:define-constant +cloud-3+                   "cloud-3"            :test #'string=)
+(alexandria:define-constant +cloud-3+                          "cloud-3"            :test #'string=)
 
-(alexandria:define-constant +smoke-tray+                "smoke-tray"         :test #'string=)
+(alexandria:define-constant +smoke-tray+                       "smoke-tray"         :test #'string=)
 
-(alexandria:define-constant +brick-wall+                "brick-wall"         :test #'string=)
+(alexandria:define-constant +brick-wall+                       "brick-wall"         :test #'string=)
 
-(alexandria:define-constant +dry-stone-wall+            "dry-stone-wall"     :test #'string=)
+(alexandria:define-constant +dry-stone-wall+                   "dry-stone-wall"     :test #'string=)
 
-(alexandria:define-constant +stone-floor-road+          "stone-floor-road"   :test #'string=)
+(alexandria:define-constant +stone-floor-road+                 "stone-floor-road"   :test #'string=)
 
-(alexandria:define-constant +grass-stones-floor+        "grass-stones-floor" :test #'string=)
+(alexandria:define-constant +grass-stones-floor+               "grass-stones-floor" :test #'string=)
 
-(alexandria:define-constant +soil+                      "soil"               :test #'string=)
+(alexandria:define-constant +soil+                             "soil"               :test #'string=)
 
-(alexandria:define-constant +dry-soil+                  "dry-soil"           :test #'string=)
+(alexandria:define-constant +dry-soil+                         "dry-soil"           :test #'string=)
 
-(alexandria:define-constant +wood-wall+                 "wood-wall"          :test #'string=)
+(alexandria:define-constant +wood-wall+                        "wood-wall"          :test #'string=)
 
-(alexandria:define-constant +luxurious-floor-1+         "floor-1"            :test #'string=)
+(alexandria:define-constant +luxurious-floor-1+                "floor-1"            :test #'string=)
 
-(alexandria:define-constant +luxurious-floor-2+         "floor-2"            :test #'string=)
+(alexandria:define-constant +luxurious-floor-2+                "floor-2"            :test #'string=)
 
-(alexandria:define-constant +decal-wall-1+              "decal-wall-1"       :test #'string=)
+(alexandria:define-constant +decal-wall-1+                     "decal-wall-1"       :test #'string=)
 
-(alexandria:define-constant +decal-wall-2+              "decal-wall-2"       :test #'string=)
+(alexandria:define-constant +decal-wall-2+                     "decal-wall-2"       :test #'string=)
 
-(alexandria:define-constant +blood-splat+               "blood-splat"        :test #'string=)
+(alexandria:define-constant +blood-splat+                      "blood-splat"        :test #'string=)
 
-(alexandria:define-constant +blood-particle+            "blood-particle"     :test #'string=)
+(alexandria:define-constant +blood-particle+                   "blood-particle"     :test #'string=)
 
-(alexandria:define-constant +fire-particle+             "fire-particle"      :test #'string=)
+(alexandria:define-constant +fire-particle+                    "fire-particle"      :test #'string=)
 
-(alexandria:define-constant +smoke-particle+            "smoke-particle"     :test #'string=)
+(alexandria:define-constant +smoke-particle+                   "smoke-particle"     :test #'string=)
 
-(alexandria:define-constant +cross-particle+            "cross-particle"     :test #'string=)
+(alexandria:define-constant +cross-particle+                   "cross-particle"     :test #'string=)
 
-(alexandria:define-constant +rock-1+                    "rock-1"             :test #'string=)
+(alexandria:define-constant +rock-1+                           "rock-1"             :test #'string=)
 
-(alexandria:define-constant +rock-2+                    "rock-2"             :test #'string=)
+(alexandria:define-constant +rock-2+                           "rock-2"             :test #'string=)
 
-(alexandria:define-constant +sand+                      "sand"               :test #'string=)
+(alexandria:define-constant +sand+                             "sand"               :test #'string=)
 
-(alexandria:define-constant +grass+                     "grass"              :test #'string=)
+(alexandria:define-constant +grass+                            "grass"              :test #'string=)
 
-(alexandria:define-constant +snow+                      "snow"               :test #'string=)
+(alexandria:define-constant +snow+                             "snow"               :test #'string=)
 
-(alexandria:define-constant +texture-tag-wall-level-1+     "wall-level-1"     :test #'string= )
+(alexandria:define-constant +texture-tag-wall-level-1+         "wall-level-1"       :test #'string=)
 
-(alexandria:define-constant +texture-tag-wall-level-2+     "wall-level-2"     :test #'string= )
+(alexandria:define-constant +texture-tag-wall-level-2+         "wall-level-2"       :test #'string=)
 
-(alexandria:define-constant +texture-tag-wall-level-3+     "wall-level-3"     :test #'string=)
+(alexandria:define-constant +texture-tag-wall-level-3+         "wall-level-3"       :test #'string=)
 
-(alexandria:define-constant +texture-tag-door-level-1+     "door-level-1"     :test #'string= )
+(alexandria:define-constant +texture-tag-door-level-1+         "door-level-1"       :test #'string=)
 
-(alexandria:define-constant +texture-tag-door-level-2+     "door-level-2"     :test #'string= )
+(alexandria:define-constant +texture-tag-door-level-2+         "door-level-2"       :test #'string=)
 
-(alexandria:define-constant +texture-tag-door-level-3+     "door-level-3"     :test #'string=)
+(alexandria:define-constant +texture-tag-door-level-3+         "door-level-3"       :test #'string=)
 
-(alexandria:define-constant +texture-tag-ceil-level-1+     "ceil-level-1"     :test #'string= )
+(alexandria:define-constant +texture-tag-ceil-level-1+         "ceil-level-1"       :test #'string=)
 
-(alexandria:define-constant +texture-tag-ceil-level-2+     "ceil-level-2"     :test #'string= )
+(alexandria:define-constant +texture-tag-ceil-level-2+         "ceil-level-2"       :test #'string=)
 
-(alexandria:define-constant +texture-tag-ceil-level-3+     "ceil-level-3"     :test #'string=)
+(alexandria:define-constant +texture-tag-ceil-level-3+         "ceil-level-3"       :test #'string=)
 
-(alexandria:define-constant +texture-tag-floor-level-1+    "floor-level-1"    :test #'string=)
+(alexandria:define-constant +texture-tag-floor-level-1+        "floor-level-1"      :test #'string=)
 
-(alexandria:define-constant +texture-tag-floor-level-2+    "floor-level-2"    :test #'string=)
+(alexandria:define-constant +texture-tag-floor-level-2+        "floor-level-2"      :test #'string=)
 
-(alexandria:define-constant +texture-tag-floor-level-3+    "floor-level-3"    :test #'string=)
+(alexandria:define-constant +texture-tag-floor-level-3+        "floor-level-3"      :test #'string=)
 
-(alexandria:define-constant +texture-tag-int-decal+        "int-decal"        :test #'string=)
+(alexandria:define-constant +texture-tag-int-decal+            "int-decal"          :test #'string=)
 
-(alexandria:define-constant +texture-tag-ext-decal+        "ext-decal"        :test #'string=)
+(alexandria:define-constant +texture-tag-ext-decal+            "ext-decal"          :test #'string=)
 
-(alexandria:define-constant +texture-tag-soil-decal+       "soil-decal"       :test #'string=)
+(alexandria:define-constant +texture-tag-soil-decal+           "soil-decal"         :test #'string=)
 
-(alexandria:define-constant +texture-tag-road-decal+       "road-decal"       :test #'string=)
+(alexandria:define-constant +texture-tag-road-decal+           "road-decal"         :test #'string=)
 
-(alexandria:define-constant +texture-tag-building-decal+   "building-decal"   :test #'string=)
+(alexandria:define-constant +texture-tag-building-decal+       "building-decal"     :test #'string=)
 
-(alexandria:define-constant +texture-tag-home-terrain+     "home-terrain"     :test #'string= )
+(alexandria:define-constant +texture-tag-home-terrain+         "home-terrain"       :test #'string=)
 
-(alexandria:define-constant +texture-tag-shore-terrain+    "shore-terrain"    :test #'string= )
+(alexandria:define-constant +texture-tag-shore-terrain+        "shore-terrain"      :test #'string=)
 
-(alexandria:define-constant +texture-tag-grass-terrain+    "grass-terrain"    :test #'string= )
+(alexandria:define-constant +texture-tag-grass-terrain+        "grass-terrain"      :test #'string=)
 
-(alexandria:define-constant +texture-tag-snow-terrain+     "snow-terrain"     :test #'string= )
+(alexandria:define-constant +texture-tag-snow-terrain+         "snow-terrain"       :test #'string=)
 
-(alexandria:define-constant +texture-tag-smoke-particle+   "smoke-particle"   :test #'string= )
+(alexandria:define-constant +texture-tag-smoke-particle+       "smoke-particle"     :test #'string=)
+
+(alexandria:define-constant +texture-tag-teleport-particle+    "teleport-particle"  :test #'string=)
+
 
 (alexandria:define-constant +texture-tag-aerial-expl-particle+ "aerial-explosion-particle"
    :test #'string= )
 
-(alexandria:define-constant +texture-tag-decals-explosion+ "decals-explosion-particle"
+(alexandria:define-constant +texture-tag-decals-explosion+     "decals-explosion-particle"
   :test #'string=)
 
-(alexandria:define-constant +texture-tag-decals-cure+      "decals-cure-particle"
+(alexandria:define-constant +texture-tag-decals-cure+          "decals-cure-particle"
   :test #'string=)
 
-(alexandria:define-constant +texture-tag-decals-heal+      "decals-heal-particle"
+(alexandria:define-constant +texture-tag-decals-heal+          "decals-heal-particle"
   :test #'string=)
 
-(alexandria:define-constant +texture-tag-cure-particle+    "cure-particle"    :test #'string=)
-
-(alexandria:define-constant +texture-tag-decals-poison+      "decals-poison-particle"
+(alexandria:define-constant +texture-tag-cure-particle+        "cure-particle"
   :test #'string=)
 
-(alexandria:define-constant +texture-tag-poison-particle+    "poison-particle"    :test #'string=)
+(alexandria:define-constant +texture-tag-decals-poison+        "decals-poison-particle"
+  :test #'string=)
+
+(alexandria:define-constant +texture-tag-poison-particle+      "poison-particle"
+  :test #'string=)
 
 (alexandria:define-constant +texture-tag-decals-circular-wave+ "decals-circular-wave"
   :test #'string=)
@@ -143,11 +148,11 @@
 
 (alexandria:define-constant +texture-tag-soil-terrain-level-3+ "soil-level-3" :test #'string= )
 
-(alexandria:define-constant +mipmap-base-level+ 0 :test #'=)
+(alexandria:define-constant +mipmap-base-level+                0              :test #'=)
 
-(alexandria:define-constant +mipmap-max-level+  4 :test #'=)
+(alexandria:define-constant +mipmap-max-level+                 4              :test #'=)
 
-(alexandria:define-constant +id-handle-invalid+  -1 :test #'=)
+(alexandria:define-constant +id-handle-invalid+               -1              :test #'=)
 
 (defparameter *texture-factory-db* '())
 

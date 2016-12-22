@@ -102,3 +102,6 @@ src/gui/spell-window.lisp
 # spells
 data/spells/vampire-1.lisp
 data/spells/vampire-2.lisp
+data/spells/teleport-1.lisp
+data/spells/teleport-2.lisp
+data/spells/teleport-3.lisp

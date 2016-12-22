@@ -1842,6 +1842,7 @@
    :+texture-tag-soil-terrain-level-2+
    :+texture-tag-soil-terrain-level-3+
    :+texture-tag-smoke-particle+
+   :+texture-tag-teleport-particle+
    :+texture-tag-aerial-expl-particle+
    :+texture-tag-decals-explosion+
    :+texture-tag-explosion-debris+
@@ -3904,7 +3905,8 @@
    :make-heal-level-2
    :make-heal-level-1
    :make-heal-level-0
-   :make-level-up))
+   :make-level-up
+   :make-teleport))
 
 (defpackage :arrows
   (:use :cl

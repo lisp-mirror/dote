@@ -497,7 +497,6 @@
 		  (elt from (+ ct (mod ct3 source-step))))))
   to)
 
-
 ;; iterations
 
 (defmacro do-while (declaration return-form &body body)
