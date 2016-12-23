@@ -20,7 +20,7 @@
 
 (define-constant +attack-min-sigma+               20.0  :test #'=)
 
-(define-constant +attack-max-sigma+               80.0  :test #'=)
+(define-constant +attack-max-sigma+               200.0  :test #'=)
 
 (define-constant +weapon-combination-bonus+        0.1  :test #'=)
 
@@ -41,10 +41,10 @@
 						 10.0))
 	     +attack-min-sigma+ +attack-max-sigma+)
       (d- (if shield-level
-	      (d* 2.8 (d- shield-level 1.0))
+	      (d* 4.0 shield-level)
 	      0.0))
       (d- (if armour-level
-	      (d* 2.8 (d- armour-level 1.0))
+	      (d* 4.0 armour-level)
 	      0.0))))
 
 (defun attack-gaussian-fn (attack-dmg bonus-attack-dmg weapon-level
@@ -110,34 +110,6 @@
   (loop for x from -0.0 below 100.0 by 1.0 do
        (loop for y from -0.0 below 100.0 by 1.0 do
 	    (format t "~a ~a ~a~%" x y (funcall producer-fn x y)))))
-
-(defun attack-statistics (weapon-level attack-dmg shield-level armor-level
-			   &optional (count 10000))
-  (macrolet ((fmt-comment (a fmt-params)
-	       `(format t ,(text-utils:strcat "# " a) ,fmt-params)))
-    (flet ((count-less-than (hits threshold)
-	     (let ((less (count-if #'(lambda (a) (< a (* attack-dmg threshold))) hits)))
-	       (* 100.0 (/ less (length hits))))))
-      (fmt-comment "weapon level: ~a~%" weapon-level)
-      (fmt-comment "max damage  : ~a~%" attack-dmg)
-      (fmt-comment "shield-level: ~a~%" shield-level)
-      (fmt-comment "armor-level : ~a~%" armor-level)
-      (let ((all-damages (loop repeat count collect
-			      (attack-damage attack-dmg
-					     0.0
-					     100.0 0.0
-					     weapon-level
-					     0.0
-					     shield-level
-					     armor-level))))
-	(fmt-comment "Hit with damage above than 80%: ~,2@f~%"
-		     (- 100 (count-less-than all-damages 0.8)))
-	(fmt-comment "Hit with damage below than 80%: ~,2@f~%"
-		     (count-less-than all-damages 0.8))
-	(fmt-comment "Hit with damage below than 50%: ~,2@f~%"
-		     (count-less-than all-damages 0.5))
-	(fmt-comment "Hit with damage below than 20%: ~,2@f~%"
-		     (count-less-than all-damages 0.2))))))
 
 (defgeneric bonus-attack-weapon-combination (weapon-atk weapon-def))
 
@@ -383,28 +355,32 @@
       (game-event:propagate-spell-event msg))))
 
 (defun height-variation-chance-fn (h-atk h-defend)
-  (if (d> h-atk h-defend)
-      (funcall (num:gaussian-function 20.0 5.0 20.0)
-	       (d- h-atk h-defend))
-      -10.0))
+  (cond
+    ((epsilon= h-atk h-defend)
+     0.0)
+    ((d> h-atk h-defend)
+     (funcall (num:gaussian-function 20.0 5.0 20.0)
+	      (d- h-atk h-defend)))
+    (t
+     -10.0)))
 
 (defun actual-chance-long-range-attack (attacker defender)
     (assert (and attacker defender))
-    (let* ((ghost-atk    (entity:ghost attacker))
-	   (ghost-defend (entity:ghost defender))
-	   (weapon-type  (character:weapon-type-long-range ghost-atk))
-	   (attack-chance     (character:actual-range-attack-chance ghost-atk))
-	   (chance-decrement  (cond
-				((eq weapon-type :crossbow)
-				      +attack-long-range-crossbow-chance-decrement+)
-				     ((eq weapon-type :bow)
-				      +attack-long-range-bow-chance-decrement+)
-				     (t
-				      0.0)))
-	   (dist              (vec-length (vec- (entity:pos attacker)
-						(entity:pos defender))))
-	   (chance-by-h       (height-variation-chance-fn (elt (entity:pos attacker) 1)
-							  (elt (entity:pos defender) 1)))
+    (let* ((ghost-atk            (entity:ghost attacker))
+	   (ghost-defend         (entity:ghost defender))
+	   (weapon-type          (character:weapon-type-long-range ghost-atk))
+	   (attack-chance        (character:actual-range-attack-chance ghost-atk))
+	   (chance-decrement     (cond
+				   ((eq weapon-type :crossbow)
+				    +attack-long-range-crossbow-chance-decrement+)
+				   ((eq weapon-type :bow)
+				    +attack-long-range-bow-chance-decrement+)
+				   (t
+				    0.0)))
+	   (dist                 (vec-length (vec- (entity:pos attacker)
+						   (entity:pos defender))))
+	   (chance-by-h          (height-variation-chance-fn (elt (entity:pos attacker) 1)
+							     (elt (entity:pos defender) 1)))
 	   (actual-attack-chance (max 0.0 (d+ (num:d* chance-decrement dist)
 					      chance-by-h
 					      attack-chance
@@ -430,7 +406,7 @@
 	   (weapon-level (if weapon
 			     (character:level weapon)
 			     0.0))
-	   (attack-dmg        (character:actual-range-attack-damage ghost-atk)))
+	   (attack-dmg   (character:actual-range-attack-damage ghost-atk)))
       (cond
 	((typep (entity:ghost defender) 'character:player-character)
 	 (let* ((armor-level  (cond
@@ -481,46 +457,51 @@
     (assert (and attacker defender))
     (let* ((ghost-atk     (entity:ghost     attacker))
 	   (ghost-defend  (entity:ghost     defender))
-	   (spell         (game-event:spell event))
-	   (attack-dmg    (lcg-next-upto (spell:damage-inflicted spell))))
-      (cond
-	((typep (entity:ghost defender) 'character:player-character)
-	 (let* ((armor-level  (cond
-				((character:armorp (character:armor ghost-defend))
-				 (character:level  (character:armor ghost-defend)))
-				(t
-				 nil)))
-		(shield-level (cond
-				((character:shieldp (character:left-hand ghost-atk))
-				 (character:level (character:left-hand ghost-atk)))
-				((character:shieldp (character:right-hand ghost-atk))
-				 (character:level (character:right-hand ghost-atk)))
-				(t
-				 nil)))
-		(dodge-chance         (character:actual-dodge-chance ghost-defend))
-		(ambushp              (and (vec~ (entity:dir attacker)
-						 (entity:dir defender))
-					   (pass-d100.0 (character:actual-ambush-attack-chance
-							 ghost-atk)))))
-	   (let ((dmg (attack-spell-damage attack-dmg
-					   dodge-chance
-					   shield-level
-					   armor-level
-					   ambushp)))
-	     (if dmg
-		 (progn
-		   (send-effects-after-attack attacker
-					      defender
-					      :weapon spell)
-		   (values dmg ambushp))
-		 (values nil nil)))))
-	((typep (entity:ghost defender) 'character:np-character)
-	 (values (attack-spell-damage attack-dmg
-				      0.0
-				      nil
-				      (character:level ghost-defend)
-				      nil)
-		 nil))))))
+	   (spell         (game-event:spell event)))
+      (%defend-from-attack-spell ghost-atk ghost-defend spell))))
+
+(defun %defend-from-attack-spell (attacker defender spell)
+  (let* ((attack-dmg (dmax 0.0
+			   (gaussian-probability (d/ (spell:damage-inflicted spell) 2.0)
+						 (d* (spell:damage-inflicted spell) 0.75)))))
+    (cond
+      ((typep defender 'character:player-character)
+       (let* ((armor-level  (cond
+			      ((character:armorp (character:armor defender))
+			       (character:level  (character:armor defender)))
+			      (t
+			       nil)))
+	      (shield-level (cond
+			      ((character:shieldp (character:left-hand  attacker))
+			       (character:level   (character:left-hand  attacker)))
+			      ((character:shieldp (character:right-hand attacker))
+			       (character:level   (character:right-hand attacker)))
+			      (t
+			       nil)))
+	      (dodge-chance         (character:actual-dodge-chance defender))
+	      (ambushp              (and (vec~ (entity:dir attacker)
+					       (entity:dir defender))
+					 (pass-d100.0 (character:actual-ambush-attack-chance
+						       attacker)))))
+	 (let ((dmg (attack-spell-damage attack-dmg
+					 dodge-chance
+					 shield-level
+					 armor-level
+					 ambushp)))
+	   (if dmg
+	       (progn
+		 (send-effects-after-attack attacker
+					    defender
+					    :weapon spell)
+		 (values dmg ambushp))
+	       (values nil nil)))))
+      ((typep defender 'character:np-character)
+       (values (attack-spell-damage attack-dmg
+				    0.0
+				    nil
+				    (character:level defender)
+				    nil)
+	       nil)))))
 
 (defun defend-from-spell (event)
  (let* ((attacker (game-event:attacker-entity event))
@@ -607,3 +588,46 @@
     (entity:reset-tooltip-ct defender)
     (world:reset-toolbar-selected-action world)
     (game-event:send-refresh-toolbar-event)))
+
+(defun attack-statistics (weapon-level attack-dmg shield-level armor-level
+			   &optional (count 10000))
+  (macrolet ((fmt-comment (a fmt-params)
+	       `(format t ,(text-utils:strcat "# " a) ,fmt-params)))
+    (flet ((count-less-than (hits threshold)
+	     (let ((less (count-if #'(lambda (a) (< a (* attack-dmg threshold))) hits)))
+	       (* 100.0 (/ less (length hits))))))
+      (fmt-comment "weapon level: ~a~%" weapon-level)
+      (fmt-comment "max damage  : ~a~%" attack-dmg)
+      (fmt-comment "shield-level: ~a~%" shield-level)
+      (fmt-comment "armor-level : ~a~%" armor-level)
+      (let ((all-damages (loop repeat count collect
+			      (attack-damage attack-dmg
+					     0.0
+					     100.0 0.0
+					     weapon-level
+					     0.0
+					     shield-level
+					     armor-level))))
+	(fmt-comment "Hit with damage above than 80%: ~,2@f~%"
+		     (- 100 (count-less-than all-damages 0.8)))
+	(fmt-comment "Hit with damage below than 80%: ~,2@f~%"
+		     (count-less-than all-damages 0.8))
+	(fmt-comment "Hit with damage below than 50%: ~,2@f~%"
+		     (count-less-than all-damages 0.5))
+	(fmt-comment "Hit with damage below than 20%: ~,2@f~%"
+		     (count-less-than all-damages 0.2))))))
+
+(defun attack-spell-vs-inert-statistics (spell-id &optional (count 1000))
+  (loop for level from 1 to 9 do
+       (format t "; level ~a~%"  level)
+       (let* ((data (loop repeat count collect
+			 (%defend-from-attack-spell nil
+						    (random-inert-object:generate-inert-object
+						     (d level))
+						    (spell:get-spell spell-id))))
+	      (max  (reduce #'(lambda (a b) (if (< a b) b a)) data :initial-value -1.0))
+	      (min  (reduce #'(lambda (a b) (if (> a b) b a)) data :initial-value 1e10)))
+	 (format t "; minimum damage ~a~%" min)
+	 (format t "; maximum damage ~a~%" max)
+	 (format t "; average damage ~a~%" (/ (reduce #'+ data) (length data)))
+	 (format t "; median         ~a~2%" (median data)))))

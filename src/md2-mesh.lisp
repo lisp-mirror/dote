@@ -243,7 +243,6 @@
 				 billboard:+tooltip-surprise-attack-char+
 				 :color     billboard:+damage-color+
 				 :font-type gui:+tooltip-font-handle+))
-
       (apply-damage object damage)
       (setf (attacked-by-entity object) (attacker-entity event))
       (game-event:register-for-end-attack-long-range-event object)

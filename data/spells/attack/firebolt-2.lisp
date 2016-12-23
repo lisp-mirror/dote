@@ -12,7 +12,7 @@
   :effective-aabb-size  #'(lambda (spell)
 			    (declare (ignore spell))
 			    (d/ +terrain-chunk-tile-size+ 7.5))
-  :damage-inflicted      15.0
+  :damage-inflicted      18.0
   :arrow                 particles:make-fire-dart-level-1
   :effects               (define-interaction
 			   effects         (define-effects)

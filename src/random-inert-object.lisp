@@ -24,7 +24,7 @@
 
 (define-constant +maximum-damage-point+                 100.0        :test #'=)
 
-(defun randomize-damage-points (character level )
+(defun randomize-damage-points (character level)
   (setf (damage-points character)
 	(calculate-randomized-damage-points level
 					    +minimum-level+

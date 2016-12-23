@@ -563,6 +563,10 @@
 	   (call-next-method)))
 ;;;; interaction
 
+(defmethod print-object ((object np-character) stream)
+  (print-unreadable-object (object stream :type t :identity t)
+    (format stream "dmg: ~a lvl: ~a" (damage-points object) (level object))))
+
 (defmethod description-for-humans :around ((object np-character))
   (strcat
    (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~]~:[~;Trap~] ~a ~a~a")
