@@ -337,8 +337,19 @@
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (d+ (d* a (dsin (d- step 1.0))) (d* b (dsin step))))
 
+(defun elastic-step (x &optional (p 0.3) (s 0.0 s-provided-p))
+  (let ((s (if s-provided-p
+	       s
+	       (* (dasin 1.0)
+		  (d* p (d/ 1.0 (d* 2.0 +pi+)))))))
+    (d- (d* (dexpt 2.0 (d* 10.0 (d- x 1.0)))
+	    (dsin (d/ (d* (d- (d- x 1.0) s)
+			  (d* 2.0 +pi+))
+		      p))))))
+
 (defmacro gen-step (name interpolator-fun)
-  (let ((fun-name (alexandria:format-symbol t "~:@(~a-interpolate~)" name)))
+  (let ((fun-name         (alexandria:format-symbol t "~:@(~a-interpolate~)"     name))
+	(fun-name-reverse (alexandria:format-symbol t "~:@(~a-interpolate-rev~)" name)))
     `(progn
        (defgeneric ,fun-name (a b weight))
        (defmethod  ,fun-name ((a number) (b number) (weight number))
@@ -350,13 +361,57 @@
        (defmethod ,fun-name ((a vector) (b vector) (par number))
 	 (map 'vector #'(lambda (v1 v2) (,fun-name v1 v2 par)) a b))
        (defmethod ,fun-name ((a list) (b list) (par number))
-	 (map 'list #'(lambda (v1 v2) (,fun-name v1 v2 par)) a b)))))
+	 (map 'list #'(lambda (v1 v2) (,fun-name v1 v2 par)) a b))
+       ;; reverse
+       (defgeneric ,fun-name-reverse (a b weight))
+       (defmethod  ,fun-name-reverse ((a number) (b number) (weight number))
+	 (declare (optimize (debug 3) (safety 0) (speed 3)))
+	 ,(alexandria:with-gensyms (w delta)
+	    `(let* ((,delta (d- b a))
+		    (,w     (alexandria:clamp (d- 1.0
+						  (d/ (d- weight a)
+						      ,delta))
+					      (d 0)
+					      (d 1))))
+	       (,interpolator-fun ,w))))
+       (defmethod ,fun-name-reverse ((a vector) (b vector) (par number))
+	 (map 'vector #'(lambda (v1 v2) (,fun-name-reverse v1 v2 par)) a b))
+       (defmethod ,fun-name-reverse ((a list) (b list) (par number))
+	 (map 'list #'(lambda (v1 v2) (,fun-name-reverse v1 v2 par)) a b)))))
 
 (gen-step smoothstep smoothstep)
 
 (gen-step sinstep sinstep)
 
 (gen-step cosstep cosstep)
+
+(gen-step elastic-step elastic-step)
+
+(defgeneric bounce-step-interpolate (a b weight))
+
+(defmethod bounce-step-interpolate ((a number) (b number) (weight number))
+  (declare (optimize (debug 3) (safety 0) (speed 3)))
+  (dabs (elastic-step-interpolate a b weight)))
+
+(defmethod bounce-step-interpolate ((a vector) (b vector) (par number))
+  (map 'vector #'(lambda (v1 v2) (bounce-step-interpolate v1 v2 par)) a b))
+
+(defmethod bounce-step-interpolate ((a list) (b list) (par number))
+  (map 'list #'(lambda (v1 v2) (bounce-step-interpolate v1 v2 par)) a b))
+
+(defgeneric bounce-step-interpolate-rev (a b weight))
+
+(defmethod bounce-step-interpolate-rev ((a number) (b number) (weight number))
+  (declare (optimize (debug 3) (safety 0) (speed 3)))
+    (dabs (elastic-step-interpolate-rev a b weight)))
+
+(defmethod bounce-step-interpolate-rev ((a vector) (b vector) (par number))
+  (map 'vector #'(lambda (v1 v2) (bounce-step-interpolate-rev v1 v2 par))
+       a b))
+
+(defmethod bounce-step-interpolate-rev ((a list) (b list) (par number))
+  (map 'list #'(lambda (v1 v2) (bounce-step-interpolate-rev v1 v2 par))
+       a b))
 
 (defun clamp-0->max-less-one (val max)
   (alexandria:clamp val (d 0.0) (d (1- max))))

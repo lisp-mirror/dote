@@ -457,7 +457,7 @@
 				       :color     billboard:+poison-damage-color+
 				       :font-type gui:+tooltip-font-handle+)
 	      (setf status +status-poisoned+)
-	      (send-refresh-toolbar-event)
+	      (send-refresh-toolbar-event :reset-health-status-animation t)
 	      t)
 	    nil)))))
 
@@ -470,7 +470,7 @@
 			      :font-type gui:+tooltip-font-handle+)
      (setf status ,new-status)
      ,@body
-     (send-refresh-toolbar-event)))
+     (send-refresh-toolbar-event :reset-health-status-animation t)))
 
 (defmethod on-game-event ((object md2-mesh) (event cause-terror-event))
   (with-simple-cause-status (object event immune-terror-status +status-terror+
@@ -630,7 +630,7 @@
 			      :font-type gui:+tooltip-font-handle+)
      (setf ,immune-accessor t)
      ,@body
-     (send-refresh-toolbar-event)))
+     (send-refresh-toolbar-event :reset-health-status-animation t)))
 
 (defmethod on-game-event ((object md2-mesh) (event immune-berserk-event))
   (with-simple-immune-status (object event immune-berserk-status +status-berserk+
@@ -743,7 +743,7 @@
 							 (_ "You can cast ~a!")
 							 ident)
 						 nil)))))
-	      (send-refresh-toolbar-event)
+	      (send-refresh-toolbar-event :reset-health-status-animation t)
 	      t)
 	    nil)))))
 

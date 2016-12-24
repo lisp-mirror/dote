@@ -85,6 +85,8 @@
    :+simple-array-fixnum-type+
    :+id-camera+
    :+id-skydome+
+   :+outside-map-day-color+
+   :+outside-map-night-color+
    :+start-id-counter+
    :+obj-mesh-file-extension+
    :+trees-resource+
@@ -300,8 +302,15 @@
    :sinstep
    :cosstep
    :smoothstep-interpolate
+   :smoothstep-interpolate-rev
    :sinstep-interpolate
+   :sinstep-interpolate-rev
    :cosstep-interpolate
+   :cosstep-interpolate-rev
+   :elastic-step-interpolate
+   :elastic-step-interpolate-rev
+   :bounce-step-interpolate
+   :bounce-step-interpolate-rev
    :hermite-polynomial
    :bidimensional-gaussian
    :gaussian-probability-distribution
@@ -2114,6 +2123,7 @@
    :unregister-for-window-accept-input-event
    :propagate-window-accept-input-event
    :refresh-toolbar-event
+   :reset-health-status-animation-p
    :register-for-refresh-toolbar-event
    :unregister-for-refresh-toolbar-event
    :propagate-refresh-toolbar-event

@@ -145,10 +145,16 @@
   ((accept-input-p
     :initform nil
     :initarg  :accept-input-p
-    :accessor accept-input-p)))
+    :accessor accept-input-p)
+   (reset-health-status-animation-p
+    :initform nil
+    :initarg  :reset-health-status-animation-p
+    :accessor reset-health-status-animation-p)))
 
-(defun send-refresh-toolbar-event ()
-  (let ((refresh-toolbar-event (make-instance 'game-event:refresh-toolbar-event)))
+(defun send-refresh-toolbar-event (&key (reset-health-status-animation nil))
+  (let ((refresh-toolbar-event (make-instance 'game-event:refresh-toolbar-event
+					      :reset-health-status-animation-p
+					      reset-health-status-animation)))
     (propagate-refresh-toolbar-event refresh-toolbar-event)))
 
 (defevent update-highlight-path ()

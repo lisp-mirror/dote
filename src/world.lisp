@@ -23,28 +23,30 @@
 (defun make-skydome (bg cloud-1 cloud-2 cloud-3 smoke)
   (let ((mesh (gen-skydome 100.0)))
     ;; background
-    (setf (texture:interpolation-type bg) :linear)
-    (texture:prepare-for-rendering bg)
-    (setf (texture-object mesh) bg)
+    (setf (texture:interpolation-type bg) :nearest)
+    (texture:prepare-for-rendering    bg)
+    (setf (texture-object mesh)       bg)
+    (setf (texture:s-wrap-mode        bg) :clamp-to-edge)
+    (setf (texture:t-wrap-mode        bg) :clamp-to-edge)
     ;; cloud layer 1
-    (setf (texture::interpolation-type cloud-1) :linear)
-    (texture:prepare-for-rendering cloud-1)
+    (setf (texture::interpolation-type  cloud-1) :linear)
+    (texture:prepare-for-rendering      cloud-1)
     (setf (elt (texture-clouds mesh) 0) cloud-1)
     ;; cloud layer 2
-    (setf (texture::interpolation-type cloud-2) :linear)
-    (texture:prepare-for-rendering cloud-2)
+    (setf (texture::interpolation-type  cloud-2) :linear)
+    (texture:prepare-for-rendering      cloud-2)
     (setf (elt (texture-clouds mesh) 1) cloud-2)
     ;; cloud layer 3
-    (setf (texture::interpolation-type cloud-3) :linear)
-    (texture:prepare-for-rendering cloud-3)
+    (setf (texture::interpolation-type  cloud-3) :linear)
+    (texture:prepare-for-rendering      cloud-3)
     (setf (elt (texture-clouds mesh) 2) cloud-3)
     ;; smoke
     (setf (texture:interpolation-type smoke) :linear)
-    (setf (texture:s-wrap-mode smoke) :clamp-to-border)
-    (setf (texture:t-wrap-mode smoke) :clamp-to-border)
-    (setf (texture:border-color smoke) §c00000000)
-    (texture:prepare-for-rendering smoke)
-    (setf (texture-projector mesh) smoke)
+    (setf (texture:s-wrap-mode        smoke) :clamp-to-border)
+    (setf (texture:t-wrap-mode        smoke) :clamp-to-border)
+    (setf (texture:border-color       smoke) §c00000000)
+    (texture:prepare-for-rendering    smoke)
+    (setf (texture-projector mesh)    smoke)
     (prepare-for-rendering mesh)
     mesh))
 
@@ -213,7 +215,9 @@
 (defmethod game-event:on-game-event ((object world)
 				     (event game-event:refresh-toolbar-event))
   (with-accessors ((toolbar toolbar)) object
-    (widget:sync-with-player toolbar)))
+    (widget:sync-with-player toolbar
+			     :reset-health-animation
+			     (game-event:reset-health-status-animation-p event))))
 
 (defmethod game-event:on-game-event ((object world)
 				     (event game-event:update-highlight-path))

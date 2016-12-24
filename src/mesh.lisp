@@ -3015,8 +3015,8 @@
 	      (uniformf compiled-shaders :traslation-clouds-speed el-time)
 	      ;; comment out the line below to get rid of camera following effect
 	      (setf (model-matrix object) (translate (get-camera-pos renderer)))
-	      (setf (model-matrix object) (matrix* (elt model-matrix 0)
-						   (translate (vec 0.0 -20.0 0.0))))
+	      ;; (setf (model-matrix object) (matrix* (elt model-matrix 0)
+	      ;; 					   (translate (vec 0.0 -20.0 0.0))))
 	      (uniformi  compiled-shaders :texture-object +texture-unit-diffuse+)
 	      (uniformfv compiled-shaders :sky-color (the vec4 (sky-bg-color state)))
 	      (uniform-matrix compiled-shaders :modelview-matrix 4

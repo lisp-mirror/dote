@@ -739,14 +739,26 @@
 		     (shown           shown)
 		     (texture-pressed texture-pressed)
 		     (texture-object  texture-object)) object
-      (setf button-state      new-state)
-      (setf shown             new-state))))
+      (setf button-state new-state)
+      (setf shown        new-state))))
 
 (defmethod on-mouse-pressed ((object signalling-light) event)
   nil)
 
 (defmethod on-mouse-released ((object signalling-light) event)
   nil)
+
+(defclass health-status-icon (signalling-light inner-animation) ())
+
+(defmethod calculate :before ((object health-status-icon) dt)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((el-time el-time)
+		   (scaling scaling)) object
+    (let ((scale-factor (d+ 1.0 (num:bounce-step-interpolate-rev 0.0 10.0 el-time))))
+      (setf scaling (sb-cga:vec scale-factor scale-factor scale-factor))
+      (setf el-time
+	    (d+ el-time
+		(d* (animation-speed object) dt))))))
 
 (defclass button (naked-button) ())
 
@@ -1776,21 +1788,25 @@
 
 (defun make-rect-button (x y scale-w scale-h overlay callback)
   (make-instance 'naked-button
-		 :x x :y y
-		 :width  (rel->abs scale-w)
-		 :height (rel->abs scale-h)
+		 :x               x
+		 :y               y
+		 :width           (rel->abs scale-w)
+		 :height          (rel->abs scale-h)
 		 :texture-object  (get-texture +square-button-texture-name+)
 		 :texture-pressed (get-texture +square-button-pressed-texture-name+)
 		 :texture-overlay (get-texture overlay)
 		 :callback        callback))
 
 (defun make-health-condition (x y size texture-name)
-  (make-instance 'signalling-light
-		 :x x :y y
-		 :width  (rel->abs size)
-		 :height (rel->abs size)
-		 :texture-name texture-name
-		 :button-status t))
+  (make-instance 'health-status-icon
+		 :animation-speed 2.0
+		 :x               x
+		 :y               y
+		 :width           (rel->abs size)
+		 :height          (rel->abs size)
+		 :texture-name    texture-name
+		 :shown           nil
+		 :button-status   nil))
 
 (defun next-turn-cb (w e)
   (declare (ignore e))
@@ -2365,7 +2381,7 @@
 (defmethod destroy :after ((object main-toolbar))
    (setf (bound-player object) nil))
 
-(defgeneric sync-with-player (object))
+(defgeneric sync-with-player (object &key reset-health-animation))
 
 (defgeneric reset-toolbar-selected-action (object))
 
@@ -2380,7 +2396,7 @@
 					 +standard-float-print-format+
 					 current-slots-value))))
 
-(defmethod sync-with-player ((object main-toolbar))
+(defmethod sync-with-player ((object main-toolbar) &key (reset-health-animation nil))
   (with-accessors ((bound-player bound-player)
 		   (bar-mp bar-mp)      (text-mp text-mp)
 		   (bar-dmg bar-dmg)    (text-dmg text-dmg)
@@ -2408,31 +2424,74 @@
 			      text-sp
 			      #'actual-magic-points
 			      #'current-magic-points ghost)
-	(setf (button-state s-faint)             nil)
-	(setf (button-state s-poisoned)          nil)
-	(setf (button-state s-terrorized)        nil)
-	(setf (button-state s-berserk)           nil)
-	(setf (button-state s-immune-faint)      nil)
-	(setf (button-state s-immune-poisoned)   nil)
-	(setf (button-state s-immune-terrorized) nil)
-	(setf (button-state s-immune-berserk)    nil)
 	(case (status ghost)
 	  (:faint
-	   (setf (button-state s-faint) t))
+	   (setf (button-state s-faint)      t)
+	   (when reset-health-animation
+	     (setf (el-time s-faint) 0.0))
+	   (setf (button-state s-poisoned)   nil)
+	   (setf (button-state s-terrorized) nil)
+	   (setf (button-state s-berserk)    nil))
 	  (:poisoned
-	   (setf (button-state s-poisoned) t))
+	   (setf (button-state s-poisoned)   t)
+	   (when reset-health-animation
+	     (setf (el-time s-poisoned) 0.0))
+	   (setf (button-state s-faint)      nil)
+	   (setf (button-state s-terrorized) nil)
+	   (setf (button-state s-berserk)    nil))
 	  (:terror
-	   (setf (button-state s-terrorized) t))
+	   (setf (button-state s-terrorized) t)
+	   (when reset-health-animation
+	     (setf (el-time s-terrorized) 0.0))
+	   (setf (button-state s-faint)      nil)
+	   (setf (button-state s-poisoned)   nil)
+	   (setf (button-state s-berserk)    nil))
 	  (:berserk
-	   (setf (button-state s-berserk) t)))
-	(and (immune-faint-status ghost)
-	     (setf (button-state s-immune-faint) t))
-	(and (immune-terror-status ghost)
-	     (setf (button-state s-immune-terrorized) t))
-	(and (immune-berserk-status ghost)
-	     (setf (button-state s-immune-berserk) t))
-	(and (immune-poison-status ghost)
-	     (setf (button-state s-immune-poisoned) t))
+	   (setf (button-state s-berserk)    t)
+	   (when reset-health-animation
+	     (setf (el-time s-berserk) 0.0))
+	   (setf (button-state s-faint)      nil)
+	   (setf (button-state s-poisoned)   nil)
+	   (setf (button-state s-terrorized) nil))
+	  (t
+	   (setf (button-state s-berserk)    nil)
+	   (setf (button-state s-faint)      nil)
+	   (setf (button-state s-poisoned)   nil)
+	   (setf (button-state s-terrorized) nil)))
+	(cond
+	  ((immune-faint-status ghost)
+	   (setf (button-state s-immune-faint) t)
+	   (when reset-health-animation
+	     (setf (el-time s-immune-faint) 0.0))
+	   (setf (button-state s-immune-poisoned)   nil)
+	   (setf (button-state s-immune-terrorized) nil)
+	   (setf (button-state s-immune-berserk)    nil))
+	  ((immune-terror-status ghost)
+	   (setf (button-state s-immune-terrorized) t)
+	   (when reset-health-animation
+	     (setf (el-time s-immune-terrorized) 0.0))
+	   (setf (button-state s-immune-faint)      nil)
+	   (setf (button-state s-immune-poisoned)   nil)
+	   (setf (button-state s-immune-berserk)    nil))
+	  ((immune-berserk-status ghost)
+	   (setf (button-state s-immune-berserk)    t)
+	   (when reset-health-animation
+	     (setf (el-time s-immune-berserk) 0.0))
+	   (setf (button-state s-immune-faint)      nil)
+	   (setf (button-state s-immune-poisoned)   nil)
+	   (setf (button-state s-immune-terrorized) nil))
+	  ((immune-poison-status ghost)
+	   (setf (button-state s-immune-poisoned)   t)
+	   (when reset-health-animation
+	     (setf (el-time s-immune-poisoned) 0.0))
+	   (setf (button-state s-immune-faint)      nil)
+	   (setf (button-state s-immune-terrorized) nil)
+	   (setf (button-state s-immune-berserk)    nil))
+	  (t
+	   (setf (button-state s-immune-poisoned)   nil)
+	   (setf (button-state s-immune-faint)      nil)
+	   (setf (button-state s-immune-terrorized) nil)
+	   (setf (button-state s-immune-berserk)    nil)))
 	(setf (texture-pressed b-portrait) (portrait ghost)
 	      (texture-object  b-portrait) (portrait ghost)
 	      (current-texture b-portrait) (portrait ghost))))))
