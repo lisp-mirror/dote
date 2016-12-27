@@ -782,7 +782,8 @@
    :do-children
    :do-children-from-end
    :find-child
-   :find-child-if))
+   :find-child-if
+   :count-leafs))
 
 (defpackage :xmls-utils
   (:use :cl
@@ -1556,6 +1557,7 @@
    :grass-stones-floor
    :clouds
    :gen-bg-sky-colors
+   :skydome-bottom-color
    :skydome))
 
 ;; procedural content

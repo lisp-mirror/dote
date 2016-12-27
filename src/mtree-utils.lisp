@@ -146,6 +146,8 @@
 
 (defgeneric remove-child-if (object predicate))
 
+(defgeneric count-leafs     (object))
+
 (defparameter *use-pprint-tree* nil)
 
 (defmethod print-object ((object m-tree) stream)
@@ -298,6 +300,14 @@
 		  #'(lambda (n)
 		      (with-accessors ((children children)) n
 			(setf children (delete-if predicate children))))))
+
+
+(defmethod count-leafs ((object m-tree))
+  (let ((results 0))
+    (top-down-visit object #'(lambda (n)
+			       (when (leafp n)
+				 (incf results))))
+    results))
 
 (defun make-node (data &optional (parent nil))
   (make-instance 'm-tree :data data :parent parent))

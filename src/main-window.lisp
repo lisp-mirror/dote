@@ -145,7 +145,7 @@
     (gl:enable :depth-test :cull-face)
     (gl:depth-func :less)
     (gl:polygon-mode :front-and-back :fill)
-    (gl:clear-color 0.039215688 0.17254902 0.08235294 1.0)
+    (gl:clear-color 0 0 0 1)
     (gl:clear-depth 1.0)
     (setf compiled-shaders (compile-library))
     ;; we need a valid opengl context to load spells database
@@ -330,7 +330,12 @@
 	      (interfaces:calculate (world object) 0.0)
 	      (world:add-ai-opponent (world object) :warrior :male)
 	      (setf (delta-time-elapsed object) (sdl2:get-ticks))
-	      (gl:clear-color 0.039215688 0.17254902 0.08235294 1.0)))
+	      ;; bg color
+	      (let ((color (pixmap:skydome-bottom-color (game-hour (game-state object)))))
+		(gl:clear-color (elt color 0)
+				(elt color 1)
+				(elt color 2)
+				1.0))))
 	(when (find text '("Y" "y" "X" "x") :test #'string=)
 	  (when (string= text "Y")
 	    (incf (elt (camera:target (world:camera (world object))) 1) 1.0))
