@@ -151,6 +151,15 @@
 			       (number
 				(split-by-continuous-value table attributes attribute)))))
 
+(defun information-gain (table attributes attribute
+			  &key (decision (alexandria:lastcar attributes)))
+  (information-gain-splitted table attributes attribute decision
+			     (ecase-attribute (table attributes attribute)
+			       (symbol
+				(split-by-attribute-value table attributes attribute))
+			       (number
+				(split-by-continuous-value table attributes attribute)))))
+
 (defun information-gain-splitted (original-table attributes attribute decision tables)
   (let* ((whole-entropy    (entropy original-table attributes decision))
 	 (position         (position attribute attributes))
