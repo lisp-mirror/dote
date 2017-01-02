@@ -425,7 +425,6 @@
        ,@body
       (error 'conditions:out-of-bounds :seq sequence :idx position)))
 
-
 (defmethod delete@ ((sequence list) position)
   (gen-delete@
    (sequence position)

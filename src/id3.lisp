@@ -138,9 +138,7 @@
 			       (/ card-partition card-table)))
 	 (res            (loop for i in ratios sum
 			      (- (* i (log i 2))))))
-    (if (num:epsilon= res 0.0)
-      1.0
-      res)))
+    res))
 
 (defun gain-ratio (table attributes attribute
  			 &key (decision (alexandria:lastcar attributes)))
@@ -182,8 +180,9 @@
 						attribute
 						decision
 						tables)))
-    (/ gain split-info)))
-
+    (if (not (num:epsilon= gain 0.0))
+	(/ gain split-info)
+	0.0)))
 
 (defun classes-list (table &optional (classes-pos (1- (table-width table))))
   (let ((res '()))
@@ -456,38 +455,75 @@
 				      (loop for decision in decisions collect
 					   (cons decision (count decision all-decisions)))))))))))
 
-(defun make-tree (table attributes &optional (classes (classes-list table)))
-  (let ((entropy (entropy table attributes (alexandria:lastcar attributes))))
-    (if (num:epsilon= 0 entropy)
-	(progn
-	  (make-instance 'decision-tree
-			 :data (alexandria:lastcar (first table))
-			 :decisions-count (loop for i in classes collect
-					       (cons i 0))))
-	(let* ((gains (loop for i from 0 below (1- (length attributes)) collect
-			   (cons (nth i attributes)
-				 (information-gain table attributes (nth i attributes)))))
-	       (max-gain (num:find-min-max #'(lambda (a b) (> (cdr a) (cdr b))) gains))
-	       (splitted (split-by-attribute-value table attributes (car max-gain))))
-	  (let* ((children (loop for i in splitted collect (make-tree i attributes classes)))
-		 (path (ecase-attribute (table attributes (car max-gain))
-			 (symbol
-			  (loop for i in splitted collect
-			       (get-test-results i attributes (car max-gain))))
-			 (number
-			  (multiple-value-bind (tables max-gain treshold)
-			      (split-by-continuous-value table
-							 attributes (car max-gain))
-			    (declare (ignore tables max-gain))
-			    (list treshold treshold)))))
-		 (new-tree (make-instance 'decision-tree
-					  :data            (car max-gain)
-					  :path            path
-					  :decisions-count (loop for i in classes collect
+(defun most-frequent-class (table &optional (class-position (1- (length (first table)))))
+  (flet ((class-in-row (row)
+	   (elt row class-position)))
+    (let ((all-classes      '())
+	  (all-observations (loop for row in table collect (class-in-row row))))
+      (loop for row in table collect
+	   (pushnew (class-in-row row) all-classes :test #'eq))
+      (let ((max (num:find-min-max #'(lambda (a b) (> (cdr a) (cdr b)))
+				   (loop for class in all-classes collect
+					(cons class (count class all-observations))))))
+	(values (car max)      ; the class
+		(cdr max)))))) ; the frequency
+
+(defun make-tree (table attributes)
+  (let ((classes (classes-list table)))
+    (cond
+      ((null table)           ; no facts, this is a problem :-(
+       (error "empty examples table"))
+      ((= (length classes) 1) ; all facts gives the same value, good
+       (make-instance 'decision-tree
+		      :data            (alexandria:lastcar (first table))
+		      :decisions-count (list (cons (alexandria:lastcar (first table))
+						   0))))
+      ((= (length attributes) 1) ; can't go further choose the most frequent value
+       (let ((most-frequent-class (most-frequent-class table)))
+	 (make-instance 'decision-tree
+			:data            most-frequent-class
+			:decisions-count (list (cons most-frequent-class
+						     0)))))
+      (t                ; split
+       (let* ((gains          (loop for i from 0 below (1- (length attributes)) collect
+				   (cons (nth i attributes)
+					 (information-gain table attributes (nth i attributes)))))
+	      (max-gain       (num:find-min-max #'(lambda (a b) (> (cdr a) (cdr b))) gains))
+	      (new-attributes (remove (car max-gain) attributes :test #'string=))
+	      (splitted       (split-by-attribute-value table attributes (car max-gain))))
+	 (let* ((children (loop for i in splitted collect
+			       (make-tree (if (not (numberp (elt (first (first splitted))
+								 (position (car max-gain)
+									   attributes))))
+					       (loop for row in i collect
+						    (misc:delete@ row
+								  (position (car max-gain)
+									    attributes)))
+					       i)
+					   (if (not (numberp (elt (first (first splitted))
+								 (position (car max-gain)
+									   attributes))))
+					       new-attributes
+					       attributes))))
+		(path (ecase-attribute (table attributes (car max-gain))
+			(symbol
+			 (loop for i in splitted collect
+			      (get-test-results i attributes (car max-gain))))
+			(number
+			 (multiple-value-bind (tables max-gain treshold)
+			     (split-by-continuous-value table
+							attributes
+							(car max-gain))
+			   (declare (ignore tables max-gain))
+			   (list treshold treshold)))))
+		(new-tree (make-instance 'decision-tree
+					 :data            (car max-gain)
+					 :path            path
+					 :decisions-count (loop for i in classes collect
 							       (cons i 0)))))
-	    (loop for i in children do
-		 (add-child new-tree i))
-	    new-tree)))))
+	   (loop for i in children do
+		(add-child new-tree i))
+	   new-tree))))))
 
 (defun pessimistic-prune-branch (unpruned-tree test-table attributes
 				 &optional (number-of-stddev .5))
@@ -525,9 +561,5 @@
    where the last column is the decision.
    attributes is a list of label for each column of the table
    '(attr1 attr2...decision"
-  (let* ((contradictions          (find-contradictions training-set))
-	 (data-no-cont            (set-difference training-set contradictions :test #'row-equal-p))
-	 (clean-data              (append data-no-cont contradictions))
-	 (shuffled-training-table (shuffle-table clean-data)))
-    (let* ((tree (make-tree shuffled-training-table attributes)))
-      tree)))
+  (let* ((shuffled-training-table (shuffle-table training-set)))
+    (make-tree shuffled-training-table attributes)))
