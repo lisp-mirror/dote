@@ -160,6 +160,30 @@
 			      weapon))))
     (random-object-messages:propagate-effects-msg weapon defender effects-to-others)))
 
+(defun short-range-attack-possible-p (attacker defender)
+  (let* ((weapon-type  (character:weapon-type-short-range (entity:ghost attacker)))
+	 (max-dist-atk (if (eq weapon-type :pole)
+			   +weapon-pole-range+
+			   +weapon-melee-range+)))
+    (and (mesh:can-use-movement-points-p attacker :minimum +attack-melee-cost+)
+	 (map-utils:facingp (mesh:calculate-cost-position attacker)
+			    (entity:dir attacker)
+			    (mesh:calculate-cost-position defender)
+			    :max-distance max-dist-atk))))
+
+(defun long-range-attack-possible-p (attacker)
+  (let* ((ghost-atk    (entity:ghost attacker))
+	 (weapon-type  (character:weapon-type-long-range ghost-atk))
+	 (cost         (cond
+			 ((eq weapon-type :bow)
+			  +attack-long-range-bow-cost+)
+			 ((eq weapon-type :crossbow)
+			  +attack-long-range-crossbow-cost+)
+			 (t
+			  0.0))))
+    (and (> cost 0.0)
+	 (mesh:can-use-movement-points-p attacker :minimum cost))))
+
 (defun send-attack-melee-event (attacker defender)
   (let* ((weapon-type  (character:weapon-type-short-range (entity:ghost attacker)))
 	 (max-dist-atk (if (eq weapon-type :pole)
@@ -457,10 +481,14 @@
     (assert (and attacker defender))
     (let* ((ghost-atk     (entity:ghost     attacker))
 	   (ghost-defend  (entity:ghost     defender))
-	   (spell         (game-event:spell event)))
-      (%defend-from-attack-spell ghost-atk ghost-defend spell))))
+	   (spell         (game-event:spell event))
+	   (ambushp              (and (vec~ (entity:dir attacker)
+					    (entity:dir defender))
+				      (pass-d100.0 (character:actual-ambush-attack-chance
+						    attacker)))))
+      (%defend-from-attack-spell ghost-atk ghost-defend spell :ambushp ambushp))))
 
-(defun %defend-from-attack-spell (attacker defender spell)
+(defun %defend-from-attack-spell (attacker defender spell &key (ambushp nil))
   (let* ((attack-dmg (dmax 0.0
 			   (gaussian-probability (d/ (spell:damage-inflicted spell) 2.0)
 						 (d* (spell:damage-inflicted spell) 0.75)))))
@@ -478,11 +506,7 @@
 			       (character:level   (character:right-hand attacker)))
 			      (t
 			       nil)))
-	      (dodge-chance         (character:actual-dodge-chance defender))
-	      (ambushp              (and (vec~ (entity:dir attacker)
-					       (entity:dir defender))
-					 (pass-d100.0 (character:actual-ambush-attack-chance
-						       attacker)))))
+	      (dodge-chance         (character:actual-dodge-chance defender)))
 	 (let ((dmg (attack-spell-damage attack-dmg
 					 dodge-chance
 					 shield-level

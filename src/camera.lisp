@@ -247,7 +247,7 @@
 		   (drag-target-pos drag-target-pos)
 		   (drag-equilibrium-pos drag-equilibrium-pos)) object
     (let* ((offset  (integrate drag-interpolator dt)))
-      (setf pos               (vec+ previous-pos (vec- drag-equilibrium-pos offset))
+      (setf pos               (vec+ previous-pos    (vec- drag-equilibrium-pos offset))
 	    target            (vec+ drag-target-pos (vec- drag-equilibrium-pos offset)))
       (look-at* object)
       (when (vec~ offset +zero-vec+ +drag-camera-ends-threshold+)
@@ -369,7 +369,7 @@
       (setf (current-pos drag-interpolator) offset
 	    drag-equilibrium-pos            offset
 	    previous-pos                    pos
-	    drag-target-pos                 (vec+ target destination)))))
+	    drag-target-pos                 target))))
 
 (defun gen-path-interpolator* (knots)
   (let* ((interpolator (interpolation:catmul-roll-interpolation* knots))

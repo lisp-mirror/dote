@@ -2083,6 +2083,7 @@
    :unregister-for-end-turn
    :propagate-end-turn
    :update-visibility
+   :from-event
    :register-for-update-visibility
    :unregister-for-update-visibility
    :propagate-update-visibility
@@ -3436,6 +3437,8 @@
   (:shadowing-import-from :sb-cga :rotate)
   (:export
    :+recover-from-faint-dmg-fraction+
+   :short-range-attack-possible-p
+   :long-range-attack-possible-p
    :send-attack-melee-event
    :defend-from-container-trap
    :defend-from-fountain-interaction
@@ -4155,12 +4158,14 @@
    :*right*
    :*upward*
    :*downward*
+   :*go-to-active-player*
    :slide-forward
    :slide-back
    :slide-left
    :slide-right
    :slide-upward
-   :slide-downward))
+   :slide-downward
+   :slide-to-active-player))
 
 (defpackage :main-window
   (:use :cl

@@ -88,10 +88,16 @@
     :initarg  :end-turn-count
     :accessor end-turn-count)))
 
-(defevent update-visibility () ())
+(defevent update-visibility ()
+  ((from-event
+    :initform nil
+    :initarg  :from-event
+    :accessor from-event)))
 
-(defun send-update-visibility-event (origin-entity)
-  (let ((event (make-instance 'update-visibility :id-origin (identificable:id origin-entity))))
+(defun send-update-visibility-event (origin-entity from-event)
+  (let ((event (make-instance 'update-visibility
+			      :id-origin  (identificable:id origin-entity)
+			      :from-event from-event)))
     (propagate-update-visibility event)))
 
 (defevent camera-drag-ends () ())

@@ -866,13 +866,21 @@
       (widget:hide-and-remove-parent-cb w e)
       (world:point-camera-to-entity world entity)))
 
+(defmethod point-camera-to-entity ((object world) entity))
+
 (defmethod point-camera-to-entity ((object world) (entity entity))
   (with-accessors ((camera camera)) object
     (with-accessors ((pos pos)) entity
-      (setf (mode camera) :drag)
-      (drag-camera-to camera (vec+ (aabb-p2 (aabb entity))
-				   (vec* (vec-negate (dir camera))
-					 +camera-point-to-entity-dir-scale+))))))
+      (multiple-value-bind (res scaling)
+	  (vector-plane-intersection (pos camera)
+				     (dir camera)
+				     (vector 0.0 1.0 0.0 +zero-height+))
+	(declare (ignore res))
+	(setf (mode camera) :drag)
+	(let ((destination (vec+ (aabb-center (aabb entity))
+				 (vec* (dir camera) (d- scaling)))))
+	  (setf (elt destination 1) (elt (pos camera) 1))
+	  (drag-camera-to camera destination))))))
 
 (defun previews-path (type gender)
   (let ((re (text-utils:strcat

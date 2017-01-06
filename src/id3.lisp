@@ -220,6 +220,8 @@
 
 (defgeneric count-misclassified (object))
 
+(defgeneric count-classified (object))
+
 (defgeneric prune-node (object))
 
 (defgeneric update-decisions-count (object decision))

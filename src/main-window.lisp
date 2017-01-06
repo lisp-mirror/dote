@@ -22,27 +22,27 @@
 
 (defparameter *zpos*   -20.0)
 
-(defparameter *xeye*   2.0)
+(defparameter *xeye*     2.0)
 
-(defparameter *yeye*   0.0)
+(defparameter *yeye*     0.0)
 
-(defparameter *zeye*   8.0)
+(defparameter *zeye*     8.0)
 
-(defparameter *xup*   0.0)
+(defparameter *xup*      0.0)
 
-(defparameter *yup*   1.0)
+(defparameter *yup*      1.0)
 
-(defparameter *zup*   0.0)
+(defparameter *zup*      0.0)
 
 (defparameter *far*    440.0)
 
-(defparameter *near*    5.0)
+(defparameter *near*     5.0)
 
-(defparameter *fov*    50.0)
+(defparameter *fov*     50.0)
 
 (defparameter *placeholder* nil)
 
-(defparameter *dt* .0017)
+(defparameter *dt*        .0017)
 
 (defclass test-window (identificable transformable gl-window)
   ((compiled-shaders
@@ -266,6 +266,7 @@
 		      (entity:dir    camera))))
 	(when (find text (list *forward* *back* *left* *right*
 			       *upward* *downward*
+			       *go-to-active-player*
 			       "o" "i" "u" "d" "V" "B"
 			       "n" "N" "V" "v" "U" "D"
 			       "L" "p")
@@ -282,6 +283,8 @@
 	    (slide-upward (world object)))
 	  (when (string= text *downward*)
 	    (slide-downward (world object)))
+	  (when (string= text *go-to-active-player*)
+	    (slide-to-active-player (world object)))
 	  (when (string= text "v")
 	    (incf *fov* +1.0))
 	  (when (string= text "V")
@@ -309,7 +312,6 @@
 				;; (random-elt (texture:list-of-texture-by-tag
 				;; 	     texture:+texture-tag-decals-circular-wave+))
 	     			(compiled-shaders object))))
-
 	  (when (string= text "L")
 	    (load-map object)
 	    ;; gui
@@ -447,7 +449,7 @@
 		  ((eq (world:toolbar-selected-action world)
 		       widget:+action-attack-short-range+)
 		   (let ((attacked (world:pick-any-entity world world x y)))
-		     (battle-utils:attack-short-range  world selected-pc attacked)))
+		     (battle-utils:attack-short-range world selected-pc attacked)))
 		  ((eq (world:toolbar-selected-action world)
 		       widget:+action-launch-spell+)
 		   (when (character:spell-loaded (entity:ghost selected-pc))

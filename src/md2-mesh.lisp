@@ -273,18 +273,80 @@
 (defmethod on-game-event ((object md2-mesh) (event update-visibility))
   (with-accessors ((state state)
 		   (id id)) object
-    (flet ((check (key entity)
-	     (declare (ignore key))
-	     (when (find-if #'(lambda (a) (= id (id a))) (visible-players entity))
-	       (setf (renderp object) t)
-	       (return-from on-game-event nil))))
-      (when (faction-ai-p state id)
-	(setf (renderp object) nil))
-      (game-state:map-player-entities state #'(lambda (k v)
+    (labels ((stop-movements (already-stopped)
+	       (when (not already-stopped)
+		 (misc:dbg "stop2!")
+		 (%stop-movement object :decrement-movement-points t)))
+	     (seenp (hash-key entity
+			    &key
+			    (from-render-p nil)
+			    (maintain-render nil))
+	     (declare (ignore hash-key))
+	     (let ((already-stopped nil))
+	       (when (find-if #'(lambda (a) (= id (id a))) (visible-players entity))
+		 (when (not maintain-render)
+		   (setf (renderp object) t))
+		 (when (and (typep (from-event event)
+				   'move-entity-entered-in-tile-event)
+			    (current-path (ghost object))
+			    (not (eq (my-faction object) (my-faction entity))))
+		   (when (not from-render-p)
+		     (setf already-stopped t)
+		     (stop-movements nil))
+		   (when (dice:pass-d100.0 (actual-ambush-attack-chance (ghost entity)))
+		     (cond
+		       ((battle-utils:long-range-attack-possible-p entity)
+			(game-state:with-world (world state)
+			  (stop-movements already-stopped)
+			  (battle-utils:attack-long-range world entity object)))
+		       ((battle-utils:short-range-attack-possible-p entity object)
+			(game-state:with-world (world state)
+			  (stop-movements already-stopped)
+			  (battle-utils:attack-short-range world entity object))))))
+		 t)
+	       nil))
+	   (seep (entity)
+	     (loop
+		for seen in (visible-players entity
+					     :predicate #'(lambda (a)
+							    (not (eq (my-faction object)
+								     (my-faction a))))) do
+		  (setf (renderp seen) t))))
+      (if (= (id object) (id-origin event))
+	  (let ((saved-renderp (renderp object)))
+	    (game-state:map-player-entities state
+					    #'(lambda (k v)
 						(declare (ignore k))
 						(update-visibility-cone v)))
-      (game-state:map-player-entities state #'check)
-      nil)))
+	    (game-state:map-ai-entities state
+					#'(lambda (k v)
+					    (declare (ignore k))
+					    (update-visibility-cone v)))
+	    (if (faction-ai-p state id)
+		(progn
+		  (setf (renderp object) nil)
+		  (game-state:map-player-entities state
+						  #'(lambda (k v)
+						      (seenp k v
+							     :maintain-render nil
+							     :from-render-p   saved-renderp)))
+		  (seep object))
+		(progn
+		  (game-state:map-ai-entities state
+					      #'(lambda (k v)
+						  (seenp k v
+							 :maintain-render t
+							 :from-render-p   saved-renderp)))
+		  (game-state:map-ai-entities state
+					      #'(lambda (k v)
+						  (declare (ignore k))
+						  (setf (renderp v) nil)))
+		  (game-state:map-player-entities state
+						  #'(lambda (k v)
+						      (declare (ignore k))
+						      (seep v)))))
+	    t)
+	  nil))))
 
 (defun path->dir (path &key (start-index 0))
   (let* ((start      (ivec2 (elt (elt path start-index) 0)
@@ -371,10 +433,10 @@
 	    ;; traps
 	    (let ((trap-ostile (trap-ostile-p object)))
 	      (when trap-ostile
-		(%stop-movement object :decrement-movement-points nil)
+		(%stop-movement object :decrement-movement-points t)
 		(%try-deactivate-trap world object trap-ostile)))
 	    (update-visibility-cone object)
-	    (send-update-visibility-event object)
+	    (send-update-visibility-event object event)
 	    (send-refresh-toolbar-event))))
       nil)))
 
@@ -400,7 +462,7 @@
 	  (setf dir (sb-cga:transform-direction dir (rotate-around +y-axe+ (d- +pi/2+))))
 	  (update-visibility-cone object)
 	  ;;(misc:dbg "visibility test: ~a" (visible-players object))
-	  (send-update-visibility-event object)
+	  (send-update-visibility-event object event)
 	  (send-refresh-toolbar-event)
 	  t)
 	nil)))
@@ -415,7 +477,7 @@
 	  (setf dir (sb-cga:transform-direction dir (rotate-around +y-axe+ +pi/2+)))
 	  (update-visibility-cone object)
 	  ;;(misc:dbg "visibility test: ~a" (visible-players object))
-	  (send-update-visibility-event object)
+	  (send-update-visibility-event object event)
 	  (send-refresh-toolbar-event)
 	  t)
 	nil)))

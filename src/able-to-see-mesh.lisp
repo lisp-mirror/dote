@@ -65,7 +65,8 @@
 		    (funcall predicate ent))
 	  collect ent)
        (loop for ent being the hash-value in mines
-	    collect ent)))))
+	  when (funcall predicate ent)
+	  collect ent)))))
 
 (defmethod other-visible-p ((object able-to-see-mesh) (target triangle-mesh))
   (let ((in-cone-p (other-visible-cone-p object target)))
@@ -83,9 +84,9 @@
 (defmethod other-visible-ray-p ((object able-to-see-mesh) (target triangle-mesh))
   (let ((lab-hitted-p    (labyrinth-element-hitted-by-ray object target))
 	(nonlab-hitted-p (nonlabyrinth-element-hitted-by-ray object target)))
-    (when +debug-mode+
-      (misc:dbg "labyrinth hitted? ~a" lab-hitted-p)
-      (misc:dbg "non labyrinth hitted? ~a" lab-hitted-p))
+    ;; (when +debug-mode+
+    ;;   (misc:dbg "labyrinth hitted? ~a" lab-hitted-p)
+    ;;   (misc:dbg "non labyrinth hitted? ~a" lab-hitted-p))
     (cond
       ((null nonlab-hitted-p)
        nil)
