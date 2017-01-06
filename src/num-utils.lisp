@@ -438,9 +438,14 @@
 
 (defun gaussian-probability-distribution (x sigma &optional (mu 0))
   (declare (optimize (debug 3) (safety 0) (speed 3)))
-  (d* (d/ (d 1) (d* sigma (sqrt (d* (d 2) constants:+pi+))))
-      (dexp (d- (d/ (dexpt (d- x mu) (d 2))
-		    (d* (d 2) (dexpt sigma (d 2))))))))
+  (d/ (d* (d/ (d 1)
+	      (d* sigma
+		  (sqrt (d* (d 2) constants:+pi+))))
+	  (dexp (d- (d/ (dexpt (d- x mu)
+			       (d 2))
+			(d* (d 2)
+			    (dexpt sigma (d 2)))))))
+      (d/ 1.0 sigma)))
 
 (defun gaussian (x amplitude sigma mean)
   (d* amplitude (dexp (d- (d/ (expt (d- x mean) 2.0) (d* 2.0 (dexpt sigma 2.0)))))))
