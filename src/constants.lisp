@@ -74,7 +74,7 @@
 
 (define-constant +attack-long-range-bow-cost+         5.0              :test #'=)
 
-(define-constant +attack-long-range-crossbow-cost+    7.0              :test #'=)
+(define-constant +attack-long-range-crossbow-cost+    8.0              :test #'=)
 
 (define-constant +attack-long-range-bow-chance-decrement+      -1.6    :test #'=)
 

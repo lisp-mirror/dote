@@ -28,6 +28,10 @@
 
 (define-constant +weapon-melee-range+                1  :test #'=)
 
+(define-constant +weapon-bow-range+                 15  :test #'=)
+
+(define-constant +weapon-crossbow-range+            25  :test #'=)
+
 (defun 2d-gaussian (x y sigma h)
   (d* h (dexp (d- (d+ (d/ (dexpt x 2.0) (d* 2.0 (dexpt sigma 2.0)))
 		      (d/ (dexpt y 2.0) (d* 2.0 (dexpt sigma 2.0))))))))
@@ -171,7 +175,7 @@
 			    (mesh:calculate-cost-position defender)
 			    :max-distance max-dist-atk))))
 
-(defun long-range-attack-possible-p (attacker)
+(defun long-range-attack-possible-p (attacker defender)
   (let* ((ghost-atk    (entity:ghost attacker))
 	 (weapon-type  (character:weapon-type-long-range ghost-atk))
 	 (cost         (cond
@@ -180,8 +184,10 @@
 			 ((eq weapon-type :crossbow)
 			  +attack-long-range-crossbow-cost+)
 			 (t
-			  0.0))))
+			  0.0)))
+	 (range-valid-p (range-weapon-valid-p attacker defender weapon-type)))
     (and (> cost 0.0)
+	 range-valid-p
 	 (mesh:can-use-movement-points-p attacker :minimum cost))))
 
 (defun send-attack-melee-event (attacker defender)
@@ -556,62 +562,95 @@
     (world:reset-toolbar-selected-action world)))
 
 (defun attack-long-range (world attacker defender)
+  "This is the most high level attack routine"
   (if (character:worn-weapon (entity:ghost attacker))
       (progn
 	(world:remove-all-tooltips world)
-	(when (attack-long-range-animation attacker defender)
-	  (arrows:launch-arrow +default-arrow-name+
-			       world
-			       attacker
-			       defender)))
+	(if (long-range-attack-possible-p attacker defender)
+	    (progn
+	      (attack-long-range-animation attacker defender)
+	      (arrows:launch-arrow +default-arrow-name+
+				   world
+				   attacker
+				   defender))
+	    (make-tooltip-out-range-error world attacker)))
       (make-tooltip-no-weapon-error world attacker))
   (entity:reset-tooltip-ct defender)
   (world:reset-toolbar-selected-action world)
   (game-event:send-refresh-toolbar-event))
 
+(defun make-tooltip (world attacker message)
+  (world:post-entity-message world attacker message nil))
+
 (defun make-tooltip-no-weapon-error (world attacker)
-  (world:post-entity-message world attacker
-			     (format nil
-				     (_"You have not got a weapon"))
-			     nil))
+  (make-tooltip world attacker (_"You have not got a weapon")))
 
 (defun make-tooltip-no-spell-error (world attacker)
-  (world:post-entity-message world attacker
-			     (format nil
-				     (_"You have not loaded a spell"))
-			     nil))
+  (make-tooltip world attacker (_"You have not loaded a spell")))
+
+(defun make-tooltip-out-range-error (world attacker)
+  (make-tooltip world attacker (_"Out of range")))
+
+(defun range-spell-valid-p (atk def spell)
+  (let ((pos-atk (map-utils:pos->game-state-pos atk))
+	(pos-def (map-utils:pos->game-state-pos def)))
+    (< (map-utils:map-manhattam-distance pos-atk pos-def)
+       (spell:range spell))))
+
+(defun range-weapon-valid-p (atk def weapon-type)
+  (let ((pos-atk (map-utils:pos->game-state-pos atk))
+	(pos-def (map-utils:pos->game-state-pos def)))
+    (case weapon-type
+      (:bow
+       (< (map-utils:map-manhattam-distance pos-atk pos-def)
+	  +weapon-bow-range+))
+      (:crossbow
+       (< (map-utils:map-manhattam-distance pos-atk pos-def)
+	  +weapon-crossbow-range+))
+      (:pole
+       (< (map-utils:map-manhattam-distance pos-atk pos-def)
+	  +weapon-pole-range+))
+      (otherwise
+       (< (map-utils:map-manhattam-distance pos-atk pos-def)
+	  +weapon-melee-range+)))))
 
 (defun attack-launch-spell (world attacker defender)
   (when (and attacker
 	     defender)
-    (if (character:spell-loaded (entity:ghost attacker))
-	(progn
-	  (world:remove-all-tooltips world)
-	  (when (attack-spell-animation attacker defender)
-	    (arrows:launch-attack-spell (character:spell-loaded (entity:ghost attacker))
-					world
-					attacker
-					defender)))
-	(make-tooltip-no-spell-error world attacker))
-    (entity:reset-tooltip-ct defender)
-    (world:reset-toolbar-selected-action world)
-    (game-event:send-refresh-toolbar-event)))
+    (let ((spell-loaded (character:spell-loaded (entity:ghost attacker))))
+      (if spell-loaded
+	  (if (range-spell-valid-p attacker defender spell-loaded)
+	      (progn
+		(world:remove-all-tooltips world)
+		(when (attack-spell-animation attacker defender)
+		  (arrows:launch-attack-spell spell-loaded
+					      world
+					      attacker
+					      defender)))
+	      (make-tooltip-out-range-error world attacker))
+	  (make-tooltip-no-spell-error world attacker))
+      (entity:reset-tooltip-ct defender)
+      (world:reset-toolbar-selected-action world)
+      (game-event:send-refresh-toolbar-event))))
 
 (defun launch-spell (world attacker defender)
   (when (and attacker
 	     defender)
-    (if (character:spell-loaded (entity:ghost attacker))
-	(progn
-	  (world:remove-all-tooltips world)
-	  (when (spell-animation attacker defender)
-	    (arrows:launch-spell (character:spell-loaded (entity:ghost attacker))
-				 world
-				 attacker
-				 defender)))
-	(make-tooltip-no-spell-error world attacker))
-    (entity:reset-tooltip-ct defender)
-    (world:reset-toolbar-selected-action world)
-    (game-event:send-refresh-toolbar-event)))
+    (let ((spell-loaded (character:spell-loaded (entity:ghost attacker))))
+      (if spell-loaded
+	  (if (range-spell-valid-p attacker defender spell-loaded)
+	      (progn
+		(world:remove-all-tooltips world)
+		(when (spell-animation attacker defender)
+		  (arrows:launch-spell spell-loaded
+				       world
+				       attacker
+				       defender)))
+	      (make-tooltip-out-range-error world attacker))
+	  (make-tooltip-no-spell-error world attacker))
+      (entity:reset-tooltip-ct defender)
+      (world:reset-toolbar-selected-action world)
+      (game-event:send-refresh-toolbar-event))))
 
 (defun attack-statistics (weapon-level attack-dmg shield-level armor-level
 			   &optional (count 10000))
