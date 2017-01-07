@@ -1659,7 +1659,7 @@ data/textures/spells/poison/cause-poison-3.tga           \
 data/textures/spells/misc/vampire-1.tga                  \
 data/textures/spells/misc/vampire-2.tga                  \
 data/textures/spells/misc/teleport-1.tga                 \
-data/textures/spells/misc/teleporg-2.tga                 \
+data/textures/spells/misc/teleport-2.tga                 \
 data/textures/spells/misc/teleport-3.tga                 \
 data/furniture-templates/carpet.tga                      \
 data/furniture-templates/corr-e.tga                      \
