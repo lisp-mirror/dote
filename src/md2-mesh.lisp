@@ -293,7 +293,7 @@
 		   (when (not from-render-p)
 		     (setf already-stopped t)
 		     (stop-movements nil))
-		   (when (dice:pass-d100.0 (actual-ambush-attack-chance (ghost entity))))
+		   (when (dice:pass-d100.0 (actual-ambush-attack-chance (ghost entity)))
 		     (cond
 		       ((battle-utils:long-range-attack-possible-p entity object)
 			(game-state:with-world (world state)
