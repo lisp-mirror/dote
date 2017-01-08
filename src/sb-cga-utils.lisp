@@ -299,6 +299,24 @@
     :initarg  :displacement
     :accessor displacement)))
 
+(gen-type-p ray)
+
+(defmethod clone-into :after ((from ray) (to ray))
+  (setf (ray-direction to) (copy-vec (ray-direction from))
+	(displacement  to) (displacement from))
+  to)
+
+(defmethod clone ((object ray))
+  (with-simple-clone (object 'ray)))
+
+(defmethod copy-flat-into :after ((from ray) (to ray))
+  (setf (ray-direction to) (ray-direction from)
+	(displacement  to) (displacement from))
+  to)
+
+(defmethod copy-flat ((object ray))
+  (with-simple-copy-flat (object 'ray)))
+
 (defmethod print-object ((object ray) stream)
   (print-unreadable-object (object stream :type t :identity t)
     (format stream "dir: ~a displ: ~a" (ray-direction object) (displacement object))))

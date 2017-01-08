@@ -870,9 +870,9 @@
 						 (map-utils:coord-terrain->chunk a
 										 :tile-offset 0.0))
 					     aabb)
-					:remove-orphaned-vertices nil
+					:remove-orphaned-vertices  nil
 					:regenerate-rendering-data nil
-					:clip-if-inside t))
+					:clip-if-inside              t))
     (pickable-mesh:populate-lookup-triangle-matrix whole)
     (setf (quad-tree:aabb (entities world)) (entity:aabb-2d whole))
     (quad-tree:subdivide  (entities world)  quadtree-depth)

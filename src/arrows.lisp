@@ -42,7 +42,39 @@
 (defun arrowp (a)
   (typep a 'arrow))
 
+(defmethod clone-into :after ((from arrow) (to arrow))
+  (setf (trajectory      to) (clone (trajectory from))
+	(launcher-entity to) (launcher-entity   from)
+	(attack-event-fn to) (attack-event-fn   from)
+	(hitted          to) (hittedp           from))
+  to)
+
+(defmethod clone ((object arrow))
+  (with-simple-clone (object 'arrow)))
+
+(defmethod copy-flat-into :after ((from arrow) (to arrow))
+  (setf (trajectory      to) (trajectory        from)
+	(launcher-entity to) (launcher-entity   from)
+	(attack-event-fn to) (attack-event-fn   from)
+	(hitted          to) (hittedp           from))
+  to)
+
+(defmethod copy-flat ((object arrow))
+  (with-simple-copy-flat (object 'arrow)))
+
 (defclass arrow-mesh (triangle-mesh arrow) ())
+
+(defmethod clone-into :after ((from arrow-mesh) (to arrow-mesh))
+  to)
+
+(defmethod clone ((object arrow-mesh))
+  (with-simple-clone (object 'arrow-mesh)))
+
+(defmethod copy-flat-into :after ((from arrow-mesh) (to arrow-mesh))
+  to)
+
+(defmethod copy-flat ((object arrow-mesh))
+  (with-simple-copy-flat (object 'arrow-mesh)))
 
 (defun hittable-by-arrow-p (entity)
   (and
@@ -257,28 +289,28 @@
 	  new-arrow))))
 
 (defun launch-ray (attacker defender)
-  (let* ((ghost-atk    (entity:ghost attacker))
-	 (weapon       (character:worn-weapon ghost-atk))
-	 (weapon-type  (if weapon
-			   (cond
-			     ((character:bowp weapon)
-			      :bow)
-			     ((character:crossbowp weapon)
-			      :crossbow)
-			     (t
-			      :spell))
-			   :spell))
-	 (attack-chance     (if (eq weapon-type :spell)
-				(character:actual-attack-spell-chance ghost-atk)
-				(character:actual-range-attack-chance ghost-atk)))
-	 (ray-dir           (normalize (vec- (aabb-center (actual-aabb-for-bullets defender))
-					     (aabb-center (aabb attacker)))))
-	 (ray               (make-instance 'ray
-					   :ray-direction ray-dir
-					   :displacement +arrow-speed+)))
+  (let* ((ghost-atk     (entity:ghost attacker))
+	 (weapon        (character:worn-weapon ghost-atk))
+	 (weapon-type   (if weapon
+			    (cond
+			      ((character:bowp weapon)
+			       :bow)
+			      ((character:crossbowp weapon)
+			       :crossbow)
+			      (t
+			       :spell))
+			    :spell))
+	 (attack-chance (if (eq weapon-type :spell)
+			    (character:actual-attack-spell-chance ghost-atk)
+			    (character:actual-range-attack-chance ghost-atk)))
+	 (ray-dir       (normalize (vec- (aabb-center (actual-aabb-for-bullets defender))
+					 (aabb-center (aabb attacker)))))
+	 (ray           (make-instance 'ray
+				       :ray-direction ray-dir
+				       :displacement +arrow-speed+)))
     (if (d< (dabs (secure-dacos (dot-product (dir attacker)
 					     ray-dir)))
-		 +visibility-cone-half-hangle+)
+	    +visibility-cone-half-hangle+)
 	(progn
 	  (when (not (die-utils:pass-d100.0 attack-chance))
 	    (setf (ray-direction ray)
@@ -299,6 +331,7 @@
   (let ((ray (launch-ray attacker defender)))
     (if ray
 	(progn
+	  (setf (renderp mesh) t)
 	  (setf (hitted mesh) nil)
 	  (setf (attack-event-fn mesh) attack-event-fn)
 	  (setf (pos mesh) position)
@@ -313,7 +346,7 @@
 	nil)))
 
 (defun launch-arrow (name world attacker defender)
-  (let* ((mesh (get-arrow name))
+  (let* ((mesh     (get-arrow name))
 	 (successp (%common-launch-projectile world
 					      attacker
 					      defender

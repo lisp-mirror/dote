@@ -275,7 +275,6 @@
 		   (id id)) object
     (labels ((stop-movements (already-stopped)
 	       (when (not already-stopped)
-		 (misc:dbg "stop2!")
 		 (%stop-movement object :decrement-movement-points t)))
 	     (seenp (hash-key entity
 			    &key

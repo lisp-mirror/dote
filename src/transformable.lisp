@@ -50,5 +50,5 @@
 (defmethod clone-into :after ((from transformable) (to transformable))
   (setf (projection-matrix to) (3d-utils:clone-matrix (elt (projection-matrix from) 0))
 	(model-matrix      to) (3d-utils:clone-matrix (elt (model-matrix      from) 0))
-	(view-matrix       to) (3d-utils:clone-matrix (elt (model-matrix      from) 0)))
+	(view-matrix       to) (3d-utils:clone-matrix (elt (view-matrix       from) 0)))
   to)
