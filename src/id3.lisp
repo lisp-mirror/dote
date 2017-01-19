@@ -16,6 +16,10 @@
 
 (in-package :id3)
 
+(define-constant +min-cardinality-partition+ 2     :test #'=)
+
+(define-constant +epsilon+                   1.e-3 :test #'=)
+
 (defun shuffle-table (table)
   (misc:shuffle table))
 
@@ -163,6 +167,8 @@
 	 (position         (position attribute attributes))
 	 (count-attributes (loop for i in tables collect (table-height i)))
 	 (count-set        (table-height original-table))
+	 (count-card-ok    (count-if #'(lambda (a) (>= a +min-cardinality-partition+))
+				     count-attributes)) ;; we could skip the rest if this is < 2
 	 (frequencies      (loop for i in count-attributes collect
 				(cons i (/ i count-set))))
 	 (entropies        (loop for i in tables collect
@@ -171,7 +177,9 @@
 	 (gain             (- whole-entropy (loop for i from 0 below (length entropies) sum
 						 (* (cdr (nth i entropies))
 						    (cdr (nth i frequencies)))))))
-    gain))
+    (if (< count-card-ok 2)
+	+epsilon+
+	gain)))
 
 (defun gain-ratio-splitted (original-table attributes attribute decision tables)
   (let* ((split-info (split-info original-table tables))
@@ -180,9 +188,9 @@
 						attribute
 						decision
 						tables)))
-    (if (not (num:epsilon= gain 0.0))
+    (if (not (num:epsilon= split-info 0.0))
 	(/ gain split-info)
-	0.0)))
+	(- +epsilon+))))
 
 (defun classes-list (table &optional (classes-pos (1- (table-width table))))
   (let ((res '()))
@@ -486,10 +494,10 @@
 			:data            most-frequent-class
 			:decisions-count (list (cons most-frequent-class
 						     0)))))
-      (t                ; split
+      (t                         ; split
        (let* ((gains          (loop for i from 0 below (1- (length attributes)) collect
 				   (cons (nth i attributes)
-					 (information-gain table attributes (nth i attributes)))))
+					 (gain-ratio table attributes (nth i attributes)))))
 	      (max-gain       (num:find-min-max #'(lambda (a b) (> (cdr a) (cdr b))) gains))
 	      (new-attributes (remove (car max-gain) attributes :test #'string=))
 	      (splitted       (split-by-attribute-value table attributes (car max-gain))))
@@ -565,3 +573,21 @@
    '(attr1 attr2...decision"
   (let* ((shuffled-training-table (shuffle-table training-set)))
     (make-tree shuffled-training-table attributes)))
+
+(defun test ()
+  (let ((table-path (fs:file-in-package "test-id3.data"))
+	(data-path  (fs:file-in-package "test-id3-error.data")))
+    (with-open-file (stream table-path)
+      (with-open-file (stream-err data-path)
+	(let* ((data        (read stream))
+	       (data-err    (read stream-err))
+	       (attributes  '("outlook"
+			      "temp"
+			      "humidity"
+			      "windy"
+			      "decision"))
+	       (tree        (build-tree data attributes)))
+	  (pachinko tree data-err attributes)
+	  (format t "~a~2%" tree)
+	  (format t "~a~2%" (to-sexp tree))
+	  (format t "ct leafs ~a~%" (count-leafs tree)))))))

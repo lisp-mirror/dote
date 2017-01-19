@@ -31,7 +31,7 @@
 
 (defclass identificable ()
   ((id
-    :initform 0
+    :initform (1- +start-id-counter+)
     :initarg :id
     :accessor id)))
 

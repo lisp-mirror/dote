@@ -409,3 +409,12 @@
   (propagate-deactivate-trap-event (make-instance 'deactivate-trap-event
 						  :id-origin      (identificable:id origin)
 						  :id-destination (identificable:id dest))))
+
+;;;; game-actions
+
+(defevent game-action-terminated (game-event-w-destination)
+  ((action-id
+    :initform (1- +start-id-counter+)
+    :initarg  :action-id
+    :accessor action-id
+    :documentation "Currently not used")))

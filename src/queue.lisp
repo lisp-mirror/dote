@@ -33,7 +33,7 @@
       nil))
 
 (defun find (element)
-  (cl:find element *queue* :key *key-function* :test *equal-function*)) 
+  (cl:find element *queue* :key *key-function* :test *equal-function*))
 
 (defun emptyp ()
   (not (> (length *queue*) 0)))
@@ -43,3 +43,39 @@
 	 (*equal-function* ,equal)
 	 (*key-function* ,key))
      ,@body))
+
+(defclass simple-queue ()
+  ((container
+    :initform (misc:make-array-frame 0)
+    :accessor container)))
+
+(defgeneric q-pop (object))
+
+(defgeneric q-peek (object))
+
+(defgeneric q-push (object value))
+
+(defgeneric q-empty-p (object))
+
+(defmethod q-pop ((object simple-queue))
+  (with-accessors ((container container)) object
+    (let ((peek (q-peek object)))
+      (if peek
+	  (progn
+	    (setf container (misc:safe-delete@ container 0))
+	    peek)
+	  nil))))
+
+(defmethod q-push ((object simple-queue) value)
+  (with-accessors ((container container)) object
+    (vector-push-extend value container)))
+
+(defmethod q-empty-p ((object simple-queue))
+  (with-accessors ((container container)) object
+    (misc:vector-empty-p container)))
+
+(defmethod q-peek ((object simple-queue))
+  (with-accessors ((container container)) object
+    (if (not (q-empty-p object))
+	(elt container 0)
+	nil)))

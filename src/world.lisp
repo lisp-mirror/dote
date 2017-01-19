@@ -126,6 +126,10 @@
     :initarg :main-state
     :initform nil
     :allocation :class)
+   (actions-queue
+    :initarg :actions-queue
+    :initform (make-instance 'action-scheduler:action-scheduler)
+    :accessor actions-queue)
    (cached-aabb
     :initarg :cached-aabb
     :initform nil

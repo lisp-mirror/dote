@@ -1188,7 +1188,11 @@
    :pop
    :find
    :emptyp
-   :with-queue))
+   :with-queue
+   :q-pop
+   :q-peek
+   :q-push
+   :q-empty-p))
 
 (defpackage :stack
   (:use :cl)
@@ -2328,7 +2332,33 @@
    :register-for-other-interaction-event
    :unregister-for-other-interaction-event
    :propagate-other-interaction-event
+   ;;;; action
+   :game-action-terminated
+   :action-id
+   :register-for-game-action-terminated
+   :unregister-for-game-action-terminated
+   :propagate-game-action-terminated
+   ;;;; utils
    :check-event-targeted-to-me))
+
+(defpackage :action-scheduler
+  (:use
+   :cl
+   :alexandria
+   :config
+   :constants
+   :misc
+   :num
+   :identificable
+   :game-event)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :game-action
+   :launch-arrow-action
+   :action-scheduler
+   :current-action
+   :substitute-action
+   :enqueue-action))
 
 (defpackage :basic-interaction-parameters
   (:use :cl
@@ -4105,6 +4135,7 @@
 
 (defpackage :id3
   (:use :cl
+	:alexandria
 	:mtree-utils
 	:interfaces))
 

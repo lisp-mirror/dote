@@ -83,25 +83,28 @@
 		   (key-function key-function)
 		   (compare-function compare-function)
 		   (equal-function equal-function)) object
-    (let ((children (remove-if #'null (get-children-pos object root-pos))))
-      (let ((maximum-child (cond
-			     ((null children)
-			      root-pos)
-			     ((= (length children) 1)
-			      (first children))
-			     (t
-			      (if (funcall compare-function
-					   (funcall key-function (elt heap (first children)))
-					   (funcall key-function (elt heap (second children))))
-				  (first children)
-				  (second children))))))
-	(when (not (funcall equal-function
-			    (funcall key-function (elt heap maximum-child))
-			    (funcall key-function (elt heap root-pos))))
-	  (let ((swp (elt heap root-pos)))
+    (let* ((children (remove-if #'null (get-children-pos object root-pos)))
+	   (maximum-child (cond
+			    ((null children)
+			     root-pos)
+			    ((= (length children) 1)
+			     (first children))
+			    (t
+			     (if (funcall compare-function
+					  (funcall key-function (elt heap (first children)))
+					  (funcall key-function (elt heap (second children))))
+				 (first children)
+				 (second children))))))
+      (when (not (funcall equal-function
+			  (funcall key-function (elt heap maximum-child))
+			  (funcall key-function (elt heap root-pos))))
+	(let ((swp (elt heap root-pos)))
+	  (when (funcall compare-function
+			 (funcall key-function (elt heap maximum-child))
+			 (funcall key-function swp))
 	    (setf (elt heap root-pos) (elt heap maximum-child))
-	    (setf (elt heap maximum-child) swp))
-	  (rearrange-top-bottom object maximum-child))))))
+	    (setf (elt heap maximum-child) swp)))
+	(rearrange-top-bottom object maximum-child)))))
 
 (defmethod push-element ((object priority-queue) val)
   (with-accessors ((heap heap)) object
@@ -129,7 +132,7 @@
   `(let ((,queue (make-instance 'priority-queue
 				:equal-function   ,compare
 				:compare-function ,sort
-				:key-function          ,key)))
+				:key-function     ,key)))
      ,@body))
 
 (defmethod find-element ((object priority-queue) element)

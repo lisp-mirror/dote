@@ -78,6 +78,13 @@
 	:all-test)
   (:export :matrix-suite))
 
+(defpackage :priority-queue-test
+  (:use :cl
+	:clunit
+	:pq
+	:all-test)
+  (:export :test-heap-sort))
+
 (defpackage :graph-test
   (:use :cl
 	:clunit
