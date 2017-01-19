@@ -573,21 +573,3 @@
    '(attr1 attr2...decision"
   (let* ((shuffled-training-table (shuffle-table training-set)))
     (make-tree shuffled-training-table attributes)))
-
-(defun test ()
-  (let ((table-path (fs:file-in-package "test-id3.data"))
-	(data-path  (fs:file-in-package "test-id3-error.data")))
-    (with-open-file (stream table-path)
-      (with-open-file (stream-err data-path)
-	(let* ((data        (read stream))
-	       (data-err    (read stream-err))
-	       (attributes  '("outlook"
-			      "temp"
-			      "humidity"
-			      "windy"
-			      "decision"))
-	       (tree        (build-tree data attributes)))
-	  (pachinko tree data-err attributes)
-	  (format t "~a~2%" tree)
-	  (format t "~a~2%" (to-sexp tree))
-	  (format t "ct leafs ~a~%" (count-leafs tree)))))))
