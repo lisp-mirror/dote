@@ -71,6 +71,13 @@
 	:all-test)
   (:export :base64-suite))
 
+(defpackage :misc-test
+  (:use :cl
+	:clunit
+	:misc
+	:all-test)
+  (:export :base64-suite))
+
 (defpackage :matrix-test
   (:use :cl
 	:clunit

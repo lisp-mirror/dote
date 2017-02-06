@@ -243,6 +243,40 @@
 		     ((>= sum-freq dice-roll) pos))))
       (elt freq pos))))
 
+(defun tokuda-sequence (n)
+  (do ((k 1 (1+ k))
+       (h 1.0 (d+ (d* 2.25 h) 1.0))
+       (res '()))
+      ((not (< h n)) res)
+    (push (ceiling h) res)))
+
+(defgeneric shellsort (sequence predicate &key key)
+  (:documentation "Note: makes a new sequence"))
+
+(defmethod shellsort ((sequence list) predicate &key (key #'identity))
+  (call-next-method (copy-list sequence)
+		    predicate
+		    :key key))
+
+(defmethod shellsort ((sequence vector) predicate &key (key #'identity))
+  (call-next-method (alexandria:copy-array sequence)
+		    predicate
+		    :key key))
+
+(defmethod shellsort (sequence predicate &key (key #'identity))
+  (loop for gap in (tokuda-sequence (length sequence)) do
+       (loop for i from gap below (length sequence) by 1 do
+	    (let ((tmp (elt sequence i)))
+	      (do ((j   i (- j gap)))
+		  ((not (and (>= j gap)
+			      (not (funcall predicate
+					    (funcall key (elt sequence (- j gap)))
+					    (funcall key tmp)))))
+		   (setf (elt sequence j) tmp))
+		(let ((swp (elt sequence (- j gap))))
+		  (setf (elt sequence j) swp))))))
+  sequence)
+
 (defun nearest-greatest-primes (num primes)
   (find-if #'(lambda (a) (< num a)) primes))
 

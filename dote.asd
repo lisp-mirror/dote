@@ -154,6 +154,7 @@
 				     (:file "quaternion-test")
 				     (:file "vec2-test")
 				     (:file "base64-test")
+				     (:file "misc-test")
 				     (:file "matrix-test")
 				     (:file "priority-queue-test")
 				     (:file "graph-test")

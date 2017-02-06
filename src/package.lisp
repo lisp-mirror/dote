@@ -291,6 +291,7 @@
    :get-random-float-sign
    :random-select-by-frequency
    :random-select-by-frequency*
+   :shellsort
    :bag-picker
    :random-pick-from-set
    :range-0to1

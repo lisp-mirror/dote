@@ -32,4 +32,9 @@
 	 (loop repeat 5 collect (elt bag (random-pick-from-set picker)))
 	 bag))))
 
-
+(deftest test-shellsort (numeric-suite)
+  (assert-true
+      (let* ((bag    (loop repeat 10000 collect (lcg-next-upto 10000)))
+	     (sorted (shellsort bag #'<)))
+	(and (null (set-difference bag sorted :test #'=))
+	     (not (find nil (mapcar #'< sorted (rest sorted))))))))

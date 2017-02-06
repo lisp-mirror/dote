@@ -16,9 +16,75 @@
 
 (in-package :id3)
 
-(define-constant +min-cardinality-partition+ 2     :test #'=)
+(define-constant +min-cardinality-partition+   2                                 :test #'=)
 
-(define-constant +epsilon+                   1.e-3 :test #'=)
+(define-constant +default-confidence-pruning+  0.25                              :test #'=)
+
+(define-constant +epsilon+                     1.e-3                             :test #'=)
+
+(define-constant +confidence+   #(0.0 0.001 0.005 0.01 0.05 0.10 0.20 0.40 1.0)  :test #'equalp)
+
+(define-constant +standard-dev+ #(100.0 3.09 2.58 2.33 1.65 1.28 0.84 0.25 0.0)  :test #'equalp)
+
+(defun gain-ratio-actual-value (info gain min-gain)
+  (if (and (>= gain (- min-gain +epsilon+))
+	   (>  info +epsilon+))
+      (/ gain info)
+      (- +epsilon+)))
+
+(defun gain-actual-value (info gain)
+  (if (and (> info 0.0)
+	   (> gain (- +epsilon+)))
+      gain
+      (- +epsilon+)))
+
+(defun calc-prob-err-coeff (confidence)
+  (let ((right-limit (position-if #'(lambda (a) (<= confidence a)) +confidence+)))
+    (assert (and (not (null right-limit))
+		 (> right-limit 0)))
+    (let* ((left-limit       (1- right-limit))
+	   (left-dev         (elt +standard-dev+ left-limit))
+           (right-dev        (elt +standard-dev+ right-limit))
+           (left-confidence  (elt +confidence+ left-limit))
+           (right-confidence (elt +confidence+ right-limit))
+           (dev-diff         (- right-dev left-dev))
+           (conf-diff        (- right-confidence left-confidence)))
+      (expt (+ left-dev
+	       (* dev-diff
+		  (/ (- confidence left-confidence)
+		     conf-diff)))
+	    2)))) ;; <- exponent
+
+(defun probab-error (samples errors
+		     &optional
+		       (confidence  +default-confidence-pruning+)
+		       (coefficient (calc-prob-err-coeff confidence)))
+  (flet ((first-pass ()
+	   (* samples (- 1 (exp (/ (log confidence)
+				   samples))))))
+    (let ((num:*default-epsilon* 1e-6))
+      (cond
+	((num:epsilon= samples 0.0)
+	 0.0)
+	((< errors num:*default-epsilon*)
+	 (first-pass))
+	((< errors 0.999)
+	 (+ (first-pass)
+	    (probab-error samples 1.0 confidence coefficient)))
+	((>= (+ errors 0.5) samples)
+	 (* 0.67 (- samples errors)))
+	(t
+	 (let* ((err+0.5 (+ errors 0.5))
+		(pol     (+ err+0.5
+			    (/ coefficient 2.0)
+			    (sqrt (* coefficient
+				     (+ (* err+0.5
+					   (- 1 (/ err+0.5
+						   samples)))
+					(/ coefficient 4.0)))))))
+	   (- (* samples (/ pol
+			    (+ samples coefficient)))
+	      errors)))))))
 
 (defun shuffle-table (table)
   (misc:shuffle table))
@@ -36,7 +102,7 @@
   (length (first table)))
 
 (defun sort-table-by-attribute-position (table position)
-  (sort table #'< :key #'(lambda (a) (nth position a))))
+  (num:shellsort table #'< :key #'(lambda (a) (nth position a))))
 
 (defun sort-table-by-attribute (table attributes sort-column)
   (let ((position (position sort-column attributes)))
@@ -57,27 +123,39 @@
       nil))
 
 (defun split-by-continuous-value (table attributes attribute
-				     &key (decision (alexandria:lastcar attributes)))
-  (let ((sorted-table (sort-table-by-attribute (copy-tree table) attributes attribute))
-	(splitter-row 0)
-	(max-gain -1))
-    (loop for i from 1 below (table-height sorted-table) do
-	 (multiple-value-bind (t1 t2)
-	     (split-table-by-row-position sorted-table i)
-	   (let ((gain (information-gain-splitted sorted-table
-						  attributes attribute decision
-						  (list t1 t2))))
-	     (when (> gain max-gain)
-	       (setf max-gain gain
-		     splitter-row i)))))
-    (multiple-value-bind (t1 t2)
-	(split-table-by-row-position sorted-table splitter-row)
-      (let* ((position (position attribute attributes))
-	     (max-value (nth position (alexandria:lastcar t1)))
-	     (min-value (nth position (first t2))))
-	(values (list t1 t2) max-gain (alexandria:mean (list min-value max-value)))))))
+				  &key (decision (alexandria:lastcar attributes)))
+  (multiple-value-bind (maximum-class maximum-class-count)
+      (most-frequent-class table)
+    (declare (ignore maximum-class))
+    (let ((sorted-table  (sort-table-by-attribute (copy-tree table) attributes attribute))
+	  (splitter-row  1)
+	  (max-gain      (- +epsilon+))
+	  (minimum-split (max (* 0.1 (/ (table-height table) maximum-class-count))
+			      +min-cardinality-partition+))
+	  (tries         0))
+      (loop for i from 1 below (table-height sorted-table) do
+	   (let* ((row              (elt sorted-table i))
+		  (prec-row         (elt sorted-table (1- i)))
+		  (attribute-column (position attribute attributes)))
+	     (when (not (num:epsilon= (elt row attribute-column)
+				      (elt prec-row attribute-column)))
+	       (incf tries)
+	       (multiple-value-bind (t1 t2)
+		   (split-table-by-row-position sorted-table i)
+		 (let ((gain (information-gain-splitted sorted-table
+							attributes attribute decision
+							(list t1 t2))))
+		   (when (and (>= (table-height t1) minimum-split)
+			      (> gain max-gain))
+		     (setf max-gain gain
+			   splitter-row i)))))))
+      (multiple-value-bind (t1 t2)
+	  (split-table-by-row-position sorted-table splitter-row)
+	(let* ((position (position attribute attributes))
+	       (min-value (nth position (alexandria:lastcar t1))))
+	  (values (list t1 t2) max-gain min-value tries))))))
 
-(defun split-by-attribute-position (table position)
+(defun split-by-attribute-position-old (table position)
   (let ((all-values (all-values-set table position))
 	(tables      nil))
     (loop for i in all-values do
@@ -89,6 +167,16 @@
 				  table))
 	       tables))
     tables))
+
+(defun split-by-attribute-position (table position)
+  (let ((all-values (all-values-set table position))
+	(tables      nil))
+    (loop for i in all-values do
+	 (push (remove-if-not #'(lambda (row)
+				  (eql i (nth position row)))
+			      table)
+	       tables))
+    (reverse tables)))
 
 (defun example-get-by-attribute-position (example position)
   (if (and (>= position 0)
@@ -144,14 +232,18 @@
 			      (- (* i (log i 2))))))
     res))
 
-(defun gain-ratio (table attributes attribute
+(defun gain-ratio (table attributes attribute average-gain
  			 &key (decision (alexandria:lastcar attributes)))
-  (gain-ratio-splitted table attributes attribute decision
-			     (ecase-attribute (table attributes attribute)
-			       (symbol
-				(split-by-attribute-value table attributes attribute))
-			       (number
-				(split-by-continuous-value table attributes attribute)))))
+  (gain-ratio-splitted table
+		       attributes
+		       attribute
+		       decision
+		       average-gain
+		       (ecase-attribute (table attributes attribute)
+			 (symbol
+			  (split-by-attribute-value table attributes attribute))
+			 (number
+			  (split-by-continuous-value table attributes attribute)))))
 
 (defun information-gain (table attributes attribute
 			  &key (decision (alexandria:lastcar attributes)))
@@ -162,9 +254,40 @@
 			       (number
 				(split-by-continuous-value table attributes attribute)))))
 
+(defun safe-log2 (n)
+  (if (<= n 0.0)
+      0.0
+      (log n 2)))
+
+(defun attribute-number-p (table column-position)
+  (numberp (elt (first table) column-position)))
+
+(defun average-gain (gains max-items attributes-matrix)
+  "gains = (list (attribute . value))"
+  (let ((count 0)
+	(sum   0))
+    (loop for gain in gains do
+	 (let* ((gain-value      (cdr gain))
+                (attribute-name  (car gain))
+                (attribute-count (length (cadr (assoc attribute-name
+                                                     attributes-matrix
+                                                     :test #'string=)))))
+	   (when (and (> gain-value
+                         (- +epsilon+))
+                      (< attribute-count
+                         (* 0.3 max-items)))
+	     (incf count)
+	     (incf sum gain-value))))
+    (if (> count 0)
+	(/ sum count)
+	1e6)))
+
 (defun information-gain-splitted (original-table attributes attribute decision tables)
   (let* ((whole-entropy    (entropy original-table attributes decision))
 	 (position         (position attribute attributes))
+	 (sorted-table     (if (attribute-number-p original-table position)
+			       (sort-table-by-attribute original-table attributes attribute)
+			       original-table))
 	 (count-attributes (loop for i in tables collect (table-height i)))
 	 (count-set        (table-height original-table))
 	 (count-card-ok    (count-if #'(lambda (a) (>= a +min-cardinality-partition+))
@@ -176,21 +299,32 @@
 				      (entropy i attributes decision))))
 	 (gain             (- whole-entropy (loop for i from 0 below (length entropies) sum
 						 (* (cdr (nth i entropies))
-						    (cdr (nth i frequencies)))))))
-    (if (< count-card-ok 2)
-	+epsilon+
-	gain)))
+						    (cdr (nth i frequencies))))))
+	 (gain-correction (if (numberp (elt (first original-table) position))
+			      (let ((tries 0))
+				(loop for i from 1 below (length sorted-table) do
+				     (let* ((row      (elt sorted-table i))
+					    (prec-row (elt sorted-table (1- i)))
+					    (attribute-column (position attribute attributes)))
+				       (when (not (num:epsilon= (elt row attribute-column)
+								(elt prec-row attribute-column)))
+					 (incf tries))))
+				(/ (safe-log2 tries)
+				   (table-height original-table)))
+			      0.0)))
 
-(defun gain-ratio-splitted (original-table attributes attribute decision tables)
+    (if (< count-card-ok 2)
+	(- +epsilon+)
+	(- gain gain-correction))))
+
+(defun gain-ratio-splitted (original-table attributes attribute decision average-gain tables)
   (let* ((split-info (split-info original-table tables))
 	 (gain       (information-gain-splitted original-table
 						attributes
 						attribute
 						decision
 						tables)))
-    (if (not (num:epsilon= split-info 0.0))
-	(/ gain split-info)
-	(- +epsilon+))))
+    (gain-ratio-actual-value split-info gain average-gain)))
 
 (defun classes-list (table &optional (classes-pos (1- (table-width table))))
   (let ((res '()))
@@ -206,11 +340,20 @@
    (decisions-count
     :initform '()
     :initarg :decisions-count
-    :accessor decisions-count)))
+    :accessor decisions-count
+    :documentation "((class-1 . count-1) (class-2 .count-2) ... (class-n . count-n))")
+   (test-table
+    :initform '()
+    :initarg :test-table
+    :accessor test-table
+    :type list)
+   (associated-error
+    :initform 0.0
+    :initarg :associated-error
+    :writer (setf associated-error))))
 
 (defmethod marshal:class-persistant-slots ((object decision-tree))
-  (append '(path
-	    decisions-count)
+  (append '(path)
 	  (call-next-method)))
 
 (defmethod serialize ((object decision-tree))
@@ -220,9 +363,17 @@
   (declare (ignore object))
   (marshal:unmarshal (read-from-string (filesystem-utils:slurp-file file))))
 
+(defgeneric associated-error (object))
+
+(defgeneric sum-bag (object))
+
+(defgeneric max-bag-branch (object))
+
+(defgeneric max-bag (object))
+
 (defgeneric test-example (object attributes example))
 
-(defgeneric pachinko (object examples attributes))
+(defgeneric pachinko (object examples attributes &key incremental))
 
 (defgeneric statistical-error (object))
 
@@ -230,13 +381,21 @@
 
 (defgeneric count-classified (object))
 
-(defgeneric prune-node (object))
-
 (defgeneric update-decisions-count (object decision))
 
 (defgeneric reset-all-decisions-count (object))
 
 (defgeneric get-children-decisions-count (object))
+
+(defgeneric prune-node-to-best-leaf (object))
+
+(defgeneric pruning-error-leaf (object table))
+
+(defgeneric prune-node-to-best-branch (object best-branch))
+
+(defgeneric all-classes (object))
+
+(defgeneric class-distribution (object))
 
 (defmethod print-object ((object decision-tree) stream)
   (print-unreadable-object (object stream :type t :identity t)
@@ -284,11 +443,15 @@
 			(pprint-tree c stream (length-node-string data p :type type))))
 		  children path))))))
 
-(alexandria:define-constant +data-el+ "data"                    :test #'string=)
+(define-constant +data-el+         "data"            :test #'string=)
 
-(alexandria:define-constant +path-el+ "path"                    :test #'string=)
+(define-constant +path-el+         "path"            :test #'string=)
 
-(alexandria:define-constant +decisions-count+ "decisions-count" :test #'string=)
+(define-constant +decisions-count+ "decisions-count" :test #'string=)
+
+(define-constant +errors+          "errors"          :test #'string=)
+
+(define-constant +test-table+      "test-table"      :test #'string=)
 
 (defmethod to-sexp ((object decision-tree))
   (let ((serialized (list nil)))
@@ -297,7 +460,9 @@
 				    (alexandria:make-keyword +data-el+) (data decisions)
 				    (alexandria:make-keyword +path-el+) (path decisions)
 				    (alexandria:make-keyword +decisions-count+)
-				    (decisions-count decisions)))
+				    (decisions-count decisions)
+                                    (alexandria:make-keyword +errors+)
+                                    (associated-error decisions)))
 	       (map nil #'(lambda (c) (%serialize c (alexandria:lastcar tree)))
 		     (children decisions))))
       (%serialize object serialized)
@@ -305,7 +470,6 @@
 
 (defmethod from-sexp ((object decision-tree) sexp)
   (labels ((dfs (node decision-node)
-	     (format t "node ~a~%" (car node))
 	     (multiple-value-bind (tree new-child)
 		 (add-child decision-node
 			    (make-instance 'decision-tree
@@ -336,6 +500,37 @@
 					      (mapcar #'(lambda (d) (cons (car d) 0))
 						      (decisions-count n))))))
 
+(defmethod associated-error ((object decision-tree))
+  (if (leafp object)
+      (slot-value object 'associated-error)
+      (let ((res 0.0))
+        (loop for c across (children object) do
+             (incf res (associated-error c)))
+        res)))
+
+(defmethod sum-bag ((object decision-tree))
+  (let ((res 0.0))
+    (top-down-visit object
+                    #'(lambda (node)
+                        (incf res (reduce #'+ (mapcar #'cdr (decisions-count node))))))
+    res))
+
+(defmethod max-bag-branch ((object decision-tree))
+  (let* ((all-bags   (loop for c across (children object) collect
+                          (sum-bag c)))
+         (max-bag    (loop for c in all-bags maximize c)))
+    (values (elt (children object)
+                 (position max-bag all-bags :test #'num:epsilon=))
+            max-bag)))
+
+(defmethod max-bag ((object decision-tree))
+  (let* ((all-bags   (loop for c across (children object) collect
+                          (sum-bag c)))
+         (max-bag    (loop for c in all-bags maximize c)))
+    (values (elt (children object)
+                 (position max-bag all-bags :test #'num:epsilon=))
+            max-bag)))
+
 (defmethod test-example ((object decision-tree) attributes example)
   (labels((%test-example (node attributes example)
 	    (if (leafp node)
@@ -350,20 +545,22 @@
 		  (%test-example (elt (children node) res-path) attributes example)))))
     (%test-example object attributes example)))
 
-(defmethod pachinko ((object decision-tree) examples attributes)
+(defmethod pachinko ((object decision-tree) examples attributes &key (incremental nil))
+  (when (not incremental)
+    (reset-all-decisions-count object))
   (mapcar #'(lambda (example)
 	      (test-example object attributes example))
 	  examples))
 
 (defmethod statistical-error ((object decision-tree))
-  (let* ((leafs-count         (count-leafs          object))
-	 (facts-count         (count-classified     object))
-	 (misclassified-count (count-misclassified  object))
-	 (err                 (+ (/ leafs-count 2) misclassified-count))
-	 (stdev-err           (sqrt (/ (* err
-					  (- facts-count err))
-				       facts-count))))
-    (values err stdev-err)))
+  (if (leafp object)
+       (let* ((facts-count         (count-classified    object))
+	      (misclassified-count (count-misclassified object)))
+	 (* facts-count (probab-error facts-count misclassified-count)))
+       (loop for subtree across (children object) sum
+	    (let* ((facts-count         (count-classified    subtree))
+		   (misclassified-count (count-misclassified subtree)))
+	      (* facts-count (probab-error facts-count misclassified-count))))))
 
 (defmethod count-misclassified ((object decision-tree))
     (let ((errors 0))
@@ -391,8 +588,12 @@
     (labels ((dfs (node-from node-to)
 	       (multiple-value-bind (tree new-child)
 		   (add-child node-to (make-instance 'decision-tree
-						     :data (data node-from)
-						     :path (copy-list (path node-from))
+						     :data           (data node-from)
+                                                     :test-table
+                                                     (copy-tree (test-table node-from))
+                                                     :associated-error (slot-value node-from
+                                                                                 'associated-error)
+						     :path           (copy-list (path node-from))
 						     :decisions-count
 						     (copy-tree (decisions-count node-from))))
 		 (declare (ignore tree))
@@ -419,11 +620,42 @@
     (setf all-decisions-count (merge-decisions-counts all-decisions-count))
     all-decisions-count))
 
-(defmethod prune-node ((object decision-tree))
-  (let ((all-decisions-count (sort (get-children-decisions-count object) #'> :key #'cdr)))
+(defmethod prune-node-to-best-leaf ((object decision-tree))
+  (let ((all-decisions-count (num:shellsort (get-children-decisions-count object)
+					    #'> :key #'cdr)))
     (setf (data object) (car (first all-decisions-count)))
     (setf (children object) #())
-    (setf (path object) nil)))
+    (setf (path object) nil)
+    object))
+
+(defmethod prune-node-to-best-branch ((object decision-tree) best-branch)
+    (setf (data object)     (data     best-branch))
+    (setf (children object) (children best-branch))
+    (setf (path object)     (path     best-branch))
+    object)
+
+(defmethod all-classes ((object decision-tree))
+  (let ((res '()))
+    (top-down-visit object
+                    #'(lambda (node)
+                        (map nil
+                             #'(lambda (a) (pushnew (car a) res))
+                             (decisions-count node))))
+    res))
+
+(defmethod class-distribution ((object decision-tree))
+  (let ((all-classes (loop for c in (all-classes object) collect
+                          (cons c 0.0))))
+    (top-down-visit object
+                    #'(lambda (node)
+                        (map nil
+                             #'(lambda (a)
+                                 (let ((class-name  (car a))
+                                       (class-count (cdr a)))
+                                   (incf (cdr (assoc class-name all-classes))
+                                         class-count)))
+                             (decisions-count node))))
+    all-classes))
 
 (defun get-test-results (table attributes attribute)
   (let ((position (position attribute attributes)))
@@ -445,122 +677,218 @@
 	    (return-from row-equal-p nil)))))
   t)
 
-(defun find-contradictions (table)
-  "return all the facts that are equals, that is same values for each column except for the last
-  (the decision). The expression return:
-  '((a b c action) ...)
-   the action is the one that appear with the maximum frequency."
-  (loop for row in table collect
-       (let* ((contradictions (remove-if-not #'(lambda (a) (row-equal-p row a)) table))
-	      (all-decisions (mapcar #'alexandria:lastcar contradictions))
-	      (decisions     '()))
-	 (dolist (decision all-decisions)
-	   (pushnew decision decisions :test #'eq))
-	 (append (subseq (first contradictions) 0
-		       (1- (length (first contradictions))))
-		 (list
-		  (car
-		   (num:find-min-max #'(lambda (a b) (> (cdr a) (cdr b)))
-				     (misc:shuffle
-				      (loop for decision in decisions collect
-					   (cons decision (count decision all-decisions)))))))))))
+(defun decisions-classes-set (table &optional (class-position (1- (length (first table)))))
+  (all-values-set table class-position))
 
-(defun most-frequent-class (table &optional (class-position (1- (length (first table)))))
+(defun all-decisions-classes (table &optional (class-position (1- (length (first table)))))
   (flet ((class-in-row (row)
 	   (elt row class-position)))
-    (let ((all-classes      '())
-	  (all-observations (loop for row in table collect (class-in-row row))))
-      (loop for row in table collect
-	   (pushnew (class-in-row row) all-classes :test #'eq))
-      (let ((max (num:find-min-max #'(lambda (a b) (> (cdr a) (cdr b)))
-				   (loop for class in all-classes collect
-					(cons class (count class all-observations))))))
-	(values (car max)      ; the class
-		(cdr max)))))) ; the frequency
+    (loop for row in table collect (class-in-row row))))
 
-(defun make-tree (table attributes)
+(defun most-frequent-class (table &optional (class-position (1- (length (first table)))))
+    (let* ((all-classes      (decisions-classes-set table class-position))
+	   (all-observations (all-decisions-classes table class-position))
+	   (max (trivial-max (loop for class in all-classes collect
+				  (cons class (count class all-observations)))
+			     :key #'cdr)))
+      (values (car max)      ; the class
+	      (cdr max)))) ; the frequency
+
+(defun trivial-max (l &key (key #'identity) (start-value nil))
+  (let ((max         (or start-value (elt l 0)))
+	(actual-list (if start-value
+			 l
+			 (rest l))))
+    (loop for i in actual-list do
+	 (when (> (funcall key i)
+		  (funcall key max))
+	   (setf max i)))
+    max))
+
+(defun make-tree (table attributes
+		  &key
+		    (max-items         (table-height table))
+		    (all-classes       (decisions-classes-set table))
+		    (attributes-matrix (build-attribute-values-matrix table attributes)))
   (let ((classes (classes-list table)))
     (cond
       ((null table)           ; no facts, this is a problem :-(
        (error "empty examples table"))
       ((= (length classes) 1) ; all facts gives the same value, good
        (make-instance 'decision-tree
+                      :test-table      (copy-tree table)
 		      :data            (alexandria:lastcar (first table))
 		      :decisions-count (list (cons (alexandria:lastcar (first table))
 						   0))))
-      ((= (length attributes) 1) ; can't go further choose the most frequent value
+      ((or (< (table-height table)
+	      (* 2 +min-cardinality-partition+))
+	   (= (length attributes) 1)) ; can't go further, choose the most frequent value
        (let ((most-frequent-class (most-frequent-class table)))
 	 (make-instance 'decision-tree
+                        :test-table      (copy-tree table)
 			:data            most-frequent-class
 			:decisions-count (list (cons most-frequent-class
 						     0)))))
-      (t                         ; split
-       (let* ((gains          (loop for i from 0 below (1- (length attributes)) collect
-				   (cons (nth i attributes)
-					 (gain-ratio table attributes (nth i attributes)))))
-	      (max-gain       (num:find-min-max #'(lambda (a b) (> (cdr a) (cdr b))) gains))
-	      (new-attributes (remove (car max-gain) attributes :test #'string=))
-	      (splitted       (split-by-attribute-value table attributes (car max-gain))))
-	 (let* ((children (loop for i in splitted collect
-			       (make-tree (if (not (numberp (elt (first (first splitted))
-								 (position (car max-gain)
-									   attributes))))
-					       (loop for row in i collect
-						    (misc:delete@ row
-								  (position (car max-gain)
-									    attributes)))
-					       i)
-					   (if (not (numberp (elt (first (first splitted))
-								 (position (car max-gain)
-									   attributes))))
-					       new-attributes
-					       attributes))))
-		(path (ecase-attribute (table attributes (car max-gain))
-			(symbol
-			 (loop for i in splitted collect
-			      (get-test-results i attributes (car max-gain))))
-			(number
-			 (multiple-value-bind (tables max-gain treshold)
-			     (split-by-continuous-value table
-							attributes
-							(car max-gain))
-			   (declare (ignore tables max-gain))
-			   (list treshold treshold)))))
-		(new-tree (make-instance 'decision-tree
-					 :data            (car max-gain)
-					 :path            path
-					 :decisions-count (loop for i in classes collect
-							       (cons i 0)))))
-	   (loop for i in children do
-		(add-child new-tree i))
-	   new-tree))))))
+      (t ; split
+       (let* ((raw-gains      (loop for i from 0 below (1- (length attributes)) collect
+				   (cons (elt attributes i)
+					 (information-gain table attributes (nth i attributes)))))
+	      (average-gain   (average-gain raw-gains max-items attributes-matrix))
+	      (gain-ratios    (loop for i from 0 below (1- (length attributes)) collect
+				   (cons (elt attributes i)
+					 (gain-ratio table
+						     attributes
+						     (nth i attributes)
+						     average-gain))))
+	      (max-gain-ratio (trivial-max gain-ratios
+					   :key #'cdr
+					   :start-value (cons :dummy (- +epsilon+))))
+	      (splitted       (split-by-attribute-value table attributes (car max-gain-ratio))))
+         (multiple-value-bind (most-frequent-class most-frequent-class-count)
+             (most-frequent-class table)
+           (let* ((children (loop for subtable in splitted collect
+                                 (make-tree subtable
+                                            attributes
+                                            :max-items         max-items
+                                            :all-classes       all-classes
+                                            :attributes-matrix attributes-matrix)))
+                  (best-attribute         (car max-gain-ratio))
+                  (best-attribute-outcome (cadr (assoc best-attribute attributes-matrix)))
+                  (path (ecase-attribute (table attributes (car max-gain-ratio))
+                          (symbol
+                           (loop for i in splitted collect
+                                (get-test-results i attributes (car max-gain-ratio))))
+                          (number
+                           (multiple-value-bind (tables max-gain-ratio treshold)
+                               (split-by-continuous-value table
+                                                          attributes
+                                                          (car max-gain-ratio))
+                             (declare (ignore tables max-gain-ratio))
+                             (list treshold treshold)))))
+                  (extra-paths (loop
+                                  for i in best-attribute-outcome
+                                  when (and i (symbolp i) (not (find i path)))
+                                  collect i))
+                  (extra-childen (loop for i in extra-paths collect
+                                      (make-instance 'decision-tree
+                                                     :data  most-frequent-class
+                                                     :decisions-count
+                                                     (list (cons most-frequent-class 0)))))
+                  (new-tree (make-instance 'decision-tree
+                                           :test-table      (copy-tree table)
+                                           :data            (car max-gain-ratio)
+                                           :path            (append path extra-paths)
+                                           :decisions-count (loop for i in classes collect
+                                                                 (cons i 0)))))
+             (loop for i in (append children extra-childen) do
+                  (add-child new-tree i))
+             ;; check for collapse
+             (pachinko new-tree table attributes :incremental nil)
+             (let ((all-facts (table-height table)))
+               (if (>= (count-misclassified new-tree)
+                       (- all-facts most-frequent-class-count +epsilon+))
+                   (progn
+                     (reset-all-decisions-count new-tree)
+                     (make-instance 'decision-tree
+                                    :test-table      (copy-tree table)
+                                    :data            most-frequent-class
+                                    :decisions-count (list (cons most-frequent-class 0))))
+                   new-tree)))))))))
 
-(defun pessimistic-prune-branch (unpruned-tree test-table attributes
-				 &optional (number-of-stddev .5))
-  (let* ((pruned-tree (clone unpruned-tree)))
-     (bottom-up-visit pruned-tree
- 		     #'(lambda (node)
- 			 (when (not (leafp node))
-			   (reset-all-decisions-count pruned-tree)
-			   (reset-all-decisions-count unpruned-tree)
-			   (pachinko unpruned-tree test-table attributes)
-			   (pachinko pruned-tree test-table attributes)
-			   (let ((saved (clone node)))
-			     (prune-node node)
-			     (pachinko pruned-tree test-table attributes)
-			     (let ((error-pruned-tree   (count-misclassified node)))
-			       (multiple-value-bind (error-unprunes stdev)
-				   (statistical-error saved)
-				 (if (< (+ error-pruned-tree 1/2)
-					(+ error-unprunes (* number-of-stddev stdev)))
-				     (setf unpruned-tree (clone pruned-tree))
-				     (progn
-				       (setf (parent node) (parent saved)
-					     (path node) (path saved)
-					     (children node) (children saved)
-					     (decisions-count node) (decisions-count saved)
-					     (data node) (data saved))))))))))
-     pruned-tree))
+(defun split-by-last-column (table)
+  (split-by-attribute-position table
+                               (1- (length (elt table 0)))))
+
+(defmethod pruning-error-leaf ((object decision-tree) table)
+  (top-down-visit object
+                  #'(lambda (node)
+                      (when (leafp node)
+                        (setf (associated-error node) 0.0))))
+  (top-down-visit object
+                   #'(lambda (node)
+                       (if (leafp node)
+                           (let* ((best-leaf-class (trivial-max (decisions-count node)
+                                                                    :key #'cdr))
+                                  (cases           (reduce #'+ (decisions-count node)
+                                                           :key #'cdr))
+                                  (leaf-error      (- cases (cdr best-leaf-class)))
+                                  (total-error     (+ leaf-error (probab-error cases
+                                                                               leaf-error))))
+                             (setf (associated-error node) total-error)))))
+  object)
+
+(defun all-leaf-errors (node)
+  (let* ((local-class-distribution (class-distribution node))
+         (max-bag (trivial-max local-class-distribution
+                               :key #'cdr))
+         (cases             (sum-bag  node))
+         (leaf-errors       (- cases (cdr max-bag)))
+         (extra-leaf-errors (probab-error cases leaf-errors)))
+    (values leaf-errors extra-leaf-errors)))
+
+(defun best-branch (node table attributes)
+  (let ((cloned-node (clone node)))
+    (pachinko cloned-node table attributes)
+    (pruning-error-leaf cloned-node table)
+    cloned-node))
+
+(defun adjust-leafs-to-best-class (tree)
+  (top-down-visit tree
+                  #'(lambda (node)
+                      (when (leafp node)
+                        (let* ((local-class-distribution (class-distribution node))
+                               (max-bag (trivial-max local-class-distribution
+                                                     :key #'cdr)))
+                          (when max-bag
+                            (setf (data node) (car max-bag))))))))
+
+(defun pessimistic-prune-branch (unpruned-tree test-table attributes &optional (modifiedp t))
+  (if modifiedp
+      (let* ((pruned-tree (clone unpruned-tree)))
+        (setf modifiedp nil)
+        (pachinko pruned-tree test-table attributes)
+        (pruning-error-leaf pruned-tree test-table)
+        (bottom-up-visit pruned-tree
+                         #'(lambda (node)
+                             (when (and (not modifiedp)
+                                        (not (leafp node)))
+                               (multiple-value-bind (leaf-errors extra-leaf-errors)
+                                   (all-leaf-errors node)
+                                 (let* ((max-branch    (max-bag-branch node))
+                                        (tree-error    (associated-error node))
+                                        (best-branch   (best-branch max-branch
+                                                                    (test-table node)
+                                                                    attributes))
+                                        (branch-errors (associated-error best-branch)))
+                                   (cond
+                                     ((and (<= (+ leaf-errors extra-leaf-errors)
+                                               (+ branch-errors 0.1))
+                                           (<= (+ leaf-errors extra-leaf-errors)
+                                               (+ tree-error 0.1)))
+                                      (format t "pruning node ~a~%" node)
+                                      (prune-node-to-best-leaf node)
+                                      (format t "-------->~%~a~%" node)
+                                      (setf modifiedp t))
+                                     ((and max-branch
+                                           (<= branch-errors
+                                               (+ tree-error 0.1)))
+                                      (setf modifiedp t)
+                                      (format t "pruning branch ~a~%" node)
+                                      (prune-node-to-best-branch node best-branch)
+                                      (adjust-leafs-to-best-class node)
+                                      (format t "-------->~%~a~%" max-branch))
+                                     (t
+                                      (format t "NO pruning~%"))))))))
+        (pessimistic-prune-branch pruned-tree test-table attributes modifiedp))
+      unpruned-tree))
+
+(defun build-attribute-values-matrix (table attributes)
+  (loop for i from 0 below (length attributes) collect
+       (let ((tail '()))
+	 (loop for row in table when (symbolp (elt row i)) do
+	      (pushnew (elt row i) tail))
+	 (cons (elt attributes i)
+	       (list tail)))))
 
 (defun build-tree (training-set attributes)
   "training set is a table of facts:
