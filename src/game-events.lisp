@@ -412,9 +412,18 @@
 
 ;;;; game-actions
 
-(defevent game-action-terminated (game-event-w-destination)
+(defevent game-action-terminated ()
   ((action-id
     :initform (1- +start-id-counter+)
     :initarg  :action-id
     :accessor action-id
     :documentation "Currently not used")))
+
+(defun send-action-terminated-event ()
+  (propagate-game-action-terminated (make-instance 'game-action-terminated)))
+
+(defmacro with-send-action-terminated (&body body)
+  `(progn
+     ,@body
+     ;; remove action form-queue
+     (game-event:send-action-terminated-event)))

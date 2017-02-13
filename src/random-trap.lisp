@@ -174,7 +174,7 @@
     (with-interaction-parameters-file (template interaction-file)
       (let* ((trap-level          (calculate-level map-level))
 	     (healing-effects-no (number-of-healing-effects trap-level 0))
-	     (healing-effects    (%get-healing-fx-shuffled template healing-effects-no)))
+	     (healing-effects    (get-healing-fx-shuffled template healing-effects-no)))
 	(n-setf-path-value char-template (list +level+) (d trap-level))
 	(loop for i in healing-effects do
 	     (cond

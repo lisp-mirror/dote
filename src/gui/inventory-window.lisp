@@ -278,16 +278,16 @@
 		   (ring-slot       ring-slot))      window
     (and item
 	 (cond
-	   ((character:ringp item)
+	   ((interactive-entity:ringp item)
 	    ring-slot)
-	   ((character:armorp item)
+	   ((interactive-entity:armorp item)
 	    armor-slot)
-	   ((character:elmp item)
+	   ((interactive-entity:elmp item)
 	    elm-slot)
-	   ((character:shoesp item)
+	   ((interactive-entity:shoesp item)
 	    shoes-slot)
-	   ((or (character:weaponp item)
-		(character:shieldp item))
+	   ((or (interactive-entity:weaponp item)
+		(interactive-entity:shieldp item))
 	    (if (empty-slot-p left-hand-slot)
 		left-hand-slot
 		right-hand-slot))))))
@@ -332,15 +332,15 @@
   (let ((all (mapcar #'contained-entity (alexandria:flatten pages))))
     (remove-if-null
      (nconc
-      (remove-if #'(lambda (a) (not (character:weaponp a))) all)
-      (remove-if #'(lambda (a) (not (character:shieldp a))) all)
-      (remove-if #'(lambda (a) (not (character:elmp a))) all)
-      (remove-if #'(lambda (a) (not (character:armorp a))) all)
-      (remove-if #'(lambda (a) (not (character:shoesp a))) all)
-      (remove-if #'(lambda (a) (not (character:potionp a))) all)
-      (remove-if #'(lambda (a) (not (character:ringp a))) all)
-      (remove-if #'(lambda (a) (not (character:keyp a))) all)
-      (remove-if #'(lambda (a) (not (character:trapp a))) all)))))
+      (remove-if #'(lambda (a) (not (interactive-entity:weaponp a))) all)
+      (remove-if #'(lambda (a) (not (interactive-entity:shieldp a))) all)
+      (remove-if #'(lambda (a) (not (interactive-entity:elmp a))) all)
+      (remove-if #'(lambda (a) (not (interactive-entity:armorp a))) all)
+      (remove-if #'(lambda (a) (not (interactive-entity:shoesp a))) all)
+      (remove-if #'(lambda (a) (not (interactive-entity:potionp a))) all)
+      (remove-if #'(lambda (a) (not (interactive-entity:ringp a))) all)
+      (remove-if #'(lambda (a) (not (interactive-entity:keyp a))) all)
+      (remove-if #'(lambda (a) (not (interactive-entity:trapp a))) all)))))
 
 (defun sort-items-enter-cb (w e)
   (declare (ignore e))

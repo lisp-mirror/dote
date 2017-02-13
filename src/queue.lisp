@@ -57,6 +57,8 @@
 
 (defgeneric q-empty-p (object))
 
+(defgeneric q-size (object))
+
 (defmethod q-pop ((object simple-queue))
   (with-accessors ((container container)) object
     (let ((peek (q-peek object)))
@@ -79,3 +81,6 @@
     (if (not (q-empty-p object))
 	(elt container 0)
 	nil)))
+
+(defmethod q-size ((object simple-queue))
+  (length (container object)))

@@ -251,14 +251,14 @@
     (cond
       ((typep (entity:ghost defender) 'character:player-character)
        (let* ((armor-level  (cond
-			     ((character:armorp (character:armor ghost-defend))
+			     ((interactive-entity:armorp (character:armor ghost-defend))
 			      (character:level  (character:armor ghost-defend)))
 			     (t
 			      nil)))
 	      (shield-level (cond
-			      ((character:shieldp (character:left-hand ghost-atk))
+			      ((interactive-entity:shieldp (character:left-hand ghost-atk))
 			       (character:level (character:left-hand ghost-atk)))
-			      ((character:shieldp (character:right-hand ghost-atk))
+			      ((interactive-entity:shieldp (character:right-hand ghost-atk))
 			       (character:level (character:right-hand ghost-atk)))
 			      (t
 			       nil)))
@@ -384,6 +384,28 @@
       (game-event:send-refresh-toolbar-event)
       (game-event:propagate-spell-event msg))))
 
+
+(defun trigger-trap-attack (trap-entity attacked-entity)
+  (with-accessors ((id id) (state entity:state)) attacked-entity
+      (let* ((ghost-trap   (entity:ghost trap-entity))
+	     (magic-effect (interactive-entity:interaction-get-magic-effect ghost-trap)))
+	(when magic-effect
+	  (game-state:with-world (world state)
+	    (let* ((spell-id (basic-interaction-parameters:spell-id magic-effect))
+		   (spell    (spell:get-spell spell-id)))
+	      (setf (character:spell-loaded ghost-trap) spell)
+	      (with-accessors ((modifiers-effects modifiers-effects)) ghost-trap
+                (let ((all-effects (random-object-messages:params->effects-messages ghost-trap)))
+                  (if (spell:attack-spell-p spell)
+                      (action-scheduler:with-enqueue-action (world)
+                        (arrows::launch-attack-spell-trap spell world trap-entity attacked-entity)
+                        (random-object-messages:propagate-effects-msg (id trap-entity)
+                                                                      id
+                                                                      all-effects))
+                      (random-object-messages:propagate-effects-msg (id trap-entity)
+                                                                    id
+                                                                    all-effects))))))))))
+
 (defun height-variation-chance-fn (h-atk h-defend)
   (cond
     ((epsilon= h-atk h-defend)
@@ -440,14 +462,14 @@
       (cond
 	((typep (entity:ghost defender) 'character:player-character)
 	 (let* ((armor-level  (cond
-				((character:armorp (character:armor ghost-defend))
+				((interactive-entity:armorp (character:armor ghost-defend))
 				 (character:level  (character:armor ghost-defend)))
 				(t
 				 nil)))
 		(shield-level (cond
-				((character:shieldp (character:left-hand ghost-atk))
+				((interactive-entity:shieldp (character:left-hand ghost-atk))
 				 (character:level (character:left-hand ghost-atk)))
-				((character:shieldp (character:right-hand ghost-atk))
+				((interactive-entity:shieldp (character:right-hand ghost-atk))
 				 (character:level (character:right-hand ghost-atk)))
 				(t
 				 nil)))
@@ -481,9 +503,9 @@
 		 nil))))))
 
 (defun defend-from-attack-spell (event)
- (let* ((attacker (game-event:attacker-entity event))
-	(defender (game-state:find-entity-by-id (entity:state attacker)
-						(game-event:id-destination event))))
+  (let* ((attacker (game-event:attacker-entity event))
+         (defender (game-state:find-entity-by-id (entity:state attacker)
+                                                 (game-event:id-destination event))))
     (assert (and attacker defender))
     (let* ((ghost-atk     (entity:ghost     attacker))
 	   (ghost-defend  (entity:ghost     defender))
@@ -491,24 +513,31 @@
 	   (ambushp              (and (vec~ (entity:dir attacker)
 					    (entity:dir defender))
 				      (pass-d100.0 (character:actual-ambush-attack-chance
-						    attacker)))))
-      (%defend-from-attack-spell ghost-atk ghost-defend spell :ambushp ambushp))))
+                                                    ghost-atk)))))
+      (multiple-value-bind (damage ambushp)
+          (%defend-from-attack-spell ghost-atk ghost-defend spell :ambushp ambushp)
+        (when damage
+          (send-effects-after-attack attacker
+                                     defender
+                                     :weapon spell))
+        (values damage ambushp)))))
 
 (defun %defend-from-attack-spell (attacker defender spell &key (ambushp nil))
+  "Values are damage ambushp"
   (let* ((attack-dmg (dmax 0.0
 			   (gaussian-probability (d/ (spell:damage-inflicted spell) 2.0)
 						 (d* (spell:damage-inflicted spell) 0.75)))))
     (cond
       ((typep defender 'character:player-character)
        (let* ((armor-level  (cond
-			      ((character:armorp (character:armor defender))
+			      ((interactive-entity:armorp (character:armor defender))
 			       (character:level  (character:armor defender)))
 			      (t
 			       nil)))
 	      (shield-level (cond
-			      ((character:shieldp (character:left-hand  attacker))
+			      ((interactive-entity:shieldp (character:left-hand  attacker))
 			       (character:level   (character:left-hand  attacker)))
-			      ((character:shieldp (character:right-hand attacker))
+			      ((interactive-entity:shieldp (character:right-hand attacker))
 			       (character:level   (character:right-hand attacker)))
 			      (t
 			       nil)))
@@ -519,11 +548,7 @@
 					 armor-level
 					 ambushp)))
 	   (if dmg
-	       (progn
-		 (send-effects-after-attack attacker
-					    defender
-					    :weapon spell)
-		 (values dmg ambushp))
+               (values dmg ambushp)
 	       (values nil nil)))))
       ((typep defender 'character:np-character)
        (values (attack-spell-damage attack-dmg
@@ -537,18 +562,18 @@
  (let* ((attacker (game-event:attacker-entity event))
 	(defender (game-state:find-entity-by-id (entity:state attacker)
 						(game-event:id-destination event))))
-    (assert (and attacker defender))
-    (let* ((spell         (game-event:spell event)))
-      (cond
-	((typep (entity:ghost defender) 'character:player-character)
-	 (if (spell:use-custom-effects-p spell)
-	     (funcall (character:basic-interaction-params spell) attacker defender)
-	     (send-effects-after-attack attacker
-					defender
-					:weapon spell))
-	 t)
-	((typep (entity:ghost defender) 'character:np-character)
-	 nil)))))
+   (assert (and attacker defender))
+   (let* ((spell         (game-event:spell event)))
+     (cond
+       ((typep (entity:ghost defender) 'character:player-character)
+        (if (spell:use-custom-effects-p spell)
+            (funcall (character:basic-interaction-params spell) attacker defender)
+            (send-effects-after-attack attacker
+                                       defender
+                                       :weapon spell))
+        t)
+       ((typep (entity:ghost defender) 'character:np-character)
+        nil)))))
 
 (defun attack-short-range (world attacker defender)
   "This is the most high level attack routine"
@@ -561,23 +586,29 @@
     (entity:reset-tooltip-ct defender)
     (world:reset-toolbar-selected-action world)))
 
-(defun attack-long-range (world attacker defender)
+(defun attack-long-range (world attacker defender &key (imprecision-increase 0.0))
   "This is the most high level attack routine"
   (if (character:worn-weapon (entity:ghost attacker))
       (progn
 	(world:remove-all-tooltips world)
 	(if (long-range-attack-possible-p attacker defender)
-	    (progn
+	    (action-scheduler:with-enqueue-action (world)
 	      (attack-long-range-animation attacker defender)
 	      (arrows:launch-arrow +default-arrow-name+
 				   world
 				   attacker
-				   defender))
+				   defender
+                                   imprecision-increase))
 	    (make-tooltip-out-range-error world attacker)))
       (make-tooltip-no-weapon-error world attacker))
   (entity:reset-tooltip-ct defender)
   (world:reset-toolbar-selected-action world)
   (game-event:send-refresh-toolbar-event))
+
+(defun attack-long-range-imprecise (world attacker defender)
+  "This is the most high level attack routine"
+  (loop repeat 3 do
+       (attack-long-range world attacker defender :imprecision-increase 0.25)))
 
 (defun make-tooltip (world attacker message)
   (world:post-entity-message world attacker message nil))
@@ -620,7 +651,7 @@
     (let ((spell-loaded (character:spell-loaded (entity:ghost attacker))))
       (if spell-loaded
 	  (if (range-spell-valid-p attacker defender spell-loaded)
-	      (progn
+	      (action-scheduler:with-enqueue-action (world)
 		(world:remove-all-tooltips world)
 		(when (attack-spell-animation attacker defender)
 		  (arrows:launch-attack-spell spell-loaded
@@ -639,7 +670,7 @@
     (let ((spell-loaded (character:spell-loaded (entity:ghost attacker))))
       (if spell-loaded
 	  (if (range-spell-valid-p attacker defender spell-loaded)
-	      (progn
+	      (action-scheduler:with-enqueue-action (world)
 		(world:remove-all-tooltips world)
 		(when (spell-animation attacker defender)
 		  (arrows:launch-spell spell-loaded

@@ -192,7 +192,7 @@
       (let* ((fountain-level        (calculate-level map-level))
 	     (healing-effects-no    (number-of-healing-effects fountain-level 0))
 	     (fountain-decay-points (calculate-decay-points fountain-level))
-	     (healing-effects       (%get-healing-fx-shuffled template healing-effects-no)))
+	     (healing-effects       (get-healing-fx-shuffled template healing-effects-no)))
 	(n-setf-path-value char-template (list +level+) (d fountain-level))
 	(n-setf-path-value char-template (list +description+) +type-name+)
 	(n-setf-path-value template

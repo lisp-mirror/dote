@@ -36,11 +36,11 @@
     (game-state:with-world (world (state object))
       (let ((player (find-entity-by-id (state object) (game-event:id-origin event))))
 	(when player
-	  (let* ((container-keycode (character:object-keycode (ghost object)))
+	  (let* ((container-keycode (interactive-entity:object-keycode (ghost object)))
 		 (key               (find-if #'(lambda (a)
-						 (and (character:keyp           a)
-						      (character:object-keycode a)
-						      (string= (character:object-keycode a)
+						 (and (interactive-entity:keyp           a)
+						      (interactive-entity:object-keycode a)
+						      (string= (interactive-entity:object-keycode a)
 							       container-keycode)))
 					     (character:inventory (ghost player)))))
 	    (cond

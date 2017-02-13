@@ -262,6 +262,10 @@
   (remove-entity-by-id (main-state object) id) ;; remove from game state (logic)
   (remove-entity-by-id (entities object)   id)) ;; remove from rendering
 
+(defmethod enqueue-action ((object world) (new-action game-action))
+  (with-accessors ((actions-queue actions-queue)) object
+    (enqueue-action actions-queue new-action)))
+
 (defgeneric (setf main-state) (new-state object))
 
 (defgeneric get-window-size (object))

@@ -1190,10 +1190,12 @@
    :find
    :emptyp
    :with-queue
+   :simple-queue
    :q-pop
    :q-peek
    :q-push
-   :q-empty-p))
+   :q-empty-p
+   :q-size))
 
 (defpackage :stack
   (:use :cl)
@@ -2339,6 +2341,8 @@
    :register-for-game-action-terminated
    :unregister-for-game-action-terminated
    :propagate-game-action-terminated
+   :send-action-terminated-event
+   :with-send-action-terminated
    ;;;; utils
    :check-event-targeted-to-me))
 
@@ -2359,7 +2363,8 @@
    :action-scheduler
    :current-action
    :substitute-action
-   :enqueue-action))
+   :enqueue-action
+   :with-enqueue-action))
 
 (defpackage :basic-interaction-parameters
   (:use :cl
@@ -2501,7 +2506,7 @@
    :*cancel-immune-poisoning*
    :init-player-messages-db))
 
-(defpackage :character
+(defpackage :interactive-entity
   (:use :cl
 	:alexandria
 	:constants
@@ -2560,10 +2565,121 @@
    :+level+
    :+exp-points+
    :interactive-entity
-   :np-character
+   :basic-interaction-params
+   :object-keycode
    :clean-effects
-   :restart-age
    :description-type
+   :can-talk-p
+   :can-be-opened-p
+   :can-attack-p
+   :can-attack-p
+   :can-be-destroyed-p
+   :can-be-burned-p
+   :can-heal-p
+   :can-be-heal-p
+   :can-be-drunk-p
+   :can-be-eaten-p
+   :can-be-worn-arm-p
+   :can-be-worn-head-p
+   :can-be-worn-neck-p
+   :can-be-worn-feet-p
+   :can-cut-p
+   :can-smash-p
+   :can-launch-bolt-p
+   :can-launch-arrow-p
+   :mounted-on-pole-p
+   :decayp
+   :effectsp
+   :healing-effects-p
+   :magic-effect-p
+   :be-consumed-p
+   :potionp
+   :fountainp
+   :weaponp
+   :bowp
+   :crossbowp
+   :armorp
+   :containerp
+   :keyp
+   :shieldp
+   :shoesp
+   :elmp
+   :ringp
+   :can-be-worn-p
+   :lockedp
+   :trapp
+   :interaction-get-strength
+   :interaction-get-stamina
+   :interaction-get-dexterity
+   :interaction-get-agility
+   :interaction-get-smartness
+   :interaction-get-empaty
+   :interaction-get-decay
+   :interaction-get-weight
+   :interaction-get-damage-points
+   :interaction-get-movement-points
+   :interaction-get-magic-points
+   :interaction-get-dodge-chance
+   :interaction-get-melee-attack-chance
+   :interaction-get-range-attack-chance
+   :interaction-get-melee-attack-damage
+   :interaction-get-range-attack-damage
+   :interaction-get-edge-weapons-chance-bonus
+   :interaction-get-edge-weapons-damage-bonus
+   :interaction-get-impact-weapons-chance-bonus
+   :interaction-get-impact-weapons-damage-bonus
+   :interaction-get-pole-weapons-chance-bonus
+   :interaction-get-pole-weapons-damage-bonus
+   :interaction-get-unlock-chance
+   :interaction-get-deactivate-trap-chance
+   :interaction-get-reply-attack-chance
+   :interaction-get-ambush-attack-chance
+   :interaction-get-spell-chance
+   :interaction-get-attack-spell-chance
+   :interaction-get-heal-damage-points
+   :interaction-get-heal-poison
+   :interaction-get-heal-berserk
+   :interaction-get-heal-faint
+   :interaction-get-heal-terror
+   :interaction-get-cause-poison
+   :interaction-get-cause-berserk
+   :interaction-get-cause-faint
+   :interaction-get-cause-terror
+   :interaction-get-immune-poison
+   :interaction-get-immune-berserk
+   :interaction-get-immune-faint
+   :interaction-get-immune-terror
+   :interaction-get-magic-effect
+   :validate-interaction-file
+   :sum-effects-mod
+   :get-effects-shuffled
+   :get-normal-fx-shuffled
+   :get-healing-fx-shuffled
+   :get-magic-fx-shuffled
+   :eq-generate-p
+   :cdr-eq-generate-p
+   :remove-generate-symbols))
+
+(defpackage :character
+  (:use :cl
+	:alexandria
+	:constants
+	:config
+	:num-utils
+	:misc-utils
+	:text-utils
+	:mtree-utils
+	:entity
+	:interfaces
+	:identificable
+	:basic-interaction-parameters
+        :interactive-entity
+	:game-event)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :basic-interaction-params ; reexported from interactive-entity
+   :np-character
+   :restart-age
    :player-character
    :portrait
    :first-name
@@ -2658,104 +2774,12 @@
    :find-entity-by-id
    :sum-modifiers
    :player-class->class-description
-   :basic-interaction-params
    :make-warrior
    :make-wizard
    :make-healer
    :make-archer
    :make-ranger
-   :object-keycode
-   :can-talk-p
-   :can-be-opened-p
-   :can-attack-p
-   :can-attack-p
-   :can-be-destroyed-p
-   :can-be-burned-p
-   :can-heal-p
-   :can-be-heal-p
-   :can-be-drunk-p
-   :can-be-eaten-p
-   :can-be-worn-arm-p
-   :can-be-worn-head-p
-   :can-be-worn-neck-p
-   :can-be-worn-feet-p
-   :can-cut-p
-   :can-smash-p
-   :can-launch-bolt-p
-   :can-launch-arrow-p
-   :mounted-on-pole-p
-   :decayp
-   :effectsp
-   :healing-effects-p
-   :magic-effect-p
-   :be-consumed-p
-   :potionp
-   :fountainp
-   :weaponp
-   :bowp
-   :crossbowp
-   :armorp
-   :containerp
-   :keyp
-   :shieldp
-   :shoesp
-   :elmp
-   :ringp
-   :can-be-worn-p
-   :lockedp
-   :trapp
-   :interaction-get-strength
-   :interaction-get-stamina
-   :interaction-get-dexterity
-   :interaction-get-agility
-   :interaction-get-smartness
-   :interaction-get-empaty
-   :interaction-get-decay
-   :interaction-get-weight
-   :interaction-get-damage-points
-   :interaction-get-movement-points
-   :interaction-get-magic-points
-   :interaction-get-dodge-chance
-   :interaction-get-melee-attack-chance
-   :interaction-get-range-attack-chance
-   :interaction-get-melee-attack-damage
-   :interaction-get-range-attack-damage
-   :interaction-get-edge-weapons-chance-bonus
-   :interaction-get-edge-weapons-damage-bonus
-   :interaction-get-impact-weapons-chance-bonus
-   :interaction-get-impact-weapons-damage-bonus
-   :interaction-get-pole-weapons-chance-bonus
-   :interaction-get-pole-weapons-damage-bonus
-   :interaction-get-unlock-chance
-   :interaction-get-deactivate-trap-chance
-   :interaction-get-reply-attack-chance
-   :interaction-get-ambush-attack-chance
-   :interaction-get-spell-chance
-   :interaction-get-attack-spell-chance
-   :interaction-get-heal-damage-points
-   :interaction-get-heal-poison
-   :interaction-get-heal-berserk
-   :interaction-get-heal-faint
-   :interaction-get-heal-terror
-   :interaction-get-cause-poison
-   :interaction-get-cause-berserk
-   :interaction-get-cause-faint
-   :interaction-get-cause-terror
-   :interaction-get-immune-poison
-   :interaction-get-immune-berserk
-   :interaction-get-immune-faint
-   :interaction-get-immune-terror
-   :interaction-get-magic-effect
-   :validate-interaction-file
-   :%get-effects-shuffled
-   :%get-normal-fx-shuffled
-   :%get-healing-fx-shuffled
-   :%get-magic-fx-shuffled
-   :cdr-eq-generate-p
-   :eq-generate-p
-   :remove-generate-symbols
    :with-character-parameters
-   :sum-effects-mod
    :params->player-character
    :calculate-randomized-damage-points
    :params->np-character
@@ -2764,7 +2788,8 @@
    :worn-weapon
    :weapon-type
    :weapon-type-long-range
-   :weapon-type-short-range))
+   :weapon-type-short-range
+   :available-spells-list))
 
 (defpackage :random-armor
   (:use :cl
@@ -2778,6 +2803,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
+        :interactive-entity
 	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
@@ -2795,6 +2821,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
+        :interactive-entity
 	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
@@ -2813,6 +2840,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
+        :interactive-entity
 	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
@@ -2831,6 +2859,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
+        :interactive-entity
 	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
@@ -2848,6 +2877,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
+        :interactive-entity
 	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
@@ -2865,6 +2895,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
+        :interactive-entity
 	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
@@ -2882,6 +2913,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
+        :interactive-entity
 	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
@@ -2901,7 +2933,8 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
-	:character)
+        :interactive-entity
+        :character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :generate-fountain))
@@ -2918,6 +2951,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
+        :interactive-entity
 	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
@@ -2935,6 +2969,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
+        :interactive-entity
 	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
@@ -2952,6 +2987,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
+        :interactive-entity
 	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
@@ -2969,6 +3005,7 @@
 	:interfaces
 	:identificable
 	:basic-interaction-parameters
+        :interactive-entity
 	:character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
@@ -2990,6 +3027,7 @@
    :identificable
    :game-event
    :basic-interaction-parameters
+   :interactive-entity
    :character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
@@ -3479,6 +3517,7 @@
    :send-attack-long-range-event
    :send-attack-spell-event
    :send-spell-event
+   :trigger-trap-attack
    :defend-from-attack-long-range
    :defend-from-attack-spell
    :defend-from-spell
@@ -3486,6 +3525,7 @@
    ;; high level routines
    :attack-short-range
    :attack-long-range
+   :attack-long-range-imprecise
    :attack-launch-spell
    :launch-spell))
 
@@ -3633,6 +3673,7 @@
 	:game-state
 	:mesh
 	:random-object-messages
+        :interactive-entity
 	:character
 	:gui-events
 	:gui)
@@ -3761,11 +3802,13 @@
 	:sb-cga-utils
 	:cl-gl-utils
 	:num
+        :action-scheduler
 	:identificable
 	:entity
 	:game-state
 	:transformable
 	:interfaces
+        :interactive-entity
 	:character
 	:camera
 	:mesh
@@ -3994,6 +4037,7 @@
 	:entity
 	:interfaces
 	:basic-interaction-parameters
+        :interactive-entity
 	:character
 	:arrows
 	:mesh)
@@ -4057,6 +4101,7 @@
 	:vec2
 	:ivec2
 	:player-messages-text
+        :interactive-entity
 	:character
 	:mesh-material
 	:mesh

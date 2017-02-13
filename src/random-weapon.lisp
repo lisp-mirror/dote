@@ -316,8 +316,8 @@
 
 (defun generate-weapon-common (interaction weapon-level weapon-decay-points
 			       effects-no healing-effects-no)
-  (let* ((effects         (%get-normal-fx-shuffled  interaction effects-no))
-	 (healing-effects (%get-healing-fx-shuffled interaction healing-effects-no)))
+  (let* ((effects         (get-normal-fx-shuffled  interaction effects-no))
+	 (healing-effects (get-healing-fx-shuffled interaction healing-effects-no)))
     (n-setf-path-value interaction
 		       (list +decay+)
 		       (calculate-decay weapon-level weapon-decay-points))

@@ -162,7 +162,7 @@
 		       (approx-terrain-height@pos state
 						  (elt pos 0)
 						  (elt pos 2))))
-	      (progn
+	      (game-event:with-send-action-terminated
 		;; remove from world
 		(remove-entity-by-id world (id object))
 		(setf (hitted object) nil)
@@ -172,7 +172,7 @@
 		(if (and intersected-entity
 			 (not (= (id intersected-entity)
 				 (id launcher-entity))))
-		    (progn
+		    (game-event:with-send-action-terminated
 		      ;; send attack event
 		      (funcall attack-event-fn launcher-entity intersected-entity)
 		      ;; remove from world
@@ -241,7 +241,7 @@
 		       (approx-terrain-height@pos state
 						  (elt pos 0)
 						  (elt pos 2))))
-	      (progn
+	      (game-event:with-send-action-terminated
 		;; remove from world
 		(remove-entity-by-id world (id object))
 		(setf (hitted object) nil)
@@ -251,7 +251,7 @@
 		(if (and intersected-entity
 			 (not (= (id intersected-entity)
 				 (id launcher-entity))))
-		    (progn
+		    (game-event:with-send-action-terminated
 		      ;; send attack event
 		      (funcall attack-event-fn launcher-entity intersected-entity)
 		      (particles::set-respawn (elt (mtree:children object) 0) nil)
@@ -259,7 +259,7 @@
 		      (setf (hitted object) t)
 		      (setf (camera:followed-entity camera) nil)
 		      (setf (camera:mode camera) :fp))
-		    (progn
+                    (progn
 		      (incf (displacement trajectory) +arrow-speed+)
 		      (setf pos (ray-ends trajectory pos))
 		      ;; update quadtree
@@ -288,47 +288,50 @@
 	  (push (make-arrow-db-entry :id id :mesh new-arrow) *arrows-factory-db*)
 	  new-arrow))))
 
-(defun launch-ray (attacker defender)
-  (let* ((ghost-atk     (entity:ghost attacker))
-	 (weapon        (character:worn-weapon ghost-atk))
-	 (weapon-type   (if weapon
-			    (cond
-			      ((character:bowp weapon)
-			       :bow)
-			      ((character:crossbowp weapon)
-			       :crossbow)
-			      (t
-			       :spell))
-			    :spell))
-	 (attack-chance (if (eq weapon-type :spell)
-			    (character:actual-attack-spell-chance ghost-atk)
-			    (character:actual-range-attack-chance ghost-atk)))
-	 (ray-dir       (normalize (vec- (aabb-center (actual-aabb-for-bullets defender))
-					 (aabb-center (aabb attacker)))))
-	 (ray           (make-instance 'ray
-				       :ray-direction ray-dir
-				       :displacement +arrow-speed+)))
-    (if (d< (dabs (secure-dacos (dot-product (dir attacker)
-					     ray-dir)))
-	    +visibility-cone-half-hangle+)
-	(progn
-	  (when (not (die-utils:pass-d100.0 attack-chance))
-	    (setf (ray-direction ray)
-		  (transform-direction (ray-direction ray)
-				       (rotate-around +y-axe+
-						      (d* (dexpt -1.0
-								 (d (lcg-next-in-range 1 3)))
-							  (if (eq weapon-type :bow)
-							      (lcg-next-in-range 0.05 1.0)
-							      (lcg-next-in-range 0.01 0.5)))))))
-	  ray)
-	nil)))
+(defun launch-ray (attacker defender imprecision-increase)
+  (flet ((decrease-atk (standard)
+           (dmax 0.0 (d- standard (d* imprecision-increase standard)))))
+    (let* ((ghost-atk     (entity:ghost attacker))
+           (weapon        (character:worn-weapon ghost-atk))
+           (weapon-type   (if weapon
+                              (cond
+                                ((interactive-entity:bowp weapon)
+                                 :bow)
+                                ((interactive-entity:crossbowp weapon)
+                                 :crossbow)
+                                (t
+                                 :spell))
+                              :spell))
+           (attack-chance (if (eq weapon-type :spell)
+                              (character:actual-attack-spell-chance ghost-atk)
+                              (decrease-atk (character:actual-range-attack-chance ghost-atk))))
+           (ray-dir       (normalize (vec- (aabb-center (actual-aabb-for-bullets defender))
+                                           (aabb-center (aabb attacker)))))
+           (ray           (make-instance 'ray
+                                         :ray-direction ray-dir
+                                         :displacement +arrow-speed+)))
+      (if (d< (dabs (secure-dacos (dot-product (dir attacker)
+                                               ray-dir)))
+              +visibility-cone-half-hangle+)
+          (progn
+            (when (not (die-utils:pass-d100.0 attack-chance))
+              (setf (ray-direction ray)
+                    (transform-direction (ray-direction ray)
+                                         (rotate-around +y-axe+
+                                                        (d* (dexpt -1.0
+                                                                   (d (lcg-next-in-range 1 3)))
+                                                            (if (eq weapon-type :bow)
+                                                                (lcg-next-in-range 0.05 1.0)
+                                                                (lcg-next-in-range 0.01 0.5)))))))
+            ray)
+          nil))))
 
 (defun %common-launch-projectile (world attacker defender mesh attack-event-fn
+                                  imprecision-increase
 				  &key
 				    (position        (aabb-center (aabb attacker)))
 				    (camera-follow-p t))
-  (let ((ray (launch-ray attacker defender)))
+  (let ((ray (launch-ray attacker defender imprecision-increase)))
     (if ray
 	(progn
 	  (setf (renderp mesh) t)
@@ -345,13 +348,14 @@
 	  ray)
 	nil)))
 
-(defun launch-arrow (name world attacker defender)
+(defun launch-arrow (name world attacker defender imprecision-increase)
   (let* ((mesh     (get-arrow name))
 	 (successp (%common-launch-projectile world
 					      attacker
 					      defender
 					      mesh
-					      #'battle-utils:send-attack-long-range-event
+                                              #'battle-utils:send-attack-long-range-event
+                                              imprecision-increase
 					      :camera-follow-p t)))
     (when successp
       (world:push-entity world mesh))))
@@ -391,6 +395,7 @@
 					      defender
 					      mesh
 					      (send-attack-spell-events-fn spell)
+                                              0.0
 					      :camera-follow-p t)))
     ;; testing aabb
     ;; (prepare-for-rendering mesh)
@@ -422,35 +427,38 @@
     (setf (pos    mesh) (pos defender))
     (setf (hitted mesh) t)
     (battle-utils:send-attack-spell-event attacker defender)
+    (setf (end-of-life-callback target-effect)
+          #'game-event:send-action-terminated-event)
     (mtree:add-child mesh target-effect)
     (world:push-entity world mesh)))
 
 (defun send-spell-events-fn (spell attacker defender)
   #'(lambda ()
-      (let* ((state            (state attacker))
-	     (range            (spell:effective-range           spell))
-	     (pos-defender     (map-utils:pos->game-state-pos   defender))
-	     (neighborhood-pc  (neighborhood-by-type state
-						     (elt pos-defender 1)
-						     (elt pos-defender 0)
-						     +pc-type+
-						     :h-offset range
-						     :w-offset range))
-	     (neighborhood-npc (neighborhood-by-type state
-						     (elt pos-defender 1)
-						     (elt pos-defender 0)
-						     +npc-type+
-						     :h-offset range
-						     :w-offset range))
-	     (neighborhood     (concatenate 'vector neighborhood-npc neighborhood-pc)))
-	(loop for map-element across neighborhood do
-	     (let* ((id-entity (entity-id (car map-element)))
-		    (entity    (find-entity-by-id state id-entity))
-		    (pos       (map-utils:pos->game-state-pos entity))
-		    (dist      (map-utils:map-manhattam-distance pos-defender pos)))
-	       (when (<= dist range)
-		 (battle-utils:send-spell-event attacker entity))))
-	(battle-utils:send-spell-event attacker defender))))
+      (game-event:with-send-action-terminated
+        (let* ((state            (state attacker))
+               (range            (spell:effective-range           spell))
+               (pos-defender     (map-utils:pos->game-state-pos   defender))
+               (neighborhood-pc  (neighborhood-by-type state
+                                                       (elt pos-defender 1)
+                                                       (elt pos-defender 0)
+                                                       +pc-type+
+                                                       :h-offset range
+                                                       :w-offset range))
+               (neighborhood-npc (neighborhood-by-type state
+                                                       (elt pos-defender 1)
+                                                       (elt pos-defender 0)
+                                                       +npc-type+
+                                                       :h-offset range
+                                                       :w-offset range))
+               (neighborhood     (concatenate 'vector neighborhood-npc neighborhood-pc)))
+          (loop for map-element across neighborhood do
+               (let* ((id-entity (entity-id (car map-element)))
+                      (entity    (find-entity-by-id state id-entity))
+                      (pos       (map-utils:pos->game-state-pos entity))
+                      (dist      (map-utils:map-manhattam-distance pos-defender pos)))
+                 (when (<= dist range)
+                   (battle-utils:send-spell-event attacker entity))))
+          (battle-utils:send-spell-event attacker defender)))))
 
 (defun %apply-tooltip (entity message)
   (billboard:apply-tooltip entity
@@ -478,5 +486,7 @@
 	      (setf (end-of-life-callback target-effect)
 		    (send-spell-events-fn spell attacker defender))
 	      (world:push-entity world target-effect))
-	    (%apply-tooltip attacker (_ "fail")))
-	(%apply-tooltip attacker (_ "too far")))))
+            (game-event:with-send-action-terminated
+              (%apply-tooltip attacker (_ "fail"))))
+        (game-event:with-send-action-terminated
+          (%apply-tooltip attacker (_ "too far"))))))

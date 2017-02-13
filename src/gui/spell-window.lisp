@@ -115,9 +115,8 @@
     (add-child window new-text-desc)
     (loop
        for button in (alexandria:flatten (slots-pages window))
-       for spell  in (spell:db) do
-	 (when (<= (spell:level spell) (level (ghost player)))
-	   (setf (texture-overlay  button) (spell:gui-texture spell)
-		 (contained-entity button) spell)))
+       for spell  in (available-spells-list (ghost player)) do
+         (setf (texture-overlay  button) (spell:gui-texture spell)
+               (contained-entity button) spell))
     (sort-spells window)
     window))

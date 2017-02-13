@@ -27,7 +27,7 @@
 (defclass launch-arrow-action (game-action) ())
 
 (defun %make-queue ()
-  (make-instance 'simple-queue))
+  (make-instance 'qu:simple-queue))
 
 (defclass action-scheduler ()
   ((current-action
@@ -48,7 +48,8 @@
   (with-accessors ((current-action current-action)
 		   (scheduled-actions scheduled-actions)) object
     (setf current-action nil)
-    (setf scheduled-actions (%make-queue))))
+    (setf scheduled-actions (%make-queue))
+    nil))
 
 (defmethod on-game-event ((object action-scheduler) (event game-action-terminated))
   (declare (ignore event))
@@ -64,15 +65,22 @@
     (if (not current-action)
 	(progn
 	  (setf current-action new-action)
-	  (funcall (launch-action-fn current-action))
-	(qu:q-push scheduled-actions new-action)))))
+	  (funcall (launch-action-fn current-action)))
+	(qu:q-push scheduled-actions new-action))))
 
 (defmethod substitute-action ((object action-scheduler))
   (with-accessors ((current-action current-action)
 		   (scheduled-actions scheduled-actions)) object
     (if (qu:q-empty-p scheduled-actions)
-	nil
+	(setf current-action nil)
 	(progn
 	  (setf current-action
 		(qu:q-pop scheduled-actions))
 	  (funcall (launch-action-fn current-action))))))
+
+(defmacro with-enqueue-action ((world) &body body)
+  (alexandria:with-gensyms (fn action-box)
+    `(let* ((,fn         (lambda () (progn ,@body)))
+            (,action-box (make-instance 'action-scheduler:game-action
+                                        :launch-action-fn ,fn)))
+       (action-scheduler:enqueue-action ,world ,action-box))))

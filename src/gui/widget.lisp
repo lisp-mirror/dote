@@ -1898,7 +1898,6 @@
   `(with-accessors ((,world bound-world)) , toolbar
      ,@body))
 
-
 (defun %find-entity (state pos)
   (game-state:find-entity-by-id state
 				(game-state:entity-id (matrix:matrix-elt (map-state state)
@@ -3900,7 +3899,8 @@
 				      (character:last-name new-player)
 				      (random-names:generate)))
     (when (not new-player)
-      (setf (character:exp-points player) character:+starting-exp-points+))
+      (setf (character:exp-points player)
+            interactive-entity:+starting-exp-points+))
     (setup-portrait win :from-player new-player)
     (setf (label lb-strength)  (format nil +standard-float-print-format+ (character:strength player)))
     (setf (label lb-stamina)   (format nil +standard-float-print-format+ (character:stamina player)))

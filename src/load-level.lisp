@@ -454,7 +454,7 @@
 						  (game-state:entity-id a)))
 	      (type (game-state:el-type a)))
 	  (assert (not (null mesh)))
-	  (and (character:containerp (entity:ghost mesh))
+	  (and (interactive-entity:containerp (entity:ghost mesh))
 	       (typep mesh 'mesh:container-mesh-shell)
 	       (eq type +container-type+))))))
 
@@ -473,8 +473,8 @@
        (caro keys   a-k)
        (caro containers a-c)
        (project (a-k a-c)
-	 (== (string= (character:object-keycode a-k)
-		      (character:object-keycode (entity:ghost a-c))) t))
+	 (== (string= (interactive-entity:object-keycode a-k)
+		      (interactive-entity:object-keycode (entity:ghost a-c))) t))
        +succeed+))
     (else
      (fresh (d-k d-c)
@@ -491,7 +491,7 @@
 
 (defun compatible-first-key-keycode (keys keycode)
   (and keys
-       (not (string= (character:object-keycode (first keys)) keycode))))
+       (not (string= (interactive-entity:object-keycode (first keys)) keycode))))
 
 (defun compatible-arrangement-keys (keys containers start out)
   (conde
@@ -514,9 +514,9 @@
 (defun average-container-distance (keys containers)
   (let ((distance-sum (loop for container in containers sum
 			   (let ((pos (position-if #'(lambda (a)
-						       (string= (character:object-keycode
+						       (string= (interactive-entity:object-keycode
 								 (entity:ghost container))
-								(character:object-keycode a)))
+								(interactive-entity:object-keycode a)))
 						   keys)))
 			     (container-distance container
 					     (if pos
@@ -531,9 +531,9 @@
     ((project (keys container)
        (== (not keys) nil)
        (== (compatible-first-key-keycode keys
-					 (character:object-keycode (entity:ghost container)))
+					 (interactive-entity:object-keycode (entity:ghost container)))
 	   t)
-       (== out (character:object-keycode (first keys)))))
+       (== out (interactive-entity:object-keycode (first keys)))))
     (else
      (project (keys)
        (== (not keys) nil))
@@ -548,8 +548,8 @@
 	   (conde
 	     ((project (l keys)
 		;; ensure container's keycode is not compatible with key
-		(== (string= (character:object-keycode l)
-			     (character:object-keycode (entity:ghost (first containers)))) t))
+		(== (string= (interactive-entity:object-keycode l)
+			     (interactive-entity:object-keycode (entity:ghost (first containers)))) t))
 	      (fresh (first cdr second rest)
 		(conso first cdr  containers) ; we need to get the first,
 					      ; the second and all others elements
@@ -590,7 +590,7 @@
 	 (let ((children (mtree:children (entity:ghost container))))
 	   (misc:dbg "container ~a keycode ~a: ~{~a~%~}"
 		     (identificable:id container)
-		     (character:object-keycode (entity:ghost container))
+		     (interactive-entity:object-keycode (entity:ghost container))
 		     (loop for child across children collect
 			  (description-for-humans child)))))))
 
@@ -612,7 +612,7 @@
 	    arranged
 	  (let ((container-cancel-keycode
 		 (find-if #'(lambda (a)
-			      (not (null (character:object-keycode (entity:ghost a)))))
+			      (not (null (interactive-entity:object-keycode (entity:ghost a)))))
 			  containers)))
 	    (when (not (null container-cancel-keycode))
 	      (n-setf-path-value (character:basic-interaction-params
@@ -626,12 +626,12 @@
 		    (map 'list #'(lambda (a)
 				   (format nil "[~a ~a]"
 					   (identificable:id a)
-					   (character:object-keycode a)))
+					   (interactive-entity:object-keycode a)))
 			 arranged-keys)
 		    (map 'list #'(lambda (a)
 				   (format nil "[~a ~a]"
 					   (identificable:id a)
-					   (character:object-keycode (entity:ghost a))))
+					   (interactive-entity:object-keycode (entity:ghost a))))
 			 arranged-containers)))))))
 
 (defun fill-containers-with-objects (world)

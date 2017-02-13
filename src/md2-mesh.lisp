@@ -506,11 +506,11 @@
 		     (immune-poison-status immune-poison-status)
 		     (status status)) ghost
       (with-accessors ((event-data event-data)) event
-	(if (and (= id (id-destination event))
+        (if (and (= id (id-destination event))
 		 (dice:pass-d1.0 (random-object-messages:msg-chance event-data))
 		 (not immune-poison-status)
 		 (null status)) ;; ensure player  can not  suffers
-	                        ;; more than one abnormal status
+                                ;; more than one abnormal status
 	    (progn
 	      (push event-data recurrent-effects)
 	      (billboard:apply-tooltip object
@@ -829,20 +829,9 @@
 
 (defmethod on-game-event ((object md2-mesh) (event trap-triggered-event))
   (check-event-targeted-to-me (object event)
-    (with-accessors ((ghost ghost) (id id) (state state)) object
-      (let* ((trap         (game-state:find-entity-by-id state (id-origin event)))
-	     (ghost-trap   (ghost trap))
-	     (magic-effect (interaction-get-magic-effect ghost-trap)))
-	(when magic-effect
-	  (game-state:with-world (world state)
-	    (let* ((spell-id (basic-interaction-parameters:spell-id magic-effect))
-		   (spell    (spell:get-spell spell-id)))
-	      (setf (spell-loaded ghost-trap) spell)
-	      (when (spell:attack-spell-p spell)
-		(arrows::launch-attack-spell-trap spell world trap object))
-	      (with-accessors ((modifiers-effects modifiers-effects)) ghost-trap
-		(let ((all-effects (random-object-messages:params->effects-messages ghost-trap)))
-		  (random-object-messages:propagate-effects-msg (id trap) id all-effects))))))))))
+    (with-accessors ((state state)) object
+      (let* ((trap (game-state:find-entity-by-id state (id-origin event))))
+        (battle-utils:trigger-trap-attack trap object)))))
 
 (defmethod on-game-event :after ((object md2-mesh) (event end-turn))
   (misc:dbg "end turn md2mesh tooltip ct ~a" (tooltip-count object))

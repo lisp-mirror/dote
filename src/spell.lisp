@@ -238,7 +238,7 @@
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun generate-spell-common (interaction level)
-  (let* ((healing-effects (%get-healing-fx-shuffled interaction 10)))
+  (let* ((healing-effects (interactive-entity:get-healing-fx-shuffled interaction 10)))
     (loop for i in healing-effects do
 	 (cond
 	   ((eq i +heal-damage-points+)
