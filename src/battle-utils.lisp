@@ -578,17 +578,18 @@
 (defun attack-short-range (world attacker defender)
   "This is the most high level attack routine"
   (when defender
-    (if (character:worn-weapon (entity:ghost attacker))
+    (if (character:weapon-type-short-range (entity:ghost attacker))
 	(progn
 	  (world:remove-all-tooltips world)
-	  (battle-utils:send-attack-melee-event attacker defender))
+          (when (short-range-attack-possible-p attacker defender)
+            (battle-utils:send-attack-melee-event attacker defender)))
 	(make-tooltip-no-weapon-error world attacker))
     (entity:reset-tooltip-ct defender)
     (world:reset-toolbar-selected-action world)))
 
 (defun attack-long-range (world attacker defender &key (imprecision-increase 0.0))
   "This is the most high level attack routine"
-  (if (character:worn-weapon (entity:ghost attacker))
+  (if (character:weapon-type-long-range (entity:ghost attacker))
       (progn
 	(world:remove-all-tooltips world)
 	(if (long-range-attack-possible-p attacker defender)

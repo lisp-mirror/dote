@@ -346,7 +346,9 @@
 	    (setf (camera:followed-entity (world:camera world)) mesh)
 	    (setf (camera:mode (world:camera world)) :follow))
 	  ray)
-	nil)))
+        (progn
+          (game-event:send-action-terminated-event)
+          nil))))
 
 (defun launch-arrow (name world attacker defender imprecision-increase)
   (let* ((mesh     (get-arrow name))
