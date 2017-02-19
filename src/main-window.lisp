@@ -311,7 +311,11 @@
 				;;10
 				;; (random-elt (texture:list-of-texture-by-tag
 				;; 	     texture:+texture-tag-decals-circular-wave+))
-	     			(compiled-shaders object))))
+                                (compiled-shaders object)))
+            (let* ((state (game-state object))
+                   (im    (game-state:make-influence-map state)))
+              (pixmap:save-pixmap (inmap:im->pixmap im)
+                                  (fs:file-in-package "influence.tga"))))
 	  (when (string= text "L")
 	    (load-map object)
 	    ;; gui
@@ -320,7 +324,7 @@
 				   :x 0.0 :y 0.0
 				   :width  *window-w*
 				   :height *window-h*
-				   :label nil))
+				   :label  nil))
 	      (mtree:add-child (world:gui (world object)) (world:toolbar (world object)))
 	      ;; test
 	      (mtree:add-child (world:gui (world object))
@@ -329,7 +333,7 @@
 		    (compiled-shaders object))
 	      (setf *map-loaded-p* t)
 	      ;; testing opponents
-	      (interfaces:calculate (world object) 0.0)
+	      (interfaces:calculate  (world object) 0.0)
 	      (world:add-ai-opponent (world object) :warrior :male)
 	      (setf (delta-time-elapsed object) (sdl2:get-ticks))
 	      ;; bg color

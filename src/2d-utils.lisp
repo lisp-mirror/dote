@@ -386,7 +386,7 @@
 	(let ((*sigma-rand* sigmah))
 	  (funcall randomfunc (elt rect 3)))))
 
-(defun line-eqn(a b &optional (thresh 1e-5))
+(defun line-eqn (a b &optional (thresh 1e-5))
   "Calculate a bidimensional line equation crossing vector a and b.
    Return a list containing m q and two flag indicating if the line is
    parallel to x or y respectively"
@@ -398,7 +398,7 @@
       ((<= 0 dx thresh) ; parallel to y
        (list 0 0 nil t))
       (t
-       (list (/ dy dx) (- (second a ) (* (/ dy dx) (elt a 0))) nil nil)))))
+       (list (/ dy dx) (- (elt a 1) (* (/ dy dx) (elt a 0))) nil nil)))))
 
 (defun recursive-bezier (pairs &key (threshold 1))
   (labels ((midpoint (pb pe)

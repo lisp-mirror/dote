@@ -252,3 +252,11 @@
 (define-constant +default-arrow-name+             "bow"                          :test #'string=)
 
 (define-constant +default-bolt-name+              "crossbow"                     :test #'string=)
+
+(define-constant +weapon-pole-range+               2                             :test #'=)
+
+(define-constant +weapon-melee-range+              1                             :test #'=)
+
+(define-constant +weapon-bow-range+               15                             :test #'=)
+
+(define-constant +weapon-crossbow-range+          25                             :test #'=)

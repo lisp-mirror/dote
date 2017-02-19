@@ -498,6 +498,10 @@
 
 (defgeneric available-spells-list (object))
 
+(defgeneric calculate-influence (object))
+
+(defgeneric calculate-influence-weapon (object weapon-type))
+
 (defmacro gen-player-class-test (name)
   (let ((name-fn (format-symbol t "~:@(pclass-~a-p~)" name)))
     `(progn
@@ -750,6 +754,27 @@
 
 (defmethod available-spells-list ((object player-character))
   (spell:filter-spell-db #'(lambda (a) (> (spell:level a) (level object)))))
+
+(defmethod calculate-influence ((object player-character))
+  (calculate-influence-weapon object (weapon-type object)))
+
+(defmethod calculate-influence-weapon ((object player-character) (weapon-type (eql nil)))
+  0.0)
+
+(defmethod calculate-influence-weapon ((object player-character) (weapon-type (eql :bow)))
+  (d +weapon-bow-range+))
+
+(defmethod calculate-influence-weapon ((object player-character) (weapon-type (eql :crossbow)))
+  (d +weapon-crossbow-range+))
+
+(defmethod calculate-influence-weapon ((object player-character) (weapon-type (eql :edge)))
+  (d +weapon-melee-range+))
+
+(defmethod calculate-influence-weapon ((object player-character) (weapon-type (eql :impact)))
+  (d +weapon-melee-range+))
+
+(defmethod calculate-influence-weapon ((object player-character) (weapon-type (eql :pole)))
+  (d +weapon-pole-range+))
 
 (defmacro gen-actual-characteristic (name)
   (let ((fn       (format-fn-symbol t "actual-~a" name))

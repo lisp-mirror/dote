@@ -141,6 +141,7 @@
 	       (:file "trees")
 	       (:file "load-level")
 	       (:file "id3")
+               (:file "influence-map")
 	       (:file "ann")
 	       (:file "keyboard-config")
 	       (:file "main-window")

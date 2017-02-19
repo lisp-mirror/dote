@@ -87,11 +87,16 @@
 		 ,(alexandria:make-keyword name)
 	       :test #'eq))))
 
-(gen-type ceiling floor
-	  empty unknown
-	  door-n door-s
-	  door-w door-e
-	  wall tree
+(gen-type ceiling
+          floor
+	  empty
+          unknown
+	  door-n
+          door-s
+	  door-w
+          door-e
+	  wall
+          tree
 	  furniture
 	  magic-furniture
 	  container
@@ -258,11 +263,13 @@
    (player-entities
     :initform (make-hash-table :test 'equal)
     :initarg  :player-entities
-    :accessor player-entities)
+    :accessor player-entities
+    :type     :md2-mesh)
    (ai-entities
     :initform (make-hash-table :test 'equal)
     :initarg  :ai-entities
-    :accessor ai-entities)
+    :accessor ai-entities
+    :type     :md2-mesh)
    (selected-pc
     :initform nil
     :initarg  :selected-pc
@@ -351,6 +358,8 @@
 (defgeneric entity-next-p (object me other))
 
 (defgeneric faction-turn  (object))
+
+(defgeneric make-influence-map (object))
 
 (defmethod fetch-render-window ((object game-state))
   (and (window-id object)
@@ -703,3 +712,12 @@
     (if (= (rem game-turn 2) 0)
 	+pc-type+
 	+npc-type+)))
+
+(defmethod make-influence-map ((object game-state))
+  (with-accessors ((player-entities player-entities)
+                   (map-state map-state)
+                   (ai-entities ai-entities)) object
+    (let* ((im (make-matrix (width map-state) (height map-state) 0.0)))
+      (inmap:apply-influence im player-entities)
+      (inmap:apply-influence im ai-entities)
+      im)))

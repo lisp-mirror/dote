@@ -292,9 +292,11 @@
 
   (defmethod print-object ((object gradient) stream)
     (print-unreadable-object (object stream :type t :identity nil)
-      (format stream "~{~a~}" (colors object))))
+      (format stream "~{~a~%~}" (colors object))))
 
   (defgeneric pick-color (object intensity))
+
+  (defgeneric add-color (object new-color))
 
   (defmethod pick-color ((object gradient) intensity)
     (with-accessors ((colors colors)) object
@@ -311,6 +313,18 @@
 	(map 'vec4 #'(lambda (a b) (dlerp weight a b))
 	     (color (elt colors (first interval)))
 	     (color (elt colors (second interval)))))))
+
+  (defmethod add-color ((object gradient) new-color)
+    (let ((new-colors (pushnew new-color
+                               (colors object)
+                               :key #'intensity
+                               :test #'num:epsilon=)))
+      (setf (colors object) new-colors))
+    (let ((max (reduce #'max (colors object) :key #'intensity)))
+      (loop for i in (colors object) do
+	   (setf (intensity i) (d/ (intensity i) max)))
+      (setf (colors object) (sort (colors object) #'< :key #'intensity))))
+
 
   (defun make-gradient (&rest colors)
     (make-instance 'gradient :colors colors)))

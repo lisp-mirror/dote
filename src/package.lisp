@@ -155,7 +155,11 @@
    :+visibility-ray-displ-incr+
    :+camera-drag-spring-k+
    :+default-arrow-name+
-   :+default-bolt-name+))
+   :+default-bolt-name+
+   :+weapon-pole-range+
+   :+weapon-melee-range+
+   :+weapon-bow-range+
+   :+weapon-crossbow-range+))
 
 (defpackage :profiling
   (:use :cl)
@@ -825,6 +829,7 @@
    :color
    :gradient
    :pick-color
+   :add-color
    :make-gradient
    :+grayscale-gradient+
    :+rainbow-gradient+
@@ -2041,6 +2046,8 @@
    :fetch-from-ai-entities
    :map-player-entities
    :map-ai-entities
+   :faction-player-p
+   :faction-ai-p
    :approx-terrain-height@pos
    :place-player-on-map
    :set-invalicable-cost-player-layer@
@@ -2059,7 +2066,8 @@
    :turn-on-fog
    :turn-off-fog
    :entity-next-p
-   :faction-turn))
+   :faction-turn
+   :make-influence-map))
 
 (defpackage :game-event
   (:use
@@ -2789,7 +2797,8 @@
    :weapon-type
    :weapon-type-long-range
    :weapon-type-short-range
-   :available-spells-list))
+   :available-spells-list
+   :calculate-influence))
 
 (defpackage :random-armor
   (:use :cl
@@ -4183,7 +4192,30 @@
   (:use :cl
 	:alexandria
 	:mtree-utils
-	:interfaces))
+	:interfaces)
+  (:export
+   :build-tree))
+
+(defpackage :influence-map
+  (:use :cl
+        :alexandria
+        :ivec2
+        :vec2
+        :num
+        :matrix
+        :identificable
+        :entity
+        :interfaces
+        :game-state)
+  (:nicknames :inmap)
+  (:export
+   :dijkstra-layer
+   :layer
+   :smooth-dijkstra-layer
+   :make-dijkstra-layer
+   :dijkstra-layer->pixmap
+   :apply-influence
+   :im->pixmap))
 
 (defpackage :ann
   (:use :cl
