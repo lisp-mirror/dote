@@ -159,7 +159,8 @@
    :+weapon-pole-range+
    :+weapon-melee-range+
    :+weapon-bow-range+
-   :+weapon-crossbow-range+))
+   :+weapon-crossbow-range+
+   :+explore-strategy+))
 
 (defpackage :profiling
   (:use :cl)
@@ -578,6 +579,7 @@
    :+ivec2-zero+
    :make-fresh-ivec2
    :copy-ivec2
+   :sequence->ivec2
    :ivec2=
    :ivec2p
    :ivec2*
@@ -894,7 +896,11 @@
    :random-sub-aabb
    :random-sub-rect
    :line-eqn
+   :calc-quadrant
+   :calc-octant
+   :segment
    :recursive-bezier
+   :displace-2d-vector
    :2d-vector-map
    :2d-vector-list-map
    :2d-vector-list-scale
@@ -1276,6 +1282,7 @@
    :h-mirror-matrix
    :matrix-hline
    :matrix-vline
+   :matrix-line
    :matrix-rect
    :pixel-inside-p
    :element@-inside-p
@@ -1824,6 +1831,7 @@
    :+sand+
    :+grass+
    :+snow+
+   :+influence-map+
    :+texture-db-floor-level-1+
    :+texture-db-floor-level-2+
    :+texture-db-floor-level-3+
@@ -2011,6 +2019,7 @@
    :labyrinth-entities
    :player-entities
    :ai-entities
+   :blackboard
    :level-difficult
    :map-cache-dir
    :window-id
@@ -2067,7 +2076,9 @@
    :turn-off-fog
    :entity-next-p
    :faction-turn
-   :make-influence-map))
+   :make-influence-map
+   :set-tile-visited
+   :set-concerning-tile))
 
 (defpackage :game-event
   (:use
@@ -2666,7 +2677,9 @@
    :get-magic-fx-shuffled
    :eq-generate-p
    :cdr-eq-generate-p
-   :remove-generate-symbols))
+   :remove-generate-symbols
+   :entity-w-portrait
+   :portrait))
 
 (defpackage :character
   (:use :cl
@@ -3394,6 +3407,7 @@
    :other-visible-p
    :update-visibility-cone
    :visible-players
+   :other-faction-visible-players
    :other-visible-p
    :other-visible-cone-p
    :other-visible-ray-p))
@@ -4209,6 +4223,7 @@
         :game-state)
   (:nicknames :inmap)
   (:export
+   :skippablep
    :dijkstra-layer
    :layer
    :smooth-dijkstra-layer
@@ -4248,6 +4263,31 @@
    :gen-blank-hopfield-ann
    :memorize
    :recall))
+
+(defpackage :blackboard
+  (:use :cl
+        :alexandria
+        :constants
+        :ivec2
+        :vec2
+        :num
+        :matrix
+        :3d-utils
+        :2d-utils
+        :identificable
+        :entity
+        :interfaces
+        :map-utils
+        :influence-map
+        :game-state)
+  (:export
+   :blackboard
+   :visited-tiles
+   :unexplored-layer
+   :set-tile-visited
+   :set-concerning-tile
+   :update-unexplored-layer
+   :next-unexplored-position))
 
 (defpackage :keyboard-config
   (:use :cl

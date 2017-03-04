@@ -27,7 +27,7 @@
 
   (defun ivec2p (a)
     (typep a 'ivec2))
-  
+
   (defun ivec2 (x y)
     (declare (optimize (debug 0) (safety 0) (speed 3)))
     (let ((v (make-array-frame 2 0 'ivec2-type t)))
@@ -46,12 +46,15 @@
       (setf (elt res 0) (elt old 0)
 	    (elt res 1) (elt old 1))
       res))
-  
-  (alexandria:define-constant +ivec2-zero+ (ivec2 0.0 0.0) 
+
+  (alexandria:define-constant +ivec2-zero+ (ivec2 0.0 0.0)
     :test #'ivec2=)
 
   (defun-inline-function make-fresh-ivec2 ()
     (make-array-frame 2 0 'ivec2-type t)))
+
+(defun-inline-function sequence->ivec2 (seq)
+  (ivec2 (elt seq 0) (elt seq 1)))
 
 (defun-inline-function ivec2* (vec val)
   (declare (ivec2 vec))
@@ -108,4 +111,3 @@
 	   (/ (elt a 1) length))))
 
 (define-compiler-macros ivec2-normalize a)
-

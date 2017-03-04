@@ -104,6 +104,10 @@
     :initarg  :basic-interaction-params
     :accessor basic-interaction-params)))
 
+(defmethod marshal:class-persistant-slots ((object interactive-entity))
+  (append  '(basic-interaction-params)
+	   (call-next-method)))
+
 (defgeneric lookup-basic-interaction (object key))
 
 (defgeneric import-interaction-from-definition (object file))
@@ -1079,3 +1083,14 @@
 		     (remove-generate-symbols (cdr i)))
 		    (t
 		     (cdr i))))))))
+
+(defclass entity-w-portrait ()
+  ((portrait
+    :initform nil
+    :initarg :portrait
+    :accessor portrait
+    :type texture:texture)))
+
+(defmethod marshal:class-persistant-slots ((object entity-w-portrait))
+  (append  '(portrait)
+	   (call-next-method)))

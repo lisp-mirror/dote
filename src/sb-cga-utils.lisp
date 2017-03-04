@@ -257,7 +257,8 @@
    (half-angle
     :initform +visibility-cone-half-hangle+
     :initarg  :half-angle
-    :accessor half-angle)
+    :accessor half-angle
+    :documentation "angle in radians")
    (cone-height
     :initform +visibility-cone-height+
     :initarg  :cone-height

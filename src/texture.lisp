@@ -68,6 +68,8 @@
 
 (alexandria:define-constant +snow+                             "snow"               :test #'string=)
 
+(alexandria:define-constant +influence-map+                    "influence-maps"     :test #'string=)
+
 (alexandria:define-constant +texture-tag-wall-level-1+         "wall-level-1"       :test #'string=)
 
 (alexandria:define-constant +texture-tag-wall-level-2+         "wall-level-2"       :test #'string=)

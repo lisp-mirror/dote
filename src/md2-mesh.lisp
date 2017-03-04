@@ -277,40 +277,40 @@
 	       (when (not already-stopped)
 		 (%stop-movement object :decrement-movement-points t)))
 	     (seenp (hash-key entity
-			    &key
-			    (from-render-p nil)
-			    (maintain-render nil))
-	     (declare (ignore hash-key))
-	     (let ((already-stopped nil))
-	       (when (find-if #'(lambda (a) (= id (id a))) (visible-players entity))
-		 (when (not maintain-render)
-		   (setf (renderp object) t))
-		 (when (and (typep (from-event event)
-				   'move-entity-entered-in-tile-event)
-			    (current-path (ghost object))
-			    (not (eq (my-faction object) (my-faction entity))))
-		   (when (not from-render-p)
-		     (setf already-stopped t)
-		     (stop-movements nil))
-		   (when (dice:pass-d100.0 (actual-ambush-attack-chance (ghost entity)))
-		     (cond
-		       ((battle-utils:long-range-attack-possible-p entity object)
-			(game-state:with-world (world state)
-			  (stop-movements already-stopped)
-			  (battle-utils:attack-long-range world entity object)))
-		       ((battle-utils:short-range-attack-possible-p entity object)
-			(game-state:with-world (world state)
-			  (stop-movements already-stopped)
-			  (battle-utils:attack-short-range world entity object))))))
-		 t)
-	       nil))
-	   (seep (entity)
-	     (loop
-		for seen in (visible-players entity
-					     :predicate #'(lambda (a)
-							    (not (eq (my-faction object)
-								     (my-faction a))))) do
-		  (setf (renderp seen) t))))
+                              &key
+                              (from-render-p nil)
+                              (maintain-render nil))
+               (declare (ignore hash-key))
+               (let ((already-stopped nil))
+                 (when (find-if #'(lambda (a) (= id (id a))) (visible-players entity))
+                   (when (not maintain-render)
+                     (setf (renderp object) t))
+                   (when (and (typep (from-event event)
+                                     'move-entity-entered-in-tile-event)
+                              (current-path (ghost object))
+                              (not (eq (my-faction object) (my-faction entity))))
+                     (when (not from-render-p)
+                       (setf already-stopped t)
+                       (stop-movements nil))
+                     (when (dice:pass-d100.0 (actual-ambush-attack-chance (ghost entity)))
+                       (cond
+                         ((battle-utils:long-range-attack-possible-p entity object)
+                          (game-state:with-world (world state)
+                            (stop-movements already-stopped)
+                            (battle-utils:attack-long-range world entity object)))
+                         ((battle-utils:short-range-attack-possible-p entity object)
+                          (game-state:with-world (world state)
+                            (stop-movements already-stopped)
+                            (battle-utils:attack-short-range world entity object))))))
+                   t)
+                 nil))
+             (seep (entity)
+               (loop
+                  for seen in (visible-players entity
+                                               :predicate #'(lambda (a)
+                                                              (not (eq (my-faction object)
+                                                                       (my-faction a))))) do
+                    (setf (renderp seen) t))))
       (if (= (id object) (id-origin event))
 	  (let ((saved-renderp (renderp object)))
 	    (game-state:map-player-entities state
@@ -429,7 +429,11 @@
 	    (world:move-entity world object leaving-tile)
 	    (propagate-update-highlight-path (make-instance 'update-highlight-path
 							    :tile-pos current-path))
-	    ;; traps
+            ;; update blackboard if AI
+            (when (faction-ai-p state id)
+              (let ((pos-entity (calculate-cost-position object)))
+                (game-state:set-tile-visited state (elt pos-entity 0) (elt pos-entity 1))))
+            ;; traps
 	    (let ((trap-ostile (trap-ostile-p object)))
 	      (when trap-ostile
 		(%stop-movement object :decrement-movement-points t)
@@ -853,6 +857,21 @@
 				       (cons (_ "Move to")
 					     (world:point-to-entity-and-hide-cb world object)))))
 	(send-refresh-toolbar-event)
+        ;;; uncomment to test autoexplore
+        ;; (when (eq (my-faction object) game-state:+npc-type+)
+        ;;   (let ((new-pos (validate-player-path object
+        ;;                                        (next-move-position object +explore-strategy+))))
+        ;;     (when new-pos
+        ;;       (misc:dbg "go to ~a dir ~a" new-pos (dir object))
+        ;;       (setf (game-state:selected-path state) new-pos)
+        ;;       (let* ((tiles          (game-state:tiles (game-state:selected-path state)))
+        ;;              (cost           (game-state:cost  (game-state:selected-path state)))
+        ;;              (movement-event (make-instance 'game-event:move-entity-along-path-event
+        ;;                                             :path           tiles
+        ;;                                             :cost           cost
+        ;;                                             :id-destination (id object))))
+        ;;         (game-event:propagate-move-entity-along-path-event movement-event)))))
+        ;;;
 	nil))))
 
 (defmethod my-faction ((object md2-mesh))
@@ -1053,6 +1072,12 @@
 (defgeneric trap-ostile-p (object))
 
 (defgeneric place-trap (object trap-ghost))
+
+(defgeneric next-move-position (object strategy))
+
+(defgeneric build-player-path (object to-pos))
+
+(defgeneric validate-player-path (object path))
 
 (defmethod destroy ((object md2-mesh))
   (when +debug-mode+
@@ -1414,7 +1439,8 @@
 		      (vec 0.0 1.0 0.0)
 		      (normalize new-dir)))))
       (if (not (vec~ (pos object) end (d/ +terrain-chunk-tile-size+ 8.0)))
-	  (setf (pos object) (vec+ (pos object) (vec* dir +model-move-speed+)))
+	  (setf (pos object) ;end)
+                (vec+ (pos object) (vec* dir +model-move-speed+)))
 	  (let ((movement-event (make-instance 'move-entity-entered-in-tile-event
 					       :id-origin (id object)
 					       :tile-pos  end)))
@@ -1963,6 +1989,65 @@
 	  (world:push-trap-entity world shell)
 	  (decrement-move-points-place-trap object)
 	  (send-refresh-toolbar-event))))))
+
+(defmethod next-move-position ((object md2-mesh) (strategy (eql +explore-strategy+)))
+  (with-accessors ((state state)) object
+    (with-accessors ((blackboard blackboard:blackboard)) state
+      (blackboard:next-unexplored-position blackboard object))))
+
+(defmethod build-player-path ((object md2-mesh) to-pos)
+  "to-pos in cost coordinates (ivec2)"
+  (assert (ivec2p to-pos))
+  (with-accessors ((ghost ghost)
+		   (state state)
+                   (pos pos)) object
+    (let* ((cost-player-pos      (calculate-cost-position object))
+           (cost-destination     (game-state:get-cost state
+                                                      (elt to-pos 0)
+                                                      (elt to-pos 1)))
+           (ghost                (entity:ghost object))
+           (min-cost             (map-utils:map-manhattam-distance-cost to-pos
+                                                                        cost-player-pos))
+           (player-movement-points (character:current-movement-points ghost)))
+      (if (and (>= player-movement-points +open-terrain-cost+)
+               (<= min-cost               player-movement-points)
+               (<= cost-destination       player-movement-points))
+          (multiple-value-bind (path cost)
+              (game-state:build-movement-path state
+                                              cost-player-pos
+                                              to-pos)
+            (if (and path
+                     (<= cost player-movement-points))
+                (game-state:make-movement-path path cost)
+                nil))
+          nil))))
+
+(defmethod validate-player-path ((object md2-mesh) path)
+  (with-accessors ((ghost ghost)
+		   (state state)
+                   (pos pos)) object
+    (let* ((cost-player-pos        (calculate-cost-position object))
+           (ends                   (alexandria:last-elt path))
+           (cost-destination       (game-state:get-cost state
+                                                        (elt ends 0)
+                                                        (elt ends 1)))
+           (ghost                  (entity:ghost object))
+           (min-cost               (map-utils:map-manhattam-distance-cost ends
+                                                                          cost-player-pos))
+           (player-movement-points (character:current-movement-points ghost)))
+      (if (and (>= player-movement-points +open-terrain-cost+)
+               (<= min-cost               player-movement-points)
+               (<= cost-destination       player-movement-points))
+          (multiple-value-bind (path cost)
+              (game-state:build-movement-path state
+                                              cost-player-pos
+                                              ends)
+            (if (and path
+                     (<= cost player-movement-points))
+                (game-state:make-movement-path path cost)
+                nil))
+          nil))))
+
 
 (defparameter *md2-mesh-factory-db* '())
 

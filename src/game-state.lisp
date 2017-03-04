@@ -277,7 +277,12 @@
    (selected-path
     :initform nil
     :initarg  :selected-path
-    :accessor selected-path)))
+    :accessor selected-path)
+   (blackboard
+    :initform nil
+    :initarg  :blackboard
+    :accessor blackboard
+    :type blackboard:blackboard)))
 
 (defgeneric fetch-render-window (object))
 
@@ -360,6 +365,10 @@
 (defgeneric faction-turn  (object))
 
 (defgeneric make-influence-map (object))
+
+(defgeneric set-tile-visited (object x y))
+
+(defgeneric set-concerning-tile (object x y))
 
 (defmethod fetch-render-window ((object game-state))
   (and (window-id object)
@@ -602,7 +611,9 @@
 					    (elt player-coordinates 1))
 	(if (eq faction +pc-type+)
 	    (add-to-player-entities object player)
-	    (add-to-ai-entities     object player))))))
+            (let ((pos-entity (mesh:calculate-cost-position player)))
+              (add-to-ai-entities     object player)
+              (set-tile-visited object (elt pos-entity 0) (elt pos-entity 1))))))))
 
 (defmethod set-invalicable-cost-player-layer@ ((object game-state) x y)
   (with-accessors ((costs-from-players costs-from-players)) object
@@ -721,3 +732,11 @@
       (inmap:apply-influence im player-entities)
       (inmap:apply-influence im ai-entities)
       im)))
+
+(defmethod set-tile-visited ((object game-state) x y)
+  (with-accessors ((blackboard blackboard)) object
+    (set-tile-visited blackboard  x y)))
+
+(defmethod set-concerning-tile ((object game-state) x y)
+  (with-accessors ((blackboard blackboard)) object
+    (set-tile-visited blackboard  x y)))

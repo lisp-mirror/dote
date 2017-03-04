@@ -198,10 +198,10 @@
     :accessor toolbar
     :initarg  :toolbar
     :initform (make-instance 'widget:main-toolbar
-				   :x 0.0
-				   :y 0.0
-				   :width  (num:d *window-w*)
-				   :height (num:d *window-h*)))
+                             :x 0.0
+                             :y 0.0
+                             :width  (num:d *window-w*)
+                             :height (num:d *window-h*)))
    (gui
     :accessor gui
     :initarg  :gui
@@ -212,9 +212,11 @@
 			     :label nil))))
 
 (defmethod initialize-instance :after ((object world) &key &allow-other-keys)
-  (game-event:register-for-refresh-toolbar-event object)
-  (game-event:register-for-update-highlight-path object)
-  (game-event:register-for-end-turn              object))
+  (with-accessors ((toolbar toolbar)) object
+    (game-event:register-for-refresh-toolbar-event object)
+    (game-event:register-for-update-highlight-path object)
+    (game-event:register-for-end-turn              object)
+    (setf (widget:bound-world toolbar) object)))
 
 (defmethod game-event:on-game-event ((object world)
 				     (event game-event:refresh-toolbar-event))
@@ -699,8 +701,7 @@
 				 (smoke    (texture:get-texture texture:+smoke-tray+))
 				 (weather-type :foggy-night-clear-day))
   (setf (skydome object) (make-skydome bg clouds-1 clouds-2 clouds-3 smoke)
-	(weather-type    (skydome object)) weather-type
-	(widget:bound-world     (toolbar object)) object))
+	(weather-type    (skydome object)) weather-type))
 
 (defmethod get-window-size ((object world))
   (sdl2:get-window-size (frame-window object)))

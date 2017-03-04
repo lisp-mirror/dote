@@ -260,3 +260,5 @@
 (define-constant +weapon-bow-range+               15                             :test #'=)
 
 (define-constant +weapon-crossbow-range+          25                             :test #'=)
+
+(define-constant +explore-strategy+               :explore                       :test #'eq)

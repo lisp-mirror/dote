@@ -20,7 +20,7 @@
 
 (alexandria:define-constant +weight-for-half-capacity-inventory+ 20.0                   :test #'=)
 
-(defclass np-character (identificable interactive-entity m-tree)
+(defclass np-character (identificable interactive-entity entity-w-portrait m-tree)
   ((first-name
     :initform ""
     :initarg :first-name
@@ -36,11 +36,6 @@
     :initarg :description
     :accessor description
     :type string)
-   (portrait
-    :initform nil
-    :initarg :portrait
-    :accessor portrait
-    :type texture:texture)
    (weight
     :initarg :weight
     :initform 35
@@ -69,13 +64,11 @@
   (append  '(first-name
 	     last-name
 	     description
-	     portrait
 	     weight
 	     damage-points
 	     current-damage-points
 	     level
-	     age
-	     basic-interaction-params)
+	     age)
 	   (call-next-method)))
 ;;;; interaction
 
@@ -83,7 +76,7 @@
   (print-unreadable-object (object stream :type t :identity t)
     (format stream "dmg: ~a lvl: ~a" (damage-points object) (level object))))
 
-(defmethod description-type :after ((object np-character))
+(defmethod description-type ((object np-character))
   (format nil "~a ~a ~a"
           (first-name object)
           (last-name  object)

@@ -40,6 +40,7 @@
 
 (defmethod smooth-dijkstra-layer ((object dijkstra-layer) (state game-state)
                                   &key (skippable-predicate #'skippablep))
+  "Note: skipped tiles will get nil as value!"
   (let* ((matrix          (layer object))
          (working-copy    (clone matrix))
          (not-skippable-p #'(lambda (el pos) (not (funcall skippable-predicate (el-type el) pos)))))
@@ -48,13 +49,18 @@
                          (ivec2 x y)))
            (let* ((neighbour (game-state:get-neighborhood state y x not-skippable-p))
                   (center    (matrix-elt working-copy y x))
-                  (min       (loop for cell across neighbour minimize
+                  (min       (loop for cell across neighbour
+                                when (matrix-elt working-copy
+                                              (elt (cdr cell) 1)  ; row
+                                              (elt (cdr cell) 0)) ; column
+                                minimize
                                   (matrix-elt working-copy
                                               (elt (cdr cell) 1)     ; row
                                               (elt (cdr cell) 0))))) ; column
-             (when (d> (dabs (d- center min)) 2.0)
+             (when (and center
+                        (d>= center (d+ (d min) 2.0)))
                (setf (matrix-elt working-copy y x)
-                     (d+ 1.0 min))))
+                     (d+ 1.0 (d min)))))
            (setf (matrix-elt working-copy y x) nil)))
     (if (matrix= matrix working-copy
                  :test #'(lambda (v1 v2)

@@ -141,7 +141,7 @@
 	 (elt rect 2)
 	 (elt rect 3)))
 
-(defun rotate-iaabb2* (aabb angle &key(rounding-fn #'round))
+(defun rotate-iaabb2* (aabb angle &key (rounding-fn #'round))
   (let* ((vertices (list
 		    (2d-vector-rotate (list (elt aabb 0) (elt aabb 1)) angle)
 		    (2d-vector-rotate (list (elt aabb 2) (elt aabb 1)) angle)
@@ -391,7 +391,7 @@
    Return a list containing m q and two flag indicating if the line is
    parallel to x or y respectively"
   (let ((dy (- (elt b 1) (elt a 1)))
-	(dx (- (elt b 0)  (elt a 0))))
+	(dx (- (elt b 0) (elt a 0))))
     (cond
       ((<= 0 dy thresh) ;parallel to x
        (list 0 (elt b 1) t nil))
@@ -399,6 +399,112 @@
        (list 0 0 nil t))
       (t
        (list (/ dy dx) (- (elt a 1) (* (/ dy dx) (elt a 0))) nil nil)))))
+
+(defun calc-quadrant (start end)
+  (let* ((xend   (elt end   0))
+         (xstart (elt start 0))
+         (yend   (elt end   1))
+         (ystart (elt start 1))
+         (dy     (- yend ystart))
+         (dx     (- xend xstart)))
+     (cond
+       ((and (>= dx 0)
+             (>= dy 0))
+        :ne)
+       ((and (>=  dx 0)
+             (minusp dy))
+        :se)
+       ((and (minusp dx)
+             (>= dy 0))
+        :nw)
+       (t
+        :sw))))
+
+(defun calc-octant (start end)
+  "Octants are:
+
+     \2|1/
+:nw  3\|/0 :ne
+    ---+---
+:sw  4/|\7 :se
+     /5|6\
+ "
+  (let* ((quadrant (calc-quadrant start end))
+         (line     (2d-utils:line-eqn start end))
+         (m        (elt line 0)))
+    (case quadrant
+      (:ne
+       (if (> m 1.0) 1 0))
+      (:se
+       (if (> m -1.0) 7 6))
+      (:nw
+       (if (< m -1.0) 2 3))
+      (:sw
+       (if (> m 1.0) 5 4)))))
+
+(defun to-octant-0 (octant point)
+  (let ((x (elt point 0))
+        (y (elt point 1)))
+    (cond
+      ((= octant 0)
+       point)
+      ((= octant 1)
+       (ivec2 y x))
+      ((= octant 2)
+       (ivec2 y (- x)))
+      ((= octant 3)
+       (ivec2 (- x) y))
+      ((= octant 4)
+       (ivec2 (- x) (- y)))
+      ((= octant 5)
+       (ivec2 (- y) (- x)))
+      ((= octant 6)
+       (ivec2 (- y) x))
+      ((= octant 7)
+       (ivec2 x (- y))))))
+
+(defun from-octant-0 (octant point)
+  (let ((x (elt point 0))
+        (y (elt point 1)))
+    (cond
+      ((= octant 0)
+       point)
+      ((= octant 1)
+       (ivec2 y x))
+      ((= octant 2)
+       (ivec2 (- y) x))
+      ((= octant 3)
+       (ivec2 (- x) y))
+      ((= octant 4)
+       (ivec2 (- x) (- y)))
+      ((= octant 5)
+       (ivec2 (- y) (- x)))
+      ((= octant 6)
+       (ivec2 y (- x)))
+      ((= octant 7)
+       (ivec2 x (- y))))))
+
+(defun segment (start end)
+  (let* ((octant       (calc-octant start end))
+         (actual-start (to-octant-0 octant start))
+         (actual-end   (to-octant-0 octant end))
+         (xend         (elt actual-end   0))
+         (xstart       (elt actual-start 0))
+         (ystart       (elt actual-start 1))
+         (dy           (- (elt actual-end 1) (elt actual-start 1)))
+         (dx           (- (elt actual-end 0) (elt actual-start 0))))
+    (do ((res '())
+         (epsilon 0)
+         (x xstart (1+ x))
+         (y ystart))
+        ((>= x xend) (reverse res))
+      (push (from-octant-0 octant (ivec2 x y)) res)
+      (if (< (* 2 (+ epsilon dy))
+             dx)
+          (incf epsilon dy)
+          (progn
+            (incf y)
+            (incf epsilon (- dy dx)))))))
 
 (defun recursive-bezier (pairs &key (threshold 1))
   (labels ((midpoint (pb pe)
@@ -429,6 +535,11 @@
   (if (not (null func))
       `(funcall ,func ,val)
       val))
+
+(defmacro displace-2d-vector ((v x y) &body body)
+  `(let ((,x (elt ,v 0))
+         (,y (elt ,v 1)))
+     ,@body))
 
 (defun 2d-vector-map (v &key (funcx nil) (funcy nil))
   "Return a list of x,y values of the vector transformed by funcx and funcy (if not nil) respectively"
@@ -538,7 +649,8 @@
 	(- angle)
 	angle)))
 
-(defgeneric 2d-vector-rotate (a angle))
+(defgeneric 2d-vector-rotate (a angle)
+  (:documentation "Angle in radians"))
 
 (defmethod 2d-vector-rotate ((a list) angle)
   (list

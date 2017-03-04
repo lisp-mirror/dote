@@ -143,6 +143,7 @@
 	       (:file "id3")
                (:file "influence-map")
 	       (:file "ann")
+               (:file "blackboard")
 	       (:file "keyboard-config")
 	       (:file "main-window")
 	       (:module tests

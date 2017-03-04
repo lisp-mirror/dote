@@ -271,6 +271,8 @@
 
   (defgeneric matrix-rect (object x y width height color))
 
+  (defgeneric matrix-line (object start end color))
+
   (defgeneric pixel-inside-p (object x y))
 
   (defgeneric element@-inside-p (object x y))
@@ -410,6 +412,7 @@ else
 	   (list x (1+ y)))))
 
 (defun gen-neighbour-position-in-box (x y w-offset h-offset &key (add-center t))
+  "note: no bounds checking is done"
   (let ((results (misc:make-fresh-array 0 nil 'ivec2:ivec2 nil)))
     (loop for x-box from (- x (floor (/ w-offset 2))) to (+ x (floor (/ w-offset 2))) by 1 do
 	 (loop for y-box from (- y (floor (/ h-offset 2))) to (+ y (floor (/ h-offset 2))) by 1 do
@@ -963,19 +966,28 @@ else
 (defmethod matrix-hline ((object matrix) x y width color)
   (do ((actx x (1+ actx)))
       ((not (< actx (+ x width))))
-    (matrix:with-check-matrix-borders (object actx y)
+    (with-check-matrix-borders (object actx y)
       (setf (matrix-elt object y actx) color))))
 
 (defmethod matrix-vline ((object matrix) x y height color)
   (do ((acty y (1+ acty)))
       ((not (<= acty (+ y height))))
-    (matrix:with-check-matrix-borders (object x acty)
+    (with-check-matrix-borders (object x acty)
       (setf (matrix-elt object acty x) color))))
 
 (defmethod matrix-rect ((object matrix) x y width height color)
   (do ((acty y (1+ acty)))
       ((not (< acty (+ y height))))
     (matrix-hline object x acty width color)))
+
+(defmethod matrix-line ((object matrix) start end color)
+  (let ((points (2d-utils:segment start end)))
+    (loop for p in points do
+         (let ((x (elt p 0))
+               (y (elt p 1)))
+           (with-check-matrix-borders (object x y)
+             (setf (matrix-elt object y x) color))))
+    object))
 
 (defmethod pixel-inside-p ((object matrix) x y)
   (declare (optimize (speed 3) (safety 0) (debug 0)))

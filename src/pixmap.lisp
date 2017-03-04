@@ -1040,13 +1040,13 @@
 		  row)))
 
 (defun matrix->pbm (matrix name &optional (magic "P1") (row-max-length +ppm-max-row-length+))
-  (let ((data (data-as-list (data matrix))))
+  (let ((data (data-as-list matrix)))
     (with-output-to-string (stream)
       (format stream "~a~%" magic)
       (format stream "#~a~%" name)
       (format stream "~a ~a~%" (width matrix) (height matrix))
-      (let ((rows (map 'vector #'(lambda (l) (misc:split-into-sublist l row-max-length))
-			(misc:split-into-sublist (rowbool->rowpixel data) (width matrix)))))
+      (let ((rows (mapcar #'(lambda (l) (misc:split-into-sublist l row-max-length))
+                          (misc:split-into-sublist (rowbool->rowpixel data) (width matrix)))))
 	(format stream "~{~{~{~a ~}~%~}~}" rows)))))
 
 (defun matrix->pgm (matrix name max-gray-level &optional (magic "P2")

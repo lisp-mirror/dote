@@ -376,7 +376,7 @@
 	  (when *placeholder*
 	    (let* ((old-pos (entity:pos *placeholder*)))
 	      (when (eq :scancode-f1 scancode)
-		(misc:dbg "position ~a costs ~a, ~a cost: ~a what ~a id ~a~% approx h ~a facing ~a"
+		(misc:dbg "position ~a costs ~a, ~a cost: ~a what ~a id ~a~% approx h ~a facing ~a occlude? ~a"
 			  old-pos
 			  (map-utils:coord-chunk->costs (elt old-pos 0))
 			  (map-utils:coord-chunk->costs (elt old-pos 2))
@@ -392,8 +392,11 @@
 			  (approx-terrain-height@pos (game-state object)
 					    (elt old-pos 0)
 					    (elt old-pos 2))
-			  (map-utils:facing-pos old-pos (entity:dir *placeholder*))))
-	      (when (and (eq :scancode-up scancode))
+			  (map-utils:facing-pos old-pos (entity:dir *placeholder*))
+                          (game-state:occludep-in-pos (game-state object)
+                                                      (map-utils:coord-chunk->costs (elt old-pos 0))
+                                                      (map-utils:coord-chunk->costs (elt old-pos 2)))))
+              (when (and (eq :scancode-up scancode))
 		(setf (entity:pos *placeholder*)
 		      (vec (elt old-pos 0)
 			   0.0

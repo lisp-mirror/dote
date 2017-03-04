@@ -32,7 +32,7 @@
 	 (epsilon= dot-product 1.0))))
 
 (defun facing-pos (pos dir)
-  "dir and pos are a 3d vector, pos a ivec2"
+  "dir and pos are a 3d vector, return an ivec2"
   (let* ((pos-map    (pos-entity-chunk->cost-pos pos))
 	 (comp       (position-if #'(lambda (a) (not (epsilon= 0.0 a))) dir))
 	 (comp-2     (if (= comp 0)

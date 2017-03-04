@@ -28,6 +28,8 @@
 
 (defgeneric visible-players (object &key predicate))
 
+(defgeneric other-faction-visible-players (object))
+
 (defgeneric other-visible-p (object target))
 
 (defgeneric other-visible-cone-p (object triangle-mesh))
@@ -67,6 +69,12 @@
        (loop for ent being the hash-value in mines
 	  when (funcall predicate ent)
 	  collect ent)))))
+
+(defmethod other-faction-visible-players ((object able-to-see-mesh))
+  (visible-players object
+                   :predicate #'(lambda (a)
+                                  (not (eq (my-faction object)
+                                           (my-faction a))))))
 
 (defmethod other-visible-p ((object able-to-see-mesh) (target triangle-mesh))
   (let ((in-cone-p (other-visible-cone-p object target)))

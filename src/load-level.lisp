@@ -909,53 +909,58 @@
     (load actual-file :verbose nil :print nil)
     (update-progress 0.4)
     (resource-cache:ensure-cache-running
-     (initialize-skydome world)
-     (update-progress 0.45)
-     (setf (main-state world)          game-state)
-     (setf (compiled-shaders world)    compiled-shaders)
-     (setup-game-hour game-state       *game-hour*)
-     (setf (map-cache-dir game-state)  *raw-seed*)
-     (setf (costs-from-map     game-state)  (cost-matrix *map*))
-     (setf (costs-from-players game-state)  (matrix:make-matrix (matrix:width  (cost-matrix *map*))
-								(matrix:height (cost-matrix *map*))
-								+minimum-player-layer-cost+))
-     (setf (movement-costs game-state)
-	   (graph:make-tile-multilayer-graph (costs-from-map game-state)
-					     (costs-from-players game-state)))
-     (prepare-map-state game-state     *map*)
-     (update-progress 0.5)
-     (setf (trees-bag world)           *trees*)
-     (setf (walls-bag world)           *wall*)
-     (setf (windows-bag world)         *window*)
-     (setf (doors-bag world)           (make-instance 'doors
-						      :door-n *door-n*
-						      :door-s *door-s*
-						      :door-e *door-e*
-						      :door-w *door-w*))
-     (setf (chairs-bag world)          (make-instance 'chairs
-						      :chair-n *chair-n*
-						      :chair-s *chair-s*
-						      :chair-e *chair-e*
-						      :chair-w *chair-w*))
-     (setf (floor-bag             world) *floor*)
-     (setf (furnitures-bag        world) *furnitures*)
-     (setf (containers-bag        world) *containers-furnitures*)
-     (setf (magic-furnitures-bag  world) *magic-furnitures*)
-     (setf (pillars-bag           world) *pillar-furnitures*)
-     (setf (tables-bag            world) *table-furnitures*)
-     (setf (wall-decorations-bag  world) *wall-decoration-furnitures*)
-     (setf (walkable-bag          world) *walkable-furnitures*)
-     (setf (traps-bag        world) *trap*)
-     (setup-terrain               world  *map*)
-     (update-progress 0.6)
-     (setup-floor                 world  *map*)
-     (update-progress 0.7)
-     ;;(setup-ceiling              world  *map*)
-     (setup-labyrinths            world  *map*)
-     (update-progress 0.8)
-     (setup-trees                 world  *map*)
-     (update-progress 0.9)
-     (setup-water                 world  *map*)
-     (update-progress 1.0)
-     ;; free memory associated with *map*, *wall* etc.
-     (clean-global-wars))))
+      (initialize-skydome world)
+      (update-progress 0.45)
+      (setf (main-state world)          game-state)
+      (setf (compiled-shaders world)    compiled-shaders)
+      (setup-game-hour game-state       *game-hour*)
+      (setf (map-cache-dir game-state)  *raw-seed*)
+      (setf (costs-from-map     game-state)  (cost-matrix *map*))
+      (setf (costs-from-players game-state)  (matrix:make-matrix (matrix:width  (cost-matrix *map*))
+                                                                 (matrix:height (cost-matrix *map*))
+                                                                 +minimum-player-layer-cost+))
+      (setf (movement-costs game-state)
+            (graph:make-tile-multilayer-graph (costs-from-map game-state)
+                                              (costs-from-players game-state)))
+      (prepare-map-state game-state     *map*)
+      (update-progress 0.5)
+      (setf (trees-bag world)           *trees*)
+      (setf (walls-bag world)           *wall*)
+      (setf (windows-bag world)         *window*)
+      (setf (doors-bag world)           (make-instance 'doors
+                                                       :door-n *door-n*
+                                                       :door-s *door-s*
+                                                       :door-e *door-e*
+                                                       :door-w *door-w*))
+      (setf (chairs-bag world)          (make-instance 'chairs
+                                                       :chair-n *chair-n*
+                                                       :chair-s *chair-s*
+                                                       :chair-e *chair-e*
+                                                       :chair-w *chair-w*))
+      (setf (floor-bag             world) *floor*)
+      (setf (furnitures-bag        world) *furnitures*)
+      (setf (containers-bag        world) *containers-furnitures*)
+      (setf (magic-furnitures-bag  world) *magic-furnitures*)
+      (setf (pillars-bag           world) *pillar-furnitures*)
+      (setf (tables-bag            world) *table-furnitures*)
+      (setf (wall-decorations-bag  world) *wall-decoration-furnitures*)
+      (setf (walkable-bag          world) *walkable-furnitures*)
+      (setf (traps-bag        world) *trap*)
+      (setup-terrain               world  *map*)
+      (update-progress 0.6)
+      (setup-floor                 world  *map*)
+      (update-progress 0.7)
+      ;;(setup-ceiling              world  *map*)
+      (setup-labyrinths            world  *map*)
+      (update-progress 0.8)
+      (setup-trees                 world  *map*)
+      (update-progress 0.9)
+      (setup-water                 world  *map*)
+      (update-progress 1.0)
+      ;; free memory associated with *map*, *wall* etc.
+      (clean-global-wars)
+      ;; initialize blackboard
+      (let ((blackboard (make-instance 'blackboard:blackboard
+                                       :main-state game-state)))
+        (game-event:register-for-end-turn blackboard)
+        (setf (game-state:blackboard game-state) blackboard)))))
