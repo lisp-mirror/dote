@@ -81,7 +81,7 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
 
    Please note that s-dot from  quicklisp will *not* works, you should
    download              the               version              hosted below
-   - [[https://github.com/cage2/s-dot2][https://github.com/cage2/s-dot2]]
+   - [[https://notabug.org/cage/s-dot2][https://notabug.org/cage/s-dot2]]
 
    Moreover  you  will  need  a Opengl  implementation  with  hardware
    acceleration.  Tested  only  with  Mesa library  with  Intel(R)  HD
