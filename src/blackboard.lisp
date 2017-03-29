@@ -22,7 +22,7 @@
 
 (define-constant +concerning-tile-value+           100.0 :test #'=)
 
-(define-constant +attack-nongoal-tile-value+        5.0 :test #'=)
+(define-constant +attack-nongoal-tile-value+       100.0 :test #'=)
 
 (define-constant +length-line-of-sight-inf+       1000.0 :test #'=)
 
