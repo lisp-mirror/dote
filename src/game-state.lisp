@@ -147,6 +147,8 @@
 
 (defgeneric map-element-empty-p (object))
 
+(defgeneric map-element-occupied-by-character-p (object))
+
 (defgeneric neighborhood-by-type (object row column type &key w-offset h-offset))
 
 (defgeneric get-neighborhood (object row column predicate &key w-offset h-offset))
@@ -158,6 +160,13 @@
 	  +empty-type+)
       (eq (el-type object)
 	  +floor-type+)))
+
+(defmethod map-element-occupied-by-character-p ((object map-state-element))
+  "t if occupied by either player or ai (npc) character"
+  (or (eq (el-type object)
+	  +pc-type+)
+      (eq (el-type object)
+	  +npc-type+)))
 
 (defmethod insert-state-chain-after ((object map-state-element)
 			  idx entity type occlusion-value
@@ -418,9 +427,17 @@
 
 (defgeneric element-mapstate@ (object x y))
 
+(defgeneric door@pos-p (object x y))
+
 (defmethod element-mapstate@ ((object game-state) (x fixnum) (y fixnum))
   (declare (optimize (speed 0) (safety 3) (debug 3)))
   (matrix-elt (map-state object) y x))
+
+(defmethod door@pos-p ((object game-state) (x fixnum) (y fixnum))
+  (or (eq (el-type-in-pos object x y) +door-n-type+)
+      (eq (el-type-in-pos object x y) +door-s-type+)
+      (eq (el-type-in-pos object x y) +door-w-type+)
+      (eq (el-type-in-pos object x y) +door-e-type+)))
 
 (defmethod prepare-map-state ((object game-state) (map random-terrain))
   (with-accessors ((map-state map-state)) object

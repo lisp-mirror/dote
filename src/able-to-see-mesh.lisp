@@ -107,13 +107,13 @@
 	   t)))))
 
 (defmethod nonlabyrinth-element-hitted-by-ray ((object able-to-see-mesh) (target triangle-mesh))
-   (with-accessors ((dir dir)
-		   (pos pos)
-		   (state state)
-		   (visibility-cone visibility-cone)) object
+  (with-accessors ((dir dir)
+                   (pos pos)
+                   (state state)
+                   (visibility-cone visibility-cone)) object
     ;; launch a ray
     (let* ((ray (make-instance 'ray
-			       :ray-direction (normalize (vec- (aabb-center (aabb target))
+                               :ray-direction (normalize (vec- (aabb-center (aabb target))
 							       (aabb-center (aabb object))))))
 	   (world-ref (game-state:fetch-world (state object)))
 	   (quad-tree (world:entities world-ref)))
@@ -156,10 +156,10 @@
 		      (t
 		       (when (insidep (aabb d) (ray-ends ray pos)) ;; O_O
 			 (if (= (id d) (id target))
-			     (progn
-			       (return-from nonlabyrinth-element-hitted-by-ray (values ray d)))
+                             (return-from nonlabyrinth-element-hitted-by-ray (values ray d))
 			     (when (not (= (id d) (id object)))
-			       (return-from nonlabyrinth-element-hitted-by-ray nil)))))))))))))
+			       (return-from
+                                nonlabyrinth-element-hitted-by-ray nil)))))))))))))
 
 (defun %blocked-by-ray-p (ray-ends vec-object)
   (loop for a across vec-object do

@@ -1999,6 +1999,7 @@
    :invalid-entity-id-map-state
    :map-state-element
    :map-element-empty-p
+   :map-element-occupied-by-character-p
    :entity-id
    :el-type
    :occlude
@@ -2036,6 +2037,7 @@
    :entity-id-in-pos
    :occludep-in-pos
    :element-mapstate@
+   :door@pos-p
    :selected-pc
    :selected-path
    :build-movement-path

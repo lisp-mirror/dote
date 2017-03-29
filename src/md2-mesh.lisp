@@ -429,6 +429,8 @@
 	    (world:move-entity world object leaving-tile)
 	    (propagate-update-highlight-path (make-instance 'update-highlight-path
 							    :tile-pos current-path))
+            ;; update-cone for ai visibility check below
+            (update-visibility-cone object)
             ;; update blackboard if AI
             (when (faction-ai-p state id)
               (let ((pos-entity (calculate-cost-position object)))
@@ -438,7 +440,6 @@
 	      (when trap-ostile
 		(%stop-movement object :decrement-movement-points t)
 		(%try-deactivate-trap world object trap-ostile)))
-	    (update-visibility-cone object)
 	    (send-update-visibility-event object event)
 	    (send-refresh-toolbar-event))))
       nil)))
@@ -857,7 +858,7 @@
 				       (cons (_ "Move to")
 					     (world:point-to-entity-and-hide-cb world object)))))
 	(send-refresh-toolbar-event)
-        ;;; uncomment to test autoexplore
+        ;; ;;; uncomment to test autoexplore
         ;; (when (eq (my-faction object) game-state:+npc-type+)
         ;;   (let ((new-pos (validate-player-path object
         ;;                                        (next-move-position object +explore-strategy+))))

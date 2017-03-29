@@ -240,7 +240,7 @@
 
 (define-constant +gui-zoom-entity+                15.0                           :test #'=)
 
-(define-constant +visibility-cone-half-hangle+     0.5235988                     :test #'=)
+(define-constant +visibility-cone-half-hangle+     0.7854                        :test #'=)
 
 (define-constant +visibility-cone-height+          (sb-cga:vec 0.0 0.0 40.0)
   :test #'sb-cga:vec~)

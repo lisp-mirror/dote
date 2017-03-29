@@ -404,6 +404,7 @@ else
 	   (list (1- x) (1+ y)))))
 
 (defun gen-4-neighbour-counterclockwise (x y &key (add-center t))
+  "note: no bounds checking is done"
   (append (and add-center (list (list x y)))
 	  (list
 	   (list (1+ x) y)

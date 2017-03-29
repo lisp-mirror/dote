@@ -947,8 +947,10 @@
       (cached-aabb object)
       (let ((res (make-instance 'aabb)))
 	(walk-quad-tree-anyway (object)
-	  (expand res (aabb-p1 (aabb entity)))
-	  (expand res (aabb-p2 (aabb entity))))
+          (when (every #'(lambda (a) (d>= a 0.0)) (aabb-p1 (aabb entity)))
+            (expand res (aabb-p1 (aabb entity))))
+          (when (every #'(lambda (a) (d>= a 0.0)) (aabb-p2 (aabb entity)))
+            (expand res (aabb-p2 (aabb entity)))))
 	(setf (slot-value object 'cached-aabb) res)
 	res)))
 
