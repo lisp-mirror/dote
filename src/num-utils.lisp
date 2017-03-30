@@ -47,6 +47,10 @@
 
   (defparameter *array-primes* (make-primes-array 100000)))
 
+(defun manhattam-distance (from to)
+  (+ (abs (- (elt to 0) (elt from 0)))
+     (abs (- (elt to 1) (elt from 1)))))
+
 (defgeneric rad->deg (rad))
 
 (defmethod rad->deg ((rad §d))

@@ -423,6 +423,13 @@ else
 		(vector-push-extend (ivec2:ivec2 x-box y-box) results))))
     results))
 
+(defun gen-ring-box-position (x y w-offset h-offset)
+  "note: no bounds checking is done, inefficient also"
+  (let ((results (gen-neighbour-position-in-box x y w-offset h-offset)))
+    (remove-if #'(lambda (a) (and (/= (abs (- (elt a 0) x)) (/ w-offset 2))
+                                  (/= (abs (- (elt a 1) y)) (/ h-offset 2))))
+               results)))
+
 (defmacro with-check-borders ((x y x-bond y-bond w h) then else)
   `(if (and
 	(>= (the fixnum ,x) (the fixnum ,x-bond))

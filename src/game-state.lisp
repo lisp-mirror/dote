@@ -122,7 +122,7 @@
     :initarg  :el-type
     :accessor el-type)
    (occlude
-    :initform t
+    :initform nil
     :initarg  :occlude
     :reader   occludep
     :writer   (setf occlude))

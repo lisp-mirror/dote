@@ -55,6 +55,12 @@
     :accessor attack-enemy-melee-layer
     :type     dijkstra-layer
     :documentation "This holds the position the player with melee weapon (except pole weapon) should reach to attack the enemy")
+   (attack-enemy-pole-layer
+    :initform nil
+    :initarg  :attack-enemy-pole-layer
+    :accessor attack-enemy-pole-layer
+    :type     dijkstra-layer
+    :documentation "This holds the position the player with pole weapon should reach to attack the enemy")
    (use-enemy-fov-when-exploring
     :initform nil
     :initarg  :use-enemy-fov-when-exploring-p
@@ -66,6 +72,7 @@
                    (concerning-tiles concerning-tiles)
                    (unexplored-layer unexplored-layer)
                    (attack-enemy-melee-layer attack-enemy-melee-layer)
+                   (attack-enemy-pole-layer  attack-enemy-pole-layer)
                    (main-state       main-state)) object
     (let ((wmap (width  (map-state main-state)))
           (hmap (height (map-state main-state))))
@@ -73,6 +80,8 @@
       (setf concerning-tiles (make-matrix wmap hmap 0.0))
       (setf unexplored-layer (inmap:make-dijkstra-layer wmap hmap +unexplored-tile-value+))
       (setf attack-enemy-melee-layer
+            (inmap:make-dijkstra-layer wmap hmap +attack-nongoal-tile-value+))
+      (setf attack-enemy-pole-layer
             (inmap:make-dijkstra-layer wmap hmap +attack-nongoal-tile-value+)))))
 
 (defun decrease-concerning (game-state concerning-map)
@@ -330,60 +339,81 @@
         (t  ;; otherwise
          nil)))))
 
+(defun %attack-layer-player-goal-pos (blackboard
+                                      layer
+                                      player
+                                      all-visibles-from-ai
+                                      goal-tiles-generator-fn)
+  (with-accessors ((main-state main-state)) blackboard
+    (cond
+      ((faction-player-p main-state (id player))
+       (when (find (id player) all-visibles-from-ai :test #'=)
+         (let* ((position (pos-entity-chunk->cost-pos (pos player)))
+                (x-player (elt position 0))
+                (y-player (elt position 1))
+                (goal-tiles-pos (funcall goal-tiles-generator-fn
+                                         x-player
+                                         y-player)))
+           (setf goal-tiles-pos (remove-if #'(lambda (a)
+                                               (or (not (element@-inside-p layer
+                                                                           (elt a 0)
+                                                                           (elt a 1)))
+                                                   (skippablep (el-type-in-pos main-state
+                                                                               (elt a 0)
+                                                                               (elt a 1))
+                                                               nil)))
+                                           goal-tiles-pos))
+           (loop
+              for point in goal-tiles-pos
+              when (2d-tile-visible-p main-state
+                                      (sequence->ivec2 point)
+                                      #'%2d-ray-stopper-melee-fn)
+              collect point)))))))
+
 (defmethod update-attack-melee-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
                                              &key
                                                (all-visibles-from-ai
                                                 (all-player-id-visible-from-ai (main-state player))))
-  (with-accessors ((main-state main-state)
-                   (attack-enemy-melee-layer attack-enemy-melee-layer)) object
+  (with-accessors ((attack-enemy-melee-layer attack-enemy-melee-layer)) object
     (with-accessors ((layer layer)) attack-enemy-melee-layer
-      (cond
-        ((faction-player-p main-state (id player))
-         (when (find (id player) all-visibles-from-ai :test #'=)
-           (let* ((position (pos-entity-chunk->cost-pos (pos player)))
-                  (x-player (elt position 0))
-                  (y-player (elt position 1))
-                  (goal-tiles-pos (gen-4-neighbour-counterclockwise x-player
-                                                                    y-player
-                                                                    :add-center nil)))
-             (setf goal-tiles-pos (remove-if #'(lambda (a)
-                                                 (or (not (element@-inside-p layer
-                                                                             (elt a 0)
-                                                                             (elt a 1)))
-                                                     (skippablep (el-type-in-pos main-state
-                                                                                 (elt a 0)
-                                                                                 (elt a 1))
-                                                                 nil)))
-                                             goal-tiles-pos))
+      (let* ((goal-generator-fn #'(lambda (x y)
+                                    (gen-4-neighbour-counterclockwise x y :add-center nil)))
+             (goal-tiles-pos    (%attack-layer-player-goal-pos object
+                                                               layer
+                                                               player
+                                                               all-visibles-from-ai
+                                                               goal-generator-fn)))
+        (loop
+           for point in goal-tiles-pos do
+             (displace-2d-vector (point x y)
+               (with-check-matrix-borders (layer x y)
+                 (setf (matrix-elt layer y x)
+                       +goal-tile-value+))))))))
 
-             (loop
-                for point in goal-tiles-pos
-                when (2d-tile-visible-p main-state
-                                        (sequence->ivec2 point)
-                                        #'%2d-ray-stopper-melee-fn)
-                do
-                  (displace-2d-vector (point x y)
-                    (with-check-matrix-borders (layer x y)
-                      (setf (matrix-elt layer y x)
-                            +goal-tile-value+)))))))))))
+(defun %update-attack-layer (blackboard djk-map update-fn)
+  (with-accessors ((main-state main-state)
+                   (concerning-tiles concerning-tiles)
+                   (attack-enemy-melee-layer attack-enemy-melee-layer)
+                   (unexplored-layer unexplored-layer)) blackboard
+      (reset-attack-layer djk-map)
+      (let ((all-visibles (all-player-id-visible-from-ai main-state)))
+        ;; add-concerning tiles
+        ;(nsuperimpose-layer concerning-tiles layer :fn #'max)
+        (map-player-entities main-state  #'(lambda (k player)
+                                             (declare (ignore k))
+                                             (funcall update-fn
+                                                      blackboard
+                                                      player
+                                                      :all-visibles-from-ai
+                                                      all-visibles)
+        (inmap:smooth-dijkstra-layer djk-map main-state))))))
 
 (defmethod update-attack-melee-layer ((object blackboard))
   (with-accessors ((main-state main-state)
                    (concerning-tiles concerning-tiles)
                    (attack-enemy-melee-layer attack-enemy-melee-layer)
                    (unexplored-layer unexplored-layer)) object
-    (with-accessors ((layer layer)) attack-enemy-melee-layer
-      (reset-attack-layer attack-enemy-melee-layer)
-      (let ((all-visibles (all-player-id-visible-from-ai main-state)))
-        ;; add-concerning tiles
-        ;(nsuperimpose-layer concerning-tiles layer :fn #'max)
-        (map-player-entities main-state  #'(lambda (k player)
-                                             (declare (ignore k))
-                                             (update-attack-melee-layer-player object
-                                                                               player
-                                                                               :all-visibles-from-ai
-                                                                               all-visibles)))
-        (inmap:smooth-dijkstra-layer attack-enemy-melee-layer main-state)))))
+    (%update-attack-layer object attack-enemy-melee-layer #'update-attack-melee-layer-player)))
 
 (defun calc-end-line-sight (player)
   (with-accessors ((pos pos)

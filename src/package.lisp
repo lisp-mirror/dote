@@ -268,6 +268,7 @@
    :primes-list
    :make-primes-array
    :*array-primes*
+   :manhattam-distance
    :rad->deg
    :deg->rad
    :spherical->cartesian
@@ -1263,6 +1264,7 @@
    :gen-neighbour-position
    :gen-4-neighbour-counterclockwise
    :gen-neighbour-position-in-box
+   :gen-ring-box-position
    :with-check-borders
    :with-check-matrix-borders
    :with-check-matrix-borders-then-else
