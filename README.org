@@ -21,8 +21,8 @@ tactical game.
 
 * Current status
 
-The game is  not playable, there is a short  video showing the terrain
-rendering in the video directory.
+The game  is not playable  but someway  interactive, there is  an old,
+short video showing the terrain rendering in the video directory.
 
 * Building
 

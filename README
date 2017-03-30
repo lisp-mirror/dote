@@ -1,0 +1,186 @@
+Table of Contents
+─────────────────
+
+1 Introduction
+.. 1.1 Features
+2 Current status
+3 Building
+.. 3.1 Hardware requisite
+.. 3.2 Dependency
+4 Issues
+5 BUGS
+6 License
+7 Contributing
+8 NO WARRANTY
+9 Thanks
+
+
+1 Introduction
+══════════════
+
+  Dawn of the Era (dote for short) will be a fantasy, turn based,
+  tactical game.
+
+
+1.1 Features
+────────────
+
+  • procedural generation of:
+    • levels;
+    • terrains;
+    • trees;
+    • labyrinths;
+    • combat units;
+    • game object (potions, weapons, etc..);
+    • spells;
+    • most of the textures.
+  • supported mesh in obj and MD2 file format, tags supported for the
+    latter;
+  • simple caching system for levels;
+  • Opengl GUI (minimal).
+
+
+2 Current status
+════════════════
+
+  The game is not playable but someway interactive, there is an old,
+  short video showing the terrain rendering in the video directory.
+
+
+3 Building
+══════════
+
+  A primitive building method using autotools is supported.  For the
+  moment just run ./configure and then edit the file src/config.lisp and
+  modify the constants \+sys-data-dir\+ \+catalog-dir\+ to match the
+  path where the sources are.
+
+  For example
+
+  ┌────
+  │ (alexandria:define-constant +sys-data-dir+
+  │   "/home/username/lisp/dote/data/" :test #'string=)
+  │
+  │ (alexandria:define-constant +catalog-dir+
+  │ "/home/username/lisp/dote/po" :test #'string=)
+  └────
+
+  then open emacs and slime load dote and finally, on the REPL type
+  (main-window::main).
+
+
+3.1 Hardware requisite
+──────────────────────
+
+  • 8 Gb of RAM;
+  • Accelerated GPU.
+
+
+3.2 Dependency
+──────────────
+
+  Of course a Common lisp compiler is mandatory, the compilation has
+  been tested only with SBCL version 1.2.15 on Debian GNU/Linux
+  (testing).
+
+  dote depends on the following lisp libraries:
+  • uiop (bundled with ASDF3);
+  • swank;
+  • clunit;
+  • alexandria;
+  • lparallel;
+  • parse-number;
+  • ieee-floats;
+  • flexi-streams;
+  • cl-ppcre-unicode;
+  • osicat;
+  • babel;
+  • trivial-garbage;
+  • xmls;
+  • cl-i18n;
+  • marshal;
+  • log4cl;
+  • sb-cga;
+  • cl-opengl;
+  • sdl2kit;
+  • s-dot;
+  • cl-kanren.
+
+  Please note that s-dot from quicklisp will *not* works, you should
+  download the version hosted below
+  • [[https://notabug.org/cage/s-dot2]]
+
+  Moreover you will need a Opengl implementation with hardware
+  acceleration.  Tested only with Mesa library with Intel(R) HD Graphics
+  2500 GPU.
+
+
+[[https://notabug.org/cage/s-dot2]] https://notabug.org/cage/s-dot2
+
+
+4 Issues
+════════
+
+  I strongly recommend you to compile and run the demo in a testing
+  environment as it is unstable (i.  e. frequently crash), remember also
+  that there is 8.
+
+
+5 BUGS
+══════
+
+  Please send bug report to cage at katamail dot com
+
+
+6 License
+═════════
+
+  This program is released under GNU General Public license version 3 or
+  later (see COPYING file).
+
+  The program use data and code from other sources, please see
+  LICENSES.org for credits.
+
+  Altough any efforts has been put to make the list of credits
+  exaustive, errors are always possible.  Please send correction to cage
+  at katamail dot com.
+
+
+7 Contributing
+══════════════
+
+  Any help is appreciated.  Artist, translators and coders are
+  needed. If you intend to contribute please send a message to cage at
+  katamail dot com.
+
+
+8 NO WARRANTY
+═════════════
+
+  Dawn of the era: a tactical game.  Copyright (C) 2015 cage
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or (at
+  your option) any later version.
+
+  This program is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see
+  [[http://www.gnu.org/licenses/]].
+
+
+[[http://www.gnu.org/licenses/]] http://www.gnu.org/licenses/
+
+
+9 Thanks
+════════
+
+  • All the peoples listed in LICENSES.org file;
+  • Salvatore di Martino for the name "Dawn of the era";
+  • Opengameart.org for the great work;
+  • ufoai.org for inspiration and documentation on MD2 model.
