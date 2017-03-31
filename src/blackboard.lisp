@@ -100,9 +100,10 @@
   (with-accessors ((concerning-tiles concerning-tiles)) object
     (decrease-concerning (main-state object) concerning-tiles)
     (update-attack-melee-layer object)
+    (update-attack-pole-layer  object)
     ;; debug ;;;;;;
     ;; (let ((pixmap (inmap:dijkstra-layer->pixmap
-    ;;                (attack-enemy-melee-layer object))))
+    ;;                (attack-enemy-pole-layer object))))
     ;;   (pixmap:save-pixmap pixmap (fs:file-in-package "exploring.tga")))
     nil))
 
@@ -122,6 +123,10 @@
 (defgeneric update-attack-melee-layer (object))
 
 (defgeneric update-attack-melee-layer-player (object player &key all-visibles-from-ai))
+
+(defgeneric update-attack-pole-layer (object))
+
+(defgeneric update-attack-pole-layer-player (object player &key all-visibles-from-ai))
 
 (defmethod set-tile-visited ((object blackboard) x y)
   (call-next-method object
@@ -364,11 +369,29 @@
                                                                nil)))
                                            goal-tiles-pos))
            (loop
-              for point in goal-tiles-pos
+              for point in (map 'list #'identity goal-tiles-pos)
               when (2d-tile-visible-p main-state
                                       (sequence->ivec2 point)
                                       #'%2d-ray-stopper-melee-fn)
               collect point)))))))
+
+(defun %update-attack-layer (blackboard djk-map update-fn)
+  (with-accessors ((main-state main-state)
+                   (concerning-tiles concerning-tiles)
+                   (attack-enemy-melee-layer attack-enemy-melee-layer)
+                   (unexplored-layer unexplored-layer)) blackboard
+      (reset-attack-layer djk-map)
+      (let ((all-visibles (all-player-id-visible-from-ai main-state)))
+        ;; add-concerning tiles
+        ;(nsuperimpose-layer concerning-tiles layer :fn #'max)
+        (map-player-entities main-state  #'(lambda (k player)
+                                             (declare (ignore k))
+                                             (funcall update-fn
+                                                      blackboard
+                                                      player
+                                                      :all-visibles-from-ai
+                                                      all-visibles)
+        (inmap:smooth-dijkstra-layer djk-map main-state))))))
 
 (defmethod update-attack-melee-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
                                              &key
@@ -390,30 +413,56 @@
                  (setf (matrix-elt layer y x)
                        +goal-tile-value+))))))))
 
-(defun %update-attack-layer (blackboard djk-map update-fn)
-  (with-accessors ((main-state main-state)
-                   (concerning-tiles concerning-tiles)
-                   (attack-enemy-melee-layer attack-enemy-melee-layer)
-                   (unexplored-layer unexplored-layer)) blackboard
-      (reset-attack-layer djk-map)
-      (let ((all-visibles (all-player-id-visible-from-ai main-state)))
-        ;; add-concerning tiles
-        ;(nsuperimpose-layer concerning-tiles layer :fn #'max)
-        (map-player-entities main-state  #'(lambda (k player)
-                                             (declare (ignore k))
-                                             (funcall update-fn
-                                                      blackboard
-                                                      player
-                                                      :all-visibles-from-ai
-                                                      all-visibles)
-        (inmap:smooth-dijkstra-layer djk-map main-state))))))
-
 (defmethod update-attack-melee-layer ((object blackboard))
   (with-accessors ((main-state main-state)
                    (concerning-tiles concerning-tiles)
                    (attack-enemy-melee-layer attack-enemy-melee-layer)
                    (unexplored-layer unexplored-layer)) object
     (%update-attack-layer object attack-enemy-melee-layer #'update-attack-melee-layer-player)))
+
+
+(defun %pole-weapon-goal-generator-fn (player)
+  (let ((level (level-difficult (state player))))
+    #'(lambda (x y)
+        (let ((size (* 2 +weapon-pole-range+)))
+          (remove-if-not #'(lambda (a)
+                             (<= (manhattam-distance a (ivec2 x y))
+                                 (/ size 2)))
+                         (cond
+                           ((< level 2)
+                            (gen-4-neighbour-counterclockwise x y :add-center nil))
+                           ((<= 2 level 3)
+                            (if (die-utils:pass-d2 2)
+                                (gen-4-neighbour-counterclockwise x y :add-center nil)
+                                (gen-ring-box-position x y size size)))
+                           (t
+                            (gen-ring-box-position x y size size))))))))
+
+(defmethod update-attack-pole-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
+                                             &key
+                                               (all-visibles-from-ai
+                                                (all-player-id-visible-from-ai (main-state player))))
+  (with-accessors ((attack-enemy-pole-layer attack-enemy-pole-layer)) object
+    (with-accessors ((layer layer)) attack-enemy-pole-layer
+      (let* ((goal-generator-fn (%pole-weapon-goal-generator-fn player))
+             (goal-tiles-pos    (%attack-layer-player-goal-pos object
+                                                               layer
+                                                               player
+                                                               all-visibles-from-ai
+                                                               goal-generator-fn)))
+        (loop
+           for point in goal-tiles-pos do
+             (displace-2d-vector (point x y)
+               (with-check-matrix-borders (layer x y)
+                 (setf (matrix-elt layer y x)
+                       +goal-tile-value+))))))))
+
+(defmethod update-attack-pole-layer ((object blackboard))
+  (with-accessors ((main-state main-state)
+                   (concerning-tiles concerning-tiles)
+                   (attack-enemy-pole-layer attack-enemy-pole-layer)
+                   (unexplored-layer unexplored-layer)) object
+    (%update-attack-layer object attack-enemy-pole-layer #'update-attack-pole-layer-player)))
 
 (defun calc-end-line-sight (player)
   (with-accessors ((pos pos)
