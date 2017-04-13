@@ -169,6 +169,8 @@
     ;; setup projection
     (transformable:build-projection-matrix world *near* *far* *fov*
 					   (num:desired (/ *window-w* *window-h*)))
+    ;; setup visibility placeholder
+    (able-to-see-mesh:setup-placeholder world compiled-shaders)
     (setf delta-time-elapsed (sdl2:get-ticks))))
 
 (defmacro with-gui ((world) &body body)

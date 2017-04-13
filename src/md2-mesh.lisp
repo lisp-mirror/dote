@@ -858,7 +858,7 @@
 				       (cons (_ "Move to")
 					     (world:point-to-entity-and-hide-cb world object)))))
 	(send-refresh-toolbar-event)
-        ;; ;;; uncomment to test autoexplore
+        ;;; uncomment to test autoexplore
         ;; (when (eq (my-faction object) game-state:+npc-type+)
         ;;   (let ((new-pos (validate-player-path object
         ;;                                        (next-move-position object +explore-strategy+))))
@@ -1440,7 +1440,7 @@
 		      (vec 0.0 1.0 0.0)
 		      (normalize new-dir)))))
       (if (not (vec~ (pos object) end (d/ +terrain-chunk-tile-size+ 8.0)))
-	  (setf (pos object) ;end)
+	  (setf (pos object); end)
                 (vec+ (pos object) (vec* dir +model-move-speed+)))
 	  (let ((movement-event (make-instance 'move-entity-entered-in-tile-event
 					       :id-origin (id object)

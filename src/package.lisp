@@ -138,6 +138,7 @@
    :+default-character-filename+
    :+default-interaction-filename+
    :+default-furniture-templates-dir+
+   :+mesh-placeholder-file+
    :+gui-static-text-delim+
    :+gui-static-text-nbsp+
    :+standard-float-print-format+
@@ -2082,7 +2083,8 @@
    :faction-turn
    :make-influence-map
    :set-tile-visited
-   :set-concerning-tile))
+   :set-concerning-tile
+   :max-ai-movement-points))
 
 (defpackage :game-event
   (:use
@@ -3406,6 +3408,11 @@
   (:shadowing-import-from :sb-cga :matrix     :rotate)
   (:shadowing-import-from :misc   :random-elt :shuffle)
   (:export
+   :*visibility-target-placeholder*
+   :setup-placeholder
+   :with-placeholder@
+   :placeholder-visible-p
+   :placeholder-visible-ray-p
    :able-to-see-mesh
    :visibility-cone
    :other-visible-p
@@ -3414,7 +3421,9 @@
    :other-faction-visible-players
    :other-visible-p
    :other-visible-cone-p
-   :other-visible-ray-p))
+   :other-visible-ray-p
+   :calc-end-line-sight
+   :calc-angle-sight))
 
 (defpackage :pickable-mesh
   (:use :cl

@@ -757,3 +757,13 @@
 (defmethod set-concerning-tile ((object game-state) x y)
   (with-accessors ((blackboard blackboard)) object
     (set-tile-visited blackboard  x y)))
+
+(defun max-movement-points (game-state iterator-fn)
+  (let ((all-mp '()))
+    (funcall iterator-fn game-state #'(lambda (k v)
+                                        (declare (ignore k))
+                                        (push (character:actual-movement-points (ghost v)) all-mp)))
+    (find-max all-mp)))
+
+(defmethod max-ai-movement-points ((object game-state))
+  (max-movement-points object #'map-ai-entities))

@@ -216,6 +216,8 @@
 
 (define-constant +default-furniture-templates-dir+ "furniture-templates"         :test #'string=)
 
+(define-constant +mesh-placeholder-file+           "placeholder.lsys"            :test #'string=)
+
 (define-constant +gui-static-text-delim+           "§"                           :test #'string=)
 
 (define-constant +gui-static-text-nbsp+            "¬"                           :test #'string=)

@@ -22,7 +22,7 @@
 
 (define-constant +concerning-tile-value+           100.0 :test #'=)
 
-(define-constant +attack-nongoal-tile-value+       100.0 :test #'=)
+(define-constant +attack-nongoal-tile-value+         5.0 :test #'=)
 
 (define-constant +length-line-of-sight-inf+       1000.0 :test #'=)
 
@@ -61,18 +61,39 @@
     :accessor attack-enemy-pole-layer
     :type     dijkstra-layer
     :documentation "This holds the position the player with pole weapon should reach to attack the enemy")
+   (attack-enemy-bow-layer
+    :initform nil
+    :initarg  :attack-enemy-bow-layer
+    :accessor attack-enemy-bow-layer
+    :type     dijkstra-layer
+    :documentation "This holds the position the player with bow weapon should reach to attack the enemy")
+   (attack-enemy-crossbow-layer
+    :initform nil
+    :initarg  :attack-enemy-crossbow-layer
+    :accessor attack-enemy-crossbow-layer
+    :type     dijkstra-layer
+    :documentation "This holds the position the player with crossbow weapon should reach to attack the enemy")
    (use-enemy-fov-when-exploring
     :initform nil
     :initarg  :use-enemy-fov-when-exploring-p
     :reader   use-enemy-fov-when-exploring-p
-    :writer   (setf use-enemy-fov-when-exploring))))
+    :writer   (setf use-enemy-fov-when-exploring))
+   (use-enemy-fov-when-attacking
+    :initform nil
+    :initarg  :use-enemy-fov-when-attacking-p
+    :reader   use-enemy-fov-when-attacking-p
+    :writer   (setf use-enemy-fov-when-attacking))))
 
 (defmethod initialize-instance :after ((object blackboard) &key &allow-other-keys)
   (with-accessors ((visited-tiles    visited-tiles)
                    (concerning-tiles concerning-tiles)
                    (unexplored-layer unexplored-layer)
-                   (attack-enemy-melee-layer attack-enemy-melee-layer)
-                   (attack-enemy-pole-layer  attack-enemy-pole-layer)
+                   (attack-enemy-melee-layer     attack-enemy-melee-layer)
+                   (attack-enemy-pole-layer      attack-enemy-pole-layer)
+                   (attack-enemy-bow-layer       attack-enemy-bow-layer)
+                   (attack-enemy-crossbow-layer  attack-enemy-crossbow-layer)
+                   (use-enemy-fov-when-exploring use-enemy-fov-when-exploring)
+                   (use-enemy-fov-when-attacking use-enemy-fov-when-attacking)
                    (main-state       main-state)) object
     (let ((wmap (width  (map-state main-state)))
           (hmap (height (map-state main-state))))
@@ -82,7 +103,15 @@
       (setf attack-enemy-melee-layer
             (inmap:make-dijkstra-layer wmap hmap +attack-nongoal-tile-value+))
       (setf attack-enemy-pole-layer
-            (inmap:make-dijkstra-layer wmap hmap +attack-nongoal-tile-value+)))))
+            (inmap:make-dijkstra-layer wmap hmap +attack-nongoal-tile-value+))
+      (setf attack-enemy-bow-layer
+            (inmap:make-dijkstra-layer wmap hmap +attack-nongoal-tile-value+))
+      (setf attack-enemy-crossbow-layer
+            (inmap:make-dijkstra-layer wmap hmap +attack-nongoal-tile-value+))
+      ;; setting smartness based on level
+      (when (>= (level-difficult main-state) 3)
+        (setf use-enemy-fov-when-exploring nil
+              use-enemy-fov-when-attacking t)))))
 
 (defun decrease-concerning (game-state concerning-map)
   (let* ((level           (level-difficult game-state))
@@ -101,9 +130,10 @@
     (decrease-concerning (main-state object) concerning-tiles)
     (update-attack-melee-layer object)
     (update-attack-pole-layer  object)
-    ;; debug ;;;;;;
-    ;; (let ((pixmap (inmap:dijkstra-layer->pixmap
-    ;;                (attack-enemy-pole-layer object))))
+    (update-attack-bow-layer  object)
+    (update-attack-crossbow-layer  object)
+    ;; ;; debug ;;;;;;
+    ;; (let ((pixmap (inmap:dijkstra-layer->pixmap (attack-enemy-bow-layer object))))
     ;;   (pixmap:save-pixmap pixmap (fs:file-in-package "exploring.tga")))
     nil))
 
@@ -126,7 +156,15 @@
 
 (defgeneric update-attack-pole-layer (object))
 
+(defgeneric update-attack-bow-layer (object))
+
+(defgeneric update-attack-crossbow-layer (object))
+
 (defgeneric update-attack-pole-layer-player (object player &key all-visibles-from-ai))
+
+(defgeneric update-attack-bow-layer-player (object player &key all-visibles-from-ai))
+
+(defgeneric update-attack-crossbow-layer-player (object player &key all-visibles-from-ai))
 
 (defmethod set-tile-visited ((object blackboard) x y)
   (call-next-method object
@@ -141,7 +179,13 @@
     (setf (matrix-elt visited-tiles y x) t)
     (update-unexplored-layer object)))
 
+    ;; debug ;;;;;;
+    ;; (let ((pixmap (inmap:dijkstra-layer->pixmap
+    ;;                (unexplored-layer object))))
+    ;;   (pixmap:save-pixmap pixmap (fs:file-in-package "exploring.tga")))))
+
 (defun calc-danger-zone-size (difficult-level)
+  "The size of the concerning zone when when some concerning event occurs"
   (ceiling (dlerp (smoothstep-interpolate 2.0 3.0 difficult-level)
                   1.0
                   3.0)))
@@ -170,11 +214,11 @@
                              (:pole
                               (+ 1 level +weapon-pole-range+))
                              (:bow
-                              +weapon-bow-range+)
+                              (* 2 +weapon-bow-range+))
                              (:crossbow
-                              +weapon-crossbow-range+)
+                              (* 2 +weapon-crossbow-range+))
                              (otherwise
-                              +weapon-melee-range+)))
+                              (* 2 +weapon-melee-range+))))
            (movement-weight (if (> level 1)
                                 (/ level 25)
                                 0)))
@@ -205,8 +249,8 @@
     (map 'list #'id all-visibles)))
 
 (defun nsuperimpose-layer (from destination &key (fn #'(lambda (a b)
-                                                         (declare (ignore a))
-                                                         b)))
+                                                         (declare (ignore b))
+                                                         a)))
   (loop-matrix (destination x y)
      (setf (matrix-elt destination y x)
            (funcall fn (matrix-elt from y x) (matrix-elt destination y x)))))
@@ -236,49 +280,47 @@
                                                                  all-visibles)))
         ;; add-concerning tiles
         (nsuperimpose-layer concerning-tiles layer)
-        ;; (loop-matrix (layer x y)
-        ;;    (setf (matrix-elt layer            y x)
-        ;;          (matrix-elt concerning-tiles y x)))
         ;; mark already visited tiles
         (loop-matrix (layer x y)
            (when (matrix-elt visited-tiles y x)
              (setf (matrix-elt layer y x) +explored-tile-value+)))
         ;; smooth the map here
-        (let ((skip-fn #'(lambda (el-type pos)
-                           (let ((chunk-x (map-utils:coord-map->chunk (elt pos 0)))
-                                 (chunk-z (map-utils:coord-map->chunk (elt pos 1))))
+        (let* ((max-mp (max-ai-movement-points main-state))
+               (skip-fn #'(lambda (el-type pos)
+                           (let ((cost (get-cost main-state (elt pos 0) (elt pos 1))))
                              (or (inmap:skippablep el-type pos)
                                  (find (entity-id-in-pos main-state (elt pos 0) (elt pos 1))
                                        all-visibles
                                        :test #'=)
-                                 (d< (approx-terrain-height@pos main-state chunk-x chunk-z)
-                                     +zero-height+))))))
+                                 (> cost max-mp))))))
           (inmap:smooth-dijkstra-layer (blackboard:unexplored-layer object)
                                        main-state
                                        :skippable-predicate skip-fn))))))
+
+(defun %2d-ray-stopper (player x y use-fov)
+  "x  and y  in  cost-map  space (integer  coordinates),  values t  if
+   somenthing prevented the ray to reach the target position"
+  (with-accessors ((state state)) player
+    (let* ((visiblep        (if use-fov
+                                (able-to-see-mesh:placeholder-visible-p     player x y)
+                                (able-to-see-mesh:placeholder-visible-ray-p player x y))))
+      (or (not (map-element-empty-p (element-mapstate@ state x y)))
+          (not visiblep)))))
 
 (defmethod update-unexplored-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
                                            &key
                                              (all-visibles-from-ai
                                               (all-player-id-visible-from-ai (main-state player))))
-  (with-accessors ((unexplored-layer unexplored-layer)
-                   (visited-tiles    visited-tiles)
-                   (concerning-tiles concerning-tiles)
-                   (main-state       main-state)) object
+  (with-accessors ((unexplored-layer               unexplored-layer)
+                   (visited-tiles                  visited-tiles)
+                   (concerning-tiles               concerning-tiles)
+                   (main-state                     main-state)
+                   (use-enemy-fov-when-exploring-p use-enemy-fov-when-exploring-p)) object
     (with-accessors ((layer layer)) unexplored-layer
       (cond
         ((faction-player-p main-state (id player))
          (when (find (id player) all-visibles-from-ai :test #'=)
-           (let* ((max-angle           (if (use-enemy-fov-when-exploring-p object)
-                                           (calc-angle-sight player)
-                                           +2pi+))
-                  (max-line-sight      (if (use-enemy-fov-when-exploring-p object)
-                                           +length-line-of-sight-inf+
-                                           (calc-end-line-sight player)))
-                  (visible-tiles       (2d-ray-casting player
-                                                       :max-angle-sight max-angle
-                                                       :end-line-sight  max-line-sight))
-                  (position            (pos-entity-chunk->cost-pos (pos player)))
+           (let* ((position            (pos-entity-chunk->cost-pos (pos player)))
                   (x-player            (elt position 0))
                   (y-player            (elt position 1))
                   (danger-zone-size    (calc-enemy-danger-zone-size player))
@@ -288,10 +330,11 @@
                                                                       danger-zone-size)))
              (loop for point across dangerous-tiles-pos do
                   (displace-2d-vector (point x y)
-                                      (with-check-matrix-borders (layer x y)
-                                        (when (find point visible-tiles :test #'ivec2=)
-                                          (setf (matrix-elt concerning-tiles y x)
-                                                +concerning-tile-value+))))))))))))
+                    (with-check-matrix-borders (layer x y)
+                      (when (not (%2d-ray-stopper player x y
+                                                  use-enemy-fov-when-exploring-p))
+                        (setf (matrix-elt concerning-tiles y x)
+                              +concerning-tile-value+))))))))))))
 
 (defmethod next-unexplored-position ((object blackboard) (player md2-mesh:md2-mesh))
   (with-accessors ((unexplored-layer unexplored-layer)) object
@@ -326,30 +369,29 @@
 (defun %2d-ray-stopper-melee-fn (player x y)
   "x and y in cost-map space (integer coordinates)"
   (with-accessors ((state state)) player
-    (let* ((center         (aabb-center (mesh:aabb player)))
-           (elevation      (elt center 1)))
-      (cond
-        ((d> (approx-terrain-height@pos state
-                                        (coord-map->chunk x)
-                                        (coord-map->chunk y))
-             elevation)
-         t)
-        ((and (door@pos-p state x y)
-              (mesh:openp (find-entity-by-id state (entity-id-in-pos state x y))))
-         nil)
-        ((and (occludep-in-pos state x y)
-              (not (map-element-occupied-by-character-p (element-mapstate@ state x y))))
-         ;; the ray does not take into account characters
-         t)
-        (t  ;; otherwise
-         nil)))))
+    (multiple-value-bind (visiblep entity-hitted)
+        (able-to-see-mesh:placeholder-visible-p player x y)
+      (let* ((emptyp                 (map-element-empty-p (element-mapstate@ state x y)))
+             (blocked-by-character-p (and (not visiblep)
+                                          entity-hitted
+                                          (faction-player-p state (id entity-hitted)))))
+        (cond
+          (blocked-by-character-p
+           nil)
+          ((not visiblep)
+           t)
+          ((not emptyp)
+           t)
+          (t
+           nil))))))
 
 (defun %attack-layer-player-goal-pos (blackboard
                                       layer
                                       player
                                       all-visibles-from-ai
                                       goal-tiles-generator-fn)
-  (with-accessors ((main-state main-state)) blackboard
+  (with-accessors ((main-state main-state)
+                   (use-enemy-fov-when-attacking-p use-enemy-fov-when-attacking-p)) blackboard
     (cond
       ((faction-player-p main-state (id player))
        (when (find (id player) all-visibles-from-ai :test #'=)
@@ -368,6 +410,23 @@
                                                                                (elt a 1))
                                                                nil)))
                                            goal-tiles-pos))
+           ;; remove tiles from the target's point of view
+           (if use-enemy-fov-when-attacking-p
+               (setf goal-tiles-pos
+                     (remove-if #'(lambda (a)
+                                    (displace-2d-vector (a x y)
+                                      (or (able-to-see-mesh:placeholder-visible-p player x y)
+                                          (not (able-to-see-mesh:placeholder-visible-ray-p player
+                                                                                           x
+                                                                                           y)))))
+                                goal-tiles-pos))
+               (setf goal-tiles-pos
+                     (remove-if-not #'(lambda (a)
+                                        (displace-2d-vector (a x y)
+                                          (able-to-see-mesh:placeholder-visible-ray-p player
+                                                                                      x
+                                                                                      y)))
+                                    goal-tiles-pos)))
            (loop
               for point in (map 'list #'identity goal-tiles-pos)
               when (2d-tile-visible-p main-state
@@ -376,22 +435,23 @@
               collect point)))))))
 
 (defun %update-attack-layer (blackboard djk-map update-fn)
-  (with-accessors ((main-state main-state)
-                   (concerning-tiles concerning-tiles)
+  (with-accessors ((main-state               main-state)
+                   (concerning-tiles         concerning-tiles)
                    (attack-enemy-melee-layer attack-enemy-melee-layer)
-                   (unexplored-layer unexplored-layer)) blackboard
+                   (unexplored-layer         unexplored-layer)) blackboard
+    (with-accessors ((layer layer)) djk-map
       (reset-attack-layer djk-map)
       (let ((all-visibles (all-player-id-visible-from-ai main-state)))
         ;; add-concerning tiles
-        ;(nsuperimpose-layer concerning-tiles layer :fn #'max)
+        (nsuperimpose-layer concerning-tiles layer :fn #'max)
         (map-player-entities main-state  #'(lambda (k player)
                                              (declare (ignore k))
                                              (funcall update-fn
                                                       blackboard
                                                       player
                                                       :all-visibles-from-ai
-                                                      all-visibles)
-        (inmap:smooth-dijkstra-layer djk-map main-state))))))
+                                                      all-visibles)))
+        (inmap:smooth-dijkstra-layer djk-map main-state)))))
 
 (defmethod update-attack-melee-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
                                              &key
@@ -419,7 +479,6 @@
                    (attack-enemy-melee-layer attack-enemy-melee-layer)
                    (unexplored-layer unexplored-layer)) object
     (%update-attack-layer object attack-enemy-melee-layer #'update-attack-melee-layer-player)))
-
 
 (defun %pole-weapon-goal-generator-fn (player)
   (let ((level (level-difficult (state player))))
@@ -457,6 +516,57 @@
                  (setf (matrix-elt layer y x)
                        +goal-tile-value+))))))))
 
+(defun %long-range-weapon-goal-generator-fn (player range)
+  (let ((level (level-difficult (state player))))
+    #'(lambda (x y)
+        (let ((size (* 2 range)))
+          (cond
+            ((< level 2)
+             (gen-4-neighbour-counterclockwise x y :add-center nil))
+            ((<= 2 level 3)
+             (if (die-utils:pass-d2 2)
+                 (gen-4-neighbour-counterclockwise x y :add-center nil)
+                 (gen-ring-box-position x y size size)))
+            (t
+             (gen-ring-box-position x y size size)))))))
+
+(defun %update-attack-long-range-layer-player (blackboard player djk-map all-visibles-from-ai range)
+  (with-accessors ((layer layer)) djk-map
+    (let* ((goal-generator-fn (%long-range-weapon-goal-generator-fn player range))
+           (goal-tiles-pos    (%attack-layer-player-goal-pos blackboard
+                                                             layer
+                                                             player
+                                                             all-visibles-from-ai
+                                                             goal-generator-fn)))
+      (loop
+         for point in goal-tiles-pos do
+           (displace-2d-vector (point x y)
+             (with-check-matrix-borders (layer x y)
+               (setf (matrix-elt layer y x)
+                     +goal-tile-value+)))))))
+
+(defmethod update-attack-bow-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
+                                             &key
+                                               (all-visibles-from-ai
+                                                (all-player-id-visible-from-ai (main-state player))))
+    (with-accessors ((attack-enemy-bow-layer attack-enemy-bow-layer)) object
+      (%update-attack-long-range-layer-player object
+                                              player
+                                              attack-enemy-bow-layer
+                                              all-visibles-from-ai
+                                              (floor (d/ (d +weapon-bow-range+) 2.0)))))
+
+(defmethod update-attack-crossbow-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
+                                             &key
+                                               (all-visibles-from-ai
+                                                (all-player-id-visible-from-ai (main-state player))))
+  (with-accessors ((attack-enemy-crossbow-layer attack-enemy-crossbow-layer)) object
+      (%update-attack-long-range-layer-player object
+                                              player
+                                              attack-enemy-crossbow-layer
+                                              all-visibles-from-ai
+                                              (floor (d/ (d +weapon-crossbow-range+) 2.0)))))
+
 (defmethod update-attack-pole-layer ((object blackboard))
   (with-accessors ((main-state main-state)
                    (concerning-tiles concerning-tiles)
@@ -464,114 +574,26 @@
                    (unexplored-layer unexplored-layer)) object
     (%update-attack-layer object attack-enemy-pole-layer #'update-attack-pole-layer-player)))
 
-(defun calc-end-line-sight (player)
-  (with-accessors ((pos pos)
-                   (dir dir)
-                   (state state)
-                   (visibility-cone able-to-see-mesh:visibility-cone)) player
-    (let* ((line-sight     (cone-height visibility-cone)))
-      (ivec2-length (pos-entity-chunk->cost-pos line-sight)))))
+(defmethod update-attack-bow-layer ((object blackboard))
+  (with-accessors ((main-state main-state)
+                   (concerning-tiles concerning-tiles)
+                   (attack-enemy-bow-layer attack-enemy-bow-layer)
+                   (unexplored-layer unexplored-layer)) object
+    (%update-attack-layer object attack-enemy-bow-layer #'update-attack-bow-layer-player)))
 
-(defun calc-angle-sight (player)
-  (with-accessors ((visibility-cone able-to-see-mesh:visibility-cone)) player
-    (d* 2.0 (half-angle visibility-cone))))
-
-(defun %2d-ray-stopper-fn (player x y)
-  "x and y in cost-map space (integer coordinates)"
-  (with-accessors ((state state)) player
-    (let* ((center         (aabb-center (mesh:aabb player)))
-           (elevation      (elt center 1)))
-      (or (d> (approx-terrain-height@pos state
-                                         (coord-map->chunk x)
-                                         (coord-map->chunk y))
-              elevation)
-          (not (map-element-empty-p (element-mapstate@ state x y)))))))
-
-(defun 2d-ray-casting (player
-                       &key
-                         (ray-stopper-fn  #'%2d-ray-stopper-fn)
-                         (angle-sweep-inc 0.01)
-                         (end-line-sight  (calc-end-line-sight player))
-                         (max-angle-sight (calc-angle-sight player)))
-  (with-accessors ((pos pos)
-                   (dir dir)
-                   (state state)
-                   (visibility-cone able-to-see-mesh:visibility-cone)) player
-    (let* ((player-pos     (pos->game-state-pos player))
-           (start-vec      (2d-vector-rotate (vec2 (elt dir 0) (elt dir 2))
-                                             (d- (half-angle visibility-cone))))
-           (saw-so-far     '()))
-      (loop
-         for angle from 0.0 below max-angle-sight by angle-sweep-inc do
-           (let* ((rotated-dir (2d-vector-rotate start-vec angle))
-                  (end         (vec2*   (vec2 (elt rotated-dir 0)
-                                              (elt rotated-dir 1))
-                                        (d end-line-sight)))
-                  (line        (segment (ivec2 0 0)
-                                        (ivec2 (round (elt end 0))
-                                               (round (elt end 1))))))
-             (when line
-               ;; translate
-               (setf line (map 'list #'(lambda (a)
-                                         (ivec2+ a player-pos))
-                               line))
-               (pushnew (first line) saw-so-far :test #'ivec2=)
-               ;; launch ray
-               (loop named draw-loop for point in (rest line) do
-                    (displace-2d-vector (point x y)
-                      (with-check-matrix-borders ((map-state state) x y)
-                        (if (funcall ray-stopper-fn player x y)
-                            (return-from draw-loop nil)
-                            (pushnew point saw-so-far :test #'ivec2=))))))))
-      saw-so-far)))
-
-(defun 2d-tile-visible-player-p (player tile-position
-                                 &key
-                                   (ray-stopper-fn  #'%2d-ray-stopper-fn)
-                                   (end-line-sight  (calc-end-line-sight player)))
-  (with-accessors ((pos pos)
-                   (dir dir)
-                   (state state)
-                   (visibility-cone able-to-see-mesh:visibility-cone)) player
-    (let* ((player-pos             (pos->game-state-pos player))
-           (player-pos-3d          (sb-cga:vec (d (elt player-pos 0)) 0.0 (d (elt player-pos 1))))
-           (dir-to-tile            (ivec2- tile-position player-pos))
-           (tile-pos-terrain-space (sb-cga:vec (coord-map->chunk (elt tile-position 0))
-                                               (elt pos 1)
-                                               (coord-map->chunk (elt tile-position 1)))))
-      (when (point-in-cone-p visibility-cone tile-pos-terrain-space)
-        (let* ((ray (make-instance 'ray
-                                   :ray-direction
-                                   (sb-cga:normalize (sb-cga:vec (d (elt dir-to-tile 0))
-                                                                 0.0
-                                                                 (d (elt dir-to-tile 1))))
-                                   :displacement 1e-5)))
-          (do ()
-              ((let ((ends (3d-utils:ray-ends ray player-pos-3d)))
-                 (if (element@-inside-p (map-state state)
-                                        (round (elt ends 0))
-                                        (round (elt ends 2)))
-                     (or (funcall ray-stopper-fn player
-                                  (round (elt ends 0))
-                                  (round (elt ends 2)))
-                         (>= (sb-cga:vec-length (sb-cga:vec- ends player-pos-3d))
-                             end-line-sight))
-                     t)))
-            (incf (displacement ray) .1))
-          (let* ((ends (ray-ends ray player-pos-3d))
-                 (line-discrete (segment player-pos
-                                         (ivec2 (round (elt ends 0))
-                                                (round (elt ends 2))))))
-            (loop for point in line-discrete do
-                 (when (ivec2= point tile-position)
-                   (return-from 2d-tile-visible-player-p t)))
-            nil))))))
+(defmethod update-attack-crossbow-layer ((object blackboard))
+  (with-accessors ((main-state main-state)
+                   (concerning-tiles concerning-tiles)
+                   (attack-enemy-crossbow-layer attack-enemy-crossbow-layer)
+                   (unexplored-layer unexplored-layer)) object
+    (%update-attack-layer object
+                          attack-enemy-crossbow-layer
+                          #'update-attack-crossbow-layer-player)))
 
 (defun 2d-tile-visible-p (game-state tile-position ray-stopper-fn)
   (map-ai-entities game-state #'(lambda (k v)
                                   (declare (ignore k))
-                                  (when (2d-tile-visible-player-p v
-                                                                  tile-position
-                                                                  :ray-stopper-fn ray-stopper-fn)
-                                    (return-from 2d-tile-visible-p t))))
+                                  (displace-2d-vector (tile-position x y)
+                                    (when (not (funcall ray-stopper-fn v x y))
+                                      (return-from 2d-tile-visible-p t)))))
   nil)
