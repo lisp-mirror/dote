@@ -60,24 +60,24 @@
 
 (defun randomize-damage-points (character level)
   (setf (damage-points character)
-	(calculate-randomized-damage-points level
-					    +minimum-level+
-					    +maximum-level+
-					    +minimum-damage-point+
-					    +maximum-damage-point+
-					    (d/ (d level) (d* 5.0 (d +maximum-level+))))))
+        (calculate-randomized-damage-points level
+                                            +minimum-level+
+                                            +maximum-level+
+                                            +minimum-damage-point+
+                                            +maximum-damage-point+
+                                            (d/ (d level) (d* 5.0 (d +maximum-level+))))))
 
 (defun level-params (map-level)
   (values (elt +level-sigma+ map-level)
-	  (elt +level-mean+  map-level)))
+          (elt +level-mean+  map-level)))
 
 (defun modifier-params (container-level)
   (values (elt +modifier-sigma+ container-level)
-	  (elt +modifier-mean+  container-level)))
+          (elt +modifier-mean+  container-level)))
 
 (defun locked-params (container-level)
   (values (elt (reverse +level-sigma+) container-level)
-	  (elt (reverse +level-mean+)  container-level)))
+          (elt (reverse +level-mean+)  container-level)))
 
 (defun calculate-locked-chance (container-level)
   (multiple-value-bind (sigma mean)
@@ -93,11 +93,11 @@
   (multiple-value-bind (sigma mean)
       (level-params (1- map-level))
     (clamp (truncate (gaussian-probability sigma mean))
-	   +minimum-level+ +maximum-level+)))
+           +minimum-level+ +maximum-level+)))
 
 (defun healing-fx-params-chance (container-level)
   (values (elt +chance-healing-fx-sigma+ container-level)
-	  (elt +chance-healing-fx-mean+  container-level)))
+          (elt +chance-healing-fx-mean+  container-level)))
 
 (defun calculate-healing-fx-params-chance (container-level)
   (multiple-value-bind (sigma mean)
@@ -106,27 +106,27 @@
 
 (defun number-of-healing-effects (container-level number-of-normal-effects)
   (let ((max (round (- (num:dlerp (num:smoothstep-interpolate 0.0
-							   10.0
-							   (d (1- container-level)))
-				  +minimum-num-healing-effects+
-				  +maximum-num-healing-effects+)
-		       number-of-normal-effects))))
+                                                           10.0
+                                                           (d (1- container-level)))
+                                  +minimum-num-healing-effects+
+                                  +maximum-num-healing-effects+)
+                       number-of-normal-effects))))
     (if (<= max 0)
-	0
-	(lcg-next-upto (max 0.0 max)))))
+        0
+        (lcg-next-upto (max 0.0 max)))))
 
 (defun set-healing-effect (effect-path container-level interaction)
   (let ((effect-object (make-instance 'healing-effect-parameters
-				      :trigger  +effect-when-used+
-				      :duration  (ceiling
-						  (calculate-container-modifier container-level))
-				      :chance (calculate-healing-fx-params-chance container-level)
-				      :target +target-self+)))
+                                      :trigger  +effect-when-used+
+                                      :duration  (ceiling
+                                                  (calculate-container-modifier container-level))
+                                      :chance (calculate-healing-fx-params-chance container-level)
+                                      :target +target-self+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun set-poison-effect (effect-path container-level interaction)
   (let ((effect-object (make-instance 'poison-effect-parameters
-				      :points-per-turn (calculate-container-modifier container-level))))
+                                      :points-per-turn (calculate-container-modifier container-level))))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun fill-character-plist (character)
@@ -140,57 +140,57 @@
 (defun generate-container (map-level &key (keychain (misc:make-fresh-array 0 nil t nil)))
   (clean-effects
    (%generate-container (res:get-resource-file +default-interaction-filename+
-					       +default-character-container-dir+
-					       :if-does-not-exists :error)
-			(res:get-resource-file +default-character-filename+
-					       +default-character-container-dir+
-					       :if-does-not-exists :error)
-			map-level
-			(res:get-resource-file +default-interaction-filename+
-					       +default-character-key-dir+
-					       :if-does-not-exists :error)
-			(res:get-resource-file +default-character-filename+
-					       +default-character-key-dir+
-					       :if-does-not-exists :error)
-			:keychain keychain)))
+                                               +default-character-container-dir+
+                                               :if-does-not-exists :error)
+                        (res:get-resource-file +default-character-filename+
+                                               +default-character-container-dir+
+                                               :if-does-not-exists :error)
+                        map-level
+                        (res:get-resource-file +default-interaction-filename+
+                                               +default-character-key-dir+
+                                               :if-does-not-exists :error)
+                        (res:get-resource-file +default-character-filename+
+                                               +default-character-key-dir+
+                                               :if-does-not-exists :error)
+                        :keychain keychain)))
 
 (defun %generate-container (interaction-file character-file map-level
-			    key-interaction-file key-character-file
-			    &key
-			      (keychain (misc:make-fresh-array 0 nil t nil)))
+                            key-interaction-file key-character-file
+                            &key
+                              (keychain (misc:make-fresh-array 0 nil t nil)))
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
     (with-interaction-parameters-file (template interaction-file)
       (let* ((container-level       (calculate-container-level map-level))
-	     (healing-effects-no    (number-of-healing-effects container-level 0))
-	     (healing-effects       (get-healing-fx-shuffled template healing-effects-no)))
-	(n-setf-path-value char-template (list +level+) (d container-level))
-	(n-setf-path-value template (list +decay+) nil)
-	(loop for i in healing-effects do
-	     (cond
-	       ((eq i +heal-damage-points+) nil)
-	       ((eq i +cause-poison+)
-		(set-poison-effect (list +healing-effects+ i) container-level template))
-	       (t
-		(set-healing-effect (list +healing-effects+ i)
-					      container-level template))))
-	(setf template (remove-generate-symbols template))
-	(fill-character-plist char-template)
-	(if (= (lcg-next-upto (calculate-locked-chance container-level)) 0)
-	    (let ((keycode (generate-keycode)))
-	      (vector-push-extend (random-key:generate-key* key-interaction-file
-							    key-character-file
-							    map-level
-							    keycode)
-				  keychain)
-	      (n-setf-path-value template (list +can-be-opened+) keycode)) ; can
-									   ; be
-									   ; opened
-									   ; with
-									   ; appropriate
-									   ; key
-	      (n-setf-path-value template (list +can-be-opened+) t)) ; no key
-	(let ((container-character (params->np-character char-template)))
-	  (setf (basic-interaction-params container-character) template)
-	  (randomize-damage-points container-character container-level)
-	  (values container-character keychain))))))
+             (healing-effects-no    (number-of-healing-effects container-level 0))
+             (healing-effects       (get-healing-fx-shuffled template healing-effects-no)))
+        (n-setf-path-value char-template (list +level+) (d container-level))
+        (n-setf-path-value template (list +decay+) nil)
+        (loop for i in healing-effects do
+             (cond
+               ((eq i +heal-damage-points+) nil)
+               ((eq i +cause-poison+)
+                (set-poison-effect (list +healing-effects+ i) container-level template))
+               (t
+                (set-healing-effect (list +healing-effects+ i)
+                                              container-level template))))
+        (setf template (remove-generate-symbols template))
+        (fill-character-plist char-template)
+        (if (= (lcg-next-upto (calculate-locked-chance container-level)) 0)
+            (let ((keycode (generate-keycode)))
+              (vector-push-extend (random-key:generate-key* key-interaction-file
+                                                            key-character-file
+                                                            map-level
+                                                            keycode)
+                                  keychain)
+              (n-setf-path-value template (list +can-be-opened+) keycode)) ; can
+                                                                           ; be
+                                                                           ; opened
+                                                                           ; with
+                                                                           ; appropriate
+                                                                           ; key
+              (n-setf-path-value template (list +can-be-opened+) t)) ; no key
+        (let ((container-character (params->np-character char-template)))
+          (setf (basic-interaction-params container-character) template)
+          (randomize-damage-points container-character container-level)
+          (values container-character keychain))))))

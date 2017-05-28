@@ -26,10 +26,10 @@
 (deftest test-friend (kanren-suite)
   (assert-equalp '(:c)
       (run* (q)
-	(fresh (x)
-	  (friendo :a x)
-	  (friendo x  :d)
-	  (== q x)))))
+        (fresh (x)
+          (friendo :a x)
+          (friendo x  :d)
+          (== q x)))))
 
 (defun shifto (l out)
   (fresh (a d new-tail new-list y)
@@ -59,7 +59,7 @@
        (caro keys   a-k)
        (caro chests a-c)
        (project (a-k a-c)
-	 (== (string= (object-keycode a-k) (object-keycode a-c)) t))
+         (== (string= (object-keycode a-k) (object-keycode a-c)) t))
        +succeed+))
     (else
      (fresh (d-k d-c)
@@ -87,7 +87,7 @@
      (fresh (x)
        (shifto keys x)
        (project (keys)
-	 (== (compatible-first-key-keycode keys start) t))
+         (== (compatible-first-key-keycode keys start) t))
        (compatible-arrangement-keys x chests start out)))))
 
 (defun distance (a b)
@@ -95,13 +95,13 @@
 
 (defun average-distance (keys chests)
   (let ((distance-sum (loop for chest in chests sum
-			   (let ((pos (position-if #'(lambda (a) (string= (object-keycode chest)
-									  (object-keycode a)))
-						   keys)))
-			     (distance chest
-				       (if pos
-					   (elt chests pos)
-					   chest))))))
+                           (let ((pos (position-if #'(lambda (a) (string= (object-keycode chest)
+                                                                          (object-keycode a)))
+                                                   keys)))
+                             (distance chest
+                                       (if pos
+                                           (elt chests pos)
+                                           chest))))))
     (/ distance-sum (length chests))))
 
 (defun incompatible-key (keys chest out)
@@ -119,23 +119,23 @@
 
 (defun arrange-compatible-keys ()
   (let* ((chest-1  (make-instance 'complementary :id 1 :object-keycode "a"))
-	 (chest-2  (make-instance 'complementary :id 2 :object-keycode "b"))
-	 (chest-3  (make-instance 'complementary :id 3 :object-keycode "c"))
-	 (chest-4  (make-instance 'complementary :id 4 :object-keycode "d"))
-	 (key-1    (make-instance 'complementary :id 5 :object-keycode "a"))
-	 (key-2    (make-instance 'complementary :id 6 :object-keycode "b"))
-	 (key-3    (make-instance 'complementary :id 7 :object-keycode "c"))
-	 (key-4    (make-instance 'complementary :id 8 :object-keycode "d"))
-	 (chests  (list chest-1 chest-2 chest-3 chest-4))
-	 (keys    (list key-1 key-2 key-3 key-4)))
+         (chest-2  (make-instance 'complementary :id 2 :object-keycode "b"))
+         (chest-3  (make-instance 'complementary :id 3 :object-keycode "c"))
+         (chest-4  (make-instance 'complementary :id 4 :object-keycode "d"))
+         (key-1    (make-instance 'complementary :id 5 :object-keycode "a"))
+         (key-2    (make-instance 'complementary :id 6 :object-keycode "b"))
+         (key-3    (make-instance 'complementary :id 7 :object-keycode "c"))
+         (key-4    (make-instance 'complementary :id 8 :object-keycode "d"))
+         (chests  (list chest-1 chest-2 chest-3 chest-4))
+         (keys    (list key-1 key-2 key-3 key-4)))
     (run 1 (q)
       (fresh (x start)
-	(incompatible-key keys chest-1 start)
-	(project (start)
-	  (compatible-arrangement-keys keys chests (coerce start 'string) x))
-	(project (x)
-	  (== (> (average-distance x chests) 3) t))
-	(== q x)))))
+        (incompatible-key keys chest-1 start)
+        (project (start)
+          (compatible-arrangement-keys keys chests (coerce start 'string) x))
+        (project (x)
+          (== (> (average-distance x chests) 3) t))
+        (== q x)))))
 
 (deftest test-key-arrangement (kanren-suite)
   (assert-equalp

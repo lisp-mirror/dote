@@ -6,8 +6,8 @@
 (defmacro with-profiling ((&key packages) &body body)
   `(progn
      ,@(loop for package in packages collect
-	    `(swank::profile-package ,package t t))
+            `(swank::profile-package ,package t t))
      (unwind-protect
-	  ,@body
+          ,@body
        (swank::profile-report)
        (swank::unprofile-all))))

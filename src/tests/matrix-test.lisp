@@ -20,25 +20,25 @@
 
 (defun test-matrix-mult ()
   (let ((a (gen-matrix-frame  4 3))
-	(b (gen-matrix-frame  4 4)))
+        (b (gen-matrix-frame  4 4)))
     (setf (data a) #(1 0 0 0
-		     0 1 0 0
-		     0 0 1 0))
+                     0 1 0 0
+                     0 0 1 0))
     (setf (data b) #(1 0 -3 2
-		     0 1 -2 1
-		     0 0 -1 1
-		     0 0 3 -2 ))
+                     0 1 -2 1
+                     0 0 -1 1
+                     0 0 3 -2 ))
     (matrix:matrix-mult a b)))
 
 (deftest matrix-mult (matrix-suite)
   (assert-true
-      (equalp  
-	 (matrix:data (test-matrix-mult))
-	 #(1  0  -3  2  
-	   0  1  -2  1  
-	   0  0  -1  1))))
+      (equalp
+         (matrix:data (test-matrix-mult))
+         #(1  0  -3  2
+           0  1  -2  1
+           0  0  -1  1))))
 
 (deftest matrix-fresh (matrix-suite)
   (let ((mat (make-matrix 4 4 (sb-cga:vec 0.0 1.0 2.0))))
     (assert-false
-      	(eq (matrix-elt mat 0 0) (matrix-elt mat 1 1)))))
+        (eq (matrix-elt mat 0 0) (matrix-elt mat 1 1)))))

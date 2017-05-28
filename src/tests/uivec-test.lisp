@@ -26,5 +26,5 @@
 (deftest copy-test (uivec-suite)
   (let ((orig (uivec (num:lcg-next-upto 1000) (num:lcg-next-upto 1000) (num:lcg-next-upto 1000))))
     (assert-equalp
-	orig
-	(copy-uivec orig))))
+        orig
+        (copy-uivec orig))))

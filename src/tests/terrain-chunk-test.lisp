@@ -16,7 +16,7 @@
 
 (in-package :terrain-chunk-test)
 
-(alexandria:define-constant +terrain-chunk-dir+ 
+(alexandria:define-constant +terrain-chunk-dir+
     (concatenate 'string (test-dir) "data/terrain/")
   :test #'string=)
 
@@ -28,31 +28,31 @@
     (build-mesh-dbg terrain)))
 
 (deftest simulated-mesh-test (terrain-chunk-suite)
-  (assert-equality 
+  (assert-equality
       #'(lambda (a b) (notevery #'null (map 'vector #'num:epsilon= a b)))
       (matrix:data (build-scaled-terrain))
-      #(0.0  0.0  0.0  0.0  0.0  0.0 
-	0.0  0.5  1.0  0.5  0.0  0.0 
-	0.0  1.0  2.0  1.0  0.0  0.0 
-	0.0  0.5  1.0  0.5  0.0  0.0 
-	0.0  0.0  0.0  0.0  0.0  0.0 
-	0.0  0.0  0.0  0.0  0.0  0.0)))
+      #(0.0  0.0  0.0  0.0  0.0  0.0
+        0.0  0.5  1.0  0.5  0.0  0.0
+        0.0  1.0  2.0  1.0  0.0  0.0
+        0.0  0.5  1.0  0.5  0.0  0.0
+        0.0  0.0  0.0  0.0  0.0  0.0
+        0.0  0.0  0.0  0.0  0.0  0.0)))
 
 (deftest vertices-mesh-test-8x8 (terrain-chunk-suite)
   (let* ((map   (random-terrain:deserialize
-		 (make-instance 'random-terrain:random-terrain)
-		 (text-utils:strcat +terrain-chunk-dir+ "terrain-chunk-8x8")))
-	 (chunk (make-instance 'terrain-chunk :heightmap (random-terrain:matrix map))))
+                 (make-instance 'random-terrain:random-terrain)
+                 (text-utils:strcat +terrain-chunk-dir+ "terrain-chunk-8x8")))
+         (chunk (make-instance 'terrain-chunk :heightmap (random-terrain:matrix map))))
     (build-mesh chunk)
-    (assert-equality 
-	#'(lambda (a b) (notevery #'null (map 'vector
-					      #'(lambda (v1 v2)
-						  (and (num:epsilon= (elt v1 0) (elt v2 0))
-						       (num:epsilon= (elt v1 1) (elt v2 1))
-						       (num:epsilon= (elt v1 2) (elt v2 2))))
-					      a b)))
-	(mesh:vertices chunk)
-	 #(#(0.0 9.023717 0.0) #(0.0 7.8408074 1.0) #(1.0 8.494174 1.0)
+    (assert-equality
+        #'(lambda (a b) (notevery #'null (map 'vector
+                                              #'(lambda (v1 v2)
+                                                  (and (num:epsilon= (elt v1 0) (elt v2 0))
+                                                       (num:epsilon= (elt v1 1) (elt v2 1))
+                                                       (num:epsilon= (elt v1 2) (elt v2 2))))
+                                              a b)))
+        (mesh:vertices chunk)
+         #(#(0.0 9.023717 0.0) #(0.0 7.8408074 1.0) #(1.0 8.494174 1.0)
            #(0.0 9.023717 0.0) #(1.0 8.494174 1.0) #(1.0 9.36677 0.0)
            #(0.0 7.8408074 1.0) #(0.0 6.657898 2.0) #(1.0 7.621578 2.0)
            #(0.0 7.8408074 1.0) #(1.0 7.621578 2.0) #(1.0 8.494174 1.0)
@@ -501,4 +501,3 @@
            #(16.0 10.0 14.0) #(15.0 10.0 15.0) #(15.0 10.0 16.0)
            #(16.0 10.0 16.0) #(15.0 10.0 15.0) #(16.0 10.0 16.0)
            #(16.0 10.0 15.0)))))
-

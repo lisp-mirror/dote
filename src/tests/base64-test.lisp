@@ -20,13 +20,12 @@
 
 (deftest equalp-static (base64-suite)
   (let* ((str "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.")
-	 (encoded (encode (map 'vector #'char-code (coerce str 'list)))))
+         (encoded (encode (map 'vector #'char-code (coerce str 'list)))))
     (assert-true
-	(equalp (decode encoded) (map 'vector #'char-code (coerce str 'list))))))
+        (equalp (decode encoded) (map 'vector #'char-code (coerce str 'list))))))
 
 (deftest equalp-dynamic (base64-suite)
-  (let* ((v (misc:random-num-filled-vector 1024 256))  
-	 (encoded (encode v)))
+  (let* ((v (misc:random-num-filled-vector 1024 256))
+         (encoded (encode v)))
     (assert-true
-	(equalp (decode encoded) v))))
-
+        (equalp (decode encoded) v))))

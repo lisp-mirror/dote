@@ -25,7 +25,7 @@
 
 (deftest copy-test (ubvec4-suite)
   (let ((orig (ubvec4 (num:lcg-next-upto 256) (num:lcg-next-upto 256)
-		      (num:lcg-next-upto 256) (num:lcg-next-upto 256))))
+                      (num:lcg-next-upto 256) (num:lcg-next-upto 256))))
     (assert-equalp
-	orig
-	(copy-ubvec4 orig))))
+        orig
+        (copy-ubvec4 orig))))

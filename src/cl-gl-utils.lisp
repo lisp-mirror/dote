@@ -21,8 +21,8 @@
 
 (defmacro with-unbind-vao (&body body)
   `(unwind-protect
-	(progn
-	  ,@body)
+        (progn
+          ,@body)
      (gl:bind-vertex-array 0)))
 
 (defmacro with-no-cull-face (&body body)
@@ -72,7 +72,7 @@
 
 (definline set-fast-glaref (v offset new-val)
   (setf (cffi:mem-aref (gl::gl-array-pointer v) :float offset)
-	new-val)
+        new-val)
   new-val)
 
 (definline mock-null-pointer ()
@@ -87,14 +87,14 @@
   (declare ((array desired-type (*)) seq))
   (let ((results (gl:alloc-gl-array :float (length seq))))
     (loop for i fixnum from 0 below (length seq) do
-	 (setf (fast-glaref results i) (aref seq i)))
+         (setf (fast-glaref results i) (aref seq i)))
     results))
 
 (defmethod seq->gl-array ((seq list))
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (let ((results (gl:alloc-gl-array :float (length seq))))
     (loop for i fixnum from 0 below (length seq) do
-	 (setf (fast-glaref results i) (elt seq i)))
+         (setf (fast-glaref results i) (elt seq i)))
     results))
 
 (defun copy-gl-array (a b count)
@@ -108,12 +108,12 @@
     (declare (fixnum i))
     (setf (fast-glaref c i)
       (alexandria:lerp interpolation-factor
-		       (fast-glaref a i)
-		       (fast-glaref b i)))))
+                       (fast-glaref a i)
+                       (fast-glaref b i)))))
 
 (defun gl-array->list (seq)
   (loop for i fixnum from 0 below (gl::gl-array-size seq) collect
-	 (fast-glaref seq i)))
+         (fast-glaref seq i)))
 
 (defun prepare-framebuffer-for-rendering  (framebuffer depthbuffer texture w h)
   (gl:bind-framebuffer :framebuffer framebuffer)
@@ -142,7 +142,7 @@
 
 (defmacro with-render-to-memory-texture ((framebuffer depthbuffer texture w h) &body body)
   `(render-to-memory-texture ,framebuffer ,depthbuffer ,texture ,w ,h
-			     #'(lambda () (progn ,@body))))
+                             #'(lambda () (progn ,@body))))
 
 (defun render-to-pixmap (framebuffer depthbuffer texture w h fn)
   (prepare-framebuffer-for-rendering framebuffer depthbuffer texture w h)
@@ -150,7 +150,7 @@
   (funcall fn)
   (gl:pixel-store :pack-alignment 1)
   (let* ((dump (gl:read-pixels 0 0 w h :rgba :unsigned-byte))
-	 (pixmap (pixmap:make-pixmap w h)))
+         (pixmap (pixmap:make-pixmap w h)))
     (setf (pixmap:bits pixmap) dump)
     (pixmap:sync-bits-to-data pixmap)
     (matrix:ploop-matrix (pixmap x y)
@@ -166,44 +166,44 @@
 (defmacro with-render-to-file ((file w h) &body body)
   (alexandria:with-gensyms (texture framebuffers depthbuffers framebuffer depthbuffer)
     `(let* ((,framebuffers (gl:gen-framebuffers 1))
-	    (,depthbuffers (gl:gen-renderbuffers 1))
-	    (,framebuffer  (elt ,framebuffers 0))
-	    (,depthbuffer  (elt ,depthbuffers 0))
-	    (,texture      (make-instance 'texture:texture
-					  :width ,w
-					  :height ,h
-					  :interpolation-type :linear)))
+            (,depthbuffers (gl:gen-renderbuffers 1))
+            (,framebuffer  (elt ,framebuffers 0))
+            (,depthbuffer  (elt ,depthbuffers 0))
+            (,texture      (make-instance 'texture:texture
+                                          :width ,w
+                                          :height ,h
+                                          :interpolation-type :linear)))
        (texture:gen-name ,texture)
        (texture:prepare-for-rendering ,texture)
        (unwind-protect
-	    (render-to-file ,file ,framebuffer ,depthbuffer (texture:handle ,texture) ,w ,h
-			    #'(lambda () (progn ,@body)))
-	 (gl:delete-framebuffers  ,framebuffers)
-	 (gl:delete-renderbuffers ,depthbuffers)
-	 (interfaces:destroy ,texture)))))
+            (render-to-file ,file ,framebuffer ,depthbuffer (texture:handle ,texture) ,w ,h
+                            #'(lambda () (progn ,@body)))
+         (gl:delete-framebuffers  ,framebuffers)
+         (gl:delete-renderbuffers ,depthbuffers)
+         (interfaces:destroy ,texture)))))
 
 (defmacro with-render-to-pixmap ((w h) &body body)
   (alexandria:with-gensyms (texture framebuffers depthbuffers framebuffer depthbuffer)
     `(let* ((,framebuffers (gl:gen-framebuffers 1))
-	    (,depthbuffers (gl:gen-renderbuffers 1))
-	    (,framebuffer  (elt ,framebuffers 0))
-	    (,depthbuffer  (elt ,depthbuffers 0))
-	    (,texture      (make-instance 'texture:texture
-					  :width ,w
-					  :height ,h
-					  :interpolation-type :linear)))
+            (,depthbuffers (gl:gen-renderbuffers 1))
+            (,framebuffer  (elt ,framebuffers 0))
+            (,depthbuffer  (elt ,depthbuffers 0))
+            (,texture      (make-instance 'texture:texture
+                                          :width ,w
+                                          :height ,h
+                                          :interpolation-type :linear)))
        (texture:gen-name ,texture)
        (texture:prepare-for-rendering ,texture)
        (unwind-protect
-	    (render-to-pixmap ,framebuffer ,depthbuffer (texture:handle ,texture) ,w ,h
-			    #'(lambda () (progn ,@body)))
-	 (gl:delete-framebuffers  ,framebuffers)
-	 (gl:delete-renderbuffers ,depthbuffers)
-	 (interfaces:destroy ,texture)))))
+            (render-to-pixmap ,framebuffer ,depthbuffer (texture:handle ,texture) ,w ,h
+                            #'(lambda () (progn ,@body)))
+         (gl:delete-framebuffers  ,framebuffers)
+         (gl:delete-renderbuffers ,depthbuffers)
+         (interfaces:destroy ,texture)))))
 
 (defun pick-position (x y modelview-matrix projection-matrix win-w win-h)
   (let* ((dx (d x))
-	 (z  (elt (gl:read-pixels x (f- win-h y) 1 1 :depth-component :float) 0)))
+         (z  (elt (gl:read-pixels x (f- win-h y) 1 1 :depth-component :float) 0)))
     ;; Note gl:read-pixels return a vector
     (3d-utils:unproject dx (d (f- win-h y)) z modelview-matrix projection-matrix
-			0.0 0.0 (d win-w) (d win-h))))
+                        0.0 0.0 (d win-w) (d win-h))))

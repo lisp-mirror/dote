@@ -17,9 +17,9 @@
 (in-package :uivec4)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (deftype uivec4-type () 
+  (deftype uivec4-type ()
     '(unsigned-byte 32))
-  
+
   (deftype uivec4 ()
     "A 4d vector of unsigned integer."
     `(simple-array uivec4-type (4)))
@@ -30,21 +30,21 @@
   (defun uivec4 (x y z &optional (w 0))
     (let ((res (misc:make-array-frame 4 0 'uivec4-type t)))
       (setf (elt res 0) x
-	    (elt res 1) y
-	    (elt res 2) z
-	    (elt res 3) w)
+            (elt res 1) y
+            (elt res 2) z
+            (elt res 3) w)
       res))
-  
+
   (defun copy-uivec4 (old)
     (let ((res (misc:make-array-frame 4 0 'uivec4-type t)))
       (setf (elt res 0) (elt old 0)
-	    (elt res 1) (elt old 1)
-	    (elt res 2) (elt old 2)
-	    (elt res 3) (elt old 3))
+            (elt res 1) (elt old 1)
+            (elt res 2) (elt old 2)
+            (elt res 3) (elt old 3))
       res))
-  
+
   (defun uivec4= (a b)
     (every #'= a b))
-  
-  (alexandria:define-constant +uivec4-zero+ (uivec4 0 0 0 0) 
+
+  (alexandria:define-constant +uivec4-zero+ (uivec4 0 0 0 0)
     :test #'uivec4=))

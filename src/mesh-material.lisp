@@ -33,32 +33,32 @@
     :initform (num:d 1.0)
     :initarg  :roughness
     :accessor roughness)
-   (shininess 
+   (shininess
     :initform (num:d 128.0)
     :initarg  :shininess
     :accessor shininess)))
 
 (defmethod print-object ((object mesh-material) stream)
   (format stream "[ ka ~a kd ~a ks ~a roughness ~a shininess ~a ]"
-	  (ka object) (kd object) (ks object) (roughness object) (shininess object)) )
+          (ka object) (kd object) (ks object) (roughness object) (shininess object)) )
 
 (defmethod marshal:class-persistant-slots ((object mesh-material))
   '(ka kd ks roughness shininess))
 
 (defmethod clone-into :after ((from mesh-material) (to mesh-material))
   (setf (ka        to) (ka from)
-	(kd        to) (kd from)
-	(ks        to) (ks from)
-	(roughness to) (roughness from)
-	(shininess to) (shininess from)))
+        (kd        to) (kd from)
+        (ks        to) (ks from)
+        (roughness to) (roughness from)
+        (shininess to) (shininess from)))
 
 (defmethod clone ((object mesh-material))
   (make-mesh-material (ka object)
-		      (kd object)
-		      (ks object)
-		      (roughness object)
-		      (shininess object)))
+                      (kd object)
+                      (ks object)
+                      (roughness object)
+                      (shininess object)))
 
 (defun make-mesh-material (ka kd ks roughness shininess)
   (make-instance 'mesh-material :ka ka :kd kd :ks ks :roughness roughness
-		 :shininess shininess))
+                 :shininess shininess))

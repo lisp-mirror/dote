@@ -25,12 +25,12 @@
        #(0.0 1.0 2.0 3.0)))
   (assert-false
       (vec4~ (vec4 0.0 1.0 2.0 3.0)
-	     #(0.0 1.0 2.0 3.001))))
+             #(0.0 1.0 2.0 3.001))))
 
 (deftest copy-test (vec4-suite)
   (let ((orig (vec4 (num:lcg-next-upto 1000.0) (num:lcg-next-upto 1000.0)
-		    (num:lcg-next-upto 1000.0) (num:lcg-next-upto 1000.0))))
+                    (num:lcg-next-upto 1000.0) (num:lcg-next-upto 1000.0))))
     (assert-true
-	(vec4~
-	 orig
-	 (copy-vec4 orig)))))
+        (vec4~
+         orig
+         (copy-vec4 orig)))))

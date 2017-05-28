@@ -21,5 +21,5 @@
 (deftest fail-if-cache-system-is-down (resource-cache-test-suite)
   (assert-condition cache-error
       (make-cache-key (make-cache-key-element :name "123"    :file-type :directory)
-		      (make-cache-key-element :name "qwerty" :file-type :directory)
-		      (make-cache-key-element :name "a.png"  :file-type :file))))
+                      (make-cache-key-element :name "qwerty" :file-type :directory)
+                      (make-cache-key-element :name "a.png"  :file-type :file))))

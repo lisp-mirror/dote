@@ -20,8 +20,8 @@
 
 (defun tree-sample ()
   (let ((tree        (make-instance 'm-tree :data 2))
-	(subtree     (make-instance 'm-tree :data 4))
-	(sub-subtree (make-instance 'm-tree :data 3)))
+        (subtree     (make-instance 'm-tree :data 4))
+        (sub-subtree (make-instance 'm-tree :data 3)))
     (add-child tree (make-instance 'm-tree :data 8))
     (add-child tree (make-instance 'm-tree :data 16))
     (add-child subtree sub-subtree)
@@ -37,4 +37,4 @@
   (assert-equality
       #'= 3
       (data (first (find-child-if (tree-sample)
-				  #'(lambda (a) (oddp (data a))))))))
+                                  #'(lambda (a) (oddp (data a))))))))

@@ -5,25 +5,25 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defmacro define-typed-op (name op type
-			     &key
-			       (return-value-on t)
-			       (input-value-on t))
+                             &key
+                               (return-value-on t)
+                               (input-value-on t))
     `(defmacro ,name (&rest args)
        (let ((the-args
-	      ,(if input-value-on
-		   `(mapcar #'(lambda (argsym)
-				`(the ,',type ,argsym))
-			    args)
-		   `args)))
-	 ,(if return-value-on
-	      ``(the ,',type
-		     (,',op ,@the-args))
-	      ``(,',op ,@the-args)))))
+              ,(if input-value-on
+                   `(mapcar #'(lambda (argsym)
+                                `(the ,',type ,argsym))
+                            args)
+                   `args)))
+         ,(if return-value-on
+              ``(the ,',type
+                     (,',op ,@the-args))
+              ``(,',op ,@the-args)))))
 
   (set-dispatch-macro-character #\§ #\d
-				#'(lambda (stream char1 num)
-				    (declare (ignore stream char1 num))
-				    (find-class 'single-float)))
+                                #'(lambda (stream char1 num)
+                                    (declare (ignore stream char1 num))
+                                    (find-class 'single-float)))
 
   (defmacro class-of-desired-type () `(find-class 'single-float))
 
@@ -110,7 +110,7 @@
 
 (defun dlerp (v a b)
   (declare (optimize (debug 0) (safety 0) (speed 3))
-	   (type desired-type v))
+           (type desired-type v))
   (d+ a (d* v (d- b a))))
 
 (defun secure-dacos (a)

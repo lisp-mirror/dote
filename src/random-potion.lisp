@@ -78,21 +78,21 @@
 
 (defun randomize-damage-points (character level)
   (setf (damage-points character)
-	(calculate-randomized-damage-points level
-					     +minimum-level+
-					     +maximum-level+
-					     +minimum-damage-point+
-					     +maximum-damage-point+
-					     (d/ (d level) (d* 5.0 (d +maximum-level+))))))
+        (calculate-randomized-damage-points level
+                                             +minimum-level+
+                                             +maximum-level+
+                                             +minimum-damage-point+
+                                             +maximum-damage-point+
+                                             (d/ (d level) (d* 5.0 (d +maximum-level+))))))
 
 
 (defun level-params (map-level)
   (values (elt +level-sigma+ map-level)
-	  (elt +level-mean+  map-level)))
+          (elt +level-mean+  map-level)))
 
 (defun modifier-params (potion-level)
   (values (elt +modifier-sigma+ potion-level)
-	  (elt +modifier-mean+  potion-level)))
+          (elt +modifier-mean+  potion-level)))
 
 (defun calculate-modifier (potion-level)
   (multiple-value-bind (sigma mean)
@@ -101,19 +101,19 @@
 
 (defun calculate-decay (map-level)
   (make-instance 'decay-parameters
-		 :leaving-message (_ " exausted.")
-		 :points          (/ +standard-potion-decay+ map-level)
-		 :when-decay      +decay-by-turns+))
+                 :leaving-message (_ " exausted.")
+                 :points          (/ +standard-potion-decay+ map-level)
+                 :when-decay      +decay-by-turns+))
 
 (defun calculate-potion-level (map-level)
   (multiple-value-bind (sigma mean)
       (level-params (1- map-level))
     (clamp (truncate (gaussian-probability sigma mean))
-	   +minimum-level+ +maximum-level+)))
+           +minimum-level+ +maximum-level+)))
 
 (defun healing-fx-params-chance (armor-level)
   (values (elt +chance-healing-fx-sigma+ armor-level)
-	  (elt +chance-healing-fx-mean+  armor-level)))
+          (elt +chance-healing-fx-mean+  armor-level)))
 
 (defun calculate-healing-fx-params-chance (armor-level)
   (multiple-value-bind (sigma mean)
@@ -122,71 +122,71 @@
 
 (defun set-healing-dmg-effect (path potion-level interaction)
   (let ((effect-object (make-instance 'heal-damage-points-effect-parameters
-				      :trigger +effect-when-consumed+
-				      :points  (calculate-modifier potion-level)
-				      :chance  (calculate-healing-fx-params-chance
-						potion-level)
-				      :target  +target-self+)))
+                                      :trigger +effect-when-consumed+
+                                      :points  (calculate-modifier potion-level)
+                                      :chance  (calculate-healing-fx-params-chance
+                                                potion-level)
+                                      :target  +target-self+)))
     (n-setf-path-value interaction path effect-object)))
 
 (defun set-healing-effect (effect-path potion-level interaction)
   (let ((effect-object (make-instance 'healing-effect-parameters
-				      :trigger  +effect-when-consumed+
-				      :duration (ceiling (calculate-modifier potion-level))
-				      :chance   (calculate-healing-fx-params-chance potion-level)
-				      :target   +target-self+)))
+                                      :trigger  +effect-when-consumed+
+                                      :duration (ceiling (calculate-modifier potion-level))
+                                      :chance   (calculate-healing-fx-params-chance potion-level)
+                                      :target   +target-self+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun set-poison-effect (effect-path potion-level interaction)
   (let ((effect-object (make-instance 'poison-effect-parameters
-				      :target          +target-self+
-				      :chance (calculate-healing-fx-params-chance potion-level)
-				      :points-per-turn (calculate-modifier potion-level))))
+                                      :target          +target-self+
+                                      :chance (calculate-healing-fx-params-chance potion-level)
+                                      :points-per-turn (calculate-modifier potion-level))))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun number-of-healing-effects (potion-level number-of-normal-effects)
   (let ((max (round (- (num:dlerp (num:smoothstep-interpolate 0.0
-							   10.0
-							   (d (1- potion-level)))
-				  +minimum-num-healing-fx+
-				  +maximum-num-healing-fx+)
-		       number-of-normal-effects))))
+                                                           10.0
+                                                           (d (1- potion-level)))
+                                  +minimum-num-healing-fx+
+                                  +maximum-num-healing-fx+)
+                       number-of-normal-effects))))
     (1+ (lcg-next-upto (max 1 max)))))
 
 (defun generate-potion (map-level)
   (clean-effects
    (%generate-potion (res:get-resource-file +default-interaction-filename+
-					    +default-character-potion-dir+
-					    :if-does-not-exists :error)
-		     (res:get-resource-file +default-character-filename+
-					    +default-character-potion-dir+
-					    :if-does-not-exists :error)
-		     map-level)))
+                                            +default-character-potion-dir+
+                                            :if-does-not-exists :error)
+                     (res:get-resource-file +default-character-filename+
+                                            +default-character-potion-dir+
+                                            :if-does-not-exists :error)
+                     map-level)))
 
 (defun %generate-potion (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
     (with-interaction-parameters-file (template interaction-file)
       (let* ((potion-level       (calculate-potion-level map-level))
-	     (healing-effects-no (number-of-healing-effects potion-level 0))
-	     (healing-effects    (get-healing-fx-shuffled template healing-effects-no))
-	     (decay              (calculate-decay map-level)))
-	(n-setf-path-value char-template (list +level+) (d potion-level))
-	(loop for i in healing-effects do
-	     (cond
-	       ((eq i +heal-damage-points+)
-		(set-healing-dmg-effect (list +healing-effects+ i) potion-level template))
-	       ((eq i +cause-poison+)
-		(set-poison-effect (list +healing-effects+ i) potion-level template))
-	       (t
-		(set-healing-effect (list +healing-effects+ i) potion-level template))))
-	(n-setf-path-value template (list +decay+) decay)
-	(setf template (remove-generate-symbols template))
-	(fill-character-plist char-template template potion-level)
-	(let ((potion-character (params->np-character char-template)))
-	  (setf (basic-interaction-params potion-character) template)
-	  (randomize-damage-points potion-character potion-level)
-	  potion-character)))))
+             (healing-effects-no (number-of-healing-effects potion-level 0))
+             (healing-effects    (get-healing-fx-shuffled template healing-effects-no))
+             (decay              (calculate-decay map-level)))
+        (n-setf-path-value char-template (list +level+) (d potion-level))
+        (loop for i in healing-effects do
+             (cond
+               ((eq i +heal-damage-points+)
+                (set-healing-dmg-effect (list +healing-effects+ i) potion-level template))
+               ((eq i +cause-poison+)
+                (set-poison-effect (list +healing-effects+ i) potion-level template))
+               (t
+                (set-healing-effect (list +healing-effects+ i) potion-level template))))
+        (n-setf-path-value template (list +decay+) decay)
+        (setf template (remove-generate-symbols template))
+        (fill-character-plist char-template template potion-level)
+        (let ((potion-character (params->np-character char-template)))
+          (setf (basic-interaction-params potion-character) template)
+          (randomize-damage-points potion-character potion-level)
+          potion-character)))))
 
 (defun filename-effects-string (interaction)
   (cond
@@ -202,34 +202,34 @@
      +re-healing+)
     ((plist-path-value interaction (list +healing-effects+ +immune-poison+))
      (strcat +re-healing+ +file-record-sep+ "immune"
-	     +file-record-sep+ "poison"))
+             +file-record-sep+ "poison"))
     ((plist-path-value interaction (list +healing-effects+ +immune-berserk+))
      (strcat +re-healing+ +file-record-sep+  "immune"
-	     +file-record-sep+ "berserk"))
+             +file-record-sep+ "berserk"))
     ((plist-path-value interaction (list +healing-effects+ +immune-faint+))
      (strcat +re-healing+ +file-record-sep+ "immune"
-	     +file-record-sep+ "faint"))
+             +file-record-sep+ "faint"))
     (t
      (strcat +re-healing+ +file-record-sep+ "immune"
-	     +file-record-sep+ "faint"))))
+             +file-record-sep+ "faint"))))
 
 (defun regexp-file-portrait (interaction potion-level)
   (strcat (filename-effects-string interaction)
-	  +file-record-sep+
-	  (format nil "~2,'0d" potion-level)))
+          +file-record-sep+
+          (format nil "~2,'0d" potion-level)))
 
 (defun build-file-names-db (potion-name-type potion-level)
   (strcat potion-name-type
-	  +file-record-sep+
-	  (format nil "~2,'0d" potion-level)
-	  ".lisp"))
+          +file-record-sep+
+          (format nil "~2,'0d" potion-level)
+          ".lisp"))
 
 (defun fill-character-plist (character interaction potion-level)
   (let* ((regex          (regexp-file-portrait interaction potion-level))
-	 (portrait-file  (random-elt (remove-if #'(lambda (a) (not (cl-ppcre:scan regex a)))
-						(res:get-resource-files
-						 +default-gui-inventory-items+)
-						:key #'uiop:native-namestring))))
+         (portrait-file  (random-elt (remove-if #'(lambda (a) (not (cl-ppcre:scan regex a)))
+                                                (res:get-resource-files
+                                                 +default-gui-inventory-items+)
+                                                :key #'uiop:native-namestring))))
     (n-setf-path-value character (list +portrait+) (uiop:native-namestring portrait-file))
     (n-setf-path-value character (list +last-name+) "")
     (n-setf-path-value character (list +first-name+) "")))

@@ -45,15 +45,15 @@
     (let ((res (vec4 0.0 0.0 0.0)))
       (declare (quat res))
       (setf (elt res 0) (elt old 0)
-	    (elt res 1) (elt old 1)
-	    (elt res 2) (elt old 2)
-	    (elt res 3) (elt old 3))
+            (elt res 1) (elt old 1)
+            (elt res 2) (elt old 2)
+            (elt res 3) (elt old 3))
       res)))
 
 (defun %set-qv (q v)
   (setf (elt q 0) (elt v 0)
-	(elt q 1) (elt v 1)
-	(elt q 2) (elt v 2)))
+        (elt q 1) (elt v 1)
+        (elt q 2) (elt v 2)))
 
 (defsetf qv %set-qv)
 
@@ -73,7 +73,7 @@
   (make-quat (elt p 0) (elt p 1) (elt p 2) 0.0))
 
 (defun axis-rad->quat (axis &optional (rad (dsqrt (d+ (dexpt (elt axis 0) 2.0)
-						      (dexpt (elt axis 1) 2.0)))))
+                                                      (dexpt (elt axis 1) 2.0)))))
   (make-quat-from-vw (vec* axis (dsin (d/ rad 2.0)))
                      (dcos (d/ rad 2.0))))
 
@@ -100,9 +100,9 @@
 
 (defun vec-neg4 (v)
   (vec4 (d- (elt v 0))
-	(d- (elt v 1))
-	(d- (elt v 2))
-	(d- (elt v 3))))
+        (d- (elt v 1))
+        (d- (elt v 2))
+        (d- (elt v 3))))
 
 (defun sq (x) (d* x x))
 
@@ -121,13 +121,13 @@
 
 (defun quat* (q r)
   (let ((q-v (qv q))
-	(q-w (qw q))
+        (q-w (qw q))
         (r-v (qv r))
-	(r-w (qw r)))
+        (r-w (qw r)))
     (make-quat-from-vw
      (vec+ (vec+ (cross-product q-v r-v)
-		 (vec* q-v r-w))
-	   (vec* r-v q-w))
+                 (vec* q-v r-w))
+           (vec* r-v q-w))
      (d- (d* q-w r-w) (dot-product q-v r-v)))))
 
 (defun quat-scale (q s)
@@ -155,63 +155,63 @@
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (quat q))
   (let* ((x (elt q 0))
-	 (y (elt q 1))
-	 (z (elt q 2))
-	 (w (elt q 3))
-	 (m11 (d- 1.0 (d* 2.0 (d+ (sq y) (sq z)))))
-	 (m12 (d* 2.0 (d+ (d* x y) (d* w z))))
-	 (m13 (d* 2.0 (d- (d* x z) (d* w y))))
-	 (m21 (d* 2.0 (d- (d* x y) (d* w z))))
-	 (m22 (d- 1.0 (d* 2.0 (d+ (sq x) (sq z)))))
-	 (m23 (d* 2.0 (d+ (d* y z) (d* w x))))
-	 (m31 (d* 2.0 (d+ (d* x z) (d* w y))))
-	 (m32 (d* 2.0 (d- (d* y z) (d* w x))))
-	 (m33 (d- 1.0 (d* 2.0 (d+ (sq x) (sq y))))))
+         (y (elt q 1))
+         (z (elt q 2))
+         (w (elt q 3))
+         (m11 (d- 1.0 (d* 2.0 (d+ (sq y) (sq z)))))
+         (m12 (d* 2.0 (d+ (d* x y) (d* w z))))
+         (m13 (d* 2.0 (d- (d* x z) (d* w y))))
+         (m21 (d* 2.0 (d- (d* x y) (d* w z))))
+         (m22 (d- 1.0 (d* 2.0 (d+ (sq x) (sq z)))))
+         (m23 (d* 2.0 (d+ (d* y z) (d* w x))))
+         (m31 (d* 2.0 (d+ (d* x z) (d* w y))))
+         (m32 (d* 2.0 (d- (d* y z) (d* w x))))
+         (m33 (d- 1.0 (d* 2.0 (d+ (sq x) (sq y))))))
     (matrix m11 m21 m31 0.0
-	    m12 m22 m32 0.0
-	    m13 m23 m33 0.0
-	    0.0 0.0 0.0 1.0)))
+            m12 m22 m32 0.0
+            m13 m23 m33 0.0
+            0.0 0.0 0.0 1.0)))
 
 (defun matrix->quat (mat)
   (let*((w-squared-1 (d+ (mref mat 0 0) (mref mat 1 1) (mref mat 2 2)))
-	(x-squared-1 (d- (mref mat 0 0) (mref mat 1 1) (mref mat 2 2)))
-	(y-squared-1 (d- (mref mat 1 1) (mref mat 0 0) (mref mat 2 2)))
-	(z-squared-1 (d- (mref mat 2 2) (mref mat 0 0) (mref mat 1 1)))
-	(biggest-idx 0)
-	(biggest w-squared-1))
+        (x-squared-1 (d- (mref mat 0 0) (mref mat 1 1) (mref mat 2 2)))
+        (y-squared-1 (d- (mref mat 1 1) (mref mat 0 0) (mref mat 2 2)))
+        (z-squared-1 (d- (mref mat 2 2) (mref mat 0 0) (mref mat 1 1)))
+        (biggest-idx 0)
+        (biggest w-squared-1))
     (cond
       ((d> x-squared-1 biggest)
        (setf biggest     x-squared-1
-	     biggest-idx 1))
+             biggest-idx 1))
       ((d> y-squared-1 biggest)
        (setf biggest     y-squared-1
-	     biggest-idx 2))
+             biggest-idx 2))
       ((d> z-squared-1 biggest)
        (setf biggest     z-squared-1
-	     biggest-idx 3)))
+             biggest-idx 3)))
     (let* ((biggest-val (d/ (dsqrt (d+ 1.0 biggest)) 2.0))
-	   (mult (d/ 0.25 biggest-val)))
+           (mult (d/ 0.25 biggest-val)))
       (case biggest-idx
-	(0
-	 (quat (d* (d- (mref mat 2 1) (mref mat 1 2)) mult)
-	       (d* (d- (mref mat 0 2) (mref mat 2 0)) mult)
-	       (d* (d- (mref mat 1 0) (mref mat 0 1)) mult)
-	       biggest-val))
-	(1
-	 (quat biggest-val
-	       (d* (d+ (mref mat 1 0) (mref mat 0 1)) mult)
-	       (d* (d+ (mref mat 0 2) (mref mat 2 0)) mult)
-	       (d* (d- (mref mat 2 1) (mref mat 1 2)) mult)))
-	(2
-	 (quat (d* (d+ (mref mat 1 0) (mref mat 0 1)) mult)
-	       biggest-val
-	       (d* (d+ (mref mat 2 1) (mref mat 1 2)) mult)
-	       (d* (d- (mref mat 0 2) (mref mat 2 0)) mult)))
-	(3
-	 (quat (d* (d+ (mref mat 0 2) (mref mat 2 0)) mult)
-	       (d* (d+ (mref mat 2 1) (mref mat 1 2)) mult)
-	       biggest-val
-	       (d* (d- (mref mat 1 0) (mref mat 0 1)) mult)))))))
+        (0
+         (quat (d* (d- (mref mat 2 1) (mref mat 1 2)) mult)
+               (d* (d- (mref mat 0 2) (mref mat 2 0)) mult)
+               (d* (d- (mref mat 1 0) (mref mat 0 1)) mult)
+               biggest-val))
+        (1
+         (quat biggest-val
+               (d* (d+ (mref mat 1 0) (mref mat 0 1)) mult)
+               (d* (d+ (mref mat 0 2) (mref mat 2 0)) mult)
+               (d* (d- (mref mat 2 1) (mref mat 1 2)) mult)))
+        (2
+         (quat (d* (d+ (mref mat 1 0) (mref mat 0 1)) mult)
+               biggest-val
+               (d* (d+ (mref mat 2 1) (mref mat 1 2)) mult)
+               (d* (d- (mref mat 0 2) (mref mat 2 0)) mult)))
+        (3
+         (quat (d* (d+ (mref mat 0 2) (mref mat 2 0)) mult)
+               (d* (d+ (mref mat 2 1) (mref mat 1 2)) mult)
+               biggest-val
+               (d* (d- (mref mat 1 0) (mref mat 0 1)) mult)))))))
 
 (defun quat-rotate-to-vec (src-vec dest-vec &key (fallback-axis +y-axe+))
   (declare (optimize (debug 0) (safety 0) (speed 3)))
@@ -219,21 +219,21 @@
          (nt   (normalize dest-vec))
          (u    (cross-product ns nt))
          (e    (dot-product   ns nt))
-	 (disc (d* 2.0 (d+ 1.0 e))))
+         (disc (d* 2.0 (d+ 1.0 e))))
     (with-epsilon (5e-4)
       (if (d>= e 1.0)
-	  +quat-identity+
-	  (progn
-	    (when (minusp disc)
-	      (format t "ZOMG COMPLEXITY~% src: ~a dest: ~a~% dot: ~a~%"
-		      src-vec dest-vec e))
-	    (if (epsilon= e -1.0)
-		(axis-rad->quat fallback-axis +pi+)
-		(let* ((radical (dsqrt disc)))
-		  (if (zerop radical)
-		      +quat-identity+
-		      (make-quat-from-vw (vec* u (/ 1.0 radical))  ; qv
-					 (/ radical 2.0))))))))))  ; qw
+          +quat-identity+
+          (progn
+            (when (minusp disc)
+              (format t "ZOMG COMPLEXITY~% src: ~a dest: ~a~% dot: ~a~%"
+                      src-vec dest-vec e))
+            (if (epsilon= e -1.0)
+                (axis-rad->quat fallback-axis +pi+)
+                (let* ((radical (dsqrt disc)))
+                  (if (zerop radical)
+                      +quat-identity+
+                      (make-quat-from-vw (vec* u (/ 1.0 radical))  ; qv
+                                         (/ radical 2.0))))))))))  ; qw
 
 (alexandria:define-constant +slerp-delta+ 1.0e-3 :test #'=)
 
@@ -253,20 +253,20 @@
           (setf scale1 (d/ (dsin (d* omega (d- 1.0 s)))
                            sin-omega)
                 scale2 (d/ (dsin (d* omega s))
-			   sin-omega))))
+                           sin-omega))))
     (quat+ (quat-scale q1 scale1)
            (quat-scale q2 scale2))))
 
 (defun spherical->quat (spherical)
   (labels ((%spherical->cartesian (sphere-coords)
-	     (let* ((phi   (elt sphere-coords 0))
-		    (theta (elt sphere-coords 1))
-		    (r     (elt sphere-coords 2))
-		    (sin-theta (dsin (d- (d/ +pi+ 2.0) theta))))
-	       (vec4 (d* r (dsin phi) sin-theta)
-		     (d* r (dcos (- (/ +pi+ 2) theta)))
-		     (d* r (dcos phi) sin-theta)
-		     1.0))))
+             (let* ((phi   (elt sphere-coords 0))
+                    (theta (elt sphere-coords 1))
+                    (r     (elt sphere-coords 2))
+                    (sin-theta (dsin (d- (d/ +pi+ 2.0) theta))))
+               (vec4 (d* r (dsin phi) sin-theta)
+                     (d* r (dcos (- (/ +pi+ 2) theta)))
+                     (d* r (dcos phi) sin-theta)
+                     1.0))))
     (let* ((cart-vec (vec4-normalize (%spherical->cartesian spherical)))
-	   (quat (quat-norm (quat-rotate-to-vec +z-axe+ cart-vec))))
+           (quat (quat-norm (quat-rotate-to-vec +z-axe+ cart-vec))))
       quat)))

@@ -16,14 +16,14 @@
 
 (in-package :os-utils)
 
-(alexandria:define-constant +proc-file-system+ 
+(alexandria:define-constant +proc-file-system+
     (concatenate 'string filesystem-utils:*directory-sep*
-		 "proc")
+                 "proc")
   :test #'string=)
 
-(alexandria:define-constant +proc-cpuinfo+ 
-    (concatenate 'string +proc-file-system+ filesystem-utils:*directory-sep* 
-		 "cpuinfo")
+(alexandria:define-constant +proc-cpuinfo+
+    (concatenate 'string +proc-file-system+ filesystem-utils:*directory-sep*
+                 "cpuinfo")
   :test #'string=)
 
 
@@ -33,9 +33,9 @@
   #+windows (the fixnum 1)
   #-windows
   (with-open-file (stream +proc-cpuinfo+ :direction :input
-			    :if-does-not-exist :error)
+                            :if-does-not-exist :error)
     (do ((line (read-line stream nil nil) (read-line stream nil nil))
-	 (cpu-count 0))
-	((not line) (the fixnum cpu-count))
+         (cpu-count 0))
+        ((not line) (the fixnum cpu-count))
       (when (cl-ppcre:scan "^processor" line)
-	(incf cpu-count)))))
+        (incf cpu-count)))))

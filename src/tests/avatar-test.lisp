@@ -30,10 +30,10 @@
 (deftest test-generation (avatar-suite)
   (assert-true
       (let* ((generated (%gen-avatar))
-	     (res (equalp
-		   (pixmap:data (load-test-tga (concatenate 'string +avatar-path+
-							    "avatar0.tga")))
-		   (pixmap:data generated))))
-	(when (not res)
-	  (dump-pixmap generated +texture-dir-tmp+ "avatar0.tga"))
-	res)))
+             (res (equalp
+                   (pixmap:data (load-test-tga (concatenate 'string +avatar-path+
+                                                            "avatar0.tga")))
+                   (pixmap:data generated))))
+        (when (not res)
+          (dump-pixmap generated +texture-dir-tmp+ "avatar0.tga"))
+        res)))

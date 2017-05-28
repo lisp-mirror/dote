@@ -25,24 +25,24 @@
 (defun test-make-map (w h seed)
   (num:with-lcg-seed (seed)
     (let ((map (make-instance 'random-terrain
-			      :matrix (gen-empty-terrain w h))))
+                              :matrix (gen-empty-terrain w h))))
       (make-map map)
       map)))
 
 (deftest generate-map-test-256-2-height (random-terrain-suite)
   (with-kernel
     (assert-true
-	(let ((map (test-make-map 256 256 2))
-	      (height (make-instance 'pixmap:pgm)))
-	  (pixmap:load height (concatenate 'string  +terrain-dir+ "terrain-256-2.pgm"))
-	  (equalp (matrix:data (matrix:map-matrix (matrix map) #'round))
-		  (matrix:data height))))))
+        (let ((map (test-make-map 256 256 2))
+              (height (make-instance 'pixmap:pgm)))
+          (pixmap:load height (concatenate 'string  +terrain-dir+ "terrain-256-2.pgm"))
+          (equalp (matrix:data (matrix:map-matrix (matrix map) #'round))
+                  (matrix:data height))))))
 
 (deftest generate-map-test-256-2-layer (random-terrain-suite)
   (with-kernel
     (assert-true
-	(let ((map (test-make-map 256 256 2))
-	      (layers (make-instance 'pixmap:tga)))
-	  (pixmap:load layers (concatenate 'string  +terrain-dir+ "terrain-256-2-layers.tga"))
-	  (equalp (pixmap:data (texture-weights map))
-		  (matrix:data layers))))))
+        (let ((map (test-make-map 256 256 2))
+              (layers (make-instance 'pixmap:tga)))
+          (pixmap:load layers (concatenate 'string  +terrain-dir+ "terrain-256-2-layers.tga"))
+          (equalp (pixmap:data (texture-weights map))
+                  (matrix:data layers))))))

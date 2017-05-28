@@ -23,93 +23,93 @@
 (defmacro generate-fonts (width height &rest fonts)
   `(progn
      ,@(loop for i in fonts collect
-	    `(defparameter ,(alexandria:format-symbol t "~:@(~a~)" (first i))
-	       (make-instance 'matrix:matrix 
-			      :data ,(second i) 
-			      :width ,width
-			      :height ,height)))))
+            `(defparameter ,(alexandria:format-symbol t "~:@(~a~)" (first i))
+               (make-instance 'matrix:matrix
+                              :data ,(second i)
+                              :width ,width
+                              :height ,height)))))
 
 (generate-fonts +font-w+ +font-h+
-		(*zero*  #(0 1 1 1 1 1 1 0
-			   1 1 0 0 0 0 1 1
-			   1 1 0 0 0 1 1 1
-			   1 1 0 0 1 0 1 1
-			   1 1 0 1 0 0 1 1
-			   1 1 1 0 0 0 1 1
-			   1 1 0 0 0 0 1 1
-			   0 1 1 1 1 1 1 0))
-		(*one*   #(0 0 0 1 1 0 0 0
-			   0 0 1 1 1 0 0 0
-			   0 1 0 1 1 0 0 0
-			   0 0 0 1 1 0 0 0
-			   0 0 0 1 1 0 0 0
-			   0 0 0 1 1 0 0 0
-			   0 0 0 1 1 0 0 0
-			   0 1 1 1 1 1 1 0))
-		(*two*   #(0 0 1 1 1 1 0 0
-			   0 0 0 0 0 1 1 0
-			   0 0 0 0 0 1 1 0
-			   0 0 0 0 0 1 1 0
-			   0 0 1 1 1 1 0 0
-			   0 1 1 0 0 0 0 0
-			   0 1 1 0 0 0 0 0
-			   0 0 1 1 1 1 0 0))
-		(*three* #(0 0 1 1 1 1 0 0
-			   0 0 0 0 0 1 1 0
-			   0 0 0 0 0 1 1 0
-			   0 0 0 0 0 1 1 0
-			   0 0 1 1 1 1 0 0
-			   0 0 0 0 0 1 1 0
-			   0 0 0 0 0 1 1 0
-			   0 0 1 1 1 1 0 0))
-		(*four*  #(0 0 0 1 1 0 0 0
-			   0 0 1 1 1 0 0 0
-			   0 1 1 0 1 0 0 0
-			   0 1 0 0 1 0 0 0
-			   1 1 0 0 1 0 0 0
-			   1 1 1 1 1 1 1 1
-			   0 0 0 0 1 0 0 0
-			   0 0 0 0 1 0 0 0))
-		(*five*  #(0 0 1 1 1 1 0 0
-			   0 1 1 0 0 0 0 0
-			   0 1 1 0 0 0 0 0
-			   0 1 1 0 0 0 0 0
-			   0 0 1 1 1 1 0 0
-			   0 0 0 0 0 1 1 0
-			   0 0 0 0 0 1 1 0
-			   0 0 1 1 1 1 0 0))
-		(*six*   #(0 0 1 1 1 1 0 0
-			   0 1 1 0 0 0 0 0
-			   0 1 1 0 0 0 0 0
-			   0 1 1 0 0 0 0 0
-			   0 0 1 1 1 1 0 0
-			   0 1 1 0 0 1 1 0
-			   0 1 1 0 0 1 1 0
-			   0 0 1 1 1 1 0 0))
-		(*seven* #(0 1 1 1 1 1 1 0
-			   0 0 0 0 0 0 1 1
-			   0 0 0 0 0 1 1 0
-			   0 0 0 0 1 1 0 0
-			   0 0 0 1 1 0 0 0
-			   0 0 1 1 0 0 0 0
-			   0 1 1 0 0 0 0 0
-			   0 1 0 0 0 0 0 0))
-		(*eight* #(0 0 1 1 1 1 0 0
-			   0 1 1 0 0 1 1 0
-			   0 1 1 0 0 1 1 0
-			   0 1 1 0 0 1 1 0
-			   0 0 1 1 1 1 0 0
-			   0 1 1 0 0 1 1 0
-			   0 1 1 0 0 1 1 0
-			   0 0 1 1 1 1 0 0))
-		(*nine* #(0 0 1 1 1 1 0 0
-			  0 1 1 0 0 1 1 0
-			  0 1 1 0 0 1 1 0
-			  0 1 1 0 0 1 1 0
-			  0 0 1 1 1 1 0 0
-			  0 0 0 0 0 1 1 0
-			  0 0 0 0 0 1 1 0
-			  0 0 1 1 1 1 0 0)))
+                (*zero*  #(0 1 1 1 1 1 1 0
+                           1 1 0 0 0 0 1 1
+                           1 1 0 0 0 1 1 1
+                           1 1 0 0 1 0 1 1
+                           1 1 0 1 0 0 1 1
+                           1 1 1 0 0 0 1 1
+                           1 1 0 0 0 0 1 1
+                           0 1 1 1 1 1 1 0))
+                (*one*   #(0 0 0 1 1 0 0 0
+                           0 0 1 1 1 0 0 0
+                           0 1 0 1 1 0 0 0
+                           0 0 0 1 1 0 0 0
+                           0 0 0 1 1 0 0 0
+                           0 0 0 1 1 0 0 0
+                           0 0 0 1 1 0 0 0
+                           0 1 1 1 1 1 1 0))
+                (*two*   #(0 0 1 1 1 1 0 0
+                           0 0 0 0 0 1 1 0
+                           0 0 0 0 0 1 1 0
+                           0 0 0 0 0 1 1 0
+                           0 0 1 1 1 1 0 0
+                           0 1 1 0 0 0 0 0
+                           0 1 1 0 0 0 0 0
+                           0 0 1 1 1 1 0 0))
+                (*three* #(0 0 1 1 1 1 0 0
+                           0 0 0 0 0 1 1 0
+                           0 0 0 0 0 1 1 0
+                           0 0 0 0 0 1 1 0
+                           0 0 1 1 1 1 0 0
+                           0 0 0 0 0 1 1 0
+                           0 0 0 0 0 1 1 0
+                           0 0 1 1 1 1 0 0))
+                (*four*  #(0 0 0 1 1 0 0 0
+                           0 0 1 1 1 0 0 0
+                           0 1 1 0 1 0 0 0
+                           0 1 0 0 1 0 0 0
+                           1 1 0 0 1 0 0 0
+                           1 1 1 1 1 1 1 1
+                           0 0 0 0 1 0 0 0
+                           0 0 0 0 1 0 0 0))
+                (*five*  #(0 0 1 1 1 1 0 0
+                           0 1 1 0 0 0 0 0
+                           0 1 1 0 0 0 0 0
+                           0 1 1 0 0 0 0 0
+                           0 0 1 1 1 1 0 0
+                           0 0 0 0 0 1 1 0
+                           0 0 0 0 0 1 1 0
+                           0 0 1 1 1 1 0 0))
+                (*six*   #(0 0 1 1 1 1 0 0
+                           0 1 1 0 0 0 0 0
+                           0 1 1 0 0 0 0 0
+                           0 1 1 0 0 0 0 0
+                           0 0 1 1 1 1 0 0
+                           0 1 1 0 0 1 1 0
+                           0 1 1 0 0 1 1 0
+                           0 0 1 1 1 1 0 0))
+                (*seven* #(0 1 1 1 1 1 1 0
+                           0 0 0 0 0 0 1 1
+                           0 0 0 0 0 1 1 0
+                           0 0 0 0 1 1 0 0
+                           0 0 0 1 1 0 0 0
+                           0 0 1 1 0 0 0 0
+                           0 1 1 0 0 0 0 0
+                           0 1 0 0 0 0 0 0))
+                (*eight* #(0 0 1 1 1 1 0 0
+                           0 1 1 0 0 1 1 0
+                           0 1 1 0 0 1 1 0
+                           0 1 1 0 0 1 1 0
+                           0 0 1 1 1 1 0 0
+                           0 1 1 0 0 1 1 0
+                           0 1 1 0 0 1 1 0
+                           0 0 1 1 1 1 0 0))
+                (*nine* #(0 0 1 1 1 1 0 0
+                          0 1 1 0 0 1 1 0
+                          0 1 1 0 0 1 1 0
+                          0 1 1 0 0 1 1 0
+                          0 0 1 1 1 1 0 0
+                          0 0 0 0 0 1 1 0
+                          0 0 0 0 0 1 1 0
+                          0 0 1 1 1 1 0 0)))
 
 (defun find-font (char)
   (cond
@@ -127,15 +127,14 @@
 (defun draw-font (mat x y color font)
   (loop for col from 0 below (matrix:height font) do
        (loop for row from 0 below (matrix:width font) do
-	    (when (= 1 (matrix:matrix-elt font row col))
-	      (matrix:with-check-matrix-borders (mat (+ x col) (+ y row) )
-		(setf (matrix:matrix-elt mat (+ y row) (+ x col)) color))))))
+            (when (= 1 (matrix:matrix-elt font row col))
+              (matrix:with-check-matrix-borders (mat (+ x col) (+ y row) )
+                (setf (matrix:matrix-elt mat (+ y row) (+ x col)) color))))))
 
 (defun draw-string (mat x y color string)
   (let ((xstart x)
-	(ystart y))
+        (ystart y))
     (map 'list #'(lambda (ch)
-		   (draw-font mat xstart ystart color (find-font ch))
-		   (incf xstart (matrix:width (find-font ch))))
-	 string)))
-
+                   (draw-font mat xstart ystart color (find-font ch))
+                   (incf xstart (matrix:width (find-font ch))))
+         string)))

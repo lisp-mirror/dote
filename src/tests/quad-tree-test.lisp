@@ -49,35 +49,35 @@
       12.5
       (elt
        (aabb
-	(first
-	 (query-smallest-intersect-aabb (%subdivide 2) (vec4 11.0 11.0 11.5 11.5))))
+        (first
+         (query-smallest-intersect-aabb (%subdivide 2) (vec4 11.0 11.0 11.5 11.5))))
        2)))
 
 (defun dump-quad-tree-to-pixmap (quad-tree levels &optional (level 0))
   (let ((pixmap (make-pixmap-frame (floor (+ (elt (aabb quad-tree) 0)
-				       (elt (aabb2->rect2 (aabb quad-tree)) 2)))
-			     (floor (+ (elt (aabb quad-tree) 1)
-				       (elt (aabb2->rect2 (aabb quad-tree)) 3))))))
+                                       (elt (aabb2->rect2 (aabb quad-tree)) 2)))
+                             (floor (+ (elt (aabb quad-tree) 1)
+                                       (elt (aabb2->rect2 (aabb quad-tree)) 3))))))
     (loop for i from 0 below (length (pixmap:data pixmap)) do
-	 (setf (elt (pixmap:data pixmap) i)
-	       #(0 0 0 255)))
+         (setf (elt (pixmap:data pixmap) i)
+               #(0 0 0 255)))
     (labels ((paint (quad level)
-	       (when (<= level levels)
-		 (with-accessors ((aabb aabb) (nw nw) (ne ne)
-				  (sw sw) (se se)) quad
-		   (let* ((rect (aabb2->rect2 aabb))
-			  (color (pick-color +rainbow-gradient+
-					     (num:desired (* (/ level levels) 1.0))))
-			  (x (round (1+ (elt (aabb quad) 0))))
-			  (y (round (1+ (elt (aabb quad) 1))))
-			  (w (round (- (elt rect 2) 2)))
-			  (h (round (- (elt rect 3) 2))))
-		     (matrix:matrix-rect pixmap x y w h
-					 (map 'vector #'color-utils:float->byte color))
-		     (and nw (paint nw (1+ level)))
-		     (and ne (paint ne (1+ level)))
-		     (and nw (paint sw (1+ level)))
-		     (and ne (paint se (1+ level))))))))
+               (when (<= level levels)
+                 (with-accessors ((aabb aabb) (nw nw) (ne ne)
+                                  (sw sw) (se se)) quad
+                   (let* ((rect (aabb2->rect2 aabb))
+                          (color (pick-color +rainbow-gradient+
+                                             (num:desired (* (/ level levels) 1.0))))
+                          (x (round (1+ (elt (aabb quad) 0))))
+                          (y (round (1+ (elt (aabb quad) 1))))
+                          (w (round (- (elt rect 2) 2)))
+                          (h (round (- (elt rect 3) 2))))
+                     (matrix:matrix-rect pixmap x y w h
+                                         (map 'vector #'color-utils:float->byte color))
+                     (and nw (paint nw (1+ level)))
+                     (and ne (paint ne (1+ level)))
+                     (and nw (paint sw (1+ level)))
+                     (and ne (paint se (1+ level))))))))
       (paint quad-tree level)
       pixmap)))
 
@@ -85,11 +85,11 @@
   (let ((quad (make-leaf-quad-tree (vec4 0.0 0.0 512.0 512.0) nil)))
     (subdivide quad 5)
     (let ((pixmap (dump-quad-tree-to-pixmap quad level))
-	  (hitted (query-smallest-intersect-aabb quad (vec4 32.5 32.5 40.0 70.2))))
+          (hitted (query-smallest-intersect-aabb quad (vec4 32.5 32.5 40.0 70.2))))
       (loop for i in hitted do
-      	   (let ((rect (num:round-all (map 'vector #'identity (aabb2->rect2 (aabb i))))))
-      	     (matrix:matrix-rect pixmap (elt rect 0) (elt rect 1) (elt rect 2) (elt rect 3)
-				 (map 'vector #'color-utils:float->byte §cff00ffff))))
+           (let ((rect (num:round-all (map 'vector #'identity (aabb2->rect2 (aabb i))))))
+             (matrix:matrix-rect pixmap (elt rect 0) (elt rect 1) (elt rect 2) (elt rect 3)
+                                 (map 'vector #'color-utils:float->byte §cff00ffff))))
       pixmap)))
 
 
@@ -104,14 +104,14 @@
     (subdivide quad 2)
     (let ((paths '()))
       (iterate-nodes-intersect quad #'(lambda (q)
-				       (push (mapcar #'node-quadrant (path-to q)) paths))
-			      aabb)
+                                       (push (mapcar #'node-quadrant (path-to q)) paths))
+                              aabb)
       paths)))
 
 (deftest map-test (quadtree-suite)
   (assert-equalp
       '((nil :se :nw) (nil :se) (nil :sw :ne) (nil :sw) (nil :ne :sw) (nil :ne)
-	(nil :nw :se) (nil :nw) (nil))
+        (nil :nw :se) (nil :nw) (nil))
       (map-paths (vec4 14.0 14.0 16.0 16.0))))
 
 (defclass dummy (entity:entity)
@@ -128,9 +128,9 @@
     (push-down quad (make-instance 'dummy :aabb aabb))
     (let ((paths '()))
       (iterate-nodes-intersect quad #'(lambda (q)
-				       (when (not (misc:vector-empty-p (data q)))
-					 (setf paths (mapcar #'node-quadrant (path-to q)))))
-			      (vec4 10.0 10.0 20.0 20.0))
+                                       (when (not (misc:vector-empty-p (data q)))
+                                         (setf paths (mapcar #'node-quadrant (path-to q)))))
+                              (vec4 10.0 10.0 20.0 20.0))
       paths)))
 
 (deftest push-down-test (quadtree-suite)

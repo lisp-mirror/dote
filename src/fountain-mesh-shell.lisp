@@ -23,29 +23,29 @@
   nil)
 
 (defmethod game-event:on-game-event ((object fountain-mesh-shell)
-				     (event game-event:other-interaction-event))
+                                     (event game-event:other-interaction-event))
   (game-event:check-event-targeted-to-me (object event)
     (let ((player (find-entity-by-id (state object) (game-event:id-origin event))))
       (when player
-	(battle-utils:defend-from-fountain-interaction object player)))))
+        (battle-utils:defend-from-fountain-interaction object player)))))
 
 (defmethod rendering-needed-p ((object fountain-mesh-shell) renderer)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (world:cone-aabb-intersects-p renderer object))
 
 (defmethod apply-damage :after ((object fountain-mesh-shell) damage
-				&key &allow-other-keys)
+                                &key &allow-other-keys)
   (with-accessors ((state state)
-		   (pos pos)
-		   (dir dir)
-		   (aabb aabb)
-		   (texture-object texture-object)
-		   (compiled-shaders compiled-shaders)) object
+                   (pos pos)
+                   (dir dir)
+                   (aabb aabb)
+                   (texture-object texture-object)
+                   (compiled-shaders compiled-shaders)) object
     (when (entity-dead-p object)
       (let ((debris (particles:make-debris (aabb-center aabb)
-					   +y-axe+
-					   (particles:debris-particles-number damage)
-					   texture-object
-					   compiled-shaders)))
-	(game-state:with-world (world state)
-	  (world:push-entity world debris))))))
+                                           +y-axe+
+                                           (particles:debris-particles-number damage)
+                                           texture-object
+                                           compiled-shaders)))
+        (game-state:with-world (world state)
+          (world:push-entity world debris))))))

@@ -22,11 +22,11 @@
 
 (defun uchar-length (leading-byte)
   (let ((ones (do* ((ct 7 (1- ct))
-		    (bit (ldb (byte 1 ct) leading-byte)
-			 (ldb (byte 1 ct) leading-byte))
-		    (ones-ct 0))
-		   ((= bit 0) ones-ct)
-		(incf ones-ct))))
+                    (bit (ldb (byte 1 ct) leading-byte)
+                         (ldb (byte 1 ct) leading-byte))
+                    (ones-ct 0))
+                   ((= bit 0) ones-ct)
+                (incf ones-ct))))
     (cond
       ((= ones 0)
        1)
@@ -37,22 +37,22 @@
 
 (defun utf8-encoded-p (file)
   (with-open-file (stream file :direction :input
-			  :if-does-not-exist :error
-			  ::element-type '(unsigned-byte 8))
+                          :if-does-not-exist :error
+                          ::element-type '(unsigned-byte 8))
     (let* ((leading-byte (read-byte stream))
-	   (leading-byte-length (uchar-length leading-byte)))
+           (leading-byte-length (uchar-length leading-byte)))
       (cond
-	((= leading-byte-length 0)
-	 nil)
-	((> leading-byte-length 6)
-	 nil)
-	(t
-	 (loop for i from 0 below (1- leading-byte-length) do
-	      (let* ((ch (read-byte stream))
-		     (ll (uchar-length ch)))
-		(when (> ll 0)
-		  (return-from utf8-encoded-p nil))))
-	 t)))))
+        ((= leading-byte-length 0)
+         nil)
+        ((> leading-byte-length 6)
+         nil)
+        (t
+         (loop for i from 0 below (1- leading-byte-length) do
+              (let* ((ch (read-byte stream))
+                     (ll (uchar-length ch)))
+                (when (> ll 0)
+                  (return-from utf8-encoded-p nil))))
+         t)))))
 
 (defun clean-unprintable-chars (string)
   (cl-ppcre:scan-to-strings "[\\p{Letter}\\p{Number}\\p{Punctuation}]+" string))
@@ -94,77 +94,77 @@
 (defun basename (file)
   (let ((pos (cl-ppcre:scan "\\." file)))
     (if pos
-	(subseq file 0 pos)
-	file)))
+        (subseq file 0 pos)
+        file)))
 
 (defun wrap-with (s wrapper)
   (strcat wrapper s wrapper))
 
 (defun right-padding (str total-size &key (padding-char #\Space))
   (strcat str
-	  (make-string (max 0 (- total-size (length str)))
-		       :initial-element padding-char)))
+          (make-string (max 0 (- total-size (length str)))
+                       :initial-element padding-char)))
 
 (defun left-padding (str total-size &key (padding-char #\Space))
   (strcat (make-string (max 0 (- total-size (length str)))
-		       :initial-element padding-char)
-	  str))
+                       :initial-element padding-char)
+          str))
 
 (defun justify-monospaced-text (text &optional (chars-per-line 30))
   (if (null (split-words text))
       (list " ")
       (let  ((text  (split-words text))
-	     (chars-per-line (round chars-per-line)))
+             (chars-per-line (round chars-per-line)))
 
-	(labels ((spaces-pos-per-line (line) (floor (/ (length line) 2)))
-		 (wline<= (l) (<= l  chars-per-line))
-		 (line-length (line)
-		   (reduce #'+ (mapcar #'length line)))
-		 (line-fit-p (line word)
-		   (wline<= (+ (line-length line) (length word))))
-		 (add-until-fit (text &optional (res '()))
-		   (if (not (line-fit-p res (first text)))
-		       (subseq res 0 (1- (length res)))
-		       (add-until-fit (rest text) (append res (list (first text) " ")))))
-		 (get-spacepos (line how-much)
-		   (do ((pos '()))
-		       ((>= (length pos) how-much) pos)
-		     (let ((ranpos (random (length line))))
-		       (when (and (oddp ranpos)
-				  (not (find ranpos pos :test #'=)))
-			 (push ranpos pos)))))
-		 (increment-each-space (line)
-		   (loop for i in line collect (if (cl-ppcre:scan "\\p{White_Space}+" i)
-						   (concatenate 'string i (string " "))
-						   i)))
-		 (justify-line (line &optional
-				     (spaces-left (- chars-per-line (line-length line))))
-		   (cond
-		     ((= (spaces-pos-per-line line) 0)
-		      (copy-list line))
+        (labels ((spaces-pos-per-line (line) (floor (/ (length line) 2)))
+                 (wline<= (l) (<= l  chars-per-line))
+                 (line-length (line)
+                   (reduce #'+ (mapcar #'length line)))
+                 (line-fit-p (line word)
+                   (wline<= (+ (line-length line) (length word))))
+                 (add-until-fit (text &optional (res '()))
+                   (if (not (line-fit-p res (first text)))
+                       (subseq res 0 (1- (length res)))
+                       (add-until-fit (rest text) (append res (list (first text) " ")))))
+                 (get-spacepos (line how-much)
+                   (do ((pos '()))
+                       ((>= (length pos) how-much) pos)
+                     (let ((ranpos (random (length line))))
+                       (when (and (oddp ranpos)
+                                  (not (find ranpos pos :test #'=)))
+                         (push ranpos pos)))))
+                 (increment-each-space (line)
+                   (loop for i in line collect (if (cl-ppcre:scan "\\p{White_Space}+" i)
+                                                   (concatenate 'string i (string " "))
+                                                   i)))
+                 (justify-line (line &optional
+                                     (spaces-left (- chars-per-line (line-length line))))
+                   (cond
+                     ((= (spaces-pos-per-line line) 0)
+                      (copy-list line))
 
-		     ((= spaces-left 0)
-		      (copy-list line))
-		     ((= spaces-left (spaces-pos-per-line line))
-		      (increment-each-space line))
-		     ((< spaces-left (spaces-pos-per-line line))
-		      (loop for i in (get-spacepos line spaces-left) do
-			   (setf (nth i line) (concatenate 'string (nth i line) (string " "))))
-		      (copy-list line))
+                     ((= spaces-left 0)
+                      (copy-list line))
+                     ((= spaces-left (spaces-pos-per-line line))
+                      (increment-each-space line))
+                     ((< spaces-left (spaces-pos-per-line line))
+                      (loop for i in (get-spacepos line spaces-left) do
+                           (setf (nth i line) (concatenate 'string (nth i line) (string " "))))
+                      (copy-list line))
 
-		     ((> spaces-left (spaces-pos-per-line line))
-		      (justify-line
-		       (increment-each-space line)
-		       (- spaces-left (spaces-pos-per-line line)))))))
-	  (mapcar #'(lambda (l) (reduce #'(lambda (a b) (concatenate 'string a b)) l))
-		  (do ((res '()))
-		      ((null text) (reverse res))
-		    (progn
-		      (let* ((line (add-until-fit text))
-			     (rest-text (if (> (1+ (floor (/ (length line) 2)))
-					       (length text))
-					    nil
-					    (subseq text (1+ (floor (/ (length line) 2)))))))
-			(setf text rest-text)
+                     ((> spaces-left (spaces-pos-per-line line))
+                      (justify-line
+                       (increment-each-space line)
+                       (- spaces-left (spaces-pos-per-line line)))))))
+          (mapcar #'(lambda (l) (reduce #'(lambda (a b) (concatenate 'string a b)) l))
+                  (do ((res '()))
+                      ((null text) (reverse res))
+                    (progn
+                      (let* ((line (add-until-fit text))
+                             (rest-text (if (> (1+ (floor (/ (length line) 2)))
+                                               (length text))
+                                            nil
+                                            (subseq text (1+ (floor (/ (length line) 2)))))))
+                        (setf text rest-text)
 
-			(push (justify-line line) res)))))))))
+                        (push (justify-line line) res)))))))))

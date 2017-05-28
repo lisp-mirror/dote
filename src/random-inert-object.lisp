@@ -26,12 +26,12 @@
 
 (defun randomize-damage-points (character level)
   (setf (damage-points character)
-	(calculate-randomized-damage-points level
-					    +minimum-level+
-					    +maximum-level+
-					    +minimum-damage-point+
-					    +maximum-damage-point+
-					    (d/ (d level) (d* 5.0 (d +maximum-level+)))))
+        (calculate-randomized-damage-points level
+                                            +minimum-level+
+                                            +maximum-level+
+                                            +minimum-damage-point+
+                                            +maximum-damage-point+
+                                            (d/ (d level) (d* 5.0 (d +maximum-level+)))))
   (setf (current-damage-points character) (damage-points character)))
 
 (defun calculate-level (map-level)
@@ -40,21 +40,21 @@
 (defun generate-inert-object (map-level)
   (clean-effects
    (%generate-inert-object (res:get-resource-file +default-interaction-filename+
-						  +default-character-inert-obj-dir+
-						  :if-does-not-exists :error)
-			   (res:get-resource-file +default-character-filename+
-						  +default-character-inert-obj-dir+
-						  :if-does-not-exists :error)
-			   map-level)))
+                                                  +default-character-inert-obj-dir+
+                                                  :if-does-not-exists :error)
+                           (res:get-resource-file +default-character-filename+
+                                                  +default-character-inert-obj-dir+
+                                                  :if-does-not-exists :error)
+                           map-level)))
 
 (defun %generate-inert-object (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
     (with-interaction-parameters-file (template interaction-file)
       (let ((object-level (calculate-level map-level)))
-	(n-setf-path-value char-template (list +level+) (d object-level))
-	(setf template (remove-generate-symbols template))
-	(let ((object-character (params->np-character char-template)))
-	  (setf (basic-interaction-params object-character) template)
-	  (randomize-damage-points object-character object-level)
-	  object-character)))))
+        (n-setf-path-value char-template (list +level+) (d object-level))
+        (setf template (remove-generate-symbols template))
+        (let ((object-character (params->np-character char-template)))
+          (setf (basic-interaction-params object-character) template)
+          (randomize-damage-points object-character object-level)
+          object-character)))))

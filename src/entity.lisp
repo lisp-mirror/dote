@@ -60,20 +60,20 @@
 
 (defmethod clone-into :after ((from entity) (to entity))
   (setf (modified to) (modified from)
-	(pos to)      (copy-vec (pos from))
-	(dir to)      (copy-vec (dir from))
-	(scaling to)  (copy-vec (scaling from))
-	(up to)       (copy-vec (up from))
-	(state to)    (state    from))
+        (pos to)      (copy-vec (pos from))
+        (dir to)      (copy-vec (dir from))
+        (scaling to)  (copy-vec (scaling from))
+        (up to)       (copy-vec (up from))
+        (state to)    (state    from))
   to)
 
 (defmethod marshal:class-persistant-slots ((object entity))
   (append '(modified
-	    pos
-	    dir
-	    scaling
-	    up)
-	  (call-next-method)))
+            pos
+            dir
+            scaling
+            up)
+          (call-next-method)))
 
 (defgeneric aabb-2d (object))
 

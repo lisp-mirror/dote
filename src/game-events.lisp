@@ -7,15 +7,15 @@
 
   (defun fresh-events-container-name ()
     (prog1
-	*events-names-counter*
+        *events-names-counter*
       (incf *events-names-counter*))))
 
 (defun clean-all-events-vectors ()
   (maphash #'(lambda (k v)
-	       (loop for i from 0 below (length v) do (setf (elt v i) nil))
-	       (setf (gethash k *all-events-container*)
-		     (make-fresh-array 0 nil 'entity:entity)))
-	   *all-events-container*))
+               (loop for i from 0 below (length v) do (setf (elt v i) nil))
+               (setf (gethash k *all-events-container*)
+                     (make-fresh-array 0 nil 'entity:entity)))
+           *all-events-container*))
 
 (defclass generic-game-event ()
   ((id-origin
@@ -58,29 +58,29 @@
 
 (defmacro defevent (name parents slots)
   (let* ((event-hash-key    (fresh-events-container-name))
-	 (event-name        (format        nil "~:@(~a~)" name))
-	 (event-symbol      (format-symbol t   "~a"       event-name))
-	 (propagate-symbol  (format-symbol t   "~:@(propagate-~a~)" name))
-	 (get-vector-symbol (gensym))
-	 (register-symbol   (format-symbol t "~:@(register-for-~a~)" name))
-	 (unregister-symbol (format-symbol t "~:@(unregister-for-~a~)" name)))
+         (event-name        (format        nil "~:@(~a~)" name))
+         (event-symbol      (format-symbol t   "~a"       event-name))
+         (propagate-symbol  (format-symbol t   "~:@(propagate-~a~)" name))
+         (get-vector-symbol (gensym))
+         (register-symbol   (format-symbol t "~:@(register-for-~a~)" name))
+         (unregister-symbol (format-symbol t "~:@(unregister-for-~a~)" name)))
     `(progn
        (defmacro ,get-vector-symbol ()
-	 `(gethash ,,(identity event-hash-key) *all-events-container*))
+         `(gethash ,,(identity event-hash-key) *all-events-container*))
        (setf (,get-vector-symbol)
-	     (make-fresh-array 0 nil 'entity:entity))
+             (make-fresh-array 0 nil 'entity:entity))
        (defclass ,event-symbol ,(or parents `(generic-game-event))
-	 ,slots)
+         ,slots)
        (defun ,register-symbol (el)
-	 (vector-push-extend el (,get-vector-symbol)))
+         (vector-push-extend el (,get-vector-symbol)))
        (defun ,unregister-symbol (el)
-	 (setf (,get-vector-symbol)
-	       (delete (identificable:id el) (,get-vector-symbol) :test #'= :key #'identificable:id)))
+         (setf (,get-vector-symbol)
+               (delete (identificable:id el) (,get-vector-symbol) :test #'= :key #'identificable:id)))
        (defun ,propagate-symbol (event)
-	 (loop for ent across (,get-vector-symbol) do
-	      (when (on-game-event ent event)
-		(return-from ,propagate-symbol t)))
-	 nil))))
+         (loop for ent across (,get-vector-symbol) do
+              (when (on-game-event ent event)
+                (return-from ,propagate-symbol t)))
+         nil))))
 
 (defevent end-turn ()
   ((end-turn-count
@@ -96,8 +96,8 @@
 
 (defun send-update-visibility-event (origin-entity from-event)
   (let ((event (make-instance 'update-visibility
-			      :id-origin  (identificable:id origin-entity)
-			      :from-event from-event)))
+                              :id-origin  (identificable:id origin-entity)
+                              :from-event from-event)))
     (propagate-update-visibility event)))
 
 (defevent camera-drag-ends () ())
@@ -159,8 +159,8 @@
 
 (defun send-refresh-toolbar-event (&key (reset-health-status-animation nil))
   (let ((refresh-toolbar-event (make-instance 'game-event:refresh-toolbar-event
-					      :reset-health-status-animation-p
-					      reset-health-status-animation)))
+                                              :reset-health-status-animation-p
+                                              reset-health-status-animation)))
     (propagate-refresh-toolbar-event refresh-toolbar-event)))
 
 (defevent update-highlight-path ()
@@ -179,94 +179,94 @@
 (defmacro gen-cause-*-events (&rest event-type)
   `(progn
      ,@(loop for ev in event-type collect
-	    `(defevent
-		,(misc:format-fn-symbol t "cause-~a-event" ev)
-		(game-event-w-destination) ()))))
+            `(defevent
+                ,(misc:format-fn-symbol t "cause-~a-event" ev)
+                (game-event-w-destination) ()))))
 
 (gen-cause-*-events poisoning terror faint berserk)
 
 (defmacro gen-make-cause-*-events (&rest event-type)
   `(progn
      ,@(loop for ev in event-type collect
-	    `(defun
-		 ,(misc:format-fn-symbol t "make-cause-~a-event" ev)
-		 (id-from id-to
-		  ,(misc:format-fn-symbol t "cause-~a-effects" ev))
-	       (make-instance ',(misc:format-fn-symbol t "cause-~a-event" ev)
-			      :id-origin      id-from
-			      :id-destination id-to
-			      :event-data     ,(misc:format-fn-symbol t "cause-~a-effects" ev))))))
+            `(defun
+                 ,(misc:format-fn-symbol t "make-cause-~a-event" ev)
+                 (id-from id-to
+                  ,(misc:format-fn-symbol t "cause-~a-effects" ev))
+               (make-instance ',(misc:format-fn-symbol t "cause-~a-event" ev)
+                              :id-origin      id-from
+                              :id-destination id-to
+                              :event-data     ,(misc:format-fn-symbol t "cause-~a-effects" ev))))))
 
 (gen-make-cause-*-events poisoning terror faint berserk)
 
 (defmacro gen-cure-*-events (&rest event-type)
   `(progn
      ,@(loop for ev in event-type collect
-	    `(defevent
-		,(misc:format-fn-symbol t "cure-~a-event" ev)
-		(game-event-w-destination) ()))))
+            `(defevent
+                ,(misc:format-fn-symbol t "cure-~a-event" ev)
+                (game-event-w-destination) ()))))
 
 (gen-cure-*-events poisoning terror faint berserk)
 
 (defmacro gen-make-cure-*-events (&rest event-type)
   `(progn
      ,@(loop for ev in event-type collect
-	    `(defun
-		 ,(misc:format-fn-symbol t "make-cure-~a-event" ev)
-		 (id-from id-to
-		  ,(misc:format-fn-symbol t "cure-~a-effects" ev))
-	       (make-instance ',(misc:format-fn-symbol t "cure-~a-event" ev)
-			      :id-origin      id-from
-			      :id-destination id-to
-			      :event-data     ,(misc:format-fn-symbol t "cure-~a-effects" ev))))))
+            `(defun
+                 ,(misc:format-fn-symbol t "make-cure-~a-event" ev)
+                 (id-from id-to
+                  ,(misc:format-fn-symbol t "cure-~a-effects" ev))
+               (make-instance ',(misc:format-fn-symbol t "cure-~a-event" ev)
+                              :id-origin      id-from
+                              :id-destination id-to
+                              :event-data     ,(misc:format-fn-symbol t "cure-~a-effects" ev))))))
 
 (gen-make-cure-*-events poisoning terror faint berserk)
 
 (defmacro gen-cancel-*-events (&rest event-type)
   `(progn
      ,@(loop for ev in event-type collect
-	    `(defevent
-		,(misc:format-fn-symbol t "cancel-~a-event" ev)
-		(game-event-w-destination game-event-procrastinated) ()))))
+            `(defevent
+                ,(misc:format-fn-symbol t "cancel-~a-event" ev)
+                (game-event-w-destination game-event-procrastinated) ()))))
 
 (gen-cancel-*-events poisoning        terror        faint        berserk
-		     immune-poisoning immune-terror immune-faint immune-berserk)
+                     immune-poisoning immune-terror immune-faint immune-berserk)
 
 (defmacro gen-make-cancel-*-events (&rest event-type)
   `(progn
      ,@(loop for ev in event-type collect
-	    `(defun
-		 ,(misc:format-fn-symbol t "make-cancel-~a-event" ev)
-		 (id-from id-to trigger-turn &key (original-event nil))
-	       (make-instance ',(misc:format-fn-symbol t "cancel-~a-event" ev)
-			      :id-origin      id-from
-			      :id-destination id-to
-			      :trigger-turn   trigger-turn
-			      :event-data     original-event)))))
+            `(defun
+                 ,(misc:format-fn-symbol t "make-cancel-~a-event" ev)
+                 (id-from id-to trigger-turn &key (original-event nil))
+               (make-instance ',(misc:format-fn-symbol t "cancel-~a-event" ev)
+                              :id-origin      id-from
+                              :id-destination id-to
+                              :trigger-turn   trigger-turn
+                              :event-data     original-event)))))
 
 (gen-make-cancel-*-events poisoning        terror        faint        berserk
-		          immune-poisoning immune-terror immune-faint immune-berserk)
+                          immune-poisoning immune-terror immune-faint immune-berserk)
 
 (defmacro gen-immune-*-events (&rest event-type)
   `(progn
      ,@(loop for ev in event-type collect
-	    `(defevent
-		,(misc:format-fn-symbol t "immune-~a-event" ev)
-		(game-event-w-destination) ()))))
+            `(defevent
+                ,(misc:format-fn-symbol t "immune-~a-event" ev)
+                (game-event-w-destination) ()))))
 
 (gen-immune-*-events poisoning terror faint berserk)
 
 (defmacro gen-make-immune-*-events (&rest event-type)
   `(progn
      ,@(loop for ev in event-type collect
-	    `(defun
-		 ,(misc:format-fn-symbol t "make-immune-~a-event" ev)
-		 (id-from id-to
-		  ,(misc:format-fn-symbol t "immune-~a-effects" ev))
-	       (make-instance ',(misc:format-fn-symbol t "immune-~a-event" ev)
-			      :id-origin      id-from
-			      :id-destination id-to
-			      :event-data     ,(misc:format-fn-symbol t "immune-~a-effects" ev))))))
+            `(defun
+                 ,(misc:format-fn-symbol t "make-immune-~a-event" ev)
+                 (id-from id-to
+                  ,(misc:format-fn-symbol t "immune-~a-effects" ev))
+               (make-instance ',(misc:format-fn-symbol t "immune-~a-event" ev)
+                              :id-origin      id-from
+                              :id-destination id-to
+                              :event-data     ,(misc:format-fn-symbol t "immune-~a-effects" ev))))))
 
 (gen-make-immune-*-events poisoning terror faint berserk)
 
@@ -296,7 +296,7 @@
 
 (defun send-end-attack-melee-event (dest)
   (propagate-end-attack-melee-event (make-instance 'end-attack-melee-event
-						   :id-destination (identificable:id dest))))
+                                                   :id-destination (identificable:id dest))))
 
 (defevent attack-long-range-event (game-event-w-destination)
   ((attacker-entity
@@ -312,19 +312,19 @@
 
 (defun send-end-attack-long-range-event (dest)
   (propagate-end-attack-long-range-event (make-instance 'end-attack-long-range-event
-							:id-destination (identificable:id dest))))
+                                                        :id-destination (identificable:id dest))))
 
 (defmacro check-event-targeted-to-me ((entity event) &body body)
   `(if (= (identificable:id ,entity) (id-destination ,event))
-	 (progn
-	   ,@body)
-	 nil))
+         (progn
+           ,@body)
+         nil))
 
 (defmacro check-event-originated-by-me ((entity event) &body body)
   `(if (= (identificable:id ,entity) (id-origin ,event))
-	 (progn
-	   ,@body)
-	 nil))
+         (progn
+           ,@body)
+         nil))
 
 (defevent attack-spell-event (game-event-w-destination)
   ((attacker-entity
@@ -348,7 +348,7 @@
 
 (defun send-end-attack-spell-event (dest)
   (propagate-end-attack-spell-event (make-instance 'end-attack-spell-event
-						   :id-destination (identificable:id dest))))
+                                                   :id-destination (identificable:id dest))))
 
 (defevent end-defend-from-attack-spell-event (game-event-w-destination)
   ((attacker-entity
@@ -386,7 +386,7 @@
 
 (defun send-end-spell-event (dest)
   (propagate-end-spell-event (make-instance 'end-spell-event
-					    :id-destination (identificable:id dest))))
+                                            :id-destination (identificable:id dest))))
 
 (defevent end-defend-from-spell-event (game-event-w-destination)
   ((attacker-entity
@@ -400,14 +400,14 @@
 
 (defun send-end-defend-from-spell-event (dest)
   (propagate-end-attack-spell-event (make-instance 'end-defend-from-spell-event
-						   :id-destination (identificable:id dest))))
+                                                   :id-destination (identificable:id dest))))
 
 (defevent lock-object-event (game-event-w-destination) ())
 
 (defun send-lock-event (origin dest)
   (propagate-lock-object-event (make-instance 'lock-object-event
-					      :id-origin      (identificable:id origin)
-					      :id-destination (identificable:id dest))))
+                                              :id-origin      (identificable:id origin)
+                                              :id-destination (identificable:id dest))))
 
 (defevent unlock-object-event (game-event-w-destination)
   ((force-unlock
@@ -418,30 +418,30 @@
 
 (defun send-unlock-event (origin dest &key (force nil))
   (propagate-unlock-object-event (make-instance 'unlock-object-event
-						:id-origin      (identificable:id origin)
-						:id-destination (identificable:id dest)
-						:force-unlock   force)))
+                                                :id-origin      (identificable:id origin)
+                                                :id-destination (identificable:id dest)
+                                                :force-unlock   force)))
 
 (defevent trap-triggered-event (game-event-w-destination) ())
 
 (defun send-trap-triggered-event (origin dest)
   (propagate-trap-triggered-event (make-instance 'trap-triggered-event
-						 :id-origin      (identificable:id origin)
-						 :id-destination (identificable:id dest))))
+                                                 :id-origin      (identificable:id origin)
+                                                 :id-destination (identificable:id dest))))
 
 (defevent other-interaction-event (game-event-w-destination) ())
 
 (defun send-other-interaction-event (origin dest)
   (propagate-other-interaction-event (make-instance 'other-interaction-event
-						    :id-origin      (identificable:id origin)
-						    :id-destination (identificable:id dest))))
+                                                    :id-origin      (identificable:id origin)
+                                                    :id-destination (identificable:id dest))))
 
 (defevent deactivate-trap-event (game-event-w-destination) ())
 
 (defun send-deactivate-trap-event (origin dest)
   (propagate-deactivate-trap-event (make-instance 'deactivate-trap-event
-						  :id-origin      (identificable:id origin)
-						  :id-destination (identificable:id dest))))
+                                                  :id-origin      (identificable:id origin)
+                                                  :id-destination (identificable:id dest))))
 
 (defevent game-idle-terminated-event () ())
 

@@ -21,14 +21,14 @@
 (deftest creation-test (vec2-suite)
   (assert-true
       (vec2~ (vec2 0.0 1.0)
-	     #(0.0 1.0)))
+             #(0.0 1.0)))
   (assert-false
       (vec2~ (vec2 0.0 3.0)
-	     #(0.0 3.001))))
-      
+             #(0.0 3.001))))
+
 (deftest copy-test (vec2-suite)
   (let ((orig (vec2 (num:lcg-next-upto 1000.0) (num:lcg-next-upto 1000.0))))
     (assert-true
-	(vec2~
-	 orig
-	 (copy-vec2 orig)))))
+        (vec2~
+         orig
+         (copy-vec2 orig)))))

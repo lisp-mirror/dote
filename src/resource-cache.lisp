@@ -24,39 +24,39 @@
 
 (define-condition cache-error (text-error)
   ()
-  (:report (lambda (condition stream) 
-	    (format stream "Cache error: ~a" (conditions:text condition)))))
+  (:report (lambda (condition stream)
+            (format stream "Cache error: ~a" (conditions:text condition)))))
 
 (defun cache-path ()
   (let ((home-dir (uiop:getenvp "HOME")))
     (if home-dir
-	(let ((parent-cache-path (strcat home-dir
-					 *directory-sep* +cache-parent-dir+ *directory-sep*)))
-	  (if (uiop:directory-exists-p parent-cache-path)
-	      (let ((actual-cache-path
-		     (strcat parent-cache-path +program-name+ *directory-sep*)))
-		(values actual-cache-path (uiop:directory-exists-p actual-cache-path)))
-	      (error 'cache-error :text
-		     (strcat
-		      (format nil "no valid cache directory (\"~a\") found." +cache-parent-dir+)
-		      (format nil "Please ensure that \"~a\" exists." parent-cache-path)))))
-	(error 'cache-error :text "no valid home directory found in environment variable"))))
-  
+        (let ((parent-cache-path (strcat home-dir
+                                         *directory-sep* +cache-parent-dir+ *directory-sep*)))
+          (if (uiop:directory-exists-p parent-cache-path)
+              (let ((actual-cache-path
+                     (strcat parent-cache-path +program-name+ *directory-sep*)))
+                (values actual-cache-path (uiop:directory-exists-p actual-cache-path)))
+              (error 'cache-error :text
+                     (strcat
+                      (format nil "no valid cache directory (\"~a\") found." +cache-parent-dir+)
+                      (format nil "Please ensure that \"~a\" exists." parent-cache-path)))))
+        (error 'cache-error :text "no valid home directory found in environment variable"))))
+
 (defun init-cache ()
   (multiple-value-bind (cache-path cache-path-exists)
       (cache-path)
     (if cache-path-exists
-	(progn
-	  (setf *cache-system-running* t)
-	  cache-path)
-	(handler-bind ((file-error #'(lambda (c)
-				       (declare (ignore c))
-				       (setf *cache-system-running* t)
-				       (invoke-restart 'use-value nil))))
-	  
-	  (ensure-directories-exist cache-path)
-	  (setf *cache-system-running* t)
-	  cache-path))))
+        (progn
+          (setf *cache-system-running* t)
+          cache-path)
+        (handler-bind ((file-error #'(lambda (c)
+                                       (declare (ignore c))
+                                       (setf *cache-system-running* t)
+                                       (invoke-restart 'use-value nil))))
+
+          (ensure-directories-exist cache-path)
+          (setf *cache-system-running* t)
+          cache-path))))
 
 (defstruct cache-key-element
   name
@@ -66,22 +66,22 @@
   `(if *cache-system-running*
        (progn ,@body)
        (error 'cache-error :text "the cache system has not been initialized.")))
-	
+
 (defun make-cache-key (&rest elements)
   (make-cache-key* elements))
 
 (defun make-cache-key* (elements)
   (with-cache-system-running
     (do ((elements-l elements (rest elements-l))
-	 (path (cache-path)
-	       (let ((element (first elements-l)))
-		 (if element
-		     (strcat path (cache-key-element-name element)
-			     (if (eq (cache-key-element-file-type element) :directory)
-				 *directory-sep*
-				 nil))
-		     path))))
-	((not elements-l) path))))
+         (path (cache-path)
+               (let ((element (first elements-l)))
+                 (if element
+                     (strcat path (cache-key-element-name element)
+                             (if (eq (cache-key-element-file-type element) :directory)
+                                 *directory-sep*
+                                 nil))
+                     path))))
+        ((not elements-l) path))))
 
 (defun regular-file-strings->cache-key (&rest names)
   (regular-file-strings->cache-key* names))
@@ -104,17 +104,17 @@
 (defun cons->cache-key* (names-alist)
   (make-cache-key*
    (loop for name-assoc in names-alist collect
-	(make-cache-key-element :name (car name-assoc) :file-type (cdr name-assoc)))))
+        (make-cache-key-element :name (car name-assoc) :file-type (cdr name-assoc)))))
 
 (defgeneric cache-miss* (key))
 
 (defmethod cache-miss* ((key string))
   (with-cache-system-running
     (or (not (uiop:probe-file* key))
-	(if *cache-reference-file*
-	    (< (get-stat-mtime key)
-	       (get-stat-mtime *cache-reference-file*))
-	    nil))))
+        (if *cache-reference-file*
+            (< (get-stat-mtime key)
+               (get-stat-mtime *cache-reference-file*))
+            nil))))
 
 (defmethod cache-miss* ((names-alist list))
   (cache-miss* (cons->cache-key* names-alist)))
@@ -139,7 +139,7 @@
 
 (defun ensure-cache-directory* (names)
   (let ((path (make-cache-key* (loop for name in names collect
-				    (make-cache-key-element :name name :file-type :directory)))))
+                                    (make-cache-key-element :name name :file-type :directory)))))
     (ensure-directories-exist path)))
 
 (defmacro ensure-cache-running (&body body)
@@ -149,4 +149,3 @@
 
 (defun test-init-cache ()
   (init-cache))
-

@@ -21,20 +21,20 @@
 (deftest test-random-pick (numeric-suite)
   (assert-false
       (let* ((bag '(0 1 2 3 4))
-	     (picker (make-instance 'bag-picker :bag bag)))
-	(set-difference
-	 (loop repeat 5 collect (elt bag (random-pick-from-set picker)))
-	 bag)))
+             (picker (make-instance 'bag-picker :bag bag)))
+        (set-difference
+         (loop repeat 5 collect (elt bag (random-pick-from-set picker)))
+         bag)))
   (assert-false
       (let* ((bag (loop repeat 100 collect (lcg-next-upto 100)))
-	     (picker (make-instance 'bag-picker :bag bag)))
-	(set-difference
-	 (loop repeat 5 collect (elt bag (random-pick-from-set picker)))
-	 bag))))
+             (picker (make-instance 'bag-picker :bag bag)))
+        (set-difference
+         (loop repeat 5 collect (elt bag (random-pick-from-set picker)))
+         bag))))
 
 (deftest test-shellsort (numeric-suite)
   (assert-true
       (let* ((bag    (loop repeat 10000 collect (lcg-next-upto 10000)))
-	     (sorted (shellsort bag #'<)))
-	(and (null (set-difference bag sorted :test #'=))
-	     (not (find nil (mapcar #'< sorted (rest sorted))))))))
+             (sorted (shellsort bag #'<)))
+        (and (null (set-difference bag sorted :test #'=))
+             (not (find nil (mapcar #'< sorted (rest sorted))))))))

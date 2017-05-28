@@ -32,17 +32,17 @@
 
 (defun init-player-messages-db ()
   (setf *terror-recover*          (list
-				   (_ "I am fully recovered from terror now.")))
+                                   (_ "I am fully recovered from terror now.")))
   (setf *berserk-recover*         (list
-				   (_ "W-what happened?")
-				   (_ "What have i done?")))
+                                   (_ "W-what happened?")
+                                   (_ "What have i done?")))
   (setf *faint-recover*           (list
-				   (_ "I am ready for battle again!")))
+                                   (_ "I am ready for battle again!")))
   (setf *cancel-immune-berserk*   (list
-				   (_ "I am immune to berserk no more")))
+                                   (_ "I am immune to berserk no more")))
   (setf *cancel-immune-faint*     (list
-				   (_ "I am immune to faint no more")))
+                                   (_ "I am immune to faint no more")))
   (setf *cancel-immune-terror*    (list
-				   (_ "I am immune to terror no more")))
+                                   (_ "I am immune to terror no more")))
   (setf *cancel-immune-poisoning* (list
-				   (_ "I am immune to poisoning no more"))))
+                                   (_ "I am immune to poisoning no more"))))

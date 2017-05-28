@@ -22,7 +22,7 @@
 (defmacro gen-load-pixmap (type)
   `(defun ,(alexandria:format-symbol t "~@:(load-test-~a~)" type) (name)
      (let ((path (concatenate 'string (test-dir) name))
-	   (file (make-instance ',(alexandria:format-symbol :pixmap "~@:(~a~)" type))))
+           (file (make-instance ',(alexandria:format-symbol :pixmap "~@:(~a~)" type))))
     (pixmap:load file path)
     file)))
 
@@ -38,9 +38,9 @@
 
 (defmacro with-kernel (&body body)
   `(let* ((config:*workers-number* (if (> (os-utils:cpu-number) 1)
-				       (os-utils:cpu-number)
-				       1))
-	  (lparallel:*kernel* (lparallel:make-kernel config:*workers-number*)))
+                                       (os-utils:cpu-number)
+                                       1))
+          (lparallel:*kernel* (lparallel:make-kernel config:*workers-number*)))
      (progn
        ,@body)
      (lparallel:end-kernel :wait t)))

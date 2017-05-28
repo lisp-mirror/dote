@@ -88,16 +88,16 @@
 
 (defun randomize-damage-points (character level)
   (setf (damage-points character)
-	(calculate-randomized-damage-points level
-					     +minimum-level+
-					     +maximum-level+
-					     +minimum-damage-point+
-					     +maximum-damage-point+
-					     (d/ (d level) (d* 5.0 (d +maximum-level+))))))
+        (calculate-randomized-damage-points level
+                                             +minimum-level+
+                                             +maximum-level+
+                                             +minimum-damage-point+
+                                             +maximum-damage-point+
+                                             (d/ (d level) (d* 5.0 (d +maximum-level+))))))
 
 (defun decay-params (shield-level)
   (values (elt +decay-sigma+ shield-level)
-	  (elt +decay-mean+  shield-level)))
+          (elt +decay-mean+  shield-level)))
 
 (defun calculate-decay-points (shield-level)
   (multiple-value-bind (sigma mean)
@@ -106,110 +106,110 @@
 
 (defun calculate-decay (object-level decay-points)
   (make-instance 'decay-parameters
-		 :leaving-message (format nil
-					  (_ " (object level ~a).") object-level)
-		 :points decay-points
-		 :when-decay +decay-by-turns+))
+                 :leaving-message (format nil
+                                          (_ " (object level ~a).") object-level)
+                 :points decay-points
+                 :when-decay +decay-by-turns+))
 
 (defun level-params (map-level)
   (values (elt +level-sigma+ map-level)
-	  (elt +level-mean+  map-level)))
+          (elt +level-mean+  map-level)))
 
 (defun modifier-params (shield-level)
   (values (elt +modifier-sigma+ shield-level)
-	  (elt +modifier-mean+  shield-level)))
+          (elt +modifier-mean+  shield-level)))
 
 (defun calculate-modifier (shield-level)
   (multiple-value-bind (sigma mean)
       (modifier-params (1- shield-level))
     (d- (gaussian-probability sigma mean)
-	(gaussian-probability (d/ sigma 4.0) (- shield-level)))))
+        (gaussian-probability (d/ sigma 4.0) (- shield-level)))))
 
 (defun calculate-level (map-level)
   (multiple-value-bind (sigma mean)
       (level-params (1- map-level))
     (clamp (truncate (gaussian-probability sigma mean))
-	   +minimum-level+ +maximum-level+)))
+           +minimum-level+ +maximum-level+)))
 
 (defun number-of-effects (shield-level)
   (let ((max (round (num:dlerp (num:smoothstep-interpolate 0.0
-							   10.0
-							   (d (1- shield-level)))
-			       +minimum-chance-effects+
-			       +maximum-chance-effects+))))
+                                                           10.0
+                                                           (d (1- shield-level)))
+                               +minimum-chance-effects+
+                               +maximum-chance-effects+))))
     (lcg-next-upto max)))
 
 (defun number-of-healing-effects (shield-level number-of-normal-effects)
   (let ((max (round (- (num:dlerp (num:smoothstep-interpolate 0.0
-							   10.0
-							   (d (1- shield-level)))
-				  +minimum-num-healing-effects+
-				  +maximum-num-healing-effects+)
-		       number-of-normal-effects))))
+                                                           10.0
+                                                           (d (1- shield-level)))
+                                  +minimum-num-healing-effects+
+                                  +maximum-num-healing-effects+)
+                       number-of-normal-effects))))
     (if (<= max 0)
-	0
-	(lcg-next-upto (max 0.0 max)))))
+        0
+        (lcg-next-upto (max 0.0 max)))))
 
 (defun generate-shield (map-level)
   (clean-effects
    (%generate-shield (res:get-resource-file +default-interaction-filename+
-					    +default-character-shield-dir+
-					    :if-does-not-exists :error)
-		     (res:get-resource-file +default-character-filename+
-					    +default-character-shield-dir+
-					    :if-does-not-exists :error)
-		     map-level)))
+                                            +default-character-shield-dir+
+                                            :if-does-not-exists :error)
+                     (res:get-resource-file +default-character-filename+
+                                            +default-character-shield-dir+
+                                            :if-does-not-exists :error)
+                     map-level)))
 
 (defun %generate-shield (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
     (with-interaction-parameters-file (template interaction-file)
       (let* ((shield-level       (calculate-level map-level))
-	     (shield-decay       (calculate-decay-points shield-level))
-	     (effects-no         (number-of-effects shield-level))
-	     (healing-effects-no (number-of-healing-effects shield-level effects-no))
-	     (effects         (get-normal-fx-shuffled  template effects-no))
-	     (healing-effects (get-healing-fx-shuffled template healing-effects-no))
-	     (sum-effects (sum-effects-mod template (list +effects+))))
-	(n-setf-path-value char-template (list +level+) (d shield-level))
-	(n-setf-path-value char-template (list +description+) +type-name+)
-	(n-setf-path-value template
-			   (list +decay+)
-			   (calculate-decay shield-level shield-decay))
-	(loop for i in effects do
-	     (set-effect (list +effects+ i) shield-level template))
-	(loop for i in healing-effects do
-	     (cond
-	       ((eq i +heal-damage-points+)
-		nil)
-	       ((eq i +cause-poison+)
-		(set-poison-effect (list +healing-effects+ i) shield-level template))
-	       (t
-		(set-healing-effect (list +healing-effects+ i) shield-level template))))
-	(when (or (plist-path-value template (list +magic-effects+))
-		  (and (> shield-level  5)
-		       (< sum-effects -10)))
-	  (set-magic-effect shield-level template))
-	(setf template (remove-generate-symbols template))
-	(fill-character-plist char-template template shield-level)
-	(let ((shield-character (params->np-character char-template)))
-	  (setf (basic-interaction-params shield-character) template)
-	  (randomize-damage-points shield-character shield-level)
-	  shield-character)))))
+             (shield-decay       (calculate-decay-points shield-level))
+             (effects-no         (number-of-effects shield-level))
+             (healing-effects-no (number-of-healing-effects shield-level effects-no))
+             (effects         (get-normal-fx-shuffled  template effects-no))
+             (healing-effects (get-healing-fx-shuffled template healing-effects-no))
+             (sum-effects (sum-effects-mod template (list +effects+))))
+        (n-setf-path-value char-template (list +level+) (d shield-level))
+        (n-setf-path-value char-template (list +description+) +type-name+)
+        (n-setf-path-value template
+                           (list +decay+)
+                           (calculate-decay shield-level shield-decay))
+        (loop for i in effects do
+             (set-effect (list +effects+ i) shield-level template))
+        (loop for i in healing-effects do
+             (cond
+               ((eq i +heal-damage-points+)
+                nil)
+               ((eq i +cause-poison+)
+                (set-poison-effect (list +healing-effects+ i) shield-level template))
+               (t
+                (set-healing-effect (list +healing-effects+ i) shield-level template))))
+        (when (or (plist-path-value template (list +magic-effects+))
+                  (and (> shield-level  5)
+                       (< sum-effects -10)))
+          (set-magic-effect shield-level template))
+        (setf template (remove-generate-symbols template))
+        (fill-character-plist char-template template shield-level)
+        (let ((shield-character (params->np-character char-template)))
+          (setf (basic-interaction-params shield-character) template)
+          (randomize-damage-points shield-character shield-level)
+          shield-character)))))
 
 (defun set-effect (effect-path shield-level interaction)
   (let ((effect-object (make-instance 'effect-parameters
-				      :modifier (calculate-modifier shield-level)
-				      :trigger  +effect-when-worn+
-				       ;; effect lasting forever  for
-				       ;; shields,  they   will  broke
-				       ;; anyway.
-				      :duration  +duration-unlimited+)))
+                                      :modifier (calculate-modifier shield-level)
+                                      :trigger  +effect-when-worn+
+                                       ;; effect lasting forever  for
+                                       ;; shields,  they   will  broke
+                                       ;; anyway.
+                                      :duration  +duration-unlimited+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun healing-fx-params-duration (shield-level)
   (values (elt +duration-healing-fx-sigma+ shield-level)
-	  (elt +duration-healing-fx-mean+  shield-level)))
+          (elt +duration-healing-fx-mean+  shield-level)))
 
 (defun calculate-healing-fx-params-duration (shield-level)
   (multiple-value-bind (sigma mean)
@@ -218,7 +218,7 @@
 
 (defun healing-fx-params-chance (shield-level)
   (values (elt +chance-healing-fx-sigma+ shield-level)
-	  (elt +chance-healing-fx-mean+  shield-level)))
+          (elt +chance-healing-fx-mean+  shield-level)))
 
 (defun calculate-healing-fx-params-chance (shield-level)
   (multiple-value-bind (sigma mean)
@@ -227,20 +227,20 @@
 
 (defun set-healing-effect (effect-path shield-level interaction)
   (let* ((effect-object (make-instance 'healing-effect-parameters
-				       :trigger  +effect-when-worn+
-				       :duration (max 1 (- +maximum-level+ shield-level))
-				       :chance   (calculate-healing-fx-params-chance shield-level)
-				       :target   +target-self+)))
+                                       :trigger  +effect-when-worn+
+                                       :duration (max 1 (- +maximum-level+ shield-level))
+                                       :chance   (calculate-healing-fx-params-chance shield-level)
+                                       :target   +target-self+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun set-poison-effect (effect-path shield-level interaction)
   (let ((effect-object (make-instance 'poison-effect-parameters
-				      :points-per-turn (calculate-modifier shield-level))))
+                                      :points-per-turn (calculate-modifier shield-level))))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun magic-fx-params (shield-level)
   (values (elt +magic-fx-sigma+ shield-level)
-	  (elt +magic-fx-mean+  shield-level)))
+          (elt +magic-fx-mean+  shield-level)))
 
 (defun calculate-magic-fx-level (shield-level)
   (multiple-value-bind (sigma mean)
@@ -249,17 +249,17 @@
 
 (defun set-magic-effect (shield-level interaction)
   (let* ((spell-level   (1+ shield-level))
-	 (spells        (spell:filter-spell-db #'(lambda (a)
-						   (or (not (spell:attack-spell-p a))
-							(> (spell:level a)
-							    spell-level)
-							(< (spell:level a)
-							   (max 0
-								(/ spell-level 4)))))))
-	 (spell-id      (spell:identifier (random-elt spells)))
-	 (effect-object (make-instance 'magic-effect-parameters
-				       :spell-id spell-id
-				       :trigger  +effect-when-worn+)))
+         (spells        (spell:filter-spell-db #'(lambda (a)
+                                                   (or (not (spell:attack-spell-p a))
+                                                        (> (spell:level a)
+                                                            spell-level)
+                                                        (< (spell:level a)
+                                                           (max 0
+                                                                (/ spell-level 4)))))))
+         (spell-id      (spell:identifier (random-elt spells)))
+         (effect-object (make-instance 'magic-effect-parameters
+                                       :spell-id spell-id
+                                       :trigger  +effect-when-worn+)))
     (n-setf-path-value interaction (list +magic-effects+) effect-object)))
 
 (defun filename-effects-string (interaction)
@@ -291,24 +291,24 @@
 
 (defun regexp-file-portrait (interaction shield-name-type shield-level)
   (strcat shield-name-type
-	  +file-record-sep+
-	  (filename-effects-string interaction)
-	  +file-record-sep+
-	  (format nil "~2,'0d" shield-level)))
+          +file-record-sep+
+          (filename-effects-string interaction)
+          +file-record-sep+
+          (format nil "~2,'0d" shield-level)))
 
 (defun build-file-names-db (shield-name-type shield-level)
   (strcat shield-name-type
-	  +file-record-sep+
-	  (format nil "~2,'0d" shield-level)
-	  ".lisp"))
+          +file-record-sep+
+          (format nil "~2,'0d" shield-level)
+          ".lisp"))
 
 (defun fill-character-plist (character interaction shield-level)
   (let* ((regex          (regexp-file-portrait interaction +type-name+ shield-level))
-	 (names-filename (build-file-names-db +type-name+ shield-level))
-	 (portrait-file  (random-elt (remove-if #'(lambda (a) (not (cl-ppcre:scan regex a)))
-						(res:get-resource-files
-						 +default-gui-inventory-items+)
-						:key #'uiop:native-namestring))))
+         (names-filename (build-file-names-db +type-name+ shield-level))
+         (portrait-file  (random-elt (remove-if #'(lambda (a) (not (cl-ppcre:scan regex a)))
+                                                (res:get-resource-files
+                                                 +default-gui-inventory-items+)
+                                                :key #'uiop:native-namestring))))
     (n-setf-path-value character (list +portrait+) (uiop:native-namestring portrait-file))
     (random-names:load-db* +shields-names-resource+ names-filename)
     (n-setf-path-value character (list +last-name+)  (random-names:generate))

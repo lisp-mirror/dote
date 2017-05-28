@@ -36,7 +36,7 @@
 
 (defmethod marshal:class-persistant-slots ((object priority-queue))
   (append '(heap)
-	   (call-next-method)))
+           (call-next-method)))
 
 (defgeneric get-children-pos (object parent-pos))
 
@@ -59,52 +59,52 @@
   (declare (integer parent-pos))
   (with-accessors ((heap heap)) object
     (list (and (< (* 2 parent-pos) (fill-pointer heap))
-	       (* 2 parent-pos))
-	  (and (< (1+ (* 2 parent-pos)) (fill-pointer heap))
-	       (1+ (* 2 parent-pos))))))
+               (* 2 parent-pos))
+          (and (< (1+ (* 2 parent-pos)) (fill-pointer heap))
+               (1+ (* 2 parent-pos))))))
 
 (defmethod rearrange-bottom-up ((object priority-queue)
-				&optional (pos (1- (length (heap object)))))
+                                &optional (pos (1- (length (heap object)))))
   (with-accessors ((heap heap)
-		   (key-function key-function)
-		   (compare-function compare-function)) object
+                   (key-function key-function)
+                   (compare-function compare-function)) object
     (let ((parent-pos (get-parent-pos pos)))
       (when (and (> parent-pos 0)
-		 (funcall compare-function
-			  (funcall key-function (elt heap pos))
-			  (funcall key-function (elt heap parent-pos))))
-	(let ((swp (elt heap parent-pos)))
-	  (setf (elt heap parent-pos) (elt heap pos))
-	  (setf (elt heap pos) swp))
-	(rearrange-bottom-up object parent-pos)))))
+                 (funcall compare-function
+                          (funcall key-function (elt heap pos))
+                          (funcall key-function (elt heap parent-pos))))
+        (let ((swp (elt heap parent-pos)))
+          (setf (elt heap parent-pos) (elt heap pos))
+          (setf (elt heap pos) swp))
+        (rearrange-bottom-up object parent-pos)))))
 
 (defmethod rearrange-top-bottom ((object priority-queue) &optional (root-pos 1))
   (with-accessors ((heap heap)
-		   (key-function key-function)
-		   (compare-function compare-function)
-		   (equal-function equal-function)) object
+                   (key-function key-function)
+                   (compare-function compare-function)
+                   (equal-function equal-function)) object
     (let* ((children (remove-if #'null (get-children-pos object root-pos)))
-	   (maximum-child (cond
-			    ((null children)
-			     root-pos)
-			    ((= (length children) 1)
-			     (first children))
-			    (t
-			     (if (funcall compare-function
-					  (funcall key-function (elt heap (first children)))
-					  (funcall key-function (elt heap (second children))))
-				 (first children)
-				 (second children))))))
+           (maximum-child (cond
+                            ((null children)
+                             root-pos)
+                            ((= (length children) 1)
+                             (first children))
+                            (t
+                             (if (funcall compare-function
+                                          (funcall key-function (elt heap (first children)))
+                                          (funcall key-function (elt heap (second children))))
+                                 (first children)
+                                 (second children))))))
       (when (not (funcall equal-function
-			  (funcall key-function (elt heap maximum-child))
-			  (funcall key-function (elt heap root-pos))))
-	(let ((swp (elt heap root-pos)))
-	  (when (funcall compare-function
-			 (funcall key-function (elt heap maximum-child))
-			 (funcall key-function swp))
-	    (setf (elt heap root-pos) (elt heap maximum-child))
-	    (setf (elt heap maximum-child) swp)))
-	(rearrange-top-bottom object maximum-child)))))
+                          (funcall key-function (elt heap maximum-child))
+                          (funcall key-function (elt heap root-pos))))
+        (let ((swp (elt heap root-pos)))
+          (when (funcall compare-function
+                         (funcall key-function (elt heap maximum-child))
+                         (funcall key-function swp))
+            (setf (elt heap root-pos) (elt heap maximum-child))
+            (setf (elt heap maximum-child) swp)))
+        (rearrange-top-bottom object maximum-child)))))
 
 (defmethod push-element ((object priority-queue) val)
   (with-accessors ((heap heap)) object
@@ -118,21 +118,21 @@
 (defmethod pop-element ((object priority-queue))
   (with-accessors ((heap heap)) object
     (if (emptyp object)
-	nil
-	(prog1
-	    (elt heap 1)
-	  (if (= (length heap) 2)
-	      (setf (fill-pointer heap) (1- (fill-pointer heap)))
-	      (progn
-		(setf (elt heap 1) (alexandria:last-elt heap))
-		(setf (fill-pointer heap) (1- (fill-pointer heap)))
-		(rearrange-top-bottom object)))))))
+        nil
+        (prog1
+            (elt heap 1)
+          (if (= (length heap) 2)
+              (setf (fill-pointer heap) (1- (fill-pointer heap)))
+              (progn
+                (setf (elt heap 1) (alexandria:last-elt heap))
+                (setf (fill-pointer heap) (1- (fill-pointer heap)))
+                (rearrange-top-bottom object)))))))
 
 (defmacro with-min-queue ((queue compare sort key) &body body)
   `(let ((,queue (make-instance 'priority-queue
-				:equal-function   ,compare
-				:compare-function ,sort
-				:key-function     ,key)))
+                                :equal-function   ,compare
+                                :compare-function ,sort
+                                :key-function     ,key)))
      ,@body))
 
 (defmethod find-element ((object priority-queue) element)

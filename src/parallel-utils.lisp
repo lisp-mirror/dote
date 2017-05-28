@@ -16,23 +16,23 @@
 
 (in-package :parallel-utils)
 
-(defparameter *parallel-setf-queue* (lparallel.queue:make-queue :initial-contents '(t) 
-								:fixed-capacity 1))
+(defparameter *parallel-setf-queue* (lparallel.queue:make-queue :initial-contents '(t)
+                                                                :fixed-capacity 1))
 (defmacro parallel-setf (place value)
   `(progn
      (lparallel.queue:pop-queue *parallel-setf-queue*)
      (prog1
-	 (setf ,place ,value)
+         (setf ,place ,value)
        (lparallel.queue:push-queue t *parallel-setf-queue*))))
 
 
 (defmacro with-workers ((&key (number `(if (> (os-utils:cpu-number) 1)
-					   (1- (os-utils:cpu-number))
-					   1)))
-			&body body)
+                                           (1- (os-utils:cpu-number))
+                                           1)))
+                        &body body)
   `(unwind-protect
-	(let ((workers-number ,number))
-	  ,@body)
+        (let ((workers-number ,number))
+          ,@body)
      (lparallel:end-kernel :wait t)))
 
 (defmacro with-fallback (timeout fallback-fn &body body)
@@ -40,12 +40,11 @@
     `(let* ((channel (lparallel:make-channel)))
        ,@body
        (let ((,res (lparallel:try-receive-result channel :timeout ,timeout)))
-	 (if ,res 
-	     ,res
-	     (funcall ,fallback-fn))))))
+         (if ,res
+             ,res
+             (funcall ,fallback-fn))))))
 
 (defmacro with-kernel (&body body)
   `(with-workers ()
      (let ((lparallel:*kernel* (lparallel:make-kernel workers-number)))
        ,@body)))
-

@@ -20,7 +20,7 @@
   (with-gensyms (dice-roll)
     `(defun ,(format-fn-symbol t "pass-d~a" max) (val)
        (let ((,dice-roll (lcg-next-upto ,max)))
-	 (< ,dice-roll val)))))
+         (< ,dice-roll val)))))
 
 (gen-pass-dice 2)
 

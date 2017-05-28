@@ -47,9 +47,9 @@
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (fixnum min-code-value max-code-value))
   (let* ((code       (d  (alexandria:clamp (char-code char) min-code-value max-code-value)))
-	 (delta-code (d  (f- (1+ max-code-value) min-code-value)))
-	 (incs       (d/ (d- max-s min-s) delta-code))
-	 (s          (d* incs (d- (d code) (d min-code-value)))))
+         (delta-code (d  (f- (1+ max-code-value) min-code-value)))
+         (incs       (d/ (d- max-s min-s) delta-code))
+         (s          (d* incs (d- (d code) (d min-code-value)))))
     (declare (desired-type code s))
     ;;  - c +-------+ d
     ;;  |   |\      |     c has coordinates (s, 1.0)
@@ -62,18 +62,18 @@
     ;;  -   +-------+      +---->
     ;;      a        b
     (values (vec2 s           0.0) (vec2 (d+ s incs) 0.0)
-	    (vec2 (d+ s incs) 1.0) (vec2 s           1.0))))
+            (vec2 (d+ s incs) 1.0) (vec2 s           1.0))))
 
 (definline gui-printable-p (char &key
-			       (min-code-value 32)
-			       (max-code-value 126))
+                               (min-code-value 32)
+                               (max-code-value 126))
   (<= min-code-value (char->code char) max-code-value))
 
 (defun char->quad-texture (char &key
-				  (min-code-value 32)
-				  (max-code-value 126)
-				  (min-s 0.0)
-				  (max-s 1.0))
+                                  (min-code-value 32)
+                                  (max-code-value 126)
+                                  (min-s 0.0)
+                                  (max-s 1.0))
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   ;;  - c +-------+ d
   ;;  |   |\      |     c has coordinates (sc, tc)
@@ -87,404 +87,404 @@
   ;;      a        b
   (multiple-value-bind (a b d c)
       (char->texture char
-		     :min-code-value min-code-value
-		     :max-code-value max-code-value
-		     :min-s min-s
-		     :max-s max-s)
+                     :min-code-value min-code-value
+                     :max-code-value max-code-value
+                     :min-s min-s
+                     :max-s max-s)
     (let* ((res  (make-array-frame 6 (vec2:vec2 0.0 0.0) 'vec2:vec2 t)))
       (declare ((simple-array vec2:vec2 (6)) res))
       (setf (elt res 0) a
-	    (elt res 1) b
-	    (elt res 2) c
-	    (elt res 3) b
-	    (elt res 4) d
-	    (elt res 5) c)
+            (elt res 1) b
+            (elt res 2) c
+            (elt res 3) b
+            (elt res 4) d
+            (elt res 5) c)
       res)))
 
 (defun load-font (font-file handle shaders-dictionary)
   (let ((font-texture (get-texture (res:get-resource-file (strcat font-file
-								  +font-file-extension+)
-							  constants:+fonts-resource+
-							  :if-does-not-exists :error)))
-	(map          (make-hash-table :test 'eql)))
+                                                                  +font-file-extension+)
+                                                          constants:+fonts-resource+
+                                                          :if-does-not-exists :error)))
+        (map          (make-hash-table :test 'eql)))
     (setf (texture:interpolation-type font-texture) :nearest)
     (prepare-for-rendering font-texture)
     (loop for i from 0 below +ascii-size+ do
-	 (let ((texture-coords (char->quad-texture (code-char i)))
-	       (mesh  (make-instance 'triangle-mesh)))
-	   (setf (interfaces:compiled-shaders mesh) shaders-dictionary)
-	   (setf (texture-object mesh) font-texture)
-	   (quad-w-explicit-texture-coords mesh
-					   1.0 1.0
-					   texture-coords
-					   +zero-vec+ nil t)
-	   (remove-orphaned-vertices mesh)
-	   (prepare-for-rendering mesh)
-	   (setf (gethash (code-char i) map) mesh)))
+         (let ((texture-coords (char->quad-texture (code-char i)))
+               (mesh  (make-instance 'triangle-mesh)))
+           (setf (interfaces:compiled-shaders mesh) shaders-dictionary)
+           (setf (texture-object mesh) font-texture)
+           (quad-w-explicit-texture-coords mesh
+                                           1.0 1.0
+                                           texture-coords
+                                           +zero-vec+ nil t)
+           (remove-orphaned-vertices mesh)
+           (prepare-for-rendering mesh)
+           (setf (gethash (code-char i) map) mesh)))
     (setf (gethash handle *fonts-db*) map)))
 
 (defun clean-font-db ()
   (maphash #'(lambda (k v)
-	       (declare (ignore k))
-	       (maphash #'(lambda (k2 v2)
-			    (declare (ignore k2))
-			    (interfaces:destroy v2))
-			v))
-	   *fonts-db*)
+               (declare (ignore k))
+               (maphash #'(lambda (k2 v2)
+                            (declare (ignore k2))
+                            (interfaces:destroy v2))
+                        v))
+           *fonts-db*)
   (maphash #'(lambda (k v) (declare (ignore k)) (setf v nil)) *fonts-db*)
   (setf *fonts-db* nil)
   (setf *fonts-db* (make-hash-table :test 'eql)))
 
 (defmacro gen-simple-bg-setup (function-name texture-handle parameter file
-			       resource-name
-			       &rest texture-setup)
+                               resource-name
+                               &rest texture-setup)
   (let ((fn-name   (alexandria:format-symbol t "~:@(setup-bg-~a~)" function-name)))
     `(progn
        (defparameter ,parameter (res:get-resource-file ,file
-						       ,resource-name
-						       :if-does-not-exists :error))
+                                                       ,resource-name
+                                                       :if-does-not-exists :error))
        (alexandria:define-constant ,texture-handle
-	   ,(string-trim '(#\+) (symbol-name texture-handle))
-	 :test #'string=)
+           ,(string-trim '(#\+) (symbol-name texture-handle))
+         :test #'string=)
        (defun ,fn-name ()
-	 (multiple-value-bind (bg error)
-	     (texture:get-texture ,parameter)
-	   (if (not error)
-	       (progn
-		 ,@texture-setup
-		 (texture:prepare-for-rendering bg)
-		 (setf (texture:filename bg) ,texture-handle)
-		 bg)
-	       (values nil error)))))))
+         (multiple-value-bind (bg error)
+             (texture:get-texture ,parameter)
+           (if (not error)
+               (progn
+                 ,@texture-setup
+                 (texture:prepare-for-rendering bg)
+                 (setf (texture:filename bg) ,texture-handle)
+                 bg)
+               (values nil error)))))))
 
 (defmacro gen-texture-bulk (&rest file)
   `(progn
      ,@(loop for f in file collect
-	    (let* ((file-name (if (consp f)
-				  (symbol-name (first f))
-				  (symbol-name f)))
-		   (res-name  (if (consp f)
-				  (second f)
-				  '+default-gui-resource+))
-		   (base      (basename file-name)))
-	      `(gen-simple-bg-setup ,(alexandria:symbolicate base)
-				    ,(alexandria:symbolicate (wrap-with (strcat base
-										"-TEXTURE-NAME")
-									"+"))
-				    ,(alexandria:symbolicate (wrap-with (strcat "BG-"
-										base)
-									"*"))
-				    ,(string-downcase file-name)
-				    ,res-name
-				    ,@(if (consp f)
-					  (subseq f 2)
-					  nil))))))
+            (let* ((file-name (if (consp f)
+                                  (symbol-name (first f))
+                                  (symbol-name f)))
+                   (res-name  (if (consp f)
+                                  (second f)
+                                  '+default-gui-resource+))
+                   (base      (basename file-name)))
+              `(gen-simple-bg-setup ,(alexandria:symbolicate base)
+                                    ,(alexandria:symbolicate (wrap-with (strcat base
+                                                                                "-TEXTURE-NAME")
+                                                                        "+"))
+                                    ,(alexandria:symbolicate (wrap-with (strcat "BG-"
+                                                                                base)
+                                                                        "*"))
+                                    ,(string-downcase file-name)
+                                    ,res-name
+                                    ,@(if (consp f)
+                                          (subseq f 2)
+                                          nil))))))
 
 (gen-texture-bulk (portrait-unknown.tga
-		   +default-gui-resource+
-		   (setf (interpolation-type bg) :linear))
-		  (preview-unknown.tga
-		   +default-gui-resource+
-		   (setf (interpolation-type bg) :linear)
-		   (setf (s-wrap-mode  bg) :clamp-to-border)
-		   (setf (t-wrap-mode  bg) :clamp-to-border)
-		   (setf (border-color bg) §c00000000))
-		  (berserk.tga
-		   +default-gui-resource+
-		   (setf (interpolation-type bg) :linear))
-		  (coma.tga
-		   +default-gui-resource+
-		   (setf (interpolation-type bg) :linear))
-		  (terror.tga
-		   +default-gui-resource+
-		   (setf (interpolation-type bg) :linear))
-		  (poison.tga
-		   +default-gui-resource+
-		   (setf (interpolation-type bg) :linear))
-		  (immune-berserk.tga
-		   +default-gui-resource+
-		   (setf (interpolation-type bg) :linear))
-		  (immune-coma.tga
-		   +default-gui-resource+
-		   (setf (interpolation-type bg) :linear))
-		  (immune-terror.tga
-		   +default-gui-resource+
-		   (setf (interpolation-type bg) :linear))
-		  (immune-poison.tga
-		   +default-gui-resource+
-		   (setf (interpolation-type bg) :linear))
-		   window-top-bar.tga
-		   window.tga
-		   button.tga
-		   button-pressed.tga
-		   message-16-error.tga
-		   message-16-help.tga
-		   message-16-info.tga
-		   message-16-ok.tga
-		   message-16-warning.tga
-		   text-field.tga
-		   text-field-focused.tga
-		   text-field-overlay.tga
-		   check-button.tga
-		   square-button.tga
-		   square-button-pressed.tga
-		   inventory-slot.tga
-		   inventory-slot-selected.tga
-		   transparent.tga
-		   silhouette.tga
-		   (drop-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (bag.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (add-to-bag.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (up-arrow-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (down-arrow-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (wear-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (spell-book-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (use-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (use-item-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (plus-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (minus-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (up-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (down-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (left-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (right-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (load-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (save-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (option-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (quit-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (next-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (previous-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (rotate-char-cw-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (rotate-char-ccw-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (next-turn-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (move-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (attack-short-range-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (attack-long-range-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (attack-long-range-imprecise-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (conversation-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (magic-staff-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (open-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (close-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (zoom-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (unzoom-overlay.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (chest-opened.tga
-		    +default-gui-resource+
-		    (setf (interpolation-type bg) :linear)
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (chest-closed.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000))
-		   (chest-closed-locked.tga
-		    +default-gui-resource+
-		    (setf (s-wrap-mode  bg) :clamp-to-border)
-		    (setf (t-wrap-mode  bg) :clamp-to-border)
-		    (setf (border-color bg) §c00000000)))
+                   +default-gui-resource+
+                   (setf (interpolation-type bg) :linear))
+                  (preview-unknown.tga
+                   +default-gui-resource+
+                   (setf (interpolation-type bg) :linear)
+                   (setf (s-wrap-mode  bg) :clamp-to-border)
+                   (setf (t-wrap-mode  bg) :clamp-to-border)
+                   (setf (border-color bg) §c00000000))
+                  (berserk.tga
+                   +default-gui-resource+
+                   (setf (interpolation-type bg) :linear))
+                  (coma.tga
+                   +default-gui-resource+
+                   (setf (interpolation-type bg) :linear))
+                  (terror.tga
+                   +default-gui-resource+
+                   (setf (interpolation-type bg) :linear))
+                  (poison.tga
+                   +default-gui-resource+
+                   (setf (interpolation-type bg) :linear))
+                  (immune-berserk.tga
+                   +default-gui-resource+
+                   (setf (interpolation-type bg) :linear))
+                  (immune-coma.tga
+                   +default-gui-resource+
+                   (setf (interpolation-type bg) :linear))
+                  (immune-terror.tga
+                   +default-gui-resource+
+                   (setf (interpolation-type bg) :linear))
+                  (immune-poison.tga
+                   +default-gui-resource+
+                   (setf (interpolation-type bg) :linear))
+                   window-top-bar.tga
+                   window.tga
+                   button.tga
+                   button-pressed.tga
+                   message-16-error.tga
+                   message-16-help.tga
+                   message-16-info.tga
+                   message-16-ok.tga
+                   message-16-warning.tga
+                   text-field.tga
+                   text-field-focused.tga
+                   text-field-overlay.tga
+                   check-button.tga
+                   square-button.tga
+                   square-button-pressed.tga
+                   inventory-slot.tga
+                   inventory-slot-selected.tga
+                   transparent.tga
+                   silhouette.tga
+                   (drop-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (bag.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (add-to-bag.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (up-arrow-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (down-arrow-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (wear-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (spell-book-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (use-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (use-item-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (plus-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (minus-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (up-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (down-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (left-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (right-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (load-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (save-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (option-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (quit-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (next-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (previous-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (rotate-char-cw-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (rotate-char-ccw-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (next-turn-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (move-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (attack-short-range-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (attack-long-range-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (attack-long-range-imprecise-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (conversation-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (magic-staff-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (open-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (close-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (zoom-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (unzoom-overlay.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (chest-opened.tga
+                    +default-gui-resource+
+                    (setf (interpolation-type bg) :linear)
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (chest-closed.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (chest-closed-locked.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000)))
 
 
 (gen-simple-bg-setup frame
-		     +frame-texture-name+
-		     *bg-frame*
-		     "basic-frame.tga"
-		     +default-gui-resource+)
+                     +frame-texture-name+
+                     *bg-frame*
+                     "basic-frame.tga"
+                     +default-gui-resource+)
 
 (gen-simple-bg-setup button-cancel
-		     +button-cancel-texture-name+
-		     *bg-button-cancel*
-		     "cancel-overlay.tga"
-		     +default-gui-resource+
-		     (setf (s-wrap-mode  bg) :clamp-to-border)
-		     (setf (t-wrap-mode  bg) :clamp-to-border)
-		     (setf (border-color bg) §c00000000))
+                     +button-cancel-texture-name+
+                     *bg-button-cancel*
+                     "cancel-overlay.tga"
+                     +default-gui-resource+
+                     (setf (s-wrap-mode  bg) :clamp-to-border)
+                     (setf (t-wrap-mode  bg) :clamp-to-border)
+                     (setf (border-color bg) §c00000000))
 
 (gen-simple-bg-setup button-ok
-		     +button-ok-texture-name+
-		     *bg-button-ok*
-		     "ok-overlay.tga"
-		     +default-gui-resource+
-		     (setf (s-wrap-mode  bg) :clamp-to-border)
-		     (setf (t-wrap-mode  bg) :clamp-to-border)
-		     (setf (border-color bg) §c00000000))
+                     +button-ok-texture-name+
+                     *bg-button-ok*
+                     "ok-overlay.tga"
+                     +default-gui-resource+
+                     (setf (s-wrap-mode  bg) :clamp-to-border)
+                     (setf (t-wrap-mode  bg) :clamp-to-border)
+                     (setf (border-color bg) §c00000000))
 
 (gen-simple-bg-setup window-close-button
-		     +window-close-button-texture-name+
-		     *bg-window-close-button*
-		     "window-button.tga"
-		     +default-gui-resource+)
+                     +window-close-button-texture-name+
+                     *bg-window-close-button*
+                     "window-button.tga"
+                     +default-gui-resource+)
 
 (gen-simple-bg-setup window-close-button-pressed
-		     +window-close-button-pressed-texture-name+
-		     *bg-window-close-button-pressed*
-		     "window-button-pressed.tga"
-		     +default-gui-resource+)
+                     +window-close-button-pressed-texture-name+
+                     *bg-window-close-button-pressed*
+                     "window-button-pressed.tga"
+                     +default-gui-resource+)
 
 (gen-simple-bg-setup blue-h-bar
-		     +blue-h-bar+
-		     *bg-blue-h-bar*
-		     "blue-bar.tga"
-		     +default-gui-resource+)
+                     +blue-h-bar+
+                     *bg-blue-h-bar*
+                     "blue-bar.tga"
+                     +default-gui-resource+)
 
 (gen-simple-bg-setup red-h-bar
-		     +red-h-bar+
-		     *bg-red-h-bar*
-		     "red-bar.tga"
-		     +default-gui-resource+)
+                     +red-h-bar+
+                     *bg-red-h-bar*
+                     "red-bar.tga"
+                     +default-gui-resource+)
 
 (gen-simple-bg-setup green-h-bar
-		     +green-h-bar+
-		     *bg-green-h-bar*
-		     "green-bar.tga"
-		     +default-gui-resource+)
+                     +green-h-bar+
+                     *bg-green-h-bar*
+                     "green-bar.tga"
+                     +default-gui-resource+)
 
 (gen-simple-bg-setup check-button-checked-green
-		     +check-button-checked-green+
-		     *bg-check-button-checked-green*
-		     "check-button-checked-green.tga"
-		     +default-gui-resource+)
+                     +check-button-checked-green+
+                     *bg-check-button-checked-green*
+                     "check-button-checked-green.tga"
+                     +default-gui-resource+)
 
 (gen-simple-bg-setup check-button-overlay
-		     +check-button-overlay+
-		     *bg-check-button-overlay*
-		     "check-button-overlay.tga"
-		     +default-gui-resource+)
+                     +check-button-overlay+
+                     *bg-check-button-overlay*
+                     "check-button-overlay.tga"
+                     +default-gui-resource+)
 
 (defun setup-gui (compiled-shaders)
   (load-font +default-font+ +default-font-handle+ compiled-shaders)

@@ -21,4 +21,4 @@
 (deftest test-shuffle (misc-suite)
   (assert-true
       (let ((bag (loop repeat 1000 collect (num:lcg-next-upto 1000))))
-	(null (set-difference bag (shuffle bag))))))
+        (null (set-difference bag (shuffle bag))))))

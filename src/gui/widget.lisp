@@ -61,35 +61,35 @@
 (defmethod render ((object font-mesh-shell) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((vbo vbo)
-		   (vao vao)
-		   (texture-object texture-object)
-		   (projection-matrix projection-matrix)
-		   (model-matrix model-matrix)
-		   (view-matrix view-matrix)
-		   (compiled-shaders compiled-shaders)
-		   (triangles triangles)
-		   (font-color font-color)
-		   (material-params material-params)) object
+                   (vao vao)
+                   (texture-object texture-object)
+                   (projection-matrix projection-matrix)
+                   (model-matrix model-matrix)
+                   (view-matrix view-matrix)
+                   (compiled-shaders compiled-shaders)
+                   (triangles triangles)
+                   (font-color font-color)
+                   (material-params material-params)) object
     (declare (texture:texture texture-object))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
     (declare (vec4 font-color))
     (when (> (length triangles) 0)
       (with-camera-view-matrix (camera-vw-matrix renderer)
-	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	  (use-program compiled-shaders :gui-fonts)
-	  (gl:active-texture :texture0)
-	  (texture:bind-texture texture-object)
-	  (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
-	  (uniformfv compiled-shaders :mult-color font-color)
-	  (uniform-matrix compiled-shaders :modelview-matrix 4
-				   (vector (sb-cga:matrix* camera-vw-matrix
-							   (elt view-matrix 0)
-							   (elt model-matrix 0)))
-				   nil)
-	  (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
-	  (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-	  (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))))
+        (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+          (use-program compiled-shaders :gui-fonts)
+          (gl:active-texture :texture0)
+          (texture:bind-texture texture-object)
+          (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+          (uniformfv compiled-shaders :mult-color font-color)
+          (uniform-matrix compiled-shaders :modelview-matrix 4
+                                   (vector (sb-cga:matrix* camera-vw-matrix
+                                                           (elt view-matrix 0)
+                                                           (elt model-matrix 0)))
+                                   nil)
+          (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+          (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+          (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))))
 
 (defun fill-font-mesh-shell (mesh &key (color §cffffffff))
   (let ((shell (fill-shell-from-mesh mesh 'font-mesh-shell)))
@@ -101,33 +101,33 @@
 (defmethod render ((object simple-gui-mesh) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((vbo vbo)
-		   (vao vao)
-		   (texture-object texture-object)
-		   (projection-matrix projection-matrix)
-		   (model-matrix model-matrix)
-		   (view-matrix view-matrix)
-		   (compiled-shaders compiled-shaders)
-		   (triangles triangles)
-		   (material-params material-params)) object
+                   (vao vao)
+                   (texture-object texture-object)
+                   (projection-matrix projection-matrix)
+                   (model-matrix model-matrix)
+                   (view-matrix view-matrix)
+                   (compiled-shaders compiled-shaders)
+                   (triangles triangles)
+                   (material-params material-params)) object
     (declare (texture:texture texture-object))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
     (when (> (length triangles) 0)
       (with-camera-view-matrix (camera-vw-matrix renderer)
-	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	  (use-program compiled-shaders :gui)
-	  (gl:active-texture :texture0)
-	  (texture:bind-texture texture-object)
-	  (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
-	  (uniformfv compiled-shaders :ia #(1.0 1.0 1.0))
-	  (uniform-matrix compiled-shaders :modelview-matrix 4
-				   (vector (sb-cga:matrix* camera-vw-matrix
-							   (elt view-matrix 0)
-							   (elt model-matrix 0)))
-				   nil)
-	  (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
-	  (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-	  (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))))
+        (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+          (use-program compiled-shaders :gui)
+          (gl:active-texture :texture0)
+          (texture:bind-texture texture-object)
+          (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+          (uniformfv compiled-shaders :ia #(1.0 1.0 1.0))
+          (uniform-matrix compiled-shaders :modelview-matrix 4
+                                   (vector (sb-cga:matrix* camera-vw-matrix
+                                                           (elt view-matrix 0)
+                                                           (elt model-matrix 0)))
+                                   nil)
+          (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+          (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+          (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))))
 
 (defclass reference-sizes ()
   ((top-bar-h
@@ -244,7 +244,7 @@
     :accessor tiny-square-button-size)))
 
 (defmethod initialize-instance :after ((object reference-sizes)
-				       &key &allow-other-keys)
+                                       &key &allow-other-keys)
   (setf (title-font-size object) (d* (top-bar-h object) (title-font-size-scaling object))))
 
 (defgeneric relative-title-space (object))
@@ -305,37 +305,37 @@
 (defmethod render ((object widget) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((vbo vbo)
-		   (vao vao)
-		   (texture-object texture-object)
-		   (projection-matrix projection-matrix)
-		   (model-matrix model-matrix)
-		   (view-matrix view-matrix)
-		   (compiled-shaders compiled-shaders)
-		   (triangles triangles)
-		   (material-params material-params)
-		   (shown shown)) object
+                   (vao vao)
+                   (texture-object texture-object)
+                   (projection-matrix projection-matrix)
+                   (model-matrix model-matrix)
+                   (view-matrix view-matrix)
+                   (compiled-shaders compiled-shaders)
+                   (triangles triangles)
+                   (material-params material-params)
+                   (shown shown)) object
     (declare (texture:texture texture-object))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
     (when shown
       (when (> (length triangles) 0)
-	(with-camera-view-matrix (camera-vw-matrix renderer)
-	  (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	    (use-program compiled-shaders :gui)
-	    (gl:active-texture :texture0)
-	    (texture:bind-texture texture-object)
-	    (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
-	    (uniformfv compiled-shaders :ia #(1.0 1.0 1.0))
-	    (uniform-matrix compiled-shaders :modelview-matrix 4
-				     (vector (sb-cga:matrix* camera-vw-matrix
-							     (elt view-matrix 0)
-							     (elt model-matrix 0)))
-				     nil)
-	    (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
-	    (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-	    (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))
+        (with-camera-view-matrix (camera-vw-matrix renderer)
+          (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+            (use-program compiled-shaders :gui)
+            (gl:active-texture :texture0)
+            (texture:bind-texture texture-object)
+            (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+            (uniformfv compiled-shaders :ia #(1.0 1.0 1.0))
+            (uniform-matrix compiled-shaders :modelview-matrix 4
+                                     (vector (sb-cga:matrix* camera-vw-matrix
+                                                             (elt view-matrix 0)
+                                                             (elt model-matrix 0)))
+                                     nil)
+            (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+            (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+            (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))
       (do-children-mesh (c object)
-	(render c renderer)))))
+        (render c renderer)))))
 
 (defgeneric flip-y (object child))
 
@@ -407,8 +407,8 @@
 
 (defmethod mouse-over ((object widget) x y)
   (let* ((aabb (aabb object))
-	 (aabb2 (vec4 (elt (aabb-p1 aabb) 0) (elt (aabb-p1 aabb) 1)
-		      (elt (aabb-p2 aabb) 0) (elt (aabb-p2 aabb) 1))))
+         (aabb2 (vec4 (elt (aabb-p1 aabb) 0) (elt (aabb-p1 aabb) 1)
+                      (elt (aabb-p2 aabb) 0) (elt (aabb-p2 aabb) 1))))
     (2d-utils:inside-aabb2-p aabb2 x y)))
 
 (defmethod label-width ((object widget))
@@ -416,58 +416,58 @@
 
 (defmethod on-mouse-pressed ((object widget) event)
   (top-down-visit object #'(lambda (a)
-			     (when (widgetp a)
-			       (setf (focus a) nil))))
+                             (when (widgetp a)
+                               (setf (focus a) nil))))
   (do-children-from-end (w object)
        (when (and (widgetp w)
-		  (on-mouse-pressed w event))
-      	 (return-from on-mouse-pressed t)))
+                  (on-mouse-pressed w event))
+         (return-from on-mouse-pressed t)))
   nil)
 
 (defmethod on-mouse-released ((object widget) event)
   (top-down-visit (find-root-widget object)
-		  #'(lambda (a) (when (and (windowp a)
-					   (dragging-mode a))
-				  (setf (dragging-mode a) nil))))
+                  #'(lambda (a) (when (and (windowp a)
+                                           (dragging-mode a))
+                                  (setf (dragging-mode a) nil))))
   (do-children-from-end (w object)
     (when (and (widgetp w)
-	       (on-mouse-released w event))
+               (on-mouse-released w event))
       (return-from on-mouse-released t)))
   nil)
 
 (defmethod on-mouse-dragged ((object widget) event)
   (do-children-from-end (w object)
        (when (and (widgetp w)
-		  (on-mouse-dragged w event))
-	 (return-from on-mouse-dragged t)))
+                  (on-mouse-dragged w event))
+         (return-from on-mouse-dragged t)))
   nil)
 
 (defmethod on-key-pressed ((object widget) event)
   (loop for w across (children object) do
        (when (and (widgetp w)
-		  (on-key-pressed w event))
-	 (return-from on-key-pressed t)))
+                  (on-key-pressed w event))
+         (return-from on-key-pressed t)))
   nil)
 
 (defun common-setup-label (widget new-label)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (simple-string new-label))
   (with-accessors ((label-font label-font)
-		   (label-font-size label-font-size)
-		   (label-font-color label-font-color)
-		   (children children)) widget
+                   (label-font-size label-font-size)
+                   (label-font-color label-font-color)
+                   (children children)) widget
     (declare (desired-type label-font-size))
     (with-slots (label) widget
       (declare (simple-string label))
       (remove-all-children widget)
       (setf label new-label)
       (loop for c across label do
-	   (let* ((mesh  (get-char-mesh label-font c))
-		  (shell (if mesh
-			     (fill-font-mesh-shell mesh :color label-font-color)
-			     nil)))
-	     (when shell
-	       (add-child widget shell)))))))
+           (let* ((mesh  (get-char-mesh label-font c))
+                  (shell (if mesh
+                             (fill-font-mesh-shell mesh :color label-font-color)
+                             nil)))
+             (when shell
+               (add-child widget shell)))))))
 
 (defun add-quad-for-widget (mesh)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -483,14 +483,14 @@
   ;;  -   +-------+      +---->
   ;;      a        b
   (quad-w-explicit-texture-coords mesh
-				  1.0 1.0
-				  (vector (vec2 0.0 0.0)  ; a
-					  (vec2 1.0 0.0)  ; b
-					  (vec2 0.0 1.0)  ; c
-					  (vec2 1.0 0.0)  ; b
-					  (vec2 1.0 1.0)  ; d
-					  (vec2 0.0 1.0)) ; c
-				  +zero-vec+ nil t))
+                                  1.0 1.0
+                                  (vector (vec2 0.0 0.0)  ; a
+                                          (vec2 1.0 0.0)  ; b
+                                          (vec2 0.0 1.0)  ; c
+                                          (vec2 1.0 0.0)  ; b
+                                          (vec2 1.0 1.0)  ; d
+                                          (vec2 0.0 1.0)) ; c
+                                  +zero-vec+ nil t))
 
 (defclass naked-button (widget)
   ((callback
@@ -525,11 +525,11 @@
   (with-parent-widget (win) widget
     (hide win)
     (remove-child (parent win)
-		  ;;(make-instance (class-of win))
-		  win
-		  :key #'identity
-		  :test #'(lambda (a b)
-			    (= (id a) (id b))))))
+                  ;;(make-instance (class-of win))
+                  win
+                  :key #'identity
+                  :test #'(lambda (a b)
+                            (= (id a) (id b))))))
 
 (defun hide-and-remove-grandparent-cb (widget event)
   (declare (ignore event))
@@ -537,19 +537,19 @@
     (with-parent-widget (grandparent) parent
       (hide grandparent)
       (remove-child (parent grandparent)
-		    (class-of grandparent)
-		    :key #'identity
-		    :test #'(lambda (a b)
-			      (declare (ignore a))
-			      (typep b (class-of grandparent)))))))
+                    (class-of grandparent)
+                    :key #'identity
+                    :test #'(lambda (a b)
+                              (declare (ignore a))
+                              (typep b (class-of grandparent)))))))
 
 
 (defmethod initialize-instance :after ((object naked-button) &key &allow-other-keys)
   (with-accessors ((width width) (height height)
-		   (label-font-size label-font-size)) object
+                   (label-font-size label-font-size)) object
     (when (or (null (texture-object object))
-	      (null (texture-pressed object))
-	      (null (texture-overlay object)))
+              (null (texture-pressed object))
+              (null (texture-overlay object)))
       (setf (texture-object  object) (get-texture +button-texture-name+))
       (setf (texture-pressed object) (get-texture +button-pressed-texture-name+))
       (setf (texture-overlay object) (get-texture +button-pressed-texture-name+)))
@@ -561,39 +561,39 @@
 (defmethod render ((object naked-button) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((vbo vbo)
-		   (vao vao)
-		   (current-texture current-texture)
-		   (texture-overlay texture-overlay)
-		   (projection-matrix projection-matrix)
-		   (model-matrix model-matrix)
-		   (view-matrix view-matrix)
-		   (compiled-shaders compiled-shaders)
-		   (triangles triangles)
-		   (material-params material-params)
-		   (shown shown)) object
+                   (vao vao)
+                   (current-texture current-texture)
+                   (texture-overlay texture-overlay)
+                   (projection-matrix projection-matrix)
+                   (model-matrix model-matrix)
+                   (view-matrix view-matrix)
+                   (compiled-shaders compiled-shaders)
+                   (triangles triangles)
+                   (material-params material-params)
+                   (shown shown)) object
     (declare (texture current-texture texture-overlay))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
     (when shown
       (when (> (length triangles) 0)
-	(with-camera-view-matrix (camera-vw-matrix renderer)
-	  (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	    (use-program compiled-shaders :gui-naked-button)
-	    (gl:active-texture :texture0)
-	    (texture:bind-texture current-texture)
-	    (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
-	    (gl:active-texture :texture1)
-	    (texture:bind-texture texture-overlay)
-	    (uniformi compiled-shaders :texture-overlay +texture-unit-overlay+)
-	    (uniformfv compiled-shaders :ia #(1.0 1.0 1.0))
-	    (uniform-matrix compiled-shaders :modelview-matrix 4
-				     (vector (sb-cga:matrix* camera-vw-matrix
-							     (elt view-matrix 0)
-							     (elt model-matrix 0)))
-				     nil)
-	    (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
-	    (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-	    (gl:draw-arrays :triangles 0 (* 3 (length triangles)))))))))
+        (with-camera-view-matrix (camera-vw-matrix renderer)
+          (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+            (use-program compiled-shaders :gui-naked-button)
+            (gl:active-texture :texture0)
+            (texture:bind-texture current-texture)
+            (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+            (gl:active-texture :texture1)
+            (texture:bind-texture texture-overlay)
+            (uniformi compiled-shaders :texture-overlay +texture-unit-overlay+)
+            (uniformfv compiled-shaders :ia #(1.0 1.0 1.0))
+            (uniform-matrix compiled-shaders :modelview-matrix 4
+                                     (vector (sb-cga:matrix* camera-vw-matrix
+                                                             (elt view-matrix 0)
+                                                             (elt model-matrix 0)))
+                                     nil)
+            (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+            (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+            (gl:draw-arrays :triangles 0 (* 3 (length triangles)))))))))
 
 (defmethod on-mouse-pressed ((object naked-button) event)
   (if (mouse-over object (x-event event) (y-event event))
@@ -604,7 +604,7 @@
   (with-accessors ((callback callback)) object
     (cond
       ((and callback
-	    (mouse-over object (x-event event) (y-event event)))
+            (mouse-over object (x-event event) (y-event event)))
        (setf (current-texture object) (texture-object object))
        (funcall callback object event))
       ((mouse-over object (x-event event) (y-event event))
@@ -636,29 +636,29 @@
 (defmethod (setf button-state) (new-state (object toggle-button))
   (with-slots (button-state) object
     (with-accessors ((current-texture current-texture)
-		     (texture-pressed texture-pressed)
-		     (texture-object  texture-object)) object
+                     (texture-pressed texture-pressed)
+                     (texture-object  texture-object)) object
       (setf button-state      new-state)
       (setf current-texture   (if button-state
-				  texture-pressed
-				  texture-object)))))
+                                  texture-pressed
+                                  texture-object)))))
 
 (defmethod flip-state ((object toggle-button))
   (with-slots (button-state) object
     (with-accessors ((group group)) object
       (setf (button-state object) (not button-state))
       (map nil #'(lambda (a)
-		   (when (/= (id a) (id object))
-		     (setf (button-state a) (not (button-state object)))))
-	   group))))
+                   (when (/= (id a) (id object))
+                     (setf (button-state a) (not (button-state object)))))
+           group))))
 
 (defmethod on-mouse-pressed ((object toggle-button) event)
   (if (mouse-over object (x-event event) (y-event event))
       (progn
-	(flip-state object)
-	(when (callback object)
-	    (funcall (callback object) object event))
-	t)
+        (flip-state object)
+        (when (callback object)
+            (funcall (callback object) object event))
+        t)
       nil))
 
 (defmethod on-mouse-released ((object toggle-button) event)
@@ -667,10 +667,10 @@
 (defclass check-button (toggle-button) ())
 
 (defmethod initialize-instance :after ((object check-button) &key
-							       (theme :green)
-							       &allow-other-keys)
+                                                               (theme :green)
+                                                               &allow-other-keys)
   (with-accessors ((width width) (height height)
-		   (label-font-size label-font-size)) object
+                   (label-font-size label-font-size)) object
     (case theme
       (:green
        (setf (texture-object  object) (get-texture +check-button-texture-name+))
@@ -683,17 +683,17 @@
   (with-slots (button-state) object
     (with-accessors ((group group)) object
       (when (not (button-state object))
-	(setf (button-state object) t)
-	(map nil #'(lambda (a)
-		     (when (/= (id a) (id object))
-		       (setf (button-state a) nil)))
-	     group)))))
+        (setf (button-state object) t)
+        (map nil #'(lambda (a)
+                     (when (/= (id a) (id object))
+                       (setf (button-state a) nil)))
+             group)))))
 
 (defclass signalling-light (check-button) ())
 
 (defmethod initialize-instance :after ((object signalling-light) &key
-								   (texture-name nil)
-								   &allow-other-keys)
+                                                                   (texture-name nil)
+                                                                   &allow-other-keys)
   (when texture-name
     (setf (texture-object  object) (get-texture texture-name))
     (setf (texture-pressed object) nil)
@@ -703,42 +703,42 @@
 (defmethod render ((object signalling-light) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((vbo vbo)
-		   (vao vao)
-		   (texture-object texture-object)
-		   (projection-matrix projection-matrix)
-		   (model-matrix model-matrix)
-		   (view-matrix view-matrix)
-		   (compiled-shaders compiled-shaders)
-		   (triangles triangles)
-		   (material-params material-params)
-		   (shown shown)) object
+                   (vao vao)
+                   (texture-object texture-object)
+                   (projection-matrix projection-matrix)
+                   (model-matrix model-matrix)
+                   (view-matrix view-matrix)
+                   (compiled-shaders compiled-shaders)
+                   (triangles triangles)
+                   (material-params material-params)
+                   (shown shown)) object
     (declare (texture:texture texture-object))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
     (when shown
       (when (> (length triangles) 0)
-	(with-camera-view-matrix (camera-vw-matrix renderer)
-	  (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	    (use-program compiled-shaders :gui)
-	    (gl:active-texture :texture0)
-	    (texture:bind-texture texture-object)
-	    (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
-	    (uniformfv compiled-shaders :ia #(1.0 1.0 1.0))
-	    (uniform-matrix compiled-shaders :modelview-matrix 4
-				     (vector (sb-cga:matrix* camera-vw-matrix
-							     (elt view-matrix 0)
-							     (elt model-matrix 0)))
-				     nil)
-	    (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
-	    (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-	    (gl:draw-arrays :triangles 0 (* 3 (length triangles)))))))))
+        (with-camera-view-matrix (camera-vw-matrix renderer)
+          (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+            (use-program compiled-shaders :gui)
+            (gl:active-texture :texture0)
+            (texture:bind-texture texture-object)
+            (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+            (uniformfv compiled-shaders :ia #(1.0 1.0 1.0))
+            (uniform-matrix compiled-shaders :modelview-matrix 4
+                                     (vector (sb-cga:matrix* camera-vw-matrix
+                                                             (elt view-matrix 0)
+                                                             (elt model-matrix 0)))
+                                     nil)
+            (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+            (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+            (gl:draw-arrays :triangles 0 (* 3 (length triangles)))))))))
 
 (defmethod (setf button-state) (new-state (object signalling-light))
   (with-slots (button-state) object
     (with-accessors ((current-texture current-texture)
-		     (shown           shown)
-		     (texture-pressed texture-pressed)
-		     (texture-object  texture-object)) object
+                     (shown           shown)
+                     (texture-pressed texture-pressed)
+                     (texture-object  texture-object)) object
       (setf button-state new-state)
       (setf shown        new-state))))
 
@@ -753,12 +753,12 @@
 (defmethod calculate :before ((object health-status-icon) dt)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((el-time el-time)
-		   (scaling scaling)) object
+                   (scaling scaling)) object
     (let ((scale-factor (d+ 1.0 (num:bounce-step-interpolate-rev 0.0 10.0 el-time))))
       (setf scaling (sb-cga:vec scale-factor scale-factor scale-factor))
       (setf el-time
-	    (d+ el-time
-		(d* (animation-speed object) dt))))))
+            (d+ el-time
+                (d* (animation-speed object) dt))))))
 
 (defclass button (naked-button) ())
 
@@ -773,69 +773,69 @@
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (simple-string new-label))
   (with-accessors ((label-font-size label-font-size)
-		   (height height)
-		   (width width)
-		   (children children)) object
+                   (height height)
+                   (width width)
+                   (children children)) object
     (declare (desired-type width height label-font-size))
     (common-setup-label object new-label)
     (let* ((label-width   (label-width object))
-	   (scaling-width (d/ (d- width (d* 2.0
-					    (button-text-offset-x *reference-sizes*)
-					    width))
-			      label-width)))
+           (scaling-width (d/ (d- width (d* 2.0
+                                            (button-text-offset-x *reference-sizes*)
+                                            width))
+                              label-width)))
       (when (d< scaling-width 1.0)
-	(setf label-font-size (d* label-font-size scaling-width)))
+        (setf label-font-size (d* label-font-size scaling-width)))
       (loop
-	 for l across (the (simple-array triangle-mesh (*)) children)
-	 for xf from 0.0 by label-font-size do
-	   (setf (scaling l) (sb-cga:vec label-font-size label-font-size 0.0))
-	   (setf (pos     l) (sb-cga:vec (d+ (d- (d/ width 2.0)
-						 (d/ (label-width object) 2.0))
-					     xf)
-					 (d+ (d/ height 2.0)
-					     (d- (d* label-font-size 0.5)))
-					 0.0))))))
+         for l across (the (simple-array triangle-mesh (*)) children)
+         for xf from 0.0 by label-font-size do
+           (setf (scaling l) (sb-cga:vec label-font-size label-font-size 0.0))
+           (setf (pos     l) (sb-cga:vec (d+ (d- (d/ width 2.0)
+                                                 (d/ (label-width object) 2.0))
+                                             xf)
+                                         (d+ (d/ height 2.0)
+                                             (d- (d* label-font-size 0.5)))
+                                         0.0))))))
 
 (defmethod render ((object button) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((vbo vbo)
-		   (vao vao)
-		   (current-texture current-texture)
-		   (projection-matrix projection-matrix)
-		   (model-matrix model-matrix)
-		   (view-matrix view-matrix)
-		   (compiled-shaders compiled-shaders)
-		   (triangles triangles)
-		   (material-params material-params)
-		   (shown shown)) object
+                   (vao vao)
+                   (current-texture current-texture)
+                   (projection-matrix projection-matrix)
+                   (model-matrix model-matrix)
+                   (view-matrix view-matrix)
+                   (compiled-shaders compiled-shaders)
+                   (triangles triangles)
+                   (material-params material-params)
+                   (shown shown)) object
     (declare (texture current-texture))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
     (when shown
       (when (> (length triangles) 0)
-	(with-camera-view-matrix (camera-vw-matrix renderer)
-	  (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	    (use-program compiled-shaders :gui)
-	    (gl:active-texture :texture0)
-	    (texture:bind-texture current-texture)
-	    (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
-	    (uniformfv compiled-shaders :ia #(1.0 1.0 1.0))
-	    (uniform-matrix compiled-shaders :modelview-matrix 4
-				     (vector (sb-cga:matrix* camera-vw-matrix
-							     (elt view-matrix 0)
-							     (elt model-matrix 0)))
-				     nil)
-	    (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
-	    (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-	    (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))
+        (with-camera-view-matrix (camera-vw-matrix renderer)
+          (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+            (use-program compiled-shaders :gui)
+            (gl:active-texture :texture0)
+            (texture:bind-texture current-texture)
+            (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+            (uniformfv compiled-shaders :ia #(1.0 1.0 1.0))
+            (uniform-matrix compiled-shaders :modelview-matrix 4
+                                     (vector (sb-cga:matrix* camera-vw-matrix
+                                                             (elt view-matrix 0)
+                                                             (elt model-matrix 0)))
+                                     nil)
+            (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+            (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+            (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))
       (do-children-mesh (c object)
-	(render c renderer)))))
+        (render c renderer)))))
 
 (defclass text-field (button) ())
 
 (defmethod initialize-instance :after ((object text-field) &key &allow-other-keys)
   (with-accessors ((width width) (height height)
-		   (label-font-size label-font-size)) object
+                   (label-font-size label-font-size)) object
     (setf (texture-object  object) (get-texture +text-field-texture-name+))
     (setf (texture-pressed object) (get-texture +text-field-focused-texture-name+))
     (setf (texture-overlay object) (get-texture +text-field-overlay-texture-name+))
@@ -844,87 +844,87 @@
 (defmethod render ((object text-field) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((vbo vbo)
-		   (vao vao)
-		   (current-texture current-texture)
-		   (texture-overlay texture-overlay)
-		   (projection-matrix projection-matrix)
-		   (model-matrix model-matrix)
-		   (view-matrix view-matrix)
-		   (compiled-shaders compiled-shaders)
-		   (triangles triangles)
-		   (material-params material-params)
-		   (shown shown)) object
+                   (vao vao)
+                   (current-texture current-texture)
+                   (texture-overlay texture-overlay)
+                   (projection-matrix projection-matrix)
+                   (model-matrix model-matrix)
+                   (view-matrix view-matrix)
+                   (compiled-shaders compiled-shaders)
+                   (triangles triangles)
+                   (material-params material-params)
+                   (shown shown)) object
     (declare (texture current-texture texture-overlay))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
     (when shown
       (when (> (length triangles) 0)
-	(with-camera-view-matrix (camera-vw-matrix renderer)
-	  (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	    (use-program compiled-shaders :gui-naked-button)
-	    (gl:active-texture :texture0)
-	    (texture:bind-texture current-texture)
-	    (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
-	    (gl:active-texture :texture1)
-	    (texture:bind-texture texture-overlay)
-	    (uniformi compiled-shaders :texture-overlay +texture-unit-overlay+)
-	    (uniformfv compiled-shaders :ia #(1.0 1.0 1.0))
-	    (uniform-matrix compiled-shaders :modelview-matrix 4
-				     (vector (sb-cga:matrix* camera-vw-matrix
-							     (elt view-matrix 0)
-							     (elt model-matrix 0)))
-				     nil)
-	    (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
-	    (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-	    (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))
+        (with-camera-view-matrix (camera-vw-matrix renderer)
+          (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+            (use-program compiled-shaders :gui-naked-button)
+            (gl:active-texture :texture0)
+            (texture:bind-texture current-texture)
+            (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+            (gl:active-texture :texture1)
+            (texture:bind-texture texture-overlay)
+            (uniformi compiled-shaders :texture-overlay +texture-unit-overlay+)
+            (uniformfv compiled-shaders :ia #(1.0 1.0 1.0))
+            (uniform-matrix compiled-shaders :modelview-matrix 4
+                                     (vector (sb-cga:matrix* camera-vw-matrix
+                                                             (elt view-matrix 0)
+                                                             (elt model-matrix 0)))
+                                     nil)
+            (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+            (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+            (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))
       (do-children-mesh (c object)
-	(render c renderer)))))
+        (render c renderer)))))
 
 (defmethod (setf label) (new-label (object text-field))
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (simple-string new-label))
   (with-accessors ((label-font-size label-font-size)
-		   (height height)
-		   (width width)
-		   (children children)) object
+                   (height height)
+                   (width width)
+                   (children children)) object
     (declare (desired-type width height label-font-size))
     (common-setup-label object new-label)
     (let* ((label-width     (label-width object))
-	   (scaling-width   (d/ (d- width (d* 2.0
-					      (button-text-offset-x *reference-sizes*)
-					      width))
-				label-width))
-	   (new-font-size   (d* label-font-size scaling-width))
-	   (max-font-height (d* (button-text-fit-height *reference-sizes*) (height object))))
+           (scaling-width   (d/ (d- width (d* 2.0
+                                              (button-text-offset-x *reference-sizes*)
+                                              width))
+                                label-width))
+           (new-font-size   (d* label-font-size scaling-width))
+           (max-font-height (d* (button-text-fit-height *reference-sizes*) (height object))))
       (if (d<= new-font-size max-font-height)
-	  (setf label-font-size new-font-size)
-	  (setf label-font-size max-font-height))
+          (setf label-font-size new-font-size)
+          (setf label-font-size max-font-height))
       (loop
-	 for l across (the (simple-array triangle-mesh (*)) children)
-	 for xf from 0.0 by label-font-size do
-	   (setf (scaling l) (sb-cga:vec label-font-size label-font-size 0.0))
-	   (setf (pos     l) (sb-cga:vec (d+ (d- (d/ width 2.0)
-						 (d/ (label-width object) 2.0))
-					     xf)
-					 (d+ (d/ height 2.0)
-					     (d- (d* label-font-size 0.5)))
-					 0.0))))))
+         for l across (the (simple-array triangle-mesh (*)) children)
+         for xf from 0.0 by label-font-size do
+           (setf (scaling l) (sb-cga:vec label-font-size label-font-size 0.0))
+           (setf (pos     l) (sb-cga:vec (d+ (d- (d/ width 2.0)
+                                                 (d/ (label-width object) 2.0))
+                                             xf)
+                                         (d+ (d/ height 2.0)
+                                             (d- (d* label-font-size 0.5)))
+                                         0.0))))))
 
 (defmethod (setf focus) (new-state (object text-field))
   (with-slots (focus) object
     (with-accessors ((current-texture current-texture)
-		     (texture-pressed texture-pressed)
-		     (texture-object  texture-object)) object
+                     (texture-pressed texture-pressed)
+                     (texture-object  texture-object)) object
       (setf focus             new-state)
       (setf current-texture   (if focus
-				  texture-pressed
-				  texture-object)))))
+                                  texture-pressed
+                                  texture-object)))))
 
 (defmethod on-mouse-pressed ((object text-field) event)
   (if (mouse-over object (x-event event) (y-event event))
       (progn
-	(setf (focus object) t)
-	t)
+        (setf (focus object) t)
+        t)
       nil))
 
 (defmethod on-mouse-released ((object text-field) event)
@@ -934,13 +934,13 @@
   (let ((old-label (label object)))
     (declare (simple-string old-label))
     (if (focus object)
-	(progn
-	  (cond
-	    ((gui-printable-p (char-event event))
-	     (setf (label object) (strcat old-label (string (char-event event)))))
-	    (old-label
-	     (setf (label object) (subseq old-label 0 (f- (length old-label) 1)))))
-	  t)
+        (progn
+          (cond
+            ((gui-printable-p (char-event event))
+             (setf (label object) (strcat old-label (string (char-event event)))))
+            (old-label
+             (setf (label object) (subseq old-label 0 (f- (length old-label) 1)))))
+          t)
       nil)))
 
 (defclass simple-label (widget) ())
@@ -950,8 +950,8 @@
   (declare (widget widget))
   (min (the desired-type (label-font-size widget))
        (d* (label-font-size widget)
-	   (d/ (width widget)
-	       (label-width widget)))))
+           (d/ (width widget)
+               (label-width widget)))))
 
 (defmethod initialize-instance :after ((object simple-label) &key &allow-other-keys)
   (with-slots (label) object
@@ -962,14 +962,14 @@
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (simple-string new-label))
   (with-accessors ((label-font-size label-font-size)
-		   (children children)) object
+                   (children children)) object
     (common-setup-label object new-label)
     (setf (label-font-size object) (calculate-text-scaling object))
     (loop
        for l across (the (simple-array triangle-mesh (*)) children)
        for xf single-float from 0.0 by label-font-size do
-	 (setf (scaling l) (sb-cga:vec label-font-size label-font-size 0.0))
-	 (setf (pos     l) (sb-cga:vec xf 0.0 0.0)))))
+         (setf (scaling l) (sb-cga:vec label-font-size label-font-size 0.0))
+         (setf (pos     l) (sb-cga:vec xf 0.0 0.0)))))
 
 (defclass simple-label-prefixed (simple-label)
   ((prefix
@@ -981,15 +981,15 @@
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (simple-string new-label))
   (with-accessors ((label-font-size label-font-size)
-		   (children children)
-		   (prefix prefix)) object
+                   (children children)
+                   (prefix prefix)) object
     (common-setup-label object (format nil "~a~a" prefix new-label))
     (setf (label-font-size object) (calculate-text-scaling object))
     (loop
        for l across (the (simple-array triangle-mesh (*)) children)
        for xf single-float from 0.0 by label-font-size do
-	 (setf (scaling l) (sb-cga:vec label-font-size label-font-size 0.0))
-	 (setf (pos     l) (sb-cga:vec xf 0.0 0.0)))))
+         (setf (scaling l) (sb-cga:vec label-font-size label-font-size 0.0))
+         (setf (pos     l) (sb-cga:vec xf 0.0 0.0)))))
 
 (defclass static-text (widget)
   ((justified
@@ -1004,60 +1004,60 @@
 
 (defun split-text-lines (text width justify)
   (reverse (or
-	    (alexandria:flatten
-	     (map 'list #'(lambda (a)
-			    (if justify
-				(justify-monospaced-text a width)
-				a))
-		  (cl-ppcre:split +gui-static-text-delim+ text)))
-	    '(""))))
+            (alexandria:flatten
+             (map 'list #'(lambda (a)
+                            (if justify
+                                (justify-monospaced-text a width)
+                                a))
+                  (cl-ppcre:split +gui-static-text-delim+ text)))
+            '(""))))
 
 (defun remove-nbrk-space (lines)
   (mapcar #'(lambda (a)
-	      (cl-ppcre:regex-replace-all +gui-static-text-nbsp+ a " "))
-	  lines))
+              (cl-ppcre:regex-replace-all +gui-static-text-nbsp+ a " "))
+          lines))
 
 (defmethod (setf label) (new-label (object static-text))
   (declare (optimize (debug 3) (speed 0) (safety 3)))
   (declare (simple-string new-label))
   (with-accessors ((label-font-size label-font-size)
-		   (label-font label-font)
-		   (label-font-color label-font-color)
-		   (height height)
-		   (width width)
-		   (children children)
-		   (justified justified)) object
+                   (label-font label-font)
+                   (label-font-color label-font-color)
+                   (height height)
+                   (width width)
+                   (children children)
+                   (justified justified)) object
     (declare (desired-type width height label-font-size))
     (remove-all-children object)
     (let* ((char-width (ftruncate (d/ width label-font-size)))
-	   (lines      (remove-nbrk-space (split-text-lines new-label char-width justified)))
-	   (wanted-height      (d* label-font-size (d (length lines))))
-	   (scaling-height     (d/ height wanted-height))
-	   (actual-height-font (if (d< wanted-height height)
-				   label-font-size
-				   (d/ (d* wanted-height scaling-height) (d (length lines)))))
-	   (actual-height      (d- (d height)
-				   (d* actual-height-font (d (length lines))))))
+           (lines      (remove-nbrk-space (split-text-lines new-label char-width justified)))
+           (wanted-height      (d* label-font-size (d (length lines))))
+           (scaling-height     (d/ height wanted-height))
+           (actual-height-font (if (d< wanted-height height)
+                                   label-font-size
+                                   (d/ (d* wanted-height scaling-height) (d (length lines)))))
+           (actual-height      (d- (d height)
+                                   (d* actual-height-font (d (length lines))))))
       (declare (list lines))
       (do ((line-count (d 0.0) (d+ line-count 1.0))
-	   (line       lines   (rest line)))
-	  ((not line))
-	(declare (list line))
-	(declare (desired-type line-count))
-	(loop
-	   for c across (the simple-string (elt line 0))
-	   for xf single-float from  0.0 by label-font-size do
-	   (let* ((mesh  (get-char-mesh label-font c))
-		  (shell (if mesh
-			     (fill-font-mesh-shell mesh :color label-font-color)
-			     nil)))
-	     (when shell
-	       (setf (scaling shell) (sb-cga:vec label-font-size actual-height-font 0.0))
-	       (setf (pos     shell) (sb-cga:vec xf
-						 (d+ (d* line-count actual-height-font)
-						     actual-height)
-						 0.0))
-	       (add-child object shell))))))))
+           (line       lines   (rest line)))
+          ((not line))
+        (declare (list line))
+        (declare (desired-type line-count))
+        (loop
+           for c across (the simple-string (elt line 0))
+           for xf single-float from  0.0 by label-font-size do
+           (let* ((mesh  (get-char-mesh label-font c))
+                  (shell (if mesh
+                             (fill-font-mesh-shell mesh :color label-font-color)
+                             nil)))
+             (when shell
+               (setf (scaling shell) (sb-cga:vec label-font-size actual-height-font 0.0))
+               (setf (pos     shell) (sb-cga:vec xf
+                                                 (d+ (d* line-count actual-height-font)
+                                                     actual-height)
+                                                 0.0))
+               (add-child object shell))))))))
 
 (defmethod label-width ((object static-text))
   (width object))
@@ -1078,27 +1078,27 @@
 
 (defmethod initialize-instance :after ((object h-bar) &key (color :blue) &allow-other-keys)
   (with-accessors ((actual-bar actual-bar)
-		   (label-width label-width)) object
+                   (label-width label-width)) object
     (with-slots (fill-level label) object
       (when color
-	(case color
-	  (:blue
-	   (setf (texture-object actual-bar) (get-texture +blue-h-bar+)))
-	  (:red
-	   (setf (texture-object actual-bar) (get-texture +red-h-bar+)))
-	  (:green
-	   (setf (texture-object actual-bar) (get-texture +green-h-bar+)))
-	  (otherwise
-	   (setf (texture-object actual-bar) (get-texture +blue-h-bar+)))))
+        (case color
+          (:blue
+           (setf (texture-object actual-bar) (get-texture +blue-h-bar+)))
+          (:red
+           (setf (texture-object actual-bar) (get-texture +red-h-bar+)))
+          (:green
+           (setf (texture-object actual-bar) (get-texture +green-h-bar+)))
+          (otherwise
+           (setf (texture-object actual-bar) (get-texture +blue-h-bar+)))))
       (add-quad-for-widget actual-bar)
       (prepare-for-rendering object)
       (add-child object actual-bar)
       (when label
-	(setf (label object) label))
+        (setf (label object) label))
       (when fill-level
-	(setf (fill-level object) fill-level))
+        (setf (fill-level object) fill-level))
       (transform-vertices actual-bar (sb-cga:scale* (d- (width object) label-width)
-						    (height object) 1.0))
+                                                    (height object) 1.0))
       (prepare-for-rendering actual-bar)
       (setf (pos actual-bar) (sb-cga:vec (label-width object) 0.0 0.0)))))
 
@@ -1110,39 +1110,39 @@
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (simple-string new-label))
   (with-accessors ((label-font label-font)
-		   (label-font-size label-font-size)
-		   (label-font-color label-font-color)
-		   (children children)
-		   (label-shells label-shells)) object
+                   (label-font-size label-font-size)
+                   (label-font-color label-font-color)
+                   (children children)
+                   (label-shells label-shells)) object
     (declare (desired-type label-font-size))
     (with-slots (label) object
       (declare (simple-string label))
       (setf label new-label)
       (loop for c across label do
-	   (let* ((mesh  (get-char-mesh label-font c))
-		  (shell (if mesh
-			     (fill-font-mesh-shell mesh :color label-font-color)
-			     nil)))
-	     (when shell
-	       (vector-push-extend shell label-shells)
-	       (add-child object shell)))))))
+           (let* ((mesh  (get-char-mesh label-font c))
+                  (shell (if mesh
+                             (fill-font-mesh-shell mesh :color label-font-color)
+                             nil)))
+             (when shell
+               (vector-push-extend shell label-shells)
+               (add-child object shell)))))))
 
 (defmethod (setf label) (new-label (object h-bar))
   (declare (optimize (debug 0) (speed 1) (safety 0)))
   (declare (simple-string new-label))
   (with-accessors ((label-font label-font)
-		   (label-font-size label-font-size)
-		   (height height)
-		   (width width)
-		   (label-shells label-shells)) object
+                   (label-font-size label-font-size)
+                   (height height)
+                   (width width)
+                   (label-shells label-shells)) object
     (declare (desired-type width height label-font-size))
     (declare ((array font-mesh-shell (*)) label-shells))
     (setup-label object new-label)
     (loop
        for l across label-shells
        for xf single-float from 0.0 by label-font-size do
-	 (setf (scaling l) (sb-cga:vec label-font-size height 0.0))
-	 (setf (pos l)     (sb-cga:vec xf 0.0 0.0)))))
+         (setf (scaling l) (sb-cga:vec label-font-size height 0.0))
+         (setf (pos l)     (sb-cga:vec xf 0.0 0.0)))))
 
 (defgeneric (setf fill-level) (value object))
 
@@ -1155,7 +1155,7 @@
 (defclass window (widget)
   ((top-bar
     :initform (make-instance 'widget
-			     :height (top-bar-h *reference-sizes*))
+                             :height (top-bar-h *reference-sizes*))
     :initarg  :top-bar
     :accessor top-bar)
    (frame
@@ -1177,195 +1177,195 @@
 (defmethod initialize-instance :after ((object window) &key &allow-other-keys)
   (with-slots (label) object
     (with-accessors ((width width) (height height)
-		     (top-bar top-bar)
-		     (frame frame)) object
+                     (top-bar top-bar)
+                     (frame frame)) object
       (let ((top-bar-h (height top-bar))
-	    (title-font-size-scaling (title-font-size-scaling *reference-sizes*))
-	    (button-y-relative (button-y-relative *reference-sizes*))
-	    (button-x-relative (button-x-relative *reference-sizes*))
-	    (button-h-relative (button-h-relative *reference-sizes*)))
-	(prepare-for-rendering object)
-	(add-quad-for-widget top-bar)
-	(transform-vertices top-bar     (sb-cga:scale* (width object) top-bar-h 1.0))
-	(setf (texture-object top-bar)  (get-texture +window-top-bar-texture-name+))
-	(setf (pos top-bar)             (sb-cga:vec 0.0 (d- height top-bar-h) 0.0))
-	(setf (label-font-size top-bar) (d* top-bar-h title-font-size-scaling))
-	(when label
-	  (setf (label object) label))
-	;; add button
-	(let ((button (make-instance 'naked-button
-				     :x        (d- width
-						   (d+ (d* top-bar-h button-h-relative)
-						       (d* width button-x-relative)))
-				     :y        (d* button-y-relative top-bar-h)
-				     :width    (d* button-h-relative top-bar-h)
-				     :height   (d* button-h-relative top-bar-h)
-				     :callback #'hide-grandparent-cb)))
-	  (setf (texture-object  button) (get-texture +window-close-button-texture-name+))
-	  (setf (texture-pressed button) (get-texture +window-close-button-pressed-texture-name+))
-	  (setf (texture-overlay button) (get-texture +button-cancel-texture-name+))
-	  (setf (current-texture button) (texture-object button))
-	  (prepare-for-rendering button)
-	  (add-child top-bar button)
-	  (setf (close-button object) button)
-	  (prepare-for-rendering top-bar)
-	  ;; add main frame
-	  (add-quad-for-widget frame)
-	  (transform-vertices frame    (sb-cga:scale* (width object) (d- height top-bar-h) 1.0))
-	  (setf (texture-object frame) (get-texture +frame-texture-name+)
-	        (pos            frame) (sb-cga:vec 0.0 0.0 0.0)
-		(width          frame) (width object)
-		(height         frame) (d- height top-bar-h))
-	  (prepare-for-rendering frame)
-	  (add-child object frame)
-	  (add-child object top-bar))))))
+            (title-font-size-scaling (title-font-size-scaling *reference-sizes*))
+            (button-y-relative (button-y-relative *reference-sizes*))
+            (button-x-relative (button-x-relative *reference-sizes*))
+            (button-h-relative (button-h-relative *reference-sizes*)))
+        (prepare-for-rendering object)
+        (add-quad-for-widget top-bar)
+        (transform-vertices top-bar     (sb-cga:scale* (width object) top-bar-h 1.0))
+        (setf (texture-object top-bar)  (get-texture +window-top-bar-texture-name+))
+        (setf (pos top-bar)             (sb-cga:vec 0.0 (d- height top-bar-h) 0.0))
+        (setf (label-font-size top-bar) (d* top-bar-h title-font-size-scaling))
+        (when label
+          (setf (label object) label))
+        ;; add button
+        (let ((button (make-instance 'naked-button
+                                     :x        (d- width
+                                                   (d+ (d* top-bar-h button-h-relative)
+                                                       (d* width button-x-relative)))
+                                     :y        (d* button-y-relative top-bar-h)
+                                     :width    (d* button-h-relative top-bar-h)
+                                     :height   (d* button-h-relative top-bar-h)
+                                     :callback #'hide-grandparent-cb)))
+          (setf (texture-object  button) (get-texture +window-close-button-texture-name+))
+          (setf (texture-pressed button) (get-texture +window-close-button-pressed-texture-name+))
+          (setf (texture-overlay button) (get-texture +button-cancel-texture-name+))
+          (setf (current-texture button) (texture-object button))
+          (prepare-for-rendering button)
+          (add-child top-bar button)
+          (setf (close-button object) button)
+          (prepare-for-rendering top-bar)
+          ;; add main frame
+          (add-quad-for-widget frame)
+          (transform-vertices frame    (sb-cga:scale* (width object) (d- height top-bar-h) 1.0))
+          (setf (texture-object frame) (get-texture +frame-texture-name+)
+                (pos            frame) (sb-cga:vec 0.0 0.0 0.0)
+                (width          frame) (width object)
+                (height         frame) (d- height top-bar-h))
+          (prepare-for-rendering frame)
+          (add-child object frame)
+          (add-child object top-bar))))))
 
 (defmethod add-child :after ((object window) child
- 			     &optional (child-pos (length (children object))))
+                             &optional (child-pos (length (children object))))
   (with-accessors ((width width)) object
     (with-accessors ((x-child x) (y-child y)
-		     (last-window-added-to last-window-added-to)) child
+                     (last-window-added-to last-window-added-to)) child
       (when (not (and last-window-added-to
-		      (eq  object last-window-added-to)))
-	(setf last-window-added-to object)
-	(when (> child-pos 2) ;; skip the titlebar , the frame and the close-button
-	  (setf x-child (d+ x-child
-			    (d* (left-frame-offset *reference-sizes*)
-				(width object))))
-	  (when *child-flip-y*
-	    (setf y-child (flip-y object child))))))))
+                      (eq  object last-window-added-to)))
+        (setf last-window-added-to object)
+        (when (> child-pos 2) ;; skip the titlebar , the frame and the close-button
+          (setf x-child (d+ x-child
+                            (d* (left-frame-offset *reference-sizes*)
+                                (width object))))
+          (when *child-flip-y*
+            (setf y-child (flip-y object child))))))))
 
 (defmethod (setf label) (new-label (object window))
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (simple-string new-label))
   (with-accessors ((label-font label-font)
-		   (top-bar top-bar)
-		   (height height)
-		   (width width)) object
+                   (top-bar top-bar)
+                   (height height)
+                   (width width)) object
     (declare (desired-type width height))
     (with-accessors ((bar-label-font-size label-font-size)
-		     (bar-children children)) top-bar
+                     (bar-children children)) top-bar
       (declare (desired-type bar-label-font-size))
       (let ((top-bar-h (top-bar-h *reference-sizes*))
-	    (top-bar-relative-offset (top-bar-relative-offset *reference-sizes*)))
-	(declare (desired-type top-bar-h top-bar-relative-offset))
-	(common-setup-label top-bar new-label)
-	(let* ((label-width   (label-width top-bar))
-	       (scaling-width (d/ (d- width (d* width (relative-title-space *reference-sizes*)))
-				  label-width)))
-	  (when (d< scaling-width 1.0)
-	    (setf bar-label-font-size (d* bar-label-font-size scaling-width)))
-	  (loop
-	     for l across (the (simple-array triangle-mesh (*)) bar-children)
-	     for xf from 0.0 by bar-label-font-size do
-	       (setf (scaling l) (sb-cga:vec bar-label-font-size bar-label-font-size 0.0))
-	       (setf (pos l)     (sb-cga:vec (d+ (d* width top-bar-relative-offset) xf)
-					     (d- (d* top-bar-h 0.5)
-						 (d* bar-label-font-size 0.5))
-					     0.0))))))))
+            (top-bar-relative-offset (top-bar-relative-offset *reference-sizes*)))
+        (declare (desired-type top-bar-h top-bar-relative-offset))
+        (common-setup-label top-bar new-label)
+        (let* ((label-width   (label-width top-bar))
+               (scaling-width (d/ (d- width (d* width (relative-title-space *reference-sizes*)))
+                                  label-width)))
+          (when (d< scaling-width 1.0)
+            (setf bar-label-font-size (d* bar-label-font-size scaling-width)))
+          (loop
+             for l across (the (simple-array triangle-mesh (*)) bar-children)
+             for xf from 0.0 by bar-label-font-size do
+               (setf (scaling l) (sb-cga:vec bar-label-font-size bar-label-font-size 0.0))
+               (setf (pos l)     (sb-cga:vec (d+ (d* width top-bar-relative-offset) xf)
+                                             (d- (d* top-bar-h 0.5)
+                                                 (d* bar-label-font-size 0.5))
+                                             0.0))))))))
 
 (defmethod render ((object window) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((vbo vbo)
-		   (vao vao)
-		   (texture-object texture-object)
-		   (projection-matrix projection-matrix)
-		   (model-matrix model-matrix)
-		   (view-matrix view-matrix)
-		   (compiled-shaders compiled-shaders)
-		   (triangles triangles)
-		   (material-params material-params)
-		   (shown shown)) object
+                   (vao vao)
+                   (texture-object texture-object)
+                   (projection-matrix projection-matrix)
+                   (model-matrix model-matrix)
+                   (view-matrix view-matrix)
+                   (compiled-shaders compiled-shaders)
+                   (triangles triangles)
+                   (material-params material-params)
+                   (shown shown)) object
     (declare (texture:texture texture-object))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
     (when shown
       (when (> (length triangles) 0)
-	(with-camera-view-matrix (camera-vw-matrix renderer)
-	  (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-	    (use-program compiled-shaders :gui)
-	    (gl:active-texture :texture0)
-	    (texture:bind-texture texture-object)
-	    (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
-	    (uniformfv compiled-shaders :ia #(1.0 1.0 1.0))
-	    (uniform-matrix compiled-shaders :modelview-matrix 4
-				     (vector (sb-cga:matrix* camera-vw-matrix
-							     (elt view-matrix 0)
-							     (elt model-matrix 0)))
-				     nil)
-	    (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
-	    (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-	    (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))
+        (with-camera-view-matrix (camera-vw-matrix renderer)
+          (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+            (use-program compiled-shaders :gui)
+            (gl:active-texture :texture0)
+            (texture:bind-texture texture-object)
+            (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+            (uniformfv compiled-shaders :ia #(1.0 1.0 1.0))
+            (uniform-matrix compiled-shaders :modelview-matrix 4
+                                     (vector (sb-cga:matrix* camera-vw-matrix
+                                                             (elt view-matrix 0)
+                                                             (elt model-matrix 0)))
+                                     nil)
+            (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+            (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+            (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))
       (do-children-mesh (c object)
-	(render c renderer)))))
+        (render c renderer)))))
 
 (defmethod flip-y ((object window) (child widget))
   (declare (optimize (debug 3) (speed 0) (safety 3)))
   (with-accessors ((parent-h height) (frame frame)) object
     (with-accessors ((child-y y) (child-h height)) child
       (let* ((frame-h (d- (height frame)
-			  (d* (top-frame-offset *reference-sizes*) (height (frame object)))))
-	     (scale   (d/ (d- frame-h child-y)
-			  frame-h))
-	     (child-new-y  (d- (d* scale frame-h)
-			       child-h)))
-	(if (< child-y frame-h)
-	    child-new-y
-	    (d+ (d- (d- parent-h child-y) child-h)
-		(d* (bottom-frame-offset *reference-sizes*) (height (frame object)))))))))
+                          (d* (top-frame-offset *reference-sizes*) (height (frame object)))))
+             (scale   (d/ (d- frame-h child-y)
+                          frame-h))
+             (child-new-y  (d- (d* scale frame-h)
+                               child-h)))
+        (if (< child-y frame-h)
+            child-new-y
+            (d+ (d- (d- parent-h child-y) child-h)
+                (d* (bottom-frame-offset *reference-sizes*) (height (frame object)))))))))
 
 (defmethod on-mouse-pressed ((object window) event)
   (with-accessors ((dragging-mode dragging-mode)) object
     (if (and (shown object)
-	     (mouse-over object (x-event event) (y-event event)))
-	(progn
-	  (do-children-from-end (w object)
-	    (when (and (widgetp w)
-		       (on-mouse-pressed w event))
-	      (return-from on-mouse-pressed t)))
-	  t)
-	nil)))
+             (mouse-over object (x-event event) (y-event event)))
+        (progn
+          (do-children-from-end (w object)
+            (when (and (widgetp w)
+                       (on-mouse-pressed w event))
+              (return-from on-mouse-pressed t)))
+          t)
+        nil)))
 
 (defmethod on-mouse-released ((object window) event)
   (if (and (shown object)
-	   (mouse-over object (x-event event) (y-event event)))
+           (mouse-over object (x-event event) (y-event event)))
       (progn
-	(do-children-from-end (w object)
-	     (when (and (widgetp w)
-			(on-mouse-released w event))
-	       (return-from on-mouse-released t)))
-	t)
+        (do-children-from-end (w object)
+             (when (and (widgetp w)
+                        (on-mouse-released w event))
+               (return-from on-mouse-released t)))
+        t)
       nil))
 
 (defun other-window-dragging-mode-p (me)
   (find-child-if (find-root-widget me)
-		 #'(lambda (a) (and
-				(windowp a)
-				(dragging-mode a)
-				(not (= (id a) (id me)))))))
+                 #'(lambda (a) (and
+                                (windowp a)
+                                (dragging-mode a)
+                                (not (= (id a) (id me)))))))
 
 (defmethod on-mouse-dragged ((object window) event)
   (with-accessors ((dragging-mode dragging-mode)) object
     (if (and dragging-mode
-	     (not (other-window-dragging-mode-p object)))
-	(progn
-	  (setf (pos object) (sb-cga:vec+ (pos object)
-					  (sb-cga:vec (dx-event event)
-						      (dy-event event)
-						      0.0)))
-	  t)
-	(progn
-	  (loop for w across (children object) do
-	       (when (and (widgetp w)
-			  (on-mouse-dragged w event))
-		 (return-from on-mouse-dragged t)))
-	  (if (and
-	       (mouse-over (top-bar object) (x-event event) (y-event event))
-	       (not (other-window-dragging-mode-p object)))
-	      (progn
-		(setf dragging-mode t)
-		t)
-	      nil)))))
+             (not (other-window-dragging-mode-p object)))
+        (progn
+          (setf (pos object) (sb-cga:vec+ (pos object)
+                                          (sb-cga:vec (dx-event event)
+                                                      (dy-event event)
+                                                      0.0)))
+          t)
+        (progn
+          (loop for w across (children object) do
+               (when (and (widgetp w)
+                          (on-mouse-dragged w event))
+                 (return-from on-mouse-dragged t)))
+          (if (and
+               (mouse-over (top-bar object) (x-event event) (y-event event))
+               (not (other-window-dragging-mode-p object)))
+              (progn
+                (setf dragging-mode t)
+                t)
+              nil)))))
 
 (defclass labeled-check-button (widget)
   ((button
@@ -1378,27 +1378,27 @@
     :accessor text)))
 
 (defmethod initialize-instance :after ((object labeled-check-button) &key
-								       (callback nil)
-								       (color :green)
-								       &allow-other-keys)
+                                                                       (callback nil)
+                                                                       (color :green)
+                                                                       &allow-other-keys)
   (with-accessors ((button button) (text text)
-		   (width width) (height height)
-		   (label label)
-		   (label-font-size label-font-size)) object
+                   (width width) (height height)
+                   (label label)
+                   (label-font-size label-font-size)) object
     (setf button (make-instance 'check-button :width height :height height
-				:color color
-				:callback callback
-				:x (d- width height) :y 0.0))
+                                :color color
+                                :callback callback
+                                :x (d- width height) :y 0.0))
     (let ((text-font-size (min label-font-size
-			       (d* (label-font-size object)
-				   (d/ (d- width height) (label-width object))))))
+                               (d* (label-font-size object)
+                                   (d/ (d- width height) (label-width object))))))
       (setf text (make-instance 'simple-label
-				:x 0.0
-				:y (d- (d/ height 2.0) (d/ text-font-size 2.0))
-				:width (d- width height)
-				:label label
-				:justified nil
-				:label-font-size text-font-size)))
+                                :x 0.0
+                                :y (d- (d/ height 2.0) (d/ text-font-size 2.0))
+                                :width (d- width height)
+                                :label label
+                                :justified nil
+                                :label-font-size text-font-size)))
     (add-child object text)
     (add-child object button)))
 
@@ -1438,10 +1438,10 @@
     (loop
        for b in buttons
        for i from 0 by 1 do
-	 (setf (elt res i)
-	        (if (typep b 'labeled-check-button)
-		    (button b)
-		    b)))
+         (setf (elt res i)
+                (if (typep b 'labeled-check-button)
+                    (button b)
+                    b)))
     res))
 
 (defun make-check-group* (&rest buttons)
@@ -1452,14 +1452,14 @@
 
 (defun make-file-chooser-square-button (overlay x y callback)
   (make-instance 'naked-button
-		 :x x
-		 :y y
-		 :width  (fchooser-button-size)
-		 :height (fchooser-button-size)
-		 :texture-object  (get-texture +square-button-texture-name+)
-		 :texture-pressed (get-texture +square-button-pressed-texture-name+)
-		 :texture-overlay (get-texture overlay)
-		 :callback        callback))
+                 :x x
+                 :y y
+                 :width  (fchooser-button-size)
+                 :height (fchooser-button-size)
+                 :texture-object  (get-texture +square-button-texture-name+)
+                 :texture-pressed (get-texture +square-button-pressed-texture-name+)
+                 :texture-overlay (get-texture overlay)
+                 :callback        callback))
 
 (defun file-chooser-w ()
   (d/ (d *window-w*) 2.0))
@@ -1502,75 +1502,75 @@
 (defclass file-chooser (window)
   ((b-updir
     :initform (make-instance 'button
-			     :height (fchooser-file-button-h)
-			     :width  (fchooser-file-button-w)
-			     :x 0.0
-			     :y 0.0
-			     :callback #'dir-up-cb
-			     :label "..")
+                             :height (fchooser-file-button-h)
+                             :width  (fchooser-file-button-w)
+                             :x 0.0
+                             :y 0.0
+                             :callback #'dir-up-cb
+                             :label "..")
     :initarg  :b-updir
     :accessor b-updir)
    (b-dir-scroll-up
     :initform (make-file-chooser-square-button +up-overlay-texture-name+
-					       0.0
-					       (fchooser-cumulative-file-buttons-h)
-					       #'dir-scroll-up-cb)
+                                               0.0
+                                               (fchooser-cumulative-file-buttons-h)
+                                               #'dir-scroll-up-cb)
     :initarg  :b-dir-scroll-up
     :accessor b-dir-scroll-up)
    (b-dir-scroll-down
     :initform (make-file-chooser-square-button +down-overlay-texture-name+
-					       (fchooser-button-size)
-					       (fchooser-cumulative-file-buttons-h)
-					       #'dir-scroll-down-cb)
+                                               (fchooser-button-size)
+                                               (fchooser-cumulative-file-buttons-h)
+                                               #'dir-scroll-down-cb)
     :initarg  :b-dir-scroll-down
     :accessor b-dir-scroll-down)
    (b-file-scroll-up
     :initform (make-file-chooser-square-button +up-overlay-texture-name+
-					       (d/ (file-chooser-w) 2.5)
-					       (fchooser-cumulative-file-buttons-h)
-					       #'file-scroll-up-cb)
+                                               (d/ (file-chooser-w) 2.5)
+                                               (fchooser-cumulative-file-buttons-h)
+                                               #'file-scroll-up-cb)
     :initarg  :b-file-scroll-up
     :accessor b-file-scroll-up)
    (b-file-scroll-down
     :initform (make-file-chooser-square-button +down-overlay-texture-name+
-					       (d+ (d/ (file-chooser-w) 2.5)
-						   (fchooser-button-size))
-					       (fchooser-cumulative-file-buttons-h)
-					       #'file-scroll-down-cb)
+                                               (d+ (d/ (file-chooser-w) 2.5)
+                                                   (fchooser-button-size))
+                                               (fchooser-cumulative-file-buttons-h)
+                                               #'file-scroll-down-cb)
     :initarg  :b-file-scroll-down
     :accessor b-file-scroll-down)
    (b-ok
     :initform (make-instance 'naked-button
-			     :x 0.0
-			     :y (fchooser-ok/close-y)
-			     :width  (fchooser-button-size)
-			     :height (fchooser-button-size)
-			     :texture-object  (get-texture +square-button-texture-name+)
-			     :texture-pressed (get-texture +square-button-pressed-texture-name+)
-			     :texture-overlay (get-texture +button-ok-texture-name+)
-			     :callback        nil) ;TODO)
+                             :x 0.0
+                             :y (fchooser-ok/close-y)
+                             :width  (fchooser-button-size)
+                             :height (fchooser-button-size)
+                             :texture-object  (get-texture +square-button-texture-name+)
+                             :texture-pressed (get-texture +square-button-pressed-texture-name+)
+                             :texture-overlay (get-texture +button-ok-texture-name+)
+                             :callback        nil) ;TODO)
     :initarg  :b-ok
     :accessor b-ok)
    (b-close
     :initform (make-instance 'naked-button
-			     :x (fchooser-button-size)
-			     :y (fchooser-ok/close-y)
-			     :width  (fchooser-button-size)
-			     :height (fchooser-button-size)
-			     :texture-object  (get-texture +square-button-texture-name+)
-			     :texture-pressed (get-texture +square-button-pressed-texture-name+)
-			     :texture-overlay (get-texture +button-cancel-texture-name+)
-			     :callback        #'hide-parent-cb)
+                             :x (fchooser-button-size)
+                             :y (fchooser-ok/close-y)
+                             :width  (fchooser-button-size)
+                             :height (fchooser-button-size)
+                             :texture-object  (get-texture +square-button-texture-name+)
+                             :texture-pressed (get-texture +square-button-pressed-texture-name+)
+                             :texture-overlay (get-texture +button-cancel-texture-name+)
+                             :callback        #'hide-parent-cb)
     :initarg  :b-close
     :accessor b-close)
 
    (input-path
     :initform (make-instance 'text-field
-			     :width  (fchooser-input-w)
-			     :height (fchooser-input-h)
-			     :x      0.0
-			     :y      (fchooser-input-y)
-			     :label nil)
+                             :width  (fchooser-input-w)
+                             :height (fchooser-input-h)
+                             :x      0.0
+                             :y      (fchooser-input-y)
+                             :label nil)
     :initarg :input-path
     :accessor input-path)
    (display-hidden
@@ -1600,21 +1600,21 @@
 
 (defmethod initialize-instance :after ((object file-chooser) &key &allow-other-keys)
   (with-accessors ((b-ok b-ok)
-		   (b-close b-close)
-		   (b-updir b-updir)
-		   (b-dir-scroll-down b-dir-scroll-down)
-		   (b-dir-scroll-up b-dir-scroll-up)
-		   (b-file-scroll-down b-file-scroll-down)
-		   (b-file-scroll-up b-file-scroll-up)
-		   (input-path input-path))              object
+                   (b-close b-close)
+                   (b-updir b-updir)
+                   (b-dir-scroll-down b-dir-scroll-down)
+                   (b-dir-scroll-up b-dir-scroll-up)
+                   (b-file-scroll-down b-file-scroll-down)
+                   (b-file-scroll-up b-file-scroll-up)
+                   (input-path input-path))              object
     (regenerate-dir-buttons object)
     (regenerate-file-buttons object)
     (setf (label input-path) (current-dir object))
     (add-children* object b-updir
-		   input-path
-		   b-close b-ok
-		   b-dir-scroll-up   b-dir-scroll-down
-		   b-file-scroll-up  b-file-scroll-down)))
+                   input-path
+                   b-close b-ok
+                   b-dir-scroll-up   b-dir-scroll-down
+                   b-file-scroll-up  b-file-scroll-down)))
 
 (defgeneric fetch-file-chooser-path (object))
 
@@ -1633,11 +1633,11 @@
   (remove-file-slot-button-by-label object)
   (setf (all-dirs object) (fchooser-init-dirs-file-slots))
   (loop for d in (sort (uiop:subdirectories (current-dir object))
-		       #'string< :key #'uiop:native-namestring)    do
+                       #'string< :key #'uiop:native-namestring)    do
        (let ((phys-name (uiop:native-namestring d)))
-	 (when (or (display-hidden object)
-		   (not (filesystem-utils:path-to-hidden-file-p phys-name)))
-	   (vector-push-extend phys-name (all-dirs object)))))
+         (when (or (display-hidden object)
+                   (not (filesystem-utils:path-to-hidden-file-p phys-name)))
+           (vector-push-extend phys-name (all-dirs object)))))
   (setf (from-dir object) 0)
   (refresh-dir-buttons object))
 
@@ -1645,57 +1645,57 @@
   (remove-file-slot-button-by-label object)
   (loop
      for i from (from-dir object) below (min (length (all-dirs object))
-					     (f+ (from-dir object) +file-visible-slot+))
+                                             (f+ (from-dir object) +file-visible-slot+))
      for y from (fchooser-file-button-h) by (fchooser-file-button-h) do
        (let ((b-dir (make-instance 'button
-				   :height (fchooser-file-button-h)
-				   :width  (fchooser-file-button-w)
-				   :x 0.0
-				   :y y
-				   :callback #'dir-enter-cb
-				   :compiled-shaders (compiled-shaders object)
-				   :label (elt (all-dirs object) i))))
-	 (add-child object b-dir))))
+                                   :height (fchooser-file-button-h)
+                                   :width  (fchooser-file-button-w)
+                                   :x 0.0
+                                   :y y
+                                   :callback #'dir-enter-cb
+                                   :compiled-shaders (compiled-shaders object)
+                                   :label (elt (all-dirs object) i))))
+         (add-child object b-dir))))
 
 (defmethod refresh-file-buttons ((object file-chooser))
   (remove-file-slot-button-by-label object)
   (loop
      for i from (from-file object) below (min (length (all-files object))
-					      (f+ (from-file object) +file-visible-slot+))
+                                              (f+ (from-file object) +file-visible-slot+))
      for y from  (fchooser-file-button-h) by (fchooser-file-button-h) do
        (let* ((filename (elt (all-files object) i))
-	      (b-file (make-instance 'button
-				     :height (fchooser-file-button-h)
-				     :width  (fchooser-file-button-w)
-				     :x (d/ (file-chooser-w) 2.5)
-				     :y y
-				     :callback #'file-click-cb
-				     :compiled-shaders (compiled-shaders object)
-				     :label filename)))
-	 (add-child object b-file))))
+              (b-file (make-instance 'button
+                                     :height (fchooser-file-button-h)
+                                     :width  (fchooser-file-button-w)
+                                     :x (d/ (file-chooser-w) 2.5)
+                                     :y y
+                                     :callback #'file-click-cb
+                                     :compiled-shaders (compiled-shaders object)
+                                     :label filename)))
+         (add-child object b-file))))
 
 (defun remove-file-slot-button-by-label (chooser)
   (setf (children chooser)
-	(remove-if #'(lambda (c) (and (typep c 'button)
-				      (find (label c) (all-files chooser) :test #'string=)))
-		   (children chooser))))
+        (remove-if #'(lambda (c) (and (typep c 'button)
+                                      (find (label c) (all-files chooser) :test #'string=)))
+                   (children chooser))))
 
 (defun remove-dir-slot-button-by-label (chooser)
   (setf (children chooser)
-	(remove-if #'(lambda (c) (and (typep c 'button)
-				      (find (label c) (all-dirs chooser) :test #'string=)))
-		   (children chooser))))
+        (remove-if #'(lambda (c) (and (typep c 'button)
+                                      (find (label c) (all-dirs chooser) :test #'string=)))
+                   (children chooser))))
 
 (defmethod regenerate-file-buttons ((object file-chooser))
   (remove-file-slot-button-by-label object)
   (setf (all-files object) (fchooser-init-dirs-file-slots))
   (loop for d in (sort (fs:directory-files (current-dir object))
-		       #'string< :key #'uiop:native-namestring)    do
+                       #'string< :key #'uiop:native-namestring)    do
        (let ((phys-name (uiop:native-namestring d)))
-	 (when (or (display-hidden object)
-		   (not (filesystem-utils:path-to-hidden-file-p phys-name)))
-	   (vector-push-extend (filesystem-utils:strip-dirs-from-path phys-name)
-			       (all-files object)))))
+         (when (or (display-hidden object)
+                   (not (filesystem-utils:path-to-hidden-file-p phys-name)))
+           (vector-push-extend (filesystem-utils:strip-dirs-from-path phys-name)
+                               (all-files object)))))
   (setf (from-file object) 0)
   (refresh-file-buttons object))
 
@@ -1703,9 +1703,9 @@
   (declare (ignore event))
   (with-parent-widget (win) button
     (setf (from-dir win)
-	  (alexandria:clamp (1+ (from-dir win))
-			    0
-			    (max 0 (- (length (all-dirs win)) +file-visible-slot+))))
+          (alexandria:clamp (1+ (from-dir win))
+                            0
+                            (max 0 (- (length (all-dirs win)) +file-visible-slot+))))
     (refresh-dir-buttons win)))
 
 (defun dir-scroll-up-cb (button event)
@@ -1718,9 +1718,9 @@
   (declare (ignore event))
   (with-parent-widget (win) button
     (setf (from-file win)
-	  (alexandria:clamp (1+ (from-file win))
-			    0
-			    (max 0 (- (length (all-files win)) +file-visible-slot+))))
+          (alexandria:clamp (1+ (from-file win))
+                            0
+                            (max 0 (- (length (all-files win)) +file-visible-slot+))))
     (refresh-file-buttons win)))
 
 (defun file-scroll-up-cb (button event)
@@ -1759,13 +1759,13 @@
 
 (defun make-file-chooser (&optional (ok-callback #'hide-parent-cb))
   (let ((win (make-instance 'file-chooser
-			    :x (d- (d/ (d *window-w*) 2.0)
-				   (d/ (file-chooser-w) 2.0))
-			    :y (d- (d/ (d *window-h*) 2.0)
-				   (d/ (file-chooser-h) 2.0))
-			    :width  (file-chooser-w)
-			    :height (file-chooser-h)
-			    :label  (_ "Choose file"))))
+                            :x (d- (d/ (d *window-w*) 2.0)
+                                   (d/ (file-chooser-w) 2.0))
+                            :y (d- (d/ (d *window-h*) 2.0)
+                                   (d/ (file-chooser-h) 2.0))
+                            :width  (file-chooser-w)
+                            :height (file-chooser-h)
+                            :label  (_ "Choose file"))))
     (setf (callback (b-ok win)) ok-callback)
     win))
 
@@ -1776,56 +1776,56 @@
 
 (defun make-square-button (x y overlay callback &key (small nil))
   (let ((size (if small
-		  *small-square-button-size*
-		  *square-button-size*)))
+                  *small-square-button-size*
+                  *square-button-size*)))
     (make-instance 'naked-button
-		   :x x :y y
-		   :width size :height size
-		   :texture-object  (get-texture +square-button-texture-name+)
-		   :texture-pressed (get-texture +square-button-pressed-texture-name+)
-		   :texture-overlay (get-texture overlay)
-		   :callback        callback)))
+                   :x x :y y
+                   :width size :height size
+                   :texture-object  (get-texture +square-button-texture-name+)
+                   :texture-pressed (get-texture +square-button-pressed-texture-name+)
+                   :texture-overlay (get-texture overlay)
+                   :callback        callback)))
 
 (defun make-rect-button (x y scale-w scale-h overlay callback)
   (make-instance 'naked-button
-		 :x               x
-		 :y               y
-		 :width           (rel->abs scale-w)
-		 :height          (rel->abs scale-h)
-		 :texture-object  (get-texture +square-button-texture-name+)
-		 :texture-pressed (get-texture +square-button-pressed-texture-name+)
-		 :texture-overlay (get-texture overlay)
-		 :callback        callback))
+                 :x               x
+                 :y               y
+                 :width           (rel->abs scale-w)
+                 :height          (rel->abs scale-h)
+                 :texture-object  (get-texture +square-button-texture-name+)
+                 :texture-pressed (get-texture +square-button-pressed-texture-name+)
+                 :texture-overlay (get-texture overlay)
+                 :callback        callback))
 
 (defun make-health-condition (x y size texture-name)
   (make-instance 'health-status-icon
-		 :animation-speed 2.0
-		 :x               x
-		 :y               y
-		 :width           (rel->abs size)
-		 :height          (rel->abs size)
-		 :texture-name    texture-name
-		 :shown           nil
-		 :button-status   nil))
+                 :animation-speed 2.0
+                 :x               x
+                 :y               y
+                 :width           (rel->abs size)
+                 :height          (rel->abs size)
+                 :texture-name    texture-name
+                 :shown           nil
+                 :button-status   nil))
 
 (defun next-turn-cb (w e)
   (declare (ignore e))
     (with-parent-widget (toolbar) w
       (with-accessors ((bound-player bound-player)) toolbar
-	(with-accessors ((state state)) bound-player
-	  (let ((event (make-instance 'game-event:end-turn
-				      :end-turn-count  (game-state:game-turn state))))
-	    (game-event:propagate-end-turn event)
-	    t)))))
+        (with-accessors ((state state)) bound-player
+          (let ((event (make-instance 'game-event:end-turn
+                                      :end-turn-count  (game-state:game-turn state))))
+            (game-event:propagate-end-turn event)
+            t)))))
 
 (defun rotate-cw-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
     (with-accessors ((bound-player bound-player)) toolbar
       (when bound-player
-	(let ((event (make-instance 'game-event:rotate-entity-cw-event
-				    :id-destination (id bound-player))))
-	  (game-event:propagate-rotate-entity-cw-event event)))))
+        (let ((event (make-instance 'game-event:rotate-entity-cw-event
+                                    :id-destination (id bound-player))))
+          (game-event:propagate-rotate-entity-cw-event event)))))
     t)
 
 (defun rotate-ccw-cb (w e)
@@ -1833,30 +1833,30 @@
   (with-parent-widget (toolbar) w
     (with-accessors ((bound-player bound-player)) toolbar
       (when bound-player
-	(let ((event (make-instance 'game-event:rotate-entity-ccw-event
-				    :id-destination (id bound-player))))
-	  (game-event:propagate-rotate-entity-ccw-event event)))))
+        (let ((event (make-instance 'game-event:rotate-entity-ccw-event
+                                    :id-destination (id bound-player))))
+          (game-event:propagate-rotate-entity-ccw-event event)))))
   t)
 
 (defun facing-door (game-state pos dir)
   "Pos in cost space, dir in world space"
   (let ((all-doors (game-state:get-neighborhood game-state
-						(elt pos 1)
-						(elt pos 0)
-						#'(lambda (a p)
-						    (declare (ignore p))
-						    (or (eq (game-state:el-type a)
-							    +door-n-type+)
-							(eq (game-state:el-type a)
-							    +door-s-type+)
-							(eq (game-state:el-type a)
-							    +door-w-type+)
-							(eq (game-state:el-type a)
-							    +door-e-type+)))))
-	(facing-door                           nil))
+                                                (elt pos 1)
+                                                (elt pos 0)
+                                                #'(lambda (a p)
+                                                    (declare (ignore p))
+                                                    (or (eq (game-state:el-type a)
+                                                            +door-n-type+)
+                                                        (eq (game-state:el-type a)
+                                                            +door-s-type+)
+                                                        (eq (game-state:el-type a)
+                                                            +door-w-type+)
+                                                        (eq (game-state:el-type a)
+                                                            +door-e-type+)))))
+        (facing-door                           nil))
     (loop for door across all-doors do
-	 (when (map-utils:facingp pos dir (cdr door))
-	   (setf facing-door door)))
+         (when (map-utils:facingp pos dir (cdr door))
+           (setf facing-door door)))
     facing-door))
 
 (defun open-cb (w e)
@@ -1864,16 +1864,16 @@
   (with-parent-widget (toolbar) w
     (with-accessors ((bound-player bound-player)) toolbar
       (when bound-player
-	(with-accessors ((dir dir)) bound-player
-	  (let* ((game-state  (mesh::state bound-player))
-		 (pos         (mesh:calculate-cost-position bound-player))
-		 (facing-door (facing-door game-state pos dir)))
-	    (when facing-door
-	      (let* ((id-door (entity-id (car facing-door)))
-		     (door-event (game-event:make-simple-event-w-dest 'game-event:open-door-event
-								      (id bound-player)
-								      id-door)))
-		(game-event:propagate-open-door-event door-event))))))))
+        (with-accessors ((dir dir)) bound-player
+          (let* ((game-state  (mesh::state bound-player))
+                 (pos         (mesh:calculate-cost-position bound-player))
+                 (facing-door (facing-door game-state pos dir)))
+            (when facing-door
+              (let* ((id-door (entity-id (car facing-door)))
+                     (door-event (game-event:make-simple-event-w-dest 'game-event:open-door-event
+                                                                      (id bound-player)
+                                                                      id-door)))
+                (game-event:propagate-open-door-event door-event))))))))
   t)
 
 (defun close-cb (w e)
@@ -1881,16 +1881,16 @@
   (with-parent-widget (toolbar) w
     (with-accessors ((bound-player bound-player)) toolbar
       (when bound-player
-	(with-accessors ((dir dir)) bound-player
-	  (let* ((game-state  (mesh::state bound-player))
-		 (pos         (mesh:calculate-cost-position bound-player))
-		 (facing-door (facing-door game-state pos dir)))
-	    (when facing-door
-	      (let* ((id-door (entity-id (car facing-door)))
-		     (door-event (game-event:make-simple-event-w-dest 'game-event:close-door-event
-								      (id bound-player)
-								      id-door)))
-		(game-event:propagate-close-door-event door-event))))))))
+        (with-accessors ((dir dir)) bound-player
+          (let* ((game-state  (mesh::state bound-player))
+                 (pos         (mesh:calculate-cost-position bound-player))
+                 (facing-door (facing-door game-state pos dir)))
+            (when facing-door
+              (let* ((id-door (entity-id (car facing-door)))
+                     (door-event (game-event:make-simple-event-w-dest 'game-event:close-door-event
+                                                                      (id bound-player)
+                                                                      id-door)))
+                (game-event:propagate-close-door-event door-event))))))))
   t)
 
 
@@ -1900,108 +1900,108 @@
 
 (defun %find-entity (state pos)
   (game-state:find-entity-by-id state
-				(game-state:entity-id (matrix:matrix-elt (map-state state)
-									 (elt pos 1)
-									 (elt pos 0)))))
+                                (game-state:entity-id (matrix:matrix-elt (map-state state)
+                                                                         (elt pos 1)
+                                                                         (elt pos 0)))))
 
 (defun lookup-chest (player)
   (let* ((map-state  (map-state (state player)))
-	 (pos        (map-utils:pos-entity-chunk->cost-pos (pos player)))
-	 (near-tiles (matrix:gen-4-neighbour-counterclockwise (elt pos 0)
-							      (elt pos 1)
-							      :add-center nil))
-	 (chests-pos (remove-if-not
-		      #'(lambda (p) (and (matrix:element@-inside-p map-state
-								   (elt p 1)
-								   (elt p 0))
-					 (%find-entity (state player) p)
-					 (containerp (ghost (%find-entity (state player) p)))))
-		      near-tiles)))
+         (pos        (map-utils:pos-entity-chunk->cost-pos (pos player)))
+         (near-tiles (matrix:gen-4-neighbour-counterclockwise (elt pos 0)
+                                                              (elt pos 1)
+                                                              :add-center nil))
+         (chests-pos (remove-if-not
+                      #'(lambda (p) (and (matrix:element@-inside-p map-state
+                                                                   (elt p 1)
+                                                                   (elt p 0))
+                                         (%find-entity (state player) p)
+                                         (containerp (ghost (%find-entity (state player) p)))))
+                      near-tiles)))
     #+debug-mode (misc:dbg "chest pos ~a" chests-pos)
     (and chests-pos
-	 (%find-entity (state player) (first chests-pos)))))
+         (%find-entity (state player) (first chests-pos)))))
 
 (defun toolbar-open-inventory-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
     (with-accessors ((bound-player bound-player)) toolbar
       (when bound-player
-	(with-accessors ((ghost ghost)) bound-player
-	  ;; lookup for chest
-	  (let* ((chest (lookup-chest bound-player))
-		 (inventory (make-inventory-window bound-player chest)))
-	    (setf (compiled-shaders inventory) (compiled-shaders toolbar))
-	    (add-child toolbar inventory))))))
+        (with-accessors ((ghost ghost)) bound-player
+          ;; lookup for chest
+          (let* ((chest (lookup-chest bound-player))
+                 (inventory (make-inventory-window bound-player chest)))
+            (setf (compiled-shaders inventory) (compiled-shaders toolbar))
+            (add-child toolbar inventory))))))
   t)
 
 (defun toolbar-move-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
     (with-accessors ((bound-player bound-player)
-		     (selected-action selected-action)) toolbar
+                     (selected-action selected-action)) toolbar
       (when bound-player
-	(setf selected-action +action-move+)))))
+        (setf selected-action +action-move+)))))
 
 (defun toolbar-attack-short-range-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
     (with-accessors ((bound-player bound-player)
-		     (selected-action selected-action)) toolbar
+                     (selected-action selected-action)) toolbar
       (when bound-player
-	(setf selected-action +action-attack-short-range+)))))
+        (setf selected-action +action-attack-short-range+)))))
 
 (defun toolbar-attack-long-range-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
     (with-accessors ((bound-player bound-player)
-		     (selected-action selected-action)) toolbar
+                     (selected-action selected-action)) toolbar
       (when bound-player
-	(setf selected-action +action-attack-long-range+)))))
+        (setf selected-action +action-attack-long-range+)))))
 
 (defun toolbar-attack-long-range-imprecise-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
     (with-accessors ((bound-player bound-player)
-		     (selected-action selected-action)) toolbar
+                     (selected-action selected-action)) toolbar
       (when bound-player
-	(setf selected-action +action-attack-long-range-imprecise+)))))
+        (setf selected-action +action-attack-long-range-imprecise+)))))
 
 (defun toolbar-conversation-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
     (with-accessors ((bound-player bound-player)
-		     (selected-action selected-action)) toolbar
+                     (selected-action selected-action)) toolbar
       (when bound-player
-	(multiple-value-bind (facing-entity map-element)
-	    (mesh:entity-facing bound-player)
-	  (when (and facing-entity
-		     (eq (game-state:el-type map-element)
-			 +magic-furniture-type+))
-	    (game-event:send-other-interaction-event bound-player facing-entity)))))))
+        (multiple-value-bind (facing-entity map-element)
+            (mesh:entity-facing bound-player)
+          (when (and facing-entity
+                     (eq (game-state:el-type map-element)
+                         +magic-furniture-type+))
+            (game-event:send-other-interaction-event bound-player facing-entity)))))))
 
 (defun toolbar-launch-spell-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
     (with-accessors ((bound-player bound-player)
-		     (selected-action selected-action)) toolbar
+                     (selected-action selected-action)) toolbar
       (when bound-player
-	(setf selected-action +action-launch-spell+)))))
+        (setf selected-action +action-launch-spell+)))))
 
 (defun toolbar-zoom-in-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
     (with-toolbar-world (world) toolbar
       (let ((camera (world:camera world)))
-	(setf (mode camera) :drag)
-	(camera:drag-camera (world:camera world) (sb-cga:vec .0 (d- +gui-zoom-entity+) .0))))))
+        (setf (mode camera) :drag)
+        (camera:drag-camera (world:camera world) (sb-cga:vec .0 (d- +gui-zoom-entity+) .0))))))
 
 (defun toolbar-zoom-out-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
     (with-toolbar-world (world) toolbar
       (let ((camera (world:camera world)))
-	(setf (mode camera) :drag)
-	(camera:drag-camera (world:camera world) (sb-cga:vec .0 +gui-zoom-entity+ .0))))))
+        (setf (mode camera) :drag)
+        (camera:drag-camera (world:camera world) (sb-cga:vec .0 +gui-zoom-entity+ .0))))))
 
 (defclass main-toolbar (widget)
   (#+debug-ai
@@ -2032,319 +2032,319 @@
    ;; first row
    (s-faint
     :initform (make-health-condition (d* 4.0 *small-square-button-size*)
-				     (d+ *small-square-button-size*
-					 (d* 0.5 *small-square-button-size*))
-				     0.25 +coma-texture-name+)
+                                     (d+ *small-square-button-size*
+                                         (d* 0.5 *small-square-button-size*))
+                                     0.25 +coma-texture-name+)
     :initarg  :s-faint
     :accessor s-faint)
    (s-poisoned
     :initform (make-health-condition (d+ (d* 4.0 *small-square-button-size*)
-					 (d* 0.5 *small-square-button-size*))
-				     (d+ *small-square-button-size*
-					 (d* 0.5 *small-square-button-size*))
-				     0.25 +poison-texture-name+)
+                                         (d* 0.5 *small-square-button-size*))
+                                     (d+ *small-square-button-size*
+                                         (d* 0.5 *small-square-button-size*))
+                                     0.25 +poison-texture-name+)
     :initarg  :s-poisoned
     :accessor s-poisoned)
    (s-terrorized
     :initform (make-health-condition (d* 4.0 *small-square-button-size*)
-				     *small-square-button-size*
-				     0.25 +terror-texture-name+)
+                                     *small-square-button-size*
+                                     0.25 +terror-texture-name+)
     :initarg  :s-terrorized
     :accessor s-terrorized)
    (s-berserk
     :initform (make-health-condition (d+ (d* 4.0 *small-square-button-size*)
-					 (d* 0.5 *small-square-button-size*))
-				     *small-square-button-size*
-				     0.25 +berserk-texture-name+)
+                                         (d* 0.5 *small-square-button-size*))
+                                     *small-square-button-size*
+                                     0.25 +berserk-texture-name+)
     :initarg  :s-berserk
     :accessor s-berserk)
    (s-immune-faint
     :initform (make-health-condition (d* 4.0 *small-square-button-size*)
-				     (d+ *small-square-button-size*
-					 (d* 0.5 *small-square-button-size*))
-				     0.25 +immune-coma-texture-name+)
+                                     (d+ *small-square-button-size*
+                                         (d* 0.5 *small-square-button-size*))
+                                     0.25 +immune-coma-texture-name+)
     :initarg  :s-immune-faint
     :accessor s-immune-faint)
    (s-immune-poisoned
     :initform (make-health-condition (d+ (d* 4.0 *small-square-button-size*)
-					 (d* 0.5 *small-square-button-size*))
-				     (d+ *small-square-button-size*
-					 (d* 0.5 *small-square-button-size*))
-				     0.25 +immune-poison-texture-name+)
+                                         (d* 0.5 *small-square-button-size*))
+                                     (d+ *small-square-button-size*
+                                         (d* 0.5 *small-square-button-size*))
+                                     0.25 +immune-poison-texture-name+)
     :initarg  :s-immune-poisoned
     :accessor s-immune-poisoned)
    (s-immune-terrorized
     :initform (make-health-condition (d* 4.0 *small-square-button-size*)
-				     *small-square-button-size*
-				     0.25 +immune-terror-texture-name+)
+                                     *small-square-button-size*
+                                     0.25 +immune-terror-texture-name+)
     :initarg  :s-immune-terrorized
     :accessor s-immune-terrorized)
    (s-immune-berserk
     :initform (make-health-condition (d+ (d* 4.0 *small-square-button-size*)
-					 (d* 0.5 *small-square-button-size*))
-				     *small-square-button-size*
-				     0.25 +immune-berserk-texture-name+)
+                                         (d* 0.5 *small-square-button-size*))
+                                     *small-square-button-size*
+                                     0.25 +immune-berserk-texture-name+)
     :initarg  :s-immune-berserk
     :accessor s-immune-berserk)
    (b-portrait
     :initform (make-instance 'naked-button
-			     :x (d* 5.0 *small-square-button-size*)
-			     :y *small-square-button-size*
-			     :width  *small-square-button-size*
-			     :height *small-square-button-size*
-			     :texture-object  (get-texture +preview-unknown-texture-name+)
-			     :texture-pressed (get-texture +preview-unknown-texture-name+)
-			     :texture-overlay (get-texture +transparent-texture-name+)
-			     :callback        #'toolbar-open-inventory-cb)
+                             :x (d* 5.0 *small-square-button-size*)
+                             :y *small-square-button-size*
+                             :width  *small-square-button-size*
+                             :height *small-square-button-size*
+                             :texture-object  (get-texture +preview-unknown-texture-name+)
+                             :texture-pressed (get-texture +preview-unknown-texture-name+)
+                             :texture-overlay (get-texture +transparent-texture-name+)
+                             :callback        #'toolbar-open-inventory-cb)
    :initarg  :b-portrait
    :accessor b-portrait)
    (b-attack-short
     :initform (make-square-button (d* 3.0 *square-button-size*)
-				  *small-square-button-size*
-				  +attack-short-range-overlay-texture-name+
-				  #'toolbar-attack-short-range-cb
-				  :small t)
+                                  *small-square-button-size*
+                                  +attack-short-range-overlay-texture-name+
+                                  #'toolbar-attack-short-range-cb
+                                  :small t)
     :initarg  :b-attack-short
     :accessor b-attack-short)
    (b-attack-long
     :initform (make-square-button (d+ (d* 3.0 *square-button-size*)
-				       *small-square-button-size*)
-				  *small-square-button-size*
-				  +attack-long-range-overlay-texture-name+
-				  #'toolbar-attack-long-range-cb
-				  :small t)
+                                       *small-square-button-size*)
+                                  *small-square-button-size*
+                                  +attack-long-range-overlay-texture-name+
+                                  #'toolbar-attack-long-range-cb
+                                  :small t)
     :initarg  :b-attack-long
     :accessor b-attack-long)
    (b-attack-long-imprecise
     :initform (make-square-button (d+ (d* 3.0 *square-button-size*)
-				      (d* 2.0 *small-square-button-size*))
-				  *small-square-button-size*
-				  +attack-long-range-imprecise-overlay-texture-name+
-				  #'toolbar-attack-long-range-imprecise-cb
-				  :small t)
+                                      (d* 2.0 *small-square-button-size*))
+                                  *small-square-button-size*
+                                  +attack-long-range-imprecise-overlay-texture-name+
+                                  #'toolbar-attack-long-range-imprecise-cb
+                                  :small t)
     :initarg  :b-attack-long-imprecise
     :accessor b-attack-long-imprecise)
    (b-conversation
     :initform (make-square-button (d+ (d* 3.0 *square-button-size*)
-				      (d* 3.0 *small-square-button-size*))
-				  *small-square-button-size*
-				  +conversation-overlay-texture-name+
-				  #'toolbar-conversation-cb
-				  :small t)
+                                      (d* 3.0 *small-square-button-size*))
+                                  *small-square-button-size*
+                                  +conversation-overlay-texture-name+
+                                  #'toolbar-conversation-cb
+                                  :small t)
     :initarg  :b-conversation
     :accessor b-conversation)
    (b-move
     :initform (make-square-button (d+ (d* 3.0 *square-button-size*)
-				      (d* 4.0 *small-square-button-size*))
-				  *small-square-button-size*
-				  +move-overlay-texture-name+
-				  #'toolbar-move-cb
-				  :small t)
+                                      (d* 4.0 *small-square-button-size*))
+                                  *small-square-button-size*
+                                  +move-overlay-texture-name+
+                                  #'toolbar-move-cb
+                                  :small t)
     :initarg  :b-move
     :accessor b-move)
 
    (text-communication
     :initform (make-instance 'widget:static-text
-			     :height    *square-button-size*
-			     :width     (d* *small-square-button-size* 5.0)
-			     :x         (d+ (d* *square-button-size* 7.0)
-					    *small-square-button-size*)
-			     :y         0.0
-			     :font-size (d* 0.1 *square-button-size*)
-			     :label     ""
-			     :justified t)
+                             :height    *square-button-size*
+                             :width     (d* *small-square-button-size* 5.0)
+                             :x         (d+ (d* *square-button-size* 7.0)
+                                            *small-square-button-size*)
+                             :y         0.0
+                             :font-size (d* 0.1 *square-button-size*)
+                             :label     ""
+                             :justified t)
     :initarg  :text-communication
     :accessor text-communication)
    ;; second row
    (b-save
     :initform (make-square-button 0.0 *small-square-button-size*
-				  +save-overlay-texture-name+
-				  nil ;; TODO callback
-				  :small t)
+                                  +save-overlay-texture-name+
+                                  nil ;; TODO callback
+                                  :small t)
     :initarg :b-save
     :accessor b-save)
    (b-load
     :initform (make-square-button *small-square-button-size* *small-square-button-size*
-				  +load-overlay-texture-name+
-				  nil  ;; TODO callback
-				  :small t)
+                                  +load-overlay-texture-name+
+                                  nil  ;; TODO callback
+                                  :small t)
     :initarg :b-load
     :accessor b-load)
    (b-options
     :initform (make-square-button 0.0 0.0
-				  +option-overlay-texture-name+
-				  nil  ;; TODO callback
-				  :small t)
+                                  +option-overlay-texture-name+
+                                  nil  ;; TODO callback
+                                  :small t)
     :initarg :b-options
     :accessor b-options)
    (b-quit
     :initform (make-square-button *small-square-button-size* 0.0
-				  +quit-overlay-texture-name+
-				  nil  ;; TODO callback
-				  :small t)
+                                  +quit-overlay-texture-name+
+                                  nil  ;; TODO callback
+                                  :small t)
     :initarg :b-quit
     :accessor b-quit)
    (b-next
     :initform (make-square-button (d* 2.0 *small-square-button-size*) *small-square-button-size*
-				  +next-overlay-texture-name+
-				  nil  ;; TODO callback
-				  :small t)
+                                  +next-overlay-texture-name+
+                                  nil  ;; TODO callback
+                                  :small t)
     :initarg :b-next
     :accessor b-next)
    (b-previous
     :initform (make-square-button (d* 3.0 *small-square-button-size*) *small-square-button-size*
-				  +previous-overlay-texture-name+
-				  nil  ;; TODO callback
-				  :small t)
+                                  +previous-overlay-texture-name+
+                                  nil  ;; TODO callback
+                                  :small t)
     :initarg :b-previous
     :accessor b-previous)
    (b-next-turn
     :initform (make-rect-button   *square-button-size*
-				  0.0
-				  1.0 0.5
-				  +next-turn-overlay-texture-name+
-				  #'next-turn-cb)
+                                  0.0
+                                  1.0 0.5
+                                  +next-turn-overlay-texture-name+
+                                  #'next-turn-cb)
     :initarg :b-next-turn
     :accessor b-next-turn)
    (b-rotate-cw
     :initform (make-square-button (d* 4.0 *small-square-button-size*)
-				  0.0
-				  +rotate-char-cw-overlay-texture-name+
-				  #'rotate-cw-cb
-				  :small t)
+                                  0.0
+                                  +rotate-char-cw-overlay-texture-name+
+                                  #'rotate-cw-cb
+                                  :small t)
     :initarg :b-rotate-cw
     :accessor b-rotate-cw)
    (b-rotate-ccw
     :initform (make-square-button (d* 5.0 *small-square-button-size*)
-				  0.0
-				  +rotate-char-ccw-overlay-texture-name+
-				  #'rotate-ccw-cb
-				  :small t)
+                                  0.0
+                                  +rotate-char-ccw-overlay-texture-name+
+                                  #'rotate-ccw-cb
+                                  :small t)
     :initarg :b-rotate-ccw
     :accessor b-rotate-ccw)
    (b-spell
     :initform (make-square-button (d* 3.0 *square-button-size*)
 
-				  0.0
-				  +magic-staff-overlay-texture-name+
-				  #'toolbar-launch-spell-cb
-				  :small t)
+                                  0.0
+                                  +magic-staff-overlay-texture-name+
+                                  #'toolbar-launch-spell-cb
+                                  :small t)
     :initarg  :b-spell
     :accessor b-spell)
    (b-open
     :initform (make-square-button (d+ (d* 3.0 *square-button-size*)
-				      *small-square-button-size*)
-				  0.0
-				  +open-overlay-texture-name+
-				  #'open-cb
-				  :small t)
+                                      *small-square-button-size*)
+                                  0.0
+                                  +open-overlay-texture-name+
+                                  #'open-cb
+                                  :small t)
     :initarg  :b-open
     :accessor b-open)
    (b-close
     :initform (make-square-button (d+ (d* 3.0 *square-button-size*)
-				      (d* 2.0 *small-square-button-size*))
-				  0.0
-				  +close-overlay-texture-name+
-				  #'close-cb
-				  :small t)
+                                      (d* 2.0 *small-square-button-size*))
+                                  0.0
+                                  +close-overlay-texture-name+
+                                  #'close-cb
+                                  :small t)
     :initarg  :b-close
     :accessor b-close)
    (b-zoom
     :initform (make-square-button  (d+ (d* 3.0 *square-button-size*)
-				       (d* 3.0 *small-square-button-size*))
-				   0.0
-				   +zoom-overlay-texture-name+
-				   #'toolbar-zoom-in-cb
-				   :small t)
+                                       (d* 3.0 *small-square-button-size*))
+                                   0.0
+                                   +zoom-overlay-texture-name+
+                                   #'toolbar-zoom-in-cb
+                                   :small t)
      :initarg :b-zoom
      :accessor b-zoom)
    (b-unzoom
     :initform (make-square-button (d+ (d* 3.0 *square-button-size*)
-				      (d* 4.0 *small-square-button-size*))
-				  0.0
-				  +unzoom-overlay-texture-name+
-				  #'toolbar-zoom-out-cb
-				  :small t)
+                                      (d* 4.0 *small-square-button-size*))
+                                  0.0
+                                  +unzoom-overlay-texture-name+
+                                  #'toolbar-zoom-out-cb
+                                  :small t)
     :initarg :b-unzoom
     :accessor b-unzoom)
    (bar-mp
     :initform (make-instance 'widget:h-bar
-			     :height (d/ *square-button-size* 8.0)
-			     :width  (d+ *square-button-size* *small-square-button-size*)
-			     :x (d* *small-square-button-size* 11.0)
-			     :y (d* 3.0 (d/ *square-button-size* 8.0))
-			     :label "MP: "
-			     :color :green)
+                             :height (d/ *square-button-size* 8.0)
+                             :width  (d+ *square-button-size* *small-square-button-size*)
+                             :x (d* *small-square-button-size* 11.0)
+                             :y (d* 3.0 (d/ *square-button-size* 8.0))
+                             :label "MP: "
+                             :color :green)
     :initarg  :bar-mp
     :accessor bar-mp)
    (bar-dmg
     :initform (make-instance 'widget:h-bar
-			     :height (d/ *square-button-size* 8.0)
-			     :width  (d+ *square-button-size* *small-square-button-size*)
-			     :x (d* *small-square-button-size* 11.0)
-			     :y (d* 2.0 (d/ *square-button-size* 8.0))
-			     :label "DMG:"
-			     :color :red
-			    :fill-level 0.5)
+                             :height (d/ *square-button-size* 8.0)
+                             :width  (d+ *square-button-size* *small-square-button-size*)
+                             :x (d* *small-square-button-size* 11.0)
+                             :y (d* 2.0 (d/ *square-button-size* 8.0))
+                             :label "DMG:"
+                             :color :red
+                            :fill-level 0.5)
     :initarg  :bar-dmg
     :accessor bar-dmg)
    (bar-sp
     :initform (make-instance 'widget:h-bar
-			     :height (d/ *square-button-size* 8.0)
-			     :width  (d+ *square-button-size* *small-square-button-size*)
-			     :x (d* *small-square-button-size* 11.0)
-			     :y (d/ *square-button-size* 8.0)
-			     :label "SP: "
-			     :color :blue
-			     :fill-level 1.0)
+                             :height (d/ *square-button-size* 8.0)
+                             :width  (d+ *square-button-size* *small-square-button-size*)
+                             :x (d* *small-square-button-size* 11.0)
+                             :y (d/ *square-button-size* 8.0)
+                             :label "SP: "
+                             :color :blue
+                             :fill-level 1.0)
     :initarg  :bar-sp
     :accessor bar-sp)
    (text-mp
     :initform (make-instance 'widget:static-text
-			     :height (d/ *square-button-size* 6.0)
-			     :width  *small-square-button-size*
-			     :x (d+ (d+ *square-button-size* *small-square-button-size*)
-				    (d* *small-square-button-size* 11.0))
-			     :y (d- (d* 3.0 (d/ *square-button-size* 8.0))
-				    5.0)
-			     :font-size 10.0
-			     :label "23"
-			     :justified nil)
+                             :height (d/ *square-button-size* 6.0)
+                             :width  *small-square-button-size*
+                             :x (d+ (d+ *square-button-size* *small-square-button-size*)
+                                    (d* *small-square-button-size* 11.0))
+                             :y (d- (d* 3.0 (d/ *square-button-size* 8.0))
+                                    5.0)
+                             :font-size 10.0
+                             :label "23"
+                             :justified nil)
     :initarg  :text-mp
     :accessor text-mp)
    (text-dmg
     :initform (make-instance 'widget:static-text
-			     :height (d/ *square-button-size* 6.0)
-			     :width  *small-square-button-size*
-			     :x (d+ (d+ *square-button-size* *small-square-button-size*)
-				    (d* *small-square-button-size* 11.0))
-			     :y (d- (d* 2.0 (d/ *square-button-size* 8.0))
-				    5.0)
-			     :font-size 10.0
-			     :label "22"
-			     :justified nil)
+                             :height (d/ *square-button-size* 6.0)
+                             :width  *small-square-button-size*
+                             :x (d+ (d+ *square-button-size* *small-square-button-size*)
+                                    (d* *small-square-button-size* 11.0))
+                             :y (d- (d* 2.0 (d/ *square-button-size* 8.0))
+                                    5.0)
+                             :font-size 10.0
+                             :label "22"
+                             :justified nil)
     :initarg  :text-dmg
     :accessor text-dmg)
    (text-sp
     :initform (make-instance 'widget:static-text
-			     :height (d/ *square-button-size* 6.0)
-			     :width  *small-square-button-size*
-			     :x (d+ (d+ *square-button-size* *small-square-button-size*)
-				    (d* *small-square-button-size* 11.0))
-			     :y (d- (d/ *square-button-size* 8.0)
-				    5.0)
-			     :font-size 10.0
-			     :label "21"
-			     :justified nil)
+                             :height (d/ *square-button-size* 6.0)
+                             :width  *small-square-button-size*
+                             :x (d+ (d+ *square-button-size* *small-square-button-size*)
+                                    (d* *small-square-button-size* 11.0))
+                             :y (d- (d/ *square-button-size* 8.0)
+                                    5.0)
+                             :font-size 10.0
+                             :label "21"
+                             :justified nil)
     :initarg  :text-sp
     :accessor text-sp)
    (text-fps
     :initform (make-instance 'widget:simple-label
-			     :label "0.0"
-			     :font-size 10.0
-			     :width     50.0
-			     :x         0.0
-			     :y         (d* 2.0 *small-square-button-size*))
+                             :label "0.0"
+                             :font-size 10.0
+                             :width     50.0
+                             :x         0.0
+                             :y         (d* 2.0 *small-square-button-size*))
     :initarg  :text-fps
     :accessor text-fps)))
 
@@ -2401,114 +2401,114 @@
 
 (defun sync-bar-with-player (bar bar-label value-fn current-value-fn ghost)
   (let* ((slot-value          (funcall value-fn ghost))
-	 (current-slots-value (funcall current-value-fn ghost))
-	 (new-fill-level      (if (> slot-value 0)
-				  (d (/ current-slots-value slot-value))
-				  0.0)))
+         (current-slots-value (funcall current-value-fn ghost))
+         (new-fill-level      (if (> slot-value 0)
+                                  (d (/ current-slots-value slot-value))
+                                  0.0)))
     (setf (fill-level bar)       new-fill-level)
     (setf (label      bar-label) (format nil
-					 +standard-float-print-format+
-					 current-slots-value))))
+                                         +standard-float-print-format+
+                                         current-slots-value))))
 
 (defmethod sync-with-player ((object main-toolbar) &key (reset-health-animation nil))
   (with-accessors ((bound-player bound-player)
-		   (bar-mp bar-mp)      (text-mp text-mp)
-		   (bar-dmg bar-dmg)    (text-dmg text-dmg)
-		   (bar-sp bar-sp)      (text-sp text-sp)
-		   (s-faint             s-faint)
-		   (s-poisoned          s-poisoned)
-		   (s-terrorized        s-terrorized)
-		   (s-berserk           s-berserk)
-		   (s-immune-faint      s-immune-faint)
-		   (s-immune-poisoned   s-immune-poisoned)
-		   (s-immune-terrorized s-immune-terrorized)
-		   (s-immune-berserk    s-immune-berserk)
-		   (b-portrait          b-portrait)) object
+                   (bar-mp bar-mp)      (text-mp text-mp)
+                   (bar-dmg bar-dmg)    (text-dmg text-dmg)
+                   (bar-sp bar-sp)      (text-sp text-sp)
+                   (s-faint             s-faint)
+                   (s-poisoned          s-poisoned)
+                   (s-terrorized        s-terrorized)
+                   (s-berserk           s-berserk)
+                   (s-immune-faint      s-immune-faint)
+                   (s-immune-poisoned   s-immune-poisoned)
+                   (s-immune-terrorized s-immune-terrorized)
+                   (s-immune-berserk    s-immune-berserk)
+                   (b-portrait          b-portrait)) object
     (when bound-player
       (with-accessors ((ghost ghost)) bound-player
-	(sync-bar-with-player bar-mp
-			      text-mp
-			      #'actual-movement-points
-			      #'current-movement-points ghost)
-	(sync-bar-with-player bar-dmg
-			      text-dmg
-			      #'actual-damage-points
-			      #'current-damage-points ghost)
-	(sync-bar-with-player bar-sp
-			      text-sp
-			      #'actual-magic-points
-			      #'current-magic-points ghost)
-	(case (status ghost)
-	  (:faint
-	   (setf (button-state s-faint)      t)
-	   (when reset-health-animation
-	     (setf (el-time s-faint) 0.0))
-	   (setf (button-state s-poisoned)   nil)
-	   (setf (button-state s-terrorized) nil)
-	   (setf (button-state s-berserk)    nil))
-	  (:poisoned
-	   (setf (button-state s-poisoned)   t)
-	   (when reset-health-animation
-	     (setf (el-time s-poisoned) 0.0))
-	   (setf (button-state s-faint)      nil)
-	   (setf (button-state s-terrorized) nil)
-	   (setf (button-state s-berserk)    nil))
-	  (:terror
-	   (setf (button-state s-terrorized) t)
-	   (when reset-health-animation
-	     (setf (el-time s-terrorized) 0.0))
-	   (setf (button-state s-faint)      nil)
-	   (setf (button-state s-poisoned)   nil)
-	   (setf (button-state s-berserk)    nil))
-	  (:berserk
-	   (setf (button-state s-berserk)    t)
-	   (when reset-health-animation
-	     (setf (el-time s-berserk) 0.0))
-	   (setf (button-state s-faint)      nil)
-	   (setf (button-state s-poisoned)   nil)
-	   (setf (button-state s-terrorized) nil))
-	  (t
-	   (setf (button-state s-berserk)    nil)
-	   (setf (button-state s-faint)      nil)
-	   (setf (button-state s-poisoned)   nil)
-	   (setf (button-state s-terrorized) nil)))
-	(cond
-	  ((immune-faint-status ghost)
-	   (setf (button-state s-immune-faint) t)
-	   (when reset-health-animation
-	     (setf (el-time s-immune-faint) 0.0))
-	   (setf (button-state s-immune-poisoned)   nil)
-	   (setf (button-state s-immune-terrorized) nil)
-	   (setf (button-state s-immune-berserk)    nil))
-	  ((immune-terror-status ghost)
-	   (setf (button-state s-immune-terrorized) t)
-	   (when reset-health-animation
-	     (setf (el-time s-immune-terrorized) 0.0))
-	   (setf (button-state s-immune-faint)      nil)
-	   (setf (button-state s-immune-poisoned)   nil)
-	   (setf (button-state s-immune-berserk)    nil))
-	  ((immune-berserk-status ghost)
-	   (setf (button-state s-immune-berserk)    t)
-	   (when reset-health-animation
-	     (setf (el-time s-immune-berserk) 0.0))
-	   (setf (button-state s-immune-faint)      nil)
-	   (setf (button-state s-immune-poisoned)   nil)
-	   (setf (button-state s-immune-terrorized) nil))
-	  ((immune-poison-status ghost)
-	   (setf (button-state s-immune-poisoned)   t)
-	   (when reset-health-animation
-	     (setf (el-time s-immune-poisoned) 0.0))
-	   (setf (button-state s-immune-faint)      nil)
-	   (setf (button-state s-immune-terrorized) nil)
-	   (setf (button-state s-immune-berserk)    nil))
-	  (t
-	   (setf (button-state s-immune-poisoned)   nil)
-	   (setf (button-state s-immune-faint)      nil)
-	   (setf (button-state s-immune-terrorized) nil)
-	   (setf (button-state s-immune-berserk)    nil)))
-	(setf (texture-pressed b-portrait) (portrait ghost)
-	      (texture-object  b-portrait) (portrait ghost)
-	      (current-texture b-portrait) (portrait ghost))))))
+        (sync-bar-with-player bar-mp
+                              text-mp
+                              #'actual-movement-points
+                              #'current-movement-points ghost)
+        (sync-bar-with-player bar-dmg
+                              text-dmg
+                              #'actual-damage-points
+                              #'current-damage-points ghost)
+        (sync-bar-with-player bar-sp
+                              text-sp
+                              #'actual-magic-points
+                              #'current-magic-points ghost)
+        (case (status ghost)
+          (:faint
+           (setf (button-state s-faint)      t)
+           (when reset-health-animation
+             (setf (el-time s-faint) 0.0))
+           (setf (button-state s-poisoned)   nil)
+           (setf (button-state s-terrorized) nil)
+           (setf (button-state s-berserk)    nil))
+          (:poisoned
+           (setf (button-state s-poisoned)   t)
+           (when reset-health-animation
+             (setf (el-time s-poisoned) 0.0))
+           (setf (button-state s-faint)      nil)
+           (setf (button-state s-terrorized) nil)
+           (setf (button-state s-berserk)    nil))
+          (:terror
+           (setf (button-state s-terrorized) t)
+           (when reset-health-animation
+             (setf (el-time s-terrorized) 0.0))
+           (setf (button-state s-faint)      nil)
+           (setf (button-state s-poisoned)   nil)
+           (setf (button-state s-berserk)    nil))
+          (:berserk
+           (setf (button-state s-berserk)    t)
+           (when reset-health-animation
+             (setf (el-time s-berserk) 0.0))
+           (setf (button-state s-faint)      nil)
+           (setf (button-state s-poisoned)   nil)
+           (setf (button-state s-terrorized) nil))
+          (t
+           (setf (button-state s-berserk)    nil)
+           (setf (button-state s-faint)      nil)
+           (setf (button-state s-poisoned)   nil)
+           (setf (button-state s-terrorized) nil)))
+        (cond
+          ((immune-faint-status ghost)
+           (setf (button-state s-immune-faint) t)
+           (when reset-health-animation
+             (setf (el-time s-immune-faint) 0.0))
+           (setf (button-state s-immune-poisoned)   nil)
+           (setf (button-state s-immune-terrorized) nil)
+           (setf (button-state s-immune-berserk)    nil))
+          ((immune-terror-status ghost)
+           (setf (button-state s-immune-terrorized) t)
+           (when reset-health-animation
+             (setf (el-time s-immune-terrorized) 0.0))
+           (setf (button-state s-immune-faint)      nil)
+           (setf (button-state s-immune-poisoned)   nil)
+           (setf (button-state s-immune-berserk)    nil))
+          ((immune-berserk-status ghost)
+           (setf (button-state s-immune-berserk)    t)
+           (when reset-health-animation
+             (setf (el-time s-immune-berserk) 0.0))
+           (setf (button-state s-immune-faint)      nil)
+           (setf (button-state s-immune-poisoned)   nil)
+           (setf (button-state s-immune-terrorized) nil))
+          ((immune-poison-status ghost)
+           (setf (button-state s-immune-poisoned)   t)
+           (when reset-health-animation
+             (setf (el-time s-immune-poisoned) 0.0))
+           (setf (button-state s-immune-faint)      nil)
+           (setf (button-state s-immune-terrorized) nil)
+           (setf (button-state s-immune-berserk)    nil))
+          (t
+           (setf (button-state s-immune-poisoned)   nil)
+           (setf (button-state s-immune-faint)      nil)
+           (setf (button-state s-immune-terrorized) nil)
+           (setf (button-state s-immune-berserk)    nil)))
+        (setf (texture-pressed b-portrait) (portrait ghost)
+              (texture-object  b-portrait) (portrait ghost)
+              (current-texture b-portrait) (portrait ghost))))))
 
 (defmethod sync-influence-map ((object main-toolbar) (map pixmap:pixmap))
   (let ((texture    (get-texture +influence-map+))
@@ -2526,42 +2526,42 @@
 
 (defun make-pgen-button (x y plus)
   (make-instance 'naked-button
-		 :x               x
-		 :y               y
-		 :width           (pgen-inc/dec-button-size)
-		 :height          (pgen-inc/dec-button-size)
-		 :texture-object  (get-texture +square-button-texture-name+)
-		 :texture-pressed (get-texture +square-button-pressed-texture-name+)
-		 :texture-overlay (get-texture (if plus
-						   +plus-overlay-texture-name+
-						   +minus-overlay-texture-name+))
-		 :callback        nil))
+                 :x               x
+                 :y               y
+                 :width           (pgen-inc/dec-button-size)
+                 :height          (pgen-inc/dec-button-size)
+                 :texture-object  (get-texture +square-button-texture-name+)
+                 :texture-pressed (get-texture +square-button-pressed-texture-name+)
+                 :texture-overlay (get-texture (if plus
+                                                   +plus-overlay-texture-name+
+                                                   +minus-overlay-texture-name+))
+                 :callback        nil))
 
 (defun add-callback-to-pgen-button (widget player slot widget-capital widget-destination
-				    plus &optional (scale-plus 1.0) (scale-minus 1.0))
+                                    plus &optional (scale-plus 1.0) (scale-minus 1.0))
   (setf (callback widget)
-	#'(lambda (w e)
-	    (declare (ignore w e))
-	    (let* ((capital (d (parse-number:parse-number
-				(cl-ppcre:scan-to-strings +float-regexp+
-							  (label widget-capital)))))
-		   (current (d (parse-number:parse-number
-				(cl-ppcre:scan-to-strings +float-regexp+
-							  (label widget-destination)))))
-		   (new-capital (if plus (d- capital 1.0)  (d+ capital 1.0)))
-		   (new-current (if plus
-				    (d+ current scale-plus)
-				    (d- current scale-minus))))
-	      (when (and (d>= new-capital 0.0)
-			 (or plus
-			     (d>= new-current 0.0)))
-		(misc:dbg "~a ~a" slot new-current)
-		(setf (label widget-capital)               (format nil +standard-float-print-format+
-								   new-capital)
-		      (label widget-destination)           (format nil +standard-float-print-format+
-								   new-current)
-		      (slot-value player slot)             new-current
-		      (character:exp-points player) new-capital))))))
+        #'(lambda (w e)
+            (declare (ignore w e))
+            (let* ((capital (d (parse-number:parse-number
+                                (cl-ppcre:scan-to-strings +float-regexp+
+                                                          (label widget-capital)))))
+                   (current (d (parse-number:parse-number
+                                (cl-ppcre:scan-to-strings +float-regexp+
+                                                          (label widget-destination)))))
+                   (new-capital (if plus (d- capital 1.0)  (d+ capital 1.0)))
+                   (new-current (if plus
+                                    (d+ current scale-plus)
+                                    (d- current scale-minus))))
+              (when (and (d>= new-capital 0.0)
+                         (or plus
+                             (d>= new-current 0.0)))
+                (misc:dbg "~a ~a" slot new-current)
+                (setf (label widget-capital)               (format nil +standard-float-print-format+
+                                                                   new-capital)
+                      (label widget-destination)           (format nil +standard-float-print-format+
+                                                                   new-current)
+                      (slot-value player slot)             new-current
+                      (character:exp-points player) new-capital))))))
 
 (defun pgen-window-w ()
   (d* (d *window-w*) 0.75))
@@ -2589,11 +2589,11 @@
 (defun pgen-label-ability-y (row)
   (d+ (d* 1.8 +portrait-size+)
       (d* (d row)
-	  (input-text-h *reference-sizes*))))
+          (input-text-h *reference-sizes*))))
 
 (defun pgen-inc-button-x ()
   (d+ (d+ (d* 2.0 (spacing *reference-sizes*))
-	  (pgen-chk-button-w))
+          (pgen-chk-button-w))
       (pgen-label-ability-w)))
 
 (defun pgen-inc/dec-button-size ()
@@ -2619,86 +2619,86 @@
 (defun pgen-characteristics-y (row)
   (d* (d row)
       (d+ (spacing *reference-sizes*)
-	  (input-text-h *reference-sizes*))))
+          (input-text-h *reference-sizes*))))
 
 (defun rotate-preview-cb (button event)
   (declare (ignore event))
   (with-parent-widget (win) button
     (with-accessors ((model-preview-paths model-preview-paths)) win
       (when model-preview-paths
-	(setf model-preview-paths (alexandria:rotate model-preview-paths 1))
-	(let ((new-preview (pixmap:slurp-pixmap 'pixmap:tga
-						(res:get-resource-file (elt model-preview-paths 0)
-								       +human-player-models-resource+
-								       :if-does-not-exists :error)))
-	      (texture     (get-texture +preview-unknown-texture-name+)))
-	  (setf (pixmap:data texture) (pixmap:data new-preview))
-	  (pixmap:sync-data-to-bits texture)
-	  (update-for-rendering texture)))
+        (setf model-preview-paths (alexandria:rotate model-preview-paths 1))
+        (let ((new-preview (pixmap:slurp-pixmap 'pixmap:tga
+                                                (res:get-resource-file (elt model-preview-paths 0)
+                                                                       +human-player-models-resource+
+                                                                       :if-does-not-exists :error)))
+              (texture     (get-texture +preview-unknown-texture-name+)))
+          (setf (pixmap:data texture) (pixmap:data new-preview))
+          (pixmap:sync-data-to-bits texture)
+          (update-for-rendering texture)))
       t)))
 
 (defun update-preview-class-cb (type)
   #'(lambda (button event)
       (declare (ignore event))
       (with-parent-widget (check-button) button
-	(with-parent-widget (win) check-button
-	  (with-accessors ((checkb-male checkb-male) (checkb-female checkb-female)
-			   (model-preview-paths model-preview-paths)) win
-	    (setf model-preview-paths
-		  (if (button-state checkb-female)
-		      (previews-path type :female)
-		      (previews-path type :male)))
-	    t)))))
+        (with-parent-widget (win) check-button
+          (with-accessors ((checkb-male checkb-male) (checkb-female checkb-female)
+                           (model-preview-paths model-preview-paths)) win
+            (setf model-preview-paths
+                  (if (button-state checkb-female)
+                      (previews-path type :female)
+                      (previews-path type :male)))
+            t)))))
 
 (defun update-preview-gender-cb (gender)
   #'(lambda (button event)
       (declare (ignore event))
       (with-parent-widget (check-button) button
-	(with-parent-widget (win) check-button
-	  (with-accessors ((checkb-warrior checkb-warrior)
-			   (checkb-wizard  checkb-wizard)
-			   (checkb-healer  checkb-healer)
-			   (checkb-archer  checkb-archer)
-			   (checkb-ranger  checkb-ranger)
-			   (model-preview-paths model-preview-paths)) win
-	    (setf model-preview-paths
-		  (cond
-		    ((button-state checkb-warrior)
-		     (previews-path :warrior gender))
-		    ((button-state checkb-wizard)
-		     (previews-path :wizard  gender))
-		    ((button-state checkb-healer)
-		     (previews-path :healer  gender))
-		    ((button-state checkb-archer)
-		     (previews-path :archer  gender))
-		    ((button-state checkb-ranger)
-		     (previews-path :ranger  gender))))
-	    t)))))
+        (with-parent-widget (win) check-button
+          (with-accessors ((checkb-warrior checkb-warrior)
+                           (checkb-wizard  checkb-wizard)
+                           (checkb-healer  checkb-healer)
+                           (checkb-archer  checkb-archer)
+                           (checkb-ranger  checkb-ranger)
+                           (model-preview-paths model-preview-paths)) win
+            (setf model-preview-paths
+                  (cond
+                    ((button-state checkb-warrior)
+                     (previews-path :warrior gender))
+                    ((button-state checkb-wizard)
+                     (previews-path :wizard  gender))
+                    ((button-state checkb-healer)
+                     (previews-path :healer  gender))
+                    ((button-state checkb-archer)
+                     (previews-path :archer  gender))
+                    ((button-state checkb-ranger)
+                     (previews-path :ranger  gender))))
+            t)))))
 
 (defun previews-path (type gender)
   (let ((re (text-utils:strcat
-	     (ecase type
-	       (:warrior
-		+model-preview-warrior-re+)
-	       (:archer
-		+model-preview-archer-re+)
-	       (:wizard
-		+model-preview-wizard-re+)
-	       (:healer
-		+model-preview-healer-re+)
-	       (:ranger
-		+model-preview-ranger-re+))
-	     (ecase gender
-	       (:male
-		"-male")
-	       (:female
-		"-female"))
-	     +model-preview-ext-re+)))
+             (ecase type
+               (:warrior
+                +model-preview-warrior-re+)
+               (:archer
+                +model-preview-archer-re+)
+               (:wizard
+                +model-preview-wizard-re+)
+               (:healer
+                +model-preview-healer-re+)
+               (:ranger
+                +model-preview-ranger-re+))
+             (ecase gender
+               (:male
+                "-male")
+               (:female
+                "-female"))
+             +model-preview-ext-re+)))
     (mapcar #'(lambda (a) (res:strip-off-resource-path +human-player-models-resource+ a))
-	    (fs:search-matching-file (resources-utils:get-resource-file
-				      ""
-				      +human-player-models-resource+)
-				     :name re))))
+            (fs:search-matching-file (resources-utils:get-resource-file
+                                      ""
+                                      +human-player-models-resource+)
+                                     :name re))))
 
 (defclass player-generator (window)
   ((world
@@ -2723,823 +2723,823 @@
     :accessor backup-data-texture-preview)
    (lb-class
     :initform (make-instance 'simple-label
-			     :label     (_ "Class")
-			     :font-size (h1-font-size *reference-sizes*)
-			     :width  (pgen-chk-button-w)
-			     :x         0.0
-			     :y         0.0)
+                             :label     (_ "Class")
+                             :font-size (h1-font-size *reference-sizes*)
+                             :width  (pgen-chk-button-w)
+                             :x         0.0
+                             :y         0.0)
     :initarg  :lb-class
     :accessor lb-class)
    (checkb-warrior
     :initform (make-instance 'labeled-check-button
-			     :height (checkbutton-h *reference-sizes*)
-			     :width  (pgen-chk-button-w)
-			     :x 0.0
-			     :y (pgen-chk-button-y 0.0)
-			     :label (_ "Warrior ")
-			     :callback (update-preview-class-cb :warrior)
-			     :color :green)
+                             :height (checkbutton-h *reference-sizes*)
+                             :width  (pgen-chk-button-w)
+                             :x 0.0
+                             :y (pgen-chk-button-y 0.0)
+                             :label (_ "Warrior ")
+                             :callback (update-preview-class-cb :warrior)
+                             :color :green)
     :initarg  :checkb-warrior
     :accessor checkb-warrior)
    (checkb-wizard
     :initform (make-instance 'labeled-check-button
-			     :height (checkbutton-h *reference-sizes*)
-			     :width  (pgen-chk-button-w)
-			     :x 0.0
-			     :y (pgen-chk-button-y 1.0)
-			     :label (_ "Wizard ")
-			     :callback (update-preview-class-cb :wizard)
-			     :color :green)
+                             :height (checkbutton-h *reference-sizes*)
+                             :width  (pgen-chk-button-w)
+                             :x 0.0
+                             :y (pgen-chk-button-y 1.0)
+                             :label (_ "Wizard ")
+                             :callback (update-preview-class-cb :wizard)
+                             :color :green)
     :initarg  :checkb-wizard
     :accessor checkb-wizard)
    (checkb-healer
     :initform (make-instance 'labeled-check-button
-			     :height (checkbutton-h *reference-sizes*)
-			     :width  (pgen-chk-button-w)
-			     :x 0.0
-			     :y (pgen-chk-button-y 2.0)
-			     :label (_ "Healer ")
-			     :callback (update-preview-class-cb :healer)
-			     :color :green)
+                             :height (checkbutton-h *reference-sizes*)
+                             :width  (pgen-chk-button-w)
+                             :x 0.0
+                             :y (pgen-chk-button-y 2.0)
+                             :label (_ "Healer ")
+                             :callback (update-preview-class-cb :healer)
+                             :color :green)
     :initarg  :checkb-healer
     :accessor checkb-healer)
    (checkb-archer
     :initform (make-instance 'labeled-check-button
-			     :height (checkbutton-h *reference-sizes*)
-			     :width  (pgen-chk-button-w)
-			     :x 0.0
-			     :y (pgen-chk-button-y 3.0)
-			     :label (_ "Archer ")
-			     :callback (update-preview-class-cb :archer)
-			     :color :green)
+                             :height (checkbutton-h *reference-sizes*)
+                             :width  (pgen-chk-button-w)
+                             :x 0.0
+                             :y (pgen-chk-button-y 3.0)
+                             :label (_ "Archer ")
+                             :callback (update-preview-class-cb :archer)
+                             :color :green)
     :initarg  :checkb-archer
     :accessor checkb-archer)
    (checkb-ranger
     :initform (make-instance 'labeled-check-button
-			     :height (checkbutton-h *reference-sizes*)
-			     :width  (pgen-chk-button-w)
-			     :x 0.0
-			     :y (pgen-chk-button-y 4.0)
-			     :label (_ "Ranger ")
-			     :callback (update-preview-class-cb :ranger)
-			     :color :green)
+                             :height (checkbutton-h *reference-sizes*)
+                             :width  (pgen-chk-button-w)
+                             :x 0.0
+                             :y (pgen-chk-button-y 4.0)
+                             :label (_ "Ranger ")
+                             :callback (update-preview-class-cb :ranger)
+                             :color :green)
     :initarg  :checkb-ranger
     :accessor checkb-ranger)
    (lb-gender
     :initform (make-instance 'simple-label
-			     :label     (_ "Gender")
-			     :font-size (h2-font-size *reference-sizes*)
-			     :width  (pgen-chk-button-w)
-			     :x      0.0
-			     :y      (pgen-chk-button-y 5.0))
+                             :label     (_ "Gender")
+                             :font-size (h2-font-size *reference-sizes*)
+                             :width  (pgen-chk-button-w)
+                             :x      0.0
+                             :y      (pgen-chk-button-y 5.0))
     :initarg  :lb-gender
     :accessor lb-gender)
    (checkb-male
     :initform (make-instance 'labeled-check-button
-			     :height (checkbutton-h *reference-sizes*)
-			     :width  (pgen-chk-button-w)
-			     :x 0.0
-			     :y (pgen-chk-button-y 6.0)
-			     :label (_ "Male ")
-			     :callback (update-preview-gender-cb :male)
-			     :color :green)
+                             :height (checkbutton-h *reference-sizes*)
+                             :width  (pgen-chk-button-w)
+                             :x 0.0
+                             :y (pgen-chk-button-y 6.0)
+                             :label (_ "Male ")
+                             :callback (update-preview-gender-cb :male)
+                             :color :green)
     :initarg  :checkb-male
     :accessor checkb-male)
    (checkb-female
     :initform (make-instance 'labeled-check-button
-			     :height (checkbutton-h *reference-sizes*)
-			     :width  (pgen-chk-button-w)
-			     :x 0.0
-			     :y (pgen-chk-button-y 7.0)
-			     :label (_ "Female ")
-			     :callback (update-preview-gender-cb :female)
-			     :color :green)
+                             :height (checkbutton-h *reference-sizes*)
+                             :width  (pgen-chk-button-w)
+                             :x 0.0
+                             :y (pgen-chk-button-y 7.0)
+                             :label (_ "Female ")
+                             :callback (update-preview-gender-cb :female)
+                             :color :green)
     :initarg  :checkb-female
     :accessor checkb-female)
    (b-generate
     :initform (make-instance 'button
-			     :height (checkbutton-h *reference-sizes*)
-			     :width  (pgen-chk-button-w)
-			     :x 0.0
-			     :y (pgen-chk-button-y 9.0)
-			     :callback #'generate-cb
-			     :label (_ "Generate new"))
+                             :height (checkbutton-h *reference-sizes*)
+                             :width  (pgen-chk-button-w)
+                             :x 0.0
+                             :y (pgen-chk-button-y 9.0)
+                             :callback #'generate-cb
+                             :label (_ "Generate new"))
     :initarg  :b-generate
     :accessor b-generate)
    (b-save
     :initform (make-instance 'button
-			     :height   (checkbutton-h *reference-sizes*)
-			     :width    (pgen-chk-button-w)
-			     :x        0.0
-			     :y        (d+ (spacing *reference-sizes*)
-					   (pgen-chk-button-y 10.0))
-			     :callback #'player-save-cb
-			     :label    (_ "Save"))
+                             :height   (checkbutton-h *reference-sizes*)
+                             :width    (pgen-chk-button-w)
+                             :x        0.0
+                             :y        (d+ (spacing *reference-sizes*)
+                                           (pgen-chk-button-y 10.0))
+                             :callback #'player-save-cb
+                             :label    (_ "Save"))
     :initarg  :b-save
     :accessor b-save)
    (b-load
     :initform (make-instance 'button
-			     :height   (checkbutton-h *reference-sizes*)
-			     :width    (pgen-chk-button-w)
-			     :x        0.0
-			     :y        (d+ (d* 2.0 (spacing *reference-sizes*))
-					   (pgen-chk-button-y 11.0))
-			     :callback #'player-load-cb
-			     :label    (_ "Load"))
+                             :height   (checkbutton-h *reference-sizes*)
+                             :width    (pgen-chk-button-w)
+                             :x        0.0
+                             :y        (d+ (d* 2.0 (spacing *reference-sizes*))
+                                           (pgen-chk-button-y 11.0))
+                             :callback #'player-load-cb
+                             :label    (_ "Load"))
     :initarg  :b-load
     :accessor b-load)
    (b-accept
     :initform (make-instance 'button
-			     :height   (checkbutton-h *reference-sizes*)
-			     :width    (pgen-chk-button-w)
-			     :x        0.0
-			     :y        (d+ (d* 3.0 (spacing *reference-sizes*))
-					   (pgen-chk-button-y 12.0))
-			     :callback #'player-accept-cb
-			     :label    (_ "Accept"))
+                             :height   (checkbutton-h *reference-sizes*)
+                             :width    (pgen-chk-button-w)
+                             :x        0.0
+                             :y        (d+ (d* 3.0 (spacing *reference-sizes*))
+                                           (pgen-chk-button-y 12.0))
+                             :callback #'player-accept-cb
+                             :label    (_ "Accept"))
     :initarg  :b-accept
     :accessor b-accept)
    (img-portrait
     :initform (make-instance 'signalling-light
-			     :width  +portrait-size+
-			     :height +portrait-size+
-			     :x (pgen-label-ability-x)
-			     :y 0.0
-			     :texture-name +portrait-unknown-texture-name+
-			     :button-status t)
+                             :width  +portrait-size+
+                             :height +portrait-size+
+                             :x (pgen-label-ability-x)
+                             :y 0.0
+                             :texture-name +portrait-unknown-texture-name+
+                             :button-status t)
     :initarg :img-portrait
     :accessor img-portrait)
    (lb-damage-pt
     :initform (make-instance 'simple-label-prefixed
-			     :width  (pgen-label-ability-w)
-			     :height (pgen-label-ability-h)
-			     :x (pgen-label-ability-x)
-			     :y (pgen-label-ability-y 0.0)
-			     :prefix (_ "Damage points: ")
-			     :label "")
+                             :width  (pgen-label-ability-w)
+                             :height (pgen-label-ability-h)
+                             :x (pgen-label-ability-x)
+                             :y (pgen-label-ability-y 0.0)
+                             :prefix (_ "Damage points: ")
+                             :label "")
     :initarg :lb-damage-pt
     :accessor lb-damage-pt)
    (b-inc-damage-pt
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 0.0)
-				t)
+                                (pgen-inc-button-y 0.0)
+                                t)
     :initarg :b-inc-damage-pt
     :accessor b-inc-damage-pt)
    (b-dec-damage-pt
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 0.0)
-				nil)
+                                (pgen-inc-button-y 0.0)
+                                nil)
     :initarg :b-dec-damage-pt
     :accessor b-dec-damage-pt)
    (lb-movement-pt
     :initform (make-instance 'simple-label-prefixed
-			     :width  (pgen-label-ability-w)
-			     :height (pgen-label-ability-h)
-			     :x (pgen-label-ability-x)
-			     :y (pgen-label-ability-y 1.0)
-			     :prefix (_ "Movement points: ")
-			     :label "")
+                             :width  (pgen-label-ability-w)
+                             :height (pgen-label-ability-h)
+                             :x (pgen-label-ability-x)
+                             :y (pgen-label-ability-y 1.0)
+                             :prefix (_ "Movement points: ")
+                             :label "")
     :initarg :lb-movement-pt
     :accessor lb-movement-pt)
    (b-inc-movement-pt
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 1.0)
-				t)
+                                (pgen-inc-button-y 1.0)
+                                t)
     :initarg :b-inc-movement-pt
     :accessor b-inc-movement-pt)
    (b-dec-movement-pt
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 1.0)
-				nil)
+                                (pgen-inc-button-y 1.0)
+                                nil)
     :initarg :b-dec-movement-pt
     :accessor b-dec-movement-pt)
    (lb-magic-pt
     :initform (make-instance 'simple-label-prefixed
-			     :width  (pgen-label-ability-w)
-			     :height (pgen-label-ability-h)
-			     :x (pgen-label-ability-x)
-			     :y (pgen-label-ability-y 2.0)
-			     :prefix (_ "Magic points: ")
-			     :label "")
+                             :width  (pgen-label-ability-w)
+                             :height (pgen-label-ability-h)
+                             :x (pgen-label-ability-x)
+                             :y (pgen-label-ability-y 2.0)
+                             :prefix (_ "Magic points: ")
+                             :label "")
     :initarg :lb-magic-pt
     :accessor lb-magic-pt)
    (b-inc-magic-pt
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 2.0)
-				t)
+                                (pgen-inc-button-y 2.0)
+                                t)
     :initarg :b-inc-magic-pt
     :accessor b-inc-magic-pt)
    (b-dec-magic-pt
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 2.0)
-				nil)
+                                (pgen-inc-button-y 2.0)
+                                nil)
     :initarg :b-dec-magic-pt
     :accessor b-dec-magic-pt)
    (lb-dodge-ch
     :initform (make-instance 'simple-label-prefixed
-			     :width  (pgen-label-ability-w)
-			     :height (pgen-label-ability-h)
-			     :x (pgen-label-ability-x)
-			     :y (pgen-label-ability-y 3.0)
-			     :prefix (_ "Dodge chance: ")
-			     :label "")
+                             :width  (pgen-label-ability-w)
+                             :height (pgen-label-ability-h)
+                             :x (pgen-label-ability-x)
+                             :y (pgen-label-ability-y 3.0)
+                             :prefix (_ "Dodge chance: ")
+                             :label "")
     :initarg :lb-dodge-ch
     :accessor lb-dodge-ch)
    (b-inc-dodge-ch
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 3.0)
-				t)
+                                (pgen-inc-button-y 3.0)
+                                t)
     :initarg :b-inc-dodge-ch
     :accessor b-inc-dodge-ch)
    (b-dec-dodge-ch
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 3.0)
-				nil)
+                                (pgen-inc-button-y 3.0)
+                                nil)
     :initarg :b-dec-dodge-ch
     :accessor b-dec-dodge-ch)
    (lb-melee-atk-ch
      :initform (make-instance 'simple-label-prefixed
-			      :width  (pgen-label-ability-w)
-			      :height (pgen-label-ability-h)
-			      :x (pgen-label-ability-x)
-			      :y (pgen-label-ability-y 4.0)
-			      :prefix (_ "Short range attack chance: ")
-			      :label "")
+                              :width  (pgen-label-ability-w)
+                              :height (pgen-label-ability-h)
+                              :x (pgen-label-ability-x)
+                              :y (pgen-label-ability-y 4.0)
+                              :prefix (_ "Short range attack chance: ")
+                              :label "")
      :initarg  :lb-melee-atk-ch
      :accessor lb-melee-atk-ch)
    (b-inc-melee-atk-ch
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 4.0)
-				t)
+                                (pgen-inc-button-y 4.0)
+                                t)
     :initarg :b-inc-melee-atk-ch
     :accessor b-inc-melee-atk-ch)
    (b-dec-melee-atk-ch
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 4.0)
-				nil)
+                                (pgen-inc-button-y 4.0)
+                                nil)
     :initarg :b-dec-melee-atk-ch
     :accessor b-dec-melee-atk-ch)
    (lb-range-atk-ch
      :initform (make-instance 'simple-label-prefixed
-			      :width  (pgen-label-ability-w)
-			      :height (pgen-label-ability-h)
-			      :x (pgen-label-ability-x)
-			      :y (pgen-label-ability-y 5.0)
-			      :prefix (_ "Long range attack chance: ")
-			      :label "")
+                              :width  (pgen-label-ability-w)
+                              :height (pgen-label-ability-h)
+                              :x (pgen-label-ability-x)
+                              :y (pgen-label-ability-y 5.0)
+                              :prefix (_ "Long range attack chance: ")
+                              :label "")
      :initarg  :lb-range-atk-ch
      :accessor lb-range-atk-ch)
    (b-inc-range-atk-ch
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 5.0)
-				t)
+                                (pgen-inc-button-y 5.0)
+                                t)
     :initarg :b-inc-range-atk-ch
     :accessor b-inc-range-atk-ch)
    (b-dec-range-atk-ch
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 5.0)
-				nil)
+                                (pgen-inc-button-y 5.0)
+                                nil)
     :initarg :b-dec-range-atk-ch
     :accessor b-dec-range-atk-ch)
    (lb-melee-atk-dmg
      :initform (make-instance 'simple-label-prefixed
-			      :width  (pgen-label-ability-w)
-			      :height (pgen-label-ability-h)
-			      :x (pgen-label-ability-x)
-			      :y (pgen-label-ability-y 6.0)
-			      :prefix (_ "Short Range attack damage: ")
-			      :label "")
+                              :width  (pgen-label-ability-w)
+                              :height (pgen-label-ability-h)
+                              :x (pgen-label-ability-x)
+                              :y (pgen-label-ability-y 6.0)
+                              :prefix (_ "Short Range attack damage: ")
+                              :label "")
      :initarg  :lb-melee-atk-dmg
      :accessor lb-melee-atk-dmg)
    (b-inc-melee-atk-dmg
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 6.0)
-				t)
+                                (pgen-inc-button-y 6.0)
+                                t)
     :initarg :b-inc-melee-atk-dmg
     :accessor b-inc-melee-atk-dmg)
    (b-dec-melee-atk-dmg
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 6.0)
-				nil)
+                                (pgen-inc-button-y 6.0)
+                                nil)
     :initarg :b-dec-melee-atk-dmg
     :accessor b-dec-melee-atk-dmg)
    (lb-range-atk-dmg
      :initform (make-instance 'simple-label-prefixed
-			      :width  (pgen-label-ability-w)
-			      :height (pgen-label-ability-h)
-			      :x (pgen-label-ability-x)
-			      :y (pgen-label-ability-y 7.0)
-			      :prefix (_ "Long Range attack damage: ")
-			      :label "")
+                              :width  (pgen-label-ability-w)
+                              :height (pgen-label-ability-h)
+                              :x (pgen-label-ability-x)
+                              :y (pgen-label-ability-y 7.0)
+                              :prefix (_ "Long Range attack damage: ")
+                              :label "")
      :initarg  :lb-range-atk-dmg
      :accessor lb-range-atk-dmg)
    (b-inc-range-atk-dmg
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 7.0)
-				t)
+                                (pgen-inc-button-y 7.0)
+                                t)
     :initarg :b-inc-range-atk-dmg
     :accessor b-inc-range-atk-dmg)
    (b-dec-range-atk-dmg
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 7.0)
-				nil)
+                                (pgen-inc-button-y 7.0)
+                                nil)
     :initarg :b-dec-range-atk-dmg
     :accessor b-dec-range-atk-dmg)
    (lb-edge-wpn-ch-bonus
      :initform (make-instance 'simple-label-prefixed
-			      :width  (pgen-label-ability-w)
-			      :height (pgen-label-ability-h)
-			      :x (pgen-label-ability-x)
-			      :y (pgen-label-ability-y 8.0)
-			      :prefix (_ "Edge weapon chance bonus: ")
-			      :label "")
+                              :width  (pgen-label-ability-w)
+                              :height (pgen-label-ability-h)
+                              :x (pgen-label-ability-x)
+                              :y (pgen-label-ability-y 8.0)
+                              :prefix (_ "Edge weapon chance bonus: ")
+                              :label "")
      :initarg  :lb-edge-wpn-ch-bonus
      :accessor lb-edge-wpn-ch-bonus)
    (b-inc-edge-wpn-ch-bonus
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 8.0)
-				t)
+                                (pgen-inc-button-y 8.0)
+                                t)
     :initarg :b-inc-edge-wpn-ch-bonus
     :accessor b-inc-edge-wpn-ch-bonus)
    (b-dec-edge-wpn-ch-bonus
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 8.0)
-				nil)
+                                (pgen-inc-button-y 8.0)
+                                nil)
     :initarg :b-dec-edge-wpn-ch-bonus
     :accessor b-dec-edge-wpn-ch-bonus)
    (lb-edge-wpn-dmg-bonus
      :initform (make-instance 'simple-label-prefixed
-			      :width  (pgen-label-ability-w)
-			      :height (pgen-label-ability-h)
-			      :x (pgen-label-ability-x)
-			      :y (pgen-label-ability-y 9.0)
-			      :prefix (_ "Edge weapon damage bonus: ")
-			      :label "")
+                              :width  (pgen-label-ability-w)
+                              :height (pgen-label-ability-h)
+                              :x (pgen-label-ability-x)
+                              :y (pgen-label-ability-y 9.0)
+                              :prefix (_ "Edge weapon damage bonus: ")
+                              :label "")
      :initarg  :lb-edge-wpn-dmg-bonus
      :accessor lb-edge-wpn-dmg-bonus)
    (b-inc-edge-wpn-dmg-bonus
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 9.0)
-				t)
+                                (pgen-inc-button-y 9.0)
+                                t)
     :initarg :b-inc-edge-wpn-dmg-bonus
     :accessor b-inc-edge-wpn-dmg-bonus)
    (b-dec-edge-wpn-dmg-bonus
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 9.0)
-				nil)
+                                (pgen-inc-button-y 9.0)
+                                nil)
     :initarg :b-dec-edge-wpn-dmg-bonus
     :accessor b-dec-edge-wpn-dmg-bonus)
    (lb-impact-wpn-ch-bonus
      :initform (make-instance 'simple-label-prefixed
-			      :width  (pgen-label-ability-w)
-			      :height (pgen-label-ability-h)
-			      :x (pgen-label-ability-x)
-			      :y (pgen-label-ability-y 10.0)
-			      :prefix (_ "Impact weapon chance bonus: ")
-			      :label "")
+                              :width  (pgen-label-ability-w)
+                              :height (pgen-label-ability-h)
+                              :x (pgen-label-ability-x)
+                              :y (pgen-label-ability-y 10.0)
+                              :prefix (_ "Impact weapon chance bonus: ")
+                              :label "")
      :initarg  :lb-impact-wpn-ch-bonus
      :accessor lb-impact-wpn-ch-bonus)
    (b-inc-impact-wpn-ch-bonus
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 10.0)
-				t)
+                                (pgen-inc-button-y 10.0)
+                                t)
     :initarg :b-inc-impact-wpn-ch-bonus
     :accessor b-inc-impact-wpn-ch-bonus)
    (b-dec-impact-wpn-ch-bonus
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 10.0)
-				nil)
+                                (pgen-inc-button-y 10.0)
+                                nil)
     :initarg :b-dec-impact-wpn-ch-bonus
     :accessor b-dec-impact-wpn-ch-bonus)
    (lb-impact-wpn-dmg-bonus
      :initform (make-instance 'simple-label-prefixed
-			      :width  (pgen-label-ability-w)
-			      :height (pgen-label-ability-h)
-			      :x (pgen-label-ability-x)
-			      :y (pgen-label-ability-y 11.0)
-			      :prefix (_ "Impact weapon damage bonus: ")
-			      :label "")
+                              :width  (pgen-label-ability-w)
+                              :height (pgen-label-ability-h)
+                              :x (pgen-label-ability-x)
+                              :y (pgen-label-ability-y 11.0)
+                              :prefix (_ "Impact weapon damage bonus: ")
+                              :label "")
      :initarg  :lb-impact-wpn-dmg-bonus
      :accessor lb-impact-wpn-dmg-bonus)
    (b-inc-impact-wpn-dmg-bonus
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 11.0)
-				t)
+                                (pgen-inc-button-y 11.0)
+                                t)
     :initarg :b-inc-impact-wpn-dmg-bonus
     :accessor b-inc-impact-wpn-dmg-bonus)
    (b-dec-impact-wpn-dmg-bonus
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 11.0)
-				nil)
+                                (pgen-inc-button-y 11.0)
+                                nil)
     :initarg :b-dec-impact-wpn-dmg-bonus
     :accessor b-dec-impact-wpn-dmg-bonus)
    (lb-pole-wpn-ch-bonus
      :initform (make-instance 'simple-label-prefixed
-			      :width  (pgen-label-ability-w)
-			      :height (pgen-label-ability-h)
-			      :x (pgen-label-ability-x)
-			      :y (pgen-label-ability-y 12.0)
-			      :prefix (_ "Pole weapon chance bonus: ")
-			      :label "")
+                              :width  (pgen-label-ability-w)
+                              :height (pgen-label-ability-h)
+                              :x (pgen-label-ability-x)
+                              :y (pgen-label-ability-y 12.0)
+                              :prefix (_ "Pole weapon chance bonus: ")
+                              :label "")
      :initarg  :lb-pole-wpn-ch-bonus
      :accessor lb-pole-wpn-ch-bonus)
    (b-inc-pole-wpn-ch-bonus
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 12.0)
-				t)
+                                (pgen-inc-button-y 12.0)
+                                t)
     :initarg :b-inc-pole-wpn-ch-bonus
     :accessor b-inc-pole-wpn-ch-bonus)
    (b-dec-pole-wpn-ch-bonus
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 12.0)
-				nil)
+                                (pgen-inc-button-y 12.0)
+                                nil)
     :initarg :b-dec-pole-wpn-ch-bonus
     :accessor b-dec-pole-wpn-ch-bonus)
    (lb-pole-wpn-dmg-bonus
      :initform (make-instance 'simple-label-prefixed
-			      :width  (pgen-label-ability-w)
-			      :height (pgen-label-ability-h)
-			      :x (pgen-label-ability-x)
-			      :y (pgen-label-ability-y 13.0)
-			      :prefix (_ "Pole weapon damage bonus: ")
-			      :label "")
+                              :width  (pgen-label-ability-w)
+                              :height (pgen-label-ability-h)
+                              :x (pgen-label-ability-x)
+                              :y (pgen-label-ability-y 13.0)
+                              :prefix (_ "Pole weapon damage bonus: ")
+                              :label "")
      :initarg  :lb-pole-wpn-dmg-bonus
      :accessor lb-pole-wpn-dmg-bonus)
    (b-inc-pole-wpn-dmg-bonus
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 13.0)
-				t)
+                                (pgen-inc-button-y 13.0)
+                                t)
     :initarg :b-inc-pole-wpn-dmg-bonus
     :accessor b-inc-pole-wpn-dmg-bonus)
    (b-dec-pole-wpn-dmg-bonus
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 13.0)
-				nil)
+                                (pgen-inc-button-y 13.0)
+                                nil)
     :initarg :b-dec-pole-wpn-dmg-bonus
     :accessor b-dec-pole-wpn-dmg-bonus)
    (lb-unlock-ch
      :initform (make-instance 'simple-label-prefixed
-			      :width  (pgen-label-ability-w)
-			      :height (pgen-label-ability-h)
-			      :x (pgen-label-ability-x)
-			      :y (pgen-label-ability-y 14.0)
-			      :prefix (_ "Unlock chance: ")
-			      :label "")
+                              :width  (pgen-label-ability-w)
+                              :height (pgen-label-ability-h)
+                              :x (pgen-label-ability-x)
+                              :y (pgen-label-ability-y 14.0)
+                              :prefix (_ "Unlock chance: ")
+                              :label "")
      :initarg  :lb-unlock-ch
      :accessor lb-unlock-ch)
    (b-inc-unlock-ch
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 14.0)
-				t)
+                                (pgen-inc-button-y 14.0)
+                                t)
     :initarg :b-inc-unlock-ch
     :accessor b-inc-unlock-ch)
    (b-dec-unlock-ch
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 14.0)
-				nil)
+                                (pgen-inc-button-y 14.0)
+                                nil)
     :initarg :b-dec-unlock-ch
     :accessor b-dec-unlock-ch)
    (lb-deactivate-trap-ch
      :initform (make-instance 'simple-label-prefixed
-			      :width  (pgen-label-ability-w)
-			      :height (pgen-label-ability-h)
-			      :x (pgen-label-ability-x)
-			      :y (pgen-label-ability-y 15.0)
-			      :prefix (_ "Deactivate trap chance: ")
-			      :label "")
+                              :width  (pgen-label-ability-w)
+                              :height (pgen-label-ability-h)
+                              :x (pgen-label-ability-x)
+                              :y (pgen-label-ability-y 15.0)
+                              :prefix (_ "Deactivate trap chance: ")
+                              :label "")
      :initarg  :lb-deactivate-trap-ch
      :accessor lb-deactivate-trap-ch)
    (b-inc-deactivate-trap-ch
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 15.0)
-				t)
+                                (pgen-inc-button-y 15.0)
+                                t)
     :initarg :b-inc-deactivate-trap-ch
     :accessor b-inc-deactivate-trap-ch)
    (b-dec-deactivate-trap-ch
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 15.0)
-				nil)
+                                (pgen-inc-button-y 15.0)
+                                nil)
     :initarg :b-dec-deactivate-trap-ch
     :accessor b-dec-deactivate-trap-ch)
    (lb-reply-attack-ch
      :initform (make-instance 'simple-label-prefixed
-			      :width  (pgen-label-ability-w)
-			      :height (pgen-label-ability-h)
-			      :x (pgen-label-ability-x)
-			      :y (pgen-label-ability-y 16.0)
-			      :prefix (_ "Reply to attack chance: ")
-			      :label "")
+                              :width  (pgen-label-ability-w)
+                              :height (pgen-label-ability-h)
+                              :x (pgen-label-ability-x)
+                              :y (pgen-label-ability-y 16.0)
+                              :prefix (_ "Reply to attack chance: ")
+                              :label "")
      :initarg  :lb-reply-attack-ch
      :accessor lb-reply-attack-ch)
    (b-inc-reply-attack-ch
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 16.0)
-				t)
+                                (pgen-inc-button-y 16.0)
+                                t)
     :initarg :b-inc-reply-attack-ch
     :accessor b-inc-reply-attack-ch)
    (b-dec-reply-attack-ch
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 16.0)
-				nil)
+                                (pgen-inc-button-y 16.0)
+                                nil)
     :initarg :b-dec-reply-attack-ch
     :accessor b-dec-reply-attack-ch)
    (lb-ambush-attack-ch
      :initform (make-instance 'simple-label-prefixed
-			      :width  (pgen-label-ability-w)
-			      :height (pgen-label-ability-h)
-			      :x (pgen-label-ability-x)
-			      :y (pgen-label-ability-y 17.0)
-			      :prefix (_ "Ambush attack chance: ")
-			      :label "")
+                              :width  (pgen-label-ability-w)
+                              :height (pgen-label-ability-h)
+                              :x (pgen-label-ability-x)
+                              :y (pgen-label-ability-y 17.0)
+                              :prefix (_ "Ambush attack chance: ")
+                              :label "")
      :initarg  :lb-ambush-attack-ch
      :accessor lb-ambush-attack-ch)
    (b-inc-ambush-attack-ch
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 17.0)
-				t)
+                                (pgen-inc-button-y 17.0)
+                                t)
     :initarg :b-inc-ambush-attack-ch
     :accessor b-inc-ambush-attack-ch)
    (b-dec-ambush-attack-ch
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 17.0)
-				nil)
+                                (pgen-inc-button-y 17.0)
+                                nil)
     :initarg :b-dec-ambush-attack-ch
     :accessor b-dec-ambush-attack-ch)
    (lb-spell-ch
      :initform (make-instance 'simple-label-prefixed
-			      :width  (pgen-label-ability-w)
-			      :height (pgen-label-ability-h)
-			      :x (pgen-label-ability-x)
-			      :y (pgen-label-ability-y 18.0)
-			      :prefix (_ "Spell chance: ")
-			      :label "")
+                              :width  (pgen-label-ability-w)
+                              :height (pgen-label-ability-h)
+                              :x (pgen-label-ability-x)
+                              :y (pgen-label-ability-y 18.0)
+                              :prefix (_ "Spell chance: ")
+                              :label "")
      :initarg  :lb-spell-ch
      :accessor lb-spell-ch)
    (b-inc-spell-ch
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 18.0)
-				t)
+                                (pgen-inc-button-y 18.0)
+                                t)
     :initarg :b-inc-spell-ch
     :accessor b-inc-spell-ch)
    (b-dec-spell-ch
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 18.0)
-				nil)
+                                (pgen-inc-button-y 18.0)
+                                nil)
     :initarg :b-dec-spell-ch
     :accessor b-dec-spell-ch)
    (lb-attack-spell-ch
      :initform (make-instance 'simple-label-prefixed
-			      :width  (pgen-label-ability-w)
-			      :height (pgen-label-ability-h)
-			      :x (pgen-label-ability-x)
-			      :y (pgen-label-ability-y 19.0)
-			      :prefix (_ "Attack spell chance: ")
-			      :label "")
+                              :width  (pgen-label-ability-w)
+                              :height (pgen-label-ability-h)
+                              :x (pgen-label-ability-x)
+                              :y (pgen-label-ability-y 19.0)
+                              :prefix (_ "Attack spell chance: ")
+                              :label "")
      :initarg  :lb-attack-spell-ch
      :accessor lb-attack-spell-ch)
    (b-inc-attack-spell-ch
     :initform (make-pgen-button (pgen-inc-button-x)
-				(pgen-inc-button-y 19.0)
-				t)
+                                (pgen-inc-button-y 19.0)
+                                t)
     :initarg :b-inc-attack-spell-ch
     :accessor b-inc-attack-spell-ch)
    (b-dec-attack-spell-ch
     :initform (make-pgen-button (pgen-dec-button-x)
-				(pgen-inc-button-y 19.0)
-				nil)
+                                (pgen-inc-button-y 19.0)
+                                nil)
     :initarg :b-dec-attack-spell-ch
     :accessor b-dec-attack-spell-ch)
    (lb-level
      :initform (make-instance 'simple-label-prefixed
-			      :width  (pgen-label-ability-w)
-			      :height (pgen-label-ability-h)
-			      :x (pgen-label-ability-x)
-			      :y (pgen-label-ability-y 20.0)
-			      :prefix (_ "Level: ")
-			      :label "")
+                              :width  (pgen-label-ability-w)
+                              :height (pgen-label-ability-h)
+                              :x (pgen-label-ability-x)
+                              :y (pgen-label-ability-y 20.0)
+                              :prefix (_ "Level: ")
+                              :label "")
      :initarg  :lb-level
      :accessor lb-level)
    (lb-exp-points
      :initform (make-instance 'simple-label-prefixed
-			      :width  (pgen-label-ability-w)
-			      :height (input-text-h *reference-sizes*)
-			      :x (pgen-label-ability-x)
-			      :y (pgen-label-ability-y 21.0)
-			      :prefix (_ "Experience points: ")
-			      :label "")
+                              :width  (pgen-label-ability-w)
+                              :height (input-text-h *reference-sizes*)
+                              :x (pgen-label-ability-x)
+                              :y (pgen-label-ability-y 21.0)
+                              :prefix (_ "Experience points: ")
+                              :label "")
      :initarg  :lb-exp-points
      :accessor lb-exp-points)
    (input-name
     :initform (make-instance 'text-field
-			     :width  (input-text-w *reference-sizes*)
-			     :height (input-text-h *reference-sizes*)
-			     :x (d+ (d* 2.0 (spacing *reference-sizes*))
-				    +portrait-size+
-				    (pgen-chk-button-w))
-			     :y 0.0
-			     :label (_ "Name"))
+                             :width  (input-text-w *reference-sizes*)
+                             :height (input-text-h *reference-sizes*)
+                             :x (d+ (d* 2.0 (spacing *reference-sizes*))
+                                    +portrait-size+
+                                    (pgen-chk-button-w))
+                             :y 0.0
+                             :label (_ "Name"))
     :initarg :input-name
     :accessor input-name)
    (input-last-name
     :initform (make-instance 'text-field
-			     :width  (input-text-w *reference-sizes*)
-			     :height (input-text-h *reference-sizes*)
-			     :x (d+ (d* 2.0 (spacing *reference-sizes*))
-				    +portrait-size+
-				    (pgen-chk-button-w))
-			     :y (d+ (spacing *reference-sizes*)
-				    (input-text-h *reference-sizes*))
-			     :label (_ "Last name"))
+                             :width  (input-text-w *reference-sizes*)
+                             :height (input-text-h *reference-sizes*)
+                             :x (d+ (d* 2.0 (spacing *reference-sizes*))
+                                    +portrait-size+
+                                    (pgen-chk-button-w))
+                             :y (d+ (spacing *reference-sizes*)
+                                    (input-text-h *reference-sizes*))
+                             :label (_ "Last name"))
     :initarg :input-last-name
     :accessor input-last-name)
    (lb-strength
     :initform (make-instance 'simple-label-prefixed
-			     :width  (input-text-w *reference-sizes*)
-			     :height (input-text-h *reference-sizes*)
-			     :x (pgen-characteristics-x)
-			     :y (pgen-characteristics-y 0.0)
-			     :prefix (_ "STR: ")
-			     :label "")
+                             :width  (input-text-w *reference-sizes*)
+                             :height (input-text-h *reference-sizes*)
+                             :x (pgen-characteristics-x)
+                             :y (pgen-characteristics-y 0.0)
+                             :prefix (_ "STR: ")
+                             :label "")
     :initarg  :lb-strength
     :accessor lb-strength)
    (lb-stamina
     :initform (make-instance 'simple-label-prefixed
-			     :width  (input-text-w *reference-sizes*)
-			     :height (input-text-h *reference-sizes*)
-			     :x (pgen-characteristics-x)
-			     :y (pgen-characteristics-y 1.0)
-			     :prefix (_ "ST:  ")
-			     :label "")
+                             :width  (input-text-w *reference-sizes*)
+                             :height (input-text-h *reference-sizes*)
+                             :x (pgen-characteristics-x)
+                             :y (pgen-characteristics-y 1.0)
+                             :prefix (_ "ST:  ")
+                             :label "")
     :initarg  :lb-stamina
     :accessor lb-stamina)
    (lb-dexterity
     :initform (make-instance 'simple-label-prefixed
-			     :width  (input-text-w *reference-sizes*)
-			     :height (input-text-h *reference-sizes*)
-			     :x (pgen-characteristics-x)
-			     :y (pgen-characteristics-y 2.0)
-			     :prefix (_ "DX:  ")
-			     :label "")
+                             :width  (input-text-w *reference-sizes*)
+                             :height (input-text-h *reference-sizes*)
+                             :x (pgen-characteristics-x)
+                             :y (pgen-characteristics-y 2.0)
+                             :prefix (_ "DX:  ")
+                             :label "")
     :initarg  :lb-dexterity
     :accessor lb-dexterity)
    (lb-agility
     :initform (make-instance 'simple-label-prefixed
-			     :width  (input-text-w *reference-sizes*)
-			     :height (input-text-h *reference-sizes*)
-			     :x (pgen-characteristics-x)
-			     :y (pgen-characteristics-y 3.0)
-			     :prefix (_ "AG:  ")
-			     :label "")
+                             :width  (input-text-w *reference-sizes*)
+                             :height (input-text-h *reference-sizes*)
+                             :x (pgen-characteristics-x)
+                             :y (pgen-characteristics-y 3.0)
+                             :prefix (_ "AG:  ")
+                             :label "")
     :initarg  :lb-agility
     :accessor lb-agility)
    (lb-smartness
     :initform (make-instance 'simple-label-prefixed
-			     :width  (input-text-w *reference-sizes*)
-			     :height (input-text-h *reference-sizes*)
-			     :x (pgen-characteristics-x)
-			     :y (pgen-characteristics-y 4.0)
-			     :prefix (_ "SM:  ")
-			     :label "")
+                             :width  (input-text-w *reference-sizes*)
+                             :height (input-text-h *reference-sizes*)
+                             :x (pgen-characteristics-x)
+                             :y (pgen-characteristics-y 4.0)
+                             :prefix (_ "SM:  ")
+                             :label "")
     :initarg  :lb-smartness
     :accessor lb-smartness)
    (lb-empaty
     :initform (make-instance 'simple-label-prefixed
-			     :width  (input-text-w *reference-sizes*)
-			     :height (input-text-h *reference-sizes*)
-			     :x      (pgen-characteristics-x)
-			     :y      (pgen-characteristics-y 5.0)
-			     :prefix (_ "EM:  ")
-			     :label  "")
+                             :width  (input-text-w *reference-sizes*)
+                             :height (input-text-h *reference-sizes*)
+                             :x      (pgen-characteristics-x)
+                             :y      (pgen-characteristics-y 5.0)
+                             :prefix (_ "EM:  ")
+                             :label  "")
     :initarg  :lb-empaty
     :accessor lb-empaty)
    (lb-weight
     :initform (make-instance 'simple-label-prefixed
-			     :width  (input-text-w *reference-sizes*)
-			     :height (input-text-h *reference-sizes*)
-			     :x      (pgen-characteristics-x)
-			     :y      (pgen-characteristics-y 6.0)
-			     :prefix (_ "WG:  ")
-			     :label  "")
+                             :width  (input-text-w *reference-sizes*)
+                             :height (input-text-h *reference-sizes*)
+                             :x      (pgen-characteristics-x)
+                             :y      (pgen-characteristics-y 6.0)
+                             :prefix (_ "WG:  ")
+                             :label  "")
     :initarg  :lb-weight
     :accessor lb-weight)
    (img-preview
     :initform (make-instance 'signalling-light
-			     :width         +portrait-size+
-			     :height        +portrait-size+
-			     :x             (pgen-preview-x)
-			     :y             0.0
-			     :texture-name  +preview-unknown-texture-name+
-			     :button-status t)
+                             :width         +portrait-size+
+                             :height        +portrait-size+
+                             :x             (pgen-preview-x)
+                             :y             0.0
+                             :texture-name  +preview-unknown-texture-name+
+                             :button-status t)
     :initarg :img-preview
     :accessor img-preview)
    (b-next-preview
     :initform (make-instance 'button
-			     :height   (checkbutton-h *reference-sizes*)
-			     :width    (pgen-chk-button-w)
-			     :x        (pgen-preview-x)
-			     :y        (d+ +portrait-size+
-					   (spacing *reference-sizes*))
-			     :callback #'rotate-preview-cb
-			     :label    (_ "Next"))
+                             :height   (checkbutton-h *reference-sizes*)
+                             :width    (pgen-chk-button-w)
+                             :x        (pgen-preview-x)
+                             :y        (d+ +portrait-size+
+                                           (spacing *reference-sizes*))
+                             :callback #'rotate-preview-cb
+                             :label    (_ "Next"))
     :initarg  :b-next-preview
     :accessor b-next-preview)))
 
 (defmethod initialize-instance :after ((object player-generator) &key &allow-other-keys)
   (with-accessors ((player player)
-		   (lb-class lb-class)
-		   (backup-data-texture-portrait backup-data-texture-portrait)
-		   (backup-data-texture-preview backup-data-texture-preview)
-		   (checkb-warrior checkb-warrior)
-		   (checkb-wizard checkb-wizard)
-		   (checkb-healer checkb-healer)
-		   (checkb-archer checkb-archer)
-		   (checkb-ranger checkb-ranger)
-		   (lb-gender lb-gender)
-		   (checkb-male checkb-male)
-		   (checkb-female checkb-female)
-		   (b-generate b-generate)
-		   (b-save b-save)
-		   (b-load b-load)
-		   (b-accept b-accept)
-		   (img-portrait img-portrait)
-		   (lb-damage-pt lb-damage-pt)
- 		   (b-inc-damage-pt b-inc-damage-pt)
-		   (b-dec-damage-pt b-dec-damage-pt)
-		   (lb-movement-pt lb-movement-pt)
-		   (b-inc-movement-pt b-inc-movement-pt)
-		   (b-dec-movement-pt b-dec-movement-pt)
-		   (lb-magic-pt lb-magic-pt)
-		   (b-inc-magic-pt b-inc-magic-pt)
-		   (b-dec-magic-pt b-dec-magic-pt)
-		   (lb-dodge-ch lb-dodge-ch)
-		   (b-inc-dodge-ch b-inc-dodge-ch)
-		   (b-dec-dodge-ch b-dec-dodge-ch)
-		   (lb-melee-atk-ch lb-melee-atk-ch)
-		   (b-inc-melee-atk-ch b-inc-melee-atk-ch)
-		   (b-dec-melee-atk-ch b-dec-melee-atk-ch)
-		   (lb-range-atk-ch lb-range-atk-ch)
-		   (b-inc-range-atk-ch b-inc-range-atk-ch)
-		   (b-dec-range-atk-ch b-dec-range-atk-ch)
-		   (lb-melee-atk-dmg lb-melee-atk-dmg)
-		   (b-inc-melee-atk-dmg b-inc-melee-atk-dmg)
-		   (b-dec-melee-atk-dmg b-dec-melee-atk-dmg)
-		   (lb-range-atk-dmg lb-range-atk-dmg)
-		   (b-inc-range-atk-dmg b-inc-range-atk-dmg)
-		   (b-dec-range-atk-dmg b-dec-range-atk-dmg)
-		   (lb-edge-wpn-ch-bonus lb-edge-wpn-ch-bonus)
-		   (b-inc-edge-wpn-ch-bonus b-inc-edge-wpn-ch-bonus)
-		   (b-dec-edge-wpn-ch-bonus b-dec-edge-wpn-ch-bonus)
-		   (lb-edge-wpn-dmg-bonus lb-edge-wpn-dmg-bonus)
-		   (b-inc-edge-wpn-dmg-bonus b-inc-edge-wpn-dmg-bonus)
-		   (b-dec-edge-wpn-dmg-bonus b-dec-edge-wpn-dmg-bonus)
-		   (lb-impact-wpn-ch-bonus lb-impact-wpn-ch-bonus)
-		   (b-inc-impact-wpn-ch-bonus b-inc-impact-wpn-ch-bonus)
-		   (b-dec-impact-wpn-ch-bonus b-dec-impact-wpn-ch-bonus)
-		   (lb-impact-wpn-dmg-bonus lb-impact-wpn-dmg-bonus)
-		   (b-inc-impact-wpn-dmg-bonus b-inc-impact-wpn-dmg-bonus)
-		   (b-dec-impact-wpn-dmg-bonus b-dec-impact-wpn-dmg-bonus)
-		   (lb-pole-wpn-ch-bonus lb-pole-wpn-ch-bonus)
-		   (b-inc-pole-wpn-ch-bonus b-inc-pole-wpn-ch-bonus)
-		   (b-dec-pole-wpn-ch-bonus b-dec-pole-wpn-ch-bonus)
-		   (lb-pole-wpn-dmg-bonus lb-pole-wpn-dmg-bonus)
-		   (b-inc-pole-wpn-dmg-bonus b-inc-pole-wpn-dmg-bonus)
-		   (b-dec-pole-wpn-dmg-bonus b-dec-pole-wpn-dmg-bonus)
-		   (lb-unlock-ch lb-unlock-ch)
-		   (b-inc-unlock-ch b-inc-unlock-ch)
-		   (b-dec-unlock-ch b-dec-unlock-ch)
-		   (lb-deactivate-trap-ch lb-deactivate-trap-ch)
-		   (b-inc-deactivate-trap-ch b-inc-deactivate-trap-ch)
-		   (b-dec-deactivate-trap-ch b-dec-deactivate-trap-ch)
-		   (lb-reply-attack-ch lb-reply-attack-ch)
-		   (b-inc-reply-attack-ch b-inc-reply-attack-ch)
-		   (b-dec-reply-attack-ch b-dec-reply-attack-ch)
-		   (lb-ambush-attack-ch lb-ambush-attack-ch)
-		   (b-inc-ambush-attack-ch b-inc-ambush-attack-ch)
-		   (b-dec-ambush-attack-ch b-dec-ambush-attack-ch)
-		   (lb-spell-ch lb-spell-ch )
-		   (b-inc-spell-ch b-inc-spell-ch)
-		   (b-dec-spell-ch b-dec-spell-ch)
-		   (lb-attack-spell-ch lb-attack-spell-ch)
-		   (b-inc-attack-spell-ch b-inc-attack-spell-ch)
-		   (b-dec-attack-spell-ch b-dec-attack-spell-ch)
-		   (lb-level lb-level)
-		   (lb-exp-points lb-exp-points)
-		   (input-name input-name)
-		   (input-last-name input-last-name)
-		   (lb-strength lb-strength)
-		   (lb-stamina lb-stamina)
-		   (lb-dexterity lb-dexterity)
-		   (lb-agility lb-agility)
-		   (lb-smartness lb-smartness)
-		   (lb-empaty lb-empaty)
-		   (lb-weight lb-weight)
-		   (img-preview img-preview)
-		   (b-next-preview b-next-preview)) object
+                   (lb-class lb-class)
+                   (backup-data-texture-portrait backup-data-texture-portrait)
+                   (backup-data-texture-preview backup-data-texture-preview)
+                   (checkb-warrior checkb-warrior)
+                   (checkb-wizard checkb-wizard)
+                   (checkb-healer checkb-healer)
+                   (checkb-archer checkb-archer)
+                   (checkb-ranger checkb-ranger)
+                   (lb-gender lb-gender)
+                   (checkb-male checkb-male)
+                   (checkb-female checkb-female)
+                   (b-generate b-generate)
+                   (b-save b-save)
+                   (b-load b-load)
+                   (b-accept b-accept)
+                   (img-portrait img-portrait)
+                   (lb-damage-pt lb-damage-pt)
+                   (b-inc-damage-pt b-inc-damage-pt)
+                   (b-dec-damage-pt b-dec-damage-pt)
+                   (lb-movement-pt lb-movement-pt)
+                   (b-inc-movement-pt b-inc-movement-pt)
+                   (b-dec-movement-pt b-dec-movement-pt)
+                   (lb-magic-pt lb-magic-pt)
+                   (b-inc-magic-pt b-inc-magic-pt)
+                   (b-dec-magic-pt b-dec-magic-pt)
+                   (lb-dodge-ch lb-dodge-ch)
+                   (b-inc-dodge-ch b-inc-dodge-ch)
+                   (b-dec-dodge-ch b-dec-dodge-ch)
+                   (lb-melee-atk-ch lb-melee-atk-ch)
+                   (b-inc-melee-atk-ch b-inc-melee-atk-ch)
+                   (b-dec-melee-atk-ch b-dec-melee-atk-ch)
+                   (lb-range-atk-ch lb-range-atk-ch)
+                   (b-inc-range-atk-ch b-inc-range-atk-ch)
+                   (b-dec-range-atk-ch b-dec-range-atk-ch)
+                   (lb-melee-atk-dmg lb-melee-atk-dmg)
+                   (b-inc-melee-atk-dmg b-inc-melee-atk-dmg)
+                   (b-dec-melee-atk-dmg b-dec-melee-atk-dmg)
+                   (lb-range-atk-dmg lb-range-atk-dmg)
+                   (b-inc-range-atk-dmg b-inc-range-atk-dmg)
+                   (b-dec-range-atk-dmg b-dec-range-atk-dmg)
+                   (lb-edge-wpn-ch-bonus lb-edge-wpn-ch-bonus)
+                   (b-inc-edge-wpn-ch-bonus b-inc-edge-wpn-ch-bonus)
+                   (b-dec-edge-wpn-ch-bonus b-dec-edge-wpn-ch-bonus)
+                   (lb-edge-wpn-dmg-bonus lb-edge-wpn-dmg-bonus)
+                   (b-inc-edge-wpn-dmg-bonus b-inc-edge-wpn-dmg-bonus)
+                   (b-dec-edge-wpn-dmg-bonus b-dec-edge-wpn-dmg-bonus)
+                   (lb-impact-wpn-ch-bonus lb-impact-wpn-ch-bonus)
+                   (b-inc-impact-wpn-ch-bonus b-inc-impact-wpn-ch-bonus)
+                   (b-dec-impact-wpn-ch-bonus b-dec-impact-wpn-ch-bonus)
+                   (lb-impact-wpn-dmg-bonus lb-impact-wpn-dmg-bonus)
+                   (b-inc-impact-wpn-dmg-bonus b-inc-impact-wpn-dmg-bonus)
+                   (b-dec-impact-wpn-dmg-bonus b-dec-impact-wpn-dmg-bonus)
+                   (lb-pole-wpn-ch-bonus lb-pole-wpn-ch-bonus)
+                   (b-inc-pole-wpn-ch-bonus b-inc-pole-wpn-ch-bonus)
+                   (b-dec-pole-wpn-ch-bonus b-dec-pole-wpn-ch-bonus)
+                   (lb-pole-wpn-dmg-bonus lb-pole-wpn-dmg-bonus)
+                   (b-inc-pole-wpn-dmg-bonus b-inc-pole-wpn-dmg-bonus)
+                   (b-dec-pole-wpn-dmg-bonus b-dec-pole-wpn-dmg-bonus)
+                   (lb-unlock-ch lb-unlock-ch)
+                   (b-inc-unlock-ch b-inc-unlock-ch)
+                   (b-dec-unlock-ch b-dec-unlock-ch)
+                   (lb-deactivate-trap-ch lb-deactivate-trap-ch)
+                   (b-inc-deactivate-trap-ch b-inc-deactivate-trap-ch)
+                   (b-dec-deactivate-trap-ch b-dec-deactivate-trap-ch)
+                   (lb-reply-attack-ch lb-reply-attack-ch)
+                   (b-inc-reply-attack-ch b-inc-reply-attack-ch)
+                   (b-dec-reply-attack-ch b-dec-reply-attack-ch)
+                   (lb-ambush-attack-ch lb-ambush-attack-ch)
+                   (b-inc-ambush-attack-ch b-inc-ambush-attack-ch)
+                   (b-dec-ambush-attack-ch b-dec-ambush-attack-ch)
+                   (lb-spell-ch lb-spell-ch )
+                   (b-inc-spell-ch b-inc-spell-ch)
+                   (b-dec-spell-ch b-dec-spell-ch)
+                   (lb-attack-spell-ch lb-attack-spell-ch)
+                   (b-inc-attack-spell-ch b-inc-attack-spell-ch)
+                   (b-dec-attack-spell-ch b-dec-attack-spell-ch)
+                   (lb-level lb-level)
+                   (lb-exp-points lb-exp-points)
+                   (input-name input-name)
+                   (input-last-name input-last-name)
+                   (lb-strength lb-strength)
+                   (lb-stamina lb-stamina)
+                   (lb-dexterity lb-dexterity)
+                   (lb-agility lb-agility)
+                   (lb-smartness lb-smartness)
+                   (lb-empaty lb-empaty)
+                   (lb-weight lb-weight)
+                   (img-preview img-preview)
+                   (b-next-preview b-next-preview)) object
     (let ((group-class (make-check-group* checkb-warrior
-					  checkb-wizard
-					  checkb-healer
-					  checkb-archer
-					  checkb-ranger)))
+                                          checkb-wizard
+                                          checkb-healer
+                                          checkb-archer
+                                          checkb-ranger)))
       (setf (group checkb-warrior) group-class)
       (setf (group checkb-wizard)  group-class)
       (setf (group checkb-healer)  group-class)
@@ -3642,47 +3642,47 @@
     (add-child object img-preview)
     (add-child object b-next-preview)
     (setf backup-data-texture-portrait
-	  (alexandria:copy-array (pixmap:data (get-texture +portrait-unknown-texture-name+))))
+          (alexandria:copy-array (pixmap:data (get-texture +portrait-unknown-texture-name+))))
     (setf backup-data-texture-preview
-	  (alexandria:copy-array (pixmap:data (get-texture +preview-unknown-texture-name+))))))
+          (alexandria:copy-array (pixmap:data (get-texture +preview-unknown-texture-name+))))))
 
 (defun setup-player-character (window &key (from-player nil))
   (setf (player window)
-	(or from-player
-	    (cond
-	      ((button-state (checkb-warrior window))
-	       (character:make-warrior :human))
-	      ((button-state (checkb-wizard window))
-	       (character:make-wizard :human))
-	      ((button-state (checkb-healer window))
-	       (character:make-healer :human))
-	      ((button-state (checkb-archer window))
-	       (character:make-archer :human))
-	      ((button-state (checkb-ranger window))
-	       (character:make-ranger :human))
-	      (t
-	       (character:make-warrior :human))))))
+        (or from-player
+            (cond
+              ((button-state (checkb-warrior window))
+               (character:make-warrior :human))
+              ((button-state (checkb-wizard window))
+               (character:make-wizard :human))
+              ((button-state (checkb-healer window))
+               (character:make-healer :human))
+              ((button-state (checkb-archer window))
+               (character:make-archer :human))
+              ((button-state (checkb-ranger window))
+               (character:make-ranger :human))
+              (t
+               (character:make-warrior :human))))))
 
 (defun setup-portrait (window &key (from-player nil))
   (let ((new-portrait (if from-player
-			  (character:portrait from-player)
-			  (cond
-			    ((button-state (checkb-male window))
-			     (avatar-portrait:build-avatar "m"))
-			    (t
-			     (avatar-portrait:build-avatar "f")))))
-	(texture     (get-texture +portrait-unknown-texture-name+)))
+                          (character:portrait from-player)
+                          (cond
+                            ((button-state (checkb-male window))
+                             (avatar-portrait:build-avatar "m"))
+                            (t
+                             (avatar-portrait:build-avatar "f")))))
+        (texture     (get-texture +portrait-unknown-texture-name+)))
     (setf (pixmap:data texture) (pixmap:data new-portrait))
     (pixmap:sync-data-to-bits texture)
     (update-for-rendering texture)))
 
 (defmacro %add-callback-to-pgen-buttons (b-inc b-dec player slot widget-capital widget-dest
-					 &optional (scale-plus 1.0) (scale-minus 1.0))
+                                         &optional (scale-plus 1.0) (scale-minus 1.0))
   `(progn
      (add-callback-to-pgen-button ,b-inc ,player ,slot ,widget-capital ,widget-dest t
-				  ,scale-plus ,scale-minus)
+                                  ,scale-plus ,scale-minus)
      (add-callback-to-pgen-button ,b-dec ,player ,slot ,widget-capital ,widget-dest nil
-				  ,scale-plus ,scale-minus)))
+                                  ,scale-plus ,scale-minus)))
 
 (defun generate-cb (button event)
   (declare (ignore event))
@@ -3693,16 +3693,16 @@
 (defmacro with-file-chooser ((widget fchooser-window) &body body)
   (alexandria:with-gensyms (file-cb file-chooser act-widget)
     `(let* ((,act-widget ,widget)
-	    (,file-cb  (lambda (w e)
-			 (declare (ignore e))
-			 (let ((,fchooser-window (parent w)))
-			   ,@body
-			   (hide ,fchooser-window)
-			   (remove-child (find-root-widget ,act-widget)
-					 ,fchooser-window
-					 :key #'id
-					 :test #'=))))
-	    (,file-chooser (widget:make-file-chooser ,file-cb)))
+            (,file-cb  (lambda (w e)
+                         (declare (ignore e))
+                         (let ((,fchooser-window (parent w)))
+                           ,@body
+                           (hide ,fchooser-window)
+                           (remove-child (find-root-widget ,act-widget)
+                                         ,fchooser-window
+                                         :key #'id
+                                         :test #'=))))
+            (,file-chooser (widget:make-file-chooser ,file-cb)))
        (setf (compiled-shaders ,file-chooser) (compiled-shaders ,act-widget))
        (add-child (find-root-widget ,act-widget) ,file-chooser))))
 
@@ -3711,24 +3711,24 @@
   (with-parent-widget (win) button
     (with-file-chooser (button fchooser-window)
       (let ((new-player (deserialize (make-instance 'character:player-character)
-				     (fetch-file-chooser-path fchooser-window))))
-	(%setup-character win :new-player new-player))))
+                                     (fetch-file-chooser-path fchooser-window))))
+        (%setup-character win :new-player new-player))))
   t)
 
 (defun player-save-cb (button event)
   (declare (ignore event))
   (with-parent-widget (win) button
     (with-accessors ((input-name input-name) (input-last-name input-last-name)
-		     (player player)) win
+                     (player player)) win
       (with-file-chooser (button fchooser-window)
-	(setf (character:first-name player) (label input-name)
-	      (character:last-name  player) (label input-last-name))
-	(setf (character:portrait   player)
-	      (clone (get-texture +portrait-unknown-texture-name+)))
-	(with-open-file (stream (fetch-file-chooser-path fchooser-window)
-				:direction :output :if-exists :supersede
-				:if-does-not-exist :create)
-	  (format stream "~a" (serialize player))))))
+        (setf (character:first-name player) (label input-name)
+              (character:last-name  player) (label input-last-name))
+        (setf (character:portrait   player)
+              (clone (get-texture +portrait-unknown-texture-name+)))
+        (with-open-file (stream (fetch-file-chooser-path fchooser-window)
+                                :direction :output :if-exists :supersede
+                                :if-does-not-exist :create)
+          (format stream "~a" (serialize player))))))
   t)
 
 (defun player-accept-error-message-cb (widget event)
@@ -3736,194 +3736,194 @@
   (with-parent-widget (win) widget
     (hide win)
     (remove-child win
-		  (make-instance 'message-window)
-		  :key  #'identity
-		  :test #'(lambda (a b)
-			    (declare (ignore a))
-			    (typep b 'message-window)))))
+                  (make-instance 'message-window)
+                  :key  #'identity
+                  :test #'(lambda (a b)
+                            (declare (ignore a))
+                            (typep b 'message-window)))))
 
 (defun player-accept-cb (button event)
   (declare (ignore event))
   (with-parent-widget (win) button
     (with-accessors ((player player)
-		     (img-portrait img-portrait)
-		     (world world)
-		     (model-preview-paths model-preview-paths)
-		     (backup-data-texture-portrait backup-data-texture-portrait)
-		     (backup-data-texture-preview backup-data-texture-preview)) win
+                     (img-portrait img-portrait)
+                     (world world)
+                     (model-preview-paths model-preview-paths)
+                     (backup-data-texture-portrait backup-data-texture-portrait)
+                     (backup-data-texture-preview backup-data-texture-preview)) win
       (with-accessors ((main-state main-state)) world
-	(if (null model-preview-paths)
-	    (let ((error-message (make-message-box (_ "Mesh not specified")
-						   "Error"
-						   :error
-						   (cons (_ "OK")
-							 #'player-accept-error-message-cb))))
-	      (setf (compiled-shaders error-message) (compiled-shaders win))
-	      (add-child win error-message))
-	    (progn
-	      ;; copy some new points to current
-	      (setf (current-damage-points   player) (damage-points player))
-	      (setf (current-movement-points player) (movement-points player))
-	      (setf (current-magic-points    player) (magic-points player))
-	      ;; setup model
-	      (let* ((dir (strcat (fs:path-first-element (first model-preview-paths))
-				  fs:*directory-sep*))
-		     (model (md2:load-md2-player player
-						 dir
-						 (compiled-shaders world)
-						 +human-player-models-resource+))
-		     (portrait-texture (texture:gen-name-and-inject-in-database
-					(texture:clone (get-texture +portrait-unknown-texture-name+)))))
-		(pixmap:sync-data-to-bits portrait-texture)
-		(texture:prepare-for-rendering portrait-texture)
-		(setf (character:model-origin-dir player) dir)
-		;(setf (entity:ghost model) player)
-		(setf (portrait (entity:ghost model)) portrait-texture)
-		(world:place-player-on-map world model game-state:+pc-type+ ;#(61 109)))
-					   #(0 0)))
-	      ;; restore preview
-	      (setf (pixmap:data (get-texture +preview-unknown-texture-name+))
-		    backup-data-texture-preview)
-	      (pixmap:sync-data-to-bits (get-texture +preview-unknown-texture-name+))
-	      (setf (pixmap:data (get-texture +portrait-unknown-texture-name+))
-		    backup-data-texture-portrait)
-	      (pixmap:sync-data-to-bits (get-texture +portrait-unknown-texture-name+))
-	      (update-for-rendering (get-texture +portrait-unknown-texture-name+))
-	      (update-for-rendering (get-texture +preview-unknown-texture-name+)))))))
+        (if (null model-preview-paths)
+            (let ((error-message (make-message-box (_ "Mesh not specified")
+                                                   "Error"
+                                                   :error
+                                                   (cons (_ "OK")
+                                                         #'player-accept-error-message-cb))))
+              (setf (compiled-shaders error-message) (compiled-shaders win))
+              (add-child win error-message))
+            (progn
+              ;; copy some new points to current
+              (setf (current-damage-points   player) (damage-points player))
+              (setf (current-movement-points player) (movement-points player))
+              (setf (current-magic-points    player) (magic-points player))
+              ;; setup model
+              (let* ((dir (strcat (fs:path-first-element (first model-preview-paths))
+                                  fs:*directory-sep*))
+                     (model (md2:load-md2-player player
+                                                 dir
+                                                 (compiled-shaders world)
+                                                 +human-player-models-resource+))
+                     (portrait-texture (texture:gen-name-and-inject-in-database
+                                        (texture:clone (get-texture +portrait-unknown-texture-name+)))))
+                (pixmap:sync-data-to-bits portrait-texture)
+                (texture:prepare-for-rendering portrait-texture)
+                (setf (character:model-origin-dir player) dir)
+                ;(setf (entity:ghost model) player)
+                (setf (portrait (entity:ghost model)) portrait-texture)
+                (world:place-player-on-map world model game-state:+pc-type+ ;#(61 109)))
+                                           #(0 0)))
+              ;; restore preview
+              (setf (pixmap:data (get-texture +preview-unknown-texture-name+))
+                    backup-data-texture-preview)
+              (pixmap:sync-data-to-bits (get-texture +preview-unknown-texture-name+))
+              (setf (pixmap:data (get-texture +portrait-unknown-texture-name+))
+                    backup-data-texture-portrait)
+              (pixmap:sync-data-to-bits (get-texture +portrait-unknown-texture-name+))
+              (update-for-rendering (get-texture +portrait-unknown-texture-name+))
+              (update-for-rendering (get-texture +preview-unknown-texture-name+)))))))
   t)
 
 (defun %find-max-lenght-ability-prefix (win)
   (with-accessors ((lb-damage-pt lb-damage-pt)
-		   (lb-movement-pt lb-movement-pt)
-		   (lb-magic-pt lb-magic-pt)
-		   (lb-dodge-ch lb-dodge-ch)
-		   (lb-melee-atk-ch lb-melee-atk-ch)
-		   (lb-range-atk-ch lb-range-atk-ch)
-		   (lb-melee-atk-dmg lb-melee-atk-dmg)
-		   (lb-range-atk-dmg lb-range-atk-dmg)
-		   (lb-edge-wpn-ch-bonus lb-edge-wpn-ch-bonus)
-		   (lb-edge-wpn-dmg-bonus lb-edge-wpn-dmg-bonus)
-		   (lb-impact-wpn-ch-bonus lb-impact-wpn-ch-bonus)
-		   (lb-impact-wpn-dmg-bonus lb-impact-wpn-dmg-bonus)
-		   (lb-pole-wpn-ch-bonus lb-pole-wpn-ch-bonus)
-		   (lb-pole-wpn-dmg-bonus lb-pole-wpn-dmg-bonus)
-		   (lb-unlock-ch lb-unlock-ch)
-		   (lb-deactivate-trap-ch lb-deactivate-trap-ch)
-		   (lb-reply-attack-ch lb-reply-attack-ch)
-		   (lb-ambush-attack-ch lb-ambush-attack-ch)
-		   (lb-spell-ch lb-spell-ch)
-		   (lb-attack-spell-ch lb-attack-spell-ch)
-		   (lb-level lb-level)
-		   (lb-exp-points lb-exp-points)) win
+                   (lb-movement-pt lb-movement-pt)
+                   (lb-magic-pt lb-magic-pt)
+                   (lb-dodge-ch lb-dodge-ch)
+                   (lb-melee-atk-ch lb-melee-atk-ch)
+                   (lb-range-atk-ch lb-range-atk-ch)
+                   (lb-melee-atk-dmg lb-melee-atk-dmg)
+                   (lb-range-atk-dmg lb-range-atk-dmg)
+                   (lb-edge-wpn-ch-bonus lb-edge-wpn-ch-bonus)
+                   (lb-edge-wpn-dmg-bonus lb-edge-wpn-dmg-bonus)
+                   (lb-impact-wpn-ch-bonus lb-impact-wpn-ch-bonus)
+                   (lb-impact-wpn-dmg-bonus lb-impact-wpn-dmg-bonus)
+                   (lb-pole-wpn-ch-bonus lb-pole-wpn-ch-bonus)
+                   (lb-pole-wpn-dmg-bonus lb-pole-wpn-dmg-bonus)
+                   (lb-unlock-ch lb-unlock-ch)
+                   (lb-deactivate-trap-ch lb-deactivate-trap-ch)
+                   (lb-reply-attack-ch lb-reply-attack-ch)
+                   (lb-ambush-attack-ch lb-ambush-attack-ch)
+                   (lb-spell-ch lb-spell-ch)
+                   (lb-attack-spell-ch lb-attack-spell-ch)
+                   (lb-level lb-level)
+                   (lb-exp-points lb-exp-points)) win
     (let ((all-labels (list lb-damage-pt
-			    lb-movement-pt
-			    lb-magic-pt
-			    lb-dodge-ch
-			    lb-melee-atk-ch
-			    lb-range-atk-ch
-			    lb-melee-atk-dmg
-			    lb-range-atk-dmg
-			    lb-edge-wpn-ch-bonus
-			    lb-edge-wpn-dmg-bonus
-			    lb-impact-wpn-ch-bonus
-			    lb-impact-wpn-dmg-bonus
-			    lb-pole-wpn-ch-bonus
-			    lb-pole-wpn-dmg-bonus
-			    lb-unlock-ch
-			    lb-deactivate-trap-ch
-			    lb-reply-attack-ch
-			    lb-ambush-attack-ch
-			    lb-spell-ch lb-spell-ch
-			    lb-attack-spell-ch
-			    lb-level lb-level
-			    lb-exp-points lb-exp-points)))
+                            lb-movement-pt
+                            lb-magic-pt
+                            lb-dodge-ch
+                            lb-melee-atk-ch
+                            lb-range-atk-ch
+                            lb-melee-atk-dmg
+                            lb-range-atk-dmg
+                            lb-edge-wpn-ch-bonus
+                            lb-edge-wpn-dmg-bonus
+                            lb-impact-wpn-ch-bonus
+                            lb-impact-wpn-dmg-bonus
+                            lb-pole-wpn-ch-bonus
+                            lb-pole-wpn-dmg-bonus
+                            lb-unlock-ch
+                            lb-deactivate-trap-ch
+                            lb-reply-attack-ch
+                            lb-ambush-attack-ch
+                            lb-spell-ch lb-spell-ch
+                            lb-attack-spell-ch
+                            lb-level lb-level
+                            lb-exp-points lb-exp-points)))
       (find-max (mapcar #'(lambda (a) (length (prefix a))) all-labels)))))
 
 (defun %setup-character (win &key (new-player nil))
   (with-accessors ((input-name input-name)
-		   (input-last-name input-last-name)
-		   (lb-strength lb-strength)
-		   (lb-stamina lb-stamina)
-		   (lb-dexterity lb-dexterity)
-		   (lb-agility lb-agility)
-		   (lb-smartness lb-smartness)
-		   (lb-empaty lb-empaty)
-		   (lb-weight lb-weight)
-		   (img-portrait img-portrait)
-		   (lb-damage-pt lb-damage-pt)
-		   (b-inc-damage-pt b-inc-damage-pt)
-		   (b-dec-damage-pt b-dec-damage-pt)
-		   (lb-movement-pt lb-movement-pt)
-		   (b-inc-movement-pt b-inc-movement-pt)
-		   (b-dec-movement-pt b-dec-movement-pt)
-		   (lb-magic-pt lb-magic-pt)
-		   (b-inc-magic-pt b-inc-magic-pt)
-		   (b-dec-magic-pt b-dec-magic-pt)
-		   (lb-dodge-ch lb-dodge-ch)
-		   (b-inc-dodge-ch b-inc-dodge-ch)
-		   (b-dec-dodge-ch b-dec-dodge-ch)
-		   (lb-melee-atk-ch lb-melee-atk-ch)
-		   (b-inc-melee-atk-ch b-inc-melee-atk-ch)
-		   (b-dec-melee-atk-ch b-dec-melee-atk-ch)
-		   (lb-range-atk-ch lb-range-atk-ch)
-		   (b-inc-range-atk-ch b-inc-range-atk-ch)
-		   (b-dec-range-atk-ch b-dec-range-atk-ch)
-		   (lb-melee-atk-dmg lb-melee-atk-dmg)
-		   (b-inc-melee-atk-dmg b-inc-melee-atk-dmg)
-		   (b-dec-melee-atk-dmg b-dec-melee-atk-dmg)
-		   (lb-range-atk-dmg lb-range-atk-dmg)
-		   (b-inc-range-atk-dmg b-inc-range-atk-dmg)
-		   (b-dec-range-atk-dmg b-dec-range-atk-dmg)
-		   (lb-edge-wpn-ch-bonus lb-edge-wpn-ch-bonus)
-		   (b-inc-edge-wpn-ch-bonus b-inc-edge-wpn-ch-bonus)
-		   (b-dec-edge-wpn-ch-bonus b-dec-edge-wpn-ch-bonus)
-		   (lb-edge-wpn-dmg-bonus lb-edge-wpn-dmg-bonus)
-		   (b-inc-edge-wpn-dmg-bonus b-inc-edge-wpn-dmg-bonus)
-		   (b-dec-edge-wpn-dmg-bonus b-dec-edge-wpn-dmg-bonus)
-		   (lb-impact-wpn-ch-bonus lb-impact-wpn-ch-bonus)
-		   (b-inc-impact-wpn-ch-bonus b-inc-impact-wpn-ch-bonus)
-		   (b-dec-impact-wpn-ch-bonus b-dec-impact-wpn-ch-bonus)
-		   (lb-impact-wpn-dmg-bonus lb-impact-wpn-dmg-bonus)
-		   (b-inc-impact-wpn-dmg-bonus b-inc-impact-wpn-dmg-bonus)
-		   (b-dec-impact-wpn-dmg-bonus b-dec-impact-wpn-dmg-bonus)
-		   (lb-pole-wpn-ch-bonus lb-pole-wpn-ch-bonus)
-		   (b-inc-pole-wpn-ch-bonus b-inc-pole-wpn-ch-bonus)
-		   (b-dec-pole-wpn-ch-bonus b-dec-pole-wpn-ch-bonus)
-		   (lb-pole-wpn-dmg-bonus lb-pole-wpn-dmg-bonus)
-		   (b-inc-pole-wpn-dmg-bonus b-inc-pole-wpn-dmg-bonus)
-		   (b-dec-pole-wpn-dmg-bonus b-dec-pole-wpn-dmg-bonus)
-		   (lb-unlock-ch lb-unlock-ch)
-		   (b-inc-unlock-ch b-inc-unlock-ch)
-		   (b-dec-unlock-ch b-dec-unlock-ch)
-		   (lb-deactivate-trap-ch lb-deactivate-trap-ch)
-		   (b-inc-deactivate-trap-ch b-inc-deactivate-trap-ch)
-		   (b-dec-deactivate-trap-ch b-dec-deactivate-trap-ch)
-		   (lb-reply-attack-ch lb-reply-attack-ch)
-		   (b-inc-reply-attack-ch b-inc-reply-attack-ch)
-		   (b-dec-reply-attack-ch b-dec-reply-attack-ch)
-		   (lb-ambush-attack-ch lb-ambush-attack-ch)
-		   (b-inc-ambush-attack-ch b-inc-ambush-attack-ch)
-		   (b-dec-ambush-attack-ch b-dec-ambush-attack-ch)
-		   (lb-spell-ch lb-spell-ch )
-		   (b-inc-spell-ch b-inc-spell-ch)
-		   (b-dec-spell-ch b-dec-spell-ch)
-		   (lb-attack-spell-ch lb-attack-spell-ch)
-		   (b-inc-attack-spell-ch b-inc-attack-spell-ch)
-		   (b-dec-attack-spell-ch b-dec-attack-spell-ch)
-		   (lb-level lb-level)
-		   (lb-exp-points lb-exp-points)
-		   (player player)) win
+                   (input-last-name input-last-name)
+                   (lb-strength lb-strength)
+                   (lb-stamina lb-stamina)
+                   (lb-dexterity lb-dexterity)
+                   (lb-agility lb-agility)
+                   (lb-smartness lb-smartness)
+                   (lb-empaty lb-empaty)
+                   (lb-weight lb-weight)
+                   (img-portrait img-portrait)
+                   (lb-damage-pt lb-damage-pt)
+                   (b-inc-damage-pt b-inc-damage-pt)
+                   (b-dec-damage-pt b-dec-damage-pt)
+                   (lb-movement-pt lb-movement-pt)
+                   (b-inc-movement-pt b-inc-movement-pt)
+                   (b-dec-movement-pt b-dec-movement-pt)
+                   (lb-magic-pt lb-magic-pt)
+                   (b-inc-magic-pt b-inc-magic-pt)
+                   (b-dec-magic-pt b-dec-magic-pt)
+                   (lb-dodge-ch lb-dodge-ch)
+                   (b-inc-dodge-ch b-inc-dodge-ch)
+                   (b-dec-dodge-ch b-dec-dodge-ch)
+                   (lb-melee-atk-ch lb-melee-atk-ch)
+                   (b-inc-melee-atk-ch b-inc-melee-atk-ch)
+                   (b-dec-melee-atk-ch b-dec-melee-atk-ch)
+                   (lb-range-atk-ch lb-range-atk-ch)
+                   (b-inc-range-atk-ch b-inc-range-atk-ch)
+                   (b-dec-range-atk-ch b-dec-range-atk-ch)
+                   (lb-melee-atk-dmg lb-melee-atk-dmg)
+                   (b-inc-melee-atk-dmg b-inc-melee-atk-dmg)
+                   (b-dec-melee-atk-dmg b-dec-melee-atk-dmg)
+                   (lb-range-atk-dmg lb-range-atk-dmg)
+                   (b-inc-range-atk-dmg b-inc-range-atk-dmg)
+                   (b-dec-range-atk-dmg b-dec-range-atk-dmg)
+                   (lb-edge-wpn-ch-bonus lb-edge-wpn-ch-bonus)
+                   (b-inc-edge-wpn-ch-bonus b-inc-edge-wpn-ch-bonus)
+                   (b-dec-edge-wpn-ch-bonus b-dec-edge-wpn-ch-bonus)
+                   (lb-edge-wpn-dmg-bonus lb-edge-wpn-dmg-bonus)
+                   (b-inc-edge-wpn-dmg-bonus b-inc-edge-wpn-dmg-bonus)
+                   (b-dec-edge-wpn-dmg-bonus b-dec-edge-wpn-dmg-bonus)
+                   (lb-impact-wpn-ch-bonus lb-impact-wpn-ch-bonus)
+                   (b-inc-impact-wpn-ch-bonus b-inc-impact-wpn-ch-bonus)
+                   (b-dec-impact-wpn-ch-bonus b-dec-impact-wpn-ch-bonus)
+                   (lb-impact-wpn-dmg-bonus lb-impact-wpn-dmg-bonus)
+                   (b-inc-impact-wpn-dmg-bonus b-inc-impact-wpn-dmg-bonus)
+                   (b-dec-impact-wpn-dmg-bonus b-dec-impact-wpn-dmg-bonus)
+                   (lb-pole-wpn-ch-bonus lb-pole-wpn-ch-bonus)
+                   (b-inc-pole-wpn-ch-bonus b-inc-pole-wpn-ch-bonus)
+                   (b-dec-pole-wpn-ch-bonus b-dec-pole-wpn-ch-bonus)
+                   (lb-pole-wpn-dmg-bonus lb-pole-wpn-dmg-bonus)
+                   (b-inc-pole-wpn-dmg-bonus b-inc-pole-wpn-dmg-bonus)
+                   (b-dec-pole-wpn-dmg-bonus b-dec-pole-wpn-dmg-bonus)
+                   (lb-unlock-ch lb-unlock-ch)
+                   (b-inc-unlock-ch b-inc-unlock-ch)
+                   (b-dec-unlock-ch b-dec-unlock-ch)
+                   (lb-deactivate-trap-ch lb-deactivate-trap-ch)
+                   (b-inc-deactivate-trap-ch b-inc-deactivate-trap-ch)
+                   (b-dec-deactivate-trap-ch b-dec-deactivate-trap-ch)
+                   (lb-reply-attack-ch lb-reply-attack-ch)
+                   (b-inc-reply-attack-ch b-inc-reply-attack-ch)
+                   (b-dec-reply-attack-ch b-dec-reply-attack-ch)
+                   (lb-ambush-attack-ch lb-ambush-attack-ch)
+                   (b-inc-ambush-attack-ch b-inc-ambush-attack-ch)
+                   (b-dec-ambush-attack-ch b-dec-ambush-attack-ch)
+                   (lb-spell-ch lb-spell-ch )
+                   (b-inc-spell-ch b-inc-spell-ch)
+                   (b-dec-spell-ch b-dec-spell-ch)
+                   (lb-attack-spell-ch lb-attack-spell-ch)
+                   (b-inc-attack-spell-ch b-inc-attack-spell-ch)
+                   (b-dec-attack-spell-ch b-dec-attack-spell-ch)
+                   (lb-level lb-level)
+                   (lb-exp-points lb-exp-points)
+                   (player player)) win
     (setup-player-character win :from-player new-player)
     (when (not new-player)
       (random-names:load-db +random-first-names-filename+))
     (setf (label input-name) (if new-player
-				 (character:first-name new-player)
-				 (random-names:generate)))
+                                 (character:first-name new-player)
+                                 (random-names:generate)))
     (when (not new-player)
       (random-names:load-db +random-last-names-filename+))
     (setf (label input-last-name) (if new-player
-				      (character:last-name new-player)
-				      (random-names:generate)))
+                                      (character:last-name new-player)
+                                      (random-names:generate)))
     (when (not new-player)
       (setf (character:exp-points player)
             interactive-entity:+starting-exp-points+))
@@ -3937,142 +3937,142 @@
     (setf (label lb-weight)    (format nil +standard-float-print-format+ (character:weight player)))
     (let ((max-length-prefix (%find-max-lenght-ability-prefix win)))
       (setf (prefix lb-damage-pt) (right-padding (prefix lb-damage-pt) max-length-prefix)
-	    (label lb-damage-pt) (format nil +standard-float-print-format+ (character:damage-points player)))
+            (label lb-damage-pt) (format nil +standard-float-print-format+ (character:damage-points player)))
       (%add-callback-to-pgen-buttons b-inc-damage-pt b-dec-damage-pt
-				     player 'damage-points
-				     lb-exp-points lb-damage-pt 0.1 1.0)
+                                     player 'damage-points
+                                     lb-exp-points lb-damage-pt 0.1 1.0)
       (setf (prefix lb-movement-pt) (right-padding (prefix lb-movement-pt) max-length-prefix)
-	    (label  lb-movement-pt) (format nil +standard-float-print-format+ (movement-points player)))
+            (label  lb-movement-pt) (format nil +standard-float-print-format+ (movement-points player)))
       (%add-callback-to-pgen-buttons b-inc-movement-pt b-dec-movement-pt
-				     player 'movement-points
-				     lb-exp-points lb-movement-pt 0.5 1.0)
+                                     player 'movement-points
+                                     lb-exp-points lb-movement-pt 0.5 1.0)
       (setf (prefix lb-magic-pt) (right-padding (prefix lb-magic-pt) max-length-prefix)
-	    (label  lb-magic-pt) (format nil +standard-float-print-format+ (magic-points player)))
+            (label  lb-magic-pt) (format nil +standard-float-print-format+ (magic-points player)))
       (%add-callback-to-pgen-buttons b-inc-magic-pt b-dec-magic-pt
-				     player 'magic-points
-				     lb-exp-points lb-magic-pt 0.5 1.0)
+                                     player 'magic-points
+                                     lb-exp-points lb-magic-pt 0.5 1.0)
       (setf (prefix lb-dodge-ch) (right-padding (prefix lb-dodge-ch) max-length-prefix)
-	    (label  lb-dodge-ch) (format nil +standard-float-print-format+ (dodge-chance player)))
+            (label  lb-dodge-ch) (format nil +standard-float-print-format+ (dodge-chance player)))
       (%add-callback-to-pgen-buttons b-inc-dodge-ch b-dec-dodge-ch
-				     player 'dodge-chance
-				     lb-exp-points lb-dodge-ch 0.5 1.0)
+                                     player 'dodge-chance
+                                     lb-exp-points lb-dodge-ch 0.5 1.0)
       (setf (prefix lb-melee-atk-ch) (right-padding (prefix lb-melee-atk-ch) max-length-prefix)
-	    (label  lb-melee-atk-ch) (format nil +standard-float-print-format+ (melee-attack-chance player)))
+            (label  lb-melee-atk-ch) (format nil +standard-float-print-format+ (melee-attack-chance player)))
       (%add-callback-to-pgen-buttons b-inc-melee-atk-ch b-dec-melee-atk-ch
-				     player 'melee-attack-chance
-				     lb-exp-points lb-melee-atk-ch)
+                                     player 'melee-attack-chance
+                                     lb-exp-points lb-melee-atk-ch)
       (setf (prefix lb-range-atk-ch) (right-padding (prefix lb-range-atk-ch) max-length-prefix)
-	    (label  lb-range-atk-ch) (format nil +standard-float-print-format+ (range-attack-chance player)))
+            (label  lb-range-atk-ch) (format nil +standard-float-print-format+ (range-attack-chance player)))
       (%add-callback-to-pgen-buttons b-inc-range-atk-ch b-dec-range-atk-ch
-				     player 'range-attack-chance
-				     lb-exp-points lb-range-atk-ch 0.5 1.0)
+                                     player 'range-attack-chance
+                                     lb-exp-points lb-range-atk-ch 0.5 1.0)
       (setf (prefix lb-melee-atk-dmg) (right-padding (prefix lb-melee-atk-dmg) max-length-prefix)
-	    (label  lb-melee-atk-dmg) (format nil +standard-float-print-format+
-					      (melee-attack-damage player)))
+            (label  lb-melee-atk-dmg) (format nil +standard-float-print-format+
+                                              (melee-attack-damage player)))
       (%add-callback-to-pgen-buttons b-inc-melee-atk-dmg b-dec-melee-atk-dmg
-				     player 'melee-attack-damage
-				     lb-exp-points lb-melee-atk-dmg 0.25 1.0)
+                                     player 'melee-attack-damage
+                                     lb-exp-points lb-melee-atk-dmg 0.25 1.0)
       (setf (prefix lb-range-atk-dmg) (right-padding (prefix lb-range-atk-dmg) max-length-prefix)
-	    (label  lb-range-atk-dmg) (format nil +standard-float-print-format+
-					      (range-attack-damage player)))
+            (label  lb-range-atk-dmg) (format nil +standard-float-print-format+
+                                              (range-attack-damage player)))
       (%add-callback-to-pgen-buttons b-inc-range-atk-dmg b-dec-range-atk-dmg
-				     player 'range-attack-damage
-				   lb-exp-points lb-range-atk-dmg 0.25 1.0)
+                                     player 'range-attack-damage
+                                   lb-exp-points lb-range-atk-dmg 0.25 1.0)
       (setf (prefix lb-edge-wpn-ch-bonus) (right-padding (prefix lb-edge-wpn-ch-bonus)
-							 max-length-prefix)
-	    (label lb-edge-wpn-ch-bonus) (format nil +standard-float-print-format+
-						 (edge-weapons-chance-bonus player)))
+                                                         max-length-prefix)
+            (label lb-edge-wpn-ch-bonus) (format nil +standard-float-print-format+
+                                                 (edge-weapons-chance-bonus player)))
       (%add-callback-to-pgen-buttons b-inc-edge-wpn-ch-bonus b-dec-edge-wpn-ch-bonus
-				     player 'edge-weapons-chance-bonus
-				     lb-exp-points lb-edge-wpn-ch-bonus 0.25 1.0)
+                                     player 'edge-weapons-chance-bonus
+                                     lb-exp-points lb-edge-wpn-ch-bonus 0.25 1.0)
       (setf (prefix lb-edge-wpn-dmg-bonus) (right-padding (prefix lb-edge-wpn-dmg-bonus)
-							  max-length-prefix)
-	    (label lb-edge-wpn-dmg-bonus) (format nil +standard-float-print-format+
-						  (edge-weapons-damage-bonus player)))
+                                                          max-length-prefix)
+            (label lb-edge-wpn-dmg-bonus) (format nil +standard-float-print-format+
+                                                  (edge-weapons-damage-bonus player)))
       (%add-callback-to-pgen-buttons b-inc-edge-wpn-dmg-bonus b-dec-edge-wpn-dmg-bonus
-				     player 'edge-weapons-damage-bonus
-				     lb-exp-points lb-edge-wpn-dmg-bonus 0.25 1.0)
+                                     player 'edge-weapons-damage-bonus
+                                     lb-exp-points lb-edge-wpn-dmg-bonus 0.25 1.0)
       (setf (prefix lb-impact-wpn-ch-bonus) (right-padding (prefix lb-impact-wpn-ch-bonus)
-							   max-length-prefix)
-	    (label lb-impact-wpn-ch-bonus) (format nil +standard-float-print-format+
-						   (impact-weapons-chance-bonus player)))
+                                                           max-length-prefix)
+            (label lb-impact-wpn-ch-bonus) (format nil +standard-float-print-format+
+                                                   (impact-weapons-chance-bonus player)))
       (%add-callback-to-pgen-buttons b-inc-impact-wpn-ch-bonus b-dec-impact-wpn-ch-bonus
-				     player 'impact-weapons-chance-bonus
-				     lb-exp-points lb-impact-wpn-ch-bonus 0.25 1.0)
+                                     player 'impact-weapons-chance-bonus
+                                     lb-exp-points lb-impact-wpn-ch-bonus 0.25 1.0)
       (setf (prefix lb-impact-wpn-dmg-bonus) (right-padding (prefix lb-impact-wpn-dmg-bonus)
-							    max-length-prefix)
-	    (label lb-impact-wpn-dmg-bonus) (format nil +standard-float-print-format+
-						    (impact-weapons-damage-bonus player)))
+                                                            max-length-prefix)
+            (label lb-impact-wpn-dmg-bonus) (format nil +standard-float-print-format+
+                                                    (impact-weapons-damage-bonus player)))
       (%add-callback-to-pgen-buttons b-inc-impact-wpn-dmg-bonus b-dec-impact-wpn-dmg-bonus
-				     player 'impact-weapons-damage-bonus
-				     lb-exp-points lb-impact-wpn-dmg-bonus 0.25 1.0)
+                                     player 'impact-weapons-damage-bonus
+                                     lb-exp-points lb-impact-wpn-dmg-bonus 0.25 1.0)
       (setf (prefix lb-pole-wpn-ch-bonus) (right-padding (prefix lb-pole-wpn-ch-bonus)
-							 max-length-prefix)
-	    (label lb-pole-wpn-ch-bonus) (format nil +standard-float-print-format+
-						    (pole-weapons-chance-bonus player)))
+                                                         max-length-prefix)
+            (label lb-pole-wpn-ch-bonus) (format nil +standard-float-print-format+
+                                                    (pole-weapons-chance-bonus player)))
       (%add-callback-to-pgen-buttons b-inc-pole-wpn-ch-bonus b-dec-pole-wpn-ch-bonus
-				     player 'pole-weapons-chance-bonus
-				     lb-exp-points lb-pole-wpn-ch-bonus 0.25 1.0)
+                                     player 'pole-weapons-chance-bonus
+                                     lb-exp-points lb-pole-wpn-ch-bonus 0.25 1.0)
       (setf (prefix lb-pole-wpn-dmg-bonus) (right-padding (prefix lb-pole-wpn-dmg-bonus)
-							  max-length-prefix)
-	    (label lb-pole-wpn-dmg-bonus) (format nil +standard-float-print-format+
-						  (pole-weapons-damage-bonus player)))
+                                                          max-length-prefix)
+            (label lb-pole-wpn-dmg-bonus) (format nil +standard-float-print-format+
+                                                  (pole-weapons-damage-bonus player)))
       (%add-callback-to-pgen-buttons b-inc-pole-wpn-dmg-bonus b-dec-pole-wpn-dmg-bonus
-				     player 'pole-weapons-damage-bonus
-				     lb-exp-points lb-pole-wpn-dmg-bonus 0.25 1.0)
+                                     player 'pole-weapons-damage-bonus
+                                     lb-exp-points lb-pole-wpn-dmg-bonus 0.25 1.0)
       (setf (prefix lb-unlock-ch) (right-padding (prefix lb-unlock-ch) max-length-prefix)
-	    (label lb-unlock-ch) (format nil +standard-float-print-format+
-					 (unlock-chance player)))
+            (label lb-unlock-ch) (format nil +standard-float-print-format+
+                                         (unlock-chance player)))
       (%add-callback-to-pgen-buttons b-inc-unlock-ch b-dec-unlock-ch
-				     player 'unlock-chance
-				     lb-exp-points lb-unlock-ch 0.5 1.0)
+                                     player 'unlock-chance
+                                     lb-exp-points lb-unlock-ch 0.5 1.0)
       (setf (prefix lb-deactivate-trap-ch) (right-padding (prefix lb-deactivate-trap-ch)
-							  max-length-prefix)
-	    (label lb-deactivate-trap-ch) (format nil +standard-float-print-format+
-						  (deactivate-trap-chance player)))
+                                                          max-length-prefix)
+            (label lb-deactivate-trap-ch) (format nil +standard-float-print-format+
+                                                  (deactivate-trap-chance player)))
       (%add-callback-to-pgen-buttons b-inc-deactivate-trap-ch b-dec-deactivate-trap-ch
-				     player 'deactivate-trap-chance
-				     lb-exp-points lb-deactivate-trap-ch 0.5 1.0)
+                                     player 'deactivate-trap-chance
+                                     lb-exp-points lb-deactivate-trap-ch 0.5 1.0)
       (setf (prefix lb-reply-attack-ch) (right-padding (prefix lb-reply-attack-ch)
-						       max-length-prefix)
-	    (label lb-reply-attack-ch) (format nil +standard-float-print-format+
-					       (reply-attack-chance player)))
+                                                       max-length-prefix)
+            (label lb-reply-attack-ch) (format nil +standard-float-print-format+
+                                               (reply-attack-chance player)))
       (%add-callback-to-pgen-buttons b-inc-reply-attack-ch b-dec-reply-attack-ch
-				     player 'reply-attack-chance
-				     lb-exp-points lb-reply-attack-ch 0.33 1.0)
+                                     player 'reply-attack-chance
+                                     lb-exp-points lb-reply-attack-ch 0.33 1.0)
       (setf (prefix lb-ambush-attack-ch) (right-padding (prefix lb-ambush-attack-ch)
-							max-length-prefix)
-	    (label lb-ambush-attack-ch) (format nil +standard-float-print-format+
-						(ambush-attack-chance player)))
+                                                        max-length-prefix)
+            (label lb-ambush-attack-ch) (format nil +standard-float-print-format+
+                                                (ambush-attack-chance player)))
       (%add-callback-to-pgen-buttons b-inc-ambush-attack-ch b-dec-ambush-attack-ch
-				     player 'ambush-attack-chance
-				     lb-exp-points lb-ambush-attack-ch 0.33 1.0)
+                                     player 'ambush-attack-chance
+                                     lb-exp-points lb-ambush-attack-ch 0.33 1.0)
       (setf (prefix lb-spell-ch) (right-padding (prefix lb-spell-ch) max-length-prefix)
-	    (label lb-spell-ch) (format nil +standard-float-print-format+
-					(spell-chance player)))
+            (label lb-spell-ch) (format nil +standard-float-print-format+
+                                        (spell-chance player)))
       (%add-callback-to-pgen-buttons b-inc-spell-ch b-dec-spell-ch
-				     player 'spell-chance
-				     lb-exp-points lb-spell-ch 0.25 1.0)
+                                     player 'spell-chance
+                                     lb-exp-points lb-spell-ch 0.25 1.0)
       (setf (prefix lb-attack-spell-ch) (right-padding (prefix lb-attack-spell-ch)
-						       max-length-prefix)
-	    (label lb-attack-spell-ch) (format nil +standard-float-print-format+
-					       (attack-spell-chance player)))
+                                                       max-length-prefix)
+            (label lb-attack-spell-ch) (format nil +standard-float-print-format+
+                                               (attack-spell-chance player)))
       (%add-callback-to-pgen-buttons b-inc-attack-spell-ch b-dec-attack-spell-ch
-				     player 'attack-spell-chance
-				     lb-exp-points lb-attack-spell-ch 0.25 1.0)
+                                     player 'attack-spell-chance
+                                     lb-exp-points lb-attack-spell-ch 0.25 1.0)
       (setf (prefix lb-level) (right-padding (prefix lb-level) max-length-prefix)
-	    (label lb-level) (format nil "~d" (level player)))
+            (label lb-level) (format nil "~d" (level player)))
       (setf (prefix lb-exp-points) (right-padding (prefix lb-exp-points) max-length-prefix)
-	    (label lb-exp-points)  (format nil "~d" (exp-points player))))))
+            (label lb-exp-points)  (format nil "~d" (exp-points player))))))
 
 (defun make-player-generator (world)
   (make-instance 'player-generator
-		 :world  world
-		 :x      0.0
-		 :y      200.0
-		 :width  (pgen-window-w)
-		 :height (pgen-window-h)
-		 :label  (_ "Generate character")))
+                 :world  world
+                 :x      0.0
+                 :y      200.0
+                 :width  (pgen-window-w)
+                 :height (pgen-window-h)
+                 :label  (_ "Generate character")))
 
 (defun message-window-w ()
   (d* 8.0 (small-square-button-size *reference-sizes*)))
@@ -4099,25 +4099,25 @@
 (defclass message-window (window)
   ((img-pictogram
     :initform (make-instance 'signalling-light
-			     :x             0.0
-			     :y             0.0
-			     :width         (message-window-pictogram-w)
-			     :height        (message-window-pictogram-h)
-			     :texture-name  +window-close-button-texture-name+
-			     :button-status t)
+                             :x             0.0
+                             :y             0.0
+                             :width         (message-window-pictogram-w)
+                             :height        (message-window-pictogram-h)
+                             :texture-name  +window-close-button-texture-name+
+                             :button-status t)
     :initarg  :img-pictogram
     :accessor img-pictogram)
    (text-message
     :initform (make-instance 'widget:static-text
-			     :height    (d* 2.0
-					    (small-square-button-size *reference-sizes*))
-			     :width     (d* 5.0
-					    (small-square-button-size *reference-sizes*))
-			     :x         (message-window-text-x)
-			     :y         0.0
-			     :font-size (h4-font-size *reference-sizes*)
-			     :label     "test test"
-			     :justified t)
+                             :height    (d* 2.0
+                                            (small-square-button-size *reference-sizes*))
+                             :width     (d* 5.0
+                                            (small-square-button-size *reference-sizes*))
+                             :x         (message-window-text-x)
+                             :y         0.0
+                             :font-size (h4-font-size *reference-sizes*)
+                             :label     "test test"
+                             :justified t)
     :initarg  :text-message
     :accessor text-message)))
 
@@ -4135,28 +4135,28 @@
     (setf (current-texture pictogram) (get-texture texture-name))))
 
 (defmethod initialize-instance :after ((object message-window) &key
-								 (message "")
-								 (type :error)
-								 &allow-other-keys)
+                                                                 (message "")
+                                                                 (type :error)
+                                                                 &allow-other-keys)
   (with-accessors ((img-pictogram img-pictogram)) object
     (with-accessors ((img-pictogram img-pictogram)
-		     (text-message text-message)
-		     (frame frame)) object
+                     (text-message text-message)
+                     (frame frame)) object
       (add-child object img-pictogram)
       (add-child object text-message)
       (when message
-	(accomodate-message object message))
+        (accomodate-message object message))
       (case type
-	(:error
-	 (set-texture-pictogram img-pictogram +message-16-error-texture-name+))
-	(:warning
-	 (set-texture-pictogram img-pictogram +message-16-warning-texture-name+))
-	(:info
-	 (set-texture-pictogram img-pictogram +message-16-info-texture-name+))
-	(:question
-	 (set-texture-pictogram img-pictogram +message-16-help-texture-name+))
-	(otherwise
-	 (set-texture-pictogram img-pictogram type))))))
+        (:error
+         (set-texture-pictogram img-pictogram +message-16-error-texture-name+))
+        (:warning
+         (set-texture-pictogram img-pictogram +message-16-warning-texture-name+))
+        (:info
+         (set-texture-pictogram img-pictogram +message-16-info-texture-name+))
+        (:question
+         (set-texture-pictogram img-pictogram +message-16-help-texture-name+))
+        (otherwise
+         (set-texture-pictogram img-pictogram type))))))
 
 (defmethod accomodate-message ((object message-window) new-label)
   (accomodate-message-text object new-label)
@@ -4164,89 +4164,89 @@
 
 (defmethod accomodate-message-text ((object message-window) new-label)
   (with-accessors ((text-message text-message)
-		   (frame frame)
-		   (top-bar top-bar)
-		   (window-height height)) object
+                   (frame frame)
+                   (top-bar top-bar)
+                   (window-height height)) object
     (with-accessors ((label-font-size label-font-size)
-		     (label-font label-font)
-		     (label-font-color label-font-color)
-		     (textarea-height height)
-		     (width width)
-		     (children children)
-		     (justified justified)) text-message
+                     (label-font label-font)
+                     (label-font-color label-font-color)
+                     (textarea-height height)
+                     (width width)
+                     (children children)
+                     (justified justified)) text-message
       (remove-all-children text-message)
       (let* ((char-width    (ftruncate (d/ width label-font-size)))
-	     (lines         (remove-nbrk-space (split-text-lines new-label
-								 char-width
-								 justified)))
-	     (wanted-height (d* label-font-size (d (length lines)))))
-	(declare (list lines))
-	(do ((line-count (d 0.0) (d+ line-count 1.0))
-	     (line       lines   (rest line)))
-	    ((not line))
-	  (declare (list line))
-	  (declare (desired-type line-count))
-	  (loop
-	     for c across (the simple-string (elt line 0))
-	     for xf single-float from  0.0 by label-font-size do
-	       (let* ((mesh  (get-char-mesh label-font c))
-		      (shell (if mesh
-				 (fill-font-mesh-shell mesh :color label-font-color)
-				 nil)))
-		 (when shell
-		   (setf (scaling shell) (sb-cga:vec label-font-size label-font-size 0.0))
-		   (setf (pos     shell) (sb-cga:vec xf
-						     (d* line-count label-font-size)
+             (lines         (remove-nbrk-space (split-text-lines new-label
+                                                                 char-width
+                                                                 justified)))
+             (wanted-height (d* label-font-size (d (length lines)))))
+        (declare (list lines))
+        (do ((line-count (d 0.0) (d+ line-count 1.0))
+             (line       lines   (rest line)))
+            ((not line))
+          (declare (list line))
+          (declare (desired-type line-count))
+          (loop
+             for c across (the simple-string (elt line 0))
+             for xf single-float from  0.0 by label-font-size do
+               (let* ((mesh  (get-char-mesh label-font c))
+                      (shell (if mesh
+                                 (fill-font-mesh-shell mesh :color label-font-color)
+                                 nil)))
+                 (when shell
+                   (setf (scaling shell) (sb-cga:vec label-font-size label-font-size 0.0))
+                   (setf (pos     shell) (sb-cga:vec xf
+                                                     (d* line-count label-font-size)
 
-						     0.0))
-		   (add-child text-message shell)))))
-	(let ((new-frame-h (d+ wanted-height
-			       (spacing *reference-sizes*)
-			       (d* 2.0 (message-window-button-h)))))
-	  (transform-vertices frame (sb-cga:scale* 1.0
-						   (d/ new-frame-h
-						       (height frame))
-						   1.0))
-	  (prepare-for-rendering frame)
-	  (setf (y top-bar)      new-frame-h)
-	  (setf (height frame)   new-frame-h)
-	  (setf window-height    (d+ new-frame-h (height top-bar)))
-	  (setf (y text-message) (d- window-height
-				     (height top-bar)
-				     (d* (top-frame-offset *reference-sizes*)
-					 (height frame))
-				     wanted-height)))))))
+                                                     0.0))
+                   (add-child text-message shell)))))
+        (let ((new-frame-h (d+ wanted-height
+                               (spacing *reference-sizes*)
+                               (d* 2.0 (message-window-button-h)))))
+          (transform-vertices frame (sb-cga:scale* 1.0
+                                                   (d/ new-frame-h
+                                                       (height frame))
+                                                   1.0))
+          (prepare-for-rendering frame)
+          (setf (y top-bar)      new-frame-h)
+          (setf (height frame)   new-frame-h)
+          (setf window-height    (d+ new-frame-h (height top-bar)))
+          (setf (y text-message) (d- window-height
+                                     (height top-bar)
+                                     (d* (top-frame-offset *reference-sizes*)
+                                         (height frame))
+                                     wanted-height)))))))
 
 (defmethod accomodate-message-img ((object message-window))
   (with-accessors ((img-pictogram img-pictogram)
-		   (frame frame)
-		   (top-bar top-bar)
-		   (text-message text-message)
-		   (window-height height)) object
+                   (frame frame)
+                   (top-bar top-bar)
+                   (text-message text-message)
+                   (window-height height)) object
     (let* ((wanted-height-scale (d/ (min (d- (height frame)
-					     (message-window-button-h)
-					     (d* (top-frame-offset *reference-sizes*)
-						 (height frame))
-					     (d* (bottom-frame-offset *reference-sizes*)
-						 (height frame))
-					     (spacing *reference-sizes*))
-					 (d- (message-window-text-x)
-					     (spacing *reference-sizes*)))
-				    (height img-pictogram)))
-	   (wanted-height       (d* wanted-height-scale (height img-pictogram))))
+                                             (message-window-button-h)
+                                             (d* (top-frame-offset *reference-sizes*)
+                                                 (height frame))
+                                             (d* (bottom-frame-offset *reference-sizes*)
+                                                 (height frame))
+                                             (spacing *reference-sizes*))
+                                         (d- (message-window-text-x)
+                                             (spacing *reference-sizes*)))
+                                    (height img-pictogram)))
+           (wanted-height       (d* wanted-height-scale (height img-pictogram))))
       (transform-vertices img-pictogram (sb-cga:scale* wanted-height-scale
-						       wanted-height-scale
-						       1.0))
+                                                       wanted-height-scale
+                                                       1.0))
       (prepare-for-rendering img-pictogram)
       (setf (height   img-pictogram) wanted-height
-	    (width    img-pictogram) wanted-height
-	    (y        img-pictogram) (d- window-height
-				       (height top-bar)
-				       (d* (top-frame-offset *reference-sizes*)
-				           (height frame))
-				       wanted-height)
-	    (x        img-pictogram)  (d* (left-frame-offset *reference-sizes*)
-					  (width object))))))
+            (width    img-pictogram) wanted-height
+            (y        img-pictogram) (d- window-height
+                                       (height top-bar)
+                                       (d* (top-frame-offset *reference-sizes*)
+                                           (height frame))
+                                       wanted-height)
+            (x        img-pictogram)  (d* (left-frame-offset *reference-sizes*)
+                                          (width object))))))
 
 (defun make-message-box (text title type &rest buttons-callbacks)
   "Car of each element of buttons-callbacks is the label, cdr the callback function"
@@ -4255,30 +4255,30 @@
 (defun make-message-box* (text title type buttons-callbacks)
   "Car of each element of buttons-callbacks is the label, cdr the callback function"
   (let* ((widget        (make-instance 'message-window
-				       :type    type
-				       :label   title
-				       :message text
-				       :x       (d (- (/ *window-w* 2) (/ (message-window-w) 2.0)))
-				       :y       (d (- (/ *window-h* 2) (/ (message-window-h) 2.0)))
-				       :width   (message-window-w)
-				       :height  (message-window-h)))
-	 (button-w      (dmin
-			 (d* 0.25 (width widget))
-			 (d/ (d* 0.8 (width widget)) (d (length buttons-callbacks)))))
-	 (all-buttons-w (d* (d (length buttons-callbacks)) button-w))
-	 (buttons-start  (d- (d/ (width widget) 2.0)
-			     (d/ all-buttons-w  2.0)
-			     (d* (left-frame-offset *reference-sizes*)
-				 (width widget)))))
+                                       :type    type
+                                       :label   title
+                                       :message text
+                                       :x       (d (- (/ *window-w* 2) (/ (message-window-w) 2.0)))
+                                       :y       (d (- (/ *window-h* 2) (/ (message-window-h) 2.0)))
+                                       :width   (message-window-w)
+                                       :height  (message-window-h)))
+         (button-w      (dmin
+                         (d* 0.25 (width widget))
+                         (d/ (d* 0.8 (width widget)) (d (length buttons-callbacks)))))
+         (all-buttons-w (d* (d (length buttons-callbacks)) button-w))
+         (buttons-start  (d- (d/ (width widget) 2.0)
+                             (d/ all-buttons-w  2.0)
+                             (d* (left-frame-offset *reference-sizes*)
+                                 (width widget)))))
     (loop
        for b-cb in buttons-callbacks
        for x    from buttons-start by button-w do
-	 (add-child widget
-		    (make-instance 'button
-				   :width    button-w
-				   :height   (message-window-button-h)
-				   :x        x
-				   :y        (d- (height widget) (message-window-button-h))
-				   :label    (car b-cb)
-				   :callback (cdr b-cb))))
+         (add-child widget
+                    (make-instance 'button
+                                   :width    button-w
+                                   :height   (message-window-button-h)
+                                   :x        x
+                                   :y        (d- (height widget) (message-window-button-h))
+                                   :label    (car b-cb)
+                                   :callback (cdr b-cb))))
     widget))

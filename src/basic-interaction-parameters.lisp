@@ -208,9 +208,9 @@
 
   (defun standard-decay-fn (get-decay-object-fn)
     #'(lambda (object)
-	(let ((decay-object (funcall get-decay-object-fn object)))
-	  (decf (points decay-object) 1)
-	  (> (points decay-object) 0))))
+        (let ((decay-object (funcall get-decay-object-fn object)))
+          (decf (points decay-object) 1)
+          (> (points decay-object) 0))))
 
   (defclass decay-parameters ()
     ((when-decay
@@ -233,21 +233,21 @@
   (defmethod print-object ((object decay-parameters) stream)
     (print-unreadable-object (object stream :type t :identity t)
       (format stream "when? ~s points ~a fn ~a msg ~s"
-	      (when-decay      object)
-	      (points          object)
-	      (decay-fn        object)
-	      (leaving-message object))))
+              (when-decay      object)
+              (points          object)
+              (decay-fn        object)
+              (leaving-message object))))
 
   (defmethod make-load-form ((object decay-parameters) &optional environment)
     (make-load-form-saving-slots object
-				 :slot-names '(when-decay points leaving-message decay-fn)
-				 :environment environment)))
+                                 :slot-names '(when-decay points leaving-message decay-fn)
+                                 :environment environment)))
 
 (defmacro define-decay (params)
   (let* ((parameters (misc:build-plist params))
-	 (points     (cdr (assoc :points   parameters)))
-	 (when-decay (cdr (assoc :duration parameters)))
-	 (message    (cdr (assoc :message  parameters))))
+         (points     (cdr (assoc :points   parameters)))
+         (when-decay (cdr (assoc :duration parameters)))
+         (message    (cdr (assoc :message  parameters))))
     (when (null points)
       (warn (_ "Interation: No points for decay, using 1000.")))
     (when (null when-decay)
@@ -256,11 +256,11 @@
       (warn (_ "Interation: No message.")))
     (when (not (valid-keyword-p when-decay +decay-by-use+ +decay-by-turns+))
       (error (format nil (_ "Invalid decay condition ~a, expected ~a")
-		     when-decay (list +decay-by-use+ +decay-by-turns+))))
+                     when-decay (list +decay-by-use+ +decay-by-turns+))))
     (make-instance 'decay-parameters
-		   :when-decay      (or when-decay +decay-by-turns+)
-		   :points          (or points     1000)
-		   :leaving-message (or message " "))))
+                   :when-decay      (or when-decay +decay-by-turns+)
+                   :points          (or points     1000)
+                   :leaving-message (or message " "))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass effect-parameters ()
@@ -279,31 +279,31 @@
 
     (defmethod print-object ((object effect-parameters) stream)
       (print-unreadable-object (object stream :type t :identity t)
-	(format stream "when? ~s duration ~a mod ~a"
-		(trigger object)
-		(duration    object)
-		(modifier    object))))
+        (format stream "when? ~s duration ~a mod ~a"
+                (trigger object)
+                (duration    object)
+                (modifier    object))))
 
     (defmethod make-load-form ((object effect-parameters) &optional environment)
       (make-load-form-saving-slots object
-				   :slot-names '(trigger duration modifier)
-				   :environment environment))
+                                   :slot-names '(trigger duration modifier)
+                                   :environment environment))
 
     (defmethod description-for-humans ((object effect-parameters))
       (format nil "~a~a~,1f"
-	      (if (effect-unlimited-p (duration object))
-				  ""
-				  (format nil
-					  (_ "(~d turns)")
-					  (duration object)))
-	      +gui-static-text-nbsp+
-	      (modifier object))))
+              (if (effect-unlimited-p (duration object))
+                                  ""
+                                  (format nil
+                                          (_ "(~d turns)")
+                                          (duration object)))
+              +gui-static-text-nbsp+
+              (modifier object))))
 
 (defmacro define-effect (params)
   (let* ((parameters  (misc:build-plist params))
-	 (trigger     (cdr (assoc :trigger parameters)))
-	 (modifier    (cdr (assoc :modifier    parameters)))
-	 (duration    (cdr (assoc :duration    parameters))))
+         (trigger     (cdr (assoc :trigger parameters)))
+         (modifier    (cdr (assoc :modifier    parameters)))
+         (duration    (cdr (assoc :duration    parameters))))
     (when (null trigger)
       (warn (_ "Interation: No activation trigger specified for effect, using \":use.\"")))
     (when (null modifier)
@@ -311,22 +311,22 @@
     (when (null duration)
       (warn (_ "Interation: No duration specified for effect, using :unlimited.")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
-				+effect-when-consumed+
-				+effect-until-picked+))
+                                +effect-when-consumed+
+                                +effect-until-picked+))
       (error (format nil (_ "Invalid trigger ~s, expected ~s")
-		     trigger (list +effect-when-worn+ +effect-when-used+
-				   +effect-when-consumed+ +effect-until-picked+))))
+                     trigger (list +effect-when-worn+ +effect-when-used+
+                                   +effect-when-consumed+ +effect-until-picked+))))
     (make-instance 'effect-parameters
-		   :trigger  (or trigger  +effect-when-used+)
-		   :duration (or duration +duration-unlimited+)
-		   :modifier (or modifier 0))))
+                   :trigger  (or trigger  +effect-when-used+)
+                   :duration (or duration +duration-unlimited+)
+                   :modifier (or modifier 0))))
 
 (defmacro define-effects (&rest parameters)
   (let ((params (misc:build-plist parameters)))
     `(list ,@(loop for i in params collect
-		  `(cons ,(car i) ,(if (consp (cdr i))
-				       (cadr i)
-				       (cdr i)))))))
+                  `(cons ,(car i) ,(if (consp (cdr i))
+                                       (cadr i)
+                                       (cdr i)))))))
 
 (defun chance->chance-for-human (c)
   (* 100 c))
@@ -343,8 +343,8 @@
 
   (defmethod make-load-form ((object parameters-with-chance) &optional environment)
       (make-load-form-saving-slots object
-				   :slot-names '(chance)
-				   :environment environment)))
+                                   :slot-names '(chance)
+                                   :environment environment)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass parameters-with-target ()
@@ -355,8 +355,8 @@
 
   (defmethod make-load-form ((object parameters-with-target) &optional environment)
       (make-load-form-saving-slots object
-				   :slot-names '(target)
-				   :environment environment)))
+                                   :slot-names '(target)
+                                   :environment environment)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass healing-effect-parameters (parameters-with-chance parameters-with-target)
@@ -371,32 +371,32 @@
 
     (defmethod print-object ((object healing-effect-parameters) stream)
       (print-unreadable-object (object stream :type t :identity t)
-	(format stream "when? ~s duration ~a chance ~,1f target ~s"
-		(trigger  object)
-		(duration object)
-		(chance->chance-for-human (chance object))
-		(target object))))
+        (format stream "when? ~s duration ~a chance ~,1f target ~s"
+                (trigger  object)
+                (duration object)
+                (chance->chance-for-human (chance object))
+                (target object))))
 
     (defmethod make-load-form ((object healing-effect-parameters) &optional environment)
       (make-load-form-saving-slots object
-				   :slot-names '(trigger duration chance target)
-				   :environment environment))
+                                   :slot-names '(trigger duration chance target)
+                                   :environment environment))
 
     (defmethod description-for-humans ((object healing-effect-parameters))
       (format nil (text-utils:strcat +standard-float-print-format+
-				     (_ "chance: ~,1f% target ~a"))
-	      (if (effect-unlimited-p (duration object))
-		  ""
-		  (format nil (_ "~d turns ") (duration object)))
-	      (chance->chance-for-human (chance object))
-	      (target object))))
+                                     (_ "chance: ~,1f% target ~a"))
+              (if (effect-unlimited-p (duration object))
+                  ""
+                  (format nil (_ "~d turns ") (duration object)))
+              (chance->chance-for-human (chance object))
+              (target object))))
 
 (defmacro define-healing-effect (params)
   (let* ((parameters (misc:build-plist params))
-	 (trigger    (cdr (assoc :trigger  parameters)))
-	 (duration   (cdr (assoc :duration parameters)))
-	 (chance     (cdr (assoc :chance   parameters)))
-	 (target     (cdr (assoc :target   parameters))))
+         (trigger    (cdr (assoc :trigger  parameters)))
+         (duration   (cdr (assoc :duration parameters)))
+         (chance     (cdr (assoc :chance   parameters)))
+         (target     (cdr (assoc :target   parameters))))
     (when (null trigger)
       (warn (_ "Interation: No activation trigger specified for healing effect, using \":use.\"")))
     (when (null chance)
@@ -406,22 +406,22 @@
     (when (null target)
       (warn (_ "Interation: No target specified for effect, using self.")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
-				+effect-when-consumed+ +effect-until-picked+))
+                                +effect-when-consumed+ +effect-until-picked+))
       (error (format nil (_ "Invalid trigger ~s, expected ~s")
-		     trigger (list +effect-when-worn+ +effect-when-used+
-				   +effect-when-consumed+ +effect-until-picked+))))
+                     trigger (list +effect-when-worn+ +effect-when-used+
+                                   +effect-when-consumed+ +effect-until-picked+))))
     (make-instance 'healing-effect-parameters
-		   :trigger  (or trigger  +effect-when-used+)
-		   :duration (or duration 1000000)
-		   :chance   (or chance  0.0)
-		   :target   (or target  +target-self+))))
+                   :trigger  (or trigger  +effect-when-used+)
+                   :duration (or duration 1000000)
+                   :chance   (or chance  0.0)
+                   :target   (or target  +target-self+))))
 
 (defmacro define-healing-effects (&rest parameters)
   (let ((params (misc:build-plist parameters)))
     `(list ,@(loop for i in params collect
-		  `(cons ,(car i) ,(if (consp (cdr i))
-				       (cadr i)
-				       (cdr i)))))))
+                  `(cons ,(car i) ,(if (consp (cdr i))
+                                       (cadr i)
+                                       (cdr i)))))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass magic-effect-parameters (parameters-with-target)
@@ -435,20 +435,20 @@
       :accessor spell-id)))
 
   (defmethod initialize-instance :after ((object magic-effect-parameters)
-					 &key &allow-other-keys)
-	     (setf (target object) nil))
+                                         &key &allow-other-keys)
+             (setf (target object) nil))
 
   (defmethod print-object ((object magic-effect-parameters) stream)
     (print-unreadable-object (object stream :type t :identity t)
       (format stream "when? ~s spell ~a target ~s"
-		(trigger  object)
-		(spell-id object)
-		(target   object))))
+                (trigger  object)
+                (spell-id object)
+                (target   object))))
 
     (defmethod make-load-form ((object magic-effect-parameters) &optional environment)
       (make-load-form-saving-slots object
-				   :slot-names '(trigger spell-id target)
-				   :environment environment))
+                                   :slot-names '(trigger spell-id target)
+                                   :environment environment))
 
     (defmethod description-for-humans ((object magic-effect-parameters))
       (spell:spell-id->string-for-human (spell-id object))))
@@ -466,32 +466,32 @@
 
     (defmethod print-object ((object poison-effect-parameters) stream)
       (print-unreadable-object (object stream :type t :identity t)
-	(format stream "when? ~s points? ~a chance? ~a target ~s"
-		(trigger         object)
-		(points-per-turn object)
-		(chance          object)
-		(target          object))))
+        (format stream "when? ~s points? ~a chance? ~a target ~s"
+                (trigger         object)
+                (points-per-turn object)
+                (chance          object)
+                (target          object))))
 
     (defmethod make-load-form ((object poison-effect-parameters) &optional environment)
       (make-load-form-saving-slots object
-				   :slot-names '(points-per-turn trigger chance target)
-				   :environment environment))
+                                   :slot-names '(points-per-turn trigger chance target)
+                                   :environment environment))
 
     (defmethod description-for-humans ((object poison-effect-parameters))
       (format nil (_ "~a chance: ~,1f target: ~a")
-	      (if (and (points-per-turn object)
-		       (> (points-per-turn object) 0))
-		  (format nil (_ "(~,1f damage per turn)") (points-per-turn object))
-		  "")
-	      (chance->chance-for-human (chance object))
-	      (target object))))
+              (if (and (points-per-turn object)
+                       (> (points-per-turn object) 0))
+                  (format nil (_ "(~,1f damage per turn)") (points-per-turn object))
+                  "")
+              (chance->chance-for-human (chance object))
+              (target object))))
 
 (defmacro define-poison-effect (params)
   (let* ((parameters (misc:build-plist params))
-	 (points     (cdr (assoc :points  parameters)))
-	 (trigger    (cdr (assoc :trigger parameters)))
-	 (chance     (cdr (assoc :chance  parameters)))
-	 (target     (cdr (assoc :target   parameters))))
+         (points     (cdr (assoc :points  parameters)))
+         (trigger    (cdr (assoc :trigger parameters)))
+         (chance     (cdr (assoc :chance  parameters)))
+         (target     (cdr (assoc :target   parameters))))
     (when (null points)
       (warn (_ "Interation: No points specified for poison effect, using \"-1\".")))
     (when (null trigger)
@@ -501,17 +501,17 @@
     (when (null target)
       (warn (_ "Interation: No target specified for effect, using self.")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
-				+effect-when-consumed+ +effect-until-picked+))
+                                +effect-when-consumed+ +effect-until-picked+))
       (error (format nil (_ "Invalid trigger ~s, expected ~s")
-		     trigger (list +effect-when-worn+ +effect-when-used+
-				   +effect-when-consumed+ +effect-until-picked+))))
+                     trigger (list +effect-when-worn+ +effect-when-used+
+                                   +effect-when-consumed+ +effect-until-picked+))))
     (when (not (numberp points))
       (error (format nil (_ "Invalid points ~a, expected a number") points)))
     (make-instance 'poison-effect-parameters
-		   :points-per-turn  points
-		   :trigger (or trigger +effect-when-used+)
-		   :chance  (or chance 0.0)
-		   :target  (or target +target-self+))))
+                   :points-per-turn  points
+                   :trigger (or trigger +effect-when-used+)
+                   :chance  (or chance 0.0)
+                   :target  (or target +target-self+))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass heal-damage-points-effect-parameters (parameters-with-chance parameters-with-target)
@@ -526,30 +526,30 @@
 
     (defmethod print-object ((object heal-damage-points-effect-parameters) stream)
       (print-unreadable-object (object stream :type t :identity t)
-	(format stream "when? ~s points? ~a chance ~,1f% target ~s"
-		(trigger object)
-		(points  object)
-		(chance->chance-for-human (chance object))
-		(target  object))))
+        (format stream "when? ~s points? ~a chance ~,1f% target ~s"
+                (trigger object)
+                (points  object)
+                (chance->chance-for-human (chance object))
+                (target  object))))
 
     (defmethod make-load-form ((object heal-damage-points-effect-parameters) &optional environment)
       (make-load-form-saving-slots object
-				   :slot-names '(points trigger chance target)
-				   :environment environment))
+                                   :slot-names '(points trigger chance target)
+                                   :environment environment))
 
     (defmethod description-for-humans ((object heal-damage-points-effect-parameters))
       (format nil (_ "heal ~,1f DMG, target ~a, chance: ~,1f%")
-	      (or (points object)
-		  0)
-	      (target object)
+              (or (points object)
+                  0)
+              (target object)
               (chance->chance-for-human (chance object)))))
 
 (defmacro define-heal-dmg-effect (params)
   (let* ((parameters (misc:build-plist params))
-	 (points     (cdr (assoc :points parameters)))
-	 (trigger    (cdr (assoc :trigger  parameters)))
-	 (chance     (cdr (assoc :chance  parameters)))
-	 (target     (cdr (assoc :target  parameters))))
+         (points     (cdr (assoc :points parameters)))
+         (trigger    (cdr (assoc :trigger  parameters)))
+         (chance     (cdr (assoc :chance  parameters)))
+         (target     (cdr (assoc :target  parameters))))
     (when (null points)
       (warn (_ "Interation: No points specified for healing effect, using \"1\".")))
     (when (null trigger)
@@ -562,18 +562,18 @@
       (error (format nil (_ "Invalid points ~a, expected a number") points)))
     (when (not (valid-keyword-p trigger +effect-when-used+ +effect-when-consumed+))
       (error (format nil (_ "Invalid trigger ~s, expected ~s")
-		     trigger (list +effect-when-used+ +effect-when-consumed+))))
+                     trigger (list +effect-when-used+ +effect-when-consumed+))))
     (make-instance 'heal-damage-points-effect-parameters
-		   :points   points
-		   :trigger  (or trigger +effect-when-used+)
-		   :chance   (or chance  0.0)
-		   :target   (or target +target-self+))))
+                   :points   points
+                   :trigger  (or trigger +effect-when-used+)
+                   :chance   (or chance  0.0)
+                   :target   (or target +target-self+))))
 
 (defmacro define-magic-effect (params)
   (let* ((parameters (misc:build-plist params))
-	 (trigger    (cdr (assoc :trigger parameters)))
-	 (spell-id   (cdr (assoc :spell-id parameters)))
-	 (target     (cdr (assoc :target   parameters))))
+         (trigger    (cdr (assoc :trigger parameters)))
+         (spell-id   (cdr (assoc :spell-id parameters)))
+         (target     (cdr (assoc :target   parameters))))
     (when (null trigger)
       (warn (_ "Interation: No activation trigger specified for magic effect, using \":use.\"")))
     (when (null spell-id)
@@ -581,24 +581,24 @@
     (when (null target)
       (warn (_ "Interation: No target specified for effect, using self.")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
-				+effect-when-consumed+ +effect-until-picked+))
+                                +effect-when-consumed+ +effect-until-picked+))
       (error (format nil (_ "Invalid trigger ~s, expected ~s")
-		     trigger (list +effect-when-worn+ +effect-when-used+
-				   +effect-when-consumed+ +effect-until-picked+))))
+                     trigger (list +effect-when-worn+ +effect-when-used+
+                                   +effect-when-consumed+ +effect-until-picked+))))
     (make-instance 'magic-effect-parameters
-		   :trigger  (or trigger  +effect-when-used+)
-		   :spell-id  (or spell-id :heal-1)
-		   :target   (or target +target-self+))))
+                   :trigger  (or trigger  +effect-when-used+)
+                   :spell-id  (or spell-id :heal-1)
+                   :target   (or target +target-self+))))
 
 (defparameter *interaction-parameters* nil)
 
 (defmacro define-interaction (&rest parameters)
   (let ((params (misc:build-plist parameters)))
     `(setf *interaction-parameters*
-	   (list ,@(loop for i in params collect
-			`(cons ,(car i) ,(if (consp (cdr i))
-					     (cadr i)
-					     (cdr i))))))))
+           (list ,@(loop for i in params collect
+                        `(cons ,(car i) ,(if (consp (cdr i))
+                                             (cadr i)
+                                             (cdr i))))))))
 
 (defmacro with-interaction-parameters-file ((params file) &body body)
   `(let* ((*interaction-parameters* nil))

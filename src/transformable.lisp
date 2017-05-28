@@ -32,12 +32,12 @@
 
 (defmacro gen-accessors-matrix (name)
   (let ((fn-name (list (alexandria:format-symbol t "~:@(setf~)")
-		       (alexandria:format-symbol t "~:@(~a~)" name))))
+                       (alexandria:format-symbol t "~:@(~a~)" name))))
     `(progn
        (defgeneric ,fn-name (new-value object))
        (defmethod ,fn-name (new-value (object transformable))
-	 (with-slots (,name) object
-	   (setf (elt ,name 0) new-value))))))
+         (with-slots (,name) object
+           (setf (elt ,name 0) new-value))))))
 
 (gen-accessors-matrix projection-matrix)
 
@@ -49,6 +49,6 @@
 
 (defmethod clone-into :after ((from transformable) (to transformable))
   (setf (projection-matrix to) (3d-utils:clone-matrix (elt (projection-matrix from) 0))
-	(model-matrix      to) (3d-utils:clone-matrix (elt (model-matrix      from) 0))
-	(view-matrix       to) (3d-utils:clone-matrix (elt (view-matrix       from) 0)))
+        (model-matrix      to) (3d-utils:clone-matrix (elt (model-matrix      from) 0))
+        (view-matrix       to) (3d-utils:clone-matrix (elt (view-matrix       from) 0)))
   to)

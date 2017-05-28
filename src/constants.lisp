@@ -66,7 +66,7 @@
   (define-constant +open-terrain-cost+                2.0              :test #'=))
 
 (define-constant +rotate-entity-cost-cost+  (/ +open-terrain-cost+
-					       2.0)                    :test #'=)
+                                               2.0)                    :test #'=)
 
 (define-constant +wear-object-entity-cost-cost+       1.0              :test #'=)
 

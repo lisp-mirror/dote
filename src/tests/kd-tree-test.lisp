@@ -29,30 +29,30 @@
   (let ((time (get-universal-time)))
     (num:with-lcg-seed (time)
       (let ((vertices (loop repeat 100000 collect (vec (num:lcg-next-upto 2.0)
-						       (num:lcg-next-upto 2.0)
-						       (num:lcg-next-upto 2.0))))
-	    (test-vec (vec (num:lcg-next-upto 2.0)
-			   (num:lcg-next-upto 2.0)
-			   (num:lcg-next-upto 2.0)))
-	    (tree (make-root-kd-node nil 3))
-	    (epsilon 1e-1))
-	(loop for i in vertices do
-	     (setf tree (insert tree i 
-				:equal #'kd-tree-equal-insert
-				:compare #'kd-tree-compare
-				:key-datum #'identity
-				:key #'identity)))
-	(let* ((num:*default-epsilon* epsilon)
-	       (raw-linear-res (mapcar #'(lambda (a) (if (every #'num:epsilon= a test-vec)
-						     a
-						     nil))
-					     vertices))
-	       (linear-res (remove-if #'null raw-linear-res))
-	       (tree-res (3d-query-range tree test-vec
-					 epsilon epsilon epsilon
-					 :just-peek-first nil)))
-	  (not (set-exclusive-or linear-res tree-res
-				 :test #'(lambda (a b) (every #'num:epsilon= a b)))))))))
+                                                       (num:lcg-next-upto 2.0)
+                                                       (num:lcg-next-upto 2.0))))
+            (test-vec (vec (num:lcg-next-upto 2.0)
+                           (num:lcg-next-upto 2.0)
+                           (num:lcg-next-upto 2.0)))
+            (tree (make-root-kd-node nil 3))
+            (epsilon 1e-1))
+        (loop for i in vertices do
+             (setf tree (insert tree i
+                                :equal #'kd-tree-equal-insert
+                                :compare #'kd-tree-compare
+                                :key-datum #'identity
+                                :key #'identity)))
+        (let* ((num:*default-epsilon* epsilon)
+               (raw-linear-res (mapcar #'(lambda (a) (if (every #'num:epsilon= a test-vec)
+                                                     a
+                                                     nil))
+                                             vertices))
+               (linear-res (remove-if #'null raw-linear-res))
+               (tree-res (3d-query-range tree test-vec
+                                         epsilon epsilon epsilon
+                                         :just-peek-first nil)))
+          (not (set-exclusive-or linear-res tree-res
+                                 :test #'(lambda (a b) (every #'num:epsilon= a b)))))))))
 
 (deftest test-3d-tree-query (kd-tree-suite)
   (assert-true (make-test-3d-tree-find)))

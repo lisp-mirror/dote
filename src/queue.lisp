@@ -28,8 +28,8 @@
 (defun pop ()
   (if (not (emptyp))
       (prog1
-	  (alexandria:first-elt *queue*)
-	(setf *queue* (misc:safe-delete@ *queue* 0)))
+          (alexandria:first-elt *queue*)
+        (setf *queue* (misc:safe-delete@ *queue* 0)))
       nil))
 
 (defun find (element)
@@ -40,8 +40,8 @@
 
 (defmacro with-queue ((equal key) &body body)
   `(let ((*queue* (misc:make-array-frame 0))
-	 (*equal-function* ,equal)
-	 (*key-function* ,key))
+         (*equal-function* ,equal)
+         (*key-function* ,key))
      ,@body))
 
 (defclass simple-queue ()
@@ -67,10 +67,10 @@
   (with-accessors ((container container)) object
     (let ((peek (q-peek object)))
       (if peek
-	  (progn
-	    (setf container (misc:safe-delete@ container 0))
-	    peek)
-	  nil))))
+          (progn
+            (setf container (misc:safe-delete@ container 0))
+            peek)
+          nil))))
 
 (defmethod q-push ((object simple-queue) value)
   (with-accessors ((container container)) object
@@ -83,8 +83,8 @@
 (defmethod q-peek ((object simple-queue))
   (with-accessors ((container container)) object
     (if (not (q-empty-p object))
-	(elt container 0)
-	nil)))
+        (elt container 0)
+        nil)))
 
 (defmethod q-size ((object simple-queue))
   (length (container object)))

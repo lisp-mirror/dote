@@ -19,10 +19,10 @@
 (defmacro with-tagmatch ((tag node) &body body)
   `(if (xmls:xmlrep-tagmatch ,tag ,node)
        (progn ,@body)
-       (error 'xml-no-matching-tag 
-	      :text (format nil 
-			    "Error in parsing scheme database, expecting ~s got ~s instead." ,tag 
-			    (xmls:xmlrep-tag ,node)))))
+       (error 'xml-no-matching-tag
+              :text (format nil
+                            "Error in parsing scheme database, expecting ~s got ~s instead." ,tag
+                            (xmls:xmlrep-tag ,node)))))
 
 
 (defmacro with-tagmatch-if-else ((tag node else) &body body-then)
@@ -36,11 +36,11 @@
   (alexandria:with-gensyms (value)
     `(let  ((,value (xmls:xmlrep-attrib-value ,att ,node nil)))
        (if (string/= ,value nil)
-	   (progn 
-	     ,@body
-	     ,value)
-	   (error 'xml-no-such-attribute 
-		  :text (format nil 
-				"Error in parsing scheme database, no attribute ~s found in node ~a."				
-				,att
-				(quote ,node)))))))
+           (progn
+             ,@body
+             ,value)
+           (error 'xml-no-such-attribute
+                  :text (format nil
+                                "Error in parsing scheme database, no attribute ~s found in node ~a."
+                                ,att
+                                (quote ,node)))))))

@@ -54,16 +54,16 @@
 
 (defun randomize-damage-points (character level)
   (setf (damage-points character)
-	(calculate-randomized-damage-points level
-					     +minimum-level+
-					     +maximum-level+
-					     +minimum-damage-point+
-					     +maximum-damage-point+
-					     (d/ (d level) (d* 5.0 (d +maximum-level+))))))
+        (calculate-randomized-damage-points level
+                                             +minimum-level+
+                                             +maximum-level+
+                                             +minimum-damage-point+
+                                             +maximum-damage-point+
+                                             (d/ (d level) (d* 5.0 (d +maximum-level+))))))
 
 (defun decay-params (shoes-level)
   (values (elt +decay-sigma+ shoes-level)
-	  (elt +decay-mean+  shoes-level)))
+          (elt +decay-mean+  shoes-level)))
 
 (defun calculate-decay-points (shoes-level)
   (multiple-value-bind (sigma mean)
@@ -73,92 +73,92 @@
 
 (defun calculate-decay (object-level decay-points)
   (make-instance 'decay-parameters
-		 :leaving-message (format nil
-					  (_ " (object level ~a).") object-level)
-		 :points decay-points
-		 :when-decay +decay-by-turns+))
+                 :leaving-message (format nil
+                                          (_ " (object level ~a).") object-level)
+                 :points decay-points
+                 :when-decay +decay-by-turns+))
 
 (defun level-params (map-level)
   (values (elt +level-sigma+ map-level)
-	  (elt +level-mean+  map-level)))
+          (elt +level-mean+  map-level)))
 
 (defun modifier-params (shoes-level)
   (values (elt +modifier-sigma+ shoes-level)
-	  (elt +modifier-mean+  shoes-level)))
+          (elt +modifier-mean+  shoes-level)))
 
 (defun calculate-modifier (weapon-level)
   (multiple-value-bind (sigma mean)
       (modifier-params (1- weapon-level))
     (d- (gaussian-probability sigma mean)
-	(gaussian-probability (d/ sigma 4.0) (- weapon-level)))))
+        (gaussian-probability (d/ sigma 4.0) (- weapon-level)))))
 
 (defun calculate-level (map-level)
   (multiple-value-bind (sigma mean)
       (level-params (1- map-level))
     (clamp (truncate (gaussian-probability sigma mean))
-	   +minimum-level+ +maximum-level+)))
+           +minimum-level+ +maximum-level+)))
 
 (defun number-of-effects (shoes-level)
   (let ((max (round (num:dlerp (num:smoothstep-interpolate 0.0
-							   10.0
-							   (d (1- shoes-level)))
-			       +minimum-chance-effects+
-			       +maximum-chance-effects+))))
+                                                           10.0
+                                                           (d (1- shoes-level)))
+                               +minimum-chance-effects+
+                               +maximum-chance-effects+))))
     (lcg-next-upto max)))
 
 (defun generate-shoes (map-level)
   (clean-effects
    (%generate-shoes (res:get-resource-file +default-interaction-filename+
-					   +default-character-shoes-dir+
-					   :if-does-not-exists :error)
-		    (res:get-resource-file +default-character-filename+
-					   +default-character-shoes-dir+
-					   :if-does-not-exists :error)
-		    map-level)))
+                                           +default-character-shoes-dir+
+                                           :if-does-not-exists :error)
+                    (res:get-resource-file +default-character-filename+
+                                           +default-character-shoes-dir+
+                                           :if-does-not-exists :error)
+                    map-level)))
 
 (defun %generate-shoes (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
     (with-interaction-parameters-file (template interaction-file)
       (let* ((shoes-level (calculate-level map-level))
-	     (shoes-decay (calculate-decay-points shoes-level))
-	     (effects-no  (number-of-effects shoes-level))
-	     (effects     (get-normal-fx-shuffled  template effects-no)))
-	(n-setf-path-value char-template (list +level+) (d shoes-level))
-	(n-setf-path-value char-template (list +description+) +type-name+)
-	(n-setf-path-value template
-			   (list +decay+)
-			   (calculate-decay shoes-level shoes-decay))
-	(loop for i in effects do
-	     (set-effect (list +effects+ i) shoes-level template))
-	(setf template (remove-generate-symbols template))
-	(fill-character-plist char-template shoes-level)
-	(let ((shoes-character (params->np-character char-template)))
-	  (setf (basic-interaction-params shoes-character) template)
-	  (randomize-damage-points shoes-character shoes-level)
-	  shoes-character)))))
+             (shoes-decay (calculate-decay-points shoes-level))
+             (effects-no  (number-of-effects shoes-level))
+             (effects     (get-normal-fx-shuffled  template effects-no)))
+        (n-setf-path-value char-template (list +level+) (d shoes-level))
+        (n-setf-path-value char-template (list +description+) +type-name+)
+        (n-setf-path-value template
+                           (list +decay+)
+                           (calculate-decay shoes-level shoes-decay))
+        (loop for i in effects do
+             (set-effect (list +effects+ i) shoes-level template))
+        (setf template (remove-generate-symbols template))
+        (fill-character-plist char-template shoes-level)
+        (let ((shoes-character (params->np-character char-template)))
+          (setf (basic-interaction-params shoes-character) template)
+          (randomize-damage-points shoes-character shoes-level)
+          shoes-character)))))
 
 (defun set-effect (effect-path shoes-level interaction)
   (let ((effect-object (make-instance 'effect-parameters
-				      :modifier (calculate-modifier shoes-level)
-				      :trigger  +effect-when-worn+
-				       ;; effect lasting forever  for
-				       ;; shoes,  they   will  broke
-				       ;; anyway.
-				      :duration +duration-unlimited+)))
+                                      :modifier (calculate-modifier shoes-level)
+                                      :trigger  +effect-when-worn+
+                                       ;; effect lasting forever  for
+                                       ;; shoes,  they   will  broke
+                                       ;; anyway.
+                                      :duration +duration-unlimited+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun regexp-file-portrait (shoes-level)
   (strcat +type-name+
-	  +file-record-sep+
-	  (format nil "~2,'0d" shoes-level)))
+          +file-record-sep+
+          (format nil "~2,'0d" shoes-level)))
 
 (defun fill-character-plist (character shoes-level)
   (let* ((regex          (regexp-file-portrait shoes-level))
-	 (portrait-file  (random-elt (remove-if #'(lambda (a) (not (cl-ppcre:scan regex a)))
-						(res:get-resource-files
-						 +default-gui-inventory-items+)
-						:key #'uiop:native-namestring))))
+         (portrait-file  (random-elt (remove-if #'(lambda (a) (not (cl-ppcre:scan regex a)))
+                                                (res:get-resource-files
+                                                 +default-gui-inventory-items+)
+                                                :key #'uiop:native-namestring))))
     (n-setf-path-value character (list +portrait+) (uiop:native-namestring portrait-file))
     (n-setf-path-value character (list +last-name+)  "")
     (n-setf-path-value character (list +first-name+) +type-name+)))

@@ -28,18 +28,18 @@
 (defun pop ()
   (if (not (emptyp))
       (prog1
-	  (alexandria:last-elt *stack*)
-	(setf *stack* (misc:safe-delete@ *stack* (1- (length *stack*)))))
+          (alexandria:last-elt *stack*)
+        (setf *stack* (misc:safe-delete@ *stack* (1- (length *stack*)))))
       nil))
 
 (defun find (element)
-  (cl:find element *stack* :key *key-function* :test *equal-function*)) 
+  (cl:find element *stack* :key *key-function* :test *equal-function*))
 
 (defun emptyp ()
   (not (> (length *stack*) 0)))
 
 (defmacro with-stack ((equal key) &body body)
   `(let ((*stack* (misc:make-array-frame 0))
-	 (*equal-function* ,equal)
-	 (*key-function* ,key))
+         (*equal-function* ,equal)
+         (*key-function* ,key))
      ,@body))

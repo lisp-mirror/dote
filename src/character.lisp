@@ -62,14 +62,14 @@
 
 (defmethod marshal:class-persistant-slots ((object np-character))
   (append  '(first-name
-	     last-name
-	     description
-	     weight
-	     damage-points
-	     current-damage-points
-	     level
-	     age)
-	   (call-next-method)))
+             last-name
+             description
+             weight
+             damage-points
+             current-damage-points
+             level
+             age)
+           (call-next-method)))
 ;;;; interaction
 
 (defmethod print-object ((object np-character) stream)
@@ -85,20 +85,20 @@
 (defmethod description-for-humans :around ((object np-character))
   (strcat
    (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~]~:[~;Trap~] ~a ~a~a")
-	   (can-cut-p   object)
-	   (can-smash-p object)
-	   (can-launch-bolt-p object)
-	   (can-launch-arrow-p object)
-	   (fountainp  object)
-	   (potionp    object)
-	   (elmp       object)
-	   (armorp     object)
-	   (ringp      object)
-	   (shoesp     object)
-	   (trapp      object)
-	   (first-name object)
-	   (last-name  object)
-	   +gui-static-text-delim+)
+           (can-cut-p   object)
+           (can-smash-p object)
+           (can-launch-bolt-p object)
+           (can-launch-arrow-p object)
+           (fountainp  object)
+           (potionp    object)
+           (elmp       object)
+           (armorp     object)
+           (ringp      object)
+           (shoesp     object)
+           (trapp      object)
+           (first-name object)
+           (last-name  object)
+           +gui-static-text-delim+)
    (call-next-method)))
 
 (defgeneric restart-age (object))
@@ -360,94 +360,94 @@
 (defmethod print-object ((object player-character) stream)
   (print-unreadable-object (object stream :type t :identity t)
     (format stream
-	    "description ~a name ~a ~a~%class: ~a~%gender: ~a~%strength: ~a ~%stamina: ~a ~%dexterity: ~a ~%agility: ~a ~%smartness: ~a ~%empaty: ~a ~%weight: ~a ~%damage-points: ~a ~%movement-points: ~a ~%magic-points: ~a ~%dodge-chance: ~a ~%melee-attack-chance: ~a ~%range-attack-chance: ~a ~%melee-attack-damage: ~a ~%range-attack-damage: ~a ~%edge-weapons-chance-bonus: ~a ~%edge-weapons-damage-bonus: ~a ~%impact-weapons-chance-bonus: ~a ~%impact-weapons-damage-bonus: ~a ~%pole-weapons-chance-bonus: ~a ~%pole-weapons-damage-bonus: ~a ~%unlock-chance: ~a ~%deactivate-trap-chance: ~a ~%reply-attack-chance: ~a ~%ambush-attack-chance: ~a ~%spell-chance: ~a ~%attack-spell-chance: ~a ~%status: ~a  ~%race: ~a ~%level: ~a ~%exp-points: ~a~%interaction ~a inventory ~a"
-	    (description                 object)
-	    (first-name                  object)
-	    (last-name                   object)
-	    (player-class                object)
-	    (gender                      object)
-	    (strength                    object)
-	    (stamina                     object)
-	    (dexterity                   object)
-	    (agility                     object)
-	    (smartness                   object)
-	    (empaty                      object)
-	    (weight                      object)
-	    (damage-points               object)
-	    (movement-points             object)
-	    (magic-points                object)
-	    (dodge-chance                object)
-	    (melee-attack-chance         object)
-	    (range-attack-chance         object)
-	    (melee-attack-damage         object)
-	    (range-attack-damage         object)
-	    (edge-weapons-chance-bonus   object)
-	    (edge-weapons-damage-bonus   object)
-	    (impact-weapons-chance-bonus object)
-	    (impact-weapons-damage-bonus object)
-	    (pole-weapons-chance-bonus   object)
-	    (pole-weapons-damage-bonus   object)
-	    (unlock-chance               object)
-	    (deactivate-trap-chance      object)
-	    (reply-attack-chance         object)
-	    (ambush-attack-chance        object)
-	    (spell-chance                object)
-	    (attack-spell-chance         object)
-	    (status                      object)
-	    (race                        object)
-	    (level                       object)
-	    (exp-points                  object)
-	    (basic-interaction-params    object)
-	    (mapcar #'description-for-humans (inventory object)))))
+            "description ~a name ~a ~a~%class: ~a~%gender: ~a~%strength: ~a ~%stamina: ~a ~%dexterity: ~a ~%agility: ~a ~%smartness: ~a ~%empaty: ~a ~%weight: ~a ~%damage-points: ~a ~%movement-points: ~a ~%magic-points: ~a ~%dodge-chance: ~a ~%melee-attack-chance: ~a ~%range-attack-chance: ~a ~%melee-attack-damage: ~a ~%range-attack-damage: ~a ~%edge-weapons-chance-bonus: ~a ~%edge-weapons-damage-bonus: ~a ~%impact-weapons-chance-bonus: ~a ~%impact-weapons-damage-bonus: ~a ~%pole-weapons-chance-bonus: ~a ~%pole-weapons-damage-bonus: ~a ~%unlock-chance: ~a ~%deactivate-trap-chance: ~a ~%reply-attack-chance: ~a ~%ambush-attack-chance: ~a ~%spell-chance: ~a ~%attack-spell-chance: ~a ~%status: ~a  ~%race: ~a ~%level: ~a ~%exp-points: ~a~%interaction ~a inventory ~a"
+            (description                 object)
+            (first-name                  object)
+            (last-name                   object)
+            (player-class                object)
+            (gender                      object)
+            (strength                    object)
+            (stamina                     object)
+            (dexterity                   object)
+            (agility                     object)
+            (smartness                   object)
+            (empaty                      object)
+            (weight                      object)
+            (damage-points               object)
+            (movement-points             object)
+            (magic-points                object)
+            (dodge-chance                object)
+            (melee-attack-chance         object)
+            (range-attack-chance         object)
+            (melee-attack-damage         object)
+            (range-attack-damage         object)
+            (edge-weapons-chance-bonus   object)
+            (edge-weapons-damage-bonus   object)
+            (impact-weapons-chance-bonus object)
+            (impact-weapons-damage-bonus object)
+            (pole-weapons-chance-bonus   object)
+            (pole-weapons-damage-bonus   object)
+            (unlock-chance               object)
+            (deactivate-trap-chance      object)
+            (reply-attack-chance         object)
+            (ambush-attack-chance        object)
+            (spell-chance                object)
+            (attack-spell-chance         object)
+            (status                      object)
+            (race                        object)
+            (level                       object)
+            (exp-points                  object)
+            (basic-interaction-params    object)
+            (mapcar #'description-for-humans (inventory object)))))
 
 (defmethod marshal:class-persistant-slots ((object player-character))
   (append  '(model-origin-dir
-	     current-path
-	     gender
-	     player-class
-	     strength
-	     stamina
-	     dexterity
-	     agility
-	     smartness
-	     empaty
-	     weight
-	     movement-points
-	     current-movement-points
-	     magic-points
-	     current-magic-points
-	     dodge-chance
-	     melee-attack-chance
-	     range-attack-chance
-	     melee-attack-damage
-	     range-attack-damage
-	     edge-weapons-chance-bonus
-	     edge-weapons-damage-bonus
-	     impact-weapons-chance-bonus
-	     impact-weapons-damage-bonus
-	     pole-weapons-chance-bonus
-	     pole-weapons-damage-bonus
-	     modifiers-effects
-	     unlock-chance
-	     deactivate-trap-chance
-	     reply-attack-chance
-	     ambush-attack-chance
-	     spell-chance
-	     attack-spell-chance
-	     status
-	     immune-faint-status
-	     immune-berserk-status
-	     immune-poison-status
-	     immune-terror-status
-	     recurrent-effects
-	     race
-	     exp-points)
-	   (call-next-method)))
+             current-path
+             gender
+             player-class
+             strength
+             stamina
+             dexterity
+             agility
+             smartness
+             empaty
+             weight
+             movement-points
+             current-movement-points
+             magic-points
+             current-magic-points
+             dodge-chance
+             melee-attack-chance
+             range-attack-chance
+             melee-attack-damage
+             range-attack-damage
+             edge-weapons-chance-bonus
+             edge-weapons-damage-bonus
+             impact-weapons-chance-bonus
+             impact-weapons-damage-bonus
+             pole-weapons-chance-bonus
+             pole-weapons-damage-bonus
+             modifiers-effects
+             unlock-chance
+             deactivate-trap-chance
+             reply-attack-chance
+             ambush-attack-chance
+             spell-chance
+             attack-spell-chance
+             status
+             immune-faint-status
+             immune-berserk-status
+             immune-poison-status
+             immune-terror-status
+             recurrent-effects
+             race
+             exp-points)
+           (call-next-method)))
 
 (defmethod serialize ((object player-character))
   (when (portrait object)
     (setf (texture:filename (portrait object))
-	  (format nil "~a" (num:fnv-hash-32 (pixmap:bits (portrait object))))))
+          (format nil "~a" (num:fnv-hash-32 (pixmap:bits (portrait object))))))
   (format nil "~s" (marshal:marshal object)))
 
 (defmethod deserialize ((object player-character) file)
@@ -522,7 +522,7 @@
     `(progn
        (defgeneric ,name-fn (object))
        (defmethod  ,name-fn ((object player-character))
-	 (eq (player-class object) ,(alexandria:make-keyword name))))))
+         (eq (player-class object) ,(alexandria:make-keyword name))))))
 
 (gen-player-class-test ranger)
 
@@ -537,24 +537,24 @@
 (defmethod random-fill-slots ((object player-character) capital characteristics)
   (loop for charact in characteristics do
        (when (> capital 0)
-	 (let ((random-value (+ (caadr charact)
-				(if (/= 0 (cadadr charact))
-				    (num:lcg-next-in-range
-				     (- (cadadr charact)) (cadadr charact))
-				    0))))
-	   (if (< random-value capital)
-	       (progn
-		 (incf (slot-value object (car charact)) random-value)
-		 (decf capital random-value))
-	       (progn
-		 (incf (slot-value object (car charact)) capital)
-		 (setf capital 0))))))
+         (let ((random-value (+ (caadr charact)
+                                (if (/= 0 (cadadr charact))
+                                    (num:lcg-next-in-range
+                                     (- (cadadr charact)) (cadadr charact))
+                                    0))))
+           (if (< random-value capital)
+               (progn
+                 (incf (slot-value object (car charact)) random-value)
+                 (decf capital random-value))
+               (progn
+                 (incf (slot-value object (car charact)) capital)
+                 (setf capital 0))))))
   capital)
 
 (defmethod inventory-slot-pages-number ((object player-character))
   (ceiling (enzyme-kinetics +max-inventory-slots-page+
-			    +weight-for-half-capacity-inventory+
-			    (d (weight object)))))
+                            +weight-for-half-capacity-inventory+
+                            (d (weight object)))))
 
 (defmethod player-class->class-description ((object player-character))
   (with-accessors ((player-class player-class)) object
@@ -591,63 +591,63 @@
 (defmethod find-entity-by-id ((object player-character) id)
   "Search everywhere"
   (with-accessors ((elm        elm)
-		   (shoes      shoes)
-		   (armor      armor)
-		   (left-hand  left-hand)
-		   (right-hand right-hand)
-		   (ring       ring)) object
+                   (shoes      shoes)
+                   (armor      armor)
+                   (left-hand  left-hand)
+                   (right-hand right-hand)
+                   (ring       ring)) object
     (or (find-item-in-inventory object id)
-	(and elm        (= (id elm)        id) elm)
-	(and shoes      (= (id shoes)      id) shoes)
-	(and armor      (= (id armor)      id) armor)
-	(and left-hand  (= (id left-hand)  id) left-hand)
-	(and right-hand (= (id right-hand) id) right-hand)
-	(and ring       (= (id ring)       id) ring))))
+        (and elm        (= (id elm)        id) elm)
+        (and shoes      (= (id shoes)      id) shoes)
+        (and armor      (= (id armor)      id) armor)
+        (and left-hand  (= (id left-hand)  id) left-hand)
+        (and right-hand (= (id right-hand) id) right-hand)
+        (and ring       (= (id ring)       id) ring))))
 
 (defmethod find-item-in-inventory ((object player-character) id)
   (find id (inventory object) :key #'id :test #'=))
 
 (defmethod remove-decayed-items ((object player-character) turn-count)
   (with-accessors ((inventory inventory)
-		   (elm        elm)
-		   (shoes      shoes)
-		   (armor      armor)
-		   (left-hand  left-hand)
-		   (right-hand right-hand)
-		   (ring       ring)) object
+                   (elm        elm)
+                   (shoes      shoes)
+                   (armor      armor)
+                   (left-hand  left-hand)
+                   (right-hand right-hand)
+                   (ring       ring)) object
     (flet ((decayedp (item)
-	     (let* ((decay-params (interaction-get-decay item))
-		    (decay-point  (and decay-params (interaction:points decay-params))))
-	       (and decay-point
-		    (>= (age item) decay-point)))))
+             (let* ((decay-params (interaction-get-decay item))
+                    (decay-point  (and decay-params (interaction:points decay-params))))
+               (and decay-point
+                    (>= (age item) decay-point)))))
       (let* ((new-inventory (remove-if #'(lambda (a) (decayedp a)) inventory))
-	     (removed-items (remove-if #'(lambda (a) (not (decayedp a))) inventory)))
-	(when (and elm
-		   (decayedp elm))
-	  (push elm removed-items)
-	  (setf elm nil))
-	(when (and shoes
-		   (decayedp shoes))
-	  (push shoes removed-items)
-	  (setf shoes nil))
-	(when (and armor
-		   (decayedp armor))
-	  (push armor removed-items)
-	  (setf armor nil))
-	(when (and left-hand
-		   (decayedp left-hand))
-	  (push left-hand removed-items)
-	  (setf left-hand nil))
-	(when (and right-hand
-		   (decayedp right-hand))
-	  (push right-hand removed-items)
-	  (setf right-hand nil))
-	(when (and ring
-		   (decayedp ring))
-	  (push ring removed-items)
-	  (setf ring nil))
-	(setf inventory new-inventory)
-	(values removed-items inventory)))))
+             (removed-items (remove-if #'(lambda (a) (not (decayedp a))) inventory)))
+        (when (and elm
+                   (decayedp elm))
+          (push elm removed-items)
+          (setf elm nil))
+        (when (and shoes
+                   (decayedp shoes))
+          (push shoes removed-items)
+          (setf shoes nil))
+        (when (and armor
+                   (decayedp armor))
+          (push armor removed-items)
+          (setf armor nil))
+        (when (and left-hand
+                   (decayedp left-hand))
+          (push left-hand removed-items)
+          (setf left-hand nil))
+        (when (and right-hand
+                   (decayedp right-hand))
+          (push right-hand removed-items)
+          (setf right-hand nil))
+        (when (and ring
+                   (decayedp ring))
+          (push ring removed-items)
+          (setf ring nil))
+        (setf inventory new-inventory)
+        (values removed-items inventory)))))
 
 (defmethod remove-from-inventory ((object player-character) item)
   (setf (inventory object) (remove (id item) (inventory object) :key #'id :test #'=)))
@@ -655,75 +655,75 @@
 (defmethod remove-from-modifiers ((object player-character) item-origin-id)
   (with-accessors ((modifiers-effects modifiers-effects)) object
     (setf modifiers-effects
-	  (remove-if #'(lambda (a)
-			 (= (random-object-messages:msg-origin a)
-			    item-origin-id))
-		     modifiers-effects))))
+          (remove-if #'(lambda (a)
+                         (= (random-object-messages:msg-origin a)
+                            item-origin-id))
+                     modifiers-effects))))
 
 (defmethod sum-modifiers ((object player-character) modifier-name)
   (with-accessors ((modifiers-effects modifiers-effects)) object
     (reduce #'(lambda (a b) (d+ a (random-object-messages:msg-modifier b)))
-	    (remove-if #'(lambda (a)
-			   (or (not (typep a 'random-object-messages:modifier-effect-msg))
-			       (not (eq    modifier-name
-					   (random-object-messages:msg-characteristic a)))))
-		       modifiers-effects)
-	    :initial-value 0.0)))
+            (remove-if #'(lambda (a)
+                           (or (not (typep a 'random-object-messages:modifier-effect-msg))
+                               (not (eq    modifier-name
+                                           (random-object-messages:msg-characteristic a)))))
+                       modifiers-effects)
+            :initial-value 0.0)))
 
 (defmethod item->player-character-slot ((object player-character) item)
   (with-accessors ((left-hand  left-hand)
-		   (right-hand right-hand)) object
+                   (right-hand right-hand)) object
     (when item
       (let ((item-id (id item)))
-	 (cond
-	   ((and (interactive-entity:ringp item)
-		 (ring object)
-		 (= item-id (id (ring object))))
-	    'character:ring)
-	   ((and (interactive-entity:armorp item)
-		 (armor object)
-		 (= item-id (id (armor object))))
-	    'character:armor)
-	   ((and (interactive-entity:elmp item)
-		 (elm object)
-		 (= item-id (id (elm object))))
-	    'character:elm)
-	   ((and (interactive-entity:shoesp item)
-		 (shoes object)
-		 (= item-id (id (shoes object))))
-	    'character:shoes)
-	   ((or (interactive-entity:weaponp item)
-		(interactive-entity:shieldp item))
-	    (cond
-	      ((and (left-hand object)
-		    (= item-id (id (left-hand object))))
-	       'character:left-hand)
-	      ((and (right-hand object)
-		    (= item-id (id (right-hand object))))
-	       'character:right-hand))))))))
+         (cond
+           ((and (interactive-entity:ringp item)
+                 (ring object)
+                 (= item-id (id (ring object))))
+            'character:ring)
+           ((and (interactive-entity:armorp item)
+                 (armor object)
+                 (= item-id (id (armor object))))
+            'character:armor)
+           ((and (interactive-entity:elmp item)
+                 (elm object)
+                 (= item-id (id (elm object))))
+            'character:elm)
+           ((and (interactive-entity:shoesp item)
+                 (shoes object)
+                 (= item-id (id (shoes object))))
+            'character:shoes)
+           ((or (interactive-entity:weaponp item)
+                (interactive-entity:shieldp item))
+            (cond
+              ((and (left-hand object)
+                    (= item-id (id (left-hand object))))
+               'character:left-hand)
+              ((and (right-hand object)
+                    (= item-id (id (right-hand object))))
+               'character:right-hand))))))))
 
 (defmethod item->available-player-character-slot ((object player-character) item)
   (with-accessors ((left-hand  left-hand)
-		   (right-hand right-hand)) object
+                   (right-hand right-hand)) object
     (and item
-	 (cond
-	   ((interactive-entity:ringp item)
-	    'character:ring)
-	   ((interactive-entity:armorp item)
-	    'character:armor)
-	   ((interactive-entity:elmp item)
-	    'character:elm)
-	   ((interactive-entity:shoesp item)
-	    'character:shoes)
-	   ((or (interactive-entity:weaponp item)
-		(interactive-entity:shieldp item)
-		(interactive-entity:bowp item)
-		(interactive-entity:crossbowp item))
-	    (if (null left-hand)
-		'character:left-hand
-		(if (null right-hand)
-		    'character:right-hand
-		    nil)))))))
+         (cond
+           ((interactive-entity:ringp item)
+            'character:ring)
+           ((interactive-entity:armorp item)
+            'character:armor)
+           ((interactive-entity:elmp item)
+            'character:elm)
+           ((interactive-entity:shoesp item)
+            'character:shoes)
+           ((or (interactive-entity:weaponp item)
+                (interactive-entity:shieldp item)
+                (interactive-entity:bowp item)
+                (interactive-entity:crossbowp item))
+            (if (null left-hand)
+                'character:left-hand
+                (if (null right-hand)
+                    'character:right-hand
+                    nil)))))))
 
 (defmethod worn-weapon ((object player-character))
   (cond
@@ -743,28 +743,28 @@
 
 (defmethod weapon-type-short-range ((object player-character))
  (let* ((weapon       (worn-weapon object))
-	(weapon-type  (when weapon
-			(cond
-			  ((can-cut-p weapon)
-			   :edge)
-			  ((can-smash-p weapon)
-			   :impact)
-			  ((mounted-on-pole-p weapon)
-			   :pole)
-			  (t
-			   nil)))))
+        (weapon-type  (when weapon
+                        (cond
+                          ((can-cut-p weapon)
+                           :edge)
+                          ((can-smash-p weapon)
+                           :impact)
+                          ((mounted-on-pole-p weapon)
+                           :pole)
+                          (t
+                           nil)))))
    weapon-type))
 
 (defmethod weapon-type-long-range ((object player-character))
  (let* ((weapon       (worn-weapon object))
-	(weapon-type  (when weapon
-			(cond
-			  ((bowp weapon)
-			   :bow)
-			  ((crossbowp weapon)
-			   :crossbow)
-			  (t
-			   nil)))))
+        (weapon-type  (when weapon
+                        (cond
+                          ((bowp weapon)
+                           :bow)
+                          ((crossbowp weapon)
+                           :crossbow)
+                          (t
+                           nil)))))
    weapon-type))
 
 (defmethod available-spells-list ((object player-character))
@@ -831,156 +831,156 @@
 
 (defmacro gen-actual-characteristic (name)
   (let ((fn       (format-fn-symbol t "actual-~a" name))
-	(accessor (format-fn-symbol t "~a"        name))
-	(constant (format-fn-symbol t "+~a+"      name)))
+        (accessor (format-fn-symbol t "~a"        name))
+        (constant (format-fn-symbol t "+~a+"      name)))
     `(progn
        (defgeneric ,fn (object))
        (defmethod  ,fn ((object player-character))
-	 (d+ (,accessor object)
-	     (sum-modifiers object ,constant))))))
+         (d+ (,accessor object)
+             (sum-modifiers object ,constant))))))
 
 (defmacro gen-actual-characteristics (&rest names)
   `(progn
      ,@(loop for name in names collect
-	    `(gen-actual-characteristic ,name))))
+            `(gen-actual-characteristic ,name))))
 
 (gen-actual-characteristics damage-points
-			    movement-points
-			    magic-points
-			    dodge-chance
-			    melee-attack-chance
-			    range-attack-chance
-			    melee-attack-damage
-			    range-attack-damage
-			    edge-weapons-chance-bonus
-			    edge-weapons-damage-bonus
-			    impact-weapons-chance-bonus
-			    impact-weapons-damage-bonus
-			    pole-weapons-chance-bonus
-			    pole-weapons-damage-bonus
-			    unlock-chance
-			    deactivate-trap-chance
-			    reply-attack-chance
-			    ambush-attack-chance
-			    spell-chance
-			    attack-spell-chance)
+                            movement-points
+                            magic-points
+                            dodge-chance
+                            melee-attack-chance
+                            range-attack-chance
+                            melee-attack-damage
+                            range-attack-damage
+                            edge-weapons-chance-bonus
+                            edge-weapons-damage-bonus
+                            impact-weapons-chance-bonus
+                            impact-weapons-damage-bonus
+                            pole-weapons-chance-bonus
+                            pole-weapons-damage-bonus
+                            unlock-chance
+                            deactivate-trap-chance
+                            reply-attack-chance
+                            ambush-attack-chance
+                            spell-chance
+                            attack-spell-chance)
 
 (defmacro gen-make-player (player-class)
   (alexandria:with-gensyms (char rest-capital)
     `(defun ,(alexandria:format-symbol t "~@:(make-~a~)" player-class)
-	 (capital race
-	  &optional (charact nil) (slots '((strength (50 10))
-					   (stamina  (40 10))
-					   (dexterity (5 3))
-					   (agility   (5 3))
-					   (empaty    (2 0))
-					   (smartness (2 0))
-					   (weight    (25 10)))))
+         (capital race
+          &optional (charact nil) (slots '((strength (50 10))
+                                           (stamina  (40 10))
+                                           (dexterity (5 3))
+                                           (agility   (5 3))
+                                           (empaty    (2 0))
+                                           (smartness (2 0))
+                                           (weight    (25 10)))))
        (let* ((,char (or charact (make-instance 'player-character)))
-	      (,rest-capital (random-fill-slots ,char capital slots)))
-	 (setf (damage-points ,char)   (d (truncate (* (stamina ,char) 0.5)))
-	       (movement-points ,char) (d (truncate (* (agility ,char) 0.5)))
-	       (magic-points ,char) (d (truncate (/ (alexandria:lerp 0.1
-								     (alexandria:lerp 0.5
-										      (smartness ,char)
-										      (empaty ,char))
-								     (dexterity ,char))
-						    3)))
-	       (dodge-chance ,char) (d (truncate (max 0 (- (agility ,char) (/ (weight ,char) 2)))))
-	       (melee-attack-chance ,char) (alexandria:lerp 0.3 (strength ,char) (agility ,char))
-	       (range-attack-chance ,char) (alexandria:lerp 0.1
-							    (dexterity ,char)
-							    (agility   ,char))
-	       (melee-attack-damage ,char) (d (truncate (* (strength ,char) 0.25)))
-	       (range-attack-damage ,char) (d (truncate (* (dexterity ,char) 0.25)))
-	       (unlock-chance ,char) (d (truncate (/ (alexandria:lerp 0.9
-								   (agility ,char)
-								   (dexterity ,char))
+              (,rest-capital (random-fill-slots ,char capital slots)))
+         (setf (damage-points ,char)   (d (truncate (* (stamina ,char) 0.5)))
+               (movement-points ,char) (d (truncate (* (agility ,char) 0.5)))
+               (magic-points ,char) (d (truncate (/ (alexandria:lerp 0.1
+                                                                     (alexandria:lerp 0.5
+                                                                                      (smartness ,char)
+                                                                                      (empaty ,char))
+                                                                     (dexterity ,char))
+                                                    3)))
+               (dodge-chance ,char) (d (truncate (max 0 (- (agility ,char) (/ (weight ,char) 2)))))
+               (melee-attack-chance ,char) (alexandria:lerp 0.3 (strength ,char) (agility ,char))
+               (range-attack-chance ,char) (alexandria:lerp 0.1
+                                                            (dexterity ,char)
+                                                            (agility   ,char))
+               (melee-attack-damage ,char) (d (truncate (* (strength ,char) 0.25)))
+               (range-attack-damage ,char) (d (truncate (* (dexterity ,char) 0.25)))
+               (unlock-chance ,char) (d (truncate (/ (alexandria:lerp 0.9
+                                                                   (agility ,char)
+                                                                   (dexterity ,char))
 
-						  10)))
-	       (deactivate-trap-chance ,char) (d (truncate
-						  (/ (alexandria:lerp 0.8
-								      (agility ,char)
-								      (dexterity ,char))
-						     10)))
-	       (reply-attack-chance ,char)  (d (truncate (/ (agility ,char) 5)))
-	       (ambush-attack-chance ,char) (d (truncate
-						(/ (alexandria:lerp 0.9
-								    (agility ,char)
-								    (strength ,char))
-						   10)))
-	       (spell-chance ,char) (d (truncate (/ (alexandria:lerp 0.9
-								     (smartness ,char)
-								     (empaty ,char))
-						    3)))
-	       (attack-spell-chance ,char) (d (truncate (/ (alexandria:lerp 0.9
-									    (agility ,char)
-									    (smartness ,char))
-							   3)))
-	       (race ,char) race)
-	 (if (> ,rest-capital 0)
-	     (,(alexandria:format-symbol t "~@:(make-~a~)" player-class)
-	       ,rest-capital race ,char slots)
-	     (progn
-	       (setf (current-magic-points    ,char) (magic-points ,char)
-		     (current-movement-points ,char) (movement-points ,char)
-		     (current-damage-points    ,char) (damage-points ,char))
-	       (values ,char ,rest-capital)))))))
+                                                  10)))
+               (deactivate-trap-chance ,char) (d (truncate
+                                                  (/ (alexandria:lerp 0.8
+                                                                      (agility ,char)
+                                                                      (dexterity ,char))
+                                                     10)))
+               (reply-attack-chance ,char)  (d (truncate (/ (agility ,char) 5)))
+               (ambush-attack-chance ,char) (d (truncate
+                                                (/ (alexandria:lerp 0.9
+                                                                    (agility ,char)
+                                                                    (strength ,char))
+                                                   10)))
+               (spell-chance ,char) (d (truncate (/ (alexandria:lerp 0.9
+                                                                     (smartness ,char)
+                                                                     (empaty ,char))
+                                                    3)))
+               (attack-spell-chance ,char) (d (truncate (/ (alexandria:lerp 0.9
+                                                                            (agility ,char)
+                                                                            (smartness ,char))
+                                                           3)))
+               (race ,char) race)
+         (if (> ,rest-capital 0)
+             (,(alexandria:format-symbol t "~@:(make-~a~)" player-class)
+               ,rest-capital race ,char slots)
+             (progn
+               (setf (current-magic-points    ,char) (magic-points ,char)
+                     (current-movement-points ,char) (movement-points ,char)
+                     (current-damage-points    ,char) (damage-points ,char))
+               (values ,char ,rest-capital)))))))
 
 (gen-make-player player)
 
 (defun make-warrior (race)
   (let ((player (make-player *standard-capital-characteristic* race nil '((strength (50 10))
-									  (stamina  (40 10))
-									  (dexterity (5 3))
-									  (agility   (10 3))
-									  (empaty    (2 0))
-									  (smartness (2 0))
-									  (weight    (52 23))))))
+                                                                          (stamina  (40 10))
+                                                                          (dexterity (5 3))
+                                                                          (agility   (10 3))
+                                                                          (empaty    (2 0))
+                                                                          (smartness (2 0))
+                                                                          (weight    (52 23))))))
     (setf (player-class player) :warrior)
     player))
 
 (defun make-wizard (race)
   (let ((player (make-player *standard-capital-characteristic* race nil '((smartness (40 10))
-									  (agility   (30 10))
-									  (stamina  (20 10))
-									  (strength (10 10))
-									  (dexterity (5 3))
-									  (empaty    (2 0))
-									  (weight    (30 5))))))
+                                                                          (agility   (30 10))
+                                                                          (stamina  (20 10))
+                                                                          (strength (10 10))
+                                                                          (dexterity (5 3))
+                                                                          (empaty    (2 0))
+                                                                          (weight    (30 5))))))
     (setf (player-class player) :wizard)
     player))
 
 (defun make-healer (race)
   (let ((player (make-player *standard-capital-characteristic* race nil '((empaty (40 10))
-									  (smartness (20 20))
-									  (agility   (15 10))
-									  (stamina  (10 10))
-									  (strength (10 10))
-									  (dexterity (5 3))
-									  (weight    (42 12))))))
+                                                                          (smartness (20 20))
+                                                                          (agility   (15 10))
+                                                                          (stamina  (10 10))
+                                                                          (strength (10 10))
+                                                                          (dexterity (5 3))
+                                                                          (weight    (42 12))))))
     (setf (player-class player) :healer)
     player))
 
 (defun make-archer (race)
   (let ((player (make-player *standard-capital-characteristic* race nil '((dexterity (50 0))
-									  (stamina  (40 10))
-									  (strength (10 10))
-									  (empaty    (1 1))
-									  (agility   (10 3))
-									  (smartness (5 3))
-									  (weight    (30 55))))))
+                                                                          (stamina  (40 10))
+                                                                          (strength (10 10))
+                                                                          (empaty    (1 1))
+                                                                          (agility   (10 3))
+                                                                          (smartness (5 3))
+                                                                          (weight    (30 55))))))
     (setf (player-class player) :archer)
     player))
 
 (defun make-ranger (race)
   (let ((player (make-player *standard-capital-characteristic* race nil '((agility (60 0))
-									  (dexterity  (40 10))
-									  (stamina (15 10))
-									  (strength (15 10))
-									  (empaty    (10 10))
-									  (smartness (5 3))
-									  (weight    (56 20))))))
+                                                                          (dexterity  (40 10))
+                                                                          (stamina (15 10))
+                                                                          (strength (15 10))
+                                                                          (empaty    (10 10))
+                                                                          (smartness (5 3))
+                                                                          (weight    (56 20))))))
     (incf (deactivate-trap-chance player) 3)
     (setf (player-class player) :ranger)
     player))
@@ -992,10 +992,10 @@
 (defmacro define-character (&rest parameters)
   (let ((params (build-plist parameters)))
     `(setf *character-parameters*
-	   (list ,@(loop for i in params collect
-			`(cons ,(car i) ,(if (consp (cdr i))
-					     (cadr i)
-					     (cdr i))))))))
+           (list ,@(loop for i in params collect
+                        `(cons ,(car i) ,(if (consp (cdr i))
+                                             (cadr i)
+                                             (cdr i))))))))
 
 (defmacro with-character-parameters ((params file) &body body)
   `(let* ((*character-parameters* nil))
@@ -1004,43 +1004,43 @@
        ,@body)))
 
 (gen-trivial-plist-gets t
-			(lambda (l k) (cdr (assoc k l)))
-			fetch
-			+description+
-			+first-name+
-			+last-name+
-			+portrait+
-			+strength+
-			+stamina+
-			+dexterity+
-			+agility+
-			+smartness+
-			+empaty+
-			+weight+
-			+damage-points+
-			+movement-points+
-			+magic-points+
-			+dodge-chance+
-			+melee-attack-chance+
-			+range-attack-chance+
-			+melee-attack-damage+
-			+range-attack-damage+
-			+edge-weapons-chance-bonus+
-			+edge-weapons-damage-bonus+
-			+impact-weapons-chance-bonus+
-			+impact-weapons-damage-bonus+
-			+pole-weapons-chance-bonus+
-			+pole-weapons-damage-bonus+
-			+unlock-chance+
-			+deactivate-trap-chance+
-			+reply-attack-chance+
-			+ambush-attack-chance+
-			+spell-chance+
-			+attack-spell-chance+
-			+status+
-			+race+
-			+level+
-			+exp-points+)
+                        (lambda (l k) (cdr (assoc k l)))
+                        fetch
+                        +description+
+                        +first-name+
+                        +last-name+
+                        +portrait+
+                        +strength+
+                        +stamina+
+                        +dexterity+
+                        +agility+
+                        +smartness+
+                        +empaty+
+                        +weight+
+                        +damage-points+
+                        +movement-points+
+                        +magic-points+
+                        +dodge-chance+
+                        +melee-attack-chance+
+                        +range-attack-chance+
+                        +melee-attack-damage+
+                        +range-attack-damage+
+                        +edge-weapons-chance-bonus+
+                        +edge-weapons-damage-bonus+
+                        +impact-weapons-chance-bonus+
+                        +impact-weapons-damage-bonus+
+                        +pole-weapons-chance-bonus+
+                        +pole-weapons-damage-bonus+
+                        +unlock-chance+
+                        +deactivate-trap-chance+
+                        +reply-attack-chance+
+                        +ambush-attack-chance+
+                        +spell-chance+
+                        +attack-spell-chance+
+                        +status+
+                        +race+
+                        +level+
+                        +exp-points+)
 
 (defun randomize-a-bit (val &key (displacement 0.1))
   (if (numberp val)
@@ -1048,25 +1048,25 @@
       val))
 
 (defun calculate-randomized-damage-points (level
-					   min-level max-level
-					   min-damage max-damage
-					   displacement)
+                                           min-level max-level
+                                           min-damage max-damage
+                                           displacement)
   (let ((val (num:dlerp (num:smoothstep-interpolate (d min-level) (d max-level) (d level))
-			min-damage
-			max-damage)))
+                        min-damage
+                        max-damage)))
     (num:gaussian-probability (d* displacement val) val)))
 
 (defun params->np-character (params)
   (let ((results (make-instance 'np-character
-				:description   (fetch-description                   params)
-				:first-name    (fetch-first-name                    params)
-				:last-name     (fetch-last-name                     params)
-				:portrait      (and (fetch-portrait params)
-						    (texture:get-texture (fetch-portrait params)))
-				:weight        (fetch-weight                        params)
-				:damage-points (fetch-damage-points                 params)
-				:level         (fetch-level                         params)
-				:age           0)))
+                                :description   (fetch-description                   params)
+                                :first-name    (fetch-first-name                    params)
+                                :last-name     (fetch-last-name                     params)
+                                :portrait      (and (fetch-portrait params)
+                                                    (texture:get-texture (fetch-portrait params)))
+                                :weight        (fetch-weight                        params)
+                                :damage-points (fetch-damage-points                 params)
+                                :level         (fetch-level                         params)
+                                :age           0)))
     (when (portrait results)
       (setf (texture:s-wrap-mode (portrait results)) :clamp-to-border)
       (setf (texture:t-wrap-mode (portrait results)) :clamp-to-border)
@@ -1076,44 +1076,44 @@
 
 (defun params->player-character (params)
   (let ((results (make-instance
-		  'player-character
-		  :description                 (fetch-description                   params)
-		  :first-name                  (fetch-first-name                    params)
-		  :last-name                   (fetch-last-name                     params)
-		  :portrait                    (and (fetch-portrait params)
-						    (texture:get-texture (fetch-portrait params)))
-		  :strength                    (fetch-strength                      params)
-		  :stamina                     (fetch-stamina                       params)
-		  :dexterity                   (fetch-dexterity                     params)
-		  :agility                     (fetch-agility                       params)
-		  :smartness                   (fetch-smartness                     params)
-		  :empaty                      (fetch-empaty                        params)
-		  :weight                      (fetch-weight                        params)
-		  :damage-points               (fetch-damage-points                 params)
-		  :movement-points             (fetch-movement-points               params)
-		  :magic-points                (fetch-magic-points                  params)
-		  :dodge-chance                (fetch-dodge-chance                  params)
-		  :melee-attack-chance         (fetch-melee-attack-chance           params)
-		  :range-attack-chance         (fetch-range-attack-chance           params)
-		  :melee-attack-damage         (fetch-melee-attack-damage           params)
-		  :range-attack-damage         (fetch-range-attack-damage           params)
-		  :edge-weapons-chance-bonus   (fetch-edge-weapons-chance-bonus     params)
-		  :edge-weapons-damage-bonus   (fetch-edge-weapons-damage-bonus     params)
-		  :impact-weapons-chance-bonus (fetch-impact-weapons-chance-bonus   params)
-		  :impact-weapons-damage-bonus (fetch-impact-weapons-damage-bonus   params)
-		  :pole-weapons-chance-bonus   (fetch-pole-weapons-chance-bonus     params)
-		  :pole-weapons-damage-bonus   (fetch-pole-weapons-damage-bonus     params)
-		  :unlock-chance               (fetch-unlock-chance                 params)
-		  :deactivate-trap-chance      (fetch-deactivate-trap-chance        params)
-		  :reply-attack-chance         (fetch-reply-attack-chance           params)
-		  :ambush-attack-chance        (fetch-ambush-attack-chance          params)
-		  :spell-chance                (fetch-spell-chance                  params)
-		  :attack-spell-chance         (fetch-attack-spell-chance           params)
-		  :status                      (fetch-status                        params)
-		  :race                        (fetch-race                          params)
-		  :level                       (fetch-level                         params)
-		  :age                         0
-		  :exp-points                  (fetch-exp-points                    params))))
+                  'player-character
+                  :description                 (fetch-description                   params)
+                  :first-name                  (fetch-first-name                    params)
+                  :last-name                   (fetch-last-name                     params)
+                  :portrait                    (and (fetch-portrait params)
+                                                    (texture:get-texture (fetch-portrait params)))
+                  :strength                    (fetch-strength                      params)
+                  :stamina                     (fetch-stamina                       params)
+                  :dexterity                   (fetch-dexterity                     params)
+                  :agility                     (fetch-agility                       params)
+                  :smartness                   (fetch-smartness                     params)
+                  :empaty                      (fetch-empaty                        params)
+                  :weight                      (fetch-weight                        params)
+                  :damage-points               (fetch-damage-points                 params)
+                  :movement-points             (fetch-movement-points               params)
+                  :magic-points                (fetch-magic-points                  params)
+                  :dodge-chance                (fetch-dodge-chance                  params)
+                  :melee-attack-chance         (fetch-melee-attack-chance           params)
+                  :range-attack-chance         (fetch-range-attack-chance           params)
+                  :melee-attack-damage         (fetch-melee-attack-damage           params)
+                  :range-attack-damage         (fetch-range-attack-damage           params)
+                  :edge-weapons-chance-bonus   (fetch-edge-weapons-chance-bonus     params)
+                  :edge-weapons-damage-bonus   (fetch-edge-weapons-damage-bonus     params)
+                  :impact-weapons-chance-bonus (fetch-impact-weapons-chance-bonus   params)
+                  :impact-weapons-damage-bonus (fetch-impact-weapons-damage-bonus   params)
+                  :pole-weapons-chance-bonus   (fetch-pole-weapons-chance-bonus     params)
+                  :pole-weapons-damage-bonus   (fetch-pole-weapons-damage-bonus     params)
+                  :unlock-chance               (fetch-unlock-chance                 params)
+                  :deactivate-trap-chance      (fetch-deactivate-trap-chance        params)
+                  :reply-attack-chance         (fetch-reply-attack-chance           params)
+                  :ambush-attack-chance        (fetch-ambush-attack-chance          params)
+                  :spell-chance                (fetch-spell-chance                  params)
+                  :attack-spell-chance         (fetch-attack-spell-chance           params)
+                  :status                      (fetch-status                        params)
+                  :race                        (fetch-race                          params)
+                  :level                       (fetch-level                         params)
+                  :age                         0
+                  :exp-points                  (fetch-exp-points                    params))))
     (when (portrait results)
       (setf (texture:s-wrap-mode (portrait results)) :clamp-to-border)
       (setf (texture:t-wrap-mode (portrait results)) :clamp-to-border)
@@ -1124,79 +1124,79 @@
 (defun load-randomize-character (file)
   (with-character-parameters (params file)
     (let ((results (make-instance 'player-character
-				  :first-name                  (randomize-a-bit
-								(fetch-first-name params))
-				  :last-name                   (randomize-a-bit
-								(fetch-last-name params))
-				  :portrait                    (texture:get-texture
-								 (fetch-portrait params))
-				  :strength                    (randomize-a-bit
-								(fetch-strength params))
-				  :stamina                     (randomize-a-bit
-								(fetch-stamina params))
-				  :dexterity                   (randomize-a-bit
-								(fetch-dexterity params))
-				  :agility                     (randomize-a-bit
-								(fetch-agility params))
-				  :smartness                   (randomize-a-bit
-								(fetch-smartness params))
-				  :empaty                      (randomize-a-bit
-								(fetch-empaty params))
-				  :weight                      (randomize-a-bit
-								(fetch-weight params))
-				  :damage-points               (randomize-a-bit
-								(fetch-damage-points params))
-				  :movement-points             (randomize-a-bit
-								(fetch-movement-points params))
-				  :magic-points                (randomize-a-bit
-								(fetch-magic-points params))
-				  :dodge-chance                (randomize-a-bit
-								(fetch-dodge-chance params))
-				  :melee-attack-chance         (randomize-a-bit
-								(fetch-melee-attack-chance params))
-				  :range-attack-chance         (randomize-a-bit
-								(fetch-range-attack-chance params))
-				  :melee-attack-damage         (randomize-a-bit
-								(fetch-melee-attack-damage params))
-				  :range-attack-damage         (randomize-a-bit
-								(fetch-range-attack-damage params))
-				  :edge-weapons-chance-bonus   (randomize-a-bit
-								(fetch-edge-weapons-chance-bonus
-								 params))
-				  :edge-weapons-damage-bonus   (randomize-a-bit
-								(fetch-edge-weapons-damage-bonus
-								 params))
-				  :impact-weapons-chance-bonus (randomize-a-bit
-								(fetch-impact-weapons-chance-bonus
-								 params))
-				  :impact-weapons-damage-bonus (randomize-a-bit
-								(fetch-impact-weapons-damage-bonus
-								 params))
-				  :pole-weapons-chance-bonus   (randomize-a-bit
-								(fetch-pole-weapons-chance-bonus
-								 params))
-				  :pole-weapons-damage-bonus   (randomize-a-bit
-								(fetch-pole-weapons-damage-bonus
-								 params))
-				  :unlock-chance               (randomize-a-bit
-								(fetch-unlock-chance params))
-				  :deactivate-trap-chance      (randomize-a-bit
-								(fetch-deactivate-trap-chance
-								 params))
-				  :reply-attack-chance         (randomize-a-bit
-								(fetch-reply-attack-chance params))
-				  :ambush-attack-chance        (randomize-a-bit
-								(fetch-ambush-attack-chance params))
-				  :spell-chance                (randomize-a-bit
-								(fetch-spell-chance params))
-				  :attack-spell-chance         (randomize-a-bit
-								(fetch-attack-spell-chance params))
-				  :status                      (randomize-a-bit
-								(fetch-status params))
-				  :race                        (randomize-a-bit
-								(fetch-race params))
-				  :level                       (randomize-a-bit
-								(fetch-level params))
-				  :exp-points                  (randomize-a-bit
-								(fetch-exp-points params)))))
+                                  :first-name                  (randomize-a-bit
+                                                                (fetch-first-name params))
+                                  :last-name                   (randomize-a-bit
+                                                                (fetch-last-name params))
+                                  :portrait                    (texture:get-texture
+                                                                 (fetch-portrait params))
+                                  :strength                    (randomize-a-bit
+                                                                (fetch-strength params))
+                                  :stamina                     (randomize-a-bit
+                                                                (fetch-stamina params))
+                                  :dexterity                   (randomize-a-bit
+                                                                (fetch-dexterity params))
+                                  :agility                     (randomize-a-bit
+                                                                (fetch-agility params))
+                                  :smartness                   (randomize-a-bit
+                                                                (fetch-smartness params))
+                                  :empaty                      (randomize-a-bit
+                                                                (fetch-empaty params))
+                                  :weight                      (randomize-a-bit
+                                                                (fetch-weight params))
+                                  :damage-points               (randomize-a-bit
+                                                                (fetch-damage-points params))
+                                  :movement-points             (randomize-a-bit
+                                                                (fetch-movement-points params))
+                                  :magic-points                (randomize-a-bit
+                                                                (fetch-magic-points params))
+                                  :dodge-chance                (randomize-a-bit
+                                                                (fetch-dodge-chance params))
+                                  :melee-attack-chance         (randomize-a-bit
+                                                                (fetch-melee-attack-chance params))
+                                  :range-attack-chance         (randomize-a-bit
+                                                                (fetch-range-attack-chance params))
+                                  :melee-attack-damage         (randomize-a-bit
+                                                                (fetch-melee-attack-damage params))
+                                  :range-attack-damage         (randomize-a-bit
+                                                                (fetch-range-attack-damage params))
+                                  :edge-weapons-chance-bonus   (randomize-a-bit
+                                                                (fetch-edge-weapons-chance-bonus
+                                                                 params))
+                                  :edge-weapons-damage-bonus   (randomize-a-bit
+                                                                (fetch-edge-weapons-damage-bonus
+                                                                 params))
+                                  :impact-weapons-chance-bonus (randomize-a-bit
+                                                                (fetch-impact-weapons-chance-bonus
+                                                                 params))
+                                  :impact-weapons-damage-bonus (randomize-a-bit
+                                                                (fetch-impact-weapons-damage-bonus
+                                                                 params))
+                                  :pole-weapons-chance-bonus   (randomize-a-bit
+                                                                (fetch-pole-weapons-chance-bonus
+                                                                 params))
+                                  :pole-weapons-damage-bonus   (randomize-a-bit
+                                                                (fetch-pole-weapons-damage-bonus
+                                                                 params))
+                                  :unlock-chance               (randomize-a-bit
+                                                                (fetch-unlock-chance params))
+                                  :deactivate-trap-chance      (randomize-a-bit
+                                                                (fetch-deactivate-trap-chance
+                                                                 params))
+                                  :reply-attack-chance         (randomize-a-bit
+                                                                (fetch-reply-attack-chance params))
+                                  :ambush-attack-chance        (randomize-a-bit
+                                                                (fetch-ambush-attack-chance params))
+                                  :spell-chance                (randomize-a-bit
+                                                                (fetch-spell-chance params))
+                                  :attack-spell-chance         (randomize-a-bit
+                                                                (fetch-attack-spell-chance params))
+                                  :status                      (randomize-a-bit
+                                                                (fetch-status params))
+                                  :race                        (randomize-a-bit
+                                                                (fetch-race params))
+                                  :level                       (randomize-a-bit
+                                                                (fetch-level params))
+                                  :exp-points                  (randomize-a-bit
+                                                                (fetch-exp-points params)))))
       results)))

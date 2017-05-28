@@ -17,29 +17,29 @@
 (in-package :pixmap)
 
 (defmacro with-rgba-texture ((pixmap &key (width 512) (height 512))
-			     &body body)
+                             &body body)
   `(let ((,pixmap (pixmap:make-pixmap-frame ,width ,height 4)))
-     (loop-matrix (,pixmap x y) 
-	,@body)
+     (loop-matrix (,pixmap x y)
+        ,@body)
      ,pixmap))
 
 
 (defmacro with-noise-rgba-texture ((pixmap pixel noise &key (width 512) (height 512)
-					  (r 255) (g 255) (b 255))
-				  &body body)
+                                          (r 255) (g 255) (b 255))
+                                  &body body)
   `(let ((,pixmap (pixmap:make-pixmap-frame ,width ,height 4)))
-     (loop-matrix (,pixmap x y) 
-	(let ((,pixel (ivec4:ivec4 0 0 0 255))
-	      (,noise 0.0))
-	    ,@body
-	    (setf ,noise (num:d/ (num:d+ ,noise 1.0) 2.0)
-		  (elt ,pixel 0) (alexandria:clamp (truncate
-						    (num:d* ,noise (num:desired ,r))) 0 255)
-		  (elt ,pixel 1) (alexandria:clamp (truncate
-						    (num:d* ,noise (num:desired ,g))) 0 255)
-		  (elt ,pixel 2) (alexandria:clamp (truncate
-						    (num:d* ,noise (num:desired ,b))) 0 255)
-		  (elt ,pixel 3) (alexandria:clamp (truncate
-						    (num:d* ,noise (num:desired ,b))) 0 255))
-	    (setf (matrix:pixel@ ,pixmap x y) ,pixel))) 
+     (loop-matrix (,pixmap x y)
+        (let ((,pixel (ivec4:ivec4 0 0 0 255))
+              (,noise 0.0))
+            ,@body
+            (setf ,noise (num:d/ (num:d+ ,noise 1.0) 2.0)
+                  (elt ,pixel 0) (alexandria:clamp (truncate
+                                                    (num:d* ,noise (num:desired ,r))) 0 255)
+                  (elt ,pixel 1) (alexandria:clamp (truncate
+                                                    (num:d* ,noise (num:desired ,g))) 0 255)
+                  (elt ,pixel 2) (alexandria:clamp (truncate
+                                                    (num:d* ,noise (num:desired ,b))) 0 255)
+                  (elt ,pixel 3) (alexandria:clamp (truncate
+                                                    (num:d* ,noise (num:desired ,b))) 0 255))
+            (setf (matrix:pixel@ ,pixmap x y) ,pixel)))
      ,pixmap))

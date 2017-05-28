@@ -34,14 +34,14 @@
     (let ((seq (make-array (file-length stream) :element-type '(unsigned-byte 8))))
       (read-sequence seq stream)
       (if convert-to-string
-	  (babel:octets-to-string seq)
-	  seq))))
+          (babel:octets-to-string seq)
+          seq))))
 
 (defun dump-sequence-to-file (seq file)
   (with-open-file (stream file
-			  :direction :output
-			  :if-exists :supersede
-			  :if-does-not-exist :create)
+                          :direction :output
+                          :if-exists :supersede
+                          :if-does-not-exist :create)
     (write-sequence seq stream)))
 
 (defun has-extension (path ext)
@@ -55,32 +55,32 @@
   (alexandria:with-gensyms (dir)
     `(let ((,dir (nix:opendir ,root)))
        (unwind-protect
-	    (handler-case
-		(do ((,var (cat-parent-dir ,root (nix:readdir ,dir))
-			   (cat-parent-dir ,root (nix:readdir ,dir))))
-		    ((cl-ppcre:scan "NIL$" ,var))
-		  ,@body)
-	      (nix::enotdir () 0)
-	      (nix:eacces () 0)
-	      (nix:eloop () 0))
+            (handler-case
+                (do ((,var (cat-parent-dir ,root (nix:readdir ,dir))
+                           (cat-parent-dir ,root (nix:readdir ,dir))))
+                    ((cl-ppcre:scan "NIL$" ,var))
+                  ,@body)
+              (nix::enotdir () 0)
+              (nix:eacces () 0)
+              (nix:eloop () 0))
        (nix:closedir ,dir)))))
 
 (defun search-matching-file (root-directory &key (name ".*"))
   "Scan a filesystem saving files that match the provided criteria,
    does not follow symlinks."
   (let ((matched '())
-	(scanner (cl-ppcre:create-scanner name)))
+        (scanner (cl-ppcre:create-scanner name)))
     (labels ((match (dir)
-	       (do-directory (path) dir
-		   (let ((filename (path-last-element path)))
-		     (cond
-		       ((regular-file-p path)
-			(when (cl-ppcre:scan scanner filename)
-			  (push path matched)))
-		       ((and (not (cl-ppcre:scan "^\\.\\." filename))
-			     (not (cl-ppcre:scan "^\\."   filename))
-			     (dirp path))
-			(match path)))))))
+               (do-directory (path) dir
+                   (let ((filename (path-last-element path)))
+                     (cond
+                       ((regular-file-p path)
+                        (when (cl-ppcre:scan scanner filename)
+                          (push path matched)))
+                       ((and (not (cl-ppcre:scan "^\\.\\." filename))
+                             (not (cl-ppcre:scan "^\\."   filename))
+                             (dirp path))
+                        (match path)))))))
       (match root-directory)
       matched)))
 
@@ -96,12 +96,12 @@
 (defun path-last-element (path)
   (let ((elements (cl-ppcre:split *directory-sep-regexp* path)))
     (and elements
-	 (alexandria:last-elt elements))))
+         (alexandria:last-elt elements))))
 
 (defun path-first-element (path)
   (let ((elements (cl-ppcre:split *directory-sep-regexp* path)))
     (and elements
-	 (alexandria:first-elt elements))))
+         (alexandria:first-elt elements))))
 
 (defun path-to-hidden-file-p (path)
   "unix-like only"
@@ -111,27 +111,27 @@
 (defun strip-dirs-from-path (p)
   (multiple-value-bind (all registers)
       (cl-ppcre:scan-to-strings (concatenate 'string
-					   *directory-sep*
-					   "([^"
-					   *directory-sep*
-					   "]+)$")
-				p)
+                                           *directory-sep*
+                                           "([^"
+                                           *directory-sep*
+                                           "]+)$")
+                                p)
     (declare (ignore all))
     (and (> (length registers) 0)
-	 (elt registers 0))))
+         (elt registers 0))))
 
 (defun parent-dir-path (path)
   (let ((splitted (remove-if #'(lambda (a) (string= "" a))
-			     (split-path-elements path))))
+                             (split-path-elements path))))
     (cond
       ((> (length splitted) 1)
        (let ((res (if (string= (string (elt path 0)) *directory-sep*)
-		      (concatenate 'string *directory-sep* (first splitted))
-		      (first splitted))))
-	 (loop for i in (subseq splitted 1 (1- (length splitted))) do
-	      (setf res (concatenate 'string res *directory-sep* i)))
-	 (setf res (concatenate 'string res *directory-sep*))
-	 res))
+                      (concatenate 'string *directory-sep* (first splitted))
+                      (first splitted))))
+         (loop for i in (subseq splitted 1 (1- (length splitted))) do
+              (setf res (concatenate 'string res *directory-sep* i)))
+         (setf res (concatenate 'string res *directory-sep*))
+         res))
       ((null splitted)
        *directory-sep*)
       (t
@@ -141,11 +141,11 @@
   (alexandria:with-gensyms (stat)
     `(defun ,(alexandria:format-symbol t "~:@(get-stat-~a~)" slot-name) (file)
        (restart-case
-	   (let ((,stat (nix:stat file)))
-	     (if ,stat
-		 (,(alexandria:format-symbol :nix "~:@(stat-~a~)" slot-name)
-		   ,stat)))
-	 (use-value (value) value)))))
+           (let ((,stat (nix:stat file)))
+             (if ,stat
+                 (,(alexandria:format-symbol :nix "~:@(stat-~a~)" slot-name)
+                   ,stat)))
+         (use-value (value) value)))))
 
 (define-stat-time mtime)
 
@@ -158,13 +158,13 @@
 
 (defun file-outdated-p (file &rest dependencies)
   (handler-bind ((nix:enoent #'(lambda (c)
-				 (declare (ignore c))
-				 (invoke-restart 'use-value nil))))
+                                 (declare (ignore c))
+                                 (invoke-restart 'use-value nil))))
     (let ((atime (get-stat-atime file))
-	  (mtimes (remove-if #'null (mapcar #'get-stat-mtime dependencies))))
+          (mtimes (remove-if #'null (mapcar #'get-stat-mtime dependencies))))
       (if atime
-	  (remove-if #'(lambda (mtime) (<= mtime atime)) mtimes)
-	  t))))
+          (remove-if #'(lambda (mtime) (<= mtime atime)) mtimes)
+          t))))
 
 (defun file-exists-p (f)
   (uiop:file-exists-p f))
@@ -175,22 +175,22 @@
 (defun temporary-filename (&optional (temp-directory nil))
   (let ((tmpdir (or temp-directory (nix:getenv "TMPDIR"))))
     (if tmpdir
-	(nix:mktemp (format nil "~a~a~a" tmpdir *directory-sep*
-		    config:+program-name+))
-	(nix:mktemp (format nil "~atmp~a~a" *directory-sep* *directory-sep*
-		    config:+program-name+)))))
+        (nix:mktemp (format nil "~a~a~a" tmpdir *directory-sep*
+                    config:+program-name+))
+        (nix:mktemp (format nil "~atmp~a~a" *directory-sep* *directory-sep*
+                    config:+program-name+)))))
 
 (defmacro with-anaphoric-temp-file ((stream &key (prefix nil) (unlink nil)) &body body)
   `(let ((temp-file (temporary-filename ,prefix))) ; anaphora
        (unwind-protect
-	    (with-open-file (,stream temp-file
-				     :direction         :output
-				     :if-exists         :error
-				     :if-does-not-exist :create)
-	      ,@body)
-	 ,(if unlink
-	      `(delete-file-if-exists temp-file)
-	      nil))))
+            (with-open-file (,stream temp-file
+                                     :direction         :output
+                                     :if-exists         :error
+                                     :if-does-not-exist :create)
+              ,@body)
+         ,(if unlink
+              `(delete-file-if-exists temp-file)
+              nil))))
 
 (defun has-file-permission-p (file permission)
   (find permission (osicat:file-permissions file) :test #'eq))
@@ -203,8 +203,8 @@
   (if (gethash path cache)
       (gethash path cache)
       (progn
-	(setf (gethash path cache) (uiop:directory-files path))
-	(cached-directory-files path))))
+        (setf (gethash path cache) (uiop:directory-files path))
+        (cached-directory-files path))))
 
 (defun directory-files (path)
   (uiop:directory-files path))
@@ -212,35 +212,35 @@
 (defun preprocess-include-file (line resource)
   (let ((included-filepath (second (cl-ppcre:split "\\p{Z}" line))))
     (if (cl-ppcre:scan +file-path-regex+ included-filepath)
-	(filesystem-utils:slurp-file (res:get-resource-file included-filepath
-							    resource))
-	"")))
+        (filesystem-utils:slurp-file (res:get-resource-file included-filepath
+                                                            resource))
+        "")))
 
 (defun preprocess (file resource)
   (let ((preprocessed-p nil))
     (with-open-file (stream-input file :direction :input :if-does-not-exist :error)
       (filesystem-utils:with-anaphoric-temp-file (stream-out :prefix nil :unlink nil)
-	(do ((line (read-line stream-input nil nil) (read-line stream-input nil nil)))
-	    ((null line))
-	  (cond
-	    ((cl-ppcre:scan +preprocess-include+ line)
-	     (setf preprocessed-p t)
-	     (format stream-out "~a" (preprocess-include-file line resource)))
-	    (t
-	     (format stream-out "~a~%" line))))
-	(if preprocessed-p
-	    (prog1
-		(progn
-		  (finish-output stream-out)
-		  (preprocess filesystem-utils:temp-file resource))
-	      (delete-file-if-exists filesystem-utils:temp-file))
-	    filesystem-utils:temp-file)))))
+        (do ((line (read-line stream-input nil nil) (read-line stream-input nil nil)))
+            ((null line))
+          (cond
+            ((cl-ppcre:scan +preprocess-include+ line)
+             (setf preprocessed-p t)
+             (format stream-out "~a" (preprocess-include-file line resource)))
+            (t
+             (format stream-out "~a~%" line))))
+        (if preprocessed-p
+            (prog1
+                (progn
+                  (finish-output stream-out)
+                  (preprocess filesystem-utils:temp-file resource))
+              (delete-file-if-exists filesystem-utils:temp-file))
+            filesystem-utils:temp-file)))))
 
 (defun package-path ()
   (uiop:pathname-parent-directory-pathname
    (asdf:component-pathname
     (asdf:find-component (alexandria:symbolicate (string-upcase config:+program-name+))
-			 nil))))
+                         nil))))
 
 (defun file-in-package (name)
   (concatenate 'string (namestring (package-path)) name))

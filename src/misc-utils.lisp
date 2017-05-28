@@ -45,30 +45,30 @@
 
 (defmacro format-fn-symbol (package format &rest format-args)
   `(alexandria:format-symbol ,package ,(concatenate 'string "~:@(" format "~)")
-			     ,@format-args))
+                             ,@format-args))
 
 ;; functions utils
 
 (defmacro gen-type-p (name)
   (alexandria:with-gensyms (a)
     (let ((fname (if (cl-ppcre:scan "-" (symbol-name name))
-		     (alexandria:format-symbol t "~:@(~a-p~)"
-					       (symbol-name name))
-		     (alexandria:format-symbol t "~:@(~ap~)"
-					       (symbol-name name)))))
+                     (alexandria:format-symbol t "~:@(~a-p~)"
+                                               (symbol-name name))
+                     (alexandria:format-symbol t "~:@(~ap~)"
+                                               (symbol-name name)))))
       `(defun ,fname (,a)
-	 (typep ,a ',name)))))
+         (typep ,a ',name)))))
 
 (defmacro define-compiler-macros (name &body args)
   (let* ((function-name (alexandria:format-symbol t "~:@(~a~)" name))
-	 (low-level-function-name (alexandria:format-symbol t "~:@(%~a~)" name)))
+         (low-level-function-name (alexandria:format-symbol t "~:@(%~a~)" name)))
     `(define-compiler-macro ,function-name (&whole form ,@args)
        (let ((low-funname ',low-level-function-name))
-	 (if (every #'constantp (list ,@args))
-	     (progn
-	       `(funcall (function ,low-funname) ,,@args))
-	     (progn
-	       form))))))
+         (if (every #'constantp (list ,@args))
+             (progn
+               `(funcall (function ,low-funname) ,,@args))
+             (progn
+               form))))))
 
 (defmacro definline (name arg &rest body)
   (let* ((function-name (alexandria:format-symbol t "~:@(~a~)" name)))
@@ -78,7 +78,7 @@
 
 (defmacro defun-inline-function (name arg &body body)
   (let* ((function-name (alexandria:format-symbol t "~:@(~a~)" name))
-	 (low-level-function-name (alexandria:format-symbol t "~:@(%~a~)" name)))
+         (low-level-function-name (alexandria:format-symbol t "~:@(%~a~)" name)))
     `(progn
        (declaim (inline ,function-name))
        (defun ,function-name (,@arg) (,low-level-function-name ,@arg))
@@ -86,68 +86,68 @@
 
 (defmacro defmethod-inline-function (name arg &body body)
   (let* ((function-name (alexandria:format-symbol t "~:@(~a~)" name))
-	 (low-level-function-name (alexandria:format-symbol t "~:@(%~a~)" name)))
+         (low-level-function-name (alexandria:format-symbol t "~:@(%~a~)" name)))
     `(progn
        (declaim (inline ,function-name))
        (defgeneric ,low-level-function-name (,@(loop for i in arg collect
-						    (if (atom i)
-							i
-							(first i)))))
+                                                    (if (atom i)
+                                                        i
+                                                        (first i)))))
 
        (defmethod ,function-name (,@arg) (,low-level-function-name
-					  ,@(loop for i in arg collect
-						 (if (atom i)
-						     i
-						     (first i)))))
+                                          ,@(loop for i in arg collect
+                                                 (if (atom i)
+                                                     i
+                                                     (first i)))))
        (defmethod ,low-level-function-name (,@arg) ,@body))))
 
 (defmacro defcached (name (arg &key (test 'equalp) (clear-cache nil))
-		     declaration
-		     (&body body))
+                     declaration
+                     (&body body))
   (let* ((function-name (alexandria:format-symbol t "~:@(~a~)" name))
-	 (cache-name (alexandria:format-symbol t "~:@(cache~)")))
+         (cache-name (alexandria:format-symbol t "~:@(cache~)")))
     `(let ((,cache-name (make-hash-table :test (quote ,test))))
        (defun ,function-name (,@arg) ,(if declaration
-				  declaration
-					  `(declare (optimize (speed 0) (safety 3) (debug 3))))
+                                  declaration
+                                          `(declare (optimize (speed 0) (safety 3) (debug 3))))
 
-	 (and ,clear-cache (setf ,cache-name (make-hash-table :test (quote ,test))))
-	 ,@(list body)))))
+         (and ,clear-cache (setf ,cache-name (make-hash-table :test (quote ,test))))
+         ,@(list body)))))
 
 (defun nest-expressions (data &optional (leaf nil))
   (if (null data)
       (list leaf)
       (append (first data) (if (rest data)
-			       (list (nest-expressions (rest data) leaf))
-			       (nest-expressions (rest data) leaf)))))
+                               (list (nest-expressions (rest data) leaf))
+                               (nest-expressions (rest data) leaf)))))
 
 (defun replace-e! (expr num)
   (if (null (first expr))
       nil
       (if (atom (first expr))
-	  (append (list
-		   (if (eq (first expr) :e!)
-		       num
-		       (first expr)))
-		  (replace-e! (rest expr) num))
-	  (append (list (replace-e! (first expr) num))
-		  (replace-e! (rest expr) num)))))
+          (append (list
+                   (if (eq (first expr) :e!)
+                       num
+                       (first expr)))
+                  (replace-e! (rest expr) num))
+          (append (list (replace-e! (first expr) num))
+                  (replace-e! (rest expr) num)))))
 
 (alexandria:define-constant +nil-equiv-bag+ '(:none :false :nil) :test #'equalp)
 
 (defun build-plist (params)
   (let ((keywords (mapcar #'alexandria:make-keyword
-			  (loop for i from 0 below (length params) when (oddp (1+ i))
-			     collect (elt params i))))
-	(vals (mapcar #'(lambda (a)
-			  (typecase a
-			    (symbol (let ((key (alexandria:make-keyword a)))
-				      (and (not (find key +nil-equiv-bag+ :test #'eq))
-					   key)))
-			    (cons   (list a))
-			    (otherwise a)))
-		      (loop for i from 0 below (length params) when (evenp (1+ i))
-			 collect (elt params i)))))
+                          (loop for i from 0 below (length params) when (oddp (1+ i))
+                             collect (elt params i))))
+        (vals (mapcar #'(lambda (a)
+                          (typecase a
+                            (symbol (let ((key (alexandria:make-keyword a)))
+                                      (and (not (find key +nil-equiv-bag+ :test #'eq))
+                                           key)))
+                            (cons   (list a))
+                            (otherwise a)))
+                      (loop for i from 0 below (length params) when (evenp (1+ i))
+                         collect (elt params i)))))
     (mapcar #'(lambda (a b) (cons a b)) keywords vals)))
 
 
@@ -161,31 +161,31 @@
     `(progn
        (defgeneric ,name-fn (object))
        (defmethod  ,name-fn ((object ,class))
-	 (funcall ,get-fn object ,var)))))
+         (funcall ,get-fn object ,var)))))
 
 (defmacro gen-trivial-plist-predicates (class get-fn &rest vars)
   `(progn
      ,@(loop for v in vars collect
-	    `(gen-trivial-plist-predicate ,(alexandria:symbolicate (string-trim "+" v))
-					  ,class
-					  ,v
-					  (function ,get-fn)))))
+            `(gen-trivial-plist-predicate ,(alexandria:symbolicate (string-trim "+" v))
+                                          ,class
+                                          ,v
+                                          (function ,get-fn)))))
 
 (defmacro gen-trivial-plist-get (function-name-prefix name class var get-fn)
   (let ((name-fn (alexandria:format-symbol t "~:@(~a-~a~)" function-name-prefix name)))
     `(progn
        (defgeneric ,name-fn (object))
        (defmethod  ,name-fn ((object ,class))
-	 (funcall ,get-fn object ,var)))))
+         (funcall ,get-fn object ,var)))))
 
 (defmacro gen-trivial-plist-gets (class get-fn function-name-prefix &rest vars)
   `(progn
      ,@(loop for v in vars collect
-	    `(gen-trivial-plist-get ,function-name-prefix
-				    ,(alexandria:symbolicate (string-trim "+" v))
-				    ,class
-				    ,v
-				    (function ,get-fn)))))
+            `(gen-trivial-plist-get ,function-name-prefix
+                                    ,(alexandria:symbolicate (string-trim "+" v))
+                                    ,class
+                                    ,v
+                                    (function ,get-fn)))))
 
 ;; plist
 
@@ -201,19 +201,19 @@
 
 (defun n-setf-path-value (db path new-value)
   (let* ((ptr (recursive-assoc-just-before path db))
-	 (last-key (alexandria:last-elt path))
-	 (last-cons (assoc last-key ptr)))
+         (last-key (alexandria:last-elt path))
+         (last-cons (assoc last-key ptr)))
     (if last-cons
-	(values (setf (cdr last-cons) new-value) t)
-	(values nil nil))))
+        (values (setf (cdr last-cons) new-value) t)
+        (values nil nil))))
 
 (defun plist-path-value (db path)
   (let* ((ptr (recursive-assoc-just-before path db))
-	 (last-key (alexandria:last-elt path))
-	 (last-cons (assoc last-key ptr)))
+         (last-key (alexandria:last-elt path))
+         (last-cons (assoc last-key ptr)))
     (if last-cons
-	(values (cdr last-cons) t)
-	(values nil nil))))
+        (values (cdr last-cons) t)
+        (values nil nil))))
 
 ;; misc
 
@@ -222,8 +222,8 @@
 
 (definline code->char (code &key (limit-to-ascii nil))
   (code-char (if limit-to-ascii
-		 (alexandria:clamp code 0 127)
-		 code)))
+                 (alexandria:clamp code 0 127)
+                 code)))
 
 (definline char->code (code)
   (char-code code))
@@ -233,32 +233,32 @@
 (defun 2byte->word (byte1 byte2) ;; little endian
   (let ((res #x00000000))
     (boole boole-ior
-	   (boole boole-ior byte1 res)
-	   (ash byte2 8))))
+           (boole boole-ior byte1 res)
+           (ash byte2 8))))
 
 (defun 2word->int (word1 word2)
   (let ((res #x00000000))
     (boole boole-ior
-	   (ash (boole boole-ior word1 res) 16)
-	   word2)))
+           (ash (boole boole-ior word1 res) 16)
+           word2)))
 
 (defun byte->int (bytes)
   (let ((res #x0000000000000000))
     (loop
        for i in bytes and
        ct = 0 then (+ ct 8) do
-	 (setf res
-	       (boole boole-ior
-		      (ash i ct)
-		      res)))
+         (setf res
+               (boole boole-ior
+                      (ash i ct)
+                      res)))
     res))
 
 (defmacro gen-intn->bytes (bits)
   (let ((function-name (alexandria:format-symbol t "~:@(int~a->bytes~)" bits)))
   `(defun ,function-name (val &optional (count 0) (res '()))
      (if (>= count ,(/ bits 8))
-	 res
-	 (,function-name (ash val -8) (1+ count) (push (boole boole-and val #x00ff) res))))))
+         res
+         (,function-name (ash val -8) (1+ count) (push (boole boole-and val #x00ff) res))))))
 
 (gen-intn->bytes 16)
 
@@ -276,27 +276,27 @@
 (defmacro define-offset-size (package prefix &rest name-offset-size)
    `(progn
       ,@(loop for i in name-offset-size collect
-	     `(progn
-		(alexandria:define-constant
-		    ,(alexandria:format-symbol package "~@:(+~a-~a-offset+~)" prefix (first i))
-		    ,(second i) :test #'=)
-		,(when (= (length i) 3)
-		       `(alexandria:define-constant
-			    ,(alexandria:format-symbol package "~@:(+~a-~a-size+~)" prefix
-						       (first i))
-			    ,(third i) :test #'=))))))
+             `(progn
+                (alexandria:define-constant
+                    ,(alexandria:format-symbol package "~@:(+~a-~a-offset+~)" prefix (first i))
+                    ,(second i) :test #'=)
+                ,(when (= (length i) 3)
+                       `(alexandria:define-constant
+                            ,(alexandria:format-symbol package "~@:(+~a-~a-size+~)" prefix
+                                                       (first i))
+                            ,(third i) :test #'=))))))
 
 (defmacro define-parse-header-chunk ((name offset size object &optional (slot name)))
   (alexandria:with-gensyms (bytes)
     `(progn
        (defgeneric ,(alexandria:format-symbol t "PARSE-~:@(~a~)" name) (,object stream))
        (defmethod ,(alexandria:format-symbol t "PARSE-~:@(~a~)" name) ((object ,object) stream)
-	 (file-position stream ,offset)
-	 (let* ((,bytes (make-fresh-list ,size)))
-	   (read-sequence ,bytes stream)
-	   ,(when (not (null slot))
-		  `(setf (,slot object) ,bytes))
-	   (values ,bytes object))))))
+         (file-position stream ,offset)
+         (let* ((,bytes (make-fresh-list ,size)))
+           (read-sequence ,bytes stream)
+           ,(when (not (null slot))
+                  `(setf (,slot object) ,bytes))
+           (values ,bytes object))))))
 
 (defun read-list (stream size &key (offset nil))
   (when offset
@@ -321,48 +321,48 @@
 
 (defun random-num-filled-vector (size max)
   (map-into (misc:make-array-frame size max (type-of max) t)
-	    #'(lambda () (num:lcg-next-upto max))))
+            #'(lambda () (num:lcg-next-upto max))))
 
 (defmacro random-elt (seq)
   `(elt ,seq (num:lcg-next-upto (length ,seq))))
 
 (defun make-fresh-list (size &optional (el nil))
   (map-into (make-list size)
-	    (if (functionp el)
-		el
-		#'(lambda () el))))
+            (if (functionp el)
+                el
+                #'(lambda () el))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun make-array-frame (size &optional (el nil) (type t) (simplep nil))
     "All elements points to the same address/reference!"
     (make-array size
-		:fill-pointer (if (not simplep) size nil)
-		:adjustable (if (not simplep) t nil)
-		:initial-element el
-		:element-type type)))
+                :fill-pointer (if (not simplep) size nil)
+                :adjustable (if (not simplep) t nil)
+                :initial-element el
+                :element-type type)))
 
 (defun make-fresh-array (size &optional (el nil) (type t) (simplep nil))
   (let ((res (make-array size
-			 :fill-pointer (if (not simplep) size nil)
-			 :adjustable (if (not simplep) t nil)
-			 :initial-element el
-			 :element-type type)))
+                         :fill-pointer (if (not simplep) size nil)
+                         :adjustable (if (not simplep) t nil)
+                         :initial-element el
+                         :element-type type)))
     (map-into res #'(lambda (a) (setf a (cond
-					  ((functionp el)
-					   (funcall el))
-					  ((arrayp el)
-					   (alexandria:copy-array el))
-					  ((listp el)
-					   (copy-list el))
-					  (t
-					   el))))
-	      res)))
+                                          ((functionp el)
+                                           (funcall el))
+                                          ((arrayp el)
+                                           (alexandria:copy-array el))
+                                          ((listp el)
+                                           (copy-list el))
+                                          (t
+                                           el))))
+              res)))
 
 (defun list->array (the-list)
   (make-array (length the-list)
-	      :fill-pointer (length the-list)
-	      :adjustable t
-	      :initial-contents (copy-list the-list)))
+              :fill-pointer (length the-list)
+              :adjustable t
+              :initial-contents (copy-list the-list)))
 
 (defun copy-list-into-array (from to)
   (assert (= (length from) (length to)))
@@ -377,41 +377,41 @@
     (loop
        for element in the-list
        for i from 0 below (length the-list) do
-	 (setf (elt res i) element))
+         (setf (elt res i) element))
     res))
 
 (defun permutation (li)
   (let ((res-partial '())
-	(res '()))
+        (res '()))
     (labels ((perm (start tail)
-	       (let ((partial-tree '()))
-		 (loop for i in start do
-		      (loop for j in (set-difference tail i) do
-			   (push (append  i (list j)) partial-tree)))
-		 (setf res-partial (reverse (copy-tree partial-tree))))))
+               (let ((partial-tree '()))
+                 (loop for i in start do
+                      (loop for j in (set-difference tail i) do
+                           (push (append  i (list j)) partial-tree)))
+                 (setf res-partial (reverse (copy-tree partial-tree))))))
       (loop for ct in li do
-	   (do ((start (list (list ct)) res-partial))
-	       ((null (set-difference li (first start)))
-		(progn
-		  (setf res (append res res-partial))
-		  (setf res-partial '())))
-	     (perm start li))))
+           (do ((start (list (list ct)) res-partial))
+               ((null (set-difference li (first start)))
+                (progn
+                  (setf res (append res res-partial))
+                  (setf res-partial '())))
+             (perm start li))))
     res))
 
 (defun shuffle (seq)
   (loop for i from (1- (length seq)) downto 1 do
        (let ((swap nil)
-	     (rnd (mod (num:lcg-next) i)))
-	 (setf swap (elt seq rnd))
-	 (setf (elt seq rnd) (elt seq i))
-	 (setf (elt seq i) swap)))
+             (rnd (mod (num:lcg-next) i)))
+         (setf swap (elt seq rnd))
+         (setf (elt seq rnd) (elt seq i))
+         (setf (elt seq i) swap)))
   seq)
 
 (defun split-into-sublist (lst len)
   (if (< (length lst) len)
       (if (null lst)
-	  lst
-	  (list lst))
+          lst
+          (list lst))
       (append (list (subseq lst 0 len)) (split-into-sublist (subseq lst len) len))))
 
 (defgeneric delete@ (sequence position))
@@ -421,7 +421,7 @@
 
 (defmacro gen-delete@ ((sequence position) &body body)
   `(if (and (>= ,position 0)
-	    (< ,position (length ,sequence)))
+            (< ,position (length ,sequence)))
        ,@body
       (error 'conditions:out-of-bounds :seq sequence :idx position)))
 
@@ -429,18 +429,18 @@
   (gen-delete@
    (sequence position)
    (append (subseq sequence 0 position)
-	   (and (/= position (- (length sequence) 1))
-		(subseq sequence (1+ position))))))
+           (and (/= position (- (length sequence) 1))
+                (subseq sequence (1+ position))))))
 
 (defmethod delete@ ((sequence vector) position)
   (gen-delete@
    (sequence position)
     (make-array (1- (length sequence))
-		:fill-pointer (1- (length sequence))
-		:adjustable t
-		:initial-contents (concatenate 'vector (subseq sequence 0 position)
-					       (and (/= position (- (length sequence) 1))
-						    (subseq sequence (1+ position)))))))
+                :fill-pointer (1- (length sequence))
+                :adjustable t
+                :initial-contents (concatenate 'vector (subseq sequence 0 position)
+                                               (and (/= position (- (length sequence) 1))
+                                                    (subseq sequence (1+ position)))))))
 
 (defmethod safe-delete@ ((sequence sequence) position)
   (restart-case
@@ -453,32 +453,32 @@
 
 (defmethod remove-compact-remap-sequence ((sequence list) predicate)
   (let ((nullified (loop
-		      for i in sequence
-		      for ct from 0 collect
-			(if (funcall predicate ct i)
-			    nil
-			    i)))
-	(mapping nil)
-	(results '()))
+                      for i in sequence
+                      for ct from 0 collect
+                        (if (funcall predicate ct i)
+                            nil
+                            i)))
+        (mapping nil)
+        (results '()))
     (loop
        for i in nullified
        for pos from 0 do
-	 (when (not (null i))
-	   (push i results)
-	   (push (list pos (1- (length results))) mapping)))
+         (when (not (null i))
+           (push i results)
+           (push (list pos (1- (length results))) mapping)))
     (values (reverse results) mapping)))
 
 (defmethod remove-compact-remap-sequence ((sequence vector) predicate)
   (let ((nullified (loop for i from 0 below (length sequence) collect
-			(if (funcall predicate i (elt sequence i))
-			    nil
-			    (elt sequence i))))
-	(mapping nil)
-	(results (make-array-frame 0)))
+                        (if (funcall predicate i (elt sequence i))
+                            nil
+                            (elt sequence i))))
+        (mapping nil)
+        (results (make-array-frame 0)))
     (loop for i from 0 below (length nullified) do
-	 (when (not (null (elt nullified i)))
-	   (vector-push-extend (elt nullified i) results)
-	   (push (list i (1- (length results))) mapping)))
+         (when (not (null (elt nullified i)))
+           (vector-push-extend (elt nullified i) results)
+           (push (list i (1- (length results))) mapping)))
     (values results mapping)))
 
 (defun remove-if-null (a)
@@ -492,8 +492,8 @@
   (loop for ct from 0 below (* source-step length) by source-step
         for ct2 from 0 below (* length source-step copy-num) by (* source-step copy-num) do
        (loop for ct3 from 0 below (* source-step copy-num) by 1 do
-	    (setf (elt to (+ ct2 ct3))
-		  (elt from (+ ct (mod ct3 source-step))))))
+            (setf (elt to (+ ct2 ct3))
+                  (elt from (+ ct (mod ct3 source-step))))))
   to)
 
 ;; iterations
@@ -503,11 +503,11 @@
   even if exit condition is t at the very first iteration"
   (alexandria:with-gensyms (first-iteration)
     `(do ,(append (list `(,first-iteration t nil))
-		  declaration)
-	 ,(append (list `(if ,first-iteration
-			     nil
-			     ,(first return-form)))
-		  (rest return-form))
+                  declaration)
+         ,(append (list `(if ,first-iteration
+                             nil
+                             ,(first return-form)))
+                  (rest return-form))
        ,@body)))
 
 (defmacro do-while* (declaration return-form &body body)
@@ -515,11 +515,11 @@
   even if exit condition is t at the very first iteration"
   (alexandria:with-gensyms (first-iteration)
     `(do* ,(append (list `(,first-iteration t nil))
-		   declaration)
-	  ,(append (list `(if ,first-iteration
-			      nil
-			      ,(first return-form)))
-		   (rest return-form))
+                   declaration)
+          ,(append (list `(if ,first-iteration
+                              nil
+                              ,(first return-form)))
+                   (rest return-form))
        ,@body)))
 
 ;; cffi

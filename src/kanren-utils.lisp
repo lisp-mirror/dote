@@ -18,10 +18,10 @@
 
 (defun kanren-format-symbol-predicate (name)
   (format-symbol t
-		 (if (> (count "-" (symbol-name name) :test #'string=) 0)
-		     "~:@(~a-o~)"
-		     "~:@(~ao~)")
-		 name))
+                 (if (> (count "-" (symbol-name name) :test #'string=) 0)
+                     "~:@(~a-o~)"
+                     "~:@(~ao~)")
+                 name))
 
 (defmacro facts (name &rest facts-list)
   (when (null facts-list)
@@ -30,19 +30,19 @@
     (when (find-if #'(lambda (a) (/= arity (length a))) facts-list)
       (error "At least an element of facts-list has different size from another"))
     (let ((fn-name (kanren-format-symbol-predicate name))
-	  (params  (loop for i from 0 below arity collect (gensym))))
+          (params  (loop for i from 0 below arity collect (gensym))))
       `(defun ,fn-name ,(if (null params)
-			    '()
-			    params)
-	 (conde
-	   ,@(loop for fact in facts-list collect
-		 `(;(fresh (,out)
-		    ,@(append
-		       (loop
-			  for i from 0 below (1- arity)
-			  for var in (subseq fact 0 (1- (length fact))) collect
-			    `(== ,var ,(elt params i)))
-		       (if (not (null params))
-			   (list `(== ,(alexandria:last-elt fact)
-				      ,(alexandria:last-elt params)))
-			   nil)))))))))
+                            '()
+                            params)
+         (conde
+           ,@(loop for fact in facts-list collect
+                 `(;(fresh (,out)
+                    ,@(append
+                       (loop
+                          for i from 0 below (1- arity)
+                          for var in (subseq fact 0 (1- (length fact))) collect
+                            `(== ,var ,(elt params i)))
+                       (if (not (null params))
+                           (list `(== ,(alexandria:last-elt fact)
+                                      ,(alexandria:last-elt params)))
+                           nil)))))))))

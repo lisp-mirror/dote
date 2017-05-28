@@ -23,42 +23,42 @@
 (defun construct-path (p)
   (let ((splitted (split +virtual-fs-dir-separator-regexp+ p)))
     (strcat *directory-sep* (join-with-srings splitted *directory-sep*)
-	    (if (cl-ppcre:scan (strcat +virtual-fs-dir-separator-regexp+ "$") p)
-		*directory-sep*))))
+            (if (cl-ppcre:scan (strcat +virtual-fs-dir-separator-regexp+ "$") p)
+                *directory-sep*))))
 
 (defun home-datadir ()
   (join-with-srings* *directory-sep*
-		     (uiop:getenvp "HOME")
-		     +home-data-dir+))
+                     (uiop:getenvp "HOME")
+                     +home-data-dir+))
 
 (defun shared-datadir ()
   (join-with-srings* *directory-sep*
-		     +sys-data-dir+))
+                     +sys-data-dir+))
 
 (defun find-in-home-datadir (file)
   (let ((actual-path (join-with-srings* *directory-sep*
-					 (home-datadir)
-					 (construct-path file))))
+                                         (home-datadir)
+                                         (construct-path file))))
     (cond
       ((not (uiop:getenvp "HOME"))
-	nil)
+        nil)
       ((or
-	 (uiop:directory-exists-p actual-path)
-	 (uiop:file-exists-p actual-path))
+         (uiop:directory-exists-p actual-path)
+         (uiop:file-exists-p actual-path))
        actual-path)
       (t
        nil))))
 
 (defun find-in-shared-datadir (file)
   (let ((actual-path (join-with-srings* *directory-sep*
-					(shared-datadir)
-					(construct-path file))))
+                                        (shared-datadir)
+                                        (construct-path file))))
     ;;(break)
     (if (or
-	 (uiop:directory-exists-p actual-path)
-	 (uiop:file-exists-p actual-path))
-	actual-path
-	nil)))
+         (uiop:directory-exists-p actual-path)
+         (uiop:file-exists-p actual-path))
+        actual-path
+        nil)))
 
 (defun %normalize-resource-name (n)
   (typecase n
@@ -69,75 +69,75 @@
   (typecase resource
     (cons
      (join-with-srings* +virtual-fs-dir-separator+
-			(join-with-srings (mapcar #'%normalize-resource-name resource)
-					  +virtual-fs-dir-separator+)
-			p))
+                        (join-with-srings (mapcar #'%normalize-resource-name resource)
+                                          +virtual-fs-dir-separator+)
+                        p))
      (otherwise
       (join-with-srings* +virtual-fs-dir-separator+
-			(%normalize-resource-name resource)
-			p))))
+                        (%normalize-resource-name resource)
+                        p))))
 
 (define-condition resource-not-found-error (file-error)
   ((resource
     :initarg :resource
     :reader  resource))
   (:report (lambda (condition stream)
-	     (format stream "Resource file not found: resource ~s path ~s"
-		     (resource condition) (file-error-pathname condition)))))
+             (format stream "Resource file not found: resource ~s path ~s"
+                     (resource condition) (file-error-pathname condition)))))
 
 (define-condition resource-not-writable-error (file-error)
   ((resource
     :initarg :resource
     :reader  resource))
   (:report (lambda (condition stream)
-	     (format stream "Resource not writable: resource ~s path ~s"
-		     (resource condition) (file-error-pathname condition)))))
+             (format stream "Resource not writable: resource ~s path ~s"
+                     (resource condition) (file-error-pathname condition)))))
 
 (defun get-resource-file (path resource &key (if-does-not-exists :error))
   (let ((home-path   (find-in-home-datadir   (construct-resource-path resource path)))
-	(shared-path (find-in-shared-datadir (construct-resource-path resource path))))
+        (shared-path (find-in-shared-datadir (construct-resource-path resource path))))
     (cond
       ((eq if-does-not-exists :error)
        (or (or home-path shared-path)
-	   (error 'resource-not-found-error :pathname path :resource resource)))
+           (error 'resource-not-found-error :pathname path :resource resource)))
       ((eq if-does-not-exists :return-writable)
        (cond
-	 ((and home-path
-	       (file-can-write-p home-path))
-	  home-path)
-	 ((and shared-path
-	       (file-can-write-p shared-path))
-	  shared-path)
-	 (t
-	  (error 'resource-not-writable-error :pathname path :resource resource)))))))
+         ((and home-path
+               (file-can-write-p home-path))
+          home-path)
+         ((and shared-path
+               (file-can-write-p shared-path))
+          shared-path)
+         (t
+          (error 'resource-not-writable-error :pathname path :resource resource)))))))
 
 (defun get-resource-files (resource &key (if-does-not-exists :error))
   (let ((home-path   (find-in-home-datadir   (construct-resource-path resource ".")))
-	(shared-path (find-in-shared-datadir (construct-resource-path resource "."))))
+        (shared-path (find-in-shared-datadir (construct-resource-path resource "."))))
     (cond
       ((eq if-does-not-exists :error)
        (if home-path
-	   (cached-directory-files home-path)
-	   (if shared-path
-	       (cached-directory-files shared-path)
-	       (error 'resource-not-found-error :pathname "." :resource resource))))
+           (cached-directory-files home-path)
+           (if shared-path
+               (cached-directory-files shared-path)
+               (error 'resource-not-found-error :pathname "." :resource resource))))
       ((eq if-does-not-exists :return-writable)
        (cond
-	 ((and home-path
-	       (file-can-write-p home-path))
-	  (cached-directory-files home-path))
-	 ((and shared-path
-	       (file-can-write-p shared-path))
-	   (cached-directory-files shared-path))
-	 (t
-	  (error 'resource-not-writable-error :pathname "." :resource resource)))))))
+         ((and home-path
+               (file-can-write-p home-path))
+          (cached-directory-files home-path))
+         ((and shared-path
+               (file-can-write-p shared-path))
+           (cached-directory-files shared-path))
+         (t
+          (error 'resource-not-writable-error :pathname "." :resource resource)))))))
 
 (defun strip-off-resource-path (resource path)
   (flet ((strip-prefix (pref path)
-	   (cl-ppcre:regex-replace (strcat pref *directory-sep* "*")
-				   path
-				   "")))
+           (cl-ppcre:regex-replace (strcat pref *directory-sep* "*")
+                                   path
+                                   "")))
     (let ((relative-path (strip-prefix (home-datadir)
-					(strip-prefix (shared-datadir)
-						      path))))
+                                        (strip-prefix (shared-datadir)
+                                                      path))))
       (strip-prefix (construct-resource-path resource "") relative-path))))

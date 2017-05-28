@@ -88,16 +88,16 @@
 
 (defun randomize-damage-points (character level)
   (setf (damage-points character)
-	(calculate-randomized-damage-points level
-					    +minimum-level+
-					    +maximum-level+
-					    +minimum-damage-point+
-					    +maximum-damage-point+
-					    (d/ (d level) (d* 5.0 (d +maximum-level+))))))
+        (calculate-randomized-damage-points level
+                                            +minimum-level+
+                                            +maximum-level+
+                                            +minimum-damage-point+
+                                            +maximum-damage-point+
+                                            (d/ (d level) (d* 5.0 (d +maximum-level+))))))
 
 (defun decay-params (ring-level)
   (values (elt +decay-sigma+ ring-level)
-	  (elt +decay-mean+  ring-level)))
+          (elt +decay-mean+  ring-level)))
 
 (defun calculate-decay-points (ring-level)
   (multiple-value-bind (sigma mean)
@@ -106,115 +106,115 @@
 
 (defun calculate-decay (object-level decay-points)
   (make-instance 'decay-parameters
-		 :leaving-message (format nil
-					  (_ " (object level ~a).") object-level)
-		 :points decay-points
-		 :when-decay  +decay-by-turns+))
+                 :leaving-message (format nil
+                                          (_ " (object level ~a).") object-level)
+                 :points decay-points
+                 :when-decay  +decay-by-turns+))
 
 ;; :points decay-points
 ;; :when-decay (if (and (> object-level (/ +maximum-level+ 2))
-;; 		      (= (lcg-next-upto 10) 0))
-;; 		 +decay-by-turns+ +decay-by-use+)))
+;;                    (= (lcg-next-upto 10) 0))
+;;               +decay-by-turns+ +decay-by-use+)))
 
 (defun level-params (map-level)
   (values (elt +level-sigma+ map-level)
-	  (elt +level-mean+  map-level)))
+          (elt +level-mean+  map-level)))
 
 (defun modifier-params (ring-level)
   (values (elt +modifier-sigma+ ring-level)
-	  (elt +modifier-mean+  ring-level)))
+          (elt +modifier-mean+  ring-level)))
 
 (defun calculate-modifier (ring-level)
   (multiple-value-bind (sigma mean)
       (modifier-params (1- ring-level))
     (d- (gaussian-probability sigma mean)
-	(gaussian-probability (d/ sigma 4.0) (- ring-level)))))
+        (gaussian-probability (d/ sigma 4.0) (- ring-level)))))
 
 (defun calculate-level (map-level)
   (multiple-value-bind (sigma mean)
       (level-params (1- map-level))
     (clamp (truncate (gaussian-probability sigma mean))
-	   +minimum-level+ +maximum-level+)))
+           +minimum-level+ +maximum-level+)))
 
 (defun number-of-effects (ring-level)
   (let ((max (round (num:dlerp (num:smoothstep-interpolate 0.0
-							   10.0
-							   (d (1- ring-level)))
-			       +minimum-chance-effects+
-			       +maximum-chance-effects+))))
+                                                           10.0
+                                                           (d (1- ring-level)))
+                               +minimum-chance-effects+
+                               +maximum-chance-effects+))))
     (lcg-next-upto max)))
 
 (defun number-of-healing-effects (ring-level number-of-normal-effects)
   (let ((max (round (- (num:dlerp (num:smoothstep-interpolate 0.0
-							   10.0
-							   (d (1- ring-level)))
-				  +minimum-num-healing-effects+
-				  +maximum-num-healing-effects+)
-		       number-of-normal-effects))))
+                                                           10.0
+                                                           (d (1- ring-level)))
+                                  +minimum-num-healing-effects+
+                                  +maximum-num-healing-effects+)
+                       number-of-normal-effects))))
     (if (<= max 0)
-	0
-	(lcg-next-upto (max 0.0 max)))))
+        0
+        (lcg-next-upto (max 0.0 max)))))
 
 (defun generate-ring (map-level)
   (clean-effects
    (%generate-ring (res:get-resource-file +default-interaction-filename+
-					  +default-character-ring-dir+
-					  :if-does-not-exists :error)
-		   (res:get-resource-file +default-character-filename+
-					  +default-character-ring-dir+
-					  :if-does-not-exists :error)
-		   map-level)))
+                                          +default-character-ring-dir+
+                                          :if-does-not-exists :error)
+                   (res:get-resource-file +default-character-filename+
+                                          +default-character-ring-dir+
+                                          :if-does-not-exists :error)
+                   map-level)))
 
 (defun %generate-ring (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
     (with-interaction-parameters-file (template interaction-file)
       (let* ((ring-level       (calculate-level map-level))
-	     (ring-decay       (calculate-decay-points ring-level))
-	     (effects-no         (number-of-effects ring-level))
-	     (healing-effects-no (number-of-healing-effects ring-level effects-no))
-	     (effects         (get-normal-fx-shuffled  template effects-no))
-	     (healing-effects (get-healing-fx-shuffled template healing-effects-no))
-	     (sum-effects (sum-effects-mod template (list +effects+))))
-	(n-setf-path-value char-template (list +level+) (d ring-level))
-	(n-setf-path-value char-template (list +description+) +type-name+)
-	(n-setf-path-value template
-			   (list +decay+)
-			   (calculate-decay ring-level ring-decay))
-	(loop for i in effects do
-	     (set-effect (list +effects+ i) ring-level template))
-	(loop for i in healing-effects do
-	     (cond
-	       ((eq i +heal-damage-points+)
-		nil)
-	       ((eq i +cause-poison+)
-		nil)
-	       (t
-		(set-healing-effect (list +healing-effects+ i) ring-level template))))
-	(when (or (plist-path-value template (list +magic-effects+))
-		  (and (> ring-level  5)
-		       (< sum-effects -10)))
-	  (set-magic-effect ring-level template))
-	(setf template (remove-generate-symbols template))
-	(fill-character-plist char-template template ring-level)
-	(let ((ring-character (params->np-character char-template)))
-	  (setf (basic-interaction-params ring-character) template)
-	  (randomize-damage-points ring-character ring-level)
-	  ring-character)))))
+             (ring-decay       (calculate-decay-points ring-level))
+             (effects-no         (number-of-effects ring-level))
+             (healing-effects-no (number-of-healing-effects ring-level effects-no))
+             (effects         (get-normal-fx-shuffled  template effects-no))
+             (healing-effects (get-healing-fx-shuffled template healing-effects-no))
+             (sum-effects (sum-effects-mod template (list +effects+))))
+        (n-setf-path-value char-template (list +level+) (d ring-level))
+        (n-setf-path-value char-template (list +description+) +type-name+)
+        (n-setf-path-value template
+                           (list +decay+)
+                           (calculate-decay ring-level ring-decay))
+        (loop for i in effects do
+             (set-effect (list +effects+ i) ring-level template))
+        (loop for i in healing-effects do
+             (cond
+               ((eq i +heal-damage-points+)
+                nil)
+               ((eq i +cause-poison+)
+                nil)
+               (t
+                (set-healing-effect (list +healing-effects+ i) ring-level template))))
+        (when (or (plist-path-value template (list +magic-effects+))
+                  (and (> ring-level  5)
+                       (< sum-effects -10)))
+          (set-magic-effect ring-level template))
+        (setf template (remove-generate-symbols template))
+        (fill-character-plist char-template template ring-level)
+        (let ((ring-character (params->np-character char-template)))
+          (setf (basic-interaction-params ring-character) template)
+          (randomize-damage-points ring-character ring-level)
+          ring-character)))))
 
 (defun set-effect (effect-path ring-level interaction)
   (let ((effect-object (make-instance 'effect-parameters
-				      :modifier (calculate-modifier ring-level)
-				      :trigger  +effect-when-worn+
-				       ;; effect lasting forever  for
-				       ;; rings,  they   will  broke
-				       ;; anyway.
-				      :duration   +duration-unlimited+)))
+                                      :modifier (calculate-modifier ring-level)
+                                      :trigger  +effect-when-worn+
+                                       ;; effect lasting forever  for
+                                       ;; rings,  they   will  broke
+                                       ;; anyway.
+                                      :duration   +duration-unlimited+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun healing-fx-params-duration (ring-level)
   (values (elt +duration-healing-fx-sigma+ ring-level)
-	  (elt +duration-healing-fx-mean+  ring-level)))
+          (elt +duration-healing-fx-mean+  ring-level)))
 
 (defun calculate-healing-fx-params-duration (ring-level)
   (multiple-value-bind (sigma mean)
@@ -223,7 +223,7 @@
 
 (defun healing-fx-params-chance (ring-level)
   (values (elt +chance-healing-fx-sigma+ ring-level)
-	  (elt +chance-healing-fx-mean+  ring-level)))
+          (elt +chance-healing-fx-mean+  ring-level)))
 
 (defun calculate-healing-fx-params-chance (ring-level)
   (multiple-value-bind (sigma mean)
@@ -232,15 +232,15 @@
 
 (defun set-healing-effect (effect-path ring-level interaction)
   (let ((effect-object (make-instance 'healing-effect-parameters
-				      :trigger  +effect-when-worn+
-				      :duration (calculate-healing-fx-params-duration ring-level)
-				      :chance (calculate-healing-fx-params-chance ring-level)
-				      :target +target-self+)))
+                                      :trigger  +effect-when-worn+
+                                      :duration (calculate-healing-fx-params-duration ring-level)
+                                      :chance (calculate-healing-fx-params-chance ring-level)
+                                      :target +target-self+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun magic-fx-params (ring-level)
   (values (elt +magic-fx-sigma+ ring-level)
-	  (elt +magic-fx-mean+  ring-level)))
+          (elt +magic-fx-mean+  ring-level)))
 
 (defun calculate-magic-fx-level (ring-level)
   (multiple-value-bind (sigma mean)
@@ -249,16 +249,16 @@
 
 (defun set-magic-effect (ring-level interaction)
   (let* ((spell-level   (1+ ring-level))
-	 (spells        (spell:filter-spell-db #'(lambda (a)
-						   (or (> (spell:level a)
-							  spell-level)
-						       (< (spell:level a)
-							  (max 0
-							       (/ spell-level 4)))))))
-	 (spell-id      (spell:identifier (random-elt spells)))
-	 (effect-object (make-instance 'magic-effect-parameters
-				       :spell-id spell-id
-				       :trigger  +effect-when-worn+)))
+         (spells        (spell:filter-spell-db #'(lambda (a)
+                                                   (or (> (spell:level a)
+                                                          spell-level)
+                                                       (< (spell:level a)
+                                                          (max 0
+                                                               (/ spell-level 4)))))))
+         (spell-id      (spell:identifier (random-elt spells)))
+         (effect-object (make-instance 'magic-effect-parameters
+                                       :spell-id spell-id
+                                       :trigger  +effect-when-worn+)))
     (n-setf-path-value interaction (list +magic-effects+) effect-object)))
 
 (defun filename-effects-string (interaction)
@@ -290,24 +290,24 @@
 
 (defun regexp-file-portrait (interaction ring-name-type ring-level)
   (strcat ring-name-type
-	  +file-record-sep+
-	  (filename-effects-string interaction)
-	  +file-record-sep+
-	  (format nil "~2,'0d" ring-level)))
+          +file-record-sep+
+          (filename-effects-string interaction)
+          +file-record-sep+
+          (format nil "~2,'0d" ring-level)))
 
 (defun build-file-names-db (ring-name-type ring-level)
   (strcat ring-name-type
-	  +file-record-sep+
-	  (format nil "~2,'0d" ring-level)
-	  ".lisp"))
+          +file-record-sep+
+          (format nil "~2,'0d" ring-level)
+          ".lisp"))
 
 (defun fill-character-plist (character interaction ring-level)
   (let* ((regex          (regexp-file-portrait interaction +type-name+ ring-level))
-	 (names-filename (build-file-names-db +type-name+ ring-level))
-	 (portrait-file  (random-elt (remove-if #'(lambda (a) (not (cl-ppcre:scan regex a)))
-						(res:get-resource-files
-						 +default-gui-inventory-items+)
-						:key #'uiop:native-namestring))))
+         (names-filename (build-file-names-db +type-name+ ring-level))
+         (portrait-file  (random-elt (remove-if #'(lambda (a) (not (cl-ppcre:scan regex a)))
+                                                (res:get-resource-files
+                                                 +default-gui-inventory-items+)
+                                                :key #'uiop:native-namestring))))
     (n-setf-path-value character (list +portrait+) (uiop:native-namestring portrait-file))
     (random-names:load-db* +rings-names-resource+ names-filename)
     (n-setf-path-value character (list +first-name+) (random-names:generate))

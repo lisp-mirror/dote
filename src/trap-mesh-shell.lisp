@@ -47,21 +47,21 @@
   (with-accessors ((state state)) object
     (with-camera (camera renderer)
       (let* ((center     (aabb-center (aabb object)))
-	     (pos-camera (pos camera))
-	     (a      (vec2 (elt center 0)     (elt center 2)))
-	     (b      (vec2 (elt pos-camera 0) (elt pos-camera 2))))
-	(declare (vec center pos-camera))
-	(and (%faction-eq object (game-state:faction-turn state))
-	     (d< (vec2-length (vec2- a b))
-		 (d* 2.0 +quad-tree-leaf-size+))
-	     (world:cone-aabb-intersects-p renderer object))))))
+             (pos-camera (pos camera))
+             (a      (vec2 (elt center 0)     (elt center 2)))
+             (b      (vec2 (elt pos-camera 0) (elt pos-camera 2))))
+        (declare (vec center pos-camera))
+        (and (%faction-eq object (game-state:faction-turn state))
+             (d< (vec2-length (vec2- a b))
+                 (d* 2.0 +quad-tree-leaf-size+))
+             (world:cone-aabb-intersects-p renderer object))))))
 
 (defmethod game-event:on-game-event ((object trap-mesh-shell)
-				     (event game-event:deactivate-trap-event))
+                                     (event game-event:deactivate-trap-event))
   (game-event:check-event-targeted-to-me (object event)
     (game-state:with-world (world (state object))
       (let ((player (find-entity-by-id (state object) (game-event:id-origin event))))
-	(when player
+        (when player
           (if (faction-ai-p (state object) (game-event:id-origin event))
               (progn
                 (remove-entity-by-id world (id object))

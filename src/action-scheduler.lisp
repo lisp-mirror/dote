@@ -111,7 +111,7 @@
 
 (defmethod game-event:on-game-event ((object action-scheduler) (event game-event:end-turn))
   (with-accessors ((current-action current-action)
-		   (scheduled-actions scheduled-actions)) object
+                   (scheduled-actions scheduled-actions)) object
     (setf current-action nil)
     (setf scheduled-actions (%make-queue))
     nil))
@@ -146,12 +146,12 @@
 
 (defmethod enqueue-action ((object action-scheduler) (new-action game-action))
   (with-accessors ((current-action current-action)
-		   (scheduled-actions scheduled-actions)
+                   (scheduled-actions scheduled-actions)
                    (capturable-types capturable-types)) object
     (if (not current-action)
-	(progn
-	  (setf current-action new-action)
-	  (funcall (launch-action-fn current-action)))
+        (progn
+          (setf current-action new-action)
+          (funcall (launch-action-fn current-action)))
         (if (and *equeue-merge-to-subscheduler-p*
                  (typep current-action 'action-scheduler)
                  (find-if  #'(lambda (a) (typep new-action a)) capturable-types))
@@ -162,7 +162,7 @@
 
 (defmethod substitute-action ((object action-scheduler))
   (with-accessors ((current-action current-action)
-		   (scheduled-actions scheduled-actions)) object
+                   (scheduled-actions scheduled-actions)) object
     (if (typep current-action 'action-scheduler)
         (progn
           (substitute-action current-action)

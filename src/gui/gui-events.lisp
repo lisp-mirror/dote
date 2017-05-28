@@ -65,8 +65,8 @@
 (defmethod print-object ((object mouse-dragged) stream)
   (print-unreadable-object (object stream :type t :identity t)
     (format stream "x ~a y ~a dx ~a dy ~a"
-	    (x-event object)  (y-event object)
-	    (dx-event object) (dy-event object))))
+            (x-event object)  (y-event object)
+            (dx-event object) (dy-event object))))
 
 (defclass key-pressed ()
   ((char-event

@@ -82,20 +82,20 @@
 
 (defun randomize-damage-points (character level)
   (setf (damage-points character)
-	(calculate-randomized-damage-points level
-					    +minimum-level+
-					    +maximum-level+
-					    +minimum-damage-point+
-					    +maximum-damage-point+
-					    (d/ (d level) (d* 5.0 (d +maximum-level+))))))
+        (calculate-randomized-damage-points level
+                                            +minimum-level+
+                                            +maximum-level+
+                                            +minimum-damage-point+
+                                            +maximum-damage-point+
+                                            (d/ (d level) (d* 5.0 (d +maximum-level+))))))
 
 (defun level-params (map-level)
   (values (elt +level-sigma+ map-level)
-	  (elt +level-mean+  map-level)))
+          (elt +level-mean+  map-level)))
 
 (defun modifier-params (fountain-level)
   (values (elt +modifier-sigma+ fountain-level)
-	  (elt +modifier-mean+  fountain-level)))
+          (elt +modifier-mean+  fountain-level)))
 
 (defun calculate-modifier (fountain-level)
   (multiple-value-bind (sigma mean)
@@ -106,11 +106,11 @@
   (multiple-value-bind (sigma mean)
       (level-params (1- map-level))
     (clamp (truncate (gaussian-probability sigma mean))
-	   +minimum-level+ +maximum-level+)))
+           +minimum-level+ +maximum-level+)))
 
 (defun healing-fx-params-chance (armor-level)
   (values (elt +chance-healing-fx-sigma+ armor-level)
-	  (elt +chance-healing-fx-mean+  armor-level)))
+          (elt +chance-healing-fx-mean+  armor-level)))
 
 (defun calculate-healing-fx-params-chance (armor-level)
   (multiple-value-bind (sigma mean)
@@ -119,25 +119,25 @@
 
 (defun set-healing-dmg-effect (path fountain-level interaction)
   (let ((effect-object (make-instance 'heal-damage-points-effect-parameters
-				      :trigger +effect-when-used+
-				      :points  (calculate-modifier fountain-level)
-				      :chance  (calculate-healing-fx-params-chance
-						fountain-level)
-				      :target  +target-other+)))
+                                      :trigger +effect-when-used+
+                                      :points  (calculate-modifier fountain-level)
+                                      :chance  (calculate-healing-fx-params-chance
+                                                fountain-level)
+                                      :target  +target-other+)))
     (n-setf-path-value interaction path effect-object)))
 
 (defun set-healing-effect (effect-path fountain-level interaction)
   (let ((effect-object (make-instance 'healing-effect-parameters
-				      :trigger  +effect-when-used+
-				      :duration (ceiling (calculate-modifier fountain-level))
-				      :chance   (calculate-healing-fx-params-chance fountain-level)
+                                      :trigger  +effect-when-used+
+                                      :duration (ceiling (calculate-modifier fountain-level))
+                                      :chance   (calculate-healing-fx-params-chance fountain-level)
                                       :target  +target-self+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun set-poison-effect (effect-path fountain-level interaction)
   (let ((effect-object (make-instance 'poison-effect-parameters
-				      :points-per-turn (calculate-modifier
-							fountain-level))))
+                                      :points-per-turn (calculate-modifier
+                                                        fountain-level))))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun fill-character-plist (character)
@@ -147,7 +147,7 @@
 
 (defun decay-params (fountain-level)
   (values (elt +decay-sigma+ fountain-level)
-	  (elt +decay-mean+  fountain-level)))
+          (elt +decay-mean+  fountain-level)))
 
 (defun calculate-decay-points (fountain-level)
   (multiple-value-bind (sigma mean)
@@ -156,61 +156,61 @@
 
 (defun calculate-decay (object-level character decay-points)
   (make-instance 'decay-parameters
-		 :leaving-message (format nil
-					  (_ "~a exhausted")
-					  (plist-path-value character (list +description+)))
-		 :points decay-points
-		 :when-decay (if (and (> object-level (/ +maximum-level+ 2))
-				      (= (lcg-next-upto 10) 0))
-				 +decay-by-turns+ +decay-by-use+)))
+                 :leaving-message (format nil
+                                          (_ "~a exhausted")
+                                          (plist-path-value character (list +description+)))
+                 :points decay-points
+                 :when-decay (if (and (> object-level (/ +maximum-level+ 2))
+                                      (= (lcg-next-upto 10) 0))
+                                 +decay-by-turns+ +decay-by-use+)))
 
 (defun number-of-healing-effects (weapon-level number-of-normal-effects)
   (let ((max (round (- (num:dlerp (num:smoothstep-interpolate 0.0
-							   10.0
-							   (d (1- weapon-level)))
-				  +minimum-chance-healing-effects+
-				  +maximum-chance-healing-effects+)
-		       number-of-normal-effects))))
+                                                           10.0
+                                                           (d (1- weapon-level)))
+                                  +minimum-chance-healing-effects+
+                                  +maximum-chance-healing-effects+)
+                       number-of-normal-effects))))
     (if (<= max 0)
-	0
-	(lcg-next-upto (max 0.0 max)))))
+        0
+        (lcg-next-upto (max 0.0 max)))))
 
 (defun generate-fountain (map-level)
   (clean-effects
    (%generate-fountain (res:get-resource-file +default-interaction-filename+
-					      +default-character-fountain-dir+
-					      :if-does-not-exists :error)
-		       (res:get-resource-file +default-character-filename+
-					      +default-character-fountain-dir+
-					      :if-does-not-exists :error)
-		       map-level)))
+                                              +default-character-fountain-dir+
+                                              :if-does-not-exists :error)
+                       (res:get-resource-file +default-character-filename+
+                                              +default-character-fountain-dir+
+                                              :if-does-not-exists :error)
+                       map-level)))
 
 (defun %generate-fountain (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
     (with-interaction-parameters-file (template interaction-file)
       (let* ((fountain-level        (calculate-level map-level))
-	     (healing-effects-no    (number-of-healing-effects fountain-level 0))
-	     (fountain-decay-points (calculate-decay-points fountain-level))
-	     (healing-effects       (get-healing-fx-shuffled template healing-effects-no)))
-	(n-setf-path-value char-template (list +level+) (d fountain-level))
-	(n-setf-path-value char-template (list +description+) +type-name+)
-	(n-setf-path-value template
-			   (list +decay+)
-			   (calculate-decay fountain-level char-template
-						     fountain-decay-points))
-	(loop for i in healing-effects do
-	     (cond
-	       ((eq i +heal-damage-points+)
-		(set-healing-dmg-effect (list +healing-effects+ i)
-						fountain-level template))
-	       ((eq i +cause-poison+)
-		(set-poison-effect (list +healing-effects+ i) fountain-level template))
-	       (t
-		(set-healing-effect (list +healing-effects+ i) fountain-level template))))
-	(setf template (remove-generate-symbols template))
-	(fill-character-plist char-template)
-	(let ((fountain-character (params->np-character char-template)))
-	  (setf (basic-interaction-params fountain-character) template)
-	  (randomize-damage-points fountain-character fountain-level)
-	  fountain-character)))))
+             (healing-effects-no    (number-of-healing-effects fountain-level 0))
+             (fountain-decay-points (calculate-decay-points fountain-level))
+             (healing-effects       (get-healing-fx-shuffled template healing-effects-no)))
+        (n-setf-path-value char-template (list +level+) (d fountain-level))
+        (n-setf-path-value char-template (list +description+) +type-name+)
+        (n-setf-path-value template
+                           (list +decay+)
+                           (calculate-decay fountain-level char-template
+                                                     fountain-decay-points))
+        (loop for i in healing-effects do
+             (cond
+               ((eq i +heal-damage-points+)
+                (set-healing-dmg-effect (list +healing-effects+ i)
+                                                fountain-level template))
+               ((eq i +cause-poison+)
+                (set-poison-effect (list +healing-effects+ i) fountain-level template))
+               (t
+                (set-healing-effect (list +healing-effects+ i) fountain-level template))))
+        (setf template (remove-generate-symbols template))
+        (fill-character-plist char-template)
+        (let ((fountain-character (params->np-character char-template)))
+          (setf (basic-interaction-params fountain-character) template)
+          (randomize-damage-points fountain-character fountain-level)
+          fountain-character)))))

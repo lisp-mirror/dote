@@ -20,24 +20,24 @@
 
 (defun testing-layer-graph ()
   (make-tile-multilayer-graph (matrix:define-matrix (3 3)
-				2.0 1.0 2.0
-				2.0 1.0 2.0
-				2.0 1.0 2.0)
-			      (matrix:define-matrix (3 3)
-				1.0  1.0 1.0
-				1.0  10.0 1.0
-				1.0  1.0 1.0)))
+                                2.0 1.0 2.0
+                                2.0 1.0 2.0
+                                2.0 1.0 2.0)
+                              (matrix:define-matrix (3 3)
+                                1.0  1.0 1.0
+                                1.0  10.0 1.0
+                                1.0  1.0 1.0)))
 
 (deftest test-a*-multilayer (graph-suite)
   (assert-true
       (let ((tree (graph:astar-search (testing-layer-graph)
-				      (graph:node->node-id (testing-layer-graph) #(1 0))
-				      (graph:node->node-id (testing-layer-graph) #(1 2))
-				      :heuristic-cost-function (heuristic-manhattam))))
-	(multiple-value-bind (raw-path cost)
-	    (graph:graph->path tree (graph:node->node-id (testing-layer-graph)  #(1 2)))
-	  (let ((path (map 'vector
-			   #'(lambda (id) (graph:node-id->node (testing-layer-graph) id))
-			   raw-path)))
-	    (and (equalp path #((1 0) (2 0) (2 1) (2 2) (1 2)))
-		 (=      cost 11.0)))))))
+                                      (graph:node->node-id (testing-layer-graph) #(1 0))
+                                      (graph:node->node-id (testing-layer-graph) #(1 2))
+                                      :heuristic-cost-function (heuristic-manhattam))))
+        (multiple-value-bind (raw-path cost)
+            (graph:graph->path tree (graph:node->node-id (testing-layer-graph)  #(1 2)))
+          (let ((path (map 'vector
+                           #'(lambda (id) (graph:node-id->node (testing-layer-graph) id))
+                           raw-path)))
+            (and (equalp path #((1 0) (2 0) (2 1) (2 2) (1 2)))
+                 (=      cost 11.0)))))))

@@ -134,31 +134,31 @@
 (defun gen-dir-interpolator (from-axe to-axe  angular-velocity)
   (declare (optimize (safety 0) (speed 3) (debug 0)))
   (let* ((angle   (dacos (dot-product from-axe to-axe)))
-	 (rot-axe (normalize (cross-product from-axe to-axe)))
-	 (q1   (quat-norm (axis-rad->quat rot-axe 0.0)))
-	 (q2   (quat-norm (axis-rad->quat rot-axe angle)))
-	 (time (desired 0.0)))
+         (rot-axe (normalize (cross-product from-axe to-axe)))
+         (q1   (quat-norm (axis-rad->quat rot-axe 0.0)))
+         (q2   (quat-norm (axis-rad->quat rot-axe angle)))
+         (time (desired 0.0)))
     (declare (desired-type time))
     #'(lambda (dt)
-	(declare (optimize (safety 0) (speed 3) (debug 0)))
-	(let* ((int-q (quat-slerp q1 q2 (min time 1.0))))
-	  (incf time (d* dt angular-velocity))
-	  (quat-rotate-vec int-q from-axe)))))
+        (declare (optimize (safety 0) (speed 3) (debug 0)))
+        (let* ((int-q (quat-slerp q1 q2 (min time 1.0))))
+          (incf time (d* dt angular-velocity))
+          (quat-rotate-vec int-q from-axe)))))
 
 (defmethod initialize-instance :after ((object camera) &key &allow-other-keys)
   (with-accessors ((pos pos) (target target) (up up) (dir dir)
-		   (orbit-interpolator orbit-interpolator)
-		   (dir-interpolator dir-interpolator)
-		   (current-force current-force)
-		   (drag-interpolator drag-interpolator)) object
+                   (orbit-interpolator orbit-interpolator)
+                   (dir-interpolator dir-interpolator)
+                   (current-force current-force)
+                   (drag-interpolator drag-interpolator)) object
     (setf (id object)     +id-camera+
-	  (pos    object)          (vec  13.0 8.0 10.0)
-	  (target object)          (vec  0.0 0.0 -1.0)
-	  ;; really needed?
-	  (previous-pos object)    (copy-vec pos)
-	  (drag-target-pos object) (copy-vec target)
-	  (up     object) (copy-vec +y-axe+)
-	  (dir    object) (vec- (target object) (pos object)))
+          (pos    object)          (vec  13.0 8.0 10.0)
+          (target object)          (vec  0.0 0.0 -1.0)
+          ;; really needed?
+          (previous-pos object)    (copy-vec pos)
+          (drag-target-pos object) (copy-vec target)
+          (up     object) (copy-vec +y-axe+)
+          (dir    object) (vec- (target object) (pos object)))
     (game-event:register-for-camera-drag-ends object)
     (look-at* object)))
 
@@ -228,57 +228,57 @@
     (setf pos (funcall (pos-interpolator object) dt))
     (when (dir-interpolator object)
       (let ((new-dir (funcall (dir-interpolator object) dt)))
-	(setf target (vec+ (vec* new-dir (vec-length target)) pos))))
+        (setf target (vec+ (vec* new-dir (vec-length target)) pos))))
     (look-at* object)))
 
 (defmethod %draw-orbit-mode ((object camera) dt)
   (multiple-value-bind (pos dir)
       (funcall (orbit-interpolator object) dt)
     (setf (pos object) pos
-	  (dir object) dir)
+          (dir object) dir)
     (look-at* object)))
 
 (defmethod %draw-drag-mode ((object camera) dt)
   (with-accessors ((target target)
-		   (pos pos)
-		   (drag-interpolator drag-interpolator)
-		   (current-force current-force)
-		   (previous-pos previous-pos)
-		   (drag-target-pos drag-target-pos)
-		   (drag-equilibrium-pos drag-equilibrium-pos)) object
+                   (pos pos)
+                   (drag-interpolator drag-interpolator)
+                   (current-force current-force)
+                   (previous-pos previous-pos)
+                   (drag-target-pos drag-target-pos)
+                   (drag-equilibrium-pos drag-equilibrium-pos)) object
     (let* ((offset  (integrate drag-interpolator dt)))
       (setf pos               (vec+ previous-pos    (vec- drag-equilibrium-pos offset))
-	    target            (vec+ drag-target-pos (vec- drag-equilibrium-pos offset)))
+            target            (vec+ drag-target-pos (vec- drag-equilibrium-pos offset)))
       (look-at* object)
       (when (vec~ offset +zero-vec+ +drag-camera-ends-threshold+)
-	;;(setf (euler:elapsed-time (drag-interpolator object)) 0.0)
-	(game-event:propagate-camera-drag-ends (make-instance 'game-event:camera-drag-ends))))))
+        ;;(setf (euler:elapsed-time (drag-interpolator object)) 0.0)
+        (game-event:propagate-camera-drag-ends (make-instance 'game-event:camera-drag-ends))))))
 
 (defmethod %draw-follow-mode ((object camera) dt)
   (with-accessors ((target target)
-		   (pos pos)
-		   (followed-entity followed-entity)) object
+                   (pos pos)
+                   (followed-entity followed-entity)) object
     (when followed-entity
       (let* ((pos-saved    (copy-vec pos))
-	     (pos-followed (pos      followed-entity)))
-	(setf pos (vec (d- (elt  pos-followed 0) (d* +terrain-chunk-tile-size+ 2.0))
-		       (elt pos-saved 1)
-		       (d- (elt pos-followed 2)  (d* +terrain-chunk-tile-size+ 2.0)))
-	      target   pos-followed)
-	(look-at* object)))))
+             (pos-followed (pos      followed-entity)))
+        (setf pos (vec (d- (elt  pos-followed 0) (d* +terrain-chunk-tile-size+ 2.0))
+                       (elt pos-saved 1)
+                       (d- (elt pos-followed 2)  (d* +terrain-chunk-tile-size+ 2.0)))
+              target   pos-followed)
+        (look-at* object)))))
 
 (defmethod look-at* ((object camera))
   (setf (dir object) (normalize (vec- (target object) (pos object))))
   (setf (view-matrix object) (sb-cga-utils:look@ (pos object) (target object) (up object))))
 
 (defmethod look-at ((object camera)
-		    eye-x eye-y eye-z
-		    target-x target-y target-z
-		    up-x up-y up-z)
+                    eye-x eye-y eye-z
+                    target-x target-y target-z
+                    up-x up-y up-z)
   (setf (pos    object) (vec  eye-x eye-y eye-z)
-	(target object) (vec  target-x target-y target-z)
-	(up     object) (normalize (vec  up-x up-y up-z))
-	(dir    object) (normalize (vec- (target object) (pos object))))
+        (target object) (vec  target-x target-y target-z)
+        (up     object) (normalize (vec  up-x up-y up-z))
+        (dir    object) (normalize (vec- (target object) (pos object))))
   (look-at* object))
 
 (defmethod orbit ((object camera) phi theta dist)
@@ -287,25 +287,25 @@
    (with-accessors ((up up) (dir dir) (target target) (pos pos)) object
      (setf pos +zero-vec+)
      (let* ((x-axis  (normalize (cross-product up (vec- target pos))))
-	    (y-axis  up)
-	    (quat    (quat* (axis-rad->quat x-axis theta)
-			    (axis-rad->quat y-axis phi)))
-	    (new-dir (normalize (quat-rotate-vec quat dir)))
-	    (new-pos (vec+ target (vec- +zero-vec+ (vec* new-dir dist)))))
+            (y-axis  up)
+            (quat    (quat* (axis-rad->quat x-axis theta)
+                            (axis-rad->quat y-axis phi)))
+            (new-dir (normalize (quat-rotate-vec quat dir)))
+            (new-pos (vec+ target (vec- +zero-vec+ (vec* new-dir dist)))))
        new-pos)))
 
 (defmethod reorient-fp-camera ((object camera) offset)
   (let ((offset-scaled (vec2:vec2* offset 0.01)))
      (with-accessors ((dir dir) (up up) (pos pos)
-		      (target target)
-		      (current-rotation current-rotation)) object
+                      (target target)
+                      (current-rotation current-rotation)) object
        (let* ((qy           (axis-rad->quat +y-axe+ (elt offset-scaled 0)))
-	      (qx           (axis-rad->quat (cross-product dir up) (elt offset-scaled 1)))
-	      (qxy          (quat* qy qx))
-	      (interpolated (quat-slerp current-rotation qxy 0.1))
-	      (new-dir      (quat-rotate-vec interpolated dir)))
-	 (setf target (vec+ (vec* new-dir (vec-length target)) pos))
-	 (look-at* object)))))
+              (qx           (axis-rad->quat (cross-product dir up) (elt offset-scaled 1)))
+              (qxy          (quat* qy qx))
+              (interpolated (quat-slerp current-rotation qxy 0.1))
+              (new-dir      (quat-rotate-vec interpolated dir)))
+         (setf target (vec+ (vec* new-dir (vec-length target)) pos))
+         (look-at* object)))))
 
 (defmethod actual-up-vector ((object camera))
   (declare (optimize (safety 0) (speed 3) (debug 0)))
@@ -313,8 +313,8 @@
   (with-accessors ((dir dir) (up up)) object
     (declare (vec dir up))
     (let* ((f (normalize dir))
-	   (s (normalize (cross-product f up)))
-	   (u (cross-product s f)))
+           (s (normalize (cross-product f up)))
+           (u (cross-product s f)))
       u)))
 
 (defun %calc-push-y (camera up dir offset)
@@ -323,10 +323,10 @@
   (declare (vec up dir))
   (declare (desired-type offset))
   (let* ((u      (actual-up-vector camera))
-	 (push-y (vec* (normalize (map 'vec
-				       #'(lambda (a b) (dlerp (dot-product up +y-axe+) a b))
-				       u dir))
-		       offset)))
+         (push-y (vec* (normalize (map 'vec
+                                       #'(lambda (a b) (dlerp (dot-product up +y-axe+) a b))
+                                       u dir))
+                       offset)))
     (declare (vec u push-y))
     (setf (elt push-y 1) 0.0)
     push-y))
@@ -337,48 +337,48 @@
   (declare (camera object))
   (declare (vec offset))
   (with-accessors ((dir dir) (up up)
-		   (pos pos)
-		   (target target)
-		   (previous-pos previous-pos)
-		   (drag-interpolator drag-interpolator)
-		   (drag-target-pos drag-target-pos)
-		   (drag-equilibrium-pos drag-equilibrium-pos)) object
+                   (pos pos)
+                   (target target)
+                   (previous-pos previous-pos)
+                   (drag-interpolator drag-interpolator)
+                   (drag-target-pos drag-target-pos)
+                   (drag-equilibrium-pos drag-equilibrium-pos)) object
     (let* ((u      (actual-up-vector object))
-	   (push-y (%calc-push-y object u dir (elt offset 2)))
-	   (push-x (vec* (normalize (cross-product dir up)) (elt offset 0)))
-	   (push   (vec+ (vec+ push-x push-y)
-			 (vec* (vec-negate dir) (elt offset 1)))))
+           (push-y (%calc-push-y object u dir (elt offset 2)))
+           (push-x (vec* (normalize (cross-product dir up)) (elt offset 0)))
+           (push   (vec+ (vec+ push-x push-y)
+                         (vec* (vec-negate dir) (elt offset 1)))))
       (setf (current-pos drag-interpolator) push
-	    drag-equilibrium-pos            push
-	    previous-pos                    pos
-	    drag-target-pos                 target))))
+            drag-equilibrium-pos            push
+            previous-pos                    pos
+            drag-target-pos                 target))))
 
 (defmethod drag-camera-to ((object camera) (destination vector))
   "move camera on the x-z plane to position specified by destination"
   (declare (optimize (safety 0) (speed 3) (debug 0)))
   (declare (camera object))
   (with-accessors ((dir dir) (up up)
-		   (pos pos)
-		   (target target)
-		   (previous-pos previous-pos)
-		   (drag-interpolator drag-interpolator)
-		   (drag-target-pos drag-target-pos)
-		   (drag-equilibrium-pos drag-equilibrium-pos)) object
+                   (pos pos)
+                   (target target)
+                   (previous-pos previous-pos)
+                   (drag-interpolator drag-interpolator)
+                   (drag-target-pos drag-target-pos)
+                   (drag-equilibrium-pos drag-equilibrium-pos)) object
 
     (let* ((offset (vec- destination pos)))
       (setf (current-pos drag-interpolator) offset
-	    drag-equilibrium-pos            offset
-	    previous-pos                    pos
-	    drag-target-pos                 target))))
+            drag-equilibrium-pos            offset
+            previous-pos                    pos
+            drag-target-pos                 target))))
 
 (defun gen-path-interpolator* (knots)
   (let* ((interpolator (interpolation:catmul-roll-interpolation* knots))
-	 (time 0.0))
+         (time 0.0))
     #'(lambda (dt)
-	(let ((res (funcall interpolator (incf time dt))))
-	  (vec (matrix:matrix-elt res 0 0)
-	       (matrix:matrix-elt res 1 0)
-	       (matrix:matrix-elt res 2 0))))))
+        (let ((res (funcall interpolator (incf time dt))))
+          (vec (matrix:matrix-elt res 0 0)
+               (matrix:matrix-elt res 1 0)
+               (matrix:matrix-elt res 2 0))))))
 
 (defun gen-path-interpolator (&rest knots)
   (gen-path-interpolator* knots))
@@ -391,21 +391,21 @@
 
 (defun gen-drag-interpolator (&key (spring-k 100.0))
   (let* ((mass           .05)
-	 (damping-ratio  1.00)
-	 (friction-coeff (d* damping-ratio 2.0 (dsqrt (d* mass spring-k))))
-	 (forces         (define-force-single
-			     #'(lambda (status)
-				 (declare (optimize (safety 0) (speed 3) (debug 0)))
-				 (with-accessors ((pos current-pos) (velocity velocity)) status
-				   (declare (vec pos velocity))
-				   (d+
-				    (d- (d* spring-k       (elt pos      :e!)))
-				    (d- (d* friction-coeff (elt velocity :e!))))))))
-	 (status (make-instance 'status
-				:force forces
-				:velocity (vec 0.0 0.0 0.0)
-				:current-pos (vec 0.0 0.0 0.0)
-				:mass mass)))
+         (damping-ratio  1.00)
+         (friction-coeff (d* damping-ratio 2.0 (dsqrt (d* mass spring-k))))
+         (forces         (define-force-single
+                             #'(lambda (status)
+                                 (declare (optimize (safety 0) (speed 3) (debug 0)))
+                                 (with-accessors ((pos current-pos) (velocity velocity)) status
+                                   (declare (vec pos velocity))
+                                   (d+
+                                    (d- (d* spring-k       (elt pos      :e!)))
+                                    (d- (d* friction-coeff (elt velocity :e!))))))))
+         (status (make-instance 'status
+                                :force forces
+                                :velocity (vec 0.0 0.0 0.0)
+                                :current-pos (vec 0.0 0.0 0.0)
+                                :mass mass)))
     status))
 
 (defmethod install-drag-interpolator ((object camera) &key (spring-k 100.0))
@@ -413,25 +413,25 @@
 
 (defun gen-orbit-interpolator (camera phi-angular-velocity theta-angular-velocity dist)
   #'(lambda (dt) (with-accessors ((current-theta current-theta)
-				  (current-phi   current-phi)) camera
-		   (setf current-phi (d* dt phi-angular-velocity))
-		   (setf current-theta (d* dt theta-angular-velocity))
-		   (orbit camera current-phi current-theta dist))))
+                                  (current-phi   current-phi)) camera
+                   (setf current-phi (d* dt phi-angular-velocity))
+                   (setf current-theta (d* dt theta-angular-velocity))
+                   (orbit camera current-phi current-theta dist))))
 
 (defmethod install-orbit-interpolator ((object camera) phi-angular-velocity
-				       theta-angular-velocity dist)
+                                       theta-angular-velocity dist)
   (setf (orbit-interpolator object)
-	(gen-orbit-interpolator object phi-angular-velocity theta-angular-velocity dist)))
+        (gen-orbit-interpolator object phi-angular-velocity theta-angular-velocity dist)))
 
 (defmethod calculate-frustum ((object camera))
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (with-accessors ((frustum-planes frustum-planes)
-		   (view-matrix view-matrix)
-		   (projection-matrix projection-matrix)) object
+                   (view-matrix view-matrix)
+                   (projection-matrix projection-matrix)) object
     (declare ((simple-array vec4:vec4 (6)) frustum-planes))
     (declare ((simple-array sb-cga:matrix (1)) projection-matrix view-matrix))
     (let ((projection-view-matrix (matrix* (elt projection-matrix 0)
-					   (elt view-matrix 0))))
+                                           (elt view-matrix 0))))
       (extract-frustum-plane (elt frustum-planes 0) projection-view-matrix  1)
       (extract-frustum-plane (elt frustum-planes 1) projection-view-matrix -1)
       (extract-frustum-plane (elt frustum-planes 2) projection-view-matrix  2)
@@ -442,8 +442,8 @@
 
 (defmethod build-projection-matrix ((object camera) near far fov ratio)
   (setf (frustum-fov object)  fov
-	(frustum-near object) near
-	(frustum-far object)  far)
+        (frustum-near object) near
+        (frustum-far object)  far)
   (let ((fov-radians (deg->rad fov)))
     (setf (frustum-h-near object) (d* 2.0 (tan (d/ fov-radians 2.0)) near))
     (setf (frustum-w-near object) (d* (frustum-h-near object) ratio))
@@ -453,36 +453,36 @@
 
 (defmethod calculate-aabb ((object camera))
   (with-accessors ((up up) (dir dir) (target target) (pos pos)
-		   (frustum-far frustum-far) (frustum-near frustum-near)
-		   (frustum-h-near frustum-h-near)
-		   (frustum-w-near frustum-w-near)
-		   (frustum-h-far  frustum-h-far)
-		   (frustum-w-far frustum-w-far)
-		   (frustum-aabb frustum-aabb)) object
+                   (frustum-far frustum-far) (frustum-near frustum-near)
+                   (frustum-h-near frustum-h-near)
+                   (frustum-w-near frustum-w-near)
+                   (frustum-h-far  frustum-h-far)
+                   (frustum-w-far frustum-w-far)
+                   (frustum-aabb frustum-aabb)) object
     (let* ((side         (normalize (cross-product dir up)))
-	   (far-center   (vec+ pos (vec* (normalize dir) frustum-far)))
-	   (near-center  (vec+ pos (vec* (normalize dir) frustum-near)))
-	   (hfar/2       (d/ frustum-h-far 2.0))
-	   (wfar/2       (d/ frustum-w-far 2.0))
-	   (hnear/2      (d/ frustum-h-near 2.0))
-	   (wnear/2      (d/ frustum-w-near 2.0))
-	   (far-top-left  (vec- (vec+ far-center (vec* up hfar/2))
-				(vec* side wfar/2)))
-	   (far-top-right (vec+ (vec+ far-center (vec* up hfar/2))
-				(vec* side wfar/2)))
-	   (far-bottom-left  (vec- (vec- far-center (vec* up hfar/2))
-				   (vec* side wfar/2)))
-	   (far-bottom-right (vec+ (vec- far-center (vec* up hfar/2))
-				   (vec* side wfar/2)))
-	   (near-top-left  (vec- (vec+ near-center (vec* up hnear/2))
-				 (vec* side wnear/2)))
-	   (near-top-right (vec+ (vec+ near-center (vec* up hnear/2))
-				 (vec* side wnear/2)))
-	   (near-bottom-left  (vec- (vec- near-center (vec* up hnear/2))
-				   (vec* side wnear/2)))
-	   (near-bottom-right (vec+ (vec- near-center (vec* up hnear/2))
-				    (vec* side wnear/2)))
-	   (aabb (make-instance 'aabb)))
+           (far-center   (vec+ pos (vec* (normalize dir) frustum-far)))
+           (near-center  (vec+ pos (vec* (normalize dir) frustum-near)))
+           (hfar/2       (d/ frustum-h-far 2.0))
+           (wfar/2       (d/ frustum-w-far 2.0))
+           (hnear/2      (d/ frustum-h-near 2.0))
+           (wnear/2      (d/ frustum-w-near 2.0))
+           (far-top-left  (vec- (vec+ far-center (vec* up hfar/2))
+                                (vec* side wfar/2)))
+           (far-top-right (vec+ (vec+ far-center (vec* up hfar/2))
+                                (vec* side wfar/2)))
+           (far-bottom-left  (vec- (vec- far-center (vec* up hfar/2))
+                                   (vec* side wfar/2)))
+           (far-bottom-right (vec+ (vec- far-center (vec* up hfar/2))
+                                   (vec* side wfar/2)))
+           (near-top-left  (vec- (vec+ near-center (vec* up hnear/2))
+                                 (vec* side wnear/2)))
+           (near-top-right (vec+ (vec+ near-center (vec* up hnear/2))
+                                 (vec* side wnear/2)))
+           (near-bottom-left  (vec- (vec- near-center (vec* up hnear/2))
+                                   (vec* side wnear/2)))
+           (near-bottom-right (vec+ (vec- near-center (vec* up hnear/2))
+                                    (vec* side wnear/2)))
+           (aabb (make-instance 'aabb)))
       (expand aabb far-top-left)
       (expand aabb far-top-right)
       (expand aabb far-bottom-left)
@@ -496,49 +496,49 @@
 
 (defmethod calculate-cone ((object camera))
   (with-accessors ((up up) (dir dir) (target target) (pos pos)
-		   (frustum-far frustum-far) (frustum-near frustum-near)
-		   (frustum-h-near frustum-h-near)
-		   (frustum-w-near frustum-w-near)
-		   (frustum-h-far  frustum-h-far)
-		   (frustum-w-far frustum-w-far)
-		   (frustum-cone frustum-cone)) object
+                   (frustum-far frustum-far) (frustum-near frustum-near)
+                   (frustum-h-near frustum-h-near)
+                   (frustum-w-near frustum-w-near)
+                   (frustum-h-far  frustum-h-far)
+                   (frustum-w-far frustum-w-far)
+                   (frustum-cone frustum-cone)) object
     (let* ((side         (normalize (cross-product dir up)))
-	   (far-center   (vec+ pos (vec* (normalize dir) frustum-far)))
-	   (near-center  (vec+ pos (vec* (normalize dir) frustum-near)))
-	   (height       (vec- far-center near-center))
-	   (hfar/2       (d/ frustum-h-far 2.0))
-	   (wfar/2       (d/ frustum-w-far 2.0))
-	   (far-top-left (vec- (vec+ far-center (vec* up hfar/2))
-			       (vec* side wfar/2)))
-	   (directrix    (vec- far-top-left pos))
-	   (cone         (make-instance 'cone
-					:cone-apex   pos
-					:cone-height height
-					:half-angle  (acos (dot-product (normalize directrix)
-									dir)))))
+           (far-center   (vec+ pos (vec* (normalize dir) frustum-far)))
+           (near-center  (vec+ pos (vec* (normalize dir) frustum-near)))
+           (height       (vec- far-center near-center))
+           (hfar/2       (d/ frustum-h-far 2.0))
+           (wfar/2       (d/ frustum-w-far 2.0))
+           (far-top-left (vec- (vec+ far-center (vec* up hfar/2))
+                               (vec* side wfar/2)))
+           (directrix    (vec- far-top-left pos))
+           (cone         (make-instance 'cone
+                                        :cone-apex   pos
+                                        :cone-height height
+                                        :half-angle  (acos (dot-product (normalize directrix)
+                                                                        dir)))))
       (setf frustum-cone cone)
       object)))
 
 (defmethod calculate-sphere ((object camera))
   (with-accessors ((up up) (dir dir) (target target) (pos pos)
-		   (frustum-far frustum-far) (frustum-near frustum-near)
-		   (frustum-h-near frustum-h-near)
-		   (frustum-w-near frustum-w-near)
-		   (frustum-h-far  frustum-h-far)
-		   (frustum-w-far  frustum-w-far)
-		   (frustum-sphere frustum-sphere)) object
+                   (frustum-far frustum-far) (frustum-near frustum-near)
+                   (frustum-h-near frustum-h-near)
+                   (frustum-w-near frustum-w-near)
+                   (frustum-h-far  frustum-h-far)
+                   (frustum-w-far  frustum-w-far)
+                   (frustum-sphere frustum-sphere)) object
     (let* ((side         (normalize (cross-product dir up)))
-	   (far-center   (vec+ pos (vec* (normalize dir) frustum-far)))
-	   (near-center  (vec+ pos (vec* (normalize dir) frustum-near)))
-	   (height       (vec- far-center near-center))
-	   (hfar/2       (d/ frustum-h-far 2.0))
-	   (wfar/2       (d/ frustum-w-far 2.0))
-	   (far-top-left (vec- (vec+ far-center (vec* up hfar/2))
-			       (vec* side wfar/2)))
-	   (sphere       (make-instance 'bounding-sphere
-					:sphere-radius (vec-length (vec- far-top-left
-									 (vec* height 0.5)))
-					:sphere-center (vec* height 0.5))))
+           (far-center   (vec+ pos (vec* (normalize dir) frustum-far)))
+           (near-center  (vec+ pos (vec* (normalize dir) frustum-near)))
+           (height       (vec- far-center near-center))
+           (hfar/2       (d/ frustum-h-far 2.0))
+           (wfar/2       (d/ frustum-w-far 2.0))
+           (far-top-left (vec- (vec+ far-center (vec* up hfar/2))
+                               (vec* side wfar/2)))
+           (sphere       (make-instance 'bounding-sphere
+                                        :sphere-radius (vec-length (vec- far-top-left
+                                                                         (vec* height 0.5)))
+                                        :sphere-center (vec* height 0.5))))
       (setf frustum-sphere sphere)
       object)))
 
@@ -548,26 +548,26 @@
 (defmethod containsp ((object camera) (p vector))
   (with-accessors ((frustum-planes frustum-planes)) object
     (loop for plane across frustum-planes do
-	 (when (not (plane-point-same-side-p plane p))
-	     (return-from containsp nil)))
+         (when (not (plane-point-same-side-p plane p))
+             (return-from containsp nil)))
     t))
 
 (defmethod fit-to-aabb ((object camera) aabb)
   (with-accessors ((pos pos)
-		   (dir dir)
-		   (target target)) object
+                   (dir dir)
+                   (target target)) object
     (setf pos (vec (elt pos 0) (elt (3d-utils:aabb-center aabb) 1) (elt pos 2)))
     (setf target (vec* pos +fit-to-aabb-scale-pos+))
     (camera:look-at* object)
     (do* ((scale 0.0 (d+ scale +fit-to-aabb-offset+))
-	  (offset  (vec-negate dir)
-		   (vec* (vec-negate offset) scale))
-	  (updated-camera (camera:calculate-frustum object)
-			  (camera:calculate-frustum updated-camera)))
-	 ((and (camera:containsp updated-camera
-				 (3d-utils:aabb-p2 aabb))
-	       (camera:containsp updated-camera
-				 (3d-utils:aabb-p1 aabb))))
+          (offset  (vec-negate dir)
+                   (vec* (vec-negate offset) scale))
+          (updated-camera (camera:calculate-frustum object)
+                          (camera:calculate-frustum updated-camera)))
+         ((and (camera:containsp updated-camera
+                                 (3d-utils:aabb-p2 aabb))
+               (camera:containsp updated-camera
+                                 (3d-utils:aabb-p1 aabb))))
       (setf pos (vec+ pos offset))
       (camera:look-at* updated-camera)
      object)))

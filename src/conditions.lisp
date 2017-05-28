@@ -19,9 +19,9 @@
 (defmacro defcond (type)
   `(define-condition ,(alexandria:format-symbol t "TEXT-~a" (string-upcase type))
        (,type)
-       ((text 
-	 :initarg :text 
-	 :reader text))
+       ((text
+         :initarg :text
+         :reader text))
      (:documentation "Error that set text")))
 
 (defcond error)
@@ -30,10 +30,10 @@
 
 (define-condition out-of-bounds (error)
   ((seq
-    :initarg :seq 
+    :initarg :seq
     :reader seq)
    (idx
-    :initarg :idx 
+    :initarg :idx
     :reader idx))
    (:documentation "Error when you go out of bound"))
 
@@ -47,44 +47,44 @@
 
 (define-condition out-of-bounds (error)
   ((seq
-    :initarg :seq 
+    :initarg :seq
     :reader seq)
    (idx
-    :initarg :idx 
+    :initarg :idx
     :reader idx))
    (:documentation "Error when you go out of bound"))
 
 (define-condition length-error (text-error)
   ((seq
-    :initarg :seq 
+    :initarg :seq
     :reader seq))
   (:documentation "Length error"))
 
 (define-condition different-length-error (error)
   ((seq1
-    :initarg :seq1 
+    :initarg :seq1
     :reader seq1)
    (seq2
     :initarg :seq2
     :reader seq2))
-  (:report (lambda (condition stream) 
-	    (format stream "~a ~a" (seq1 condition) (seq2 condition))))
+  (:report (lambda (condition stream)
+            (format stream "~a ~a" (seq1 condition) (seq2 condition))))
   (:documentation "Length error"))
 
-(define-condition xml-no-matching-tag (text-error) 
+(define-condition xml-no-matching-tag (text-error)
   ()
-  (:report (lambda (condition stream) 
-	    (format stream "~a" (text condition)))))
+  (:report (lambda (condition stream)
+            (format stream "~a" (text condition)))))
 
-(define-condition xml-no-such-attribute (text-error) 
+(define-condition xml-no-such-attribute (text-error)
   ()
-  (:report (lambda (condition stream) 
-	     (format stream "~a" (text condition)))))
+  (:report (lambda (condition stream)
+             (format stream "~a" (text condition)))))
 
 (define-condition invalid-aabb-error (error)
   ((aabb
     :initarg :aabb
     :reader aabb))
   (:report (lambda (condition stream)
-	     (format stream "invalid aabb ~a" (aabb condition))))
+             (format stream "invalid aabb ~a" (aabb condition))))
   (:documentation "Error when aabb is invalid"))

@@ -51,10 +51,10 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun get-shader-source (name)
     (let ((actual-file (fs:preprocess (res:get-resource-file name +shaders-resource+)
-				      +shaders-resource+)))
+                                      +shaders-resource+)))
       (prog1
-	  (filesystem-utils:slurp-file actual-file)
-	(fs:delete-file-if-exists actual-file)))))
+          (filesystem-utils:slurp-file actual-file)
+        (fs:delete-file-if-exists actual-file)))))
 
 ;; (defvar *shader-dict*
 ;;   '((:solid
@@ -102,34 +102,34 @@
     (loop for type in shaders by #'cddr
        for text in (cdr shaders) by #'cddr
        do (let ((shader (gl:create-shader type)))
-	    (alexandria:when-let ((log (compile-and-check-shader shader text)))
-	      (format *error-output* "Compile Log for ~A:~%~A~%shader ~a" type log text))
-	    (push shader compiled-shaders)))
+            (alexandria:when-let ((log (compile-and-check-shader shader text)))
+              (format *error-output* "Compile Log for ~A:~%~A~%shader ~a" type log text))
+            (push shader compiled-shaders)))
     (let ((program (gl:create-program)))
       (if (= 0 program)
           (progn
             (loop for shader in compiled-shaders
-	       do (gl:delete-shader shader))
+               do (gl:delete-shader shader))
             (error "Error creating program"))
           (progn
             (loop for shader in compiled-shaders
-	       do (gl:attach-shader program shader))
-	    ;; set varyings output variable name
-	    (cffi:with-foreign-object (string-array :pointer 2)
-	      (setf (cffi:mem-aref string-array :pointer 0)
-		    (cffi:foreign-string-alloc (symbol-to-uniform +feedback-new-position+)))
-	      (setf (cffi:mem-aref string-array :pointer 1)
-		    (cffi:foreign-string-alloc (symbol-to-uniform +feedback-new-velocity+)))
-	      (%gl:transform-feedback-varyings-ext program 2 string-array :interleaved-attribs)
-	      (cffi:foreign-string-free (cffi:mem-aref string-array :pointer 0))
-	      (cffi:foreign-string-free (cffi:mem-aref string-array :pointer 1)))
+               do (gl:attach-shader program shader))
+            ;; set varyings output variable name
+            (cffi:with-foreign-object (string-array :pointer 2)
+              (setf (cffi:mem-aref string-array :pointer 0)
+                    (cffi:foreign-string-alloc (symbol-to-uniform +feedback-new-position+)))
+              (setf (cffi:mem-aref string-array :pointer 1)
+                    (cffi:foreign-string-alloc (symbol-to-uniform +feedback-new-velocity+)))
+              (%gl:transform-feedback-varyings-ext program 2 string-array :interleaved-attribs)
+              (cffi:foreign-string-free (cffi:mem-aref string-array :pointer 0))
+              (cffi:foreign-string-free (cffi:mem-aref string-array :pointer 1)))
             (gl:link-program program)
-	    (let ((log (gl:get-program-info-log program)))
+            (let ((log (gl:get-program-info-log program)))
               (unless (string= "" log)
                 (format *error-output* "Link Log:~%~A~%" log)))
             (loop for shader in compiled-shaders do
-		 (gl:detach-shader program shader)
-		 (gl:delete-shader shader))))
+                 (gl:detach-shader program shader)
+                 (gl:delete-shader shader))))
 
       program)))
 
@@ -163,7 +163,7 @@
 (defmethod interfaces:destroy ((object shader-dictionary))
   (with-slots (programs) object
     (loop for program being the hash-values in programs do
-	 (interfaces:destroy program))))
+         (interfaces:destroy program))))
 
 (defmethod preprocess-program-entry ((type (eql :shaders)) entry program)
   (let ((p (apply #'compile-and-link-program entry)))
@@ -207,18 +207,18 @@ valid."
   (let ((sd (make-instance 'shader-dictionary)))
     (with-slots (programs) sd
       (loop
-	 for program-spec in dictionary
-	 as name = (car program-spec)
-	 as program = (make-instance 'program :name name)
-	 do (setf (gethash name programs) program)
-	   (loop for entry in (cdr program-spec)
-	      do
-		(misc:dbg "preprocess  ~a" (car entry))
-		(preprocess-program-entry
-		 (car entry) (cdr entry) program))
-	   (loop for entry in (cdr program-spec)
-	      do (postprocess-program-entry
-		  (car entry) (cdr entry) program))))
+         for program-spec in dictionary
+         as name = (car program-spec)
+         as program = (make-instance 'program :name name)
+         do (setf (gethash name programs) program)
+           (loop for entry in (cdr program-spec)
+              do
+                (misc:dbg "preprocess  ~a" (car entry))
+                (preprocess-program-entry
+                 (car entry) (cdr entry) program))
+           (loop for entry in (cdr program-spec)
+              do (postprocess-program-entry
+                  (car entry) (cdr entry) program))))
     sd))
 
 (defun use-program (dict program)
@@ -298,316 +298,316 @@ active program (set by sdk2.kit:use-program)."
       :modelview-matrix
       :proj-matrix)
      (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
-	       :vertex-shader   ,(get-shader-source "terrain.vert")
-	       :fragment-shader ,(get-shader-source "terrain.frag")))
+               :vertex-shader   ,(get-shader-source "terrain.vert")
+               :fragment-shader ,(get-shader-source "terrain.frag")))
     (:water
      (:uniforms :light-pos
-		:ia
-		:id
-		:is
-		:ka
-		:kd
-		:ks
-		:shine
-		:time
-		:wave-ampl
-		:wave-freq
-		:modelview-matrix
-		:proj-matrix
-		:proj-texture-matrix
-		:texture-object)
+                :ia
+                :id
+                :is
+                :ka
+                :kd
+                :ks
+                :shine
+                :time
+                :wave-ampl
+                :wave-freq
+                :modelview-matrix
+                :proj-matrix
+                :proj-texture-matrix
+                :texture-object)
      (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
-	       :vertex-shader   ,(get-shader-source "water.vert")
-	       :fragment-shader ,(get-shader-source "water.frag")))
+               :vertex-shader   ,(get-shader-source "water.vert")
+               :fragment-shader ,(get-shader-source "water.frag")))
     (:water-no-texture
      (:uniforms :light-pos
-		:ia
-		:id
-		:is
-		:ka
-		:kd
-		:ks
-		:shine
-		:time
-		:wave-ampl
-		:wave-freq
-		:modelview-matrix
-		:proj-matrix
-		:proj-texture-matrix)
+                :ia
+                :id
+                :is
+                :ka
+                :kd
+                :ks
+                :shine
+                :time
+                :wave-ampl
+                :wave-freq
+                :modelview-matrix
+                :proj-matrix
+                :proj-texture-matrix)
      (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
-	       :vertex-shader   ,(get-shader-source "water-no-texture.vert")
-	       :fragment-shader ,(get-shader-source "water-no-texture.frag")))
+               :vertex-shader   ,(get-shader-source "water-no-texture.vert")
+               :fragment-shader ,(get-shader-source "water-no-texture.frag")))
 
     (:tree
      (:uniforms :light-pos
-		:ia
-		:id
-		:is
-		:ka
-		:kd
-		:ks
-		:shine
-		:time
-		:fog-density
-		:model-matrix
-		:modelview-matrix
-		:proj-matrix
-		:texture-object)
+                :ia
+                :id
+                :is
+                :ka
+                :kd
+                :ks
+                :shine
+                :time
+                :fog-density
+                :model-matrix
+                :modelview-matrix
+                :proj-matrix
+                :texture-object)
      (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
-	       :vertex-shader   ,(get-shader-source "tree.vert")
-	       :fragment-shader ,(get-shader-source "tree.frag")))
+               :vertex-shader   ,(get-shader-source "tree.vert")
+               :fragment-shader ,(get-shader-source "tree.frag")))
     (:mesh-bump
      (:uniforms :light-pos
-		:ia
-		:id
-		:is
-		:ka
-		:kd
-		:ks
-		:shine
-		:time
-		:fog-density
-		:model-matrix
-		:model-matrix
-		:modelview-matrix
-		:proj-matrix
-		:texture-object
-		:normal-map)
+                :ia
+                :id
+                :is
+                :ka
+                :kd
+                :ks
+                :shine
+                :time
+                :fog-density
+                :model-matrix
+                :model-matrix
+                :modelview-matrix
+                :proj-matrix
+                :texture-object
+                :normal-map)
      (:shaders :vertex-shader   ,(get-shader-source "bump.vert")
                :vertex-shader   ,(get-shader-source "mesh-bump.vert")
-	       :fragment-shader ,(get-shader-source "mesh-bump.frag")))
+               :fragment-shader ,(get-shader-source "mesh-bump.frag")))
     (:mesh-bump-inst
      (:uniforms :light-pos
-		:ia
-		:id
-		:is
-		:ka
-		:kd
-		:ks
-		:shine
-		:time
-		:fog-density
-		:model-matrix
-		:model-matrix
-		:modelview-matrix
-		:proj-matrix
-		:texture-object
-		:normal-map)
+                :ia
+                :id
+                :is
+                :ka
+                :kd
+                :ks
+                :shine
+                :time
+                :fog-density
+                :model-matrix
+                :model-matrix
+                :modelview-matrix
+                :proj-matrix
+                :texture-object
+                :normal-map)
      (:shaders :vertex-shader   ,(get-shader-source "bump.vert")
                :vertex-shader   ,(get-shader-source "mesh-bump-inst.vert")
-	       :fragment-shader ,(get-shader-source "mesh-bump.frag")))
+               :fragment-shader ,(get-shader-source "mesh-bump.frag")))
     (:building-floor-bump
      (:uniforms :light-pos
-		:ia
-		:id
-		:is
-		:ka
-		:kd
-		:ks
-		:shine
-		:fog-density
-		:pick-color
-		:modelview-matrix
-		:proj-matrix
-		:texture-object
-		:normal-map
-		:scale-text-coord)
+                :ia
+                :id
+                :is
+                :ka
+                :kd
+                :ks
+                :shine
+                :fog-density
+                :pick-color
+                :modelview-matrix
+                :proj-matrix
+                :texture-object
+                :normal-map
+                :scale-text-coord)
      (:shaders :vertex-shader   ,(get-shader-source "bump.vert")
                :vertex-shader   ,(get-shader-source "building-floor-bump.vert")
-	       :fragment-shader ,(get-shader-source "building-floor-bump.frag")))
+               :fragment-shader ,(get-shader-source "building-floor-bump.frag")))
     (:building-floor-ads
      (:uniforms :light-pos
-		:ia
-		:id
-		:is
-		:ka
-		:kd
-		:ks
-		:shine
-		:fog-density
-		:pick-color
-		:modelview-matrix
-		:proj-matrix
-		:texture-object
-		:scale-text-coord)
+                :ia
+                :id
+                :is
+                :ka
+                :kd
+                :ks
+                :shine
+                :fog-density
+                :pick-color
+                :modelview-matrix
+                :proj-matrix
+                :texture-object
+                :scale-text-coord)
      (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
-	       :vertex-shader   ,(get-shader-source "building-floor-ads.vert")
-	       :fragment-shader ,(get-shader-source "building-floor-ads.frag")))
+               :vertex-shader   ,(get-shader-source "building-floor-ads.vert")
+               :fragment-shader ,(get-shader-source "building-floor-ads.frag")))
     (:mesh-ads
      (:uniforms :light-pos
-		:ia
-		:id
-		:is
-		:ka
-		:kd
-		:ks
-		:shine
-		:modelview-matrix
-		:model-matrix
-		:time
-		:fog-density
-		:proj-matrix
-		:texture-object
-		:scale-text-coord)
+                :ia
+                :id
+                :is
+                :ka
+                :kd
+                :ks
+                :shine
+                :modelview-matrix
+                :model-matrix
+                :time
+                :fog-density
+                :proj-matrix
+                :texture-object
+                :scale-text-coord)
      (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
-	       :vertex-shader   ,(get-shader-source "mesh-ads.vert")
-	       :fragment-shader ,(get-shader-source "mesh-ads.frag")))
+               :vertex-shader   ,(get-shader-source "mesh-ads.vert")
+               :fragment-shader ,(get-shader-source "mesh-ads.frag")))
     (:mesh-ads-inst
      (:uniforms :light-pos
-		:ia
-		:id
-		:is
-		:ka
-		:kd
-		:ks
-		:shine
-		:modelview-matrix
-		:model-matrix
-		:time
-		:fog-density
-		:proj-matrix
-		:texture-object
-		:scale-text-coord)
+                :ia
+                :id
+                :is
+                :ka
+                :kd
+                :ks
+                :shine
+                :modelview-matrix
+                :model-matrix
+                :time
+                :fog-density
+                :proj-matrix
+                :texture-object
+                :scale-text-coord)
      (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
-	       :vertex-shader   ,(get-shader-source "mesh-ads-inst.vert")
-	       :fragment-shader ,(get-shader-source "mesh-ads.frag")))
+               :vertex-shader   ,(get-shader-source "mesh-ads-inst.vert")
+               :fragment-shader ,(get-shader-source "mesh-ads.frag")))
 
     (:mesh-debug
      (:uniforms :out-color
-		:modelview-matrix
-		:proj-matrix)
+                :modelview-matrix
+                :proj-matrix)
      (:shaders :vertex-shader   ,(get-shader-source "mesh-debug.vert")
-	       :fragment-shader ,(get-shader-source "mesh-debug.frag")))
+               :fragment-shader ,(get-shader-source "mesh-debug.frag")))
     (:wall-decorated
      (:uniforms :light-pos
-		:ia
-		:id
-		:is
-		:ka
-		:kd
-		:ks
-		:shine
-		:fog-density
-		:modelview-matrix
-		:model-matrix
-		:time
-		:proj-matrix
-		:proj-texture-matrix
-		:texture-object
-		:texture-projector)
+                :ia
+                :id
+                :is
+                :ka
+                :kd
+                :ks
+                :shine
+                :fog-density
+                :modelview-matrix
+                :model-matrix
+                :time
+                :proj-matrix
+                :proj-texture-matrix
+                :texture-object
+                :texture-projector)
      (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
-	       :vertex-shader   ,(get-shader-source "wall-decorated.vert")
-	       :fragment-shader ,(get-shader-source "wall-decorated.frag")))
+               :vertex-shader   ,(get-shader-source "wall-decorated.vert")
+               :fragment-shader ,(get-shader-source "wall-decorated.frag")))
     (:skydome
      (:uniforms :modelview-matrix
-		:proj-matrix
-		:proj-texture-matrix
-		:texture-object
-		:texture-clouds-1
-		:texture-clouds-2
-		:texture-clouds-3
-		:texture-smoke
-		:traslation-clouds-speed
-		:weather-type
-		:sky-color
-		:ia
-		:ka)
+                :proj-matrix
+                :proj-texture-matrix
+                :texture-object
+                :texture-clouds-1
+                :texture-clouds-2
+                :texture-clouds-3
+                :texture-smoke
+                :traslation-clouds-speed
+                :weather-type
+                :sky-color
+                :ia
+                :ka)
      (:shaders :vertex-shader   ,(get-shader-source "skydome.vert")
-	       :fragment-shader ,(get-shader-source "skydome.frag")))
+               :fragment-shader ,(get-shader-source "skydome.frag")))
     (:gui
      (:uniforms :modelview-matrix
-		:proj-matrix
-		:texture-object
-		:ia)
+                :proj-matrix
+                :texture-object
+                :ia)
      (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
-	       :fragment-shader ,(get-shader-source "gui.frag")))
+               :fragment-shader ,(get-shader-source "gui.frag")))
     (:gui-splash-progress
      (:uniforms :modelview-matrix
-		:proj-matrix
-		:texture-object
-		:progress)
+                :proj-matrix
+                :texture-object
+                :progress)
      (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
-	       :fragment-shader ,(get-shader-source "splash-progress-gauge.frag")))
+               :fragment-shader ,(get-shader-source "splash-progress-gauge.frag")))
     (:gui-fonts
      (:uniforms :modelview-matrix
-		:proj-matrix
-		:texture-object
-		:mult-color)
+                :proj-matrix
+                :texture-object
+                :mult-color)
      (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
-	       :fragment-shader ,(get-shader-source "gui-fonts.frag")))
+               :fragment-shader ,(get-shader-source "gui-fonts.frag")))
     (:gui-naked-button
      (:uniforms :modelview-matrix
-		:proj-matrix
-		:texture-object
-		:texture-overlay
-		:ia)
+                :proj-matrix
+                :texture-object
+                :texture-overlay
+                :ia)
      (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
-	       :fragment-shader ,(get-shader-source "gui-naked-button.frag")))
+               :fragment-shader ,(get-shader-source "gui-naked-button.frag")))
     (:tree-impostor
      (:uniforms :modelview-matrix
-		:proj-matrix
-		:texture-object
-		:time)
+                :proj-matrix
+                :texture-object
+                :time)
      (:shaders :vertex-shader   ,(get-shader-source "tree-impostor.vert")
-	       :fragment-shader ,(get-shader-source "tree-impostor.frag")))
+               :fragment-shader ,(get-shader-source "tree-impostor.frag")))
 
     (:tooltip
      (:uniforms :modelview-matrix
-		:proj-matrix
-		:texture-object
-		:post-scaling
-		:vert-displacement-speed
-		:duration
-		:mult-color
-		:gravity
-		:time)
+                :proj-matrix
+                :texture-object
+                :post-scaling
+                :vert-displacement-speed
+                :duration
+                :mult-color
+                :gravity
+                :time)
       (:shaders :vertex-shader   ,(get-shader-source "tooltip.vert")
-		:fragment-shader ,(get-shader-source "tooltip.frag")))
+                :fragment-shader ,(get-shader-source "tooltip.frag")))
     (:particles-blood
      (:uniforms :modelview-matrix
-		:proj-matrix
-		:texture-object
-		:time)
+                :proj-matrix
+                :texture-object
+                :time)
       (:shaders :vertex-shader   ,(get-shader-source "generic-particle.vert")
-		:fragment-shader ,(get-shader-source "particle-blood.frag")))
+                :fragment-shader ,(get-shader-source "particle-blood.frag")))
     (:particles-fire-dart
      (:uniforms :modelview-matrix
-		:proj-matrix
-		:texture-object
-		:time)
+                :proj-matrix
+                :texture-object
+                :time)
       (:shaders :vertex-shader   ,(get-shader-source "generic-particle.vert")
-		:fragment-shader ,(get-shader-source "particle-fire-dart.frag")))
+                :fragment-shader ,(get-shader-source "particle-fire-dart.frag")))
     (:particles-spell-decals
      (:uniforms :modelview-matrix
-		:proj-matrix
-		:texture-object
-		:time)
+                :proj-matrix
+                :texture-object
+                :time)
       (:shaders :vertex-shader   ,(get-shader-source "spell-decal.vert")
-		:fragment-shader ,(get-shader-source "spell-decal.frag")))
+                :fragment-shader ,(get-shader-source "spell-decal.frag")))
     (:particles-aerial-explosion
      (:uniforms :modelview-matrix
-		:proj-matrix
-		:texture-object
-		:time)
+                :proj-matrix
+                :texture-object
+                :time)
       (:shaders :vertex-shader   ,(get-shader-source "generic-particle.vert")
-		:fragment-shader ,(get-shader-source "aerial-explosion.frag")))
+                :fragment-shader ,(get-shader-source "aerial-explosion.frag")))
     ;;;;; transform feedback
     (:blood-integrator
      (:uniforms :dt
-		:noise-scale
-		:gravity
-		:min-y)
+                :noise-scale
+                :gravity
+                :min-y)
      (:feedback-shaders :vertex-shader ,(get-shader-source "particle-blood-feedback.vert")))
     (:fire-dart-integrator
      (:uniforms :dt
-		:gravity)
+                :gravity)
      (:feedback-shaders :vertex-shader ,(get-shader-source "particle-fire-dart-feedback.vert")))))
 
 (defun compile-library ()
   (let ((*error-output* (make-string-output-stream)))
     (handler-case
-	(compile-shader-dictionary *shaders-library*)
+        (compile-shader-dictionary *shaders-library*)
       (error ()
-	(progn
-	  (misc:dbg "error compiling shaders ~a" (get-output-stream-string *error-output*))
-	  nil)))))
+        (progn
+          (misc:dbg "error compiling shaders ~a" (get-output-stream-string *error-output*))
+          nil)))))

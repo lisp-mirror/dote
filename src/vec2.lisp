@@ -17,29 +17,29 @@
 (in-package :vec2)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (deftype vec2-type () 
+  (deftype vec2-type ()
     'single-float)
-  
+
   (deftype vec2 ()
     "A 2d vector of single floats."
     `(simple-array vec2-type (2)))
 
   (defun vec2p (a)
     (typep a 'vec2))
-  
+
   (defun vec2 (x y)
     (declare (optimize (debug 0) (safety 0) (speed 3)))
     (let ((v (make-array-frame 2 0.0 'vec2-type t)))
       (declare (vec2 v))
       (setf (elt v 0) x
-	    (elt v 1) y)
+            (elt v 1) y)
       v))
 
   (defun vec2= (a b)
     (and (= (elt a 0) (elt b 0))
-	 (= (elt a 1) (elt b 1))))
+         (= (elt a 1) (elt b 1))))
 
-  (alexandria:define-constant +vec2-zero+ (vec2 0.0 0.0) 
+  (alexandria:define-constant +vec2-zero+ (vec2 0.0 0.0)
     :test #'vec2=)
 
   (defun-inline-function make-fresh-vec2 ()
@@ -49,14 +49,14 @@
   (let ((res (make-array-frame 2 0.0 'vec2-type t)))
     (declare (vec2 res))
     (setf (elt res 0) (elt old 0)
-	  (elt res 1) (elt old 1))
+          (elt res 1) (elt old 1))
     res))
 
 (defun-inline-function vec2* (vec val)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (vec2 vec))
   (vec2 (num:d* (elt vec 0) val)
-	(num:d* (elt vec 1) val)))
+        (num:d* (elt vec 1) val)))
 
 (define-compiler-macros vec2* vec val)
 
@@ -64,7 +64,7 @@
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (vec2 vec))
   (vec2 (num:d/ (elt vec 0) val)
-	(num:d/ (elt vec 1) val)))
+        (num:d/ (elt vec 1) val)))
 
 (define-compiler-macros vec2/ vec val)
 
@@ -78,7 +78,7 @@
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (vec2 a b))
   (vec2 (num:d+ (elt a 0) (elt b 0))
-	(num:d+ (elt a 1) (elt b 1))))
+        (num:d+ (elt a 1) (elt b 1))))
 
 (define-compiler-macros vec2+ a b)
 
@@ -86,7 +86,7 @@
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (vec2 a b))
   (vec2 (num:d- (elt a 0) (elt b 0))
-	(num:d- (elt a 1) (elt b 1))))
+        (num:d- (elt a 1) (elt b 1))))
 
 (define-compiler-macros vec2-negate a)
 
@@ -94,7 +94,7 @@
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (vec2 a))
   (vec2 (num:d- (elt a 0))
-	(num:d- (elt a 1))))
+        (num:d- (elt a 1))))
 
 (define-compiler-macros vec2- a b)
 
@@ -102,7 +102,7 @@
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (vec2 a))
   (num:dsqrt (num:d+ (num:dexpt (elt a 0) 2.0)
-		     (num:dexpt (elt a 1) 2.0))))
+                     (num:dexpt (elt a 1) 2.0))))
 
 (define-compiler-macros vec2-length a)
 
@@ -111,7 +111,7 @@
   (declare (vec2 a))
   (let ((length (vec2-length a)))
     (vec2 (num:d/ (elt a 0) length)
-	  (num:d/ (elt a 1) length))))
+          (num:d/ (elt a 1) length))))
 
 (define-compiler-macros vec2-normalize a)
 

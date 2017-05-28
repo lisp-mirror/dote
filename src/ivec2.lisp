@@ -33,18 +33,18 @@
     (let ((v (make-array-frame 2 0 'ivec2-type t)))
       (declare (ivec2 v))
       (setf (elt v 0) x
-	    (elt v 1) y)
+            (elt v 1) y)
       v))
 
   (defun ivec2= (a b)
     (and (= (elt a 0) (elt b 0))
-	 (= (elt a 1) (elt b 1))))
+         (= (elt a 1) (elt b 1))))
 
   (defun copy-ivec2 (old)
     (let ((res (make-array-frame 2 0 'ivec2-type t)))
       (declare (ivec2 res))
       (setf (elt res 0) (elt old 0)
-	    (elt res 1) (elt old 1))
+            (elt res 1) (elt old 1))
       res))
 
   (alexandria:define-constant +ivec2-zero+ (ivec2 0.0 0.0)
@@ -60,7 +60,7 @@
   (declare (ivec2 vec))
   (declare ((signed-byte 32) val))
   (ivec2 (* (elt vec 0) val)
-	 (* (elt vec 1) val)))
+         (* (elt vec 1) val)))
 
 (define-compiler-macros ivec2* vec val)
 
@@ -69,7 +69,7 @@
   (declare (ivec2 vec))
   (declare ((signed-byte 32) val))
   (ivec2 (/ (elt vec 0) val)
-	 (/ (elt vec 1) val)))
+         (/ (elt vec 1) val)))
 
 (define-compiler-macros ivec2/ vec val)
 
@@ -83,7 +83,7 @@
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (ivec2 a b))
   (ivec2 (+ (elt a 0) (elt b 0))
-	 (+ (elt a 1) (elt b 1))))
+         (+ (elt a 1) (elt b 1))))
 
 (define-compiler-macros ivec2+ a b)
 
@@ -91,14 +91,14 @@
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (ivec2 a b))
   (ivec2 (- (elt a 0) (elt b 0))
-	 (- (elt a 1) (elt b 1))))
+         (- (elt a 1) (elt b 1))))
 
 (define-compiler-macros ivec2- a b)
 
 (defun-inline-function ivec2-length (a)
   (declare (ivec2 a))
   (round (sqrt (+ (expt (elt a 0) 2)
-		  (expt (elt a 1) 2)))))
+                  (expt (elt a 1) 2)))))
 
 (define-compiler-macros ivec2-length a)
 
@@ -108,6 +108,6 @@
   (let ((length (ivec2-length a)))
     (declare ((signed-byte 32) length))
     (ivec2 (/ (elt a 0) length)
-	   (/ (elt a 1) length))))
+           (/ (elt a 1) length))))
 
 (define-compiler-macros ivec2-normalize a)
