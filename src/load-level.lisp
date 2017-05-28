@@ -569,8 +569,7 @@
 	     (compatible-arrangement-keys keys containers (coerce start 'string) x))
 	   (project (x)
 	     (progn
-	       (when +debug-mode+
-		 (misc:dbg "avg dist: ~f~%"  (average-container-distance x containers)))
+	       #+debug-mode (misc:dbg "avg dist: ~f~%"  (average-container-distance x containers))
 	       (== (> (average-container-distance x containers) dist) t)))))
       (== q `(,x ,y)))))
 
@@ -701,8 +700,7 @@
 	   (push-labyrinth-entity world labyrinth-mesh)))
     (rearrange-keys-for-containers world keychain)
     (fill-containers-with-objects world)
-    (when +debug-mode+
-      (dump-containers world))))
+    #+debug-mode (dump-containers world)))
 
 (defun setup-single-floor (world aabb)
   (let* ((rect            (aabb2->rect2 aabb))

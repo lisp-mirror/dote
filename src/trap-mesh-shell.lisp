@@ -62,17 +62,21 @@
     (game-state:with-world (world (state object))
       (let ((player (find-entity-by-id (state object) (game-event:id-origin event))))
 	(when player
-	  (world:post-entity-message world
-				     player
-				     (_ "Trap deactivated!")
-				     t
-				     (cons (_ "Ok")
-					   #'(lambda (a b)
-					       (declare (ignore a b))
-					       (world:remove-all-windows world)
-					       (remove-entity-by-id world (id object))
-					       (pop-trap-entity (state object) object)))))))))
+          (if (faction-ai-p (state object) (game-event:id-origin event))
+              (progn
+                (remove-entity-by-id world (id object))
+                (pop-trap-entity (state object) object))
+              (world:post-entity-message world
+                                         player
+                                         (_ "Trap deactivated!")
+                                         t
+                                         (cons (_ "Ok")
+                                               #'(lambda (a b)
+                                                   (declare (ignore a b))
+                                                   (world:remove-all-windows world)
+                                                   (remove-entity-by-id world (id object))
+                                                   (pop-trap-entity (state object) object))))))))))
 
 (defmethod on-game-event ((object trap-mesh-shell) (event game-event:end-turn))
-  (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
+  ;;(misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
   nil)

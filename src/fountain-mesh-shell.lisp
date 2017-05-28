@@ -19,7 +19,7 @@
 (defclass fountain-mesh-shell (triangle-mesh-shell) ())
 
 (defmethod game-event:on-game-event ((object fountain-mesh-shell) (event game-event:end-turn))
-  (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
+  ;;(misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
   nil)
 
 (defmethod game-event:on-game-event ((object fountain-mesh-shell)

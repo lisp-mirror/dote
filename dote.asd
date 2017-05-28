@@ -2,6 +2,7 @@
   :description "Dawn of the Era: A tactical game"
   :author "cage <cage@katamail.com>"
   :license "GPLv3"
+  :version "0.0.1"
   :pathname "src"
   :serial t
   :depends-on (:swank
@@ -94,6 +95,7 @@
 	       (:file "player-messages-text")
                (:file "interactive-entity")
                (:file "spell")
+               (:file "planner")
 	       (:file "character")
 	       (:file "random-weapon")
 	       (:file "random-potion")
@@ -175,4 +177,9 @@
 				     (:file "terrain-chunk-test")
 				     (:file "avatar-test")
 				     (:file "mtree-test")
-				     (:file "kanren-test")))))
+				     (:file "kanren-test")
+                                     (:file "action-scheduler-test")))))
+
+(progn
+  (pushnew :debug-mode *features*)
+  (pushnew :debug-ai   *features*))

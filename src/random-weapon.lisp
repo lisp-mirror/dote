@@ -241,7 +241,7 @@
 (defun set-effect (effect-path weapon-level interaction)
   (let ((effect-object (make-instance 'effect-parameters
 				      :modifier (calculate-modifier weapon-level)
-				      :trigger  +effect-until-held+
+				      :trigger  +effect-when-worn+
 				       ;; effect lasting forever  for
 				       ;; weapons,  they   will  broke
 				       ;; anyway.
@@ -274,7 +274,7 @@
 (defun set-healing-effect (effect-path weapon-level interaction)
   (let* ((target (healing-target))
 	 (effect-object (make-instance 'healing-effect-parameters
-				       :trigger  +effect-until-held+
+				       :trigger  +effect-when-worn+
 				       :duration (ceiling (max 1
 							       (- +maximum-level+
 								  weapon-level)))
@@ -311,7 +311,7 @@
 	 (spell-id      (spell:identifier (random-elt spells)))
 	 (effect-object (make-instance 'magic-effect-parameters
 				       :spell-id spell-id
-				       :trigger  +effect-until-held+)))
+				       :trigger  +effect-when-worn+)))
     (n-setf-path-value interaction (list +magic-effects+) effect-object)))
 
 (defun generate-weapon-common (interaction weapon-level weapon-decay-points

@@ -155,7 +155,7 @@
 	 (spell-id      (spell:identifier (random-elt spells)))
 	 (effect-object (make-instance 'magic-effect-parameters
 				       :spell-id spell-id
-				       :trigger  +effect-until-held+)))
+				       :trigger  +effect-when-used+)))
     (n-setf-path-value interaction (list +magic-effects+) effect-object)))
 
 (defun generate-trap (map-level)

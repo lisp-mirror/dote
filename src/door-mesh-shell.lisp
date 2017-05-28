@@ -35,7 +35,7 @@
 	   (world:cone-aabb-intersects-p renderer object)))))
 
 (defmethod on-game-event ((object door-mesh-shell) (event game-event:end-turn))
-  (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
+  ;;(misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
   nil)
 
 (defmethod on-game-event ((object door-mesh-shell) (event game-event:open-door-event))

@@ -59,6 +59,10 @@
 
 (defgeneric q-size (object))
 
+(defgeneric q-sort (object predicate))
+
+(defgeneric q-dbg-print (object))
+
 (defmethod q-pop ((object simple-queue))
   (with-accessors ((container container)) object
     (let ((peek (q-peek object)))
@@ -84,3 +88,15 @@
 
 (defmethod q-size ((object simple-queue))
   (length (container object)))
+
+(defmethod q-sort ((object simple-queue) predicate)
+  (with-accessors ((container container)) object
+    (setf container (stable-sort container predicate))))
+
+(defmethod q-dbg-print ((object simple-queue))
+  (misc:dbg "--queue--")
+  (loop
+     for i from 0
+     for a across (container object) do
+       (misc:dbg "~a ~a" i a))
+  (misc:dbg "----"))

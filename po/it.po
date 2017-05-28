@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dote 0.0.1\n"
 "Report-Msgid-Bugs-To: cage@katamail.com\n"
-"POT-Creation-Date: 2016-12-22 15:38+0100\n"
-"PO-Revision-Date: 2016-12-22 15:57+0100\n"
+"POT-Creation-Date: 2017-05-14 13:26+0200\n"
+"PO-Revision-Date: 2017-05-28 10:37+0200\n"
 "Last-Translator: cage <cage@katamail.com>\n"
 "Language-Team: Italian\n"
 "Language: it\n"
@@ -17,449 +17,443 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/character.lisp:370
-#, lisp-format
-msgid ""
-"~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~]~:[~;Trap~] "
-"~a ~a"
-msgstr ""
-"~:[~;Arma da taglio~]~:[~;Arma ad impatto~]~:[~;Arma da lancio~]~:[~;Arma da lancio~]~:[~;Fontana~]~:[~;Pozione~]~:[~;Elmo~]~:[~;Armatura~]~:[~;Anello~]~:[~;Scarpe~]~:[~;Trappola~] "
-"~a ~a"
+#: src/arrows.lisp:507
+msgid "fail"
+msgstr "fallito"
 
-#: src/character.lisp:388
-#, lisp-format
-msgid "~a strength"
-msgstr "~a forza"
+#: src/arrows.lisp:508
+msgid "too far"
+msgstr "lontano"
 
-#: src/character.lisp:391
-#, lisp-format
-msgid "~a stamina"
-msgstr "~a resistenza"
-
-#: src/character.lisp:393
-#, lisp-format
-msgid "~a dexterity"
-msgstr "~a abilita'"
-
-#: src/character.lisp:395
-#, lisp-format
-msgid "~a agility"
-msgstr "~a agilita'"
-
-#: src/character.lisp:397
-#, lisp-format
-msgid "~a smartness"
-msgstr "~a intelligenza"
-
-#: src/character.lisp:399
-#, lisp-format
-msgid "~a empaty"
-msgstr "~a empatia"
-
-#: src/character.lisp:401
-#, lisp-format
-msgid "~a weight"
-msgstr "~a peso"
-
-#: src/character.lisp:403
-#, lisp-format
-msgid "~a damage points"
-msgstr "~a punti danno"
-
-#: src/character.lisp:405
-#, lisp-format
-msgid "~a movement points"
-msgstr "~a punti movimento"
-
-#: src/character.lisp:407
-#, lisp-format
-msgid "~a magic points"
-msgstr "~a punti magici"
-
-#: src/character.lisp:409
-#, lisp-format
-msgid "~a dodge chance"
-msgstr "~a probabilita' di schivare"
-
-#: src/character.lisp:411
-#, lisp-format
-msgid "~a melee attack chance"
-msgstr "~a probabilita' negli attacchi corpo a corpo"
-
-#: src/character.lisp:413
-#, lisp-format
-msgid "~a range attack chance"
-msgstr "~a probabilita' attacchi a lungo raggio"
-
-#: src/character.lisp:415
-#, lisp-format
-msgid "~a melee attack damage"
-msgstr "~a danno negli attacchi corpo a corpo"
-
-#: src/character.lisp:417
-#, lisp-format
-msgid "~a range attack damage"
-msgstr "~a danno negli attacchi a distanza"
-
-#: src/character.lisp:419
-#, lisp-format
-msgid "~a edge weapons chance bonus"
-msgstr "~a bonus probabilita' attacchi con armi da taglio"
-
-#: src/character.lisp:421
-#, lisp-format
-msgid "~a edge weapons damage bonus"
-msgstr "~a bonus danno attacchi con armi da taglio"
-
-#: src/character.lisp:423
-#, lisp-format
-msgid "~a impact weapons chance bonus"
-msgstr "~a bonus probabilita' attacchi con armi ad imapatto"
-
-#: src/character.lisp:425
-#, lisp-format
-msgid "~a impact weapons damage bonus"
-msgstr "~a bonus danno attacchi con armi ad impatto"
-
-#: src/character.lisp:427
-#, lisp-format
-msgid "~a pole weapons chance bonus"
-msgstr "~a bonus probabilita' attacchi con lance"
-
-#: src/character.lisp:429
-#, lisp-format
-msgid "~a pole weapons damage bonus"
-msgstr "~a bonus danno attacchi con lance"
-
-#: src/character.lisp:431
-#, lisp-format
-msgid "~a unlock chance"
-msgstr "~a probabilita' scassinamento"
-
-#: src/character.lisp:433
-#, lisp-format
-msgid "~a deactivate traps chance"
-msgstr "~a probabilita' disattiva trappole"
-
-#: src/character.lisp:435
-#, lisp-format
-msgid "~a reply attack chance"
-msgstr "~a probabilita' contrattacco"
-
-#: src/character.lisp:437
-#, lisp-format
-msgid "~a ambush attack chance"
-msgstr "~a possibilita' attacco di sorpresa "
-
-#: src/character.lisp:439
-#, lisp-format
-msgid "~a spell chance"
-msgstr "~a probabilita' incantesimo"
-
-#: src/character.lisp:441
-#, lisp-format
-msgid "~a attack spell chance"
-msgstr "~a probabilita' incantesimo d'attacco"
-
-#: src/character.lisp:443
-#, lisp-format
-msgid "~a recover DMG"
-msgstr "~a recupero DMG"
-
-#: src/character.lisp:445
-#, lisp-format
-msgid "heals poison condition ~a"
-msgstr "cura avvelenamento ~a"
-
-#: src/character.lisp:447
-#, lisp-format
-msgid "heals berserk condition ~a"
-msgstr "cura berserk ~a"
-
-#: src/character.lisp:449
-#, lisp-format
-msgid "heals faint condition ~a"
-msgstr "cura svenimento ~a"
-
-#: src/character.lisp:451
-#, lisp-format
-msgid "heals terror condition ~a"
-msgstr "cura terrore ~a"
-
-#: src/character.lisp:453
-#, lisp-format
-msgid "makes immune from poison (~a)"
-msgstr "immune al veleno (~a)"
-
-#: src/character.lisp:455
-#, lisp-format
-msgid "makes immune from terror (~a)"
-msgstr "immune al terrore (~a)"
-
-#: src/character.lisp:457
-#, lisp-format
-msgid "makes immune from berserk (~a)"
-msgstr "immune  berserk (~a)"
-
-#: src/character.lisp:459
-#, lisp-format
-msgid "makes immune from faint (~a)"
-msgstr "immune allo svenimento (~a)"
-
-#: src/character.lisp:461
-#, lisp-format
-msgid "~a cause faint condition"
-msgstr "~a causa svenimento"
-
-#: src/character.lisp:463
-#, lisp-format
-msgid "~a cause poison condition"
-msgstr "~a causa avvelenamento"
-
-#: src/character.lisp:465
-#, lisp-format
-msgid "~a cause terror condition"
-msgstr "~a causa terrore"
-
-#: src/character.lisp:467
-#, lisp-format
-msgid "~a cause berserk condition"
-msgstr "~a causa berserk"
-
-#: src/character.lisp:469
-#, lisp-format
-msgid "launchs ~a"
-msgstr "lancia ~a"
-
-#: src/character.lisp:568
-#, lisp-format
-msgid ""
-"~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~]~:[~;Trap~] "
-"~a ~a~a"
-msgstr ""
-"~:[~;Arma da taglio~]~:[~;Arma ad impatto~]~:[~;Arma da lancio~]~:[~;Arma da lancio~]~:[~;Fontana~]~:[~;Pozione~]~:[~;Elmo~]~:[~;Armatura~]~:[~;Anello~]~:[~;Scarpe~]~:[~;Trappola~] "
-"~a ~a~a"
-
-#: src/character.lisp:1014
-msgid "warrior"
-msgstr "guerriero"
-
-#: src/character.lisp:1016
-msgid "archer"
-msgstr "arciere"
-
-#: src/character.lisp:1018
-msgid "wizard"
-msgstr "mago"
-
-#: src/character.lisp:1020
-msgid "healer"
-msgstr "guaritore"
-
-#: src/character.lisp:1022
-msgid "ranger"
-msgstr "ranger"
-
-#: src/character.lisp:1028
-msgid "male"
-msgstr "maschile"
-
-#: src/character.lisp:1030
-msgid "female"
-msgstr "femminile"
-
-#: src/trap-mesh-shell.lisp:67
-msgid "Trap deactivated!"
-msgstr "Trappola disinnescata!"
-
-#: src/trap-mesh-shell.lisp:69
-msgid "Ok"
-msgstr "Ok"
-
-#: src/world.lisp:847 src/md2-mesh.lisp:345 src/gui/widget.lisp:3675
-msgid "OK"
-msgstr "OK"
-
-#: src/world.lisp:854
-msgid "Message"
-msgstr "Messaggio"
-
-#: src/md2-mesh.lisp:341
-#, lisp-format
-msgid "Trap found! deactivate (chance ~a)?"
-msgstr "Attivata una trappola! Provare a disinnescarla (possibilita' ~a)"
-
-#: src/md2-mesh.lisp:347
-msgid "No"
-msgstr "No"
-
-#: src/md2-mesh.lisp:564 src/md2-mesh.lisp:589 src/md2-mesh.lisp:804
-msgid "Move to"
-msgstr "Spostati"
-
-#: src/md2-mesh.lisp:744
-#, lisp-format
-msgid "You can cast ~a!"
-msgstr "Adesso puoi lanciare ~a!"
-
-#: src/md2-mesh.lisp:801
-#, lisp-format
-msgid "~a broken"
-msgstr "~a rotto/a"
-
-#: src/md2-mesh.lisp:844
-msgid "miss"
-msgstr "mancato"
-
-#: src/random-fountain.lisp:160
-#, lisp-format
-msgid "~a exhausted"
-msgstr "~a esaurito/a"
-
-#: src/random-armor.lisp:110 src/random-elm.lisp:103 src/random-ring.lisp:110
-#: src/random-shield.lisp:110 src/random-shoes.lisp:77
-#: src/random-weapon.lisp:118
-#, lisp-format
-msgid " (object level ~a)."
-msgstr " (livello dell'oggetto ~a)."
-
-#: src/random-potion.lisp:104
-msgid " exausted."
-msgstr " esaurito/a."
-
-#: src/random-weapon.lisp:235
-msgid "Unknown weapon type"
-msgstr "Tipo di arma sconosciuta"
+#: src/basic-interaction-parameters.lisp:252
+msgid "Interation: No points for decay, using 1000."
+msgstr "Interazione: non sono stati definti punti per il deperimento, uso 1000."
 
 #: src/basic-interaction-parameters.lisp:254
-msgid "Interation: No points for decay, using 1000."
-msgstr ""
-"Interazione: non sosono stati definti punti per il deperimento, uso 1000."
+msgid "Interation: No decay condition specified, using :turns."
+msgstr "Interazione: non sosono state definte condizioni per il deperimento, uso :turns."
 
 #: src/basic-interaction-parameters.lisp:256
-msgid "Interation: No decay condition specified, using :turns."
-msgstr ""
-"Interazione: non sosono state definte condizioni per il decadimento, uso :"
-"turns."
-
-#: src/basic-interaction-parameters.lisp:258
 msgid "Interation: No message."
 msgstr "Interazione: non e' stato definito il messaggio."
 
-#: src/basic-interaction-parameters.lisp:260
+#: src/basic-interaction-parameters.lisp:258
 #, lisp-format
 msgid "Invalid decay condition ~a, expected ~a"
 msgstr "Condizione per il decadimento non valida ~a, atteso ~a"
 
-#: src/basic-interaction-parameters.lisp:299
+#: src/basic-interaction-parameters.lisp:297
 #, lisp-format
 msgid "(~d turns)"
 msgstr "(~d turni)"
 
-#: src/basic-interaction-parameters.lisp:310
+#: src/basic-interaction-parameters.lisp:308
 msgid "Interation: No activation trigger specified for effect, using \":use.\""
 msgstr "Interazione: nessun innesco definito per l'effetto, uso :use."
 
-#: src/basic-interaction-parameters.lisp:312
+#: src/basic-interaction-parameters.lisp:310
 msgid "Interation: No modifier specified for effect, using 0."
 msgstr "Interazione: nessun modificatore specificato per l'effetto, uso 0."
 
-#: src/basic-interaction-parameters.lisp:314
+#: src/basic-interaction-parameters.lisp:312
 msgid "Interation: No duration specified for effect, using :unlimited."
 msgstr "Interazione: nessuna durata specificata per l'effetto, uso :unlimited."
 
-#: src/basic-interaction-parameters.lisp:318
-#: src/basic-interaction-parameters.lisp:414
-#: src/basic-interaction-parameters.lisp:511
-#: src/basic-interaction-parameters.lisp:570
-#: src/basic-interaction-parameters.lisp:592
+#: src/basic-interaction-parameters.lisp:316
+#: src/basic-interaction-parameters.lisp:410
+#: src/basic-interaction-parameters.lisp:505
+#: src/basic-interaction-parameters.lisp:564
+#: src/basic-interaction-parameters.lisp:585
 #, lisp-format
 msgid "Invalid trigger ~s, expected ~s"
 msgstr "Condizione di innesco non valido ~s, atteso ~s"
 
-#: src/basic-interaction-parameters.lisp:390
+#: src/basic-interaction-parameters.lisp:387
 #, lisp-format
 msgid "chance: ~,1f% target ~a"
 msgstr "probabilita': ~,1f% obiettivo ~a"
 
-#: src/basic-interaction-parameters.lisp:393
+#: src/basic-interaction-parameters.lisp:390
 #, lisp-format
 msgid "~d turns "
 msgstr "~d turni "
 
-#: src/basic-interaction-parameters.lisp:404
-#: src/basic-interaction-parameters.lisp:562
+#: src/basic-interaction-parameters.lisp:401
+#: src/basic-interaction-parameters.lisp:556
 msgid ""
 "Interation: No activation trigger specified for healing effect, using \":use."
 "\""
 msgstr ""
 "interazione: nessun innesco specificato per effetti sulla salute, uso :use."
 
-#: src/basic-interaction-parameters.lisp:406
-#: src/basic-interaction-parameters.lisp:505
-#: src/basic-interaction-parameters.lisp:564
+#: src/basic-interaction-parameters.lisp:403
+#: src/basic-interaction-parameters.lisp:500
+#: src/basic-interaction-parameters.lisp:558
 msgid "Interation: No chance specified for healing effect, using 0"
 msgstr ""
 "Interazione: nessuna probabilita' specificata per effetti sulla salute, uso "
 "0."
 
-#: src/basic-interaction-parameters.lisp:408
+#: src/basic-interaction-parameters.lisp:405
 msgid "Interation: No duration specified for effect, using 1000000."
 msgstr "Interazione: nessuna durata specificata fer l'effetto, uso 1000000."
 
-#: src/basic-interaction-parameters.lisp:410
-#: src/basic-interaction-parameters.lisp:507
-#: src/basic-interaction-parameters.lisp:566
-#: src/basic-interaction-parameters.lisp:588
+#: src/basic-interaction-parameters.lisp:407
+#: src/basic-interaction-parameters.lisp:502
+#: src/basic-interaction-parameters.lisp:560
+#: src/basic-interaction-parameters.lisp:582
 msgid "Interation: No target specified for effect, using self."
 msgstr "Interazione: nessun obiettivo specificato per l'effetto uso :self."
 
-#: src/basic-interaction-parameters.lisp:486
+#: src/basic-interaction-parameters.lisp:481
 #, lisp-format
 msgid "~a chance: ~,1f target: ~a"
 msgstr "~a probabilita': ~,1f% obiettivo ~a"
 
-#: src/basic-interaction-parameters.lisp:489
+#: src/basic-interaction-parameters.lisp:484
 #, lisp-format
 msgid "(~,1f damage per turn)"
 msgstr "(~,1f danno per turno)"
 
-#: src/basic-interaction-parameters.lisp:501
+#: src/basic-interaction-parameters.lisp:496
 msgid "Interation: No points specified for poison effect, using \"-1\"."
 msgstr ""
 "Interazione: punti non specificati per gli effetti di avvelenamento, uso 1."
 
-#: src/basic-interaction-parameters.lisp:503
+#: src/basic-interaction-parameters.lisp:498
 msgid ""
 "Interation: No activation trigger specified for poison effect, using \":use."
 "\""
 msgstr "Interazione: nessun innesco specificato per l'avvelenamento, uso :use."
 
-#: src/basic-interaction-parameters.lisp:516
-#: src/basic-interaction-parameters.lisp:568
+#: src/basic-interaction-parameters.lisp:509
+#: src/basic-interaction-parameters.lisp:562
 #, lisp-format
 msgid "Invalid points ~a, expected a number"
 msgstr "Punti non validi ~a, era atteso un numero"
 
-#: src/basic-interaction-parameters.lisp:548
+#: src/basic-interaction-parameters.lisp:541
 #, lisp-format
-msgid "heal ~,1f DMG, target ~a"
-msgstr "cura ~,1f DMG, obiettivo ~a"
+msgid "heal ~,1f DMG, target ~a, chance: ~,1f%"
+msgstr "cura ~,1f DMG, obiettivo ~a, probabilita': ~,1f%"
 
-#: src/basic-interaction-parameters.lisp:560
+#: src/basic-interaction-parameters.lisp:554
 msgid "Interation: No points specified for healing effect, using \"1\"."
 msgstr ""
 "Interazione: punti non specificati per gli effetti sulla salute, uso 1."
 
-#: src/basic-interaction-parameters.lisp:584
+#: src/basic-interaction-parameters.lisp:578
 msgid ""
 "Interation: No activation trigger specified for magic effect, using \":use.\""
 msgstr ""
 "Interazione: nessun innesco specificato per gli effetti magici, uso :use."
 
-#: src/basic-interaction-parameters.lisp:586
+#: src/basic-interaction-parameters.lisp:580
 msgid "Interation: No spell for magic effect, using \":heal-1.\""
 msgstr "Interazione: nessun incantesimo specificato, uso \":heal-1\""
+
+#: src/battle-utils.lisp:605
+msgid "You have not got a weapon"
+msgstr "Non possiedi un arma"
+
+#: src/battle-utils.lisp:608
+msgid "You have not loaded a spell"
+msgstr "Non hai un incantesimo caricato"
+
+#: src/battle-utils.lisp:611
+msgid "Out of range"
+msgstr "Fuori raggio"
+
+#: src/character.lisp:87
+#, lisp-format
+msgid ""
+"~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~]~:[~;Trap~] "
+"~a ~a~a"
+msgstr ""
+"~:[~;Arma da taglio~]~:[~;Arma ad impatto~]~:[~;Arma da lancio~]~:[~;Arma da lancio~]~:[~;Fontana~]~:[~;Pozione~]~:[~;Elmo~]~:[~;Armatura~]~:[~;Anello~]~:[~;Scarpe~]~:[~;Trappola~] "
+"~a ~a~a"
+
+#: src/character.lisp:563
+msgid "warrior"
+msgstr "guerriero"
+
+#: src/character.lisp:565
+msgid "archer"
+msgstr "arciere"
+
+#: src/character.lisp:567
+msgid "wizard"
+msgstr "mago"
+
+#: src/character.lisp:569
+msgid "healer"
+msgstr "guaritore"
+
+#: src/character.lisp:571
+msgid "ranger"
+msgstr "ranger"
+
+#: src/character.lisp:577
+msgid "male"
+msgstr "maschile"
+
+#: src/character.lisp:579
+msgid "female"
+msgstr "femminile"
+
+#: src/container-mesh-shell.lisp:54 src/container-mesh-shell.lisp:66
+msgid "Container opened!"
+msgstr "Contenitore aperto!"
+
+#: src/container-mesh-shell.lisp:56 src/container-mesh-shell.lisp:68
+#: src/container-mesh-shell.lisp:79 src/trap-mesh-shell.lisp:73
+msgid "Ok"
+msgstr "Ok"
+
+#: src/container-mesh-shell.lisp:77
+msgid "No fitting key found"
+msgstr "Nessuna chiave adatta e' stata trovata"
+
+#: src/interactive-entity.lisp:369
+#, lisp-format
+msgid "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~]~:[~;Trap~] "
+msgstr "~:[~;Arma da taglio~]~:[~;Arma ad impatto~]~:[~;Arma da lancio~]~:[~;Arma da lancio~]~:[~;Fontana~]~:[~;Pozione~]~:[~;Elmo~]~:[~;Armatura~]~:[~;Anello~]~:[~;Scarpe~]~:[~;Trappola~] "
+
+#: src/interactive-entity.lisp:385
+#, lisp-format
+msgid "~a strength"
+msgstr "~a forza"
+
+#: src/interactive-entity.lisp:388
+#, lisp-format
+msgid "~a stamina"
+msgstr "~a resistenza"
+
+#: src/interactive-entity.lisp:390
+#, lisp-format
+msgid "~a dexterity"
+msgstr "~a abilita'"
+
+#: src/interactive-entity.lisp:392
+#, lisp-format
+msgid "~a agility"
+msgstr "~a agilita'"
+
+#: src/interactive-entity.lisp:394
+#, lisp-format
+msgid "~a smartness"
+msgstr "~a intelligenza"
+
+#: src/interactive-entity.lisp:396
+#, lisp-format
+msgid "~a empaty"
+msgstr "~a empatia"
+
+#: src/interactive-entity.lisp:398
+#, lisp-format
+msgid "~a weight"
+msgstr "~a peso"
+
+#: src/interactive-entity.lisp:400
+#, lisp-format
+msgid "~a damage points"
+msgstr "~a punti danno"
+
+#: src/interactive-entity.lisp:402
+#, lisp-format
+msgid "~a movement points"
+msgstr "~a punti movimento"
+
+#: src/interactive-entity.lisp:404
+#, lisp-format
+msgid "~a magic points"
+msgstr "~a punti magici"
+
+#: src/interactive-entity.lisp:406
+#, lisp-format
+msgid "~a dodge chance"
+msgstr "~a probabilita' di schivare"
+
+#: src/interactive-entity.lisp:408
+#, lisp-format
+msgid "~a melee attack chance"
+msgstr "~a probabilita' negli attacchi corpo a corpo"
+
+#: src/interactive-entity.lisp:410
+#, lisp-format
+msgid "~a range attack chance"
+msgstr "~a probabilita' attacchi a lungo raggio"
+
+#: src/interactive-entity.lisp:412
+#, lisp-format
+msgid "~a melee attack damage"
+msgstr "~a danno negli attacchi corpo a corpo"
+
+#: src/interactive-entity.lisp:414
+#, lisp-format
+msgid "~a range attack damage"
+msgstr "~a danno negli attacchi a distanza"
+
+#: src/interactive-entity.lisp:416
+#, lisp-format
+msgid "~a edge weapons chance bonus"
+msgstr "~a bonus probabilita' attacchi con armi da taglio"
+
+#: src/interactive-entity.lisp:418
+#, lisp-format
+msgid "~a edge weapons damage bonus"
+msgstr "~a bonus danno attacchi con armi da taglio"
+
+#: src/interactive-entity.lisp:420
+#, lisp-format
+msgid "~a impact weapons chance bonus"
+msgstr "~a bonus probabilita' attacchi con armi ad imapatto"
+
+#: src/interactive-entity.lisp:422
+#, lisp-format
+msgid "~a impact weapons damage bonus"
+msgstr "~a bonus danno attacchi con armi ad impatto"
+
+#: src/interactive-entity.lisp:424
+#, lisp-format
+msgid "~a pole weapons chance bonus"
+msgstr "~a bonus probabilita' attacchi con lance"
+
+#: src/interactive-entity.lisp:426
+#, lisp-format
+msgid "~a pole weapons damage bonus"
+msgstr "~a bonus danno attacchi con lance"
+
+#: src/interactive-entity.lisp:428
+#, lisp-format
+msgid "~a unlock chance"
+msgstr "~a probabilita' scassinamento"
+
+#: src/interactive-entity.lisp:430
+#, lisp-format
+msgid "~a deactivate traps chance"
+msgstr "~a probabilita' disattiva trappole"
+
+#: src/interactive-entity.lisp:432
+#, lisp-format
+msgid "~a reply attack chance"
+msgstr "~a probabilita' contrattacco"
+
+#: src/interactive-entity.lisp:434
+#, lisp-format
+msgid "~a ambush attack chance"
+msgstr "~a possibilita' attacco di sorpresa "
+
+#: src/interactive-entity.lisp:436
+#, lisp-format
+msgid "~a spell chance"
+msgstr "~a probabilita' incantesimo"
+
+#: src/interactive-entity.lisp:438
+#, lisp-format
+msgid "~a attack spell chance"
+msgstr "~a probabilita' incantesimo d'attacco"
+
+#: src/interactive-entity.lisp:440
+#, lisp-format
+msgid "~a recover DMG"
+msgstr "~a recupero DMG"
+
+#: src/interactive-entity.lisp:442
+#, lisp-format
+msgid "heals poison condition ~a"
+msgstr "cura avvelenamento ~a"
+
+#: src/interactive-entity.lisp:444
+#, lisp-format
+msgid "heals berserk condition ~a"
+msgstr "cura berserk ~a"
+
+#: src/interactive-entity.lisp:446
+#, lisp-format
+msgid "heals faint condition ~a"
+msgstr "cura svenimento ~a"
+
+#: src/interactive-entity.lisp:448
+#, lisp-format
+msgid "heals terror condition ~a"
+msgstr "cura terrore ~a"
+
+#: src/interactive-entity.lisp:450
+#, lisp-format
+msgid "makes immune from poison (~a)"
+msgstr "immune al veleno (~a)"
+
+#: src/interactive-entity.lisp:452
+#, lisp-format
+msgid "makes immune from terror (~a)"
+msgstr "immune al terrore (~a)"
+
+#: src/interactive-entity.lisp:454
+#, lisp-format
+msgid "makes immune from berserk (~a)"
+msgstr "immune  berserk (~a)"
+
+#: src/interactive-entity.lisp:456
+#, lisp-format
+msgid "makes immune from faint (~a)"
+msgstr "immune allo svenimento (~a)"
+
+#: src/interactive-entity.lisp:458
+#, lisp-format
+msgid "~a cause faint condition"
+msgstr "~a causa svenimento"
+
+#: src/interactive-entity.lisp:460
+#, lisp-format
+msgid "~a cause poison condition"
+msgstr "~a causa avvelenamento"
+
+#: src/interactive-entity.lisp:462
+#, lisp-format
+msgid "~a cause terror condition"
+msgstr "~a causa terrore"
+
+#: src/interactive-entity.lisp:464
+#, lisp-format
+msgid "~a cause berserk condition"
+msgstr "~a causa berserk"
+
+#: src/interactive-entity.lisp:466
+#, lisp-format
+msgid "launchs ~a"
+msgstr "lancia ~a"
+
+#: src/md2-mesh.lisp:471
+#, lisp-format
+msgid "Trap found! deactivate (chance ~a)?"
+msgstr "Attivata una trappola! Provare a disinnescarla (possibilita' ~a)"
+
+#: src/md2-mesh.lisp:475 src/world.lisp:865 src/gui/widget.lisp:3732
+msgid "OK"
+msgstr "OK"
+
+#: src/md2-mesh.lisp:477
+msgid "No"
+msgstr "No"
+
+#: src/md2-mesh.lisp:740 src/md2-mesh.lisp:765 src/md2-mesh.lisp:1021
+msgid "Move to"
+msgstr "Spostati"
+
+#: src/md2-mesh.lisp:926
+#, lisp-format
+msgid "You can cast ~a!"
+msgstr "Adesso puoi lanciare ~a!"
+
+#: src/md2-mesh.lisp:1018
+#, lisp-format
+msgid "~a broken"
+msgstr "~a rotto/a"
+
+#: src/md2-mesh.lisp:1075
+msgid "miss"
+msgstr "mancato"
 
 #: src/player-messages-text.lisp:35
 msgid "I am fully recovered from terror now."
@@ -493,6 +487,26 @@ msgstr "Non sono piu' immune al terrore."
 msgid "I am immune to poisoning no more"
 msgstr "Non sono piu' immune all'avvelenamento."
 
+#: src/random-armor.lisp:110 src/random-elm.lisp:103 src/random-ring.lisp:110
+#: src/random-shield.lisp:110 src/random-shoes.lisp:77
+#: src/random-weapon.lisp:118
+#, lisp-format
+msgid " (object level ~a)."
+msgstr " (livello dell'oggetto ~a)."
+
+#: src/random-fountain.lisp:160
+#, lisp-format
+msgid "~a exhausted"
+msgstr "~a esaurito/a"
+
+#: src/random-potion.lisp:104
+msgid " exausted."
+msgstr " esaurito/a."
+
+#: src/random-weapon.lisp:235
+msgid "Unknown weapon type"
+msgstr "Tipo di arma sconosciuta"
+
 #: src/spell.lisp:128
 #, lisp-format
 msgid "~a~arange: ~a effective range: ~a cost: ~a~a"
@@ -503,207 +517,207 @@ msgstr "~a~agittata: ~a raggio efficace: ~a costo: ~a~a"
 msgid "element: ~a~adamage: ~a~a"
 msgstr "elemento: ~a~adanno: ~a~a"
 
-#: src/spell.lisp:310
+#: src/spell.lisp:312
 msgid "No description available"
 msgstr "Nessuna descrizione disponibile"
 
-#: src/arrows.lisp:448
-msgid "fail"
-msgstr "fallito"
+#: src/trap-mesh-shell.lisp:71
+msgid "Trap deactivated!"
+msgstr "Trappola disinnescata!"
 
-#: src/arrows.lisp:449
-msgid "too far"
-msgstr "lontano"
+#: src/world.lisp:872
+msgid "Message"
+msgstr "Messaggio"
 
-#: src/gui/widget.lisp:1756
+#: src/gui/widget.lisp:1768
 msgid "Choose file"
 msgstr "Scegli un file"
 
-#: src/gui/widget.lisp:2642
+#: src/gui/widget.lisp:2699
 msgid "Class"
 msgstr "Classe"
 
-#: src/gui/widget.lisp:2655
+#: src/gui/widget.lisp:2712
 msgid "Warrior "
 msgstr "Guerriero "
 
-#: src/gui/widget.lisp:2666
+#: src/gui/widget.lisp:2723
 msgid "Wizard "
 msgstr "Mago "
 
-#: src/gui/widget.lisp:2677
+#: src/gui/widget.lisp:2734
 msgid "Healer "
 msgstr "Guaritore "
 
-#: src/gui/widget.lisp:2688
+#: src/gui/widget.lisp:2745
 msgid "Archer "
 msgstr "Arciere "
 
-#: src/gui/widget.lisp:2699
+#: src/gui/widget.lisp:2756
 msgid "Ranger "
 msgstr "Ranger "
 
-#: src/gui/widget.lisp:2706
+#: src/gui/widget.lisp:2763
 msgid "Gender"
 msgstr "Genere"
 
-#: src/gui/widget.lisp:2719
+#: src/gui/widget.lisp:2776
 msgid "Male "
 msgstr "Maschile "
 
-#: src/gui/widget.lisp:2730
+#: src/gui/widget.lisp:2787
 msgid "Female "
 msgstr "Femminile "
 
-#: src/gui/widget.lisp:2742
+#: src/gui/widget.lisp:2799
 msgid "Generate new"
 msgstr "Genera nuovo"
 
-#: src/gui/widget.lisp:2753
+#: src/gui/widget.lisp:2810
 msgid "Save"
 msgstr "Salva"
 
-#: src/gui/widget.lisp:2764
+#: src/gui/widget.lisp:2821
 msgid "Load"
 msgstr "Carica"
 
-#: src/gui/widget.lisp:2775
+#: src/gui/widget.lisp:2832
 msgid "Accept"
 msgstr "Accetta"
 
-#: src/gui/widget.lisp:2794 src/gui/player-report-window.lisp:102
+#: src/gui/widget.lisp:2851 src/gui/player-report-window.lisp:102
 msgid "Damage points: "
 msgstr "Punti danno: "
 
-#: src/gui/widget.lisp:2816 src/gui/player-report-window.lisp:112
+#: src/gui/widget.lisp:2873 src/gui/player-report-window.lisp:112
 msgid "Movement points: "
 msgstr "Punti movimento: "
 
-#: src/gui/widget.lisp:2838 src/gui/player-report-window.lisp:122
+#: src/gui/widget.lisp:2895 src/gui/player-report-window.lisp:122
 msgid "Magic points: "
 msgstr "Punti magia: "
 
-#: src/gui/widget.lisp:2860 src/gui/player-report-window.lisp:132
+#: src/gui/widget.lisp:2917 src/gui/player-report-window.lisp:132
 msgid "Dodge chance: "
 msgstr "Probabilita' di schivare: "
 
-#: src/gui/widget.lisp:2882 src/gui/player-report-window.lisp:142
+#: src/gui/widget.lisp:2939 src/gui/player-report-window.lisp:142
 msgid "Short range attack chance: "
 msgstr "Probabilita' attacchi a corto raggio: "
 
-#: src/gui/widget.lisp:2904 src/gui/player-report-window.lisp:152
+#: src/gui/widget.lisp:2961 src/gui/player-report-window.lisp:152
 msgid "Long range attack chance: "
 msgstr "Probabilita' attacchi a lungo raggio: "
 
-#: src/gui/widget.lisp:2926 src/gui/player-report-window.lisp:162
+#: src/gui/widget.lisp:2983 src/gui/player-report-window.lisp:162
 msgid "Short Range attack damage: "
 msgstr "Danno con attacchi a corto raggio: "
 
-#: src/gui/widget.lisp:2948 src/gui/player-report-window.lisp:172
+#: src/gui/widget.lisp:3005 src/gui/player-report-window.lisp:172
 msgid "Long Range attack damage: "
 msgstr "Danni con attacchi a lungo raggio:"
 
-#: src/gui/widget.lisp:2970 src/gui/player-report-window.lisp:182
+#: src/gui/widget.lisp:3027 src/gui/player-report-window.lisp:182
 msgid "Edge weapon chance bonus: "
 msgstr "Bonus probabilita' attacchi armi da taglio: "
 
-#: src/gui/widget.lisp:2992 src/gui/player-report-window.lisp:192
+#: src/gui/widget.lisp:3049 src/gui/player-report-window.lisp:192
 msgid "Edge weapon damage bonus: "
 msgstr "Bonus danni armi da taglio: "
 
-#: src/gui/widget.lisp:3014 src/gui/player-report-window.lisp:202
+#: src/gui/widget.lisp:3071 src/gui/player-report-window.lisp:202
 msgid "Impact weapon chance bonus: "
 msgstr "Bonus probabilita' attacchi armi ad impatto: "
 
-#: src/gui/widget.lisp:3036 src/gui/player-report-window.lisp:212
+#: src/gui/widget.lisp:3093 src/gui/player-report-window.lisp:212
 msgid "Impact weapon damage bonus: "
 msgstr "Bonus attacchi armi ad impatto: "
 
-#: src/gui/widget.lisp:3058 src/gui/player-report-window.lisp:222
+#: src/gui/widget.lisp:3115 src/gui/player-report-window.lisp:222
 msgid "Pole weapon chance bonus: "
 msgstr "Bonus probabilita' attacchi con lance: "
 
-#: src/gui/widget.lisp:3080 src/gui/player-report-window.lisp:232
+#: src/gui/widget.lisp:3137 src/gui/player-report-window.lisp:232
 msgid "Pole weapon damage bonus: "
 msgstr "Bonus danni attacchi con lance: "
 
-#: src/gui/widget.lisp:3102 src/gui/player-report-window.lisp:242
+#: src/gui/widget.lisp:3159 src/gui/player-report-window.lisp:242
 msgid "Unlock chance: "
 msgstr "Probabilita' scassinamento serrature: "
 
-#: src/gui/widget.lisp:3124 src/gui/player-report-window.lisp:252
+#: src/gui/widget.lisp:3181 src/gui/player-report-window.lisp:252
 msgid "Deactivate trap chance: "
 msgstr "Probabilita' disattiva trappole: "
 
-#: src/gui/widget.lisp:3146 src/gui/player-report-window.lisp:262
+#: src/gui/widget.lisp:3203 src/gui/player-report-window.lisp:262
 msgid "Reply to attack chance: "
 msgstr "Probabilita contrattacco: "
 
-#: src/gui/widget.lisp:3168 src/gui/player-report-window.lisp:272
+#: src/gui/widget.lisp:3225 src/gui/player-report-window.lisp:272
 msgid "Ambush attack chance: "
 msgstr "Probabilita' attacco di sorpresa: "
 
-#: src/gui/widget.lisp:3190 src/gui/player-report-window.lisp:282
+#: src/gui/widget.lisp:3247 src/gui/player-report-window.lisp:282
 msgid "Spell chance: "
 msgstr "Probabilita' incantesimo: "
 
-#: src/gui/widget.lisp:3212 src/gui/player-report-window.lisp:292
+#: src/gui/widget.lisp:3269 src/gui/player-report-window.lisp:292
 msgid "Attack spell chance: "
 msgstr "Probabilita incantesimo d'attacco: "
 
-#: src/gui/widget.lisp:3234 src/gui/player-report-window.lisp:302
+#: src/gui/widget.lisp:3291 src/gui/player-report-window.lisp:302
 msgid "Level: "
 msgstr "Livello: "
 
-#: src/gui/widget.lisp:3244 src/gui/player-report-window.lisp:312
+#: src/gui/widget.lisp:3301 src/gui/player-report-window.lisp:312
 msgid "Experience points: "
 msgstr "Punti esperienza: "
 
-#: src/gui/widget.lisp:3256
+#: src/gui/widget.lisp:3313
 msgid "Name"
 msgstr "Nome"
 
-#: src/gui/widget.lisp:3268
+#: src/gui/widget.lisp:3325
 msgid "Last name"
 msgstr "Cognome"
 
-#: src/gui/widget.lisp:3277 src/gui/player-report-window.lisp:334
+#: src/gui/widget.lisp:3334 src/gui/player-report-window.lisp:334
 msgid "STR: "
 msgstr "STR: "
 
-#: src/gui/widget.lisp:3287 src/gui/player-report-window.lisp:344
+#: src/gui/widget.lisp:3344 src/gui/player-report-window.lisp:344
 msgid "ST:  "
 msgstr "ST:  "
 
-#: src/gui/widget.lisp:3297 src/gui/player-report-window.lisp:354
+#: src/gui/widget.lisp:3354 src/gui/player-report-window.lisp:354
 msgid "DX:  "
 msgstr "DX:  "
 
-#: src/gui/widget.lisp:3307 src/gui/player-report-window.lisp:364
+#: src/gui/widget.lisp:3364 src/gui/player-report-window.lisp:364
 msgid "AG:  "
 msgstr "AG:  "
 
-#: src/gui/widget.lisp:3317 src/gui/player-report-window.lisp:374
+#: src/gui/widget.lisp:3374 src/gui/player-report-window.lisp:374
 msgid "SM:  "
 msgstr "SM:  "
 
-#: src/gui/widget.lisp:3327 src/gui/player-report-window.lisp:384
+#: src/gui/widget.lisp:3384 src/gui/player-report-window.lisp:384
 msgid "EM:  "
 msgstr "EM:  "
 
-#: src/gui/widget.lisp:3337 src/gui/player-report-window.lisp:394
+#: src/gui/widget.lisp:3394 src/gui/player-report-window.lisp:394
 msgid "WG:  "
 msgstr "WG:  "
 
-#: src/gui/widget.lisp:3359
+#: src/gui/widget.lisp:3416
 msgid "Next"
 msgstr "Successivo"
 
-#: src/gui/widget.lisp:3672
+#: src/gui/widget.lisp:3729
 msgid "Mesh not specified"
 msgstr "Modello non indicato"
 
-#: src/gui/widget.lisp:3990
+#: src/gui/widget.lisp:4048
 msgid "Generate character"
 msgstr "Genera personaggio"
 
@@ -761,12 +775,16 @@ msgid "Spells"
 msgstr "Incantesimi"
 
 #: data/spells/vampire-1.lisp:6
-msgid "Steals 3 dmg (maximum)."
-msgstr "Ruba DMG (al massimo 3)"
+msgid "Steals maximum 3 dmg (to inflict damage a melee weapon must be worn)."
+msgstr ""
+"Ruba un massimo di 3 DMG (per infliggere danno deve essere indossata un'arma "
+"a corto raggio)"
 
 #: data/spells/vampire-2.lisp:6
-msgid "Steals 10 dmg (maximum)."
-msgstr "Ruba DMG (al massimo 10)"
+msgid "Steals maximum 10 dmg (to inflict damage a melee weapon must be worn)."
+msgstr ""
+"Ruba un massimo di 10 DMG (per infliggere danno deve essere indossata "
+"un'arma a corto raggio)"
 
 #: data/spells/teleport-1.lisp:6
 msgid "Teleport in a random location with maximum radius of ~6 tiles."

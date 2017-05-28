@@ -16,12 +16,16 @@
 
 (in-package :arrows)
 
-(alexandria:define-constant +arrow-speed+         0.0005     :test #'=)
+(alexandria:define-constant +arrow-speed+        0.0005      :test #'=)
 
 (alexandria:define-constant +arrow-model-name+   "model.obj" :test #'string=)
 
 (defclass arrow ()
-  ((trajectory
+  ((type-current-action-scheduler
+    :initform 'action-scheduler:attack-long-range-action
+    :initarg  :type-current-action-scheduler
+    :accessor type-current-action-scheduler)
+   (trajectory
     :initform nil
     :initarg  :trajectory
     :accessor trajectory)
@@ -161,9 +165,10 @@
 		  (d<= (elt pos 1)
 		       (approx-terrain-height@pos state
 						  (elt pos 0)
-						  (elt pos 2))))
-	      (game-event:with-send-action-terminated
-		;; remove from world
+						  (elt pos 2)))) ;; gone out of the map
+	      (game-event:with-send-action-and-idle-terminated-check-type
+                  (world (type-current-action-scheduler object))
+                ;; remove from world
 		(remove-entity-by-id world (id object))
 		(setf (hitted object) nil)
 		(setf (camera:followed-entity camera) nil)
@@ -172,7 +177,9 @@
 		(if (and intersected-entity
 			 (not (= (id intersected-entity)
 				 (id launcher-entity))))
-		    (game-event:with-send-action-terminated
+                    (game-event:with-send-action-terminated-check-type
+                        (world (type-current-action-scheduler object))
+                      ;; note the player receiving the attack will unset idle plan
 		      ;; send attack event
 		      (funcall attack-event-fn launcher-entity intersected-entity)
 		      ;; remove from world
@@ -193,7 +200,8 @@
     :accessor aabb-size)))
 
 (defmethod initialize-instance :after ((object arrow-attack-spell-mesh) &key &allow-other-keys)
-  (setf (use-blending-p object) t))
+  (setf (use-blending-p object) t)
+  (setf (type-current-action-scheduler object) 'action-scheduler:attack-launch-spell-action))
 
 (defmethod aabb ((object arrow-attack-spell-mesh))
   (with-slots (aabb bounding-sphere) object
@@ -218,9 +226,9 @@
   (do-children-mesh (c object)
     (render c renderer)))
 
-(defmethod removeable-from-world ((object arrow-attack-spell-mesh))
+(defmethod removeable-from-world-p ((object arrow-attack-spell-mesh))
   (and (not (vector-empty-p (mtree:children object)))
-       (removeable-from-world (elt (mtree:children object) 0))))
+       (removeable-from-world-p (elt (mtree:children object) 0))))
 
 ;; (defmethod render :after ((object arrow-attack-spell-mesh) renderer)
 ;;   (render-debug object renderer))
@@ -358,7 +366,8 @@
 					      mesh
                                               #'battle-utils:send-attack-long-range-event
                                               imprecision-increase
-					      :camera-follow-p t)))
+                                              ;; test was ':camera-follow-p t'
+					      :camera-follow-p nil)))
     (when successp
       (world:push-entity world mesh))))
 
@@ -410,64 +419,73 @@
 				       +zero-vec+
 				       +entity-forward-direction+
 				       shaders))
-	       (blocker       (make-instance 'mesh:blocker-render-children))
-	       (target-effect (funcall (spell:visual-effect-target spell)
+               (target-effect (funcall (spell:visual-effect-target spell)
 				       +zero-vec+
 				       shaders)))
-	  (mtree:add-child mesh bullet)
-	  (mtree:add-child (elt (mtree:children mesh) 0) blocker)
-	  (mtree:add-child blocker target-effect)))
+          (mtree:add-child mesh bullet)
+          (with-enqueue-action
+              (world action-scheduler:particle-effect-action)
+            (setf (pos target-effect) (pos mesh))
+            (world:push-entity world target-effect))
+          (with-enqueue-action-and-send-remove-after
+              (world action-scheduler:end-attack-spell-action)
+            (game-event:send-end-attack-spell-event attacker)
+            (game-event:send-end-defend-from-attack-spell-event defender))))
       (world:push-entity world mesh))))
 
 (defun launch-attack-spell-trap (spell world attacker defender)
-  (let* ((mesh (make-instance 'arrow-attack-spell-mesh
-			      :aabb-size (funcall (spell:effective-aabb-size spell) spell)))
-	 (shaders       (compiled-shaders world))
+  (let* ((shaders       (compiled-shaders world))
 	 (target-effect (funcall (spell:visual-effect-target spell)
 				 +zero-vec+
 				 shaders)))
-    (setf (pos    mesh) (pos defender))
-    (setf (hitted mesh) t)
-    (battle-utils:send-attack-spell-event attacker defender)
-    (setf (end-of-life-callback target-effect)
-          #'game-event:send-action-terminated-event)
-    (mtree:add-child mesh target-effect)
-    (world:push-entity world mesh)))
+    (setf (pos    target-effect) (pos defender))
+    (end-of-life-remove-from-action-scheduler target-effect
+                                              action-scheduler::particle-effect-action)
+    (with-enqueue-action ;; make a sub-scheduler
+        (world action-scheduler:action-scheduler))
+    (with-enqueue-action
+        (world action-scheduler:particle-effect-action)
+      (world:push-entity world target-effect))
+    (with-enqueue-action-and-send-remove-after
+        (world action-scheduler:send-spell-fx-action)
+      (battle-utils:send-attack-spell-event attacker defender :ignore-visible t))
+    (with-enqueue-action-and-send-remove-after
+        (world action-scheduler:end-attack-spell-action)
+      (game-event:send-end-defend-from-attack-spell-event defender))))
 
 (defun send-spell-events-fn (spell attacker defender)
   #'(lambda ()
-      (game-event:with-send-action-terminated
-        (let* ((state            (state attacker))
-               (range            (spell:effective-range           spell))
-               (pos-defender     (map-utils:pos->game-state-pos   defender))
-               (neighborhood-pc  (neighborhood-by-type state
-                                                       (elt pos-defender 1)
-                                                       (elt pos-defender 0)
-                                                       +pc-type+
-                                                       :h-offset range
-                                                       :w-offset range))
-               (neighborhood-npc (neighborhood-by-type state
-                                                       (elt pos-defender 1)
-                                                       (elt pos-defender 0)
-                                                       +npc-type+
-                                                       :h-offset range
-                                                       :w-offset range))
-               (neighborhood     (concatenate 'vector neighborhood-npc neighborhood-pc)))
-          (loop for map-element across neighborhood do
-               (let* ((id-entity (entity-id (car map-element)))
-                      (entity    (find-entity-by-id state id-entity))
-                      (pos       (map-utils:pos->game-state-pos entity))
-                      (dist      (map-utils:map-manhattam-distance pos-defender pos)))
-                 (when (<= dist range)
-                   (battle-utils:send-spell-event attacker entity))))
-          (battle-utils:send-spell-event attacker defender)))))
+      (let* ((state            (state attacker))
+             (range            (spell:effective-range           spell))
+             (pos-defender     (map-utils:pos->game-state-pos   defender))
+             (neighborhood-pc  (neighborhood-by-type state
+                                                     (elt pos-defender 1)
+                                                     (elt pos-defender 0)
+                                                     +pc-type+
+                                                     :h-offset range
+                                                     :w-offset range))
+             (neighborhood-npc (neighborhood-by-type state
+                                                     (elt pos-defender 1)
+                                                     (elt pos-defender 0)
+                                                     +npc-type+
+                                                     :h-offset range
+                                                     :w-offset range))
+             (neighborhood     (concatenate 'vector neighborhood-npc neighborhood-pc)))
+        (loop for map-element across neighborhood do
+             (let* ((id-entity (entity-id (car map-element)))
+                    (entity    (find-entity-by-id state id-entity))
+                    (pos       (map-utils:pos->game-state-pos entity))
+                    (dist      (map-utils:map-manhattam-distance pos-defender pos)))
+               (when (<= dist range)
+                 (battle-utils:send-spell-event attacker entity))))
+        (battle-utils:send-spell-event attacker defender))))
 
-(defun %apply-tooltip (entity message)
-  (billboard:apply-tooltip entity
-			   message
-			   :color     billboard:+damage-color+
-			   :font-type gui:+tooltip-font-handle+
-			   :activep   t))
+(defun %enqueue-tooltip (entity message)
+  (billboard:enqueue-tooltip entity
+                             message
+                             :color     billboard:+damage-color+
+                             :font-type gui:+tooltip-font-handle+
+                             :activep   t))
 
 (defun launch-spell (spell world attacker defender)
   (let* ((range        (spell:range spell))
@@ -480,15 +498,23 @@
 	 (dist         (map-utils:map-manhattam-distance (ivec2:ivec2 x-attacker z-attacker)
 							 (ivec2:ivec2 x-defender z-defender))))
     (if (<= dist range)
-	(if (die-utils:pass-d100.0 (character:actual-spell-chance (ghost attacker)))
+        ;;; TEST
+	(if (or t (die-utils:pass-d100.0 (character:actual-spell-chance (ghost attacker))))
 	    (let* ((shaders (compiled-shaders world))
 		   (target-effect (funcall (spell:visual-effect-target spell)
 					   (copy-vec (aabb-center (aabb defender)))
 					   shaders)))
-	      (setf (end-of-life-callback target-effect)
-		    (send-spell-events-fn spell attacker defender))
-	      (world:push-entity world target-effect))
-            (game-event:with-send-action-terminated
-              (%apply-tooltip attacker (_ "fail"))))
-        (game-event:with-send-action-terminated
-          (%apply-tooltip attacker (_ "too far"))))))
+              (end-of-life-remove-from-action-scheduler target-effect
+                                                        action-scheduler:particle-effect-action)
+              (with-enqueue-action
+                   (world action-scheduler:particle-effect-action)
+                (world:push-entity world target-effect))
+              (with-enqueue-action-and-send-remove-after
+                  (world action-scheduler:send-spell-fx-action)
+                (funcall (send-spell-events-fn spell attacker defender)))
+              (with-enqueue-action-and-send-remove-after
+                  (world action-scheduler:end-spell-action)
+                (game-event:send-end-spell-event attacker))
+                (game-event:send-end-defend-from-spell-event defender))
+            (%enqueue-tooltip attacker (_ "fail")))
+        (%enqueue-tooltip attacker (_ "too far")))))

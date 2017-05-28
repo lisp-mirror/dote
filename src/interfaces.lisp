@@ -143,6 +143,9 @@
 (defmethod description-for-humans ((object t))
   (if object " " nil))
 
+(defmethod description-for-humans ((object (eql nil)))
+  nil)
+
 (defclass inner-animation ()
   ((start-time
     :initform 0.0
@@ -192,10 +195,35 @@
     :initarg  :end-of-life-callback
     :accessor end-of-life-callback)))
 
-(defgeneric removeable-from-world (object))
+(defmacro with-maybe-trigger-end-of-life ((object &optional (trigger-predicate nil)) &body body)
+  (with-gensyms (triggered-p end-of-life-callback repeat-trigger-p)
+    `(with-accessors ((,triggered-p triggered-p)
+                      (,end-of-life-callback end-of-life-callback)
+                      (,repeat-trigger-p repeat-trigger-p)) ,object
+       (when (and (or ,repeat-trigger-p
+                      (not ,triggered-p))
+                  ,(if trigger-predicate
+                       trigger-predicate
+                       t))
+         (and ,end-of-life-callback
+              (funcall ,end-of-life-callback))
+         (setf (triggered ,object) t)
+         ,@body))))
 
-(defmethod  removeable-from-world ((object t))
+(defun remove-end-of-life-callback (object)
+  "First value is t if slot exists the second is the old value of the slot"
+  (if (slot-exists-p object 'end-of-life-callback)
+      (let ((old (slot-value object 'end-of-life-callback)))
+        (setf (slot-value object 'end-of-life-callback) nil)
+        (values t old))
+      (values nil nil)))
+
+(defgeneric removeable-from-world-p (object))
+
+(defmethod  removeable-from-world-p ((object t))
   nil)
+
+(defgeneric almost-removeable-from-world-p (object))
 
 (defgeneric apply-damage (object damage &key &allow-other-keys))
 

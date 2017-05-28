@@ -151,17 +151,17 @@
 
 (defun send-effects-after-attack (attacker defender
 				  &key (weapon (character:worn-weapon (entity:ghost attacker))))
-  (let* ((effects-to-others (remove-if
-			     #'(lambda (a)
-				 (and (funcall ;; only "when-"used" triggered effects
-				       (random-object-messages:untrigged-effect-p-fn
+  (let* ((all-effects (random-object-messages:params->effects-messages weapon))
+         (effects-to-others (remove-if-not
+			     #'(lambda (a)     ;; we want
+				 (and (funcall ;; only "when-used" triggered effects
+				       (random-object-messages:trigged-effect-p-fn
 					basic-interaction-parameters:+effect-when-used+)
 				       a)
 				      (funcall ;; only effects affecting others
 				       (random-object-messages:to-other-target-effect-p-fn)
 				       a)))
-			     (random-object-messages:params->effects-messages
-			      weapon))))
+                             all-effects)))
     (random-object-messages:propagate-effects-msg weapon defender effects-to-others)))
 
 (defun short-range-attack-possible-p (attacker defender)
@@ -185,10 +185,25 @@
 			  +attack-long-range-crossbow-cost+)
 			 (t
 			  0.0)))
-	 (range-valid-p (range-weapon-valid-p attacker defender weapon-type)))
+	 (range-valid-p (range-weapon-valid-p attacker defender weapon-type))
+         (visiblep      (able-to-see-mesh:other-visible-p attacker defender)))
     (and (> cost 0.0)
 	 range-valid-p
+         visiblep
 	 (mesh:can-use-movement-points-p attacker :minimum cost))))
+
+(defun launch-attack-spell-possible-p (attacker defender)
+  (when-let* ((ghost-atk     (entity:ghost attacker))
+              (spell         (character:spell-loaded ghost-atk))
+              (cost          (spell:cost spell))
+              (range-valid-p (range-spell-valid-p attacker defender spell))
+              (visiblep      (able-to-see-mesh:other-visible-p attacker defender)))
+    ;; the first and the second of the following checks are useless as
+    ;; we  are  using when-let*,  but  harmless  and, moreover,  helps
+    ;; readability.
+    (and range-valid-p
+         visiblep
+	 (mesh:can-use-spell-points-p attacker :minimum cost))))
 
 (defun send-attack-melee-event (attacker defender)
   (let* ((weapon-type  (character:weapon-type-short-range (entity:ghost attacker)))
@@ -276,9 +291,7 @@
 				       armor-level
 				       ambushp)))
 	       (if dmg
-		   (progn
-		     (send-effects-after-attack attacker defender)
-		     (values dmg ambushp))
+                   (values dmg ambushp)
 		   (values nil nil))))))
       ((typep (entity:ghost defender) 'character:np-character)
        (values (attack-damage attack-dmg bonus-attack-dmg
@@ -360,8 +373,9 @@
       (game-event:send-refresh-toolbar-event)
       (game-event:propagate-attack-long-range-event msg))))
 
-(defun send-attack-spell-event (attacker defender)
-  (when (renderp defender) ;; does it means: "is visible for someone?"
+(defun send-attack-spell-event (attacker defender &key (ignore-visible nil))
+  (when (or ignore-visible
+            (renderp defender)) ;; does it means: "is visible for someone?"
     (let* ((ghost-atk    (entity:ghost attacker))
 	   (spell        (character:spell-loaded ghost-atk))
 	   (msg (make-instance 'game-event:attack-spell-event
@@ -369,8 +383,8 @@
 			       :id-destination  (identificable:id defender)
 			       :attacker-entity attacker
 			       :spell           spell)))
-      (game-event:send-refresh-toolbar-event)
-      (game-event:propagate-attack-spell-event msg))))
+      (game-event:propagate-attack-spell-event msg)
+      (game-event:send-refresh-toolbar-event))))
 
 (defun send-spell-event (attacker defender)
   (when (renderp defender) ;; does it means: "is visible for someone?"
@@ -381,9 +395,8 @@
 			       :id-destination  (identificable:id defender)
 			       :attacker-entity attacker
 			       :spell           spell)))
-      (game-event:send-refresh-toolbar-event)
-      (game-event:propagate-spell-event msg))))
-
+      (game-event:propagate-spell-event msg)
+      (game-event:send-refresh-toolbar-event))))
 
 (defun trigger-trap-attack (trap-entity attacked-entity)
   (with-accessors ((id id) (state entity:state)) attacked-entity
@@ -397,8 +410,8 @@
 	      (with-accessors ((modifiers-effects modifiers-effects)) ghost-trap
                 (let ((all-effects (random-object-messages:params->effects-messages ghost-trap)))
                   (if (spell:attack-spell-p spell)
-                      (action-scheduler:with-enqueue-action (world)
-                        (arrows::launch-attack-spell-trap spell world trap-entity attacked-entity)
+                      (progn
+                        (arrows:launch-attack-spell-trap spell world trap-entity attacked-entity)
                         (random-object-messages:propagate-effects-msg (id trap-entity)
                                                                       id
                                                                       all-effects))
@@ -488,10 +501,8 @@
 					 armor-level
 					 ambushp)))
 		 (if dmg
-		   (progn
-		     (send-effects-after-attack attacker defender)
-		     (values dmg ambushp))
-		   (values nil nil))))))
+                     (values dmg ambushp)
+                     (values nil nil))))))
 	((typep (entity:ghost defender) 'character:np-character)
 	 (values (attack-damage attack-dmg  0.0
 				(actual-chance-long-range-attack attacker defender) 0.0
@@ -516,10 +527,6 @@
                                                     ghost-atk)))))
       (multiple-value-bind (damage ambushp)
           (%defend-from-attack-spell ghost-atk ghost-defend spell :ambushp ambushp)
-        (when damage
-          (send-effects-after-attack attacker
-                                     defender
-                                     :weapon spell))
         (values damage ambushp)))))
 
 (defun %defend-from-attack-spell (attacker defender spell &key (ambushp nil))
@@ -579,49 +586,51 @@
   "This is the most high level attack routine"
   (when defender
     (if (character:weapon-type-short-range (entity:ghost attacker))
-	(progn
-	  (world:remove-all-tooltips world)
-          (when (short-range-attack-possible-p attacker defender)
-            (battle-utils:send-attack-melee-event attacker defender)))
-	(make-tooltip-no-weapon-error world attacker))
-    (entity:reset-tooltip-ct defender)
+        (when (short-range-attack-possible-p attacker defender)
+          (battle-utils:send-attack-melee-event attacker defender))
+	(make-attacker-message-gui-no-weapon-error world attacker))
     (world:reset-toolbar-selected-action world)))
 
 (defun attack-long-range (world attacker defender &key (imprecision-increase 0.0))
   "This is the most high level attack routine"
-  (if (character:weapon-type-long-range (entity:ghost attacker))
-      (progn
-	(world:remove-all-tooltips world)
-	(if (long-range-attack-possible-p attacker defender)
-	    (action-scheduler:with-enqueue-action (world)
-	      (attack-long-range-animation attacker defender)
-	      (arrows:launch-arrow +default-arrow-name+
-				   world
-				   attacker
-				   defender
-                                   imprecision-increase))
-	    (make-tooltip-out-range-error world attacker)))
-      (make-tooltip-no-weapon-error world attacker))
-  (entity:reset-tooltip-ct defender)
+  (when (able-to-see-mesh:other-visible-p attacker defender)
+    (if (character:weapon-type-long-range (entity:ghost attacker))
+        (if (range-weapon-valid-p attacker
+                                  defender
+                                  (character:weapon-type-long-range (entity:ghost attacker)))
+            (when (long-range-attack-possible-p attacker defender)
+              (action-scheduler:with-enqueue-action
+                  (world action-scheduler:attack-long-range-action)
+                (attack-long-range-animation attacker defender)
+                (arrows:launch-arrow +default-arrow-name+
+                                     world
+                                     attacker
+                                     defender
+                                     imprecision-increase)))
+            (make-attacker-message-gui-out-range-error world attacker))
+        (make-attacker-message-gui-no-weapon-error world attacker)))
   (world:reset-toolbar-selected-action world)
   (game-event:send-refresh-toolbar-event))
 
 (defun attack-long-range-imprecise (world attacker defender)
   "This is the most high level attack routine"
   (loop repeat 3 do
-       (attack-long-range world attacker defender :imprecision-increase 0.25)))
+       (action-scheduler:with-enqueue-action-and-send-remove-after
+           (world action-scheduler:attack-long-range-imprecise-action
+                  (action-scheduler:next-minimum-priority (world:actions-queue world)))
+         (attack-long-range world attacker defender :imprecision-increase 0.25))))
 
-(defun make-tooltip (world attacker message)
+(defun make-gui-attacker-message (world attacker message)
   (world:post-entity-message world attacker message nil))
 
-(defun make-tooltip-no-weapon-error (world attacker)
-  (make-tooltip world attacker (_"You have not got a weapon")))
+(defun make-attacker-message-gui-no-weapon-error (world attacker)
+  (make-gui-attacker-message world attacker (_ "You have not got a weapon")))
 
-(defun make-tooltip-no-spell-error (world attacker)
-  (make-tooltip world attacker (_"You have not loaded a spell")))
+(defun make-attacker-message-gui-no-spell-error (world attacker)
+  (make-gui-attacker-message world attacker (_ "You have not loaded a spell")))
 
-(defun make-tooltip-out-range-error (world attacker)
-  (make-tooltip world attacker (_"Out of range")))
+(defun make-attacker-message-gui-out-range-error (world attacker)
+  (make-gui-attacker-message world attacker (_ "Out of range")))
 
 (defun range-spell-valid-p (atk def spell)
   (let ((pos-atk (map-utils:pos->game-state-pos atk))
@@ -649,21 +658,22 @@
 (defun attack-launch-spell (world attacker defender)
   (when (and attacker
 	     defender)
-    (let ((spell-loaded (character:spell-loaded (entity:ghost attacker))))
-      (if spell-loaded
-	  (if (range-spell-valid-p attacker defender spell-loaded)
-	      (action-scheduler:with-enqueue-action (world)
-		(world:remove-all-tooltips world)
-		(when (attack-spell-animation attacker defender)
-		  (arrows:launch-attack-spell spell-loaded
-					      world
-					      attacker
-					      defender)))
-	      (make-tooltip-out-range-error world attacker))
-	  (make-tooltip-no-spell-error world attacker))
-      (entity:reset-tooltip-ct defender)
-      (world:reset-toolbar-selected-action world)
-      (game-event:send-refresh-toolbar-event))))
+    (when (able-to-see-mesh:other-visible-p attacker defender)
+      (let ((spell-loaded (character:spell-loaded (entity:ghost attacker))))
+        (if spell-loaded
+            (if (long-range-attack-possible-p attacker defender)
+                (when (launch-attack-spell-possible-p attacker defender)
+                  (action-scheduler:with-enqueue-action
+                      (world action-scheduler:attack-launch-spell-action)
+                    (when (attack-spell-animation attacker defender)
+                      (arrows:launch-attack-spell spell-loaded
+                                                  world
+                                                  attacker
+                                                  defender))))
+                (make-attacker-message-gui-out-range-error world attacker))
+            (make-attacker-message-gui-no-spell-error world attacker))))
+    (world:reset-toolbar-selected-action world)
+    (game-event:send-refresh-toolbar-event)))
 
 (defun launch-spell (world attacker defender)
   (when (and attacker
@@ -671,16 +681,16 @@
     (let ((spell-loaded (character:spell-loaded (entity:ghost attacker))))
       (if spell-loaded
 	  (if (range-spell-valid-p attacker defender spell-loaded)
-	      (action-scheduler:with-enqueue-action (world)
-		(world:remove-all-tooltips world)
+              ;; enqueue is totally useless here but keep it for congruence with 'attack-spell'
+	      (action-scheduler:with-enqueue-action-and-send-remove-after
+                  (world action-scheduler:launch-spell-action)
 		(when (spell-animation attacker defender)
 		  (arrows:launch-spell spell-loaded
 				       world
 				       attacker
 				       defender)))
-	      (make-tooltip-out-range-error world attacker))
-	  (make-tooltip-no-spell-error world attacker))
-      (entity:reset-tooltip-ct defender)
+	      (make-attacker-message-gui-out-range-error world attacker))
+	  (make-attacker-message-gui-no-spell-error world attacker))
       (world:reset-toolbar-selected-action world)
       (game-event:send-refresh-toolbar-event))))
 

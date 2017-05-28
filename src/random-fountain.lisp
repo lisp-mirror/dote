@@ -123,7 +123,7 @@
 				      :points  (calculate-modifier fountain-level)
 				      :chance  (calculate-healing-fx-params-chance
 						fountain-level)
-				      :target  +target-self+)))
+				      :target  +target-other+)))
     (n-setf-path-value interaction path effect-object)))
 
 (defun set-healing-effect (effect-path fountain-level interaction)
@@ -131,7 +131,7 @@
 				      :trigger  +effect-when-used+
 				      :duration (ceiling (calculate-modifier fountain-level))
 				      :chance   (calculate-healing-fx-params-chance fountain-level)
-				       :target  +target-self+)))
+                                      :target  +target-self+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun set-poison-effect (effect-path fountain-level interaction)

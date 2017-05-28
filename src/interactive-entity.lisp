@@ -144,7 +144,7 @@
 ;; events
 
 (defmethod game-event:on-game-event ((object interactive-entity) (event game-event:end-turn))
-  (misc:dbg " end turn character ~a(~a) ~a" (type-of object) (id object) (type-of event))
+  ;(misc:dbg " end turn character ~a(~a) ~a" (type-of object) (id object) (type-of event))
   (incf (age object))
   nil)
 
@@ -472,7 +472,6 @@
     (if (dice:pass-d2 1)
 	(n-setf-path-value interaction-params path1 nil)
 	(n-setf-path-value interaction-params path2 nil))))
-
 
 (alexandria:define-constant +all-effects+
     (list (list :effects :strength)

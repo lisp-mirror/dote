@@ -29,7 +29,6 @@
    :+random-first-names-filename+
    :+random-last-names-filename+
    :+game-fps+
-   :+debug-mode+
    :*window-w*
    :*window-h*
    :*workers-number*
@@ -390,7 +389,7 @@
 	:conditions
 	:misc
 	:num)
-  (:shadowing-import-from :misc   :random-elt :shuffle)
+  (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :gen-pass-dice
    :pass-d1.0
@@ -520,8 +519,10 @@
 
 (defpackage :interfaces
   (:use :cl
+        :alexandria
 	:constants
 	:misc)
+  (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :destructible
    :main-light-pos
@@ -565,7 +566,10 @@
    :triggered
    :triggered-p
    :end-of-life-callback
-   :removeable-from-world
+   :remove-end-of-life-callback
+   :with-maybe-trigger-end-of-life
+   :removeable-from-world-p
+   :almost-removeable-from-world-p
    :apply-damage
    :faction-player-p
    :faction-ai-p
@@ -1033,7 +1037,6 @@
    :scaling
    :up
    :ghost
-   :tooltip-count
    :attacked-by-entity
    :reply-attack
    :reply-attack-p
@@ -1042,10 +1045,7 @@
    :find-entity-by-id
    :remove-entity-by-id
    :remove-entity-if
-   :entity-dead-p
-   :incf-tooltip-ct
-   :decf-tooltip-ct
-   :reset-tooltip-ct))
+   :entity-dead-p))
 
 (defpackage :bs-tree
   (:use
@@ -1204,11 +1204,14 @@
    :emptyp
    :with-queue
    :simple-queue
+   :container
    :q-pop
    :q-peek
    :q-push
    :q-empty-p
-   :q-size))
+   :q-size
+   :q-sort
+   :q-dbg-print))
 
 (defpackage :stack
   (:use :cl)
@@ -1283,6 +1286,7 @@
    :scale-matrix-nearest
    :matrix-mult
    :h-mirror-matrix
+   :v-mirror-matrix
    :matrix-hline
    :matrix-vline
    :matrix-line
@@ -1807,6 +1811,7 @@
 	:mesh-material)
   (:shadowing-import-from :pixmap :load)
   (:export
+   :init-db
    :clean-db
    :+skydome-bg+
    :+cloud-1+
@@ -1835,6 +1840,8 @@
    :+grass+
    :+snow+
    :+influence-map+
+   :+influence-map-w+
+   :+influence-map-h+
    :+texture-db-floor-level-1+
    :+texture-db-floor-level-2+
    :+texture-db-floor-level-3+
@@ -2317,6 +2324,11 @@
    :unregister-for-end-attack-spell-event
    :propagate-end-attack-spell-event
    :send-end-attack-spell-event
+   :end-defend-from-attack-spell-event
+   :register-for-end-defend-from-attack-spell-event
+   :unregister-for-end-defend-from-attack-spell-event
+   :propagate-end-defend-from-attack-spell-event
+   :send-end-defend-from-attack-spell-event
    :spell-event
    :spell
    :register-for-spell-event
@@ -2327,6 +2339,11 @@
    :unregister-for-end-spell-event
    :propagate-end-spell-event
    :send-end-spell-event
+   :end-defend-from-spell-event
+   :register-for-end-defend-from-spell-event
+   :unregister-for-end-defend-from-spell-event
+   :propagate-end-defend-from-spell-event
+   :send-end-defend-from-spell-event
    :end-attack-melee-event
    :register-for-end-attack-melee-event
    :unregister-for-end-attack-melee-event
@@ -2360,6 +2377,12 @@
    :register-for-other-interaction-event
    :unregister-for-other-interaction-event
    :propagate-other-interaction-event
+   :game-idle-terminated-event
+   :register-for-game-idle-terminated-event
+   :unregister-for-game-idle-terminated-event
+   :propagate-game-idle-terminated-event
+   :send-game-idle-terminated-event
+   :with-remove-idle-character-plan
    ;;;; action
    :game-action-terminated
    :action-id
@@ -2368,8 +2391,13 @@
    :propagate-game-action-terminated
    :send-action-terminated-event
    :with-send-action-terminated
+   :with-send-action-terminated-assertion
+   :with-send-action-terminated-check-type
+   :with-send-action-and-idle-terminated
+   :with-send-action-and-idle-terminated-check-type
    ;;;; utils
-   :check-event-targeted-to-me))
+   :check-event-targeted-to-me
+   :check-event-originated-by-me))
 
 (defpackage :action-scheduler
   (:use
@@ -2383,13 +2411,35 @@
    :game-event)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
+   :*equeue-merge-to-subscheduler-p*
    :game-action
    :launch-arrow-action
+   :attack-long-range-action
+   :attack-long-range-imprecise-action
+   :attack-launch-spell-action
+   :launch-spell-action
+   :end-spell-action
+   :end-attack-spell-action
+   :send-spell-fx-action
+   :trigger-trap-attack-action
+   :tactical-plane-action
+   :tooltip-show-action
+   :particle-effect-action
+   :refresh-status-bar-action
+   :blood-spill-action
    :action-scheduler
    :current-action
    :substitute-action
    :enqueue-action
-   :with-enqueue-action))
+   :actions-queue-empty-p
+   :priority-range
+   :next-minimum-priority
+   :next-maximum-priority
+   :recursive-current-action
+   :*default-action-priority*
+   :with-enqueue-action
+   :end-of-life-remove-from-action-scheduler
+   :with-enqueue-action-and-send-remove-after))
 
 (defpackage :basic-interaction-parameters
   (:use :cl
@@ -2410,7 +2460,6 @@
    :+effect-when-worn+
    :+effect-when-consumed+
    :+effect-until-picked+
-   :+effect-until-held+
    :+can-talk+
    :+can-ask-for-help+
    :+can-be-opened+
@@ -2687,6 +2736,17 @@
    :entity-w-portrait
    :portrait))
 
+(defpackage :planner
+  (:use :cl
+        :alexandria
+        :constants
+        :resources-utils)
+  (:export
+   :+idle-action+
+   :+move-action+
+   :+faint-action+
+   :+interrupted-action+))
+
 (defpackage :character
   (:use :cl
 	:alexandria
@@ -2713,6 +2773,9 @@
    :last-name
    :model-origin-dir
    :current-path
+   :current-plan
+   :thinker
+   :thinkerp
    :gender
    :player-class
    :strength
@@ -2817,7 +2880,13 @@
    :weapon-type-long-range
    :weapon-type-short-range
    :available-spells-list
-   :calculate-influence))
+   :calculate-influence
+   :tactical-plan
+   :with-no-thinking
+   :set-idle-plan
+   :unset-idle-plan
+   :has-idle-plan-p
+   :disgregard-tactical-plan))
 
 (defpackage :random-armor
   (:use :cl
@@ -3061,6 +3130,7 @@
   (:export
    :+poison-turn-arg-key+
    :untrigged-effect-p-fn
+   :trigged-effect-p-fn
    :to-other-target-effect-p-fn
    :heal-damage-msg
    :modifier-effect-msg
@@ -3069,6 +3139,8 @@
    :msg-points
    :msg-origin
    :msg-modifier
+   :magic-effect-msg
+   :msg-spell-id
    :cause-poison-msg
    :cause-terror-msg
    :cause-faint-msg
@@ -3544,10 +3616,12 @@
    :+recover-from-faint-dmg-fraction+
    :short-range-attack-possible-p
    :long-range-attack-possible-p
+   :launch-attack-spell-possible-p
    :send-attack-melee-event
    :defend-from-container-trap
    :defend-from-fountain-interaction
    :defend-from-attack-short-range
+   :send-effects-after-attack
    :attack-long-range-animation
    :attack-spell-animation
    :send-attack-long-range-event
@@ -3756,6 +3830,7 @@
    :bound-world
    :bound-player
    :sync-with-player
+   :sync-influence-map
    :reset-toolbar-selected-action
    :text-communication
    :text-fps
@@ -3824,6 +3899,7 @@
    :duration
    :make-tooltip
    :apply-tooltip
+   :enqueue-tooltip
    :tree-impostor-shell
    :make-impostor-pixmap
    :make-impostor-texture
@@ -3864,6 +3940,7 @@
    :world
    :entities
    :main-state
+   :actions-queue
    :camera
    :frame-window
    :skydome
@@ -3884,6 +3961,7 @@
    :traps-bag
    :windows-bag
    :gui
+   :influence-map-type
    :toolbar
    :render-for-reflection
    :push-entity
@@ -3925,7 +4003,9 @@
    :world-aabb
    :remove-all-tooltips
    :remove-all-windows
-   :activate-all-tooltips))
+   :remove-all-removeable
+   :activate-all-tooltips
+   :actions-queue-empty-p))
 
 (defpackage :terrain-chunk
   (:use :cl
@@ -4040,9 +4120,10 @@
 	:sb-cga
 	:sb-cga-utils
 	:num-utils
-	:misc
+        :misc
 	:cl-gl-utils
 	:shaders-utils
+        :action-scheduler
 	:identificable
 	:transformable
 	:entity
@@ -4056,10 +4137,12 @@
    :launch-ray
    :launch-arrow
    :launch-attack-spell
+   :launch-attack-spell-trap
    :launch-spell))
 
 (defpackage :spell
   (:use :cl
+        :alexandria
 	:config
 	:constants
 	:sb-cga
@@ -4077,6 +4160,8 @@
 	:character
 	:arrows
 	:mesh)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:shadowing-import-from :sb-cga :rotate)
   (:export
    :db
    :clean-spell-db
@@ -4295,12 +4380,20 @@
         :game-state)
   (:export
    :blackboard
+   :concerning-tiles
    :visited-tiles
    :unexplored-layer
+   :attack-enemy-melee-layer
+   :attack-enemy-pole-layer
+   :attack-enemy-bow-layer
+   :attack-enemy-crossbow-layer
+   :strategy-decision
    :set-tile-visited
+   :calc-danger-zone-size
    :set-concerning-tile
    :update-unexplored-layer
-   :next-unexplored-position))
+   :next-unexplored-position
+   :disgregard-all-plans))
 
 (defpackage :keyboard-config
   (:use :cl

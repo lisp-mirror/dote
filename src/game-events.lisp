@@ -320,6 +320,12 @@
 	   ,@body)
 	 nil))
 
+(defmacro check-event-originated-by-me ((entity event) &body body)
+  `(if (= (identificable:id ,entity) (id-origin ,event))
+	 (progn
+	   ,@body)
+	 nil))
+
 (defevent attack-spell-event (game-event-w-destination)
   ((attacker-entity
     :initform nil
@@ -344,6 +350,19 @@
   (propagate-end-attack-spell-event (make-instance 'end-attack-spell-event
 						   :id-destination (identificable:id dest))))
 
+(defevent end-defend-from-attack-spell-event (game-event-w-destination)
+  ((attacker-entity
+    :initform nil
+    :initarg  :attacker-entity
+    :accessor attacker-entity)
+   (spell
+    :initform nil
+    :initarg  :spell
+    :accessor spell)))
+
+(defun send-end-defend-from-attack-spell-event (dest)
+  (propagate-end-defend-from-attack-spell-event (make-instance 'end-defend-from-attack-spell-event
+                                                               :id-destination (identificable:id dest))))
 
 (defevent spell-event (game-event-w-destination)
   ((attacker-entity
@@ -368,6 +387,20 @@
 (defun send-end-spell-event (dest)
   (propagate-end-spell-event (make-instance 'end-spell-event
 					    :id-destination (identificable:id dest))))
+
+(defevent end-defend-from-spell-event (game-event-w-destination)
+  ((attacker-entity
+    :initform nil
+    :initarg  :attacker-entity
+    :accessor attacker-entity)
+   (spell
+    :initform nil
+    :initarg  :spell
+    :accessor spell)))
+
+(defun send-end-defend-from-spell-event (dest)
+  (propagate-end-attack-spell-event (make-instance 'end-defend-from-spell-event
+						   :id-destination (identificable:id dest))))
 
 (defevent lock-object-event (game-event-w-destination) ())
 
@@ -410,6 +443,17 @@
 						  :id-origin      (identificable:id origin)
 						  :id-destination (identificable:id dest))))
 
+(defevent game-idle-terminated-event () ())
+
+(defun send-game-idle-terminated-event ()
+  (propagate-game-idle-terminated-event (make-instance 'game-idle-terminated-event)))
+
+(defmacro with-remove-idle-character-plan (&body body)
+  `(progn
+     ,@body
+     ;; remove action form-queue
+     (game-event:send-game-idle-terminated-event)))
+
 ;;;; game-actions
 
 (defevent game-action-terminated ()
@@ -422,8 +466,42 @@
 (defun send-action-terminated-event ()
   (propagate-game-action-terminated (make-instance 'game-action-terminated)))
 
-(defmacro with-send-action-terminated (&body body)
+(defmacro with-send-action-terminated-if (predicate &body body)
   `(progn
      ,@body
      ;; remove action form-queue
+     (when (funcall ,predicate)
+       (game-event:send-action-terminated-event))))
+
+
+(defmacro with-send-action-terminated-assertion ((&optional assertion) &body body)
+  `(progn
+     ,@(append
+        (when assertion
+          (list `(assert ,assertion)))
+        body)
+     ;; remove action form-queue
      (game-event:send-action-terminated-event)))
+
+(defmacro with-send-action-terminated (&body body)
+  `(game-event:with-send-action-terminated-assertion () ,@body))
+
+(defmacro with-send-action-terminated-check-type ((world action-type) &body body)
+  (with-gensyms (current-action)
+    (let ((check (if (symbolp action-type)
+                     `(typep ,current-action ',action-type)
+                     `(typep ,current-action ,action-type))))
+      `(let ((,current-action (action-scheduler:recursive-current-action
+                               (world:actions-queue ,world))))
+         (game-event:with-send-action-terminated-assertion (,check)
+           ,@body)))))
+
+(defmacro with-send-action-and-idle-terminated (&body body)
+  `(game-event:with-send-action-terminated
+     (game-event:with-remove-idle-character-plan
+       ,@body)))
+
+(defmacro with-send-action-and-idle-terminated-check-type ((world action-type) &body body)
+  `(game-event:with-send-action-terminated-check-type (,world ,action-type)
+     (game-event:with-remove-idle-character-plan
+       ,@body)))

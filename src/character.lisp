@@ -123,6 +123,18 @@
     :initform nil
     :initarg  :current-path
     :accessor current-path)
+   (current-plan
+    :initform nil
+    :initarg  :current-plan
+    :accessor current-plan
+    :documentation "A list with the current plan sorted from the first
+                    to accomplish to the last")
+   (thinker
+    :initform nil
+    :initarg  :current-plan
+    :reader   thinkerp
+    :writer   (setf thinker)
+    :documentation "Should this character 'think'?")
    (gender
     :initarg :gender
     :initform :male
@@ -449,7 +461,7 @@
 ;; events
 
 (defmethod game-event:on-game-event :after ((object player-character) (event game-event:end-turn))
-  (misc:dbg " end turn character ~a(~a) ~a" (type-of object) (id object) (type-of event))
+  ;;(misc:dbg " end turn character ~a(~a) ~a" (type-of object) (id object) (type-of event))
   (remove-decayed-items object (game-event:end-turn-count event))
   nil)
 
@@ -494,6 +506,16 @@
 (defgeneric calculate-influence (object))
 
 (defgeneric calculate-influence-weapon (object weapon-type))
+
+(defgeneric tactical-plan (object strategy-expert))
+
+(defgeneric has-idle-plan-p (object))
+
+(defgeneric set-idle-plan (object))
+
+(defgeneric unset-idle-plan (object))
+
+(defgeneric disgregard-tactical-plan (object))
 
 (defmacro gen-player-class-test (name)
   (let ((name-fn (format-symbol t "~:@(pclass-~a-p~)" name)))
@@ -746,7 +768,9 @@
    weapon-type))
 
 (defmethod available-spells-list ((object player-character))
-  (spell:filter-spell-db #'(lambda (a) (> (spell:level a) (level object)))))
+  ;;; TEST ;;;;
+  ;(spell:filter-spell-db #'(lambda (a) (> (spell:level a) (level object)))))
+  spell::*spells-db*)
 
 (defmethod calculate-influence ((object player-character))
   (calculate-influence-weapon object (weapon-type object)))
@@ -768,6 +792,42 @@
 
 (defmethod calculate-influence-weapon ((object player-character) (weapon-type (eql :pole)))
   (d +weapon-pole-range+))
+
+(defmacro with-no-thinking ((character) &body body)
+  (with-gensyms (saved)
+    `(if ,character
+         (let ((,saved (thinkerp ,character)))
+           (setf (thinker ,character) nil)
+           ,@body
+           (setf (thinker ,character) ,saved))
+        (progn ,@body))))
+
+;; TODO add GOAP
+(defmethod tactical-plan ((object player-character) strategy-expert)
+  (with-accessors ((current-plan current-plan)) object
+    (if current-plan
+        current-plan
+        (let ((strategy (blackboard:strategy-decision strategy-expert)))
+          (declare (ignore strategy))
+          (setf current-plan (list planner:+move-action+))
+          (tactical-plan object strategy-expert)))))
+
+(defmethod set-idle-plan ((object player-character))
+  (misc:dbg "set idle plan")
+  (setf (current-plan object) (list planner:+idle-action+)))
+
+(defmethod unset-idle-plan ((object player-character))
+  (disgregard-tactical-plan object))
+
+(defmethod has-idle-plan-p ((object player-character))
+  (with-accessors ((current-plan current-plan)) object
+    (and current-plan
+         (eq (elt current-plan 0) planner:+idle-action+))))
+
+(defmethod disgregard-tactical-plan ((object player-character))
+  (with-accessors ((current-plan current-plan)) object
+    (misc:dbg "disg")
+    (setf current-plan nil)))
 
 (defmacro gen-actual-characteristic (name)
   (let ((fn       (format-fn-symbol t "actual-~a" name))

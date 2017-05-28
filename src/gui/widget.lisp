@@ -1917,8 +1917,7 @@
 					 (%find-entity (state player) p)
 					 (containerp (ghost (%find-entity (state player) p)))))
 		      near-tiles)))
-    (when +debug-mode+
-      (misc:dbg "chest pos ~a" chests-pos))
+    #+debug-mode (misc:dbg "chest pos ~a" chests-pos)
     (and chests-pos
 	 (%find-entity (state player) (first chests-pos)))))
 
@@ -2005,7 +2004,19 @@
 	(camera:drag-camera (world:camera world) (sb-cga:vec .0 +gui-zoom-entity+ .0))))))
 
 (defclass main-toolbar (widget)
-  ((selected-action
+  (#+debug-ai
+   (influence-map-dump
+    :initform (make-instance 'signalling-light
+                             :x               (d 0)
+                             :y               (d (- *window-h* +influence-map-h+))
+                             :width           (d +influence-map-w+)
+                             :height          (d +influence-map-h+)
+                             :texture-name    +influence-map+
+                             :shown           t
+                             :button-status   t)
+    :initarg  :influence-map-dump
+    :accessor influence-map-dump)
+   (selected-action
     :initform nil
     :initarg  :selected-action
     :accessor selected-action)
@@ -2338,6 +2349,8 @@
     :accessor text-fps)))
 
 (defmethod initialize-instance :after ((object main-toolbar) &key &allow-other-keys)
+  ;; other
+  #+debug-ai (add-child object (influence-map-dump      object))
   ;; first row
   (add-child object (s-faint                 object))
   (add-child object (s-poisoned              object))
@@ -2381,6 +2394,8 @@
    (setf (bound-player object) nil))
 
 (defgeneric sync-with-player (object &key reset-health-animation))
+
+(defgeneric sync-influence-map (object map))
 
 (defgeneric reset-toolbar-selected-action (object))
 
@@ -2494,6 +2509,17 @@
 	(setf (texture-pressed b-portrait) (portrait ghost)
 	      (texture-object  b-portrait) (portrait ghost)
 	      (current-texture b-portrait) (portrait ghost))))))
+
+(defmethod sync-influence-map ((object main-toolbar) (map pixmap:pixmap))
+  (let ((texture    (get-texture +influence-map+))
+        (new-pixmap (matrix:scale-matrix-nearest map
+                                                 (d/ (d texture:+influence-map-w+)
+                                                     (d (pixmap:width  map)))
+                                                 (d/ (d texture:+influence-map-h+)
+                                                     (d (pixmap:height map))))))
+    (setf (pixmap:data texture) (pixmap:data new-pixmap))
+    (pixmap:sync-data-to-bits texture)
+    (update-for-rendering texture)))
 
 (defmethod reset-toolbar-selected-action ((object main-toolbar))
   (setf (selected-action object) nil))

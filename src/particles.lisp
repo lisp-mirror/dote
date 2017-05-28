@@ -613,10 +613,10 @@
 		  (setf (fast-glaref particles-color (+ ct i 2)) (elt color 2))
 		  (setf (fast-glaref particles-color (+ ct i 3)) (elt color 3))))))))
 
-(defmethod removeable-from-world ((object particles-cluster))
+(defmethod removeable-from-world-p ((object particles-cluster))
   (loop for p across (particles object) do
        (when (> (particle-life p) 0.0)
-	 (return-from removeable-from-world nil)))
+	 (return-from removeable-from-world-p nil)))
   t)
 
 (defmethod aabb ((object particles-cluster))
@@ -665,8 +665,7 @@
 		   (transform-vao transform-vao)
 		   (transform-vbo-input transform-vbo-input)
 		   (transform-vbo-output transform-vbo-output)) object
-    (when +debug-mode+
-      (misc:dbg "destroy particle cluster ~a" (id object)))
+    #+debug-mode+ (misc:dbg "destroy particle cluster ~a" (id object))
     (setf particles-positions        nil
 	  particles-v0               nil
 	  particles-vt               nil
@@ -747,8 +746,7 @@
 	  (vbo-in         (slot-value object 'transform-vbo-input))
 	  (vbo-out        (slot-value object 'transform-vbo-output)))
       (tg:finalize object #'(lambda ()
-			      (when +debug-mode+
-				(misc:dbg "finalize destroy particles ~a" id))
+			      #+debug-mode (misc:dbg "finalize destroy particles ~a" id)
 			      (free-memory* (list pos-in
 						  velo-t0
 						  velo-t
@@ -1121,13 +1119,13 @@
     (when (< global-life 0)
       (set-respawn object nil))))
 
-(defclass blood (cluster-w-gravity)
+(defclass minimal-particle-effect (cluster-w-gravity)
   ((noise-scale
     :initform 0.0
     :initarg :noise-scale
     :accessor noise-scale)))
 
-(defmethod initialize-instance :after ((object blood)
+(defmethod initialize-instance :after ((object minimal-particle-effect)
 				       &key
 					 (texture (texture:get-texture
 						   texture:+blood-particle+))
@@ -1136,7 +1134,7 @@
   (setf (integrator-shader object) :blood-integrator)
   (setf (texture-object object) texture))
 
-(defmethod calculate ((object blood) dt)
+(defmethod calculate ((object minimal-particle-effect) dt)
   (with-accessors ((compiled-shaders compiled-shaders)
 		   (particle-min-y   particle-min-y)
 		   (gravity          gravity)
@@ -1147,7 +1145,7 @@
       (uniformf  compiled-shaders :min-y   particle-min-y)))
   (call-next-method)) ;; calculate children too
 
-(defmethod render ((object blood) renderer)
+(defmethod render ((object minimal-particle-effect) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((vbo vbo)
 		   (vao vao)
@@ -1182,6 +1180,23 @@
 	    (gl:draw-arrays :triangles 0 (f* 3 (length triangles)))
 	    (gl:blend-equation :func-add)))))
     (call-next-method))) ;; render children too
+
+(defclass blood (minimal-particle-effect end-life-trigger) ())
+
+(defmethod initialize-instance :after ((object blood) &key &allow-other-keys)
+  (action-scheduler:end-of-life-remove-from-action-scheduler object
+                                                             action-scheduler:blood-spill-action))
+
+(defmethod calculate :after ((object blood) dt)
+  (with-maybe-trigger-end-of-life (object (almost-removeable-from-world-p object))))
+
+(defmethod almost-removeable-from-world-p ((object blood))
+  (let ((all        (d (length (particles object))))
+        (removeable (d (loop for p across (particles object)
+                          when (< (particle-life p) 0.0)
+                          sum 1))))
+    (d> (d/ removeable all)
+        0.1)))
 
 (defun make-particles-cluster (class particles-count shaders-dict
 			       &key
@@ -1252,8 +1267,8 @@
 				  :particle-height    height
 				  :particle-width-fn  particle-width-fn
 				  :particle-height-fn particle-height-fn
-				  :particles         (list->simple-array particles nil 'particle)
-				  :gravity           gravity)))
+				  :particles          (list->simple-array particles nil 'particle)
+				  :gravity            gravity)))
     (prepare-for-rendering cluster)
     cluster))
 
@@ -1333,7 +1348,7 @@
 			  :width  .1
 			  :height .1))
 
-(defclass debris (blood) ())
+(defclass debris (minimal-particle-effect) ())
 
 (defmethod render ((object debris) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -1612,7 +1627,7 @@
 			  :height .5
 			  :respawn nil))
 
-(defclass smoke-trail (blood)
+(defclass smoke-trail (minimal-particle-effect)
   ((frequency-smoke
     :initform 30
     :initarg  :frequency-smoke
@@ -1638,7 +1653,7 @@
 		   (scaling-trail-clsr scaling-trail-clsr)
 		   (el-time el-time)) object
     (when (and (= (rem smoke-ct frequency-smoke) 0)
-	       (not (removeable-from-world object)))
+	       (not (removeable-from-world-p object)))
       (loop
 	 for particle across particles
 	 for i from 0 by 3             do
@@ -1746,7 +1761,7 @@
     (do-children-mesh (c object)
       (render c renderer))))
 
-;; (defmethod removeable-from-world ((object fire-dart))
+;; (defmethod removeable-from-world-p ((object fire-dart))
 ;;   (mark-for-remove-p object))
 
 (defun make-fire-dart (pos dir compiled-shaders)
@@ -1858,7 +1873,7 @@
 			  :height 1.0
 			  :respawn nil))
 
-(defclass spell-decal (blood) ())
+(defclass spell-decal (minimal-particle-effect) ())
 
 (defmethod bubbleup-modelmatrix ((object spell-decal))
   (let ((res      (matrix* (translate (pos     object))
@@ -1922,7 +1937,7 @@
 		(gl:draw-arrays :triangles 0 (* 3 (length triangles)))
 		(gl:blend-equation :func-add)))))))))
 
-(defclass aerial-explosion (blood end-life-trigger)
+(defclass aerial-explosion (minimal-particle-effect end-life-trigger)
   ())
 
 (defmethod initialize-instance :after ((object aerial-explosion)
@@ -1930,23 +1945,17 @@
  					 (texture (texture:get-texture
  						   texture:+cross-particle+))
  					 &allow-other-keys)
-  (game-state:with-world (world (state object))
-    (setf (use-blending-p object) t)
-    (setf (integrator-shader object) :blood-integrator)
-    (setf (texture-object object) texture)
-    (setf (end-of-life-callback object)
-	  #'(lambda () (world:activate-all-tooltips world)))))
+  (setf (use-blending-p object) t)
+  (setf (integrator-shader object) :blood-integrator)
+  (setf (texture-object object) texture)
+  (action-scheduler:end-of-life-remove-from-action-scheduler object
+                                                             action-scheduler:particle-effect-action))
+
+    ;; (setf (end-of-life-callback object)
+    ;;       #'(lambda () (world:activate-all-tooltips world)))))
 
 (defmethod calculate :after ((object aerial-explosion) dt)
-  (with-accessors ((triggered-p triggered-p)
-		   (end-of-life-callback end-of-life-callback)
-		   (repeat-trigger-p repeat-trigger-p)) object
-    (when (and (removeable-from-world object)
-	       (or repeat-trigger-p
-		   (not triggered-p)))
-      (and end-of-life-callback
-	   (funcall end-of-life-callback))
-      (setf (triggered object) t))))
+  (with-maybe-trigger-end-of-life (object (removeable-from-world-p object))))
 
 (defmethod render ((object aerial-explosion) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -2071,12 +2080,17 @@
 			:scaling-rate 200.0
 			:texture texture)))
 
+;; (defun %set-fireball-callback (ball trail)
+;;   (let ((saved-callback (end-of-life-callback ball)))
+;;     (setf (end-of-life-callback ball)
+;; 	  #'(lambda ()
+;; 	      (funcall saved-callback)
+;; 	      (setf (triangles trail) '())))))
+
 (defun %set-fireball-callback (ball trail)
-  (let ((saved-callback (end-of-life-callback ball)))
-    (setf (end-of-life-callback ball)
+  (setf (end-of-life-callback ball)
 	  #'(lambda ()
-	      (funcall saved-callback)
-	      (setf (triangles trail) '())))))
+	      (setf (triangles trail) '()))))
 
 (defun make-fireball-level-2 (pos dir compiled-shaders)
   (let* ((texture  (random-elt (list-of-texture-by-tag +texture-tag-aerial-expl-particle+)))
@@ -2484,21 +2498,13 @@
     (mtree:add-child flame (make-circular-wave-level-2 +zero-vec+ compiled-shaders))
     flame))
 
-(defclass cure-spark (blood cluster-w-global-life end-life-trigger) ())
+(defclass cure-spark (minimal-particle-effect cluster-w-global-life end-life-trigger) ())
 
 (defmethod initialize-instance :after ((object cure-spark) &key &allow-other-keys)
   (setf (noise-scale object) 0.01))
 
 (defmethod calculate :after ((object cure-spark) dt)
-  (with-accessors ((triggered-p triggered-p)
-		   (end-of-life-callback end-of-life-callback)
-		   (repeat-trigger-p repeat-trigger-p)) object
-    (when (and (removeable-from-world object)
-	       (or repeat-trigger-p
-		   (not triggered-p)))
-      (and end-of-life-callback
-	   (funcall end-of-life-callback))
-      (setf (triggered object) t))))
+  (with-maybe-trigger-end-of-life (object (removeable-from-world-p object))))
 
 (defmethod render ((object cure-spark) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -2541,15 +2547,7 @@
 (defclass teleport-particle (spell-decal cluster-w-global-life end-life-trigger) ())
 
 (defmethod calculate :after ((object teleport-particle) dt)
-  (with-accessors ((triggered-p triggered-p)
-		   (end-of-life-callback end-of-life-callback)
-		   (repeat-trigger-p repeat-trigger-p)) object
-    (when (and (removeable-from-world object)
-	       (or repeat-trigger-p
-		   (not triggered-p)))
-      (and end-of-life-callback
-	   (funcall end-of-life-callback))
-      (setf (triggered object) t))))
+  (with-maybe-trigger-end-of-life (object (removeable-from-world-p object))))
 
 (defun make-teleport (pos compiled-shaders)
   (let* ((actual-pos (vec (elt pos 0)

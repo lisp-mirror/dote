@@ -256,7 +256,7 @@
    (level-difficult
     :accessor level-difficult
     :initarg  :level-difficult
-    :initform 1)
+    :initform 4)
    (map-cache-dir
     :accessor map-cache-dir
     :initarg  :map-cache-dir
@@ -377,7 +377,9 @@
 
 (defgeneric set-tile-visited (object x y))
 
-(defgeneric set-concerning-tile (object x y))
+(defgeneric set-concerning-tile (object x y &key danger-zone-size))
+
+(defgeneric max-ai-movement-points (object))
 
 (defmethod fetch-render-window ((object game-state))
   (and (window-id object)
@@ -555,6 +557,8 @@
 
 (defmethod add-to-player-entities ((object game-state) entity)
   (with-accessors ((player-entities player-entities)) object
+    ;; test
+    (character:reset-movement-points (ghost entity))
     (setf (gethash (id entity) player-entities) entity)))
 
 (defmethod add-to-ai-entities ((object game-state) entity)
@@ -754,9 +758,11 @@
   (with-accessors ((blackboard blackboard)) object
     (set-tile-visited blackboard  x y)))
 
-(defmethod set-concerning-tile ((object game-state) x y)
+(defmethod set-concerning-tile ((object game-state) x y
+                                &key (danger-zone-size (let* ((level (level-difficult object)))
+                                                         (blackboard:calc-danger-zone-size level))))
   (with-accessors ((blackboard blackboard)) object
-    (set-tile-visited blackboard  x y)))
+    (set-concerning-tile blackboard  x y :danger-zone-size danger-zone-size)))
 
 (defun max-movement-points (game-state iterator-fn)
   (let ((all-mp '()))

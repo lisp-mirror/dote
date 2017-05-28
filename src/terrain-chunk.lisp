@@ -123,9 +123,8 @@
 
 (defmethod destroy :after ((object terrain-chunk))
   (with-accessors ((renderer-data-text-weights renderer-data-text-weights)) object
-    (when +debug-mode+
-      (misc:dbg "destroy terrain-chunk ~a" (identificable:id object)))
-      (setf renderer-data-text-weights nil)))
+    #+debug-mode (misc:dbg "destroy terrain-chunk ~a" (identificable:id object))
+    (setf renderer-data-text-weights nil)))
 
 (defmethod make-data-for-opengl :after ((object terrain-chunk))
   (with-accessors ((renderer-data-count-weights renderer-data-count-weights)
@@ -151,8 +150,7 @@
     (let ((gl-arr-weight (slot-value object 'renderer-data-text-weights))
 	  (id            (slot-value object 'id)))
       (tg:finalize object #'(lambda ()
-			      (when +debug-mode+
-				(misc:dbg "finalize destroy terrain ~a" id))
+			      #+debug-mode (misc:dbg "finalize destroy terrain ~a" id)
 			      (free-memory* (list (gl:free-gl-array gl-arr-weight)) nil nil)
 			      (setf gl-arr-weight nil))))))
 

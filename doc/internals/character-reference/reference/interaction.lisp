@@ -39,7 +39,8 @@
       stamina                      (define-effect
 				       (modifier 2 duration unlimited trigger when-consumed))
       dexterity                     (define-effect
-					(modifier -4 duration until-worn trigger until-held))
+					(modifier -4 duration 3 ;; turns
+                                                  trigger when-worn))
       agility                       (define-effect
 					(modifier -4 duration unlimited trigger when-used))
       smartness                    none

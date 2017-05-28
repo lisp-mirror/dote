@@ -106,10 +106,10 @@
 		   (texture-object texture-object)
 		   (compiled-shaders compiled-shaders)) object
     (when (entity-dead-p object)
-      (let ((debris (particles:make-debris  (aabb-center aabb)
-					    +y-axe+
-					    (particles:debris-particles-number damage)
-					    texture-object
-					    compiled-shaders)))
+      (let ((debris (particles:make-debris (aabb-center aabb)
+					   +y-axe+
+					   (particles:debris-particles-number damage)
+					   texture-object
+					   compiled-shaders)))
 	(game-state:with-world (world state)
 	  (world:push-entity world debris))))))

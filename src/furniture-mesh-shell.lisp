@@ -19,7 +19,7 @@
 (defclass furniture-mesh-shell (triangle-mesh-shell) ())
 
 (defmethod game-event:on-game-event ((object furniture-mesh-shell) (event game-event:end-turn))
-  (misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
+  ;;(misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
   nil)
 
 (defmethod rendering-needed-p ((object furniture-mesh-shell) renderer)
@@ -35,10 +35,10 @@
 		   (texture-object texture-object)
 		   (compiled-shaders compiled-shaders)) object
     (when (entity-dead-p object)
-      (let ((debris (particles:make-debris  (aabb-center aabb)
-					    +y-axe+
-					    (particles:debris-particles-number damage)
-					    texture-object
-					    compiled-shaders)))
+      (let ((debris (particles:make-debris (aabb-center aabb)
+                                           +y-axe+
+                                           (particles:debris-particles-number damage)
+                                           texture-object
+                                           compiled-shaders)))
 	(game-state:with-world (world state)
 	  (world:push-entity world debris))))))

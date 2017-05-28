@@ -54,11 +54,11 @@
 
 (define-constant +impostor-default-size+        512                   :test #'=)
 
-(defclass tooltip (triangle-mesh inner-animation)
-  ((duration
+(defclass tooltip (triangle-mesh inner-animation end-life-trigger)
+  ((duration/2
     :initform (lcg-next-in-range 3.0 4.0)
-    :initarg  :duration
-    :accessor duration)
+    :initarg  :duration/2
+    :accessor duration/2)
    (gravity
     :initform (num:lcg-next-in-range 1.0 2.0)
     :initarg  :gravity
@@ -70,10 +70,16 @@
    (font-color
     :initform +damage-color+
     :initarg  :font-color
-    :accessor font-color)))
+    :accessor font-color))
+  (:documentation "Note: the tooltip will add and remove itself from action-queue automatically
+                   see: make instance and keyworld enqueuedp"))
 
-(defmethod initialize-instance :after ((object tooltip) &key &allow-other-keys)
-  (setf (use-blending-p object) t))
+(defmethod initialize-instance :after ((object tooltip)
+                                       &key (enqueuedp nil) &allow-other-keys)
+  (setf (use-blending-p object) t)
+  (when enqueuedp
+    (action-scheduler:end-of-life-remove-from-action-scheduler object
+                                                               action-scheduler:tooltip-show-action)))
 
 (defun setup-label-tooltip (host new-label)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -105,11 +111,17 @@
   (with-accessors ((calculatep calculatep)) object
     (when calculatep
       (incf (el-time object) (d* dt (animation-speed object)))
-      (bubbleup-modelmatrix object))))
+      (bubbleup-modelmatrix object)
+      (with-maybe-trigger-end-of-life (object (removeable-from-world-p object))))))
+
+(defmethod removeable-from-world-p ((object tooltip))
+  (with-accessors ((duration/2 duration/2)
+                   (el-time el-time)) object
+    (d> el-time (d* 2.0 duration/2))))
 
 (defmethod render ((object tooltip) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
-  (with-accessors ((duration duration)
+  (with-accessors ((duration/2 duration/2)
 		   (projection-matrix projection-matrix)
 		   (compiled-shaders compiled-shaders)
 		   (font-color font-color)
@@ -130,16 +142,16 @@
 	(with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
 	  (cl-gl-utils:with-depth-disabled
 	    (cl-gl-utils:with-blending
-	      (gl:blend-func :src-alpha :one)
+	      (gl:blend-func                :src-alpha :one)
 	      (use-program compiled-shaders :tooltip)
-	      (gl:active-texture :texture0)
+	      (gl:active-texture            :texture0)
 	      (texture:bind-texture texture-object)
-	      (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
-	      (uniformf  compiled-shaders :duration duration)
+	      (uniformi  compiled-shaders :texture-object          +texture-unit-diffuse+)
+	      (uniformf  compiled-shaders :duration                duration/2)
 	      (uniformf  compiled-shaders :vert-displacement-speed +tooltip-v-speed+)
-	      (uniformf  compiled-shaders :time   el-time)
-	      (uniformf  compiled-shaders :gravity gravity)
-	      (uniformfv compiled-shaders :mult-color font-color)
+	      (uniformf  compiled-shaders :time                    el-time)
+	      (uniformf  compiled-shaders :gravity                 gravity)
+	      (uniformfv compiled-shaders :mult-color              font-color)
 	      (uniform-matrix compiled-shaders
 			      :post-scaling 4
 			      (vector (scale scaling))
@@ -162,32 +174,46 @@
 
 (defun make-tooltip (label pos shaders
 		     &key
-		       (color +damage-color+)
+		       (color     +damage-color+)
 		       (font-type gui:+default-font-handle+)
-		       (gravity (num:lcg-next-in-range 1.0 24.0))
-		       (activep t))
-
+		       (gravity   (num:lcg-next-in-range 1.0 24.0))
+		       (activep   t)
+                       (enqueuedp nil))
   (let ((tooltip (make-instance 'billboard:tooltip
 				:animation-speed 1.0
 				:font-color      color
 				:font-type       font-type
 				:gravity         gravity
 				:renderp         activep
-				:calculatep      activep)))
+				:calculatep      activep
+                                :enqueuedp       enqueuedp)))
     (setf (interfaces:compiled-shaders tooltip) shaders)
     (setf (entity:pos tooltip) pos)
     (setf (label tooltip) label)
     (mesh:prepare-for-rendering tooltip)
     tooltip))
 
-(defgeneric apply-tooltip (object label &key color))
+(defgeneric apply-tooltip (object label &key
+                                          color
+                                          font-type
+                                          gravity
+                                          activep
+                                          enqueuedp))
+
+(defgeneric enqueue-tooltip (object label &key
+                                            color
+                                            font-type
+                                            gravity
+                                            additional-action-enqueued-fn
+                                            activep))
 
 (defmethod apply-tooltip ((object mesh:triangle-mesh) label
 			  &key
 			    (color     +damage-color+)
 			    (font-type gui:+default-font-handle+)
 			    (gravity   1.0)
-			    (activep    t))
+			    (activep   t)
+                            (enqueuedp nil))
   (with-accessors ((ghost ghost)
 		   (id id)
 		   (state state)) object
@@ -196,20 +222,37 @@
 		     (status status)) ghost
       (game-state:with-world (world state)
 	(let* ((mesh-pos       (aabb-top-center (aabb object)))
-	       (tooltip-count  (tooltip-count   object))
 	       (tooltip        (billboard:make-tooltip label
 						       (vec+ mesh-pos
-							     (vec* (vec 0.0
-									(d* 1.5 +tooltip-h+)
-									0.0)
-								   tooltip-count))
+							     (vec 0.0
+                                                                  (d* 1.5 +tooltip-h+)
+                                                                  0.0))
 						       (compiled-shaders object)
 						       :color      color
 						       :font-type  font-type
 						       :gravity    gravity
-						       :activep    activep)))
-	  (incf-tooltip-ct object)
+						       :activep    activep
+                                                       :enqueuedp  enqueuedp)))
 	  (world:push-entity world tooltip))))))
+
+(defmethod enqueue-tooltip ((object mesh:triangle-mesh) label
+                            &key
+                              (color     +damage-color+)
+                              (font-type gui:+default-font-handle+)
+                              (gravity   1.0)
+                              (additional-action-enqueued-fn nil)
+                              (activep    t))
+  (with-accessors ((state state)) object
+    (game-state:with-world (world state)
+      (action-scheduler:with-enqueue-action (world action-scheduler:tooltip-show-action)
+        (apply-tooltip object label
+                       :color     color
+                       :font-type font-type
+                       :gravity   gravity
+                       :activep   activep
+                       :enqueuedp t)
+        (when additional-action-enqueued-fn
+          (funcall additional-action-enqueued-fn))))))
 
 (defun get-bitmap-min-x-opaque (pixmap)
   (let ((min (matrix:width pixmap)))
@@ -227,7 +270,6 @@
 	(setf max x)))
     max))
 
-
 (defclass tree-impostor-shell (triangle-mesh-shell) ())
 
 (defmethod initialize-instance :after ((object tree-impostor-shell) &key &allow-other-keys)
@@ -242,8 +284,7 @@
 
 (defmethod render ((object tree-impostor-shell) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
-  (with-accessors ((duration duration)
-		   (projection-matrix projection-matrix)
+  (with-accessors ((projection-matrix projection-matrix)
 		   (compiled-shaders compiled-shaders)
 		   (font-color font-color)
 		   (el-time el-time)

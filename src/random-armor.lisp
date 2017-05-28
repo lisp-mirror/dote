@@ -261,7 +261,7 @@
 	 (spell-id      (spell:identifier (random-elt spells)))
 	 (effect-object (make-instance 'magic-effect-parameters
 				       :spell-id spell-id
-				       :trigger  +effect-until-held+)))
+				       :trigger  +effect-when-worn+)))
     (n-setf-path-value interaction (list +magic-effects+) effect-object)))
 
 (defun filename-effects-string (interaction)

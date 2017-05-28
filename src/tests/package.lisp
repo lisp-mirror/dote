@@ -238,3 +238,10 @@
 	:alexandria
 	:cl-kanren
 	:kanren-utils))
+
+(defpackage :action-scheduler-test
+  (:use :cl
+	:clunit
+	:all-test
+	:alexandria
+	:action-scheduler))

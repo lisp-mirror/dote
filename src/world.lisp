@@ -209,21 +209,70 @@
 			     :x 0.0 :y 0.0
 			     :width  *window-w*
 			     :height *window-h*
-			     :label nil))))
+			     :label nil))
+    #+debug-ai
+    (influence-map-type
+     :accessor influence-map-type
+     :initarg  :influence-map-type
+     :initform :unexplored-layer)))
 
 (defmethod initialize-instance :after ((object world) &key &allow-other-keys)
-  (with-accessors ((toolbar toolbar)) object
+  (with-accessors ((toolbar       toolbar)
+                   (actions-queue actions-queue)) object
     (game-event:register-for-refresh-toolbar-event object)
     (game-event:register-for-update-highlight-path object)
     (game-event:register-for-end-turn              object)
+    ;; registering root action-scheduler
+    (game-event:register-for-end-turn               actions-queue)
+    (game-event:register-for-game-action-terminated actions-queue)
     (setf (widget:bound-world toolbar) object)))
+
+(defmethod actions-queue-empty-p ((object world))
+ (actions-queue-empty-p (actions-queue object)))
+
+#+debug-ai
+(defgeneric render-influence-map (object))
+
+#+debug-ai
+(defun type-influence->pixmap (world)
+  (with-accessors ((main-state main-state)
+                   (influence-map-type influence-map-type)) world
+    (with-accessors ((blackboard blackboard)) main-state
+      (let ((layer (ecase influence-map-type
+                     (:unexplored-layer
+                      (inmap:dijkstra-layer->pixmap
+                       (blackboard:unexplored-layer blackboard)))
+                     (:attack-enemy-melee-layer
+                      (inmap:dijkstra-layer->pixmap
+                       (blackboard:attack-enemy-melee-layer blackboard)))
+                     (:attack-enemy-pole-layer
+                      (inmap:dijkstra-layer->pixmap
+                       (blackboard:attack-enemy-pole-layer blackboard)))
+                     (:attack-enemy-bow-layer
+                      (inmap:dijkstra-layer->pixmap
+                       (blackboard:attack-enemy-bow-layer blackboard)))
+                     (:attack-enemy-crossbow-layer
+                      (inmap:dijkstra-layer->pixmap
+                       (blackboard:attack-enemy-crossbow-layer blackboard))))))
+        layer))))
+
+#+debug-ai
+(defmethod render-influence-map ((object world))
+  (with-accessors ((main-state main-state)
+                   (toolbar    toolbar))   object
+    (with-accessors ((blackboard blackboard)) main-state
+      (let ((texture-map (type-influence->pixmap object)))
+        (matrix:v-mirror-matrix texture-map)
+        (matrix:h-mirror-matrix texture-map)
+        (widget:sync-influence-map toolbar texture-map)))))
 
 (defmethod game-event:on-game-event ((object world)
 				     (event game-event:refresh-toolbar-event))
   (with-accessors ((toolbar toolbar)) object
     (widget:sync-with-player toolbar
-			     :reset-health-animation
-			     (game-event:reset-health-status-animation-p event))))
+                             :reset-health-animation
+                             (game-event:reset-health-status-animation-p event))
+    #+debug-ai (render-influence-map object)))
 
 (defmethod game-event:on-game-event ((object world)
 				     (event game-event:update-highlight-path))
@@ -245,12 +294,10 @@
 
 (defmethod game-event:on-game-event ((object world) (event game-event:end-turn))
   (with-accessors ((main-state main-state)) object
-    (misc:dbg " end turn ~a ~a" (type-of object) (type-of event))
-    (remove-all-tooltips object)
-    (remove-all-windows  object)
-    (remove-entity-if (entities object)
-		      #'(lambda (a)
-			  (removeable-from-world a)))
+    ;;(misc:dbg " end turn ~a ~a" (type-of object) (type-of event))
+    (remove-all-tooltips   object)
+    (remove-all-windows    object)
+    (remove-all-removeable object)
     ;;(remove-entity-if (gui object) #'(lambda (a) (typep a 'widget:message-window)))
     (incf (game-turn (main-state object)))
     (maphash #'(lambda (k v) (declare (ignore k)) (mesh:process-postponed-messages v))
@@ -328,6 +375,8 @@
 (defgeneric remove-all-tooltips (object))
 
 (defgeneric remove-all-windows (object))
+
+(defgeneric remove-all-removeable (object))
 
 (defgeneric activate-all-tooltips (object))
 
@@ -529,8 +578,8 @@
 		    (when bind
 		      (setf (selected-pc main-state) entity)
 		      (setf (widget:bound-player toolbar) entity)
-		      (widget:sync-with-player toolbar))
-		    (return-from pick-player-entity entity)))))))))
+                      (game-event:send-refresh-toolbar-event :reset-health-status-animation nil))
+                    (return-from pick-player-entity entity)))))))))
   nil)
 
 (defmethod pick-any-entity ((object world) renderer x y)
@@ -784,58 +833,64 @@
 
 (defmethod place-player-on-map ((object world) player faction &optional (pos #(0 0)))
   ;; events
-  (game-event:register-for-end-turn                          player)
+  (game-event:register-for-end-turn                           player)
   ;; movement
-  (game-event:register-for-move-entity-along-path-event      player)
-  (game-event:register-for-move-entity-along-path-end-event  player)
-  (game-event:register-for-move-entity-entered-in-tile-event player)
-  (game-event:register-for-rotate-entity-cw-event            player)
-  (game-event:register-for-rotate-entity-ccw-event           player)
+  (game-event:register-for-move-entity-along-path-event       player)
+  (game-event:register-for-move-entity-along-path-end-event   player)
+  (game-event:register-for-move-entity-entered-in-tile-event  player)
+  (game-event:register-for-rotate-entity-cw-event             player)
+  (game-event:register-for-rotate-entity-ccw-event            player)
   ;; health
   ;;poison
-  (game-event:register-for-cause-poisoning-event             player)
-  (game-event:register-for-cure-poisoning-event              player)
-  (game-event:register-for-immune-poisoning-event            player)
-  (game-event:register-for-cancel-immune-poisoning-event     player)
+  (game-event:register-for-cause-poisoning-event              player)
+  (game-event:register-for-cure-poisoning-event               player)
+  (game-event:register-for-immune-poisoning-event             player)
+  (game-event:register-for-cancel-immune-poisoning-event      player)
   ;; terror
-  (game-event:register-for-cause-terror-event                player)
-  (game-event:register-for-cure-terror-event                 player)
-  (game-event:register-for-cancel-terror-event               player)
-  (game-event:register-for-immune-terror-event               player)
-  (game-event:register-for-cancel-immune-terror-event        player)
+  (game-event:register-for-cause-terror-event                 player)
+  (game-event:register-for-cure-terror-event                  player)
+  (game-event:register-for-cancel-terror-event                player)
+  (game-event:register-for-immune-terror-event                player)
+  (game-event:register-for-cancel-immune-terror-event         player)
   ;; berserk
-  (game-event:register-for-cause-berserk-event               player)
-  (game-event:register-for-cure-berserk-event                player)
-  (game-event:register-for-cancel-berserk-event              player)
-  (game-event:register-for-immune-berserk-event              player)
-  (game-event:register-for-cancel-immune-berserk-event       player)
+  (game-event:register-for-cause-berserk-event                player)
+  (game-event:register-for-cure-berserk-event                 player)
+  (game-event:register-for-cancel-berserk-event               player)
+  (game-event:register-for-immune-berserk-event               player)
+  (game-event:register-for-cancel-immune-berserk-event        player)
   ;; faint
-  (game-event:register-for-cause-faint-event                 player)
-  (game-event:register-for-cure-faint-event                  player)
-  (game-event:register-for-cancel-faint-event                player)
-  (game-event:register-for-immune-faint-event                player)
-  (game-event:register-for-cancel-immune-faint-event         player)
+  (game-event:register-for-cause-faint-event                  player)
+  (game-event:register-for-cure-faint-event                   player)
+  (game-event:register-for-cancel-faint-event                 player)
+  (game-event:register-for-immune-faint-event                 player)
+  (game-event:register-for-cancel-immune-faint-event          player)
   ;; DMG points
-  (game-event:register-for-heal-damage-event                 player)
+  (game-event:register-for-heal-damage-event                  player)
   ;; modifier
-  (game-event:register-for-modifier-object-event             player)
+  (game-event:register-for-modifier-object-event              player)
   ;; wearing
-  (game-event:register-for-wear-object-event                 player)
-  (game-event:register-for-unwear-object-event               player)
+  (game-event:register-for-wear-object-event                  player)
+  (game-event:register-for-unwear-object-event                player)
   ;; visibility
-  (game-event:register-for-update-visibility                 player)
+  (game-event:register-for-update-visibility                  player)
   ;; attack
-  (game-event:register-for-attack-melee-event                player)
-  (game-event:register-for-attack-long-range-event           player)
+  (game-event:register-for-attack-melee-event                 player)
+  (game-event:register-for-attack-long-range-event            player)
   ;; attack spell
-  (game-event:register-for-attack-spell-event                player)
+  (game-event:register-for-attack-spell-event                 player)
+  (game-event:register-for-end-attack-spell-event             player)
+  (game-event:register-for-end-defend-from-attack-spell-event player)
   ;; spell
-  (game-event:register-for-spell-event                       player)
+  (game-event:register-for-spell-event                        player)
+  (game-event:register-for-end-spell-event                    player)
+  (game-event:register-for-end-defend-from-spell-event        player)
   ;; traps
-  (game-event:register-for-trap-triggered-event              player)
+  (game-event:register-for-trap-triggered-event               player)
+  ;; plan, AI etc.
+  (game-event:register-for-game-idle-terminated-event         player)
   ;; events registration ends here
-  (game-state:place-player-on-map (main-state object)        player faction pos)
-  (push-interactive-entity object                            player faction :occlude))
+  (game-state:place-player-on-map (main-state object)         player faction pos)
+  (push-interactive-entity object                             player faction :occlude))
 
 (defmethod push-labyrinth-entity ((object world) labyrinth)
   (game-state:push-labyrinth-entity (main-state object) labyrinth)
@@ -959,6 +1014,11 @@
 
 (defmethod remove-all-windows ((object world))
   (remove-entity-if (gui object) #'(lambda (a) (typep a 'widget:window))))
+
+(defmethod remove-all-removeable ((object world))
+  (remove-entity-if (entities object)
+                    #'(lambda (a)
+                        (removeable-from-world-p a))))
 
 (defmethod activate-all-tooltips ((object world))
   (walk-quad-tree-anyway (object)

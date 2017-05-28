@@ -52,11 +52,6 @@
     :initarg  :attacked-by-entity
     :initform nil
     :type     entity)
-   (tooltip-count
-    :accessor tooltip-count
-    :initarg  :tooltip-count
-    :initform 0.0
-    :type     num:desired-type)
    (state
     :accessor state
     :initarg :state
@@ -89,22 +84,3 @@
 (defgeneric remove-entity-if (object predicate))
 
 (defgeneric entity-dead-p (object))
-
-(defgeneric incf-tooltip-ct (object))
-
-(defgeneric decf-tooltip-ct (object))
-
-(defgeneric reset-tooltip-ct (object))
-
-(defmethod incf-tooltip-ct ((object entity))
-  (with-accessors ((tooltip-count tooltip-count)) object
-    (setf tooltip-count (d+ tooltip-count 1.0))))
-
-(defmethod decf-tooltip-ct ((object entity))
-  (with-accessors ((tooltip-count tooltip-count)) object
-    (setf tooltip-count (max 0.0
-			     (d- tooltip-count 1.0)))))
-
-(defmethod reset-tooltip-ct ((object entity))
-  (with-accessors ((tooltip-count tooltip-count)) object
-    (setf tooltip-count 0.0)))

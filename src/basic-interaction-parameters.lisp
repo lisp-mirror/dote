@@ -24,8 +24,6 @@
 
 (define-constant +effect-when-worn+            :when-worn                   :test #'eq)
 
-(define-constant +effect-until-held+           :until-held                  :test #'eq)
-
 (define-constant +effect-until-picked+         :until-picked                :test #'eq)
 
 (define-constant +effect-when-consumed+        :when-consumed               :test #'eq)
@@ -314,11 +312,10 @@
       (warn (_ "Interation: No duration specified for effect, using :unlimited.")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
 				+effect-when-consumed+
-				+effect-until-picked+ +effect-until-held+))
+				+effect-until-picked+))
       (error (format nil (_ "Invalid trigger ~s, expected ~s")
 		     trigger (list +effect-when-worn+ +effect-when-used+
-				   +effect-when-consumed+ +effect-until-picked+
-				   +effect-until-held+))))
+				   +effect-when-consumed+ +effect-until-picked+))))
     (make-instance 'effect-parameters
 		   :trigger  (or trigger  +effect-when-used+)
 		   :duration (or duration +duration-unlimited+)
@@ -409,12 +406,10 @@
     (when (null target)
       (warn (_ "Interation: No target specified for effect, using self.")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
-				+effect-when-consumed+ +effect-until-picked+
-				+effect-until-held+))
+				+effect-when-consumed+ +effect-until-picked+))
       (error (format nil (_ "Invalid trigger ~s, expected ~s")
 		     trigger (list +effect-when-worn+ +effect-when-used+
-				   +effect-when-consumed+ +effect-until-picked+
-				   +effect-until-held+))))
+				   +effect-when-consumed+ +effect-until-picked+))))
     (make-instance 'healing-effect-parameters
 		   :trigger  (or trigger  +effect-when-used+)
 		   :duration (or duration 1000000)
@@ -456,7 +451,7 @@
 				   :environment environment))
 
     (defmethod description-for-humans ((object magic-effect-parameters))
-      (format nil "~a" (description-for-humans (spell:get-spell (spell-id object))))))
+      (spell:spell-id->string-for-human (spell-id object))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass poison-effect-parameters (parameters-with-chance parameters-with-target)
@@ -506,12 +501,10 @@
     (when (null target)
       (warn (_ "Interation: No target specified for effect, using self.")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
-				+effect-when-consumed+ +effect-until-picked+
-				+effect-until-held+))
+				+effect-when-consumed+ +effect-until-picked+))
       (error (format nil (_ "Invalid trigger ~s, expected ~s")
 		     trigger (list +effect-when-worn+ +effect-when-used+
-				   +effect-when-consumed+ +effect-until-picked+
-				   +effect-until-held+))))
+				   +effect-when-consumed+ +effect-until-picked+))))
     (when (not (numberp points))
       (error (format nil (_ "Invalid points ~a, expected a number") points)))
     (make-instance 'poison-effect-parameters
@@ -545,10 +538,11 @@
 				   :environment environment))
 
     (defmethod description-for-humans ((object heal-damage-points-effect-parameters))
-      (format nil (_ "heal ~,1f DMG, target ~a")
+      (format nil (_ "heal ~,1f DMG, target ~a, chance: ~,1f%")
 	      (or (points object)
 		  0)
-	      (target object))))
+	      (target object)
+              (chance->chance-for-human (chance object)))))
 
 (defmacro define-heal-dmg-effect (params)
   (let* ((parameters (misc:build-plist params))
@@ -587,12 +581,10 @@
     (when (null target)
       (warn (_ "Interation: No target specified for effect, using self.")))
     (when (not (valid-keyword-p trigger +effect-when-worn+ +effect-when-used+
-				+effect-when-consumed+ +effect-until-picked+
-				+effect-until-held+))
+				+effect-when-consumed+ +effect-until-picked+))
       (error (format nil (_ "Invalid trigger ~s, expected ~s")
 		     trigger (list +effect-when-worn+ +effect-when-used+
-				   +effect-when-consumed+ +effect-until-picked+
-				   +effect-until-held+))))
+				   +effect-when-consumed+ +effect-until-picked+))))
     (make-instance 'magic-effect-parameters
 		   :trigger  (or trigger  +effect-when-used+)
 		   :spell-id  (or spell-id :heal-1)

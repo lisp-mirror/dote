@@ -993,16 +993,17 @@
 		   :sigma-w-fn labyrinth-sigma-w-function)
   (build-texture-weights object soil-threshold)
   (build-cost-matrix object nil)
-  (when +debug-mode+
-    (pixmap:save-pixmap (texture-weights object)
-			(fs:file-in-package "layers.tga"))
-    (dump object (fs:file-in-package "height.pgm"))
-    (with-open-file (stream
-		     (fs:file-in-package "costs.pgm")
-		     :direction :output
-		     :if-exists :supersede :if-does-not-exist :create)
-      (format stream "~a" (pixmap:matrix->pgm (map-matrix (cost-matrix object) #'round) ""
-					      (truncate +invalicable-element-cost+)))))
+  #+debug-mode (progn
+                 (pixmap:save-pixmap (texture-weights object)
+                                     (fs:file-in-package "layers.tga"))
+                 (dump object (fs:file-in-package "height.pgm"))
+                 (with-open-file (stream
+                                  (fs:file-in-package "costs.pgm")
+                                  :direction :output
+                                  :if-exists :supersede :if-does-not-exist :create)
+                   (format stream "~a" (pixmap:matrix->pgm (map-matrix (cost-matrix object)
+                                                                       #'round) ""
+                                                           (truncate +invalicable-element-cost+)))))
   object)
 
 (alexandria:define-constant +min-size-lab-start-generation+ 5 :test #'=)
@@ -1088,15 +1089,15 @@
 		       (d/
 			(d (height (random-labyrinth:shared-matrix (elt (labyrinths object) i))))
 			+terrain-chunk-tile-size+)))))
-  (when +debug-mode+
-    (loop
-       for i in (labyrinths object)
-       for j from 0 do
-	 (random-labyrinth:clear-mat i)
-	 (random-labyrinth:room->mat i :draw-door t :draw-door-to-nowhere t
-				     :draw-border t :draw-seed nil :draw-id nil)
-	 (random-labyrinth:dump i (fs:file-in-package (format nil "lab~a.ppm" j))
-				:draw-door-to-nowhere t :draw-id nil)))
+  #+debug-mode (progn
+                 (loop
+                    for i in (labyrinths object)
+                    for j from 0 do
+                      (random-labyrinth:clear-mat i)
+                      (random-labyrinth:room->mat i :draw-door t :draw-door-to-nowhere t
+                                                  :draw-border t :draw-seed nil :draw-id nil)
+                      (random-labyrinth:dump i (fs:file-in-package (format nil "lab~a.ppm" j))
+                                             :draw-door-to-nowhere t :draw-id nil)))
   (loop for i in (labyrinths object) do (random-labyrinth:clean-and-redraw-mat i)))
 
 (defmethod make-mountains ((object random-terrain)

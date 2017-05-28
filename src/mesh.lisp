@@ -581,8 +581,7 @@
 	   (call-next-method)))
 
 (defmethod game-event:on-game-event ((object triangle-mesh) (event game-event:end-turn))
-  (misc:dbg "mesh end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
-  (reset-tooltip-ct object)
+  ;;(misc:dbg "mesh end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
   nil)
 
 (defmethod game-event:on-game-event ((object triangle-mesh)
@@ -976,11 +975,11 @@
 
 (defmethod can-use-movement-points-p ((object triangle-mesh) &key (minimum 0))
   (and (character:current-movement-points (ghost object))
-       (> (character:current-movement-points (ghost object)) minimum)))
+       (>= (character:current-movement-points (ghost object)) minimum)))
 
 (defmethod can-use-spell-points-p ((object triangle-mesh) &key (minimum 0))
   (and (character:current-magic-points (ghost object))
-       (> (character:current-magic-points (ghost object)) minimum)))
+       (>= (character:current-magic-points (ghost object)) minimum)))
 
 (defmethod calculate-cost-position ((object triangle-mesh))
   (with-accessors ((pos pos)) object
@@ -1368,8 +1367,7 @@
 	      (id              (slot-value object 'id)))
 	  (tg:finalize object
 		       #'(lambda ()
-			   (when +debug-mode+
-			     (misc:dbg "finalize destroy mesh ~a" id))
+			   #+debug-mode (misc:dbg "finalize destroy mesh ~a" id)
 			   (free-memory* (list gl-arr-vert
 					       gl-arr-tex
 					       gl-arr-norm
@@ -1544,8 +1542,7 @@
 		   (renderer-data-normals-obj-space renderer-data-normals-obj-space)
 		   (renderer-data-aabb-obj-space renderer-data-aabb-obj-space)
 		   (vbo vbo) (vao vao)) object
-    (when +debug-mode+
-      (misc:dbg "destroy triangle mesh ~a" (id object)))
+    #+debug-mode (misc:dbg "destroy triangle mesh ~a" (id object))
     (setf vbo nil
 	  vao nil
 	  renderer-data-vertices nil
@@ -3107,8 +3104,7 @@
     (let ((id (slot-value object 'id)))
       (tg:finalize object
 		   #'(lambda ()
-		       (when +debug-mode+
-			 (misc:dbg "finalize water ~a" id))
+		       #+debug-mode (misc:dbg "finalize water ~a" id)
 		       (gl:delete-framebuffers framebuffers)
 		       (gl:delete-renderbuffers depthbuffers))))))
 
@@ -3258,8 +3254,7 @@
 
 (defmethod destroy :after ((object water))
   (with-accessors ((framebuffer framebuffer) (depthbuffer depthbuffer)) object
-    (when +debug-mode+
-      (misc:dbg "destroy water ~a" (id object)))
+    #+debug-mode (misc:dbg "destroy water ~a" (id object))
     (setf framebuffer nil
 	  depthbuffer nil)))
 

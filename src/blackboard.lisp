@@ -125,16 +125,17 @@
                (setf (matrix-elt concerning-map y x) new-value)
                (setf (matrix-elt concerning-map y x) 0.0)))))))
 
+(defun %update-all-layers (blackboard)
+  (update-unexplored-layer      blackboard)
+  (update-attack-melee-layer    blackboard)
+  (update-attack-pole-layer     blackboard)
+  (update-attack-bow-layer      blackboard)
+  (update-attack-crossbow-layer blackboard))
+
 (defmethod game-event:on-game-event ((object blackboard) (event game-event:end-turn))
   (with-accessors ((concerning-tiles concerning-tiles)) object
     (decrease-concerning (main-state object) concerning-tiles)
-    (update-attack-melee-layer object)
-    (update-attack-pole-layer  object)
-    (update-attack-bow-layer  object)
-    (update-attack-crossbow-layer  object)
-    ;; ;; debug ;;;;;;
-    ;; (let ((pixmap (inmap:dijkstra-layer->pixmap (attack-enemy-bow-layer object))))
-    ;;   (pixmap:save-pixmap pixmap (fs:file-in-package "exploring.tga")))
+    (%update-all-layers object)
     nil))
 
 (defmethod main-state ((object blackboard))
@@ -143,6 +144,8 @@
 (defmethod (setf main-state) (new-state (object blackboard))
   (with-slots (main-state) object
     (setf main-state new-state)))
+
+(defgeneric strategy-decision (object))
 
 (defgeneric update-unexplored-layer (object))
 
@@ -166,6 +169,11 @@
 
 (defgeneric update-attack-crossbow-layer-player (object player &key all-visibles-from-ai))
 
+;; TODO use decision tree
+(defmethod strategy-decision ((object blackboard))
+  (declare (ignore object))
+  +explore-strategy+)
+
 (defmethod set-tile-visited ((object blackboard) x y)
   (call-next-method object
                     (map-utils:coord-chunk->matrix x)
@@ -177,24 +185,21 @@
                    (unexplored-layer unexplored-layer)) object
     ;; mark visited
     (setf (matrix-elt visited-tiles y x) t)
-    (update-unexplored-layer object)))
-
-    ;; debug ;;;;;;
-    ;; (let ((pixmap (inmap:dijkstra-layer->pixmap
-    ;;                (unexplored-layer object))))
-    ;;   (pixmap:save-pixmap pixmap (fs:file-in-package "exploring.tga")))))
+    (%update-all-layers object)))
 
 (defun calc-danger-zone-size (difficult-level)
   "The size of the concerning zone when when some concerning event occurs"
-  (ceiling (dlerp (smoothstep-interpolate 2.0 3.0 difficult-level)
-                  1.0
-                  3.0)))
+  (ceiling (dlerp (smoothstep-interpolate 2.0 5.0 difficult-level)
+                  4.0
+                  8.0)))
 
-(defmethod set-concerning-tile ((object blackboard) x y)
-  (with-accessors ((concerning-tiles concerning-tiles)
-                   (main-state main-state)) object
-    (let* ((danger-zone-size    (calc-danger-zone-size (level-difficult main-state)))
-           (dangerous-tiles-pos (gen-neighbour-position-in-box x
+(defmethod set-concerning-tile ((object blackboard) x y
+                                &key
+                                  (danger-zone-size (let* ((main-state (main-state object))
+                                                           (level (level-difficult main-state)))
+                                                      (calc-danger-zone-size level))))
+  (with-accessors ((concerning-tiles concerning-tiles)) object
+    (let* ((dangerous-tiles-pos (gen-neighbour-position-in-box x
                                                                y
                                                                danger-zone-size
                                                                danger-zone-size)))
@@ -597,3 +602,8 @@
                                     (when (not (funcall ray-stopper-fn v x y))
                                       (return-from 2d-tile-visible-p t)))))
   nil)
+
+(defun disgregard-all-plans (game-state)
+  (map-ai-entities game-state #'(lambda (k v)
+                                  (declare (ignore k))
+                                  (character:disgregard-tactical-plan (ghost v)))))

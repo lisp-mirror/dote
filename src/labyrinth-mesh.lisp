@@ -47,8 +47,7 @@
 		   (renderer-data-normals-obj-space renderer-data-normals-obj-space)
 		   (renderer-data-aabb-obj-space renderer-data-aabb-obj-space)
 		   (vbo vbo) (vao vao)) object
-    (when +debug-mode+
-      (misc:dbg "destroy instanced-mesh ~a" (id object)))
+    #+debug-mode (misc:dbg "destroy instanced-mesh ~a" (id object))
     (setf renderer-data-position           nil
 	  vbo                              nil
 	  vao                              nil
@@ -104,8 +103,7 @@
     (let ((gl-arr-pos (slot-value object 'renderer-data-position))
 	  (id            (slot-value object 'id)))
       (tg:finalize object #'(lambda ()
-			      (when +debug-mode+
-				(misc:dbg "finalize destroy instanced-mesh ~a" id))
+			      #+debug-mode (misc:dbg "finalize destroy instanced-mesh ~a" id)
 			      (free-memory* (list (gl:free-gl-array gl-arr-pos)) nil nil)
 			      (setf gl-arr-pos nil))))))
 

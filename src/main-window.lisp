@@ -150,6 +150,8 @@
     (setf compiled-shaders (compile-library))
     ;; we need a valid opengl context to load spells database
     (spell:load-spell-db)
+    ;; we need a valid opengl context to start texture's database
+    (texture:init-db)
     (gui:setup-gui compiled-shaders)
     ;; set up world
     (setf world (make-instance 'world :frame-window object))
@@ -360,6 +362,21 @@
     (setf *placeholder* nil)
     (close-window object)))
 
+#+debug-ai
+(defun %change-ai-layer (window scancode)
+  (flet ((%change-layer (type)
+           (setf (world:influence-map-type (world window)) type)))
+    (when (eq :scancode-f8 scancode)
+      (%change-layer :unexplored-layer))
+    (when (eq :scancode-f9 scancode)
+      (%change-layer :attack-enemy-melee-layer))
+    (when (eq :scancode-f10 scancode)
+      (%change-layer :attack-enemy-pole-layer))
+    (when (eq :scancode-f11 scancode)
+      (%change-layer :attack-enemy-bow-layer))
+    (when (eq :scancode-f12 scancode)
+      (%change-layer :attack-enemy-crossbow-layer))))
+
 (defmethod keydown-event ((object test-window) ts repeat-p keysym)
   (with-accessors ((world world)) object
     (let ((gui-event (make-instance 'gui-events:key-pressed
@@ -370,13 +387,14 @@
 	  (when (eq :scancode-escape scancode)
 	    (setf *placeholder* nil)
 	    (close-window object))
-	  (when (eq :scancode-f8 scancode)
+	  (when (eq :scancode-f2 scancode)
 	    (with-accessors ((world world) (mesh mesh)) object
 	      (cl-gl-utils:with-render-to-file ((fs:file-in-package "screenshot.tga")
 						*window-w* *window-h*)
 		(interfaces:render world world))))
 	  (when *placeholder*
 	    (let* ((old-pos (entity:pos *placeholder*)))
+              #+debug-ai (%change-ai-layer object scancode)
 	      (when (eq :scancode-f1 scancode)
 		(misc:dbg "position ~a costs ~a, ~a cost: ~a what ~a id ~a~% approx h ~a facing ~a occlude? ~a"
 			  old-pos

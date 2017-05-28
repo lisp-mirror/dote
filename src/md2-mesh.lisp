@@ -1,18 +1,19 @@
 ;; dawn of the Era: a tactical game.
 ;; Copyright (C) 2015  cage
 
-;; This program is free software: you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation, either version 3 of the License, or
-;; (at your option) any later version.
+;; This  program is  free  software: you  can  redistribute it  and/or
+;; modify it  under the  terms of  the GNU  General Public  License as
+;; published by the Free Software  Foundation, either version 3 of the
+;; License, or (at your option) any later version.
 
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
+;; This program is distributed in the hope that it will be useful, but
+;; WITHOUT  ANY  WARRANTY;  without   even  the  implied  warranty  of
+;; MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE.   See the GNU
+;; General Public License for more details.
 
-;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;; You should have  received a copy of the GNU  General Public License
+;; along      with      this      program.       If      not,      see
+;; <http://www.gnu.org/licenses/>.
 
 (in-package :md2-mesh)
 
@@ -176,19 +177,29 @@
 (defmethod print-object ((object md2-mesh) stream)
   (print-unreadable-object (object stream :type t :identity t)))
 
-(defmethod on-game-event ((object md2-mesh) (event attack-melee-event))
-  (check-event-targeted-to-me (object event)
-    (multiple-value-bind (damage ambush)
-	(battle-utils:defend-from-attack-short-range event)
-      (when ambush
-	(billboard:apply-tooltip object
-				 billboard:+tooltip-surprise-attack-char+
-				 :color     billboard:+damage-color+
-				 :font-type gui:+tooltip-font-handle+))
-      (apply-damage object damage)
-      (setf (attacked-by-entity object) (attacker-entity event))
-      (game-event:register-for-end-attack-melee-event object)
-      t)))
+(defmethod on-game-event ((object md2-mesh) (event game-event:game-idle-terminated-event))
+  "Note no need to check for target id, because just an entity can
+   exists in idle state at any time in the game"
+  (with-accessors ((ghost ghost)) object
+    (if (and ghost
+             (has-idle-plan-p ghost))
+        (progn
+          (unset-idle-plan ghost)
+          t)
+        nil)))
+
+(defun update-concening-zones-around-entity (entity)
+  (with-accessors ((ghost ghost)
+		   (dir dir)
+		   (id id)
+		   (state state)) entity
+    (let* ((pos-entity (calculate-cost-position entity))
+           (difficult  (game-state:level-difficult state))
+           (dangerous-zone-size (max 2 (blackboard:calc-danger-zone-size difficult))))
+      (game-state:set-concerning-tile state
+                                      (elt pos-entity 0)
+                                      (elt pos-entity 1)
+                                      :danger-zone-size dangerous-zone-size))))
 
 (defmacro with-end-attack-event ((object event attacked-by-entity) &body body)
   `(check-event-targeted-to-me (,object ,event)
@@ -203,65 +214,109 @@
     `(with-accessors ((,state state)) ,object
        (let* ((,ghost (ghost ,object))
 	      (,chance (actual-reply-attack-chance ,ghost)))
-	 (when (and (not (entity:reply-attack-p ,attacked-by-entity))
-		    (dice:pass-d1.0 ,chance))
+         ;; TEST ;;;;;;;;;;;;,
+	 (when (or t (and (not (entity:reply-attack-p ,attacked-by-entity))
+                          ( dice:pass-d100.0 ,chance)))
 	   ;; attack!
 	   (game-state:with-world (,world ,state)
-	     (let ((,weapon-short-range (character:weapon-type-short-range ,ghost))
-		   (,weapon-long-range  (character:weapon-type-long-range  ,ghost)))
+	     (let ((,weapon-short-range (weapon-type-short-range ,ghost))
+		   (,weapon-long-range  (weapon-type-long-range  ,ghost)))
 	       (cond
 		 (,weapon-short-range
 		  (setf (entity:reply-attack ,object) t)
 		  (battle-utils:attack-short-range ,world ,object ,attacked-by-entity))
 		 (,weapon-long-range
 		  (setf (entity:reply-attack ,object) t)
-		  (battle-utils:attack-long-range ,world ,object ,attacked-by-entity)))
-	       ,@body)))))))
+		  (battle-utils:attack-long-range ,world ,object ,attacked-by-entity))))))
+         ,@body))))
 
 (defmethod on-game-event ((object md2-mesh) (event end-attack-melee-event))
   (with-end-attack-event (object event attacked-by-entity)
-    (with-maybe-reply-attack (object attacked-by-entity))))
+    (with-maybe-reply-attack (object attacked-by-entity)
+      (with-remove-idle-character-plan))))
 
 (defmethod on-game-event ((object md2-mesh) (event end-attack-long-range-event))
   (with-end-attack-event (object event attacked-by-entity)
-    (with-maybe-reply-attack (object attacked-by-entity))))
+    (update-concening-zones-around-entity object)
+    (with-maybe-reply-attack (object attacked-by-entity)
+      (with-remove-idle-character-plan))))
 
 (defmethod on-game-event ((object md2-mesh) (event end-attack-spell-event))
   (with-end-attack-event (object event attacked-by-entity) ;; no reply to spell
-    (setf (character:spell-loaded (entity:ghost object)) nil)))
+    (setf (spell-loaded (entity:ghost object)) nil)))
 
 (defmethod on-game-event ((object md2-mesh) (event end-spell-event))
   (with-end-attack-event (object event attacked-by-entity) ;; no reply to spell
-    (setf (character:spell-loaded (entity:ghost object)) nil)))
+    (setf (spell-loaded (entity:ghost object)) nil)))
+
+(defmethod on-game-event ((object md2-mesh) (event end-defend-from-attack-spell-event))
+  (with-end-attack-event (object event attacked-by-entity) ;; no reply to spell
+    (update-concening-zones-around-entity object)
+    (with-remove-idle-character-plan)))
+
+(defmethod on-game-event ((object md2-mesh) (event end-defend-from-spell-event))
+  (with-end-attack-event (object event attacked-by-entity) ;; no reply to spell
+    (with-remove-idle-character-plan)))
+
+(defun manage-occurred-damage (entity
+                               event
+                               damage
+                               ambushp
+                               register-for-end-attack-fn
+                               send-end-attack-event-fn
+                               weapon)
+  (when ambushp
+    (billboard:apply-tooltip entity
+                             billboard:+tooltip-surprise-attack-char+
+                             :enqueuedp nil
+                             :color     billboard:+damage-color+
+                             :font-type gui:+tooltip-font-handle+))
+  (apply-damage entity damage) ;; it is ok for damage to be nil.
+  (setf (attacked-by-entity entity) (attacker-entity event))
+  (funcall register-for-end-attack-fn entity)
+  (if damage
+      (battle-utils:send-effects-after-attack (attacker-entity event) entity :weapon weapon)
+      (funcall send-end-attack-event-fn entity)))
+
+(defmethod on-game-event ((object md2-mesh) (event attack-melee-event))
+  (check-event-targeted-to-me (object event)
+    (multiple-value-bind (damage ambush)
+	(battle-utils:defend-from-attack-short-range event)
+      (manage-occurred-damage object
+                              event
+                              damage
+                              ambush
+                              #'register-for-end-attack-melee-event
+                              #'send-end-attack-melee-event
+                              (worn-weapon (entity:ghost object)))
+      t)))
 
 (defmethod on-game-event ((object md2-mesh) (event attack-long-range-event))
   (check-event-targeted-to-me (object event)
     (multiple-value-bind (damage ambush)
 	(battle-utils:defend-from-attack-long-range event)
-      (when ambush
-	(billboard:apply-tooltip object
-				 billboard:+tooltip-surprise-attack-char+
-				 :color     billboard:+damage-color+
-				 :font-type gui:+tooltip-font-handle+))
-      (apply-damage object damage)
-      (setf (attacked-by-entity object) (attacker-entity event))
-      (game-event:register-for-end-attack-long-range-event object)
+      (manage-occurred-damage object
+                              event
+                              damage
+                              ambush
+                              #'register-for-end-attack-long-range-event
+                              #'send-end-attack-long-range-event
+                              (worn-weapon (entity:ghost object)))
       t)))
 
 (defmethod on-game-event ((object md2-mesh) (event attack-spell-event))
   (check-event-targeted-to-me (object event)
     (multiple-value-bind (damage ambush)
 	(battle-utils:defend-from-attack-spell event)
-      (when ambush
-	(billboard:apply-tooltip object
-				 billboard:+tooltip-surprise-attack-char+
-				 :color     billboard:+damage-color+
-				 :font-type gui:+tooltip-font-handle+
-				 :activep   nil))
-      (apply-damage object damage :tooltip-active-p nil)
-      (setf (attacked-by-entity object) (attacker-entity event))
-      (game-event:register-for-end-attack-spell-event object)
-      t)))
+      #+debug-mode (misc:dbg "apply ~a" damage)
+      (manage-occurred-damage object
+                              event
+                              damage
+                              ambush
+                              #'register-for-end-attack-spell-event
+                              #'send-end-attack-spell-event
+                              (game-event:spell event))
+        t)))
 
 (defmethod on-game-event ((object md2-mesh) (event spell-event))
   (check-event-targeted-to-me (object event)
@@ -276,7 +331,7 @@
     (labels ((stop-movements (already-stopped)
 	       (when (not already-stopped)
 		 (%stop-movement object :decrement-movement-points t)))
-	     (seenp (hash-key entity
+             (seenp (hash-key entity
                               &key
                               (from-render-p nil)
                               (maintain-render nil))
@@ -292,14 +347,17 @@
                      (when (not from-render-p)
                        (setf already-stopped t)
                        (stop-movements nil))
-                     (when (dice:pass-d100.0 (actual-ambush-attack-chance (ghost entity)))
+                     ;;;;; TEST;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                     (when (or t (dice:pass-d100.0 (actual-ambush-attack-chance (ghost entity))))
                        (cond
                          ((battle-utils:long-range-attack-possible-p entity object)
                           (game-state:with-world (world state)
+                            (set-idle-plan (ghost object))
                             (stop-movements already-stopped)
                             (battle-utils:attack-long-range world entity object)))
                          ((battle-utils:short-range-attack-possible-p entity object)
                           (game-state:with-world (world state)
+                            (set-idle-plan (ghost object))
                             (stop-movements already-stopped)
                             (battle-utils:attack-short-range world entity object))))))
                    t)
@@ -357,17 +415,22 @@
 
 (defmethod on-game-event ((object md2-mesh) (event move-entity-along-path-event))
   (with-accessors ((ghost ghost)
-		   (dir dir)) object
+		   (dir dir)
+                   (stop-animation  stop-animation)
+                   (cycle-animation cycle-animation)
+                   (setf cycle-animation nil)) object
     (with-accessors ((current-path current-path)) ghost
       (if (= (id object) (id-destination event))
 	  (let ((disable-input-event (make-instance 'window-accept-input-event
 						    :accept-input-p nil)))
 	    (game-event:propagate-window-accept-input-event disable-input-event)
 	    (setf (game-state:selected-path (state object)) nil)
-	    (set-animation object :move)
-	    (setf (current-action object) :move)
-	    (setf current-path (path event))
-	    (setf dir (path->dir current-path :start-index 0))
+            (setf current-path (path event))
+            (setf stop-animation  nil)
+            (setf cycle-animation t)
+            (setf (current-action object) :move)
+	    (set-animation object :move :recalculate t)
+            (setf dir (path->dir current-path :start-index 0))
 	    t)
 	  nil))))
 
@@ -378,11 +441,11 @@
 		   (state state)) player
     (with-accessors ((current-path current-path)) ghost
       (let ((end-event (make-instance 'move-entity-along-path-end-event
-				      :id-origin id
-				      :tile-pos  (alexandria:last-elt current-path))))
-	(when decrement-movement-points
-	  (decrement-move-points-entering-tile player))
-	(propagate-move-entity-along-path-end-event end-event)))))
+                                      :id-origin id
+                                      :tile-pos  (alexandria:last-elt current-path))))
+        (when decrement-movement-points
+          (decrement-move-points-entering-tile player))
+        (propagate-move-entity-along-path-end-event end-event)))))
 
 (defun %try-deactivate-trap-cb (world player trap)
   #'(lambda (w e)
@@ -394,6 +457,9 @@
 				     (level                         ghost-trap)))
 	    (send-deactivate-trap-event player trap)
 	    (send-trap-triggered-event trap player)))))
+
+(defun %try-deactivate-trap-from-ai (world player trap)
+  (funcall (%try-deactivate-trap-cb world player trap) nil nil))
 
 (defun %try-deactivate-trap (world player trap)
   (world:post-entity-message world
@@ -410,6 +476,37 @@
 				       (send-trap-triggered-event trap player)
 				       (world:remove-all-windows world)))))
 
+(defun %on-move-entity-entered-in-tile-event-ai (player event)
+  (with-accessors ((ghost ghost)
+		   (dir dir)
+		   (id id)
+		   (state state)) player
+    (with-accessors ((current-path current-path)) ghost
+      (let ((leaving-tile (alexandria:first-elt current-path))
+            (pos-entity (calculate-cost-position player)))
+        (setf current-path (subseq current-path 1))
+        (if (= (length current-path) 1) ;; entering in last tile, stop
+            (%stop-movement player :decrement-movement-points t)
+            (progn
+              (decrement-move-points-entering-tile player)
+              (setf dir (path->dir current-path :start-index 0))))
+        (game-state:with-world (world state)
+          ;; update state matrix and quadtree
+          (world:move-entity world player leaving-tile)
+          (propagate-update-highlight-path (make-instance 'update-highlight-path
+                                                          :tile-pos current-path))
+          (update-visibility-cone player)
+          ;; update visited tiles in blackboard
+          (game-state:set-tile-visited state (elt pos-entity 0) (elt pos-entity 1))
+          ;; manage traps
+          (let ((trap-ostile (trap-ostile-p player)))
+            (when trap-ostile
+              (set-idle-plan ghost)
+              (%stop-movement player :decrement-movement-points t)
+              (%try-deactivate-trap-from-ai world player trap-ostile)))
+          (send-update-visibility-event player event)
+          (send-refresh-toolbar-event))))))
+
 (defmethod on-game-event ((object md2-mesh) (event move-entity-entered-in-tile-event))
   (with-accessors ((ghost ghost)
 		   (dir dir)
@@ -417,43 +514,45 @@
 		   (state state)) object
     (with-accessors ((current-path current-path)) ghost
       (when (= (id-origin event) id)
-	(let ((leaving-tile (alexandria:first-elt current-path)))
-	  (setf current-path (subseq current-path 1))
-	  (if (= (length current-path) 1)
-	      (%stop-movement object :decrement-movement-points t)
-	      (progn
-		(decrement-move-points-entering-tile object)
-		(setf dir (path->dir current-path :start-index 0))))
-	  (game-state:with-world (world state)
-	    ;; update state matrix and quadtree
-	    (world:move-entity world object leaving-tile)
-	    (propagate-update-highlight-path (make-instance 'update-highlight-path
-							    :tile-pos current-path))
-            ;; update-cone for ai visibility check below
-            (update-visibility-cone object)
-            ;; update blackboard if AI
-            (when (faction-ai-p state id)
-              (let ((pos-entity (calculate-cost-position object)))
-                (game-state:set-tile-visited state (elt pos-entity 0) (elt pos-entity 1))))
-            ;; traps
-	    (let ((trap-ostile (trap-ostile-p object)))
-	      (when trap-ostile
-		(%stop-movement object :decrement-movement-points t)
-		(%try-deactivate-trap world object trap-ostile)))
-	    (send-update-visibility-event object event)
-	    (send-refresh-toolbar-event))))
-      nil)))
+        (if (faction-ai-p state id)
+            (%on-move-entity-entered-in-tile-event-ai object event)
+            (let ((leaving-tile (alexandria:first-elt current-path)))
+              (setf current-path (subseq current-path 1))
+              (if (= (length current-path) 1)
+                  (%stop-movement object :decrement-movement-points t)
+
+                  (progn
+                    (decrement-move-points-entering-tile object)
+                    (setf dir (path->dir current-path :start-index 0))))
+              (game-state:with-world (world state)
+                ;; update state matrix and quadtree
+                (world:move-entity world object leaving-tile)
+                (propagate-update-highlight-path (make-instance 'update-highlight-path
+                                                                :tile-pos current-path))
+                ;; update-cone for ai visibility check below
+                (update-visibility-cone object)
+                ;; traps
+                (let ((trap-ostile (trap-ostile-p object)))
+                  (when trap-ostile
+                    (%stop-movement object :decrement-movement-points t)
+                    (%try-deactivate-trap world object trap-ostile)))
+                (send-update-visibility-event object event)
+                (send-refresh-toolbar-event)))))))
+  nil)
 
 (defmethod on-game-event ((object md2-mesh) (event move-entity-along-path-end-event))
   (with-accessors ((id id)
-		   (ghost ghost)) object
-    (when (= (id-origin event) id)
+		   (ghost ghost)
+                   (state state)) object
+    (check-event-originated-by-me (object event)
       (let ((enable-input-event (make-instance 'window-accept-input-event
-					       :accept-input-p t)))
-	(game-event:propagate-window-accept-input-event enable-input-event)
-	(setf (current-action object) :stand)
-	(set-animation object :stand))))
-  nil)
+                                               :accept-input-p t)))
+        (game-event:propagate-window-accept-input-event enable-input-event)
+        (setf (current-action object) :stand)
+        (set-animation object :stand :recalculate t)
+        (when (faction-ai-p state (id object))
+          (send-action-terminated-event))
+        t))))
 
 (defmethod on-game-event ((object md2-mesh) (event rotate-entity-cw-event))
   (with-accessors ((ghost ghost)
@@ -461,11 +560,12 @@
 		   (pos pos)) object
     (if (= (id object) (id-destination event))
 	(when (> (current-movement-points ghost) 0)
-	  (decrement-move-points-rotate object)
-	  (setf (current-action object) :rotate)
+          (decrement-move-points-rotate object)
+          (setf (current-action object) :rotate)
 	  (setf dir (sb-cga:transform-direction dir (rotate-around +y-axe+ (d- +pi/2+))))
 	  (update-visibility-cone object)
-	  ;;(misc:dbg "visibility test: ~a" (visible-players object))
+          ;; test
+	  (misc:dbg "visibility test: ~a" (mapcar #'id (visible-players object)))
 	  (send-update-visibility-event object event)
 	  (send-refresh-toolbar-event)
 	  t)
@@ -487,7 +587,7 @@
 	nil)))
 
 (defmacro with-cause-events-accessors ((mesh event immune-status-accessor) &body body)
-  `(with-accessors ((ghost ghost)
+  `(with-accessors ((ghost ghost) ; anaphora
 		    (id id)
 		    (state state)) ,mesh
      (with-accessors ((recurrent-effects recurrent-effects)
@@ -495,7 +595,8 @@
 		      (status status)) ghost
        (with-accessors ((event-data event-data)) ,event
 	 (if (and (= id (id-destination ,event))
-		  (dice:pass-d1.0 (random-object-messages:msg-chance event-data))
+                  ;; TEST ;;;;;
+		  (or t (dice:pass-d1.0 (random-object-messages:msg-chance event-data)))
 		  (not ,immune-status-accessor)
 		  (null status)) ;; ensure player  can not  suffers
                                  ;; more than one abnormal status
@@ -512,38 +613,45 @@
 		     (status status)) ghost
       (with-accessors ((event-data event-data)) event
         (if (and (= id (id-destination event))
-		 (dice:pass-d1.0 (random-object-messages:msg-chance event-data))
+                 ;;; TEST ;;;;
+		 (or t (dice:pass-d1.0 (random-object-messages:msg-chance event-data)))
 		 (not immune-poison-status)
 		 (null status)) ;; ensure player  can not  suffers
                                 ;; more than one abnormal status
-	    (progn
+            (game-state:with-world (world state)
 	      (push event-data recurrent-effects)
-	      (billboard:apply-tooltip object
-				       billboard:+tooltip-poison-char+
-				       :color     billboard:+poison-damage-color+
-				       :font-type gui:+tooltip-font-handle+)
-	      (setf status +status-poisoned+)
-	      (send-refresh-toolbar-event :reset-health-status-animation t)
+              (action-scheduler:with-enqueue-action-and-send-remove-after
+                  (world action-scheduler:refresh-status-bar-action)
+                (setf status +status-poisoned+)
+                (billboard:enqueue-tooltip object
+                                           billboard:+tooltip-poison-char+
+                                           :color     billboard:+poison-damage-color+
+                                           :font-type gui:+tooltip-font-handle+)
+                (send-refresh-toolbar-event :reset-health-status-animation t))
 	      t)
 	    nil)))))
 
 (defmacro with-simple-cause-status ((mesh event immune-accessor new-status tooltip)
-				     &body body)
-  `(with-cause-events-accessors (,mesh ,event ,immune-accessor)
-     (billboard:apply-tooltip ,mesh
-			      ,tooltip
-			      :color     billboard:+poison-damage-color+
-			      :font-type gui:+tooltip-font-handle+)
-     (setf status ,new-status)
-     ,@body
-     (send-refresh-toolbar-event :reset-health-status-animation t)))
+                                    &body body)
+  (alexandria:with-gensyms (world)
+    `(with-cause-events-accessors (,mesh ,event ,immune-accessor)
+       (game-state:with-world (,world state)
+         (action-scheduler:with-enqueue-action-and-send-remove-after
+             (,world action-scheduler:refresh-status-bar-action)
+           (setf status ,new-status)
+           (billboard:enqueue-tooltip ,mesh
+                                      ,tooltip
+                                      :color     billboard:+poison-damage-color+
+                                      :font-type gui:+tooltip-font-handle+)
+                (send-refresh-toolbar-event :reset-health-status-animation t))
+         ,@body))))
 
 (defmethod on-game-event ((object md2-mesh) (event cause-terror-event))
   (with-simple-cause-status (object event immune-terror-status +status-terror+
 				    billboard:+tooltip-terror-char+)
     (with-accessors ((event-data event-data)) event
       (when (numberp (random-object-messages:msg-duration event-data))
-	(pq:push-element (character:postponed-messages (ghost object))
+	(pq:push-element (postponed-messages (ghost object))
 			 (make-cancel-terror-event (id-origin event)
 						   (id object)
 						   (+ (random-object-messages:msg-duration event-data)
@@ -555,7 +663,7 @@
 				    billboard:+tooltip-berserk-char+)
     (with-accessors ((event-data event-data)) event
       (when (numberp (random-object-messages:msg-duration event-data))
-	(pq:push-element (character:postponed-messages (ghost object))
+	(pq:push-element (postponed-messages (ghost object))
 			 (make-cancel-berserk-event (id-origin event)
 						    (id object)
 						    (+ (random-object-messages:msg-duration event-data)
@@ -580,7 +688,7 @@
 	(if (and (= id (id-destination event))
 		 (dice:pass-d1.0 (random-object-messages:msg-chance event-data)))
 	    (progn
-	      (billboard:apply-tooltip mesh
+	      (billboard:enqueue-tooltip mesh
 				       billboard:+tooltip-heal-char+
 				       :color     billboard:+healing-color+
 				       :font-type gui:+tooltip-font-handle+)
@@ -689,21 +797,25 @@
 
 (defmacro with-simple-immune-status ((mesh event immune-accessor status-affected tooltip)
 				     &body body)
-  `(with-immune-events-accessors (,mesh ,event ,immune-accessor ,status-affected)
-     (billboard:apply-tooltip ,mesh
-			      ,tooltip
-			      :color     billboard:+poison-damage-color+
-			      :font-type gui:+tooltip-font-handle+)
-     (setf ,immune-accessor t)
-     ,@body
-     (send-refresh-toolbar-event :reset-health-status-animation t)))
+  (alexandria:with-gensyms (world)
+    `(with-immune-events-accessors (,mesh ,event ,immune-accessor ,status-affected)
+       (game-state:with-world (,world state)
+         (action-scheduler:with-enqueue-action-and-send-remove-after
+             (,world action-scheduler:refresh-status-bar-action)
+           (setf ,immune-accessor t)
+           (billboard:enqueue-tooltip ,mesh
+                                      ,tooltip
+                                      :color     billboard:+poison-damage-color+
+                                      :font-type gui:+tooltip-font-handle+)
+           (send-refresh-toolbar-event :reset-health-status-animation t))
+         ,@body))))
 
 (defmethod on-game-event ((object md2-mesh) (event immune-berserk-event))
   (with-simple-immune-status (object event immune-berserk-status +status-berserk+
 				    billboard:+tooltip-immune-berserk-char+)
     (with-accessors ((event-data event-data)) event
       (when (numberp (random-object-messages:msg-duration event-data))
-	(pq:push-element (character:postponed-messages (ghost object))
+	(pq:push-element (postponed-messages (ghost object))
 			 (make-cancel-immune-berserk-event (id-origin event)
 							   (id object)
 							   (+ (random-object-messages:msg-duration event-data)
@@ -715,7 +827,7 @@
 				    billboard:+tooltip-immune-terror-char+)
     (with-accessors ((event-data event-data)) event
       (when (numberp (random-object-messages:msg-duration event-data))
-	(pq:push-element (character:postponed-messages (ghost object))
+	(pq:push-element (postponed-messages (ghost object))
 			 (make-cancel-immune-terror-event (id-origin event)
 							  (id object)
 							  (+ (random-object-messages:msg-duration event-data)
@@ -727,7 +839,7 @@
 				    billboard:+tooltip-immune-faint-char+)
     (with-accessors ((event-data event-data)) event
       (when (numberp (random-object-messages:msg-duration event-data))
-	(pq:push-element (character:postponed-messages (ghost object))
+	(pq:push-element (postponed-messages (ghost object))
 			 (make-cancel-immune-faint-event (id-origin event)
 							  (id object)
 							  (+ (random-object-messages:msg-duration event-data)
@@ -739,7 +851,7 @@
 				    billboard:+tooltip-immune-poison-char+)
     (with-accessors ((event-data event-data)) event
       (when (numberp (random-object-messages:msg-duration event-data))
-	(pq:push-element (character:postponed-messages (ghost object))
+	(pq:push-element (postponed-messages (ghost object))
 			 (make-cancel-immune-poisoning-event (id-origin event)
 							     (id object)
 							     (+ (random-object-messages:msg-duration event-data)
@@ -755,7 +867,8 @@
 		     (status status)) ghost
       (with-accessors ((event-data event-data)) event
 	(if (and (= id (id-destination event))
-		 (dice:pass-d1.0 (random-object-messages:msg-chance event-data))
+                 ;; TEST
+		 (or t (dice:pass-d1.0 (random-object-messages:msg-chance event-data)))
 		 (not (or (eq status +status-faint+)
 			  (eq status +status-berserk+))))
 	    (progn
@@ -763,12 +876,12 @@
 		    (min damage-points
 			 (d+ current-damage-points
 			     (random-object-messages:msg-points event-data))))
-	      (billboard:apply-tooltip object
-				       (format nil
-					       +standard-float-print-format+
-					       (random-object-messages:msg-points event-data))
-				       :color     billboard:+healing-color+
-				       :font-type gui:+tooltip-font-handle+)
+	      (billboard:enqueue-tooltip object
+                                         (format nil
+                                                 +standard-float-print-format+
+                                                 (random-object-messages:msg-points event-data))
+                                         :color     billboard:+healing-color+
+                                         :font-type gui:+tooltip-font-handle+)
 	      (send-refresh-toolbar-event)
 	      t)
 	    nil)))))
@@ -778,8 +891,7 @@
     (with-accessors ((messages event-data)) event
       (with-accessors ((modifiers-effects modifiers-effects)) ghost
 	(if (= id (id-destination event))
-	    (let* ((id-origin            (id-origin event))
-		   (triggered            (remove-if
+	    (let* ((triggered            (remove-if
 					  (random-object-messages:untrigged-effect-p-fn
 					   basic-interaction-parameters:+effect-when-worn+)
 					  messages))
@@ -787,18 +899,20 @@
 		   (all-effects-to-other (remove-if-not
 					  (random-object-messages:to-other-target-effect-p-fn)
 					  messages))
-		  (item         (find-entity-by-id ghost id-origin))
-		  (magic-effect (interaction-get-magic-effect item)))
+                   (magic-effect (find-if #'(lambda (a)
+                                              (typep a 'random-object-messages:magic-effect-msg))
+                                          triggered)))
 	      (decrement-move-points-wear object)
 	      (random-object-messages:propagate-effects-msg (id-origin event) id triggered)
 	      (dolist (effect all-effects-to-other)
 		(push effect modifiers-effects))
 	      ;; spells
 	      (when (and magic-effect
-			 (die-utils:pass-d1.0 (smoothstep-interpolate 0.0
-								      100.0
-								      (d (smartness ghost)))))
-		(let* ((spell-id (basic-interaction-parameters:spell-id magic-effect))
+                         ;; TEST ;;;;;;;;;;;;;;;;;;;;;
+			 (or t (die-utils:pass-d100.0 (smoothstep-interpolate 0.0
+                                                                              100.0
+                                                                              (d (smartness ghost))))))
+		(let* ((spell-id (random-object-messages:msg-spell-id magic-effect))
 		       (spell    (spell:get-spell spell-id)))
 		  (setf (spell-loaded ghost) spell)
 		  (game-state:with-world (world state)
@@ -838,41 +952,72 @@
       (let* ((trap (game-state:find-entity-by-id state (id-origin event))))
         (battle-utils:trigger-trap-attack trap object)))))
 
+(defmacro with-slots-for-reasoning ((mesh state ghost blackboard) &body body)
+  `(with-accessors ((,state state)
+                    (,ghost ghost)) ,mesh
+    (with-accessors ((,blackboard blackboard:blackboard)) ,state
+      ,@body)))
+
+(defgeneric actuate-plan (object strategy action))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql planner:+idle-action+)))
+  ;; "does nothing"
+  )
+
+(defmethod actuate-plan ((object md2-mesh)
+                         (strategy (eql +explore-strategy+))
+                         (action   (eql planner:+move-action+)))
+  (with-accessors ((state state)) object
+    (game-state:with-world (world state)
+      (action-scheduler:with-enqueue-action (world action-scheduler:tactical-plane-action)
+        (let ((new-pos (validate-player-path object
+                                             (next-move-position object +explore-strategy+))))
+          (when new-pos
+            ;;(misc:dbg "~a go to ~a dir ~a" (id object) (game-state:tiles new-pos) (dir object))
+            (setf (game-state:selected-path state) new-pos)
+            (let* ((tiles          (game-state:tiles (game-state:selected-path state)))
+                   (cost           (game-state:cost  (game-state:selected-path state)))
+                   (movement-event (make-instance 'game-event:move-entity-along-path-event
+                                                  :path           tiles
+                                                  :cost           cost
+                                                  :id-destination (id object))))
+              (game-event:propagate-move-entity-along-path-event movement-event))))))))
+
+(defun actuate-strategy (mesh)
+  (with-slots-for-reasoning (mesh state ghost blackboard)
+    (game-state:with-world (world state)
+      (when (and (eq  (my-faction mesh) game-state:+npc-type+)
+                 (eq  (my-faction mesh) (game-state:faction-turn state))
+                 (world:actions-queue-empty-p world)
+                 ghost)
+        ;; TODO add a slot for the plan list and actuate the last
+        (let ((action (first (tactical-plan ghost blackboard))))
+          (actuate-plan mesh
+                        (blackboard:strategy-decision blackboard)
+                        action))))))
+
 (defmethod on-game-event :after ((object md2-mesh) (event end-turn))
-  (misc:dbg "end turn md2mesh tooltip ct ~a" (tooltip-count object))
+  ;;(misc:dbg "end turn md2mesh tooltip ct ~a" (tooltip-count object))
   (with-accessors ((ghost ghost)
 		   (state state)) object
     (game-state:with-world (world state)
       (when ghost
-	(character:reset-magic-points    ghost)
-	(character:reset-movement-points ghost)
+	(reset-magic-points    ghost)
+	(reset-movement-points ghost)
 	(traverse-recurrent-effects      object)
 	(let ((decayed-items (remove-decayed-items ghost (end-turn-count event))))
 	  (dolist (item decayed-items)
 	    (remove-from-modifiers ghost (id item))
 	    (world:post-entity-message world object
 				       (format nil
-					       (_"~a broken")
+					       (_ "~a broken")
 					       (description-type item))
 				       nil
 				       (cons (_ "Move to")
 					     (world:point-to-entity-and-hide-cb world object)))))
 	(send-refresh-toolbar-event)
-        ;;; uncomment to test autoexplore
-        ;; (when (eq (my-faction object) game-state:+npc-type+)
-        ;;   (let ((new-pos (validate-player-path object
-        ;;                                        (next-move-position object +explore-strategy+))))
-        ;;     (when new-pos
-        ;;       (misc:dbg "go to ~a dir ~a" new-pos (dir object))
-        ;;       (setf (game-state:selected-path state) new-pos)
-        ;;       (let* ((tiles          (game-state:tiles (game-state:selected-path state)))
-        ;;              (cost           (game-state:cost  (game-state:selected-path state)))
-        ;;              (movement-event (make-instance 'game-event:move-entity-along-path-event
-        ;;                                             :path           tiles
-        ;;                                             :cost           cost
-        ;;                                             :id-destination (id object))))
-        ;;         (game-event:propagate-move-entity-along-path-event movement-event)))))
-        ;;;
 	nil))))
 
 (defmethod my-faction ((object md2-mesh))
@@ -893,6 +1038,20 @@
     ((> (/ damage max-damage) 0.7)
      #'particles:make-blood-level-2)))
 
+(defun enqueue-blood (world blood-generator-fn center dir compiled-shader)
+  (let ((blood (funcall blood-generator-fn center dir compiled-shader)))
+    (action-scheduler:with-enqueue-action
+        (world action-scheduler:blood-spill-action)
+      (world:push-entity world blood))))
+
+(defmacro with-enqueue-blood ((world blood-generator-fn center dir compiled-shader) &body body)
+  (alexandria:with-gensyms (blood)
+    `(let ((,blood (funcall ,blood-generator-fn ,center ,dir ,compiled-shader)))
+       (action-scheduler:with-enqueue-action
+           (world action-scheduler:blood-spill-action)
+         (world:push-entity ,world ,blood)
+         ,@body))))
+
 (defmethod apply-damage ((object md2-mesh) damage &key (tooltip-active-p t))
   (with-accessors ((ghost ghost)
 		   (id id)
@@ -909,33 +1068,33 @@
 		     (current-damage-points current-damage-points)) ghost
       (when (not (entity-dead-p object))
 	(if (null damage)
-	    (billboard:apply-tooltip object
-				     (format nil (_ "miss"))
-				     :color     billboard:+damage-color+
-				     :font-type gui:+tooltip-font-handle+
-				     :activep   tooltip-active-p)
+	    (billboard:enqueue-tooltip object
+                                       (format nil (_ "miss"))
+                                       :color     billboard:+damage-color+
+                                       :font-type gui:+tooltip-font-handle+
+                                       :activep   tooltip-active-p)
 	    (progn
 	      (setf current-damage-points (d- current-damage-points damage))
 	      (if (entity-dead-p object)
 		  (set-death-status object)
-		  (let ((blood (funcall (blood-spill-level damage
-							   (character:actual-damage-points ghost))
-					(aabb-center aabb)
-					dir
-					compiled-shaders)))
-		    (game-state:with-world (world state)
-		      (world:push-entity world blood))
-		    (setf current-action  :pain)
-		    (set-animation object :pain)
-		    (setf stop-animation nil)
-		    (setf cycle-animation nil)))
-	      (billboard:apply-tooltip object
-				       (format nil
-					       +standard-float-print-format+
-					       (d- damage))
-				       :color     billboard:+damage-color+
-				       :font-type gui:+tooltip-font-handle+
-				       :activep   tooltip-active-p)))))))
+                  (game-state:with-world (world state)
+                    (let ((blood-fn (blood-spill-level damage (actual-damage-points ghost))))
+                      (with-enqueue-blood (world
+                                           blood-fn
+                                           (aabb-center aabb)
+                                           dir
+                                           compiled-shaders)
+                        (setf current-action  :pain)
+                        (set-animation object :pain :recalculate t)
+                        (setf stop-animation nil)
+                        (setf cycle-animation nil)))))
+	      (billboard:enqueue-tooltip object
+                                         (format nil
+                                                 +standard-float-print-format+
+                                                 (d- damage))
+                                         :color     billboard:+damage-color+
+                                         :font-type gui:+tooltip-font-handle+
+                                         :activep   tooltip-active-p)))))))
 
 (defmethod traverse-recurrent-effects ((object md2-mesh))
   (with-accessors ((ghost ghost)
@@ -957,15 +1116,15 @@
 		    (set-death-status object)
 		    (progn
 		      (setf current-action  :pain)
-		      (set-animation object :pain)
+		      (set-animation object :pain :recalculate t)
 		      (setf stop-animation nil)
 		      (setf cycle-animation nil)))
-		(billboard:apply-tooltip object
-					 (format nil
-						 +standard-float-print-format+
-						 (d- (random-object-messages:msg-damage effect)))
-					 :color billboard:+damage-color+
-					 :font-type gui:+tooltip-font-handle+))))))))
+		(billboard:enqueue-tooltip object
+                                           (format nil
+                                                   +standard-float-print-format+
+                                                   (d- (random-object-messages:msg-damage effect)))
+                                           :color billboard:+damage-color+
+                                           :font-type gui:+tooltip-font-handle+))))))))
 
 (defmethod process-postponed-messages ((object md2-mesh))
   (with-accessors ((ghost ghost)
@@ -1004,15 +1163,16 @@
 		     (current-damage-points current-damage-points)) ghost
       (setf (status ghost) +status-faint+)
       (setf current-action  :death)
-      (set-animation object :death)
+      (set-animation object :death :recalculate t)
       (setf stop-animation nil)
       (setf cycle-animation nil)
       (setf current-damage-points (d 0.0))
       (game-state:with-world (world state)
-	(world:push-entity world
-			   (particles:make-blood-death (aabb-center aabb)
-						       +y-axe+
-						       compiled-shaders))))))
+        (enqueue-blood world
+                       #'particles:make-blood-death
+                       (aabb-center aabb)
+                       +y-axe+
+                       compiled-shaders)))))
 
 (defmethod set-attack-status ((object md2-mesh))
   (with-accessors ((ghost ghost)
@@ -1022,7 +1182,7 @@
     (with-accessors ((status status)
 		     (current-damage-points current-damage-points)) ghost
       (setf current-action  :attack)
-      (set-animation object :attack)
+      (set-animation object :attack :recalculate t)
       (setf stop-animation nil)
       (setf cycle-animation nil))))
 
@@ -1034,7 +1194,7 @@
     (with-accessors ((status status)
 		     (current-damage-points current-damage-points)) ghost
       (setf current-action  :attack-spell)
-      (set-animation object :attack-spell)
+      (set-animation object :attack-spell :recalculate t)
       (setf stop-animation nil)
       (setf cycle-animation nil))))
 
@@ -1046,7 +1206,7 @@
     (with-accessors ((status status)
 		     (current-damage-points current-damage-points)) ghost
       (setf current-action  :spell)
-      (set-animation object :spell)
+      (set-animation object :spell :recalculate t)
       (setf stop-animation nil)
       (setf cycle-animation nil))))
 
@@ -1081,8 +1241,7 @@
 (defgeneric validate-player-path (object path))
 
 (defmethod destroy ((object md2-mesh))
-  (when +debug-mode+
-    (misc:dbg "destroy md2 mesh ~a ~a" (id object) (map 'list #'id (frames object))))
+  #+debug-mode (misc:dbg "destroy md2 mesh ~a ~a" (id object) (map 'list #'id (frames object)))
   (map nil #'destroy (frames object))
   (call-next-method))
 
@@ -1256,8 +1415,7 @@
 	    (id              (slot-value object 'id)))
 	(tg:finalize object
 		     #'(lambda ()
-			 (when +debug-mode+
-			   (misc:dbg "finalize destroy md2 mesh ~a" id))
+			 #+debug-mode (misc:dbg "finalize destroy md2 mesh ~a" id)
 			 (free-memory* (list gl-arr-vert
 					     gl-arr-tex
 					     gl-arr-norm
@@ -1430,8 +1588,8 @@
   (with-accessors ((ghost ghost)
 		   (pos pos)
 		   (dir dir)) object
-    (let* ((x-chunk (map-utils:coord-map->chunk (elt (elt (character:current-path ghost) 1) 0)))
-	   (z-chunk (map-utils:coord-map->chunk (elt (elt (character:current-path ghost) 1) 1)))
+    (let* ((x-chunk (map-utils:coord-map->chunk (elt (elt (current-path ghost) 1) 0)))
+	   (z-chunk (map-utils:coord-map->chunk (elt (elt (current-path ghost) 1) 1)))
 	   (y       (d+ 1.5 ; hardcoded :(  to be removed soon
 			(game-state:approx-terrain-height@pos (state object) x-chunk z-chunk)))
 	   (end (vec x-chunk y z-chunk))
@@ -1488,12 +1646,17 @@
     (declare (simple-array frames))
     (declare (string tag-key-parent))
     (declare (list tags-table tags-matrices))
+    ;; AI thinking...
+    (when (and ghost
+               (thinkerp ghost))
+      (actuate-strategy object))
+    ;; animation
     (ecase current-action
       (:stand
        ;; nothing to do
        )
       (:death
-       ;; nothing to do
+       ;; TODO set death plane
        )
       (:attack
        (when stop-animation
@@ -1650,7 +1813,8 @@
 		   (current-frame-offset current-frame-offset)
 		   (fps fps)
 		   (current-animation-time current-animation-time)
-		   (animation-table animation-table)) object
+		   (animation-table animation-table)
+                   (ghost ghost)) object
     (let ((anim-spec (assoc animation animation-table :test #'eql)))
       (when anim-spec
 	(setf starting-frame (second anim-spec)
@@ -1659,7 +1823,8 @@
 	      current-animation-time 0.0
 	      current-frame-offset 0)
 	(when recalculate
-	  (calculate object 0.0))))))
+          (with-no-thinking (ghost)
+            (calculate object 0.0)))))))
 
 (defun %load-common-md2-parameters (model modeldir resource-path
 				    tags-file animation-file texture-file)
@@ -1694,11 +1859,10 @@
     (load model (res:get-resource-file (text-utils:strcat modeldir mesh-file)
 				       resource-path
 				       :if-does-not-exists :error))
-    (when +debug-mode+
-      (misc:dbg "error md2 parsing ~a" (parsing-errors model)))
+    #+debug-mode (misc:dbg "error md2 parsing ~a" (parsing-errors model))
     (prepare-for-rendering model)
     ;;(map nil #'mesh:remove-mesh-data (frames model))
-    (set-animation model :stand)
+    (set-animation model :stand :recalculate t)
     model))
 
 ;;;;;;;;;;;;;;;; testing only! ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1793,7 +1957,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 (defun load-md2-player (ghost dir compiled-shaders resource-path)
   (let ((body (get-md2-shell      :dir            dir
 				  :mesh-file      "body01.md2"
@@ -1809,12 +1972,13 @@
 			     :resource-path  resource-path)))
     (setf (interfaces:compiled-shaders body) compiled-shaders
 	  (interfaces:compiled-shaders head) compiled-shaders)
-    (md2:set-animation body :stand)
-    (md2:set-animation head :stand)
+    (set-animation body :stand :recalculate t)
+    (set-animation head :stand :recalculate t)
     (setf (md2:tag-key-parent head) md2:+tag-head-key+)
     (mtree-utils:add-child body head)
     (setf (ghost body) ghost)
-      ;;;;;;;;;;;;;;;;;;;;;;;; testing
+    (setf (thinker (ghost body)) t)
+      ;;;;;;;;;;;;;;;;;;;;;;;; test
     (let ((forged-potion              (forged-potion))
 	  (forged-potion-cure-dmg     (forged-potion-cure-dmg))
 	  (forged-potion-cure-berserk (forged-potion-cure-berserk))
@@ -1875,8 +2039,9 @@
 (defclass md2-mesh-shell (md2-mesh) ())
 
 (defmethod destroy ((object md2-mesh-shell))
-  (when +debug-mode+
-    (misc:dbg "destroy md2 mesh shell ~a ~a" (id object) (map 'list #'id (frames object))))
+  #+debug-mode (misc:dbg "destroy md2 mesh shell ~a ~a"
+                         (id object)
+                         (map 'list #'id (frames object)))
   (setf (frames object) nil)) ; useless
 
 (defmethod prepare-for-rendering ((object md2-mesh-shell))
@@ -2009,7 +2174,7 @@
            (ghost                (entity:ghost object))
            (min-cost             (map-utils:map-manhattam-distance-cost to-pos
                                                                         cost-player-pos))
-           (player-movement-points (character:current-movement-points ghost)))
+           (player-movement-points (current-movement-points ghost)))
       (if (and (>= player-movement-points +open-terrain-cost+)
                (<= min-cost               player-movement-points)
                (<= cost-destination       player-movement-points))
@@ -2035,7 +2200,7 @@
            (ghost                  (entity:ghost object))
            (min-cost               (map-utils:map-manhattam-distance-cost ends
                                                                           cost-player-pos))
-           (player-movement-points (character:current-movement-points ghost)))
+           (player-movement-points (current-movement-points ghost)))
       (if (and (>= player-movement-points +open-terrain-cost+)
                (<= min-cost               player-movement-points)
                (<= cost-destination       player-movement-points))

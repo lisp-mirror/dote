@@ -112,8 +112,8 @@
 
 (defmethod destroy :after ((object pickable-mesh))
   (with-accessors ((renderer-data-pick-overlay renderer-data-pick-overlay)) object
-    (when +debug-mode+
-      (misc:dbg "destroy pickable-mesh ~a" (id object)))
+    #+debug-mode
+      (misc:dbg "destroy pickable-mesh ~a" (id object))
     (setf renderer-data-pick-overlay nil)))
 
 (defmethod make-data-for-opengl :after ((object pickable-mesh))
@@ -136,8 +136,7 @@
     (let ((gl-arr-weight (slot-value object 'renderer-data-pick-overlay))
 	  (id            (slot-value object 'id)))
       (tg:finalize object #'(lambda ()
-			      (when +debug-mode+
-				(misc:dbg "finalize destroy pickable ~a" id))
+			      #+debug-mode (misc:dbg "finalize destroy pickable ~a" id)
 			      (free-memory* (list (gl:free-gl-array gl-arr-weight)) nil nil)
 			      (setf gl-arr-weight nil))))))
 

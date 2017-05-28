@@ -20,11 +20,17 @@
 
 (define-constant +modifier-characteristic-key+  :char           :test #'eq)
 
+(define-constant +spell-id-key+                 :spell-id       :test #'eq)
+
 (defun untrigged-effect-p-fn (valid-trigger)
   #'(lambda (a)
-      (not (eq
-	    (random-object-messages:msg-trigger a)
-	    valid-trigger))))
+      (not (funcall (trigged-effect-p-fn valid-trigger) a))))
+
+(defun trigged-effect-p-fn (valid-trigger)
+  #'(lambda (a)
+      (eq
+       (random-object-messages:msg-trigger a)
+       valid-trigger)))
 
 (defun to-other-target-effect-p-fn ()
   #'(lambda (a)
@@ -157,6 +163,12 @@
     :initarg  :msg-points
     :accessor msg-points)))
 
+(defclass magic-effect-msg (generic-msg)
+  ((msg-spell-id
+    :initform nil
+    :initarg  :msg-spell-id
+    :accessor msg-spell-id)))
+
 (defclass modifier-effect-msg (generic-msg generic-msg-w-duration)
   ((msg-characteristic
     :initform nil
@@ -185,6 +197,14 @@
 (defgeneric effect->msg (object id-origin &optional other-initargs))
 
 (defgeneric effect->msg-complement (object id-origin &optional other-initargs))
+
+(defmethod effect->msg ((object magic-effect-parameters) id-origin  &optional (other-initargs '()))
+  (declare (ignore other-initargs))
+  (make-instance 'magic-effect-msg
+                 :msg-spell-id           (spell-id object)
+                 :msg-trigger            (trigger  object)
+		 :msg-target             +target-self+
+                 :msg-origin             id-origin))
 
 (defmethod effect->msg ((object effect-parameters) id-origin  &optional (other-initargs '()))
   (make-instance 'modifier-effect-msg
@@ -357,6 +377,11 @@
 		     (list +modifier-characteristic-key+
 			   (car effect))))))
 
+(defun magic-effect->effects-messages (effect id-origin)
+  (if effect
+      (list (effect->msg effect id-origin))
+      nil))
+
 (defun health-effect->effects-messages (params id-origin)
   (remove-if-null
    (loop for effect in params collect
@@ -416,13 +441,16 @@
 
 (defun params->effects-messages (entity)
   (let* ((params  (character:basic-interaction-params entity))
-	 (health (health-effect->effects-messages
-		  (remove-null-effects params (list +healing-effects+))
-		  (id entity)))
+	 (health  (health-effect->effects-messages
+                   (remove-null-effects params (list +healing-effects+))
+                   (id entity)))
 	 (effects (modifier-effect->effects-messages
 		   (remove-null-effects params (list +effects+))
+		   (id entity)))
+         (spells  (magic-effect->effects-messages
+		   (misc:plist-path-value params (list +magic-effects+))
 		   (id entity))))
-    (nconc health effects)))
+    (concatenate 'list health effects spells)))
 
 (defun params->effects-messages-complement (entity)
   (let* ((params  (character:basic-interaction-params entity))

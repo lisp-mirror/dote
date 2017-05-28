@@ -253,6 +253,8 @@
 
   (defgeneric h-mirror-matrix (object))
 
+  (defgeneric v-mirror-matrix (object))
+
   (defgeneric matrix-mult (a b))
 
   (defgeneric sample@ (object x y &key
@@ -922,7 +924,16 @@ else
     (loop for y from 0 below row-pivot do
 	 (loop for x from 0 below (width object) do
 	      (let ((row-destination (- (1- (height object)) y)))
-		(swap-elements object y x row-destination x :destructive t))))))
+		(swap-elements object y x row-destination x :destructive t)))))
+  object)
+
+(defmethod v-mirror-matrix ((object matrix))
+  (let ((col-pivot (floor (/ (width object) 2))))
+    (loop for x from 0 below col-pivot do
+	 (loop for y from 0 below (height object) do
+	      (let ((col-destination (- (1- (width object)) x)))
+		(swap-elements object y x y col-destination :destructive t)))))
+  object)
 
 (defmethod matrix-mult ((a matrix) (b matrix))
   (let ((res (gen-matrix-frame (width b) (height a))))

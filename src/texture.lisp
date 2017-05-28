@@ -70,6 +70,10 @@
 
 (alexandria:define-constant +influence-map+                    "influence-maps"     :test #'string=)
 
+(alexandria:define-constant +influence-map-w+                  256                  :test #'=)
+
+(alexandria:define-constant +influence-map-h+                  256                  :test #'=)
+
 (alexandria:define-constant +texture-tag-wall-level-1+         "wall-level-1"       :test #'string=)
 
 (alexandria:define-constant +texture-tag-wall-level-2+         "wall-level-2"       :test #'string=)
@@ -157,6 +161,13 @@
 (alexandria:define-constant +id-handle-invalid+               -1              :test #'=)
 
 (defparameter *texture-factory-db* '())
+
+(defun init-db ()
+  #+debug-ai
+  (let* ((map-pixmap   (pixmap:make-pixmap +influence-map-w+ +influence-map-w+))
+         (map-texture  (texture:gen-name-and-inject-in-database map-pixmap)))
+    (setf (filename map-texture) +influence-map+)
+    (prepare-for-rendering map-texture)))
 
 (defun clean-db ()
   (map 'nil #'destroy *texture-factory-db*)
@@ -404,8 +415,7 @@
   (let ((handle   (slot-value object 'handle))
 	(filename (slot-value object 'filename)))
     (tg:finalize object #'(lambda ()
-			    (when +debug-mode+
-			      (misc:dbg "finalize texture ~a ~a" handle filename))
+			    #+debug-mode (misc:dbg "finalize texture ~a ~a" handle filename)
 			    (free-memory handle)))))
 
 (defmethod bind-texture ((object texture))

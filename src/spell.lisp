@@ -19,10 +19,10 @@
 (alexandria:define-constant +maximum-level+             9
   :test #'=)
 
-(alexandria:define-constant +chance-healing-fx-sigma+   #(.08 .1 .12 .18 .22 .23 .24 .25 .26 .28)
+(alexandria:define-constant +chance-healing-fx-sigma+   #(.32 .36 .40 .44 .48 .49 .50 .51 .53 .56)
   :test #'equalp)
 
-(alexandria:define-constant +chance-healing-fx-mean+    #(0.0 0.0 0.0 0.0 0.0 0.0 0.1 0.2 0.3 0.4)
+(alexandria:define-constant +chance-healing-fx-mean+    #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
   :test #'equalp)
 
 (alexandria:define-constant +minimum-chance-healing-fx+ 0.05
@@ -193,7 +193,9 @@
 (defun calculate-healing-fx-params-chance (level)
   (multiple-value-bind (sigma mean)
       (healing-fx-params-chance (1- level))
-    (max +minimum-chance-healing-fx+ (dabs (gaussian-probability sigma mean)))))
+    (clamp (dabs (gaussian-probability sigma mean))
+           +minimum-chance-healing-fx+
+           1.0)))
 
 (defun modifier-params (level)
   (values (elt +modifier-sigma+ level)
@@ -223,7 +225,7 @@
 					   :points  (calculate-modifier level)
 					   :chance  (calculate-healing-fx-params-chance
 						     level)
-					   :target  +target-self+)
+					   :target  +target-other+)
 			    (plist-path-value interaction path))))
     (n-setf-path-value interaction path effect-object)))
 

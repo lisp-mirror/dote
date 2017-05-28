@@ -14,23 +14,12 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(in-package :vec4-test)
+(in-package :planner)
 
-(defsuite vec4-suite (all-suite))
+(define-constant +idle-action+        :idle      :test #'eq)
 
-(deftest creation-test (vec4-suite)
-  (assert-true
-      (vec4~
-       (vec4 0.0 1.0 2.0 3.0)
-       #(0.0 1.0 2.0 3.0)))
-  (assert-false
-      (vec4~ (vec4 0.0 1.0 2.0 3.0)
-	     #(0.0 1.0 2.0 3.001))))
+(define-constant +move-action+        :move      :test #'eq)
 
-(deftest copy-test (vec4-suite)
-  (let ((orig (vec4 (num:lcg-next-upto 1000.0) (num:lcg-next-upto 1000.0)
-		    (num:lcg-next-upto 1000.0) (num:lcg-next-upto 1000.0))))
-    (assert-true
-	(vec4~
-	 orig
-	 (copy-vec4 orig)))))
+(define-constant +faint-action+       :faint     :test #'eq)
+
+(define-constant +interrupted-action+ :interrupt :test #'eq)
