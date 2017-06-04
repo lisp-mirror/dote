@@ -16,6 +16,8 @@
 
 (in-package :blackboard)
 
+(define-constant +goal-attack-occupied-value+      100.0 :test #'=)
+
 (define-constant +explored-tile-value+             100.0 :test #'=)
 
 (define-constant +unexplored-tile-value+             0.0 :test #'=)
@@ -136,6 +138,9 @@
   (with-accessors ((concerning-tiles concerning-tiles)) object
     (decrease-concerning (main-state object) concerning-tiles)
     (%update-all-layers object)
+    ;; ;; test
+    ;; (let ((pix (inmap:dijkstra-layer->pixmap (attack-enemy-pole-layer object))))
+    ;;   (pixmap:save-pixmap pix (fs:file-in-package "pole.tga")))
     nil))
 
 (defmethod main-state ((object blackboard))
@@ -315,7 +320,7 @@
 (defmethod update-unexplored-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
                                            &key
                                              (all-visibles-from-ai
-                                              (all-player-id-visible-from-ai (main-state player))))
+                                              (all-player-id-visible-from-ai (state player))))
   (with-accessors ((unexplored-layer               unexplored-layer)
                    (visited-tiles                  visited-tiles)
                    (concerning-tiles               concerning-tiles)
@@ -420,6 +425,10 @@
                (setf goal-tiles-pos
                      (remove-if #'(lambda (a)
                                     (displace-2d-vector (a x y)
+                                      ;; remove if  visible or blocked
+                                      ;; by  ray (even  if not  in the
+                                      ;; visibility cone  (for example
+                                      ;; behind the attacked entity).
                                       (or (able-to-see-mesh:placeholder-visible-p player x y)
                                           (not (able-to-see-mesh:placeholder-visible-ray-p player
                                                                                            x
@@ -436,7 +445,7 @@
               for point in (map 'list #'identity goal-tiles-pos)
               when (2d-tile-visible-p main-state
                                       (sequence->ivec2 point)
-                                      #'%2d-ray-stopper-melee-fn)
+                                      #'%2d-ray-stopper-melee-fn) ; skip tiles not visible by AI
               collect point)))))))
 
 (defun %update-attack-layer (blackboard djk-map update-fn)
@@ -461,7 +470,7 @@
 (defmethod update-attack-melee-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
                                              &key
                                                (all-visibles-from-ai
-                                                (all-player-id-visible-from-ai (main-state player))))
+                                                (all-player-id-visible-from-ai (state player))))
   (with-accessors ((attack-enemy-melee-layer attack-enemy-melee-layer)) object
     (with-accessors ((layer layer)) attack-enemy-melee-layer
       (let* ((goal-generator-fn #'(lambda (x y)
@@ -475,8 +484,11 @@
            for point in goal-tiles-pos do
              (displace-2d-vector (point x y)
                (with-check-matrix-borders (layer x y)
-                 (setf (matrix-elt layer y x)
-                       +goal-tile-value+))))))))
+                 (when (not (goal-canceled-for-neighbour-p all-visibles-from-ai
+                                                           player
+                                                           point))
+                   (setf (matrix-elt layer y x)
+                         +goal-tile-value+)))))))))
 
 (defmethod update-attack-melee-layer ((object blackboard))
   (with-accessors ((main-state main-state)
@@ -484,6 +496,48 @@
                    (attack-enemy-melee-layer attack-enemy-melee-layer)
                    (unexplored-layer unexplored-layer)) object
     (%update-attack-layer object attack-enemy-melee-layer #'update-attack-melee-layer-player)))
+
+(defun increase-attack-goal (allied player goal-pos increase-threshold-dist)
+  (let* ((allied-pos      (pos-entity-chunk->cost-pos (pos allied)))
+         (dist            (d (map-utils:map-manhattam-distance allied-pos goal-pos)))
+         (res             (dlerp (- 1.0 (smoothstep-interpolate 1.0 increase-threshold-dist dist))
+                                 0.0
+                                 1.0)))
+    (if (= (id allied) (id player))
+        0.0
+        res)))
+
+(defun calc-goal-canceled-for-neighbour-thershold (player)
+  (with-accessors ((state state)) player
+    (let ((level (level-difficult state)))
+      (cond
+        ((<= 0 level 1)
+         3.0)
+        ((<= 2 level 3)
+         1.0)
+        (t
+         0.8)))))
+
+(defun calc-goal-canceled-for-neighbour-dist-thershold (player)
+  (with-accessors ((state state)) player
+    (let ((level (level-difficult state)))
+      (cond
+        ((<= 0 level 1)
+         2.0)
+        ((<= 2 level 3)
+         3.0)
+        (t
+         5.0)))))
+
+(defun goal-canceled-for-neighbour-p (all-visibles-from-ai player goal-pos)
+  (with-accessors ((state state)) player
+    (let* ((threshold (calc-goal-canceled-for-neighbour-dist-thershold player))
+           (sum-neighbour (loop for allied-id in all-visibles-from-ai sum
+                               (let ((allied (find-entity-by-id state allied-id)))
+                                 (if allied
+                                     (increase-attack-goal allied player goal-pos threshold)
+                                     0.0)))))
+      (> sum-neighbour (calc-goal-canceled-for-neighbour-thershold player)))))
 
 (defun %pole-weapon-goal-generator-fn (player)
   (let ((level (level-difficult (state player))))
@@ -503,9 +557,9 @@
                             (gen-ring-box-position x y size size))))))))
 
 (defmethod update-attack-pole-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
-                                             &key
-                                               (all-visibles-from-ai
-                                                (all-player-id-visible-from-ai (main-state player))))
+                                            &key
+                                              (all-visibles-from-ai
+                                               (all-player-id-visible-from-ai (state player))))
   (with-accessors ((attack-enemy-pole-layer attack-enemy-pole-layer)) object
     (with-accessors ((layer layer)) attack-enemy-pole-layer
       (let* ((goal-generator-fn (%pole-weapon-goal-generator-fn player))
@@ -518,8 +572,11 @@
            for point in goal-tiles-pos do
              (displace-2d-vector (point x y)
                (with-check-matrix-borders (layer x y)
-                 (setf (matrix-elt layer y x)
-                       +goal-tile-value+))))))))
+                 (when (not (goal-canceled-for-neighbour-p all-visibles-from-ai
+                                                           player
+                                                           point))
+                   (setf (matrix-elt layer y x)
+                         +goal-tile-value+)))))))))
 
 (defun %long-range-weapon-goal-generator-fn (player range)
   (let ((level (level-difficult (state player))))
@@ -547,13 +604,16 @@
          for point in goal-tiles-pos do
            (displace-2d-vector (point x y)
              (with-check-matrix-borders (layer x y)
-               (setf (matrix-elt layer y x)
-                     +goal-tile-value+)))))))
+               (when (not (goal-canceled-for-neighbour-p all-visibles-from-ai
+                                                         player
+                                                         point))
+                 (setf (matrix-elt layer y x)
+                       +goal-tile-value+))))))))
 
 (defmethod update-attack-bow-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
                                              &key
                                                (all-visibles-from-ai
-                                                (all-player-id-visible-from-ai (main-state player))))
+                                                (all-player-id-visible-from-ai (state player))))
     (with-accessors ((attack-enemy-bow-layer attack-enemy-bow-layer)) object
       (%update-attack-long-range-layer-player object
                                               player
@@ -564,7 +624,7 @@
 (defmethod update-attack-crossbow-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
                                              &key
                                                (all-visibles-from-ai
-                                                (all-player-id-visible-from-ai (main-state player))))
+                                                (all-player-id-visible-from-ai (state player))))
   (with-accessors ((attack-enemy-crossbow-layer attack-enemy-crossbow-layer)) object
       (%update-attack-long-range-layer-player object
                                               player
@@ -596,10 +656,10 @@
                           #'update-attack-crossbow-layer-player)))
 
 (defun 2d-tile-visible-p (game-state tile-position ray-stopper-fn)
-  (map-ai-entities game-state #'(lambda (k v)
+  (map-ai-entities game-state #'(lambda (k entity)
                                   (declare (ignore k))
                                   (displace-2d-vector (tile-position x y)
-                                    (when (not (funcall ray-stopper-fn v x y))
+                                    (when (not (funcall ray-stopper-fn entity x y))
                                       (return-from 2d-tile-visible-p t)))))
   nil)
 

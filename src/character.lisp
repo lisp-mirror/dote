@@ -804,13 +804,16 @@
 
 ;; TODO add GOAP
 (defmethod tactical-plan ((object player-character) strategy-expert)
-  (with-accessors ((current-plan current-plan)) object
-    (if current-plan
-        current-plan
-        (let ((strategy (blackboard:strategy-decision strategy-expert)))
-          (declare (ignore strategy))
-          (setf current-plan (list planner:+move-action+))
-          (tactical-plan object strategy-expert)))))
+  ;; TEST
+  ;; (with-accessors ((current-plan current-plan)) object
+  ;;   (if current-plan
+  ;;       current-plan
+  ;;       (let ((strategy (blackboard:strategy-decision strategy-expert)))
+  ;;         (declare (ignore strategy))
+  ;;         (setf current-plan (list planner:+move-action+))
+  ;;         (tactical-plan object strategy-expert)))))
+  (setf (current-plan object) (list planner:+idle-action+))
+  (current-plan object))
 
 (defmethod set-idle-plan ((object player-character))
   (misc:dbg "set idle plan")

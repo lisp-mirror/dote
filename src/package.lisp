@@ -199,6 +199,7 @@
    :dump-hash-table
    :safe-random
    :split-into-sublist
+   :group-by
    :delete@
    :safe-delete@
    :remove-compact-remap-sequence
@@ -2414,6 +2415,7 @@
    :*equeue-merge-to-subscheduler-p*
    :game-action
    :launch-arrow-action
+   :attack-short-range-action
    :attack-long-range-action
    :attack-long-range-imprecise-action
    :attack-launch-spell-action

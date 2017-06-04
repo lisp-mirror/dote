@@ -805,8 +805,12 @@
   (with-accessors ((entities entities)
                    (main-state main-state)) object
     ;; update quadtree
+    ;; remove entity from quad tree and game state
     (remove-entity-by-id entities (id entity))
+    ;; re-add to quad-tre (updating leaf it belong, if needed)
     (push-entity object entity)
+    ;; re-add to game-state
+    (push-entity main-state entity)
     (when update-costs
       ;; set minimum cost for leaved tile
       (game-state:set-minimum-cost-player-layer@ main-state (elt from 0) (elt from 1))

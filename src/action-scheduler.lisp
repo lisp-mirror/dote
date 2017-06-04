@@ -43,6 +43,8 @@
 ;; unused
 (defclass launch-arrow-action                (game-action) ())
 
+(defclass attack-short-range-action          (game-action) ())
+
 (defclass attack-long-range-action           (game-action) ())
 
 (defclass attack-long-range-imprecise-action (game-action) ())

@@ -414,6 +414,13 @@
           (list lst))
       (append (list (subseq lst 0 len)) (split-into-sublist (subseq lst len) len))))
 
+(defun group-by (sequence &key (test #'=))
+  (let ((distinct '()))
+    (loop for i in sequence do
+         (pushnew i distinct :test test))
+    (loop for i in distinct collect
+         (remove-if-not #'(lambda (a) (funcall test a i)) sequence))))
+
 (defgeneric delete@ (sequence position))
 
 (defgeneric safe-delete@ (sequence position)

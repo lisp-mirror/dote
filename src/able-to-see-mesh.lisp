@@ -59,6 +59,8 @@
             (vec (map-utils:coord-map->chunk 0.0)
                  (- +zero-height+)
                  (map-utils:coord-map->chunk 0.0)))
+      (world:move-entity (game-state:fetch-world (state *visibility-target-placeholder*))
+                        *visibility-target-placeholder* nil :update-costs nil)
       (values ray entity))))
 
 (defun placeholder-visible-ray-p (player x y)

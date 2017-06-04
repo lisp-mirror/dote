@@ -141,3 +141,111 @@
   (assert-equalp
       '(7 8 5 6)
       (mapcar #'id (first (arrange-compatible-keys)))))
+
+(defclass attacker ()
+  ((id
+    :initform 0
+    :initarg :id
+    :accessor id)))
+
+(defmethod print-object ((object attacker) stream)
+  (format stream "*~a" (id object)))
+
+(defclass defender ()
+  ((id
+    :initform 0
+    :initarg :id
+    :accessor id)
+   (max-attackers
+    :initform 0
+    :initarg  :max-attackers
+    :accessor max-attackers)))
+
+(defmethod print-object ((object defender) stream)
+  (format stream "~a[~a]" (id object) (max-attackers object)))
+
+(defmethod equivp ((lhs defender) (rhs defender))
+  (= (id lhs) (id rhs)))
+
+(defmethod equivp ((lhs defender) (rhs attacker))
+  (= (id lhs) (id rhs)))
+
+(defmethod equivp ((lhs attacker) (rhs attacker))
+  (= (id lhs) (id rhs)))
+
+(defmethod equivp ((lhs attacker) (rhs defender))
+  (equivp (id lhs) (id rhs)))
+
+(defun reachable-p (a b)
+  (and (>= (id a) (id b))))
+
+(defun reachable-o (a b)
+  (project (a b)
+    (== (reachable-p a b) t)))
+
+(defun make-pair (attacker defenders out)
+  (conde
+   ((nullo defenders)
+    +fail+)
+   ((fresh (car-def cdr-def bind)
+      (conso car-def cdr-def defenders)
+      (reachable-o attacker car-def)    ; actual test
+      (conso attacker car-def bind)     ; building res
+      (== bind out)))
+   (else
+    (fresh (cdr-def)
+      (cdro defenders cdr-def)
+      (make-pair attacker cdr-def out)))))
+
+(defun make-pairs (attackers defenders out)
+  (conde
+   ((nullo attackers)
+    (== '() out))
+   (else
+    (fresh (car-atk cdr-atk res res2)
+      (conso car-atk cdr-atk attackers)
+      (make-pair car-atk defenders res)
+      (make-pairs cdr-atk defenders res2)
+      (conso res res2 out)))))
+
+(defun make-defender (id max-attackers)
+  (make-instance 'defender :id id :max-attackers max-attackers))
+
+(defun make-attacker (n)
+  (make-instance 'attacker :id n))
+
+(defun make-attacker-tactics-test ()
+  (let* ((atk (list (make-attacker 4)
+                    (make-attacker 8)
+                    (make-attacker 1)
+                    (make-attacker 2)))
+         (def (list (make-defender 8 1)
+                    (make-defender 1 2)
+                    (make-defender 2 1)))
+         (all-reachables (run* (q)
+                           (fresh (all-pairs pair)
+                             (caro all-pairs pair)
+                             (make-pairs atk def all-pairs)
+                             (== q all-pairs)))))
+    (remove-if-not #'(lambda (a)
+                   (let ((grouped (misc:group-by a
+                                                 :test #'(lambda (a b)
+                                                           (= (id (cdr a)) (id (cdr b)))))))
+                     (every #'(lambda (a)
+                                (<= (length a) (max-attackers (cdr (first a)))))
+                            grouped)))
+                   all-reachables)))
+
+(deftest test-attack-tactic (kanren-suite)
+  (assert-true
+      (tree-equal
+       (make-attacker-tactics-test)
+       (list (list (cons (make-attacker 4) (make-defender 2 1))
+                   (cons (make-attacker 8) (make-defender 8 1))
+                   (cons (make-attacker 1) (make-defender 1 2))
+                   (cons (make-attacker 2) (make-defender 1 2)))
+             (list (cons (make-attacker 4) (make-defender 1 2))
+                   (cons (make-attacker 8) (make-defender 8 1))
+                   (cons (make-attacker 1) (make-defender 1 2))
+                   (cons (make-attacker 2) (make-defender 2 1))))
+       :test #'equivp)))

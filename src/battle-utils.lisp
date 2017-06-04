@@ -587,7 +587,9 @@
   (when defender
     (if (character:weapon-type-short-range (entity:ghost attacker))
         (when (short-range-attack-possible-p attacker defender)
-          (battle-utils:send-attack-melee-event attacker defender))
+          (action-scheduler:with-enqueue-action-and-send-remove-after
+              (world action-scheduler:attack-short-range-action)
+            (battle-utils:send-attack-melee-event attacker defender)))
         (make-attacker-message-gui-no-weapon-error world attacker))
     (world:reset-toolbar-selected-action world)))
 
