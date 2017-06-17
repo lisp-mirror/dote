@@ -61,6 +61,9 @@
   (defun byte-vector->vec4 (bytes)
     (map 'vec4 #'byte->float bytes))
 
+  (defun ubvec4->vec4 (bytes)
+    (map 'vec4 #'byte->float bytes))
+
   (defun vec4->byte-vector (floats)
     (declare (optimize (safety 0) (speed 3) (debug 0)))
     (declare (vec4 floats))

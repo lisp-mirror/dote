@@ -273,7 +273,9 @@
 
   (defgeneric matrix-rect (object x y width height color))
 
-  (defgeneric matrix-line (object start end color))
+  (defgeneric matrix-line (object start end color &key antialiasp))
+
+  (defgeneric matrix-line-norm (object start end color &key antialiasp))
 
   (defgeneric pixel-inside-p (object x y))
 
@@ -860,8 +862,8 @@ else
     res))
 
 (defmethod scale-matrix ((object matrix) scale-x scale-y)
-  (let* ((old-width   (width object))
-         (old-height  (width object))
+  (let* ((old-width   (width  object))
+         (old-height  (height object))
          (dnew-width  (* scale-x old-width))
          (dnew-height (* scale-y old-height))
          (new-width   (floor dnew-width))
@@ -999,14 +1001,25 @@ else
       ((not (< acty (+ y height))))
     (matrix-hline object x acty width color)))
 
-(defmethod matrix-line ((object matrix) start end color)
-  (let ((points (2d-utils:segment start end)))
+(defmethod matrix-line ((object matrix) start end color  &key (antialiasp t))
+  (let ((points (2d-utils:segment start end :antialiasp antialiasp)))
     (loop for p in points do
-         (let ((x (elt p 0))
-               (y (elt p 1)))
+         (let* ((pos (elt p 0))
+                (x (elt pos 0))
+                (y (elt pos 1)))
            (with-check-matrix-borders (object x y)
              (setf (matrix-elt object y x) color))))
     object))
+
+(defmethod matrix-line-norm ((object matrix) start end color &key (antialiasp t))
+  (with-accessors ((width  width)
+                   (height height)) object
+    (let ((start (ivec2 (floor (d* (elt start 0) (d width)))
+                        (floor (d* (elt start 1) (d height)))))
+          (end   (ivec2 (floor (d* (elt end 0) (d width)))
+                        (floor (d* (elt end 1) (d height))))))
+      (matrix-line object start end color :antialiasp antialiasp)
+      object)))
 
 (defmethod pixel-inside-p ((object matrix) x y)
   (declare (optimize (speed 3) (safety 0) (debug 0)))
@@ -1430,3 +1443,42 @@ else
   (declare (optimize (speed 3) (safety 0) (debug 0)))
   (let ((submatrix (submatrix object x y (width sample) (height sample))))
     (matrix= submatrix sample :test test)))
+
+(defun min-x-opaque (pixmap)
+  (loop for x from 0 below (width pixmap) do
+       (loop for y from 0 below (height pixmap) do
+            (when (/= (elt (matrix:pixel@ pixmap x y) 3) 0)
+              (return-from min-x-opaque x))))
+  nil)
+
+(defun min-y-opaque (pixmap)
+  (loop for y from 0 below (height pixmap) do
+       (loop for x from 0 below (width pixmap) do
+            (when (/= (elt (matrix:pixel@ pixmap x y) 3) 0)
+              (return-from min-y-opaque y))))
+  nil)
+
+(defun max-x-opaque (pixmap)
+  (loop for x from (1- (width pixmap)) downto 0 by 1 do
+       (loop for y from (1- (height pixmap)) downto 0 by 1 do
+            (when (/= (elt (matrix:pixel@ pixmap x y) 3) 0)
+              (return-from max-x-opaque x))))
+  nil)
+
+(defun max-y-opaque (pixmap)
+  (loop for y from (1- (height pixmap)) downto 0 by 1 do
+       (loop for x from (1- (width pixmap)) downto 0 by 1 do
+            (when (/= (elt (matrix:pixel@ pixmap x y) 3) 0)
+              (return-from max-y-opaque y))))
+  nil)
+
+(defun clip-to-bounding-box (pixmap)
+  (let ((min-x (min-x-opaque pixmap))
+        (min-y (min-y-opaque pixmap))
+        (max-x (max-x-opaque pixmap))
+        (max-y (max-y-opaque pixmap)))
+   (matrix:submatrix pixmap
+                     min-x
+                     min-y
+                     (- max-x min-x)
+                     (- max-y min-y))))

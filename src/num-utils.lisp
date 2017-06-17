@@ -57,7 +57,7 @@
   (declare (optimize (speed 3) (debug 0) (safety 0)))
   (d* (d* rad 360.0) 0.15915494309189535))
 
-(defgeneric deg->rad (rad))
+(defgeneric deg->rad (deg))
 
 (defmethod deg->rad ((deg number))
   (/ (* deg +2pi+) 360))

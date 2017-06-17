@@ -228,6 +228,9 @@
 (definline char->code (code)
   (char-code code))
 
+(defmacro swap (a b)
+  `(rotatef ,a ,b))
+
 ;;;; binary files utils
 
 (defun 2byte->word (byte1 byte2) ;; little endian

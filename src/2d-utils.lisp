@@ -497,7 +497,7 @@
          (reverse res))
       (push (ivec2 (elt start 0) y) res))))
 
-(defun segment (start end)
+(defun segment-bresenham (start end)
   (if (= (elt start 0) (elt end 0))
       (vertical-segment start end)
       (let* ((octant       (calc-octant start end))
@@ -512,7 +512,7 @@
              (epsilon 0)
              (x xstart (1+ x))
              (y ystart))
-            ((>= x xend) (reverse res))
+            ((>= x (1+ xend)) (reverse res))
           (push (from-octant-0 octant (ivec2 x y)) res)
           (if (< (* 2 (+ epsilon dy))
                  dx)
@@ -520,6 +520,70 @@
               (progn
                 (incf y)
                 (incf epsilon (- dy dx))))))))
+
+(defun antialiased-ipart (a)
+  (floor a))
+
+(defun antialiased-round (a)
+  (antialiased-ipart (+ a 0.5)))
+
+(defun antialiased-fpart (a)
+  (if (< a 0)
+      (1- (- a  (floor a)))
+      (- a (floor a))))
+
+(defun antialiased-rfpart (a)
+  (- 1 (antialiased-fpart a)))
+
+(defun segment-antialiased (start end)
+  (let ((res   '()))
+    (let* ((swap-x-p     (> (elt start 0) (elt end 0)))
+           (origin       (ivec2 0 0))
+           (swapped-start   (if swap-x-p
+                              end
+                              start))
+           (swapped-end   (if swap-x-p
+                              (ivec2+ start (ivec2-negate end))
+                              (ivec2+ end   (ivec2-negate start))))
+           (octant       (calc-octant origin swapped-end))
+           (actual-start (to-octant-0 octant origin))
+           (actual-end   (to-octant-0 octant swapped-end))
+           (x0           (elt actual-start 0))
+           (y0           (elt actual-start 1))
+           (x1           (elt actual-end   0))
+           (y1           (elt actual-end   1))
+           (dx           (- x1 x0))
+           (dy           (- y1 y0))
+           (gradient     (if (= 0 dx) ;; never true when fallback is used
+                             1
+                             (/ dy dx)))
+           (xend         (antialiased-round x0))
+           (yend         (+ y0 (* gradient (- xend x0))))
+           (xpxl1        xend))
+      (flet ((build-res (octant x y intensity)
+               (push (list  (ivec2+ swapped-start (from-octant-0 octant (ivec2 x y))) intensity)
+                           res)))
+        (build-res octant x0 y0 1.0)
+        (let* ((intery (+ yend gradient))
+               (xend   (antialiased-round x1))
+               (xpxl2  xend))
+          (build-res octant x1 y1 1.0)
+          (loop for x from  xpxl1 below xpxl2 do
+               (build-res octant x (antialiased-ipart intery)       (antialiased-rfpart intery))
+               (build-res octant x (1+ (antialiased-ipart intery))  (antialiased-fpart intery))
+               (setf intery (+ intery gradient)))
+          res)))))
+
+(defun segment (start end &key (antialiasp t))
+  (num:with-epsilon (1e-5)
+    (if (or (not antialiasp)
+            (num:epsilon= (elt start 0) (elt end 0))
+            (num:epsilon= (elt start 1) (elt end 1))
+            (num:epsilon= (num:d (abs (/ (- (elt start 1) (elt end 1))
+                                         (- (elt start 0) (elt end 0)))))
+                          1.0))
+        (mapcar #'(lambda (a) (list a 1.0)) (segment-bresenham start end))
+        (segment-antialiased start end))))
 
 (defun recursive-bezier (pairs &key (threshold 1))
   (labels ((midpoint (pb pe)

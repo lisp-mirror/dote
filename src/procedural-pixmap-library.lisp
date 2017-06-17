@@ -142,13 +142,14 @@
   (with-random-perlin-gradient-offset
     (let ((pixmap (with-draw-normalizated-coord-square (x y size pixmap 4
                                                   :bindings (*perlin-gradient-random-offset*))
-                    (let* ((turbulence (d* fuzziness (gen-fbm x y 6 1.0 1.0 0.65 2.0
-                                                              :normalize nil)))
-                           (p (vector (d- x 0.5 turbulence) (d- y 0.5 turbulence)))
-                           (magn-p (2d-utils:2d-vector-magn p))
-                           (max (d* (desired +default-size-pixmap-library+) (desired +default-size-pixmap-library+)))
-                           (weight (smoothstep-interpolate inner-radius outer-radius
-                                                           (alexandria:clamp magn-p 0.0 max))))
+                    (let* ((turbulence (d* fuzziness
+                                           (gen-fbm x y 6 1.0 1.0 0.65 2.0 :normalize nil)))
+                           (p          (vector (d- x 0.5 turbulence) (d- y 0.5 turbulence)))
+                           (magn-p     (2d-utils:2d-vector-magn p))
+                           (max        (d* (desired +default-size-pixmap-library+)
+                                           (desired +default-size-pixmap-library+)))
+                           (weight     (smoothstep-interpolate inner-radius outer-radius
+                                                               (alexandria:clamp magn-p 0.0 max))))
                       (mix-color color-1 color-2 weight)))))
       (values pixmap "fuzzy-circular-frame"))))
 
@@ -178,9 +179,8 @@
                                (d/ (desired x) (desired size))
                                (d/ (desired y) (desired size))
                                (lambda (x y)
-                                 (let* ((p (vector
-                                            (d- translate-x (desired x))
-                                            (d- translate-y (desired y))))
+                                 (let* ((p (vector (d- translate-x (desired x))
+                                                   (d- translate-y (desired y))))
                                         (magn-p (2d-utils:2d-vector-magn p))
                                         (displ (d+
                                                 (dsin
@@ -2387,6 +2387,188 @@
 (defun test-clouds ()
   (test-clouds* 22.0 "clouds.tga")
   t)
+
+
+(alexandria:define-constant +starting-heading+  (vec2 0.0 1.0)         :test #'vec2=)
+
+(alexandria:define-constant +starting-position+ (vec2 0.0 0.0)         :test #'vec2=)
+
+(alexandria:define-constant +starting-color+    (vec4 1.0 1.0 1.0 1.0) :test #'vec4=)
+
+(defclass turtle ()
+  ((heading
+    :initform +starting-heading+
+    :initarg  heading
+    :accessor heading)
+   (turtle-pos
+    :initform +starting-position+
+    :initarg  :turtle-pos
+    :accessor turtle-pos)
+   (turtle-color
+    :initform +starting-color+
+    :initarg  :turtle-color
+    :accessor turtle-color)
+   (antialiasp
+    :initform t
+    :initarg  :antialiasp
+    :accessor antialiasp)
+   (pen-down
+    :initform t
+    :initarg  :pen-down
+    :reader   pen-down-p
+    :writer   (setf pen-down))))
+
+(defparameter *pixmap* nil)
+
+(defparameter *turtle* nil)
+
+(defun turtle-rotate-cw  (angle)
+  (with-accessors ((heading heading)) *turtle*
+    (setf heading (vec2-normalize (vec->vec2 (2d-vector-rotate heading angle)))))
+  *turtle*)
+
+(defun turtle-rotate-ccw (angle)
+  (turtle-rotate-cw (d- angle)))
+
+(defun turtle-forward    (size)
+  (with-accessors ((heading  heading)
+                   (turtle-pos turtle-pos)
+                   (turtle-color turtle-color)
+                   (pen-down-p  pen-down-p)
+                   (antialiasp antialiasp)) *turtle*
+    (let ((new-pos (map 'vec2 #'fract (vec2+ (vec2* heading size)
+                                             turtle-pos))))
+      (when pen-down-p
+        (assert *pixmap*)
+        (matrix-line-norm *pixmap*
+                          turtle-pos
+                          new-pos
+                          (color-utils:vec4->ubvec4 turtle-color)
+                          :antialiasp antialiasp)
+        (setf turtle-pos new-pos)))
+    *turtle*))
+
+(defun turtle-set-pos (x y)
+  (with-accessors ((turtle-pos turtle-pos)
+                   (turtle-color turtle-color)
+                   (pen-down-p  pen-down-p)) *turtle*
+    (setf turtle-pos (vec2 (fract x) (fract y)))
+    (when pen-down-p
+      (assert *pixmap*)
+      (setf (sample@ *pixmap* (elt turtle-pos 0) (elt turtle-pos 1))
+            (color-utils:vec4->ubvec4 turtle-color)))))
+
+(defun turtle-push ()
+  (stack:push *turtle*))
+
+(defun turtle-pop ()
+  (setf *turtle* (stack:pop)))
+
+(defun turtle-angle ()
+  (with-accessors ((heading heading)) *turtle*
+    (let ((angle (atan (elt heading 1) (elt heading 0))))
+      (if (< angle 0)
+          (d+ +2pi+ angle)
+          angle))))
+
+(defun set-turtle-angle (turtle angle)
+  (setf (slot-value turtle 'heading) (vec2 (d (cos angle)) (d (sin angle))))
+  turtle)
+
+(defsetf turtle-angle set-turtle-angle)
+
+(defun turtle-vector-advance (angle size)
+  (setf (turtle-angle *turtle*) angle)
+  (turtle-forward size)
+  *turtle*)
+
+(defmacro with-turtle ((w h &key (bg (ubvec4 0 0 0 0))) &body body)
+  `(stack:with-stack (#'eq #'identity)
+    (let* ((*pixmap* (make-pixmap ,w ,h 4 ,bg))
+           (*turtle*  (make-instance 'turtle)))
+      ,@body)))
+
+(defun turtle-spyro (size dist-1 dist-2 angle-1 angle-2 color
+                     &optional (minimum-iteration 10000.0))
+  (declare (desired-type dist-1 dist-2 angle-1 angle-2))
+  (with-turtle (size size)
+    (setf (turtle-color *turtle*) color)
+    (let ((*default-epsilon* 1.0e-4))
+      (labels ((draw (&optional (ct 0.0) (min minimum-iteration))
+                 (declare (desired-type ct))
+                 (setf ct (d+ 1.0 ct))
+                 (turtle-vector-advance (d* ct angle-1) dist-1)
+                 (turtle-vector-advance (d* ct angle-2) dist-2)
+                 (when (or (d< ct min)
+                           (not (epsilon= (rem (the desired-type (turtle-angle)) +2pi+)
+                                          0.0)))
+                   (draw ct min))))
+        (setf (pen-down *turtle*) nil)
+        (turtle-set-pos 0.5 0.5)
+        (setf (pen-down *turtle*) t)
+        (draw)
+        *pixmap*))))
+
+(defun turtle-poly (size dist angle color antialiasp)
+  (with-turtle (size size)
+    (setf (turtle-color *turtle*) color)
+    (setf (antialiasp *turtle*) antialiasp)
+    (labels ((draw ()
+               (turtle-rotate-ccw angle)
+               (turtle-forward    dist)
+               (when (not (= (rem (round (rad->deg (turtle-angle)))
+                                  360)
+                             0))
+                 (draw))))
+      (setf (pen-down *turtle*) nil)
+      (turtle-set-pos 0.5 0.5)
+      (setf (heading *turtle*) (vec2-normalize (vec2 1e-3 0.0)))
+      (setf (pen-down *turtle*) t)
+      (draw)
+      *pixmap*)))
+
+(defun blit-blend-subt-fn ()
+  #'(lambda (src dst x-src y-src x-dst y-dst)
+      (map 'ubvec4 #'(lambda (a b) (alexandria:clamp (* b a) 0 255))
+           (matrix-elt dst y-dst x-dst)
+           (matrix-elt src y-src x-src))))
+
+(defun red-aura (size)
+  (let* ((ext (turtle-spyro size 0.004 0.001
+                            (num:deg->rad 2.24)
+                            (num:deg->rad 0.5)
+                            §c870000ff))
+         (ext2 (turtle-spyro size 0.004 0.001
+                            (num:deg->rad 2.24)
+                            (num:deg->rad 0.5)
+                            §cff0000ff)))
+    (with-premultiplied-alpha (ext)
+      (setf ext (pgaussian-blur-separated ext #'floor 10)))
+    (with-premultiplied-alpha (ext2)
+      (setf ext2 (pgaussian-blur-separated ext2 #'floor 2)))
+    (pblit ext2 ext 0 0 0 0 :function-blend (blit-blend-lerp-fn))
+    (clip-to-bounding-box ext)))
+
+(defun pentacle (size)
+  (let ((star (clip-to-bounding-box (turtle-poly size 0.05 (deg->rad 144.0) §cff0000ff t)))
+        (aura (red-aura size)))
+    (with-premultiplied-alpha (star)
+      (ncopy-matrix-into-pixmap star (scale-matrix star
+                                                   (d (/ (width  aura) (width star)))
+                                                   (d (/ (height aura) (height star))))))
+    (pblit star aura 0 0 0 0 :function-blend (blit-blend-lerp-fn))
+    aura))
+
+(defun test-turtle (size)
+  (save-pixmap (pentacle size) (fs:file-in-package "turtle.tga"))
+  t)
+
+(defun test-scale ()
+  (let ((px  (make-pixmap 7 7)))
+    (setf (pixel@ px 3 3) (ubvec4 255 0 0 255))
+    (ncopy-matrix-into-pixmap px (scale-matrix px 10.0 10.0))
+    (save-pixmap px (fs:file-in-package "b.tga"))
+    t))
 
 (defun test-all-textures ()
   (let ((tests '(test-single-skydome

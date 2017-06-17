@@ -139,6 +139,10 @@
 (alexandria:define-constant +texture-tag-decals-poison+        "decals-poison-particle"
   :test #'string=)
 
+(alexandria:define-constant +texture-tag-decals-hellish+       "decals-hellish-particle"
+  :test #'string=)
+
+
 (alexandria:define-constant +texture-tag-poison-particle+      "poison-particle"
   :test #'string=)
 

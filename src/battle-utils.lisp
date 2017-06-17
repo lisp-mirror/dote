@@ -663,7 +663,7 @@
     (when (able-to-see-mesh:other-visible-p attacker defender)
       (let ((spell-loaded (character:spell-loaded (entity:ghost attacker))))
         (if spell-loaded
-            (if (long-range-attack-possible-p attacker defender)
+            (if (range-spell-valid-p attacker defender spell-loaded)
                 (when (launch-attack-spell-possible-p attacker defender)
                   (action-scheduler:with-enqueue-action
                       (world action-scheduler:attack-launch-spell-action)

@@ -196,6 +196,7 @@
    :dbg
    :code->char
    :char->code
+   :swap
    :dump-hash-table
    :safe-random
    :split-into-sublist
@@ -594,6 +595,7 @@
    :ivec2~
    :ivec2+
    :ivec2-
+   :ivec2-negate
    :ivec2-length
    :ivec2-normalize))
 
@@ -605,12 +607,14 @@
    :vec2-type
    :vec2
    :+vec2-zero+
+   :vec->vec2
    :make-fresh-vec2
    :copy-vec2
    :vec2p
    :vec2*
    :vec2/
    :vec2~
+   :vec2=
    :vec2+
    :vec2-
    :vec2-negate
@@ -821,6 +825,7 @@
    :int->bytes
    :int->vec4
    :byte-vector->vec4
+   :ubvec4->vec4
    :vec4->byte-vector
    :vec4->ubvec4
    :random-mixed-color
@@ -906,6 +911,7 @@
    :calc-quadrant
    :calc-octant
    :segment
+   :segment-antialiased
    :recursive-bezier
    :displace-2d-vector
    :2d-vector-map
@@ -1291,6 +1297,7 @@
    :matrix-hline
    :matrix-vline
    :matrix-line
+   :matrix-line-norm
    :matrix-rect
    :pixel-inside-p
    :element@-inside-p
@@ -1312,7 +1319,8 @@
    :pblit-matrix
    :blit-matrix
    :matrix=
-   :submatrix=))
+   :submatrix=
+   :clip-to-bounding-box))
 
 (defpackage :graph
   (:use :cl
@@ -1540,6 +1548,7 @@
    :gen-normal-map
    :tileize
    :guess-correct-replace-fn
+   :with-premultiplied-alpha
    ;; procedural texture
    :+default-size-pixmap-library+
    :with-random-perlin-gradient-offset
@@ -1583,6 +1592,29 @@
    :starfish
    :grass-stones-floor
    :clouds
+   :turtle
+   :heading
+   :turtle-pos
+   :turtle-color
+   :pen-down
+   :turtle-rotate-cw
+   :turtle-rotate-ccw
+   :turtle-forward
+   :turtle-set-pos
+   :turtle-push
+   :turtle-pop
+   :turtle-angle
+   :set-turtle-angle
+   :turtle-vector-advance
+   :with-turtle
+   :turtle-spyro
+   :pixmap-min-x-opaque
+   :pixmap-min-y-opaque
+   :pixmap-max-x-opaque
+   :pixmap-max-y-opaque
+   :clip-to-bounding-box
+   :red-aura
+   :pentacle
    :gen-bg-sky-colors
    :skydome-bottom-color
    :skydome))
@@ -1894,6 +1926,7 @@
    :+texture-tag-decals-poison+
    :+texture-tag-poison-particle+
    :+texture-tag-decals-circular-wave+
+   :+texture-tag-decals-hellish+
    :texture
    :free-memory
    :interpolation-type
@@ -4109,6 +4142,7 @@
    :make-poison-level-2
    :make-poison-level-1
    :make-poison-level-0
+   :make-vampire-level-2
    :make-heal-level-2
    :make-heal-level-1
    :make-heal-level-0

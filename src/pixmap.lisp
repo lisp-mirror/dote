@@ -211,6 +211,10 @@
 
 (defgeneric average-color (object aabb))
 
+(defgeneric ppremultiply-alpha (object))
+
+(defgeneric punremultiply-alpha (object))
+
 (defmethod papply-kernel-ubvec4 ((object pixmap) kernel &key (round-fn #'identity))
   (declare (optimize (speed 3) (safety 0) (debug 0)))
   (declare (pixmap object))
@@ -505,15 +509,27 @@
       (declare (ignore dest x-dst y-dst))
       (copy-ubvec4 (matrix-elt src y-src x-src))))
 
-(defun blit-blend-lerp-fn (&optional (alpha-combine-fn #'max))
+(defun %blit-blend-lerp (pix-src pix-dst)
+  (let* ((pix-src   (ubvec4->vec4 pix-src))
+         (pix-dst   (ubvec4->vec4 pix-dst))
+         (alpha-src (elt pix-src 3))
+         (alpha-dst (elt pix-dst 3))
+         (alpha-out (dlerp alpha-dst alpha-src 1.0))
+         (combine-fn #'(lambda (src dst)
+                         (if (epsilon= alpha-out 0.0)
+                             (float->byte 0.0)
+                             (float->byte (dlerp (d* src alpha-src)
+                                                 (d* dst alpha-dst)
+                                                 1.0)))))
+         (raw-color (map 'ubvec4 combine-fn pix-src pix-dst)))
+    (setf (elt raw-color 3) (float->byte alpha-out))
+    raw-color))
+
+(defun blit-blend-lerp-fn ()
   #'(lambda (src dest x-src y-src x-dst y-dst)
-      (let* ((pix-src (pixel@ src x-src y-src))
-             (pix-dst (pixel@ dest x-dst y-dst))
-             (weight  (d/ (desired (elt pix-src 3)) 255.0)))
-        (let ((raw-color (map 'ubvec4 #'(lambda (a b) (truncate (alexandria:lerp weight a b)))
-                              pix-dst pix-src)))
-          (setf (elt raw-color 3) (funcall alpha-combine-fn (elt pix-src 3) (elt pix-dst 3)))
-          raw-color))))
+      (let* ((pix-src   (pixel@ src x-src y-src))
+             (pix-dst   (pixel@ dest x-dst y-dst)))
+        (%blit-blend-lerp pix-src pix-dst))))
 
 (defun blit-blend-replace-ivec4-fn ()
   #'(lambda (src dest x-src y-src x-dst y-dst)
@@ -524,6 +540,12 @@
   #'(lambda (src dest x-src y-src x-dst y-dst)
       (declare (ignore dest x-dst y-dst))
       (copy-vec4 (matrix-elt src y-src x-src))))
+
+(defun blit-blend-mult-fn ()
+  #'(lambda (src dst x-src y-src x-dst y-dst)
+      (map 'ubvec4 #'(lambda (a b) (floor (/ (* a b) 255)))
+           (matrix-elt dst y-dst x-dst)
+           (matrix-elt src y-src x-src))))
 
 (defun blit-blend-sum-fn ()
   #'(lambda (src dst x-src y-src x-dst y-dst)
@@ -749,6 +771,34 @@
       (ivec4 average)
       (vec average)
       (vec4  average))))
+
+(defmethod ppremultiply-alpha  ((object pixmap))
+  (assert (truecolorp object))
+  (ploop-matrix (object x y)
+    (let* ((src   (pixel@ object x y))
+           (alpha (elt src 3)))
+      (setf (pixel@ object x y)
+            (map 'ubvec4 #'(lambda (a) (floor (/ (* a alpha) 255))) src))
+      (setf (elt (pixel@ object x y) 3) alpha))))
+
+(defmethod punremultiply-alpha ((object pixmap))
+  (assert (truecolorp object))
+  (ploop-matrix (object x y)
+    (let* ((src   (pixel@ object x y))
+           (alpha (elt src 3)))
+      (setf (pixel@ object x y)
+            (map 'ubvec4 #'(lambda (a)
+                             (if (/= alpha 0)
+                                 (floor (* a (/ 255 alpha)))
+                                 a))
+                 src))
+      (setf (elt (pixel@ object x y) 3) alpha))))
+
+(defmacro with-premultiplied-alpha ((pixmap) &body body)
+  `(progn
+     (ppremultiply-alpha ,pixmap)
+     ,@body
+     (punremultiply-alpha ,pixmap)))
 
 (defclass pixmap-file (pixmap)
   ((magic-number
@@ -1314,3 +1364,20 @@
                                       new-bits))))
     (sync-bits-to-data ppm)
     ppm)))
+
+(defmethod matrix-line ((object pixmap) start end color &key (antialiasp t))
+  (assert (truecolorp object))
+  (let ((points (2d-utils:segment start end :antialiasp antialiasp)))
+    (loop for p in points do
+         (let* ((pos       (elt p 0))
+                (intensity (elt p 1))
+                (x         (elt pos 0))
+                (y         (elt pos 1)))
+           (with-check-matrix-borders (object x y)
+             (let ((pix-src (ubvec4 (elt color 0)
+                                    (elt color 1)
+                                    (elt color 2)
+                                    (float->byte (d intensity))))
+                   (pix-dst (pixel@ object x y)))
+               (setf (pixel@ object x y) (%blit-blend-lerp pix-src pix-dst)))))))
+  object)

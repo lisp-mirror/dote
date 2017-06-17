@@ -95,6 +95,14 @@
 
 (define-compiler-macros ivec2- a b)
 
+(defun-inline-function ivec2-negate (a)
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (declare (ivec2 a))
+  (ivec2 (truncate (- (elt a 0)))
+         (truncate (- (elt a 1)))))
+
+(define-compiler-macros vec2-negate a)
+
 (defun-inline-function ivec2-length (a)
   (declare (ivec2 a))
   (round (sqrt (+ (expt (elt a 0) 2)

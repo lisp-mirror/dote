@@ -42,6 +42,9 @@
   (alexandria:define-constant +vec2-zero+ (vec2 0.0 0.0)
     :test #'vec2=)
 
+  (definline vec->vec2 (vec)
+    (vec2 (elt vec 0) (elt vec 1)))
+
   (defun-inline-function make-fresh-vec2 ()
     (make-array-frame 2 0 'vec2-type t)))
 

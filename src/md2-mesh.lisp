@@ -1928,8 +1928,8 @@
                        '(:effects :melee-attack-chance)
                        effect-modifier)
     (n-setf-path-value (basic-interaction-params sword)
-                       '(:healing-effects :cause-poison)
-                       poisoning)
+                        '(:healing-effects :cause-poison)
+                        poisoning)
     (clean-effects sword)
     sword))
 

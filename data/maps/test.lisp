@@ -167,6 +167,11 @@
   with tags ("decals-heal-particle")
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
+  generate particle              from function pixmap:pentacle
+  with parameters (1024)
+  with tags ("decals-hellish-particle")
+  with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
+
   generate particle              from function pixmap:blurred-circle
   with parameters (64 start-blur 0.2 end-blur 0.5)
   with tags ("cure-particle" "poison-particle")

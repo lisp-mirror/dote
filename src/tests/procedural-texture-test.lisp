@@ -371,6 +371,14 @@
   (let ((file-name "wood-4.tga"))
     (dump-pixmap (wood-4 512)  +texture-dir-tmp+ file-name)))
 
+(defun test-red-aura ()
+  (let ((file-name "red-aura.tga"))
+    (dump-pixmap (red-aura 512) +texture-dir-tmp+ file-name)))
+
+(defun test-pentacle ()
+  (let ((file-name "pentacle.tga"))
+    (dump-pixmap (pentacle 512) +texture-dir-tmp+ file-name)))
+
 (defmacro test-all-textures ()
   `(with-kernel
      ,@(let ((tests '(test-single-skydome
@@ -411,7 +419,9 @@
                       test-blurred-circled-cross
                       test-perlin-3d-ref
                       test-clouds
-                      test-wood-wall)))
+                      test-wood-wall
+                      test-red-aura
+                      test-pentacle)))
             (loop for i in tests collect
                  `(assert-true
                       (num:with-lcg-seed (1)

@@ -16,36 +16,35 @@
 
 (in-package :particles)
 
-(alexandria:define-constant +attribute-position-location+        0 :test #'=)
+(alexandria:define-constant +attribute-position-location+        0                  :test #'=)
 
-(alexandria:define-constant +attribute-mass-location+            1 :test #'=)
+(alexandria:define-constant +attribute-mass-location+            1                  :test #'=)
 
-(alexandria:define-constant +attribute-v0-location+              2 :test #'=)
+(alexandria:define-constant +attribute-v0-location+              2                  :test #'=)
 
-(alexandria:define-constant +attribute-delay-feedback-location+  3 :test #'=)
+(alexandria:define-constant +attribute-delay-feedback-location+  3                  :test #'=)
 
-(alexandria:define-constant +attribute-force-feedback-location+  4 :test #'=)
+(alexandria:define-constant +attribute-force-feedback-location+  4                  :test #'=)
 
-(alexandria:define-constant +attribute-center-pos-location+      1 :test #'=)
+(alexandria:define-constant +attribute-center-pos-location+      1                  :test #'=)
 
-(alexandria:define-constant +attribute-delay-location+           3 :test #'=)
+(alexandria:define-constant +attribute-delay-location+           3                  :test #'=)
 
-(alexandria:define-constant +attribute-life-location+            4 :test #'=)
+(alexandria:define-constant +attribute-life-location+            4                  :test #'=)
 
-(alexandria:define-constant +attribute-scaling-location+         5 :test #'=)
+(alexandria:define-constant +attribute-scaling-location+         5                  :test #'=)
 
-(alexandria:define-constant +attribute-alpha-location+           6 :test #'=)
+(alexandria:define-constant +attribute-alpha-location+           6                  :test #'=)
 
-(alexandria:define-constant +attribute-rotation-location+        7 :test #'=)
+(alexandria:define-constant +attribute-rotation-location+        7                  :test #'=)
 
-(alexandria:define-constant +attribute-color-location+           8 :test #'=)
+(alexandria:define-constant +attribute-color-location+           8                  :test #'=)
 
-(alexandria:define-constant +transform-vbo-count+                9 :test #'=)
+(alexandria:define-constant +transform-vbo-count+                9                  :test #'=)
 
-(alexandria:define-constant +appended-vbo-count+                 7 :test #'=)
+(alexandria:define-constant +appended-vbo-count+                 7                  :test #'=)
 
-(alexandria:define-constant +particle-gravity+                   (vec 0.0 -9.0 0.0)
-  :test #'vec~)
+(alexandria:define-constant +particle-gravity+                   (vec 0.0 -9.0 0.0) :test #'vec~)
 
 (defun %constant-color-clsr (color)
   #'(lambda ()
@@ -1873,7 +1872,11 @@
                           :height 1.0
                           :respawn nil))
 
-(defclass spell-decal (minimal-particle-effect) ())
+(defclass spell-decal (minimal-particle-effect)
+  ((blend-dst
+    :initform :one
+    :initarg  :blend-dst
+    :accessor blend-dst)))
 
 (defmethod bubbleup-modelmatrix ((object spell-decal))
   (let ((res      (matrix* (translate (pos     object))
@@ -1910,6 +1913,7 @@
                    (view-matrix view-matrix)
                    (compiled-shaders compiled-shaders)
                    (triangles triangles)
+                   (blend-dst blend-dst)
                    (el-time el-time)) object
     (declare (texture:texture texture-object))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
@@ -1921,11 +1925,11 @@
             (with-blending
               (with-no-cull-face
                 (gl:blend-equation :func-add)
-                (gl:blend-func :src-alpha :one)
+                (gl:blend-func :src-alpha blend-dst)
                 (use-program compiled-shaders :particles-spell-decals)
                 (gl:active-texture :texture0)
                 (texture:bind-texture texture-object)
-                (uniformf  compiled-shaders :time  el-time)
+                (uniformf compiled-shaders :time  el-time)
                 (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
                 (uniform-matrix compiled-shaders :modelview-matrix 4
                                 (vector (matrix* camera-vw-matrix
@@ -1997,32 +2001,37 @@
 
 (defun make-spell-decal (pos compiled-shaders
                          &key
-                           (texture (random-elt (list-of-texture-by-tag +texture-tag-decals-cure+)))
-                           (color-fn (%constant-color-clsr §cffffffff))
-                           (delay-fn (gaussian-distribution-fn 1.0 0.01)))
-  (make-particles-cluster 'spell-decal
-                          1
-                          compiled-shaders
-                          :texture texture
-                          :pos     pos
-                          :v0-fn  (constantly +zero-vec+)
-                          :mass-fn  (gaussian-distribution-fn 1.0 .1)
-                          :life-fn  (gaussian-distribution-fn 30.0 0.0)
-                          :delay-fn delay-fn
-                          :gravity    (vec 0.0 -1e-5 0.0)
-                          :rotation-fn #'(lambda ()
-                                           (let ((fn-enz (funcall (%limited-scaling-clsr .6 20.0)))
-                                                 (fn-lin (funcall (%uniform-scaling-clsr .2))))
+                           (texture
+                            (random-elt (list-of-texture-by-tag +texture-tag-decals-cure+)))
+                           (color-fn  (%constant-color-clsr §cffffffff))
+                           (delay-fn  (gaussian-distribution-fn 1.0 0.01))
+                           (blend-dst :one))
+  (let ((res (make-particles-cluster 'spell-decal
+                                     1
+                                     compiled-shaders
+                                     :texture texture
+                                     :pos     pos
+                                     :v0-fn  (constantly +zero-vec+)
+                                     :mass-fn  (gaussian-distribution-fn 1.0 .1)
+                                     :life-fn  (gaussian-distribution-fn 30.0 0.0)
+                                     :delay-fn delay-fn
+                                     :gravity    (vec 0.0 -1e-5 0.0)
+                                     :rotation-fn
+                                     #'(lambda ()
+                                         (let ((fn-enz (funcall (%limited-scaling-clsr .6 20.0)))
+                                               (fn-lin (funcall (%uniform-scaling-clsr .2))))
 
-                                             #'(lambda (p dt)
-                                                 (d+ (funcall fn-lin p dt)
-                                                     (funcall fn-enz p dt)))))
-                          :scaling-fn  (%limited-scaling-clsr .4 120.0)
-                          :alpha-fn   (%sin-alpha-fading-clsr .20)
-                          :color-fn   color-fn
-                          :width  .1
-                          :height .1
-                          :respawn nil))
+                                           #'(lambda (p dt)
+                                               (d+ (funcall fn-lin p dt)
+                                                   (funcall fn-enz p dt)))))
+                                     :scaling-fn  (%limited-scaling-clsr .4 120.0)
+                                     :alpha-fn   (%sin-alpha-fading-clsr .20)
+                                     :color-fn   color-fn
+                                     :width  .1
+                                     :height .1
+                                     :respawn nil)))
+    (setf (blend-dst res) blend-dst)
+    res))
 
 (defun make-circular-wave (pos compiled-shaders
                            &key
@@ -2787,7 +2796,8 @@
                                         :respawn t))
          (decal (make-spell-decal +zero-vec+
                                   compiled-shaders
-                                  :texture (random-elt (list-of-texture-by-tag +texture-tag-decals-poison+))
+                                  :texture
+                                  (random-elt (list-of-texture-by-tag +texture-tag-decals-poison+))
                                   :color-fn (%constant-color-clsr billboard:+poison-damage-color+)
                                   :delay-fn (gaussian-distribution-fn 1.0 0.1))))
 
@@ -2893,6 +2903,64 @@
     (setf (global-life spark) 150)
     spark))
 
+(defun make-vampire-level-2 (pos compiled-shaders)
+  (let* ((min-y (d- (d- (elt pos 1) +zero-height+)))
+         (texture  (random-elt (list-of-texture-by-tag +texture-tag-poison-particle+)))
+         (size-fn  #'(lambda (c)
+                       (declare (ignore c))
+                       (max 0.0 (gaussian-probability .05 .005))))
+         (gradient (color-utils:make-gradient
+                    (color-utils:make-gradient-color 0.0 billboard:+poison-damage-color+)
+                    (color-utils:make-gradient-color 0.2 §c7000a8ff)
+                    (color-utils:make-gradient-color 1.0 §c380054ff)))
+         (spark (make-particles-cluster 'cure-spark
+                                        400
+                                        compiled-shaders
+                                        :remove-starting-delay t
+                                        :forces   (vector (attraction-force-clsr 10.0))
+                                        :texture  texture
+                                        :pos      pos
+                                        :min-y   min-y
+                                        :particle-pos-fn #'(lambda (cluster)
+                                                             (let ((xy (elt (bivariate-sampling (d/ +terrain-chunk-tile-size+ 3.0)
+                                                                                                (d/ +terrain-chunk-tile-size+ 3.0)
+                                                                                                1)
+                                                                            0)))
+                                                               (vec (elt xy 0)
+                                                                    (d* (particle-height cluster)
+                                                                        (lcg-next-upto (d* (particle-height cluster)
+                                                                                           60.0)))
+                                                                    (elt xy 1))))
+                                        :v0-fn    (gaussian-velocity-distribution-fn +y-axe+
+                                                                                     3.0
+                                                                                     1.0
+                                                                                     (d/ +pi/2+
+                                                                                         5.0))
+                                        :mass-fn  (gaussian-distribution-fn 0.8 .2)
+                                        :life-fn  (gaussian-distribution-fn 2.0 0.2)
+                                        :delay-fn (gaussian-distribution-fn 10.00 2.50)
+                                        :gravity    (vec 0.0 1e-5 0.0)
+                                        :scaling-fn (%limited-scaling-clsr 0.1 10.0)
+                                        :rotation-fn (%no-rotation-clrs)
+                                        :alpha-fn   (%smooth-alpha-fading-clsr 2.0)
+                                        :color-fn   (%smooth-gradient-color-clsr gradient 3.0)
+                                        :width  .2
+                                        :height .2
+                                        :particle-height-fn nil    ;; will use particle-width-fn
+                                        :particle-width-fn  size-fn
+                                        :respawn t))
+         (decal (make-spell-decal (vec 0.0 (d- (d- (elt pos 1) +zero-height+)) 0.0)
+                                  compiled-shaders
+                                  :texture
+                                  (random-elt (list-of-texture-by-tag +texture-tag-decals-hellish+))
+                                  :color-fn   (%constant-color-clsr billboard:+poison-damage-color+)
+                                  :delay-fn   (gaussian-distribution-fn 1.0 0.1)
+                                  :blend-dst  :one-minus-src-alpha)))
+    (mtree:add-child spark decal)
+    (setf (global-life spark) 200)
+    spark))
+
+
 (defun make-heal-level-2 (pos compiled-shaders)
   (let* ((actual-pos (vec (elt pos 0)
                           (d+ (elt pos 1)
@@ -2943,7 +3011,8 @@
                                         :respawn t))
          (decal (make-spell-decal (vec 0.0 (d- (d- (elt actual-pos 1) +zero-height+)) 0.0)
                                   compiled-shaders
-                                  :texture (random-elt (list-of-texture-by-tag +texture-tag-decals-heal+))
+                                  :texture
+                                  (random-elt (list-of-texture-by-tag +texture-tag-decals-heal+))
                                   :color-fn (%constant-color-clsr billboard:+blessing-color+)
                                   :delay-fn (gaussian-distribution-fn 1.0 0.1))))
     (mtree:add-child spark decal)

@@ -30,6 +30,39 @@
 
 (define-constant +goal-tile-value+                   0.0 :test #'=)
 
+(defclass entity-taker ()
+  ((entity-id
+    :initform nil
+    :initarg :entity-id
+    :accessor entity-id)))
+
+(defclass def-target (entity-taker)
+  ((goal-pos
+    :initform '()
+    :initarg  :goal-pos
+    :accessor goal-pos)))
+
+(defgeneric max-attackers (object))
+
+(defmethod max-attackers ((object def-target))
+  (length (goal-pos object)))
+
+(defmethod print-object ((object def-target) stream)
+  (format stream "~a[~a]" (entity-id object) (max-attackers object)))
+
+(defun make-defender-target (id &optional (goal-pos '()))
+  (make-instance 'def-target :entity-id id :goal-pos goal-pos))
+
+(defclass attacker (entity-taker)
+  ((target-id
+    :initform nil
+    :initarg  :target-id
+    :accessor target-id)
+   (target-pos
+    :initform nil
+    :initarg  :target-pos
+    :accessor target-pos)))
+
 (defclass blackboard ()
   ((main-state
     :initform nil
@@ -75,6 +108,26 @@
     :accessor attack-enemy-crossbow-layer
     :type     dijkstra-layer
     :documentation "This holds the position the player with crossbow weapon should reach to attack the enemy")
+   (attack-enemy-melee-positions
+    :initform '()
+    :initarg  :attack-enemy-melee-positions
+    :accessor attack-enemy-melee-positions
+    :documentation "This holds the position the positions with melee weapon (except pole weapon) should reach to attack the enemy")
+   (attack-enemy-pole-positions
+    :initform '()
+    :initarg  :attack-enemy-pole-positions
+    :accessor attack-enemy-pole-positions
+    :documentation "This holds the position the positions with pole weapon should reach to attack the enemy")
+   (attack-enemy-bow-positions
+    :initform '()
+    :initarg  :attack-enemy-bow-positions
+    :accessor attack-enemy-bow-positions
+    :documentation "This holds the position the positions with bow weapon should reach to attack the enemy")
+   (attack-enemy-crossbow-positions
+    :initform '()
+    :initarg  :attack-enemy-crossbow-positions
+    :accessor attack-enemy-crossbow-positions
+    :documentation "This holds the position the positions with crossbow weapon should reach to attack the enemy")
    (use-enemy-fov-when-exploring
     :initform nil
     :initarg  :use-enemy-fov-when-exploring-p
@@ -128,11 +181,15 @@
                (setf (matrix-elt concerning-map y x) 0.0)))))))
 
 (defun %update-all-layers (blackboard)
-  (update-unexplored-layer      blackboard)
-  (update-attack-melee-layer    blackboard)
-  (update-attack-pole-layer     blackboard)
-  (update-attack-bow-layer      blackboard)
-  (update-attack-crossbow-layer blackboard))
+  (setf (attack-enemy-melee-positions    blackboard) nil
+        (attack-enemy-pole-positions     blackboard) nil
+        (attack-enemy-bow-positions      blackboard) nil
+        (attack-enemy-crossbow-positions blackboard) nil)
+  (update-unexplored-layer               blackboard)
+  (update-attack-melee-layer             blackboard)
+  (update-attack-pole-layer              blackboard)
+  (update-attack-bow-layer               blackboard)
+  (update-attack-crossbow-layer          blackboard))
 
 (defmethod game-event:on-game-event ((object blackboard) (event game-event:end-turn))
   (with-accessors ((concerning-tiles concerning-tiles)) object
@@ -467,11 +524,19 @@
                                                       all-visibles)))
         (inmap:smooth-dijkstra-layer djk-map main-state)))))
 
+(defun push-target-position (bag id-player target-pos)
+  (let ((target-found (find-if #'(lambda (a) (= (entity-id a) id-player)) bag)))
+    (if target-found
+        (pushnew target-pos (goal-pos target-found) :test #'ivec2=)
+        (push (make-defender-target id-player (list target-pos)) bag))
+    bag))
+
 (defmethod update-attack-melee-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
                                              &key
                                                (all-visibles-from-ai
                                                 (all-player-id-visible-from-ai (state player))))
-  (with-accessors ((attack-enemy-melee-layer attack-enemy-melee-layer)) object
+  (with-accessors ((attack-enemy-melee-layer     attack-enemy-melee-layer)
+                   (attack-enemy-melee-positions attack-enemy-melee-positions)) object
     (with-accessors ((layer layer)) attack-enemy-melee-layer
       (let* ((goal-generator-fn #'(lambda (x y)
                                     (gen-4-neighbour-counterclockwise x y :add-center nil)))
@@ -487,6 +552,11 @@
                  (when (not (goal-canceled-for-neighbour-p all-visibles-from-ai
                                                            player
                                                            point))
+                   ;; update position as well
+                   (setf attack-enemy-melee-positions
+                         (push-target-position attack-enemy-melee-positions
+                                               (id player)
+                                               point))
                    (setf (matrix-elt layer y x)
                          +goal-tile-value+)))))))))
 
@@ -497,7 +567,7 @@
                    (unexplored-layer unexplored-layer)) object
     (%update-attack-layer object attack-enemy-melee-layer #'update-attack-melee-layer-player)))
 
-(defun increase-attack-goal (allied player goal-pos increase-threshold-dist)
+(defun increase-attack-goal-fading-weight (allied player goal-pos increase-threshold-dist)
   (let* ((allied-pos      (pos-entity-chunk->cost-pos (pos allied)))
          (dist            (d (map-utils:map-manhattam-distance allied-pos goal-pos)))
          (res             (dlerp (- 1.0 (smoothstep-interpolate 1.0 increase-threshold-dist dist))
@@ -507,7 +577,7 @@
         0.0
         res)))
 
-(defun calc-goal-canceled-for-neighbour-thershold (player)
+(defun calc-goal-canceled-for-neighbour-threshold (player)
   (with-accessors ((state state)) player
     (let ((level (level-difficult state)))
       (cond
@@ -518,7 +588,7 @@
         (t
          0.8)))))
 
-(defun calc-goal-canceled-for-neighbour-dist-thershold (player)
+(defun calc-goal-canceled-for-neighbour-dist-threshold (player)
   (with-accessors ((state state)) player
     (let ((level (level-difficult state)))
       (cond
@@ -531,13 +601,16 @@
 
 (defun goal-canceled-for-neighbour-p (all-visibles-from-ai player goal-pos)
   (with-accessors ((state state)) player
-    (let* ((threshold (calc-goal-canceled-for-neighbour-dist-thershold player))
+    (let* ((threshold (calc-goal-canceled-for-neighbour-dist-threshold player))
            (sum-neighbour (loop for allied-id in all-visibles-from-ai sum
                                (let ((allied (find-entity-by-id state allied-id)))
                                  (if allied
-                                     (increase-attack-goal allied player goal-pos threshold)
+                                     (increase-attack-goal-fading-weight allied
+                                                                         player
+                                                                         goal-pos
+                                                                         threshold)
                                      0.0)))))
-      (> sum-neighbour (calc-goal-canceled-for-neighbour-thershold player)))))
+      (> sum-neighbour (calc-goal-canceled-for-neighbour-threshold player)))))
 
 (defun %pole-weapon-goal-generator-fn (player)
   (let ((level (level-difficult (state player))))
@@ -560,7 +633,8 @@
                                             &key
                                               (all-visibles-from-ai
                                                (all-player-id-visible-from-ai (state player))))
-  (with-accessors ((attack-enemy-pole-layer attack-enemy-pole-layer)) object
+  (with-accessors ((attack-enemy-pole-layer attack-enemy-pole-layer)
+                   (attack-enemy-pole-positions attack-enemy-pole-positions)) object
     (with-accessors ((layer layer)) attack-enemy-pole-layer
       (let* ((goal-generator-fn (%pole-weapon-goal-generator-fn player))
              (goal-tiles-pos    (%attack-layer-player-goal-pos object
@@ -575,6 +649,11 @@
                  (when (not (goal-canceled-for-neighbour-p all-visibles-from-ai
                                                            player
                                                            point))
+                   ;; update position as well
+                   (setf attack-enemy-pole-positions
+                         (push-target-position attack-enemy-pole-positions
+                                               (id player)
+                                               point))
                    (setf (matrix-elt layer y x)
                          +goal-tile-value+)))))))))
 
@@ -592,7 +671,9 @@
             (t
              (gen-ring-box-position x y size size)))))))
 
-(defun %update-attack-long-range-layer-player (blackboard player djk-map all-visibles-from-ai range)
+(defun %update-attack-long-range-layer-player (blackboard player djk-map
+                                               target-positions-bag
+                                               all-visibles-from-ai range)
   (with-accessors ((layer layer)) djk-map
     (let* ((goal-generator-fn (%long-range-weapon-goal-generator-fn player range))
            (goal-tiles-pos    (%attack-layer-player-goal-pos blackboard
@@ -607,6 +688,11 @@
                (when (not (goal-canceled-for-neighbour-p all-visibles-from-ai
                                                          player
                                                          point))
+                 ;; update position as well
+                   (setf target-positions-bag
+                         (push-target-position target-positions-bag
+                                               (id player)
+                                               point))
                  (setf (matrix-elt layer y x)
                        +goal-tile-value+))))))))
 
@@ -614,10 +700,12 @@
                                              &key
                                                (all-visibles-from-ai
                                                 (all-player-id-visible-from-ai (state player))))
-    (with-accessors ((attack-enemy-bow-layer attack-enemy-bow-layer)) object
+  (with-accessors ((attack-enemy-bow-layer attack-enemy-bow-layer)
+                   (attack-enemy-bow-positions attack-enemy-bow-positions)) object
       (%update-attack-long-range-layer-player object
                                               player
                                               attack-enemy-bow-layer
+                                              attack-enemy-bow-positions
                                               all-visibles-from-ai
                                               (floor (d/ (d +weapon-bow-range+) 2.0)))))
 
@@ -625,10 +713,12 @@
                                              &key
                                                (all-visibles-from-ai
                                                 (all-player-id-visible-from-ai (state player))))
-  (with-accessors ((attack-enemy-crossbow-layer attack-enemy-crossbow-layer)) object
+  (with-accessors ((attack-enemy-crossbow-layer attack-enemy-crossbow-layer)
+                   (attack-enemy-crossbow-positions attack-enemy-crossbow-positions)) object
       (%update-attack-long-range-layer-player object
                                               player
                                               attack-enemy-crossbow-layer
+                                              attack-enemy-crossbow-positions
                                               all-visibles-from-ai
                                               (floor (d/ (d +weapon-crossbow-range+) 2.0)))))
 
