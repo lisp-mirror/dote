@@ -607,7 +607,7 @@
    :vec2-type
    :vec2
    :+vec2-zero+
-   :vec->vec2
+   :sequence->vec2
    :make-fresh-vec2
    :copy-vec2
    :vec2p

@@ -2424,7 +2424,7 @@
 
 (defun turtle-rotate-cw  (angle)
   (with-accessors ((heading heading)) *turtle*
-    (setf heading (vec2-normalize (vec->vec2 (2d-vector-rotate heading angle)))))
+    (setf heading (vec2-normalize (sequence->vec2 (2d-vector-rotate heading angle)))))
   *turtle*)
 
 (defun turtle-rotate-ccw (angle)
