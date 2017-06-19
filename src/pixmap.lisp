@@ -1365,9 +1365,9 @@
     (sync-bits-to-data ppm)
     ppm)))
 
-(defmethod matrix-line ((object pixmap) start end color &key (antialiasp t))
+(defmethod matrix-line ((object pixmap) start end color &key (antialiasp t) (width 1))
   (assert (truecolorp object))
-  (let ((points (2d-utils:segment start end :antialiasp antialiasp)))
+  (let ((points (2d-utils:segment start end :antialiasp antialiasp :width width)))
     (loop for p in points do
          (let* ((pos       (elt p 0))
                 (intensity (elt p 1))

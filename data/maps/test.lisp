@@ -169,7 +169,7 @@
 
   generate particle              from function pixmap:pentacle
   with parameters (1024)
-  with tags ("decals-hellish-particle")
+  with tags ("decals-hellish-particle" "int-decal" "ext-decal")
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
   generate particle              from function pixmap:blurred-circle

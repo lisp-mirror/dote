@@ -273,9 +273,9 @@
 
   (defgeneric matrix-rect (object x y width height color))
 
-  (defgeneric matrix-line (object start end color &key antialiasp))
+  (defgeneric matrix-line (object start end color &key antialiasp width))
 
-  (defgeneric matrix-line-norm (object start end color &key antialiasp))
+  (defgeneric matrix-line-norm (object start end color &key antialiasp width))
 
   (defgeneric pixel-inside-p (object x y))
 
@@ -1001,8 +1001,8 @@ else
       ((not (< acty (+ y height))))
     (matrix-hline object x acty width color)))
 
-(defmethod matrix-line ((object matrix) start end color  &key (antialiasp t))
-  (let ((points (2d-utils:segment start end :antialiasp antialiasp)))
+(defmethod matrix-line ((object matrix) start end color &key (antialiasp t) (width 1))
+  (let ((points (2d-utils:segment start end :antialiasp antialiasp :width width)))
     (loop for p in points do
          (let* ((pos (elt p 0))
                 (x (elt pos 0))
@@ -1011,14 +1011,14 @@ else
              (setf (matrix-elt object y x) color))))
     object))
 
-(defmethod matrix-line-norm ((object matrix) start end color &key (antialiasp t))
-  (with-accessors ((width  width)
+(defmethod matrix-line-norm ((object matrix) start end color &key (antialiasp t) (width 1))
+  (with-accessors ((w  width)
                    (height height)) object
-    (let ((start (ivec2 (floor (d* (elt start 0) (d width)))
+    (let ((start (ivec2 (floor (d* (elt start 0) (d w)))
                         (floor (d* (elt start 1) (d height)))))
-          (end   (ivec2 (floor (d* (elt end 0) (d width)))
+          (end   (ivec2 (floor (d* (elt end 0) (d w)))
                         (floor (d* (elt end 1) (d height))))))
-      (matrix-line object start end color :antialiasp antialiasp)
+      (matrix-line object start end color :antialiasp antialiasp :width width)
       object)))
 
 (defmethod pixel-inside-p ((object matrix) x y)

@@ -2408,6 +2408,10 @@
     :initform +starting-color+
     :initarg  :turtle-color
     :accessor turtle-color)
+   (line-thickness
+    :initform 1
+    :initarg  :line-thickness
+    :accessor line-thickness)
    (antialiasp
     :initform t
     :initarg  :antialiasp
@@ -2435,6 +2439,7 @@
                    (turtle-pos turtle-pos)
                    (turtle-color turtle-color)
                    (pen-down-p  pen-down-p)
+                   (line-thickness line-thickness)
                    (antialiasp antialiasp)) *turtle*
     (let ((new-pos (map 'vec2 #'fract (vec2+ (vec2* heading size)
                                              turtle-pos))))
@@ -2444,7 +2449,8 @@
                           turtle-pos
                           new-pos
                           (color-utils:vec4->ubvec4 turtle-color)
-                          :antialiasp antialiasp)
+                          :antialiasp antialiasp
+                          :width line-thickness)
         (setf turtle-pos new-pos)))
     *turtle*))
 
@@ -2509,10 +2515,11 @@
         (draw)
         *pixmap*))))
 
-(defun turtle-poly (size dist angle color antialiasp)
+(defun turtle-poly (size dist angle color line-thickness antialiasp)
   (with-turtle (size size)
-    (setf (turtle-color *turtle*) color)
-    (setf (antialiasp *turtle*) antialiasp)
+    (setf (turtle-color   *turtle*) color)
+    (setf (antialiasp     *turtle*) antialiasp)
+    (setf (line-thickness *turtle*) line-thickness)
     (labels ((draw ()
                (turtle-rotate-ccw angle)
                (turtle-forward    dist)
@@ -2550,7 +2557,11 @@
     (clip-to-bounding-box ext)))
 
 (defun pentacle (size)
-  (let ((star (clip-to-bounding-box (turtle-poly size 0.05 (deg->rad 144.0) §cff0000ff t)))
+  (let ((star (clip-to-bounding-box (turtle-poly (floor (* size 0.7)) 0.1
+                                                 (deg->rad 144.0)
+                                                 §cb70000ff
+                                                  (max 3 (floor (/ size 300)))
+                                                  t)))
         (aura (red-aura size)))
     (with-premultiplied-alpha (star)
       (ncopy-matrix-into-pixmap star (scale-matrix star

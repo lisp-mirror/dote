@@ -149,8 +149,8 @@
                     (2d-vector-rotate (list (elt aabb 0) (elt aabb 3)) angle)))
          (all-x (mapcar #'(lambda (v) (funcall rounding-fn (elt v 0))) vertices))
          (all-y (mapcar #'(lambda (v) (funcall rounding-fn (elt v 1))) vertices)))
-    (ivec4 (num:find-min all-x) (num:find-min all-y)
-           (num:find-max all-x) (num:find-max all-y))))
+    (ivec4 (find-min all-x) (find-min all-y)
+           (find-max all-x) (find-max all-y))))
 
 (defun center-iaabb2 (aabb)
   (let ((rect (iaabb2->irect2 aabb)))
@@ -186,10 +186,10 @@
 
 (defun aabb2~ (a b)
   (and
-   (num:epsilon= (elt a 0) (elt b 0))
-   (num:epsilon= (elt a 1) (elt b 1))
-   (num:epsilon= (elt a 2) (elt b 2))
-   (num:epsilon= (elt a 3) (elt b 3))))
+   (epsilon= (elt a 0) (elt b 0))
+   (epsilon= (elt a 1) (elt b 1))
+   (epsilon= (elt a 2) (elt b 2))
+   (epsilon= (elt a 3) (elt b 3))))
 
 (misc:definline aabb2-min-x (aabb)
   (elt aabb 0))
@@ -300,16 +300,16 @@
 (defun approx-aabb2-intersect-p (aabb1 aabb2 enlarge)
   (if enlarge
    (or
-    (not (num:epsilon= (elt aabb1 0) (elt aabb2 2)))
-    (not (num:epsilon= (elt aabb1 2) (elt aabb2 0)))
-    (not (num:epsilon= (elt aabb1 1) (elt aabb2 3)))
-    (not (num:epsilon= (elt aabb1 3) (elt aabb2 1))))
+    (not (epsilon= (elt aabb1 0) (elt aabb2 2)))
+    (not (epsilon= (elt aabb1 2) (elt aabb2 0)))
+    (not (epsilon= (elt aabb1 1) (elt aabb2 3)))
+    (not (epsilon= (elt aabb1 3) (elt aabb2 1))))
    (not
     (or
-     (num:epsilon= (elt aabb1 0) (elt aabb2 2))
-     (num:epsilon= (elt aabb1 2) (elt aabb2 0))
-     (num:epsilon= (elt aabb1 1) (elt aabb2 3))
-     (num:epsilon= (elt aabb1 3) (elt aabb2 1))))))
+     (epsilon= (elt aabb1 0) (elt aabb2 2))
+     (epsilon= (elt aabb1 2) (elt aabb2 0))
+     (epsilon= (elt aabb1 1) (elt aabb2 3))
+     (epsilon= (elt aabb1 3) (elt aabb2 1))))))
 
 (defun aabb2-null-p (aabb)
   (let ((rect (aabb2->rect2 aabb)))
@@ -336,8 +336,8 @@
                     (2d-vector-rotate (list (elt aabb 0) (elt aabb 3)) angle)))
          (all-x (mapcar #'(lambda (v) (elt v 0)) vertices))
          (all-y (mapcar #'(lambda (v) (elt v 1)) vertices)))
-    (vec4 (num:find-min all-x) (num:find-min all-y)
-          (num:find-max all-x) (num:find-max all-y))))
+    (vec4 (find-min all-x) (find-min all-y)
+          (find-max all-x) (find-max all-y))))
 
 (defun center-aabb2 (aabb)
   (let ((rect (aabb2->rect2 aabb)))
@@ -364,7 +364,7 @@
 (defun aabb-safe-random (size)
    (if (< size 1)
        0.0
-       (let ((randw (abs (first (num:random-gaussian-distribution *sigma-rand*)))))
+       (let ((randw (abs (first (random-gaussian-distribution *sigma-rand*)))))
          (if (< randw size)
              (if (= 0 randw) 1 randw)
              size))))
@@ -399,6 +399,164 @@
        (list 0 0 nil t))
       (t
        (list (/ dy dx) (- (elt a 1) (* (/ dy dx) (elt a 0))) nil nil)))))
+(defmacro funcall-if-not-null (func val)
+  (if (not (null func))
+      `(funcall ,func ,val)
+      val))
+
+(defmacro displace-2d-vector ((v x y) &body body)
+  `(let ((,x (elt ,v 0))
+         (,y (elt ,v 1)))
+     ,@body))
+
+(defun 2d-vector-map (v &key (funcx nil) (funcy nil))
+  "Return a list of x,y values of the vector transformed by funcx and funcy (if not nil) respectively"
+  (list
+   (if (not (null funcx))
+       (funcall-if-not-null funcx (elt v 0))
+       (funcall-if-not-null nil (elt v 0)))
+
+   (if (not (null funcy))
+       (funcall-if-not-null funcy (elt v 1))
+       (funcall-if-not-null nil (elt v 1)))))
+
+(defun 2d-vector-list-map (pairs &key (funcx nil) (funcy nil))
+  "Remap pairs applying funcx and funcy (if not nil) to each component"
+  (mapcar #'(lambda (v) (2d-vector-map v :funcx funcx :funcy funcy)) pairs))
+
+(defun 2d-vector-list-scale (pairs &optional (ax 1) (ay 1))
+  "Remap pairs scaling each components by ax and ay"
+  (mapcar #'(lambda (v) (2d-vector-scale v ax ay)) pairs))
+
+(defun 2d-vector-list-translate (pairs &optional (dx 0) (dy 0))
+  "translate pairs by dx and dy"
+  (mapcar #'(lambda (v) (2d-vector-map v
+                                       :funcx #'(lambda (x) (+ x dx))
+                                       :funcy #'(lambda (y) (+ y dy))))
+          pairs))
+
+(defun 2d-vector-list-rotate (pairs angle)
+  (mapcar #'(lambda (v) (2d-vector-rotate v angle)) pairs))
+
+(defgeneric 2d-vector-sum (a b))
+
+(defmethod 2d-vector-sum ((a list) (b list))
+  (mapcar #'(lambda (x y) (+ x y)) a b))
+
+(defmethod 2d-vector-sum ((a vector) (b vector))
+  (map 'vector #'(lambda (x y) (+ x y)) a b))
+
+(defmethod 2d-vector-sum (a b)
+  (map 'vector #'(lambda (x y) (+ x y)) a b))
+
+(defgeneric 2d-vector-diff (a b))
+
+(defmethod 2d-vector-diff ((a list) (b list))
+  (mapcar #'(lambda (x y) (- x y)) a b))
+
+(defmethod 2d-vector-diff ((a vector) (b vector))
+  (map 'vector #'(lambda (x y) (- x y)) a b))
+
+(defmethod 2d-vector-diff (a b)
+  (map 'vector #'(lambda (x y) (- x y)) a b))
+
+(defgeneric d2d-vector-diff (a b))
+
+(defmethod d2d-vector-diff ((a list) (b list))
+  (mapcar #'(lambda (x y) (d- (desired x) (desired y))) a b))
+
+(defmethod d2d-vector-diff ((a vector) (b vector))
+  (map 'vector #'(lambda (x y) (d- (desired x) (desired y))) a b))
+
+(defun 2d-vector-dot-product (a b)
+  (+ (* (elt a 0) (elt b 0)) (* (elt a 1) (elt b 1))))
+
+(defun d2d-vector-dot-product (a b)
+  (d+ (d* (desired (elt a 0)) (desired (elt b 0)))
+          (d* (desired (elt a 1)) (desired (elt b 1)))))
+
+(defun 2d-vector-cross-product (a b)
+  (- (* (elt a 0) (elt b 1)) (* (elt a 1) (elt b 0))))
+
+(defgeneric 2d-vector-scale (a amount-x &optional amount-y))
+
+(defmethod 2d-vector-scale ((a list) amount-x &optional (amount-y amount-x))
+  (list (* amount-x (elt a 0)) (* amount-y (elt a 1))))
+
+(defmethod 2d-vector-scale ((a vector) amount-x &optional (amount-y amount-x))
+  (vector (* amount-x (elt a 0)) (* amount-y (elt a 1))))
+
+(defgeneric 2d-vector-translate (a amount-x &optional amount-y))
+
+(defmethod 2d-vector-translate ((a list) amount-x &optional (amount-y amount-x))
+  (list (+ amount-x (elt a 0)) (+ amount-y (elt a 1))))
+
+(defmethod 2d-vector-translate ((a vector) amount-x &optional (amount-y amount-x))
+  (vector (+ amount-x (elt a 0)) (+ amount-y (elt a 1))))
+
+(defun 2d-vector-magn (a)
+  (sqrt (+ (expt (elt a 0) 2) (expt (elt a 1) 2))))
+
+(defgeneric 2d-vector-normalize (a))
+
+(defmethod 2d-vector-normalize ((a list))
+  (let ((mag (2d-vector-magn a)))
+    (list (/ (elt a 0) mag) (/ (elt a 1) mag))))
+
+(defmethod 2d-vector-normalize ((a vector))
+  (let ((mag (2d-vector-magn a)))
+    (vector (/ (elt a 0) mag) (/ (elt a 1) mag))))
+
+(defun 2d-vector-angle (a b)
+  (let* ((a-norm (2d-vector-normalize a))
+         (b-norm (2d-vector-normalize b))
+         (dot-product (2d-vector-dot-product a-norm b-norm))
+         (angle (acos dot-product)))
+    (if (< (2d-vector-cross-product a b) 0)
+        (- angle)
+        angle)))
+
+(defgeneric 2d-vector-rotate (a angle)
+  (:documentation "Angle in radians"))
+
+(defmethod 2d-vector-rotate ((a list) angle)
+  (list
+   (- (* (elt a 0) (cos angle)) (* (elt a 1) (sin angle)))
+   (+ (* (elt a 0) (sin angle)) (* (elt a 1) (cos angle)))))
+
+(defmethod 2d-vector-rotate ((a vector) angle)
+  (vector
+   (- (* (elt a 0) (cos angle)) (* (elt a 1) (sin angle)))
+   (+ (* (elt a 0) (sin angle)) (* (elt a 1) (cos angle)))))
+
+(defun xy->pair (xs ys)
+  "Convert (x1 x2 x3...) (y1 y2 y3...) to ((x1 y1) (x2 y2) (x3 y3) ...)"
+  (mapcar #'(lambda (x y) (list x y)) xs ys))
+
+(defun pair->interleaved-xy (x-y)
+  "Convert ((x1 y1) (x2 y2) (x3 y3) ...) to (x1 y1 x2 y2 x3 y3 ...)"
+  (reduce #'append x-y))
+
+(defun xy->interleaved-xy (xs ys &key (modfunc-x nil) (modfunc-y nil))
+  "Convert (x1 x2 x3...) (y1 y2 y3...) to ( (funcall modfunc-x x1) (funcall modfunc-y y1)...)"
+  (pair->interleaved-xy (xy->pair (if (not (null modfunc-x))
+                                      (mapcar modfunc-x xs)
+                                      xs)
+                                  (if (not (null modfunc-y))
+                                      (mapcar modfunc-y ys)
+                                      ys))))
+
+(defun interleaved-xy->pair (xy)
+  (macrolet ((get-from-list (when-clause list)
+               `(loop
+                   for i in ,list
+                   for c = 0 then (1+ c)
+                   when (,when-clause c)
+                   collect i)))
+    (let ((xs (get-from-list evenp xy))
+          (ys (get-from-list oddp xy)))
+      (xy->pair xs ys))))
+
 
 (defun calc-quadrant (start end)
   (let* ((xend   (elt end   0))
@@ -535,55 +693,96 @@
 (defun antialiased-rfpart (a)
   (- 1 (antialiased-fpart a)))
 
+(defmacro with-translate-to-origin-octant-0 ((start end x0 y0 x1 y1 octant build-results-fn results)
+                                             &body body)
+  (alexandria:with-gensyms (origin swap-x-p swapped-start swapped-end actual-start actual-end)
+      `(let* ((,results          '())
+              (,swap-x-p     (> (elt start 0) (elt end 0)))
+              (,origin       (ivec2 0 0))
+              (,swapped-start   (if ,swap-x-p
+                                    ,end
+                                    ,start))
+              (,swapped-end   (if ,swap-x-p
+                                  (ivec2+ ,start (ivec2-negate ,end))
+                                  (ivec2+ ,end   (ivec2-negate ,start))))
+              (,octant       (calc-octant ,origin ,swapped-end))
+              (,actual-start (to-octant-0 ,octant ,origin))
+              (,actual-end   (to-octant-0 ,octant ,swapped-end))
+              (,x0           (elt ,actual-start 0))
+              (,y0           (elt ,actual-start 1))
+              (,x1           (elt ,actual-end   0))
+              (,y1           (elt ,actual-end   1)))
+      (flet ((,build-results-fn (octant x y intensity)
+               (push (list (ivec2+ ,swapped-start
+                                   (from-octant-0 octant (ivec2 x y)))
+                           (d intensity))
+                     ,results)))
+        ,@body))))
+
 (defun segment-antialiased (start end)
-  (let ((res   '()))
-    (let* ((swap-x-p     (> (elt start 0) (elt end 0)))
-           (origin       (ivec2 0 0))
-           (swapped-start   (if swap-x-p
-                              end
-                              start))
-           (swapped-end   (if swap-x-p
-                              (ivec2+ start (ivec2-negate end))
-                              (ivec2+ end   (ivec2-negate start))))
-           (octant       (calc-octant origin swapped-end))
-           (actual-start (to-octant-0 octant origin))
-           (actual-end   (to-octant-0 octant swapped-end))
-           (x0           (elt actual-start 0))
-           (y0           (elt actual-start 1))
-           (x1           (elt actual-end   0))
-           (y1           (elt actual-end   1))
-           (dx           (- x1 x0))
-           (dy           (- y1 y0))
-           (gradient     (if (= 0 dx) ;; never true when fallback is used
+  (with-translate-to-origin-octant-0 (start end x0 y0 x1 y1 octant build-results-fn results)
+    (build-results-fn octant x0 y0 1.0)
+    (let* ((dx       (- x1 x0))
+           (dy       (- y1 y0))
+           (gradient (if (= 0 dx) ;; never true when fallback is used
                              1
                              (/ dy dx)))
-           (xend         (antialiased-round x0))
-           (yend         (+ y0 (* gradient (- xend x0))))
-           (xpxl1        xend))
-      (flet ((build-res (octant x y intensity)
-               (push (list  (ivec2+ swapped-start (from-octant-0 octant (ivec2 x y))) intensity)
-                           res)))
-        (build-res octant x0 y0 1.0)
-        (let* ((intery (+ yend gradient))
-               (xend   (antialiased-round x1))
-               (xpxl2  xend))
-          (build-res octant x1 y1 1.0)
-          (loop for x from  xpxl1 below xpxl2 do
-               (build-res octant x (antialiased-ipart intery)       (antialiased-rfpart intery))
-               (build-res octant x (1+ (antialiased-ipart intery))  (antialiased-fpart intery))
-               (setf intery (+ intery gradient)))
-          res)))))
+           (yend     (+ y0 (* gradient
+                              (- (antialiased-round x0) x0))))
+           (intery   (+ yend gradient))
+           (xpxl1    (antialiased-round x0))
+           (xpxl2    (antialiased-round x1)))
+      (build-results-fn octant x1 y1 1.0)
+      (loop for x from  xpxl1 below xpxl2 do
+           (build-results-fn octant x (antialiased-ipart intery)       (antialiased-rfpart intery))
+           (build-results-fn octant x (1+ (antialiased-ipart intery))  (antialiased-fpart intery))
+           (setf intery (+ intery gradient)))
+      results)))
 
-(defun segment (start end &key (antialiasp t))
-  (num:with-epsilon (1e-5)
-    (if (or (not antialiasp)
-            (num:epsilon= (elt start 0) (elt end 0))
-            (num:epsilon= (elt start 1) (elt end 1))
-            (num:epsilon= (num:d (abs (/ (- (elt start 1) (elt end 1))
-                                         (- (elt start 0) (elt end 0)))))
-                          1.0))
-        (mapcar #'(lambda (a) (list a 1.0)) (segment-bresenham start end))
-        (segment-antialiased start end))))
+(defun segment-thick (start end width antialiasp)
+  (with-translate-to-origin-octant-0 (start end x0 y0 x1 y1 octant build-results-fn results)
+    (labels ((find-extremes (comp-fn)
+               #'(lambda (a b) (funcall comp-fn (elt a 0) (elt b 0))))
+             (draw-boundaries (segment)
+               (loop for point in segment do
+                    (displace-2d-vector ((elt point 0) x y)
+                      (let ((intensity (elt point 1)))
+                        (build-results-fn octant x y intensity))))))
+      (let* ((segment            (segment-bresenham (ivec2 x0 y0) (ivec2 x1 y1)))
+             (width/2            (floor (/ width 2)))
+             (min-x              (find-min-max (find-extremes #'<) segment))
+             (max-x              (find-min-max (find-extremes #'>) segment))
+             (lu                 (+ width/2 (elt min-x 1)))
+             (ru                 (+ width/2 (elt max-x 1)))
+             (ld                 (- (elt min-x 1) width/2))
+             (rd                 (- (elt max-x 1) width/2))
+             (segment-up-limit   (segment-antialiased (ivec2 (elt min-x 0) lu)
+                                                      (ivec2 (elt max-x 0) ru)))
+             (segment-down-limit (segment-antialiased (ivec2 (elt min-x 0) ld)
+                                                      (ivec2 (elt max-x 0) rd))))
+        (loop for point in segment do
+             (displace-2d-vector (point x y)
+               (loop for dy from (- (1- width/2)) to width/2 do
+                    (build-results-fn octant x (+ y dy) 1.0))))
+        (when antialiasp
+          (draw-boundaries segment-up-limit)
+          (draw-boundaries segment-down-limit))))
+    results))
+
+(defun segment (start end &key (antialiasp t) (width 1))
+  (with-epsilon (1e-5)
+    (cond
+      ((> width 1)
+       (segment-thick start end width antialiasp))
+      ((or (not antialiasp)
+           (epsilon= (elt start 0) (elt end 0))
+           (epsilon= (elt start 1) (elt end 1))
+           (epsilon= (d (abs (/ (- (elt start 1) (elt end 1))
+                                (- (elt start 0) (elt end 0)))))
+                     1.0))
+       (mapcar #'(lambda (a) (list a 1.0)) (segment-bresenham start end)))
+      (t
+       (segment-antialiased start end)))))
 
 (defun recursive-bezier (pairs &key (threshold 1))
   (labels ((midpoint (pb pe)
@@ -609,162 +808,3 @@
                    (list p4))
            :test #'eqvec-p)
           nil))))
-
-(defmacro funcall-if-not-null (func val)
-  (if (not (null func))
-      `(funcall ,func ,val)
-      val))
-
-(defmacro displace-2d-vector ((v x y) &body body)
-  `(let ((,x (elt ,v 0))
-         (,y (elt ,v 1)))
-     ,@body))
-
-(defun 2d-vector-map (v &key (funcx nil) (funcy nil))
-  "Return a list of x,y values of the vector transformed by funcx and funcy (if not nil) respectively"
-  (list
-   (if (not (null funcx))
-       (funcall-if-not-null funcx (elt v 0))
-       (funcall-if-not-null nil (elt v 0)))
-
-   (if (not (null funcy))
-       (funcall-if-not-null funcy (elt v 1))
-       (funcall-if-not-null nil (elt v 1)))))
-
-(defun 2d-vector-list-map (pairs &key (funcx nil) (funcy nil))
-  "Remap pairs applying funcx and funcy (if not nil) to each component"
-  (mapcar #'(lambda (v) (2d-vector-map v :funcx funcx :funcy funcy)) pairs))
-
-
-(defun 2d-vector-list-scale (pairs &optional (ax 1) (ay 1))
-  "Remap pairs scaling each components by ax and ay"
-  (mapcar #'(lambda (v) (2d-vector-scale v ax ay)) pairs))
-
-(defun 2d-vector-list-translate (pairs &optional (dx 0) (dy 0))
-  "translate pairs by dx and dy"
-  (mapcar #'(lambda (v) (2d-vector-map v
-                                       :funcx #'(lambda (x) (+ x dx))
-                                       :funcy #'(lambda (y) (+ y dy))))
-          pairs))
-
-(defun 2d-vector-list-rotate (pairs angle)
-  (mapcar #'(lambda (v) (2d-vector-rotate v angle)) pairs))
-
-(defgeneric 2d-vector-sum (a b))
-
-(defmethod 2d-vector-sum ((a list) (b list))
-  (mapcar #'(lambda (x y) (+ x y)) a b))
-
-(defmethod 2d-vector-sum ((a vector) (b vector))
-  (map 'vector #'(lambda (x y) (+ x y)) a b))
-
-(defmethod 2d-vector-sum (a b)
-  (map 'vector #'(lambda (x y) (+ x y)) a b))
-
-(defgeneric 2d-vector-diff (a b))
-
-(defmethod 2d-vector-diff ((a list) (b list))
-  (mapcar #'(lambda (x y) (- x y)) a b))
-
-(defmethod 2d-vector-diff ((a vector) (b vector))
-  (map 'vector #'(lambda (x y) (- x y)) a b))
-
-(defmethod 2d-vector-diff (a b)
-  (map 'vector #'(lambda (x y) (- x y)) a b))
-
-(defgeneric d2d-vector-diff (a b))
-
-(defmethod d2d-vector-diff ((a list) (b list))
-  (mapcar #'(lambda (x y) (num:d- (num:desired x) (num:desired y))) a b))
-
-(defmethod d2d-vector-diff ((a vector) (b vector))
-  (map 'vector #'(lambda (x y) (num:d- (num:desired x) (num:desired y))) a b))
-
-(defun 2d-vector-dot-product (a b)
-  (+ (* (elt a 0) (elt b 0)) (* (elt a 1) (elt b 1))))
-
-(defun d2d-vector-dot-product (a b)
-  (num:d+ (num:d* (num:desired (elt a 0)) (num:desired (elt b 0)))
-          (num:d* (num:desired (elt a 1)) (num:desired (elt b 1)))))
-
-(defun 2d-vector-cross-product (a b)
-  (- (* (elt a 0) (elt b 1)) (* (elt a 1) (elt b 0))))
-
-(defgeneric 2d-vector-scale (a amount-x &optional amount-y))
-
-(defmethod 2d-vector-scale ((a list) amount-x &optional (amount-y amount-x))
-  (list (* amount-x (elt a 0)) (* amount-y (elt a 1))))
-
-(defmethod 2d-vector-scale ((a vector) amount-x &optional (amount-y amount-x))
-  (vector (* amount-x (elt a 0)) (* amount-y (elt a 1))))
-
-(defgeneric 2d-vector-translate (a amount-x &optional amount-y))
-
-(defmethod 2d-vector-translate ((a list) amount-x &optional (amount-y amount-x))
-  (list (+ amount-x (elt a 0)) (+ amount-y (elt a 1))))
-
-(defmethod 2d-vector-translate ((a vector) amount-x &optional (amount-y amount-x))
-  (vector (+ amount-x (elt a 0)) (+ amount-y (elt a 1))))
-
-(defun 2d-vector-magn (a)
-  (sqrt (+ (expt (elt a 0) 2) (expt (elt a 1) 2))))
-
-(defgeneric 2d-vector-normalize (a))
-
-(defmethod 2d-vector-normalize ((a list))
-  (let ((mag (2d-vector-magn a)))
-    (list (/ (elt a 0) mag) (/ (elt a 1) mag))))
-
-(defmethod 2d-vector-normalize ((a vector))
-  (let ((mag (2d-vector-magn a)))
-    (vector (/ (elt a 0) mag) (/ (elt a 1) mag))))
-
-(defun 2d-vector-angle (a b)
-  (let* ((a-norm (2d-vector-normalize a))
-         (b-norm (2d-vector-normalize b))
-         (dot-product (2d-vector-dot-product a-norm b-norm))
-         (angle (acos dot-product)))
-    (if (< (2d-vector-cross-product a b) 0)
-        (- angle)
-        angle)))
-
-(defgeneric 2d-vector-rotate (a angle)
-  (:documentation "Angle in radians"))
-
-(defmethod 2d-vector-rotate ((a list) angle)
-  (list
-   (- (* (elt a 0) (cos angle)) (* (elt a 1) (sin angle)))
-   (+ (* (elt a 0) (sin angle)) (* (elt a 1) (cos angle)))))
-
-(defmethod 2d-vector-rotate ((a vector) angle)
-  (vector
-   (- (* (elt a 0) (cos angle)) (* (elt a 1) (sin angle)))
-   (+ (* (elt a 0) (sin angle)) (* (elt a 1) (cos angle)))))
-
-(defun xy->pair (xs ys)
-  "Convert (x1 x2 x3...) (y1 y2 y3...) to ((x1 y1) (x2 y2) (x3 y3) ...)"
-  (mapcar #'(lambda (x y) (list x y)) xs ys))
-
-(defun pair->interleaved-xy (x-y)
-  "Convert ((x1 y1) (x2 y2) (x3 y3) ...) to (x1 y1 x2 y2 x3 y3 ...)"
-  (reduce #'append x-y))
-
-(defun xy->interleaved-xy (xs ys &key (modfunc-x nil) (modfunc-y nil))
-  "Convert (x1 x2 x3...) (y1 y2 y3...) to ( (funcall modfunc-x x1) (funcall modfunc-y y1)...)"
-  (pair->interleaved-xy (xy->pair (if (not (null modfunc-x))
-                                      (mapcar modfunc-x xs)
-                                      xs)
-                                  (if (not (null modfunc-y))
-                                      (mapcar modfunc-y ys)
-                                      ys))))
-
-(defun interleaved-xy->pair (xy)
-  (macrolet ((get-from-list (when-clause list)
-               `(loop
-                   for i in ,list
-                   for c = 0 then (1+ c)
-                   when (,when-clause c)
-                   collect i)))
-    (let ((xs (get-from-list evenp xy))
-          (ys (get-from-list oddp xy)))
-      (xy->pair xs ys))))

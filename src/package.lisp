@@ -853,6 +853,8 @@
 (defpackage :2d-utils
   (:use :cl
         :constants
+        :alexandria
+        :num
         :ivec2
         :ivec4
         :vec2
