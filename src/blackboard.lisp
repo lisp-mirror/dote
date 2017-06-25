@@ -201,7 +201,7 @@
     (decrease-concerning (main-state object) concerning-tiles)
     (%update-all-layers object)
     ;; test
-    ;; (let ((pix (inmap:dijkstra-layer->pixmap (attack-enemy-bow-layer object))))
+    ;; (let ((pix (inmap:dijkstra-layer->pixmap (attack-enemy-crossbow-layer object))))
     ;;   (pixmap:save-pixmap pix (fs:file-in-package "attack.tga")))
     nil))
 
@@ -513,9 +513,9 @@
                                     goal-tiles-pos)))
            (loop
               for point in (map 'list #'identity goal-tiles-pos)
-              when (2d-tile-visible-p main-state
-                                      (sequence->ivec2 point)
-                                      #'%2d-ray-stopper-melee-fn) ; skip tiles not visible by AI
+              when (2d-tile-visible-around-ai-p main-state ; skip tiles not visible by AI
+                                                (sequence->ivec2 point)
+                                                #'%2d-ray-stopper-melee-fn)
               collect point)))))))
 
 (defun %update-attack-pos (blackboard update-fn)
@@ -876,6 +876,34 @@
                                     (when (not (funcall ray-stopper-fn entity x y))
                                       (return-from 2d-tile-visible-p t)))))
   nil)
+
+(defun 2d-tile-visible-around-ai-p (game-state tile-position ray-stopper-fn)
+  (with-accessors ((blackboard blackboard)) game-state
+    (with-accessors ((unexplored-layer unexplored-layer)) blackboard
+      (with-accessors ((layer layer)) unexplored-layer
+        (flet ((change-viewpoint (entity dir)
+                 (setf (dir entity) dir)
+                 (able-to-see-mesh:update-visibility-cone entity)))
+        (map-ai-entities game-state
+                         #'(lambda (k entity)
+                             (declare (ignore k))
+                             (let ((saved-dir (dir entity)))
+                               (loop for temp-dir in +entity-all-direction+ do
+                                    (change-viewpoint entity temp-dir)
+                                    (displace-2d-vector (tile-position x y)
+                                      ;; visible if is hitted by the ray
+                                      ;; AND
+                                      ;; is already explored OR
+                                      ;; the direction is the actual direction of the entity
+                                      (when (and (not (funcall ray-stopper-fn entity x y))
+                                                 (matrix-elt layer y x)
+                                                 (or (sb-cga:vec~ temp-dir saved-dir)
+                                                     (> (matrix-elt layer y x)
+                                                        +unexplored-tile-value+)))
+                                        (change-viewpoint entity saved-dir)
+                                        (return-from 2d-tile-visible-around-ai-p t))))
+                               (change-viewpoint entity saved-dir))))
+        nil)))))
 
 (defun disgregard-all-plans (game-state)
   (map-ai-entities game-state #'(lambda (k v)

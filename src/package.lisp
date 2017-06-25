@@ -80,6 +80,7 @@
    :+z-axe+
    :+entity-forward-direction+
    :+entity-up-direction+
+   :+entity-all-direction+
    :+zero-vec+
    :+simple-array-fixnum-type+
    :+id-camera+
