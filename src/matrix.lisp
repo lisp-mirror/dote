@@ -217,6 +217,8 @@
 
   (defgeneric valid-index-p (object r c))
 
+  (defgeneric valid-coordinates-p (object coordinates))
+
   (defgeneric swap-elements (object row column row2 column2 &key destructive))
 
   (defgeneric map-matrix (object predicate))
@@ -480,6 +482,9 @@ else
      (< c w)
      (>= r 0)
      (< r h))))
+
+(defmethod valid-coordinates-p ((object matrix) (coordinates sequence))
+  (valid-index-p object (elt coordinates 1) (elt coordinates 0)))
 
 (defmethod %matrix-incf (matrix x y (delta number))
   (with-check-matrix-borders (matrix x y)

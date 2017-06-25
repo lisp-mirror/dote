@@ -48,7 +48,7 @@
   (length (goal-pos object)))
 
 (defmethod print-object ((object def-target) stream)
-  (format stream "~a[~a]" (entity-id object) (max-attackers object)))
+  (format stream "~a[~a]" (entity-id object) (goal-pos object)))
 
 (defun make-defender-target (id &optional (goal-pos '()))
   (make-instance 'def-target :entity-id id :goal-pos goal-pos))
@@ -189,15 +189,20 @@
   (update-attack-melee-layer             blackboard)
   (update-attack-pole-layer              blackboard)
   (update-attack-bow-layer               blackboard)
-  (update-attack-crossbow-layer          blackboard))
+  (update-attack-crossbow-layer          blackboard)
+  ;; positions
+  (update-pole-attackable-pos            blackboard)
+  (update-melee-attackable-pos           blackboard)
+  (update-bow-attackable-pos             blackboard)
+  (update-crossbow-attackable-pos        blackboard))
 
 (defmethod game-event:on-game-event ((object blackboard) (event game-event:end-turn))
   (with-accessors ((concerning-tiles concerning-tiles)) object
     (decrease-concerning (main-state object) concerning-tiles)
     (%update-all-layers object)
-    ;; ;; test
-    ;; (let ((pix (inmap:dijkstra-layer->pixmap (attack-enemy-pole-layer object))))
-    ;;   (pixmap:save-pixmap pix (fs:file-in-package "pole.tga")))
+    ;; test
+    ;; (let ((pix (inmap:dijkstra-layer->pixmap (attack-enemy-bow-layer object))))
+    ;;   (pixmap:save-pixmap pix (fs:file-in-package "attack.tga")))
     nil))
 
 (defmethod main-state ((object blackboard))
@@ -219,13 +224,21 @@
 
 (defgeneric update-attack-melee-layer-player (object player &key all-visibles-from-ai))
 
+(defgeneric update-melee-attackable-pos-player (object player &key all-visibles-from-ai))
+
+(defgeneric update-melee-attackable-pos (object))
+
 (defgeneric update-attack-pole-layer (object))
+
+(defgeneric update-attack-pole-layer-player (object player &key all-visibles-from-ai))
+
+(defgeneric update-pole-attackable-pos-player (object player &key all-visibles-from-ai))
+
+(defgeneric update-pole-attackable-pos (object))
 
 (defgeneric update-attack-bow-layer (object))
 
 (defgeneric update-attack-crossbow-layer (object))
-
-(defgeneric update-attack-pole-layer-player (object player &key all-visibles-from-ai))
 
 (defgeneric update-attack-bow-layer-player (object player &key all-visibles-from-ai))
 
@@ -505,6 +518,17 @@
                                       #'%2d-ray-stopper-melee-fn) ; skip tiles not visible by AI
               collect point)))))))
 
+(defun %update-attack-pos (blackboard update-fn)
+  (with-accessors ((main-state main-state)) blackboard
+    (let ((all-visibles (all-player-id-visible-from-ai main-state)))
+      (map-player-entities main-state  #'(lambda (k player)
+                                           (declare (ignore k))
+                                           (funcall update-fn
+                                                    blackboard
+                                                    player
+                                                    :all-visibles-from-ai
+                                                    all-visibles))))))
+
 (defun %update-attack-layer (blackboard djk-map update-fn)
   (with-accessors ((main-state               main-state)
                    (concerning-tiles         concerning-tiles)
@@ -531,6 +555,43 @@
         (push (make-defender-target id-player (list target-pos)) bag))
     bag))
 
+(defun %calc-new-goal-attack-position-bag (player new-valid-positions old-position-bag)
+  (loop for position in new-valid-positions do
+       (setf old-position-bag (push-target-position old-position-bag (id player) position)))
+  old-position-bag)
+
+(defun %calc-melee-attack-position-player (blackboard player all-visibles-from-ai)
+  (with-accessors ((attack-enemy-melee-layer     attack-enemy-melee-layer)
+                   (attack-enemy-melee-positions attack-enemy-melee-positions)) blackboard
+    (with-accessors ((layer layer)) attack-enemy-melee-layer
+      (let* ((goal-generator-fn #'(lambda (x y)
+                                    (gen-4-neighbour-counterclockwise x y :add-center nil)))
+             (goal-tiles-pos    (%attack-layer-player-goal-pos blackboard
+                                                               layer
+                                                               player
+                                                               all-visibles-from-ai
+                                                               goal-generator-fn)))
+        (loop
+           for point in goal-tiles-pos
+           when (and (valid-coordinates-p layer point)
+                     (not (goal-canceled-for-neighbour-p all-visibles-from-ai
+                                                         player
+                                                         point)))
+           collect point)))))
+
+(defmethod update-melee-attackable-pos-player ((object blackboard) (player md2-mesh:md2-mesh)
+                                               &key
+                                                 (all-visibles-from-ai
+                                                  (all-player-id-visible-from-ai (state player))))
+    (with-accessors ((attack-enemy-melee-positions attack-enemy-melee-positions)) object
+      (let ((valid-positions (%calc-melee-attack-position-player object
+                                                                 player
+                                                                 all-visibles-from-ai)))
+        (setf attack-enemy-melee-positions
+              (%calc-new-goal-attack-position-bag player
+                                                  valid-positions
+                                                  attack-enemy-melee-positions)))))
+
 (defmethod update-attack-melee-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
                                              &key
                                                (all-visibles-from-ai
@@ -538,27 +599,13 @@
   (with-accessors ((attack-enemy-melee-layer     attack-enemy-melee-layer)
                    (attack-enemy-melee-positions attack-enemy-melee-positions)) object
     (with-accessors ((layer layer)) attack-enemy-melee-layer
-      (let* ((goal-generator-fn #'(lambda (x y)
-                                    (gen-4-neighbour-counterclockwise x y :add-center nil)))
-             (goal-tiles-pos    (%attack-layer-player-goal-pos object
-                                                               layer
-                                                               player
-                                                               all-visibles-from-ai
-                                                               goal-generator-fn)))
-        (loop
-           for point in goal-tiles-pos do
-             (displace-2d-vector (point x y)
-               (with-check-matrix-borders (layer x y)
-                 (when (not (goal-canceled-for-neighbour-p all-visibles-from-ai
-                                                           player
-                                                           point))
-                   ;; update position as well
-                   (setf attack-enemy-melee-positions
-                         (push-target-position attack-enemy-melee-positions
-                                               (id player)
-                                               point))
-                   (setf (matrix-elt layer y x)
-                         +goal-tile-value+)))))))))
+      (let ((valid-positions (%calc-melee-attack-position-player object
+                                                                 player
+                                                                 all-visibles-from-ai)))
+        (loop for position in valid-positions do
+             (displace-2d-vector (position x y)
+               (setf (matrix-elt layer y x)
+                     +goal-tile-value+)))))))
 
 (defmethod update-attack-melee-layer ((object blackboard))
   (with-accessors ((main-state main-state)
@@ -566,6 +613,9 @@
                    (attack-enemy-melee-layer attack-enemy-melee-layer)
                    (unexplored-layer unexplored-layer)) object
     (%update-attack-layer object attack-enemy-melee-layer #'update-attack-melee-layer-player)))
+
+(defmethod update-melee-attackable-pos ((object blackboard))
+  (%update-attack-pos object #'update-melee-attackable-pos-player))
 
 (defun increase-attack-goal-fading-weight (allied player goal-pos increase-threshold-dist)
   (let* ((allied-pos      (pos-entity-chunk->cost-pos (pos allied)))
@@ -629,33 +679,51 @@
                            (t
                             (gen-ring-box-position x y size size))))))))
 
-(defmethod update-attack-pole-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
-                                            &key
-                                              (all-visibles-from-ai
-                                               (all-player-id-visible-from-ai (state player))))
+(defun %calc-pole-attack-position-player (blackboard player all-visibles-from-ai)
   (with-accessors ((attack-enemy-pole-layer attack-enemy-pole-layer)
-                   (attack-enemy-pole-positions attack-enemy-pole-positions)) object
+                   (attack-enemy-pole-positions attack-enemy-pole-positions)) blackboard
     (with-accessors ((layer layer)) attack-enemy-pole-layer
       (let* ((goal-generator-fn (%pole-weapon-goal-generator-fn player))
-             (goal-tiles-pos    (%attack-layer-player-goal-pos object
+             (goal-tiles-pos    (%attack-layer-player-goal-pos blackboard
                                                                layer
                                                                player
                                                                all-visibles-from-ai
                                                                goal-generator-fn)))
         (loop
-           for point in goal-tiles-pos do
-             (displace-2d-vector (point x y)
-               (with-check-matrix-borders (layer x y)
-                 (when (not (goal-canceled-for-neighbour-p all-visibles-from-ai
-                                                           player
-                                                           point))
-                   ;; update position as well
-                   (setf attack-enemy-pole-positions
-                         (push-target-position attack-enemy-pole-positions
-                                               (id player)
-                                               point))
-                   (setf (matrix-elt layer y x)
-                         +goal-tile-value+)))))))))
+           for point in goal-tiles-pos
+           when (and (valid-coordinates-p layer point)
+                     (not (goal-canceled-for-neighbour-p all-visibles-from-ai
+                                                         player
+                                                         point)))
+           collect point)))))
+
+(defmethod update-pole-attackable-pos-player ((object blackboard) (player md2-mesh:md2-mesh)
+                                              &key
+                                                (all-visibles-from-ai
+                                                 (all-player-id-visible-from-ai (state player))))
+    (with-accessors ((attack-enemy-pole-positions attack-enemy-pole-positions)) object
+      (let ((valid-positions (%calc-pole-attack-position-player object
+                                                                player
+                                                                all-visibles-from-ai)))
+        (setf attack-enemy-pole-positions
+              (%calc-new-goal-attack-position-bag player
+                                                  valid-positions
+                                                  attack-enemy-pole-positions)))))
+
+(defmethod update-attack-pole-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
+                                            &key
+                                              (all-visibles-from-ai
+                                               (all-player-id-visible-from-ai (state player))))
+    (with-accessors ((attack-enemy-pole-layer attack-enemy-pole-layer)
+                     (attack-enemy-pole-positions attack-enemy-pole-positions)) object
+      (with-accessors ((layer layer)) attack-enemy-pole-layer
+        (let ((valid-positions (%calc-pole-attack-position-player object
+                                                                  player
+                                                                  all-visibles-from-ai)))
+          (loop for position in valid-positions do
+               (displace-2d-vector (position x y)
+                 (setf (matrix-elt layer y x)
+                       +goal-tile-value+)))))))
 
 (defun %long-range-weapon-goal-generator-fn (player range)
   (let ((level (level-difficult (state player))))
@@ -671,9 +739,8 @@
             (t
              (gen-ring-box-position x y size size)))))))
 
-(defun %update-attack-long-range-layer-player (blackboard player djk-map
-                                               target-positions-bag
-                                               all-visibles-from-ai range)
+(defun %calc-attack-long-range-position-player (blackboard player djk-map
+                                                all-visibles-from-ai range)
   (with-accessors ((layer layer)) djk-map
     (let* ((goal-generator-fn (%long-range-weapon-goal-generator-fn player range))
            (goal-tiles-pos    (%attack-layer-player-goal-pos blackboard
@@ -682,19 +749,54 @@
                                                              all-visibles-from-ai
                                                              goal-generator-fn)))
       (loop
-         for point in goal-tiles-pos do
-           (displace-2d-vector (point x y)
-             (with-check-matrix-borders (layer x y)
-               (when (not (goal-canceled-for-neighbour-p all-visibles-from-ai
-                                                         player
-                                                         point))
-                 ;; update position as well
-                   (setf target-positions-bag
-                         (push-target-position target-positions-bag
-                                               (id player)
-                                               point))
-                 (setf (matrix-elt layer y x)
-                       +goal-tile-value+))))))))
+         for point in goal-tiles-pos
+         when (and (valid-coordinates-p layer point)
+                   (not (goal-canceled-for-neighbour-p all-visibles-from-ai
+                                                       player
+                                                       point)))
+         collect point))))
+
+(defun %update-attack-long-range-position-player (blackboard player djk-map
+                                                  target-positions-bag
+                                                  all-visibles-from-ai range)
+  (let ((valid-positions (%calc-attack-long-range-position-player blackboard
+                                                                  player
+                                                                  djk-map
+                                                                  all-visibles-from-ai
+                                                                  range)))
+    (setf target-positions-bag
+          (%calc-new-goal-attack-position-bag player
+                                              valid-positions
+                                              target-positions-bag))
+    target-positions-bag))
+
+(defun %update-attack-long-range-layer-player (blackboard player djk-map
+                                               all-visibles-from-ai range)
+  (let ((valid-positions (%calc-attack-long-range-position-player blackboard
+                                                                 player
+                                                                 djk-map
+                                                                 all-visibles-from-ai
+                                                                 range)))
+    (with-accessors ((layer layer)) djk-map
+      (loop
+         for position in valid-positions do
+           (displace-2d-vector (position x y)
+             (setf (matrix-elt layer y x)
+                   +goal-tile-value+))))))
+
+(defmethod update-bow-attackable-pos-player ((object blackboard) (player md2-mesh:md2-mesh)
+                                             &key
+                                               (all-visibles-from-ai
+                                                (all-player-id-visible-from-ai (state player))))
+  (with-accessors ((attack-enemy-bow-layer attack-enemy-bow-layer)
+                   (attack-enemy-bow-positions attack-enemy-bow-positions)) object
+    (setf attack-enemy-bow-positions
+          (%update-attack-long-range-position-player object
+                                                     player
+                                                     attack-enemy-bow-layer
+                                                     attack-enemy-bow-positions
+                                                     all-visibles-from-ai
+                                                     (floor (d/ (d +weapon-bow-range+) 2.0))))))
 
 (defmethod update-attack-bow-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
                                              &key
@@ -705,9 +807,23 @@
       (%update-attack-long-range-layer-player object
                                               player
                                               attack-enemy-bow-layer
-                                              attack-enemy-bow-positions
                                               all-visibles-from-ai
                                               (floor (d/ (d +weapon-bow-range+) 2.0)))))
+
+(defmethod update-crossbow-attackable-pos-player ((object blackboard) (player md2-mesh:md2-mesh)
+                                                  &key
+                                                    (all-visibles-from-ai
+                                                     (all-player-id-visible-from-ai (state player))))
+  (with-accessors ((attack-enemy-crossbow-layer attack-enemy-crossbow-layer)
+                   (attack-enemy-crossbow-positions attack-enemy-crossbow-positions)) object
+    (setf attack-enemy-crossbow-positions
+          (%update-attack-long-range-position-player object
+                                                     player
+                                                     attack-enemy-crossbow-layer
+                                                     attack-enemy-crossbow-positions
+                                                     all-visibles-from-ai
+                                                     (floor (d/ (d +weapon-crossbow-range+)
+                                                                2.0))))))
 
 (defmethod update-attack-crossbow-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
                                              &key
@@ -718,9 +834,14 @@
       (%update-attack-long-range-layer-player object
                                               player
                                               attack-enemy-crossbow-layer
-                                              attack-enemy-crossbow-positions
                                               all-visibles-from-ai
                                               (floor (d/ (d +weapon-crossbow-range+) 2.0)))))
+
+(defmethod update-bow-attackable-pos ((object blackboard))
+  (%update-attack-pos object #'update-bow-attackable-pos-player))
+
+(defmethod update-crossbow-attackable-pos ((object blackboard))
+  (%update-attack-pos object #'update-crossbow-attackable-pos-player))
 
 (defmethod update-attack-pole-layer ((object blackboard))
   (with-accessors ((main-state main-state)
@@ -728,6 +849,9 @@
                    (attack-enemy-pole-layer attack-enemy-pole-layer)
                    (unexplored-layer unexplored-layer)) object
     (%update-attack-layer object attack-enemy-pole-layer #'update-attack-pole-layer-player)))
+
+(defmethod update-pole-attackable-pos ((object blackboard))
+  (%update-attack-pos object #'update-pole-attackable-pos-player))
 
 (defmethod update-attack-bow-layer ((object blackboard))
   (with-accessors ((main-state main-state)

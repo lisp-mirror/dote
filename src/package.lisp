@@ -1255,6 +1255,7 @@
    :with-matrix-op-typecase
    :row->sequence
    :valid-index-p
+   :valid-coordinates-p
    :matrix-elt
    :matrix-elt-vec4
    :matrix-elt-ubvec4
