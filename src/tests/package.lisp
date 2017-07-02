@@ -236,8 +236,12 @@
         :clunit
         :all-test
         :alexandria
+        :num
+        :vec2
+        :ivec2
         :cl-kanren
-        :kanren-utils))
+        :kanren-utils
+        :attack-tactics))
 
 (defpackage :action-scheduler-test
   (:use :cl

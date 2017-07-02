@@ -200,9 +200,6 @@
   (with-accessors ((concerning-tiles concerning-tiles)) object
     (decrease-concerning (main-state object) concerning-tiles)
     (%update-all-layers object)
-    ;; test
-    ;; (let ((pix (inmap:dijkstra-layer->pixmap (attack-enemy-crossbow-layer object))))
-    ;;   (pixmap:save-pixmap pix (fs:file-in-package "attack.tga")))
     nil))
 
 (defmethod main-state ((object blackboard))
@@ -238,11 +235,19 @@
 
 (defgeneric update-attack-bow-layer (object))
 
+(defgeneric update-bow-attackable-pos-player (object player &key all-visibles-from-ai))
+
 (defgeneric update-attack-crossbow-layer (object))
+
+(defgeneric update-crossbow-attackable-pos-player (object player &key all-visibles-from-ai))
 
 (defgeneric update-attack-bow-layer-player (object player &key all-visibles-from-ai))
 
+(defgeneric update-bow-attackable-pos (object))
+
 (defgeneric update-attack-crossbow-layer-player (object player &key all-visibles-from-ai))
+
+(defgeneric update-crossbow-attackable-pos (object))
 
 ;; TODO use decision tree
 (defmethod strategy-decision ((object blackboard))

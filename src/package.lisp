@@ -4402,6 +4402,37 @@
    :memorize
    :recall))
 
+(defpackage :attack-tactics
+  (:use :cl
+        :alexandria
+        :cl-kanren
+        :kanren-utils
+        :constants
+        :ivec2
+        :vec2
+        :num)
+  (:nicknames :atk-tac)
+  (:export
+   :atk-mp
+   :atk-pos
+   :atk-mp-o
+   :atk-pos-o
+   :def-pos
+   :def-goal-pos
+   :def-pos-o
+   :def-goal-pos-o
+   :def-mp-o
+   :def-mp
+   :attack-equals-p
+   :make-def-o
+   :reachablep
+   :*reachable-p-fn*
+   :reachableo
+   :attach-attacker@-o
+   :attach-attacker-o
+   :substo-all
+   :make-attack-tactics))
+
 (defpackage :blackboard
   (:use :cl
         :alexandria
