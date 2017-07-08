@@ -70,8 +70,6 @@
     :accessor ids)))
 
 (defun matrix->graph (matrix-costs)
-  (declare (optimize (speed 0) (safety 3) (debug 3)))
-  (declare (matrix:matrix matrix-costs))
   (make-instance 'graph:tile-based-graph :matrix matrix-costs))
 
 (defmethod initialize-instance :after ((object tile-based-graph) &key
@@ -132,7 +130,6 @@
   #'(lambda (a b) (< (matrix:matrix-elt costs (second a) (first a))
                      (matrix:matrix-elt costs (second b) (first b)))))
 
-
 (defclass tile-multilayers-graph (graph)
   ((layers
     :initform (misc:make-fresh-array 0)
@@ -192,6 +189,41 @@
 (defmethod random-node-id ((object tile-multilayers-graph))
   (node->node-id object (list (mod (num:lcg-next) (matrix:width (matrix object)))
                               (mod (num:lcg-next) (matrix:height (matrix object))))))
+
+(defgeneric push-cost-layer (object new-layer))
+
+(defgeneric pop-cost-layer (object))
+
+(defmethod push-cost-layer ((object tile-multilayers-graph) new-layer)
+  (with-accessors ((layers layers)) object
+    (let ((new-array (misc:make-fresh-array (1+ (length layers)) nil 'matrix:matrix t)))
+      (loop
+         for i across layers
+         for ct from 0 by 1 do
+           (setf (elt new-array ct) i))
+      (setf (elt new-array (length layers)) new-layer)
+      (setf layers new-array)
+      object)))
+
+(defmethod pop-cost-layer ((object tile-multilayers-graph))
+  (with-accessors ((layers layers)) object
+    (let ((new-array (misc:make-fresh-array (max 0 (1- (length layers))) nil 'matrix:matrix t)))
+      (loop for i from 0 below  (length new-array) do
+           (setf (elt new-array i)
+                 (elt layers    i)))
+      (setf layers new-array)
+      object)))
+
+(defmacro with-pushed-cost-layer ((graph layers) &body body)
+  (alexandria:with-gensyms (additional-layer layer-count)
+    `(unwind-protect
+          (progn
+            (loop for ,additional-layer in ,layers do
+               (graph:push-cost-layer ,graph ,additional-layer))
+
+            ,@body)
+       (loop for ,layer-count from 0 below (length ,layers) do
+               (graph:pop-cost-layer ,graph)))))
 
 (defclass matrix-graph (graph)
   ((matrix

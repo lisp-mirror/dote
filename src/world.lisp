@@ -239,6 +239,12 @@
                    (influence-map-type influence-map-type)) world
     (with-accessors ((blackboard blackboard)) main-state
       (let ((layer (ecase influence-map-type
+                     (:blurred-concerning-layer
+                      (inmap::layer->pixmap
+                       (blackboard:concerning-tiles->costs-matrix blackboard)))
+                     (:concerning-layer
+                      (inmap::layer->pixmap
+                       (blackboard:concerning-tiles blackboard)))
                      (:unexplored-layer
                       (inmap:dijkstra-layer->pixmap
                        (blackboard:unexplored-layer blackboard)))

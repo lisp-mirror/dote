@@ -326,7 +326,7 @@
                     (interfaces:calculate mesh 0.0)
                     (interfaces:render mesh renderer)
                     (gl:viewport 0.0 0.0 *window-w* *window-h*)))))
-    ;; remove transparent color
+    ;; set alpha to zero where pixel color is black
     (matrix:ploop-matrix (pixmap x y)
       (let*  ((px (matrix:pixel@ pixmap x y))
               (rgb (vector (elt px 0) (elt px 1) (elt px 2))))
@@ -334,27 +334,10 @@
                 (uivec:uivec~ rgb #(0 0 0)))
           ;; set alpha to zero
           (setf (elt (matrix:pixel@ pixmap x y) 3) 0))))
-    ;; try remove the totally transparent area below model
-    (let ((max-y (matrix:loop-matrix (pixmap x y loop-matrix)
-                   (when (/= (elt (matrix:pixel@ pixmap
-                                                 x
-                                                 (- (1- (matrix:height pixmap)) y))
-                                  3)
-                             0)
-                     (return-from loop-matrix (- (matrix:height pixmap) y)))))
-          (min-y  (matrix:loop-matrix (pixmap x y loop-matrix)
-                    (when (/= (elt (matrix:pixel@ pixmap x y) 3) 0)
-                      (return-from loop-matrix y))))
-          (min-x (get-bitmap-min-x-opaque pixmap))
-          (max-x (get-bitmap-max-x-opaque pixmap)))
-      ;; clip
-      (setf pixmap (matrix:submatrix pixmap
-                                     min-x
-                                     min-y
-                                     (- max-x min-x)
-                                     (- max-y min-y)))
-      (pixmap:sync-data-to-bits pixmap)
-      pixmap)))
+    ;; remove transparent color
+    (setf pixmap (matrix:clip-to-bounding-box pixmap))
+    (pixmap:sync-data-to-bits pixmap)
+    pixmap))
 
 (defun make-impostor-texture (renderer mesh
                               &key (w +impostor-default-size+) (h  +impostor-default-size+))

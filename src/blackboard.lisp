@@ -16,19 +16,21 @@
 
 (in-package :blackboard)
 
-(define-constant +goal-attack-occupied-value+      100.0 :test #'=)
+(define-constant +goal-attack-occupied-value+            100.0 :test #'=)
 
-(define-constant +explored-tile-value+             100.0 :test #'=)
+(define-constant +explored-tile-value+                   100.0 :test #'=)
 
-(define-constant +unexplored-tile-value+             0.0 :test #'=)
+(define-constant +unexplored-tile-value+                   0.0 :test #'=)
 
-(define-constant +concerning-tile-value+           100.0 :test #'=)
+(define-constant +concerning-tile-value+                 100.0 :test #'=)
 
-(define-constant +attack-nongoal-tile-value+         5.0 :test #'=)
+(define-constant +attack-nongoal-tile-value+               5.0 :test #'=)
 
-(define-constant +length-line-of-sight-inf+       1000.0 :test #'=)
+(define-constant +length-line-of-sight-inf+             1000.0 :test #'=)
 
-(define-constant +goal-tile-value+                   0.0 :test #'=)
+(define-constant +goal-tile-value+                         0.0 :test #'=)
+
+(define-constant +concerning-tiles-cost->graph-scaling+    3.0 :test #'=)
 
 (defclass entity-taker ()
   ((entity-id
@@ -168,6 +170,42 @@
         (setf use-enemy-fov-when-exploring nil
               use-enemy-fov-when-attacking t)))))
 
+(defun update-concerning-zones-around-entity (entity)
+  (with-accessors ((ghost ghost)
+                   (dir dir)
+                   (id id)
+                   (state state)) entity
+    (let* ((pos-entity (mesh:calculate-cost-position entity))
+           (difficult  (game-state:level-difficult state))
+           (dangerous-zone-size (max 2 (blackboard:calc-danger-zone-size difficult))))
+      (game-state:set-concerning-tile state
+                                      (elt pos-entity 0)
+                                      (elt pos-entity 1)
+                                      :danger-zone-size dangerous-zone-size))))
+
+(defun add-tail-concerning-zone (attacker defender)
+  (with-accessors ((ghost ghost)
+                   (dir dir)
+                   (id id)
+                   (state state)) defender
+    (with-accessors ((blackboard blackboard:blackboard)) state
+      (with-accessors ((concerning-tiles blackboard:concerning-tiles)) blackboard
+        (let* ((pos-entity-goal  (mesh:calculate-cost-position defender))
+               (pos-entity-start (mesh:calculate-cost-position attacker))
+               (difficult        (game-state:level-difficult state))
+               (tail             (2d-utils:segment pos-entity-start pos-entity-goal
+                                                   :antialiasp nil
+                                                   :width      1))
+               (cost             (d* (blackboard:calc-concerning-tiles-cost-scaling
+                                      difficult)
+                                     +open-terrain-cost+)))
+          (when (> difficult 3)
+            (loop for point in tail do
+                 (let ((coord (elt point 0)))
+                   (2d-utils:displace-2d-vector (coord x y)
+                     (setf (matrix:matrix-elt concerning-tiles y x)
+                           cost))))))))))
+
 (defun decrease-concerning (game-state concerning-map)
   (let* ((level           (level-difficult game-state))
          (decrease-rate   (d  (/ 1 level)))
@@ -209,6 +247,8 @@
   (with-slots (main-state) object
     (setf main-state new-state)))
 
+(defgeneric concerning-tiles->costs-matrix (object))
+
 (defgeneric strategy-decision (object))
 
 (defgeneric update-unexplored-layer (object))
@@ -249,6 +289,27 @@
 
 (defgeneric update-crossbow-attackable-pos (object))
 
+(defun calc-concerning-tiles-cost-scaling (difficult-level)
+  (dlerp (smoothstep-interpolate 2.0 5.0 (d difficult-level))
+         10.0
+         15.0))
+
+(defmethod concerning-tiles->costs-matrix ((object blackboard))
+  (with-accessors ((concerning-tiles concerning-tiles)
+                   (main-state main-state)) object
+    (let ((res   (clone concerning-tiles))
+          (level (level-difficult main-state)))
+      (setf res
+            (matrix:map-matrix res
+                               #'(lambda (a)
+                                   (if (not (epsilon= 0.0 a))
+                                     (d* (calc-concerning-tiles-cost-scaling level)
+                                         +open-terrain-cost+)
+                                     0.0))))
+      (setf res
+            (matrix:pgaussian-blur-separated res #'identity 5))
+      res)))
+
 ;; TODO use decision tree
 (defmethod strategy-decision ((object blackboard))
   (declare (ignore object))
@@ -284,7 +345,7 @@
                                                                danger-zone-size
                                                                danger-zone-size)))
       (loop for point across dangerous-tiles-pos do
-           (displace-2d-vector (point x y)
+           (2d-utils:displace-2d-vector (point x y)
              (with-check-matrix-borders (concerning-tiles x y)
                (incf (matrix-elt concerning-tiles y x) +concerning-tile-value+)))))))
 

@@ -188,19 +188,6 @@
           t)
         nil)))
 
-(defun update-concening-zones-around-entity (entity)
-  (with-accessors ((ghost ghost)
-                   (dir dir)
-                   (id id)
-                   (state state)) entity
-    (let* ((pos-entity (calculate-cost-position entity))
-           (difficult  (game-state:level-difficult state))
-           (dangerous-zone-size (max 2 (blackboard:calc-danger-zone-size difficult))))
-      (game-state:set-concerning-tile state
-                                      (elt pos-entity 0)
-                                      (elt pos-entity 1)
-                                      :danger-zone-size dangerous-zone-size))))
-
 (defmacro with-end-attack-event ((object event attacked-by-entity) &body body)
   `(check-event-targeted-to-me (,object ,event)
     (with-accessors ((,attacked-by-entity attacked-by-entity)) ,object
@@ -237,7 +224,6 @@
 
 (defmethod on-game-event ((object md2-mesh) (event end-attack-long-range-event))
   (with-end-attack-event (object event attacked-by-entity)
-    (update-concening-zones-around-entity object)
     (with-maybe-reply-attack (object attacked-by-entity)
       (with-remove-idle-character-plan))))
 
@@ -251,7 +237,6 @@
 
 (defmethod on-game-event ((object md2-mesh) (event end-defend-from-attack-spell-event))
   (with-end-attack-event (object event attacked-by-entity) ;; no reply to spell
-    (update-concening-zones-around-entity object)
     (with-remove-idle-character-plan)))
 
 (defmethod on-game-event ((object md2-mesh) (event end-defend-from-spell-event))
@@ -291,10 +276,19 @@
                               (worn-weapon (entity:ghost object)))
       t)))
 
+(defun update-concernining-tiles-on-event (event)
+  (let* ((attacker (game-event:attacker-entity event))
+         (defender (game-state:find-entity-by-id (entity:state attacker)
+                                                 (game-event:id-destination event))))
+    (blackboard:update-concerning-zones-around-entity defender)
+    (blackboard:add-tail-concerning-zone    attacker defender)))
+
 (defmethod on-game-event ((object md2-mesh) (event attack-long-range-event))
   (check-event-targeted-to-me (object event)
     (multiple-value-bind (damage ambush)
         (battle-utils:defend-from-attack-long-range event)
+      (when damage
+        (update-concernining-tiles-on-event event))
       (manage-occurred-damage object
                               event
                               damage
@@ -308,6 +302,8 @@
   (check-event-targeted-to-me (object event)
     (multiple-value-bind (damage ambush)
         (battle-utils:defend-from-attack-spell event)
+      (when damage
+        (update-concernining-tiles-on-event event))
       #+debug-mode (misc:dbg "apply ~a" damage)
       (manage-occurred-damage object
                               event
@@ -1998,7 +1994,7 @@
       (add-to-inventory (ghost body) forged-bow)
       (add-to-inventory (ghost body) forged-sword)
       (add-to-inventory (ghost body) forged-trap)
-      (setf (movement-points (ghost body)) 200.0)
+      (setf (movement-points (ghost body)) 20.0)
       (setf (magic-points    (ghost body)) 50.0)
       ;; note:   wear-item-event  will   not  be   catched  as   the
       ;; registration happens when the entity is added to world
@@ -2213,7 +2209,6 @@
                 (game-state:make-movement-path path cost)
                 nil))
           nil))))
-
 
 (defparameter *md2-mesh-factory-db* '())
 

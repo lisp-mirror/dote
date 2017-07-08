@@ -366,6 +366,10 @@
 (defun %change-ai-layer (window scancode)
   (flet ((%change-layer (type)
            (setf (world:influence-map-type (world window)) type)))
+    (when (eq :scancode-f6 scancode)
+      (%change-layer :blurred-concerning-layer))
+    (when (eq :scancode-f7 scancode)
+      (%change-layer :concerning-layer))
     (when (eq :scancode-f8 scancode)
       (%change-layer :unexplored-layer))
     (when (eq :scancode-f9 scancode)
@@ -515,7 +519,9 @@
                                                                   (elt cost-pointer-position 0)
                                                                   (elt cost-pointer-position 1)))
                                         +invalicable-element-cost+))
-             (ghost                 (entity:ghost selected-pc)))
+             (ghost                 (entity:ghost selected-pc))
+             (blackboard            (game-state:blackboard main-state))
+             (concerning-tiles      (blackboard:concerning-tiles->costs-matrix blackboard)))
         (when (and cost-pointer-position
                    (not (path-same-ends-p main-state
                                           cost-player-position
@@ -531,7 +537,8 @@
                        cost-pointer-position
                        (game-state:build-movement-path main-state
                                                        cost-player-position
-                                                       cost-pointer-position))
+                                                       cost-pointer-position
+                                                       :other-costs-layer (list concerning-tiles)))
                 (when (and path
                            (<= cost player-movement-points))
                   (setf (game-state:selected-path main-state)

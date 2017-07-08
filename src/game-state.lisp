@@ -305,7 +305,7 @@
 
 (defgeneric entity-id-in-pos (object x y))
 
-(defgeneric build-movement-path (object start end))
+(defgeneric build-movement-path (object start end &key other-costs-layer))
 
 (defgeneric terrain-aabb-2d (object))
 
@@ -467,17 +467,19 @@
              (cross (abs (d- (d* dx1 dy2) (d* dx2 dy1)))))
         (d+ cost (d* cross 0.05)))))
 
-(defmethod build-movement-path ((object game-state) start end)
+(defmethod build-movement-path ((object game-state) start end &key (other-costs-layer '()))
   (with-accessors ((movement-costs movement-costs)) object
-    (let ((tree (graph:astar-search movement-costs
-                                    (graph:node->node-id movement-costs start)
-                                    (graph:node->node-id movement-costs end)
-                                    :heuristic-cost-function (heuristic-manhattam))))
-      (multiple-value-bind (raw-path cost)
-          (graph:graph->path tree (graph:node->node-id movement-costs end))
-        (values
-         (map 'vector #'(lambda (id) (graph:node-id->node movement-costs id)) raw-path)
-         cost)))))
+    (graph:with-pushed-cost-layer (movement-costs other-costs-layer)
+      (let ((tree (graph:astar-search movement-costs
+                                      (graph:node->node-id movement-costs start)
+                                      (graph:node->node-id movement-costs end)
+                                      :heuristic-cost-function (heuristic-manhattam))))
+        (multiple-value-bind (raw-path cost)
+            (graph:graph->path tree (graph:node->node-id movement-costs end))
+          (let ((path (map 'vector
+                           #'(lambda (id) (graph:node-id->node movement-costs id))
+                           raw-path)))
+            (values path cost)))))))
 
 (defmethod terrain-aabb-2d ((object game-state))
   (declare (optimize (debug 0) (safety 0) (speed 3)))

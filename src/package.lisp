@@ -1335,6 +1335,9 @@
    :tile-multilayers-graph
    :layers
    :make-tile-multilayer-graph
+   :push-cost-layer
+   :pop-cost-layer
+   :with-pushed-cost-layer
    :matrix->graph
    :matrix-graph
    :matrix
@@ -4452,12 +4455,16 @@
   (:export
    :blackboard
    :concerning-tiles
+   :calc-concerning-tiles-cost-scaling
    :visited-tiles
    :unexplored-layer
    :attack-enemy-melee-layer
    :attack-enemy-pole-layer
    :attack-enemy-bow-layer
    :attack-enemy-crossbow-layer
+   :concerning-tiles->costs-matrix
+   :add-tail-concerning-zone
+   :update-concerning-zones-around-entity
    :strategy-decision
    :set-tile-visited
    :calc-danger-zone-size
