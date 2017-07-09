@@ -238,6 +238,9 @@
   (with-accessors ((concerning-tiles concerning-tiles)) object
     (decrease-concerning (main-state object) concerning-tiles)
     (%update-all-layers object)
+    ;; test
+    ;; (let ((pix (inmap:dijkstra-layer->pixmap (attack-enemy-crossbow-layer object))))
+    ;;   (pixmap:save-pixmap pix (fs:file-in-package "attack.tga")))
     nil))
 
 (defmethod main-state ((object blackboard))
@@ -288,6 +291,8 @@
 (defgeneric update-attack-crossbow-layer-player (object player &key all-visibles-from-ai))
 
 (defgeneric update-crossbow-attackable-pos (object))
+
+(defgeneric fetch-defender-positions (object))
 
 (defun calc-concerning-tiles-cost-scaling (difficult-level)
   (dlerp (smoothstep-interpolate 2.0 5.0 (d difficult-level))
@@ -614,16 +619,47 @@
                                                       all-visibles)))
         (inmap:smooth-dijkstra-layer djk-map main-state)))))
 
-(defun push-target-position (bag id-player target-pos)
-  (let ((target-found (find-if #'(lambda (a) (= (entity-id a) id-player)) bag)))
-    (if target-found
-        (pushnew target-pos (goal-pos target-found) :test #'ivec2=)
-        (push (make-defender-target id-player (list target-pos)) bag))
-    bag))
+(defun push-target-position (bag player target-pos)
+  (let* ((id-player (id player))
+         (game-state (state player))
+         (blackboard (blackboard game-state)))
+    (labels ((%push ()
+               (let ((target-found (find-if #'(lambda (a) (= (entity-id a) id-player)) bag)))
+                 (if target-found
+                     (pushnew target-pos (goal-pos target-found) :test #'ivec2=)
+                     (push (make-defender-target id-player (list target-pos)) bag)))
+               bag)
+             (%find-maybe-remove-pos (target-pos bag)
+               "if nil it is safe to add the position"
+               (let ((target-with-pos (find-if #'(lambda (a) (find target-pos a :test #'ivec2=))
+                                               bag
+                                               :key #'goal-pos))
+                     (removep (die-utils:pass-d2 1))) ; roll a die
+                 (if target-with-pos ; another target has the same slot
+                     (if removep
+                         (progn
+                           (setf (goal-pos target-with-pos)  ; remove the old slot
+                                 (remove target-pos (goal-pos target-with-pos) :test #'ivec2=))
+                           nil)
+                       t)
+                     nil)))
+             (%find-pos (blackboard target-pos)
+               (with-accessors ((attack-enemy-pole-positions     attack-enemy-pole-positions)
+                                (attack-enemy-melee-positions    attack-enemy-melee-positions)
+                                (attack-enemy-bow-positions      attack-enemy-bow-positions)
+                                (attack-enemy-crossbow-positions attack-enemy-crossbow-positions))
+                   blackboard
+                 (or (%find-maybe-remove-pos target-pos attack-enemy-pole-positions)
+                     (%find-maybe-remove-pos target-pos attack-enemy-melee-positions)
+                     (%find-maybe-remove-pos target-pos attack-enemy-bow-positions)
+                     (%find-maybe-remove-pos target-pos attack-enemy-crossbow-positions)))))
+      (if (not (%find-pos blackboard target-pos))
+          (%push)
+          bag))))
 
 (defun %calc-new-goal-attack-position-bag (player new-valid-positions old-position-bag)
   (loop for position in new-valid-positions do
-       (setf old-position-bag (push-target-position old-position-bag (id player) position)))
+       (setf old-position-bag (push-target-position old-position-bag player position)))
   old-position-bag)
 
 (defun %calc-melee-attack-position-player (blackboard player all-visibles-from-ai)
@@ -934,6 +970,21 @@
     (%update-attack-layer object
                           attack-enemy-crossbow-layer
                           #'update-attack-crossbow-layer-player)))
+
+(defmethod fetch-defender-positions ((object blackboard))
+  (with-accessors ((main-state                      main-state)
+                   (attack-enemy-pole-positions     attack-enemy-pole-positions)
+                   (attack-enemy-melee-positions    attack-enemy-melee-positions)
+                   (attack-enemy-bow-positions      attack-enemy-bow-positions)
+                   (attack-enemy-crossbow-positions attack-enemy-crossbow-positions))
+      object
+    (flet ((%fetch (l)
+             (loop for i in l append (attack-tactics:defender-class->defender i))))
+      (list
+       :pole     (%fetch attack-enemy-pole-positions)
+       :melee    (%fetch attack-enemy-melee-positions)
+       :bow      (%fetch attack-enemy-bow-positions)
+       :crossbow (%fetch attack-enemy-crossbow-positions)))))
 
 (defun 2d-tile-visible-p (game-state tile-position ray-stopper-fn)
   (map-ai-entities game-state #'(lambda (k entity)

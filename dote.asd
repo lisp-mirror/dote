@@ -179,7 +179,8 @@
                                      (:file "avatar-test")
                                      (:file "mtree-test")
                                      (:file "kanren-test")
-                                     (:file "action-scheduler-test")))))
+                                     (:file "action-scheduler-test")
+                                     (:file "attack-tactics-test")))))
 
 (progn
   (pushnew :debug-mode *features*)

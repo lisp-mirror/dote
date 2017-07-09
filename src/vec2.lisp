@@ -43,7 +43,8 @@
     :test #'vec2=)
 
   (definline sequence->vec2 (vec)
-    (vec2 (elt vec 0) (elt vec 1)))
+    (vec2 (num:d (elt vec 0))
+          (num:d (elt vec 1))))
 
   (defun-inline-function make-fresh-vec2 ()
     (make-array-frame 2 0 'vec2-type t)))

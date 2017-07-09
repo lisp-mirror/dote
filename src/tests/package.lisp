@@ -249,3 +249,10 @@
         :all-test
         :alexandria
         :action-scheduler))
+
+(defpackage :attack-tactics-test
+  (:use :cl
+        :clunit
+        :all-test
+        :alexandria
+        :blackboard))

@@ -138,3 +138,13 @@
       (substo-all defenders defender-number car-atk tmp)
       (make-attack-tactics tmp defender-number cdr-atk res)
       (appendo tmp res out)))))
+
+(defun attacker-class->attacker (game-state atk)
+  (let* ((entity (entity:find-entity-by-id game-state (blackboard:entity-id atk)))
+         (mp     (character:actual-movement-points    (entity:ghost entity)))
+         (pos    (vec2:sequence->vec2                 (mesh:calculate-cost-position entity))))
+    (cons pos mp)))
+
+(defun defender-class->defender (def)
+  (let ((positions (blackboard:goal-pos def)))
+    (mapcar #'(lambda (a) (list (vec2:sequence->vec2 a))) positions)))

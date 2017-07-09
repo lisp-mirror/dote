@@ -4413,7 +4413,8 @@
         :constants
         :ivec2
         :vec2
-        :num)
+        :num
+        :interfaces)
   (:nicknames :atk-tac)
   (:export
    :atk-mp
@@ -4434,7 +4435,8 @@
    :attach-attacker@-o
    :attach-attacker-o
    :substo-all
-   :make-attack-tactics))
+   :make-attack-tactics
+   :defender-class->defender))
 
 (defpackage :blackboard
   (:use :cl
@@ -4453,6 +4455,10 @@
         :influence-map
         :game-state)
   (:export
+   :entity-id
+   :target-id
+   :goal-pos
+   :target-pos
    :blackboard
    :concerning-tiles
    :calc-concerning-tiles-cost-scaling
@@ -4462,6 +4468,10 @@
    :attack-enemy-pole-layer
    :attack-enemy-bow-layer
    :attack-enemy-crossbow-layer
+   :attack-enemy-pole-positions
+   :attack-enemy-melee-positions
+   :attack-enemy-bow-positions
+   :attack-enemy-crossbow-positions
    :concerning-tiles->costs-matrix
    :add-tail-concerning-zone
    :update-concerning-zones-around-entity
