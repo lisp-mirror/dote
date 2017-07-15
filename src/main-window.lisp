@@ -519,9 +519,11 @@
                                                                   (elt cost-pointer-position 0)
                                                                   (elt cost-pointer-position 1)))
                                         +invalicable-element-cost+))
-             (ghost                 (entity:ghost selected-pc))
-             (blackboard            (game-state:blackboard main-state))
-             (concerning-tiles      (blackboard:concerning-tiles->costs-matrix blackboard)))
+             (ghost                 (entity:ghost selected-pc)))
+        ;; test concerning tiles
+        ;; (blackboard            (game-state:blackboard main-state)))
+
+        ;; (concerning-tiles      (blackboard:concerning-tiles->costs-matrix blackboard)))
         (when (and cost-pointer-position
                    (not (path-same-ends-p main-state
                                           cost-player-position
@@ -537,8 +539,9 @@
                        cost-pointer-position
                        (game-state:build-movement-path main-state
                                                        cost-player-position
-                                                       cost-pointer-position
-                                                       :other-costs-layer (list concerning-tiles)))
+                                                       cost-pointer-position))
+                                                       ;;;; test concerning-tiles
+                                                       ;:other-costs-layer (list concerning-tiles)))
                 (when (and path
                            (<= cost player-movement-points))
                   (setf (game-state:selected-path main-state)

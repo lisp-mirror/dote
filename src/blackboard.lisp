@@ -65,6 +65,9 @@
     :initarg  :target-pos
     :accessor target-pos)))
 
+(defmethod print-object ((object attacker) stream)
+  (format stream "~a -> ~a@~a" (entity-id object) (target-id object) (target-pos object)))
+
 (defclass blackboard ()
   ((main-state
     :initform nil
@@ -90,46 +93,42 @@
     :initform nil
     :initarg  :attack-enemy-melee-layer
     :accessor attack-enemy-melee-layer
-    :type     dijkstra-layer
-    :documentation "This holds the position the player with melee weapon (except pole weapon) should reach to attack the enemy")
+    :type     dijkstra-layer)
    (attack-enemy-pole-layer
     :initform nil
     :initarg  :attack-enemy-pole-layer
     :accessor attack-enemy-pole-layer
-    :type     dijkstra-layer
-    :documentation "This holds the position the player with pole weapon should reach to attack the enemy")
+    :type     dijkstra-layer)
    (attack-enemy-bow-layer
     :initform nil
     :initarg  :attack-enemy-bow-layer
     :accessor attack-enemy-bow-layer
-    :type     dijkstra-layer
-    :documentation "This holds the position the player with bow weapon should reach to attack the enemy")
+    :type     dijkstra-layer)
    (attack-enemy-crossbow-layer
     :initform nil
     :initarg  :attack-enemy-crossbow-layer
     :accessor attack-enemy-crossbow-layer
-    :type     dijkstra-layer
-    :documentation "This holds the position the player with crossbow weapon should reach to attack the enemy")
+    :type     dijkstra-layer)
    (attack-enemy-melee-positions
     :initform '()
     :initarg  :attack-enemy-melee-positions
     :accessor attack-enemy-melee-positions
-    :documentation "This holds the position the positions with melee weapon (except pole weapon) should reach to attack the enemy")
+    :documentation "This holds the positions AI with melee weapon (except pole weapon) should reach to attack the enemy")
    (attack-enemy-pole-positions
     :initform '()
     :initarg  :attack-enemy-pole-positions
     :accessor attack-enemy-pole-positions
-    :documentation "This holds the position the positions with pole weapon should reach to attack the enemy")
+    :documentation "This holds the positions AI with pole weapon should reach to attack the enemy")
    (attack-enemy-bow-positions
     :initform '()
     :initarg  :attack-enemy-bow-positions
     :accessor attack-enemy-bow-positions
-    :documentation "This holds the position the positions with bow weapon should reach to attack the enemy")
+    :documentation "This holds the positions AI with bow weapon should reach to attack the enemy")
    (attack-enemy-crossbow-positions
     :initform '()
     :initarg  :attack-enemy-crossbow-positions
     :accessor attack-enemy-crossbow-positions
-    :documentation "This holds the position the positions with crossbow weapon should reach to attack the enemy")
+    :documentation "This holds the positions AI with crossbow weapon should reach to attack the enemy")
    (use-enemy-fov-when-exploring
     :initform nil
     :initarg  :use-enemy-fov-when-exploring-p
@@ -232,7 +231,19 @@
   (update-pole-attackable-pos            blackboard)
   (update-melee-attackable-pos           blackboard)
   (update-bow-attackable-pos             blackboard)
-  (update-crossbow-attackable-pos        blackboard))
+  (update-crossbow-attackable-pos        blackboard)
+  (misc:dbg "pole  ~a" (attack-enemy-pole-positions  blackboard))
+  (misc:dbg "melee ~a" (attack-enemy-melee-positions blackboard))
+  (misc:dbg "bow   ~a" (attack-enemy-bow-positions blackboard))
+  (misc:dbg "crossbow   ~a" (attack-enemy-crossbow-positions blackboard))
+  (misc:dbg "def-pos ~a" (fetch-defender-positions blackboard))
+  (misc:dbg "atk-pos ~a" (fetch-attacker-positions blackboard))
+  (misc:dbg "all-tactics ~a" (build-all-attack-tactics blackboard))
+  (misc:dbg "ids ~a"     (multiple-value-list
+                          (attack-tactic->id-entities blackboard
+                                                      (list (ivec2 5 1)
+                                                            (ivec2 3 8)
+                                                            20)))))
 
 (defmethod game-event:on-game-event ((object blackboard) (event game-event:end-turn))
   (with-accessors ((concerning-tiles concerning-tiles)) object
@@ -291,8 +302,6 @@
 (defgeneric update-attack-crossbow-layer-player (object player &key all-visibles-from-ai))
 
 (defgeneric update-crossbow-attackable-pos (object))
-
-(defgeneric fetch-defender-positions (object))
 
 (defun calc-concerning-tiles-cost-scaling (difficult-level)
   (dlerp (smoothstep-interpolate 2.0 5.0 (d difficult-level))
@@ -667,7 +676,9 @@
                    (attack-enemy-melee-positions attack-enemy-melee-positions)) blackboard
     (with-accessors ((layer layer)) attack-enemy-melee-layer
       (let* ((goal-generator-fn #'(lambda (x y)
-                                    (gen-4-neighbour-counterclockwise x y :add-center nil)))
+                                    (mapcar #'ivec2:sequence->ivec2
+                                            (gen-4-neighbour-counterclockwise x y
+                                                                              :add-center nil))))
              (goal-tiles-pos    (%attack-layer-player-goal-pos blackboard
                                                                layer
                                                                player
@@ -970,21 +981,6 @@
     (%update-attack-layer object
                           attack-enemy-crossbow-layer
                           #'update-attack-crossbow-layer-player)))
-
-(defmethod fetch-defender-positions ((object blackboard))
-  (with-accessors ((main-state                      main-state)
-                   (attack-enemy-pole-positions     attack-enemy-pole-positions)
-                   (attack-enemy-melee-positions    attack-enemy-melee-positions)
-                   (attack-enemy-bow-positions      attack-enemy-bow-positions)
-                   (attack-enemy-crossbow-positions attack-enemy-crossbow-positions))
-      object
-    (flet ((%fetch (l)
-             (loop for i in l append (attack-tactics:defender-class->defender i))))
-      (list
-       :pole     (%fetch attack-enemy-pole-positions)
-       :melee    (%fetch attack-enemy-melee-positions)
-       :bow      (%fetch attack-enemy-bow-positions)
-       :crossbow (%fetch attack-enemy-crossbow-positions)))))
 
 (defun 2d-tile-visible-p (game-state tile-position ray-stopper-fn)
   (map-ai-entities game-state #'(lambda (k entity)

@@ -2540,12 +2540,6 @@
       (draw)
       *pixmap*)))
 
-(defun blit-blend-subt-fn ()
-  #'(lambda (src dst x-src y-src x-dst y-dst)
-      (map 'ubvec4 #'(lambda (a b) (alexandria:clamp (* b a) 0 255))
-           (matrix-elt dst y-dst x-dst)
-           (matrix-elt src y-src x-src))))
-
 (defun red-aura (size)
   (let* ((ext (turtle-spyro size 0.004 0.001
                             (num:deg->rad 2.24)
@@ -2587,6 +2581,14 @@
     (setf (pixel@ px 3 3) (ubvec4 255 0 0 255))
     (ncopy-matrix-into-pixmap px (scale-matrix px 10.0 10.0))
     (save-pixmap px (fs:file-in-package "b.tga"))
+    t))
+
+(defun test-lerp ()
+  (let ((a (make-pixmap 1024 1024))
+        (b (make-pixmap 1024 1024 4 (ubvec4 0 255 0 255))))
+    (matrix-line-norm a #(0.0 0.0) #(0.5 0.3) (ubvec4 255 0 0 255) :width 8)
+    (pblit-unsafe a b 0 0 0 0 :function-blend (blit-blend-lerp-fn))
+    (save-pixmap b (fs:file-in-package "b.tga"))
     t))
 
 (defun test-all-textures ()

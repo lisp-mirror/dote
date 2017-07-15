@@ -583,6 +583,25 @@
   (with-accessors ((ai-entities ai-entities)) object
     (maphash function ai-entities)))
 
+(defun find-faction-entity-id-by-position (game-state probe faction)
+  (flet ((fn (k entity)
+           (declare (ignore k))
+           (let ((pos (mesh:calculate-cost-position entity)))
+             (when (ivec2:ivec2= pos probe)
+               (return-from find-faction-entity-id-by-position (id entity))))))
+    (ecase faction
+        (:player
+         (map-player-entities game-state #'fn))
+        (:ai
+         (map-ai-entities game-state #'fn)))
+    nil))
+
+(defun find-player-id-by-position (game-state probe)
+  (find-faction-entity-id-by-position game-state probe :player))
+
+(defun find-ai-id-by-position (game-state probe)
+  (find-faction-entity-id-by-position game-state probe :ai))
+
 (defmethod faction-player-p ((object game-state) &optional (id-entity nil))
   (assert (numberp id-entity))
   (fetch-from-player-entities object id-entity))

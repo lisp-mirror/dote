@@ -240,8 +240,7 @@
         :vec2
         :ivec2
         :cl-kanren
-        :kanren-utils
-        :attack-tactics))
+        :kanren-utils))
 
 (defpackage :action-scheduler-test
   (:use :cl

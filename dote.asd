@@ -131,7 +131,6 @@
                                      (:file "spell-window")
                                      (:file "player-report-window")
                                      (:file "splash-screen-progress-gauge")))
-               (:file "attack-tactics")
                (:file "billboard")
                (:file "world")
                (:file "terrain-chunk")
@@ -147,6 +146,7 @@
                (:file "influence-map")
                (:file "ann")
                (:file "blackboard")
+               (:file "attack-tactics")
                (:file "keyboard-config")
                (:file "main-window")
                (:module tests

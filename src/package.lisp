@@ -2108,6 +2108,8 @@
    :fetch-from-ai-entities
    :map-player-entities
    :map-ai-entities
+   :find-player-id-by-position
+   :find-ai-id-by-position
    :faction-player-p
    :faction-ai-p
    :approx-terrain-height@pos
@@ -4405,18 +4407,24 @@
    :memorize
    :recall))
 
-(defpackage :attack-tactics
+(defpackage :blackboard
   (:use :cl
         :alexandria
         :cl-kanren
-        :kanren-utils
         :constants
         :ivec2
         :vec2
         :num
-        :interfaces)
-  (:nicknames :atk-tac)
+        :matrix
+        :2d-utils
+        :identificable
+        :entity
+        :interfaces
+        :map-utils
+        :influence-map
+        :game-state)
   (:export
+   ;; attack tactics
    :atk-mp
    :atk-pos
    :atk-mp-o
@@ -4436,25 +4444,7 @@
    :attach-attacker-o
    :substo-all
    :make-attack-tactics
-   :defender-class->defender))
-
-(defpackage :blackboard
-  (:use :cl
-        :alexandria
-        :constants
-        :ivec2
-        :vec2
-        :num
-        :matrix
-        :3d-utils
-        :2d-utils
-        :identificable
-        :entity
-        :interfaces
-        :map-utils
-        :influence-map
-        :game-state)
-  (:export
+   :defender-class->defender
    :entity-id
    :target-id
    :goal-pos
