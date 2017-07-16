@@ -4160,7 +4160,10 @@
    :make-heal-level-1
    :make-heal-level-0
    :make-level-up
-   :make-teleport))
+   :make-teleport
+   :make-teleport-level-1
+   :make-teleport-level-2
+   :make-teleport-level-3))
 
 (defpackage :arrows
   (:use :cl

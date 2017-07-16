@@ -9,7 +9,7 @@
   :visual-effect-self    nil
   :range                 10  ;; in tile units
   :effective-range        1  ;; in tile units
-  :visual-effect-target  particles:make-teleport
+  :visual-effect-target  particles:make-teleport-level-1
   :effects
   (lambda (attacker defender)
     (declare (ignore attacker))

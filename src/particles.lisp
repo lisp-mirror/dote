@@ -2558,7 +2558,7 @@
 (defmethod calculate :after ((object teleport-particle) dt)
   (with-maybe-trigger-end-of-life (object (removeable-from-world-p object))))
 
-(defun make-teleport (pos compiled-shaders)
+(defun make-teleport (pos compiled-shaders &optional (num 7))
   (let* ((actual-pos (vec (elt pos 0)
                           (d+ (elt pos 1)
                               (d* 2.0 +terrain-chunk-tile-size+))
@@ -2573,7 +2573,7 @@
                      (color-utils:make-gradient-color 0.5 §cc99ff99ff)
                      (color-utils:make-gradient-color 1.0 §cc99ffccff)))
          (particles (make-particles-cluster 'teleport-particle
-                                        7
+                                        num
                                         compiled-shaders
                                         :remove-starting-delay nil
                                         :forces                #()
@@ -2600,6 +2600,15 @@
                                         :respawn t)))
     (setf (global-life particles) 2)
     particles))
+
+(defun make-teleport-level-1 (pos compiled-shaders)
+  (make-teleport pos compiled-shaders 1))
+
+(defun make-teleport-level-2 (pos compiled-shaders)
+  (make-teleport pos compiled-shaders 2))
+
+(defun make-teleport-level-3 (pos compiled-shaders)
+  (make-teleport pos compiled-shaders 7))
 
 (defun make-cure-level-2 (pos compiled-shaders)
   (let* ((min-y (d- (d- (elt pos 1) +zero-height+)))
