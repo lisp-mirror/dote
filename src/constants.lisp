@@ -216,6 +216,8 @@
 
 (define-constant +default-character-inert-obj-dir+ '("characters" "inert")        :test #'equalp)
 
+(define-constant +animation-texture-dir+           '("textures" "animation")      :test #'equalp)
+
 (define-constant +default-character-filename+      "character.lisp"               :test #'string=)
 
 (define-constant +default-interaction-filename+    "interaction.lisp"             :test #'string=)

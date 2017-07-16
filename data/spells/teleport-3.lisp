@@ -1,6 +1,6 @@
 (in-package :spell)
 
-(define-spell (:teleport-2)
+(define-spell (:teleport-3)
   :level                 10
   :element               :fire
   :description           (_ "Teleport in a random location with maximum radius of ~27 tiles.")
@@ -47,6 +47,15 @@
 			     displacement))))
 		  (old-tile (map-utils:pos->game-state-pos defender)))
 	      (when displacement
-		(setf (pos defender) displacement)
-		;; update state matrix and quadtree
-		(world:move-entity world defender old-tile))))))))
+                (let ((texture-flash (res:get-resource-file "flash-1.tga"
+                                                            +animation-texture-dir+))
+                      (size          (num:d* 5.0 constants:+terrain-chunk-tile-size+)))
+                  (billboard:enqueue-animated-billboard displacement
+                                                        texture-flash
+                                                        state
+                                                        (compiled-shaders defender)
+                                                        :w size
+                                                        :h size)
+                  (setf (pos defender) displacement)
+                  ;; update state matrix and quadtree
+                  (world:move-entity world defender old-tile)))))))))

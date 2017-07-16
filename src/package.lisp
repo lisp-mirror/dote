@@ -135,6 +135,7 @@
    :+default-character-food-dir+
    :+default-character-misc-dir+
    :+default-character-inert-obj-dir+
+   :+animation-texture-dir+
    :+default-character-filename+
    :+default-interaction-filename+
    :+default-furniture-templates-dir+
@@ -179,7 +180,8 @@
    :different-length-error
    :xml-no-matching-tag
    :xml-no-such-attribute
-   :invalid-aabb-error))
+   :invalid-aabb-error
+   :invalid-texture))
 
 (defpackage :parallel-utils
   (:use :cl)
@@ -2468,6 +2470,7 @@
    :trigger-trap-attack-action
    :tactical-plane-action
    :tooltip-show-action
+   :animated-billboard-show-action
    :particle-effect-action
    :refresh-status-bar-action
    :blood-spill-action
@@ -3944,6 +3947,7 @@
    :make-tooltip
    :apply-tooltip
    :enqueue-tooltip
+   :enqueue-animated-billboard
    :tree-impostor-shell
    :make-impostor-pixmap
    :make-impostor-texture

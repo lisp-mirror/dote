@@ -88,3 +88,5 @@
   (:report (lambda (condition stream)
              (format stream "invalid aabb ~a" (aabb condition))))
   (:documentation "Error when aabb is invalid"))
+
+(define-condition invalid-texture (conditions:text-error) ())

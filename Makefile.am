@@ -1661,6 +1661,9 @@ data/textures/spells/misc/vampire-2.tga                  \
 data/textures/spells/misc/teleport-1.tga                 \
 data/textures/spells/misc/teleport-2.tga                 \
 data/textures/spells/misc/teleport-3.tga                 \
+data/textures/animation/flash-1.tga                      \
+data/textures/animation/heal-1.tga                       \
+data/textures/animation/shock-1.tga                      \
 data/furniture-templates/carpet.tga                      \
 data/furniture-templates/corr-e.tga                      \
 data/furniture-templates/corr-n.tga                      \

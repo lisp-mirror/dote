@@ -222,17 +222,17 @@
                      (status status)) ghost
       (game-state:with-world (world state)
         (let* ((mesh-pos       (aabb-top-center (aabb object)))
-               (tooltip        (billboard:make-tooltip label
-                                                       (vec+ mesh-pos
-                                                             (vec 0.0
-                                                                  (d* 1.5 +tooltip-h+)
-                                                                  0.0))
-                                                       (compiled-shaders object)
-                                                       :color      color
-                                                       :font-type  font-type
-                                                       :gravity    gravity
-                                                       :activep    activep
-                                                       :enqueuedp  enqueuedp)))
+               (tooltip        (make-tooltip label
+                                             (vec+ mesh-pos
+                                                   (vec 0.0
+                                                        (d* 1.5 +tooltip-h+)
+                                                        0.0))
+                                             (compiled-shaders object)
+                                             :color      color
+                                             :font-type  font-type
+                                             :gravity    gravity
+                                             :activep    activep
+                                             :enqueuedp  enqueuedp)))
           (world:push-entity world tooltip))))))
 
 (defmethod enqueue-tooltip ((object mesh:triangle-mesh) label
@@ -254,21 +254,208 @@
         (when additional-action-enqueued-fn
           (funcall additional-action-enqueued-fn))))))
 
-(defun get-bitmap-min-x-opaque (pixmap)
-  (let ((min (matrix:width pixmap)))
-    (matrix:ploop-matrix (pixmap x y)
-      (when (and (/= (elt (matrix:pixel@ pixmap x y) 3) 0)
-                 (< x min))
-        (setf min x)))
-    min))
+(defclass animated-billboard (triangle-mesh inner-animation end-life-trigger)
+  ((duration/2
+    :initform (lcg-next-in-range 3.0 4.0)
+    :initarg  :duration/2
+    :accessor duration/2)
+   (gravity
+    :initform (num:lcg-next-in-range 1.0 2.0)
+    :initarg  :gravity
+    :accessor gravity)
+   (frequency-animation
+    :initform 10
+    :initarg  :frequency-animation
+    :accessor frequency-animation)
+   (frame-count
+    :initform 0
+    :initarg  :frame-count
+    :accessor frame-count)
+   (starting-s-texture
+    :initform 0.1
+    :initarg  :starting-s-texture
+    :accessor starting-s-texture)
+   (texture-horizontal-offset
+    :initform 0.0
+    :initarg  :texture-horizontal-offset
+    :accessor texture-horizontal-offset)
+   (animation-loop
+    :initform nil
+    :initarg  :animation-loop-p
+    :reader animation-loop-p
+    :writer (setf animation-loop)))
+  (:documentation "Note: the tooltip will add and remove itself from action-queue automatically
+                   see: make instance and keyworld enqueuedp"))
 
-(defun get-bitmap-max-x-opaque (pixmap)
-  (let ((max -1))
-    (matrix:ploop-matrix (pixmap x y)
-      (when (and (/= (elt (matrix:pixel@ pixmap x y) 3) 0)
-                 (> x max))
-        (setf max x)))
-    max))
+(defmethod initialize-instance :after ((object animated-billboard)
+                                       &key
+                                         (enqueuedp nil)
+                                         (w         1.0)
+                                         (h         1.0)
+                                         &allow-other-keys)
+  (with-accessors ((starting-s-texture starting-s-texture)) object
+    (setf (use-blending-p object) t)
+    (let ((w/2 (d* w 0.5))
+          (h/2 (d* h 0.5)))
+      (quad object w h
+                 0.0 0.0 starting-s-texture 1.0
+                 (vec (d- w/2) (d- h/2) 0.0) ; centering
+                 nil t)
+      (remove-orphaned-vertices object)
+      (prepare-for-rendering object)
+      (when enqueuedp
+        (action-scheduler:end-of-life-remove-from-action-scheduler object
+                                                                   action-scheduler:animated-billboard-show-action)))))
+
+(definline animated-billboard-last-frame-reached-p (animation)
+  (with-accessors ((texture-horizontal-offset texture-horizontal-offset)
+                   (starting-s-texture starting-s-texture)) animation
+    (not (< texture-horizontal-offset (d- 1.0 starting-s-texture)))))
+
+(defmethod calculate ((object animated-billboard) dt)
+  (with-accessors ((calculatep calculatep)
+                   (frequency-animation frequency-animation)
+                   (el-time el-time)
+                   (starting-s-texture starting-s-texture)
+                   (texture-horizontal-offset texture-horizontal-offset)
+                   (animation-loop-p animation-loop-p)
+                   (frame-count frame-count)) object
+    (when calculatep
+      (incf (el-time object) (d* dt (animation-speed object)))
+      (incf frame-count)
+      (when (or animation-loop-p
+                (not (animated-billboard-last-frame-reached-p object)))
+        (when (= (rem frame-count frequency-animation) 0)
+          (incf texture-horizontal-offset starting-s-texture)))
+      (bubbleup-modelmatrix object)
+      (with-maybe-trigger-end-of-life (object (removeable-from-world-p object))))))
+
+(defmethod removeable-from-world-p ((object animated-billboard))
+  (with-accessors ((duration/2       duration/2)
+                   (el-time          el-time)
+                   (animation-loop-p animation-loop-p)) object
+    (if animation-loop-p
+        (d> el-time (d* 2.0 duration/2))
+        (animated-billboard-last-frame-reached-p object))))
+
+(defmethod render ((object animated-billboard) renderer)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((duration/2 duration/2)
+                   (projection-matrix projection-matrix)
+                   (compiled-shaders compiled-shaders)
+                   (el-time el-time)
+                   (gravity  gravity)
+                   (texture-horizontal-offset texture-horizontal-offset)
+                   (model-matrix model-matrix)
+                   (triangles triangles)
+                   (scaling scaling)
+                   (texture-object texture-object)
+                   (vao vao)
+                   (view-matrix view-matrix)
+                   (renderp renderp)) object
+    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
+    (declare (list triangles))
+    (when renderp
+      (with-camera-view-matrix (camera-vw-matrix renderer)
+        (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+          (cl-gl-utils:with-depth-disabled
+            (cl-gl-utils:with-blending
+              (gl:blend-func                :src-alpha :one)
+              (use-program compiled-shaders :animated-billboard)
+              (gl:active-texture            :texture0)
+              (texture:bind-texture texture-object)
+              (uniformi  compiled-shaders :texture-object            +texture-unit-diffuse+)
+              (uniformf  compiled-shaders :duration                  duration/2)
+              (uniformf  compiled-shaders :vert-displacement-speed   +tooltip-v-speed+)
+              (uniformf  compiled-shaders :time                      el-time)
+              (uniformf  compiled-shaders :gravity                   gravity)
+              (uniformf  compiled-shaders :texture-horizontal-offset texture-horizontal-offset)
+              (uniform-matrix compiled-shaders
+                              :post-scaling 4
+                              (vector (scale scaling))
+                              nil)
+              (uniform-matrix compiled-shaders
+                              :modelview-matrix 4
+                              (vector (matrix* camera-vw-matrix
+                                               (elt view-matrix  0)
+                                               (elt model-matrix 0)))
+                              nil)
+              (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+              (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+              (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))))))
+
+(defun make-animated-billboard (pos shaders texture-name
+                              &key
+                                (duration/2                .0001)
+                                (w                         (d* 2.0 +terrain-chunk-tile-size+))
+                                (h                         (d* 2.0 +terrain-chunk-tile-size+))
+                                (loop-p                    nil)
+                                (frequency-animation       5)
+                                (texture-horizontal-offset 0.125)
+                                (gravity                   0.0)
+                                (activep                   t)
+                                (enqueuedp                 nil))
+  (let ((tooltip (make-instance 'animated-billboard
+                                :duration/2                duration/2
+                                :w                         w
+                                :h                         h
+                                :animation-loop-p          loop-p
+                                :animation-speed           1.0
+                                :frequency-animation       frequency-animation
+                                :texture-horizontal-offset texture-horizontal-offset
+                                :starting-s-texture        texture-horizontal-offset
+                                :gravity                   gravity
+                                :renderp                   activep
+                                :calculatep                activep
+                                :enqueuedp                 enqueuedp)))
+    (setf (interfaces:compiled-shaders tooltip) shaders)
+    (setf (entity:pos tooltip) pos)
+    (multiple-value-bind (texture errors)
+        (texture:get-texture texture-name)
+      (if (not errors)
+          (progn
+            (setf (texture-object tooltip) texture)
+            (texture:prepare-for-rendering (mesh:texture-object tooltip)))
+          (error 'conditions:invalid-texture
+                 :text (format nil
+                               "Can not load texture ~a"
+                               texture-name))))
+    (mesh:prepare-for-rendering tooltip)
+    tooltip))
+
+(defun enqueue-animated-billboard (pos texture-name game-state shaders
+                                   &key
+                                     (duration/2                .0001)
+                                     (w                     (d* 2.0
+                                                                +terrain-chunk-tile-size+))
+                                     (h                     (d* 2.0
+                                                                +terrain-chunk-tile-size+))
+                                     (loop-p                    nil)
+                                     (frequency-animation       5)
+                                     (texture-horizontal-offset 0.125)
+                                     (gravity                   0.0)
+                                     (activep                   t)
+                                     (enqueuedp                 t)
+                                     (additional-action-enqueued-fn nil))
+  (game-state:with-world (world game-state)
+    (action-scheduler:with-enqueue-action (world
+                                           action-scheduler:animated-billboard-show-action)
+      (let ((billboard (make-animated-billboard pos
+                                                shaders
+                                                texture-name
+                                                :duration/2                 duration/2
+                                                :w                         w
+                                                :h                         h
+                                                :loop-p                    loop-p
+                                                :frequency-animation       frequency-animation
+                                                :texture-horizontal-offset
+                                                texture-horizontal-offset
+                                                :gravity                   gravity
+                                                :activep                   activep
+                                                :enqueuedp                 enqueuedp)))
+        (world:push-entity world billboard)
+        (when additional-action-enqueued-fn
+          (funcall additional-action-enqueued-fn))))))
 
 (defclass tree-impostor-shell (triangle-mesh-shell) ())
 

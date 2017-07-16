@@ -366,8 +366,6 @@
         (push-errors (format nil "Expected integer and ~a, ~a, ~a found instead"
                     +face-separator+ index separator)))))
 
-(define-condition invalid-texture (conditions:text-error) ())
-
 (define-condition invalid-model (conditions:text-error) ())
 
 (defun load (filename &key
@@ -387,7 +385,7 @@
                 (setf (mesh:texture-object (mesh *file*)) texture)
                 (prepare-for-rendering (mesh *file*))
                 (texture:prepare-for-rendering (mesh:texture-object (mesh *file*))))
-              (error 'invalid-texture
+              (error 'conditions:invalid-texture
                      :text (format nil
                                    "Can not load texture ~a for model ~a"
                                    filename

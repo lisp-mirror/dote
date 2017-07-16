@@ -306,20 +306,13 @@
             (misc:dbg "n ~a" *near*)
             (incf *near* -.1))
           (when (string= text "p")
-            (world:push-entity (world object)
-                               (particles:make-teleport
-                                (vec (map-utils:coord-map->chunk 5.0)
-                                     +zero-height+
-                                     (map-utils:coord-map->chunk 5.0))
-                                ;;(vec-negate +z-axe+)
-                                ;;10
-                                ;; (random-elt (texture:list-of-texture-by-tag
-                                ;;           texture:+texture-tag-decals-circular-wave+))
-                                (compiled-shaders object)))
-            (let* ((state (game-state object))
-                   (im    (game-state:make-influence-map state)))
-              (pixmap:save-pixmap (inmap:im->pixmap im)
-                                  (fs:file-in-package "influence.tga"))))
+            (billboard:enqueue-animated-billboard (vec 0.0
+                                                       +zero-height+
+                                                       0.0)
+                                                  (res:get-resource-file "flash-1.tga"
+                                                                         +animation-texture-dir+)
+                                                  (game-state object)
+                                                  (compiled-shaders object)))
           (when (string= text "L")
             (load-map object)
             ;; gui

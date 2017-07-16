@@ -337,7 +337,6 @@ active program (set by sdk2.kit:use-program)."
      (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
                :vertex-shader   ,(get-shader-source "water-no-texture.vert")
                :fragment-shader ,(get-shader-source "water-no-texture.frag")))
-
     (:tree
      (:uniforms :light-pos
                 :ia
@@ -563,6 +562,18 @@ active program (set by sdk2.kit:use-program)."
                 :time)
       (:shaders :vertex-shader   ,(get-shader-source "tooltip.vert")
                 :fragment-shader ,(get-shader-source "tooltip.frag")))
+    (:animated-billboard
+     (:uniforms :modelview-matrix
+                :proj-matrix
+                :texture-object
+                :post-scaling
+                :vert-displacement-speed
+                :duration
+                :texture-horizontal-offset
+                :gravity
+                :time)
+     (:shaders :vertex-shader   ,(get-shader-source "animated-billboard.vert")
+               :fragment-shader ,(get-shader-source "animated-billboard.frag")))
     (:particles-blood
      (:uniforms :modelview-matrix
                 :proj-matrix
