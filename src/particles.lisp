@@ -2775,31 +2775,32 @@
                                         :texture  texture
                                         :pos      pos
                                         :min-y   min-y
-                                        :particle-pos-fn #'(lambda (cluster)
-                                                             (let ((xy (elt (bivariate-sampling (d/ +terrain-chunk-tile-size+ 1.5)
-                                                                                                (d/ +terrain-chunk-tile-size+ 1.5)
-                                                                                                1)
-                                                                            0)))
-                                                               (vec (elt xy 0)
-                                                                    (d* (particle-height cluster)
-                                                                        (lcg-next-upto (d* (particle-height cluster)
-                                                                                           50.0)))
-                                                                    (elt xy 1))))
-                                        :v0-fn    (gaussian-velocity-distribution-fn +y-axe+
-                                                                                     2.0
-                                                                                     1.0
-                                                                                     (d/ +pi/2+
-                                                                                         5.0))
-                                        :mass-fn  (gaussian-distribution-fn 0.8 .2)
-                                        :life-fn  (gaussian-distribution-fn 2.0 0.2)
-                                        :delay-fn (gaussian-distribution-fn 10.00 2.50)
+                                        :particle-pos-fn
+                                        #'(lambda (cluster)
+                                            (let ((xy (elt (bivariate-sampling (d/ +terrain-chunk-tile-size+ 1.5)
+                                                                               (d/ +terrain-chunk-tile-size+ 1.5)
+                                                                               1)
+                                                           0)))
+                                              (vec (elt xy 0)
+                                                   (d* (particle-height cluster)
+                                                       (lcg-next-upto (d* (particle-height cluster)
+                                                                          50.0)))
+                                                   (elt xy 1))))
+                                        :v0-fn      (gaussian-velocity-distribution-fn +y-axe+
+                                                                                       2.0
+                                                                                       1.0
+                                                                                       (d/ +pi/2+
+                                                                                           5.0))
+                                        :mass-fn    (gaussian-distribution-fn 0.8 .2)
+                                        :life-fn    (gaussian-distribution-fn 2.0 0.2)
+                                        :delay-fn   (gaussian-distribution-fn 10.00 2.50)
                                         :gravity    (vec 0.0 1e-5 0.0)
                                         :scaling-fn (%limited-scaling-clsr 0.1 10.0)
                                         :rotation-fn (%no-rotation-clrs)
                                         :alpha-fn   (%smooth-alpha-fading-clsr 2.0)
                                         :color-fn   (%smooth-gradient-color-clsr gradient 3.0)
-                                        :width  .2
-                                        :height .2
+                                        :width              .2
+                                        :height             .2
                                         :particle-height-fn nil    ;; will use particle-width-fn
                                         :particle-width-fn  size-fn
                                         :respawn t))
@@ -2809,10 +2810,22 @@
                                   (random-elt (list-of-texture-by-tag +texture-tag-decals-poison+))
                                   :color-fn (%constant-color-clsr billboard:+poison-damage-color+)
                                   :delay-fn (gaussian-distribution-fn 1.0 0.1))))
-
     (mtree:add-child spark decal)
     (setf (global-life spark) 150)
     spark))
+
+(defun %enqueue-poison-1-effect-billboard (particles-mesh pos)
+  (billboard:enqueue-animated-billboard pos
+                                        (res:get-resource-file "wasp.tga" +animation-texture-dir+)
+                                        (state            particles-mesh)
+                                        (compiled-shaders particles-mesh)
+                                        :w
+                                        (d* +terrain-chunk-tile-size+ 6.0)
+                                        :h
+                                        (d* +terrain-chunk-tile-size+ 6.0)
+                                        :duration/2                2.5
+                                        :loop-p                    t
+                                        :texture-horizontal-offset 0.02631579))
 
 (defun make-poison-level-1 (pos compiled-shaders)
   (let* ((min-y (d- (d- (elt pos 1) +zero-height+)))
@@ -2861,6 +2874,7 @@
                                         :particle-width-fn  size-fn
                                         :respawn t)))
     (setf (global-life spark) 200)
+    (%enqueue-poison-1-effect-billboard spark pos)
     spark))
 
 (defun make-poison-level-0 (pos compiled-shaders)

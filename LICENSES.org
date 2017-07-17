@@ -724,6 +724,11 @@
   https://creativecommons.org/licenses/by/3.0/
   according to https://opengameart.org/content/lightning-shock-spell
 
+- data/textures/animation/wasp.tga
+  derived from © Tiamalt released under
+  https://creativecommons.org/licenses/by/3.0/
+  according to https://opengameart.org/content/giant-wasp
+
 ** Source code
 
 - src/mesh.lisp use codes from cl-opengl
