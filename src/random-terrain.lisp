@@ -809,14 +809,13 @@
                    (+ cost (* cross 0.05))))))
       (let* ((start (list x y))
              (end (list x1 y1))
-             (path (mapcar #'(lambda (id)
-                               (graph:node-id->node graph id))
-                           (graph:graph->path
-                            (graph:astar-search graph
-                                                (graph:node->node-id graph start)
-                                                (graph:node->node-id graph end)
-                                                :heuristic-cost-function (heuristic-fn))
-                            (graph:node->node-id graph end)))))
+             (path (mapcar #'(lambda (id) (graph:node-id->node graph id))
+                           (graph:graph->path (graph:astar-search graph
+                                                                  (graph:node->node-id graph start)
+                                                                  (graph:node->node-id graph end)
+                                                                  :heuristic-cost-function
+                                                                  (heuristic-fn))
+                                              (graph:node->node-id graph end)))))
         path)))
 
 (defun lake-particle-inside-limits-p (matrix x y)

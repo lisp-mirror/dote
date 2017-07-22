@@ -217,6 +217,7 @@
    :make-fresh-list
    :make-array-frame
    :make-fresh-array
+   :sequence->list
    :vector-empty-p
    :random-num-filled-vector
    :random-elt

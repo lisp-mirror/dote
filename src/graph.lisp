@@ -461,7 +461,8 @@
     (if (funcall (test-node-id-function object)
                  end-node (parent (find-node object end-node)))
         (values (push end-node path) cost)
-        (graph->path object (parent (find-node object end-node))
+        (graph->path object
+                     (parent (find-node object end-node))
                      (push end-node path) cost))))
 
 (defparameter *cumulative-cost-plus-heuristic* (rb-tree:make-root-rb-node nil 'black))

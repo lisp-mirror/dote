@@ -238,7 +238,8 @@
   (misc:dbg "crossbow   ~a" (attack-enemy-crossbow-positions blackboard))
   (misc:dbg "def-pos ~a" (fetch-defender-positions blackboard))
   (misc:dbg "atk-pos ~a" (fetch-attacker-positions blackboard))
-  (misc:dbg "all-tactics ~a" (build-all-attack-tactics blackboard))
+  (let ((*reachable-p-fn* (reachable-p-w/concening-tiles blackboard)))
+    (misc:dbg "all-tactics ~a" (build-all-attack-tactics blackboard)))
   (misc:dbg "ids ~a"     (multiple-value-list
                           (attack-tactic->id-entities blackboard
                                                       (list (ivec2 5 1)
@@ -250,7 +251,7 @@
     (decrease-concerning (main-state object) concerning-tiles)
     (%update-all-layers object)
     ;; test
-    ;; (let ((pix (inmap:dijkstra-layer->pixmap (attack-enemy-crossbow-layer object))))
+    ;; (let ((pix (inmap:dijkstra-layer->pixmap (attack-enemy-melee-layer object))))
     ;;   (pixmap:save-pixmap pix (fs:file-in-package "attack.tga")))
     nil))
 

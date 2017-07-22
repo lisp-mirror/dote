@@ -335,6 +335,11 @@
                 el
                 #'(lambda () el))))
 
+(defun seq->list (sequence)
+  (if (listp sequence)
+      (copy-list sequence)
+      (map-into (make-list (length sequence)) #'identity sequence)))
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun make-array-frame (size &optional (el nil) (type t) (simplep nil))
     "All elements points to the same address/reference!"

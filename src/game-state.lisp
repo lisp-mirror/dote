@@ -481,6 +481,20 @@
                            raw-path)))
             (values path cost)))))))
 
+(defmethod build-movement-path ((object graph:tile-multilayers-graph) start end
+                                &key (other-costs-layer '()))
+    (graph:with-pushed-cost-layer (object other-costs-layer)
+      (let ((tree (graph:astar-search object
+                                      (graph:node->node-id object start)
+                                      (graph:node->node-id object end)
+                                      :heuristic-cost-function (heuristic-manhattam))))
+        (multiple-value-bind (raw-path cost)
+            (graph:graph->path tree (graph:node->node-id object end))
+          (let ((path (map 'vector
+                           #'(lambda (id) (graph:node-id->node object id))
+                           raw-path)))
+            (values path cost))))))
+
 (defmethod terrain-aabb-2d ((object game-state))
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (with-accessors ((map-state map-state)) object

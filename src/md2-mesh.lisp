@@ -1994,7 +1994,7 @@
       (add-to-inventory (ghost body) forged-bow)
       (add-to-inventory (ghost body) forged-sword)
       (add-to-inventory (ghost body) forged-trap)
-      (setf (movement-points (ghost body)) 20.0)
+      (setf (movement-points (ghost body)) 40.0)
       (setf (magic-points    (ghost body)) 50.0)
       ;; note:   wear-item-event  will   not  be   catched  as   the
       ;; registration happens when the entity is added to world
