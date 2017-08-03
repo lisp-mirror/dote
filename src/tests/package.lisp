@@ -255,3 +255,13 @@
         :all-test
         :alexandria
         :blackboard))
+
+(defpackage :goap-test
+  (:use :cl
+        :clunit
+        :all-test
+        :alexandria
+        :blackboard
+        :identificable
+        :graph
+        :goap))

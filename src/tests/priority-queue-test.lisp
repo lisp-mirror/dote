@@ -28,3 +28,33 @@
                                (res (list el)              (push el res)))
                               ((pq:emptyp queue) (reverse res)))))
         (assert-equalp sorted heap-sorted)))))
+
+(deftest test-remove-simple (priority-queue-suite)
+  (pq:with-min-queue (queue #'= #'< #'identity)
+    (let* ((input  (list 1 3 5 7 2 4 6 8))
+           (sorted (sort (remove 8 (copy-list input)) #'<)))
+      (loop for i in input do
+           (pq:push-element queue i))
+      (remove-element queue 8)
+      (let ((heap-sorted (do* ((el  (pq:pop-element queue) (pq:pop-element queue))
+                               (res (list el)              (push el res)))
+                              ((pq:emptyp queue) (reverse res)))))
+        (assert-equalp sorted heap-sorted)))))
+
+(deftest test-remove-big (priority-queue-suite)
+  (loop repeat 100 do
+       (let ((num 1000))
+         (pq:with-min-queue (queue #'= #'< #'identity)
+           (let* ((input       (do ((v (num:lcg-next-upto num) (num:lcg-next-upto num))
+                                    (res '()))
+                                   ((= (length res) num) res)
+                                 (pushnew v res :test #'=)))
+                  (remove-pos  (num:lcg-next-upto num))
+                  (sorted      (sort (misc:delete@ (copy-list input) remove-pos) #'<)))
+             (loop for i in input do
+                  (pq:push-element queue i))
+             (remove-element queue (elt input remove-pos))
+             (let ((heap-sorted (do* ((el  (pq:pop-element queue) (pq:pop-element queue))
+                                      (res (list el)              (push el res)))
+                                ((pq:emptyp queue) (reverse res)))))
+               (assert-equalp sorted heap-sorted)))))))

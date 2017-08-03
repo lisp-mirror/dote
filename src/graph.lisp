@@ -541,11 +541,10 @@
                                                              (node-id->node object to-id)
                                                              (node-id->node object next)
                                                              (node-id->node object from-id)))))
-                   (when (or
-                          (null (find-node frontier next))
-                          (and  (null (find-node bst next))
-                                (< new-cost (find-cost-in-node-set
-                                             next cumulative-cost))))
+                   (when (or (null (find-node frontier next))
+                             (and  (null (find-node bst next))
+                                   (< new-cost (find-cost-in-node-set
+                                                next cumulative-cost))))
                      (setf *cumulative-cost-plus-heuristic*
                            (bs-tree:insert *cumulative-cost-plus-heuristic*
                                              (list next new-cost-plus-heuristic)

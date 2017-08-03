@@ -147,6 +147,7 @@
                (:file "ann")
                (:file "blackboard")
                (:file "attack-tactics")
+               (:file "goap")
                (:file "keyboard-config")
                (:file "main-window")
                (:module tests
@@ -180,7 +181,8 @@
                                      (:file "mtree-test")
                                      (:file "kanren-test")
                                      (:file "action-scheduler-test")
-                                     (:file "attack-tactics-test")))))
+                                     (:file "attack-tactics-test")
+                                     (:file "goap-test")))))
 
 (progn
   (pushnew :debug-mode *features*)

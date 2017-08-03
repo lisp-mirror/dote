@@ -50,7 +50,9 @@
 
 (defgeneric emptyp (object))
 
-(defgeneric find-element (object element))
+(defgeneric find-element (object element &key key-fn test-fn))
+
+(defgeneric remove-element (object element))
 
 (defun get-parent-pos (pos)
   (floor (/ pos 2)))
@@ -135,5 +137,35 @@
                                 :key-function     ,key)))
      ,@body))
 
-(defmethod find-element ((object priority-queue) element)
-  (find element (heap object) :key (key-function object) :test (equal-function object)))
+(defmethod find-element ((object priority-queue) element
+                         &key (key-fn  (key-function object))
+                              (test-fn (equal-function object)))
+  (find element
+        (heap  object)
+        :key   key-fn
+        :test  test-fn
+        :start 1))
+
+(defmethod remove-element ((object priority-queue) element)
+  (with-accessors ((heap heap)
+                   (key-function key-function)
+                   (equal-function equal-function)
+                   (compare-function compare-function)) object
+      (let ((pos        (position element
+                                  heap
+                                  :start 1
+                                  :key   (key-function object)
+                                  :test  (equal-function object)))
+            (old-length (length heap)))
+        (if (= pos 1)
+            (pop-element object)
+            (when pos
+              (misc:swap (elt heap pos)
+                         (elt heap  (1- (length heap))))
+              (setf (fill-pointer heap) (1- (fill-pointer heap)))
+
+              (when (not (= pos (1- old-length)))
+                (let ((parent-pos (get-parent-pos pos)))
+                  (if (funcall compare-function (elt heap pos) (elt heap parent-pos))
+                      (rearrange-bottom-up  object pos)
+                      (rearrange-top-bottom object pos)))))))))

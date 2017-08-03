@@ -32,6 +32,12 @@
 
 (define-constant +concerning-tiles-cost->graph-scaling+    3.0 :test #'=)
 
+(defun reachablep (atk-pos def-pos mp)
+  (<= (ivec2-length (ivec2- atk-pos def-pos))
+      mp))
+
+(defparameter *reachable-p-fn* #'reachablep)
+
 (defclass entity-taker ()
   ((entity-id
     :initform nil

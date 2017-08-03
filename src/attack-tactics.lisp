@@ -59,10 +59,6 @@
   (project (def-pos atk-pos atk-mp)
     (== out `(,def-pos ,atk-pos ,atk-mp))))
 
-(defun reachablep (atk-pos def-pos mp)
-  (<= (ivec2-length (ivec2- atk-pos def-pos))
-      mp))
-
 (defun tactic-attacker-pos (tactic)
   (elt tactic 1))
 
@@ -109,8 +105,6 @@
                         (values t path-w/concering)
                         nil))
                   nil)))))))
-
-(defparameter *reachable-p-fn* #'reachablep)
 
 (defun reachableo (def)
   (fresh (atk-pos def-pos mp)

@@ -1201,6 +1201,7 @@
    :push-element
    :pop-element
    :find-element
+   :remove-element
    :emptyp
    :with-min-queue))
 
@@ -4480,6 +4481,40 @@
    :update-unexplored-layer
    :next-unexplored-position
    :disgregard-all-plans))
+
+(defpackage :goap
+  (:use :cl
+        :alexandria
+        :constants
+        :misc
+        :graph
+        :identificable
+        :interfaces
+        :blackboard
+        :game-state)
+  (:shadowing-import-from :misc :shuffle :random-elt)
+  (:export
+   :planner-state
+   :action-to-reach
+   :h-cost
+   :g-cost
+   :variables
+   :planner
+   :action-bag
+   :current-state
+   :goal-state
+   :copy-action
+   :action-p
+   :action-name
+   :action-preconditions
+   :action-effects
+   :action-cost
+   :make-action
+   :action-satisfise-condition-p
+   :state-diff
+   :add-action
+   :find-action
+   :build-plan))
 
 (defpackage :keyboard-config
   (:use :cl
