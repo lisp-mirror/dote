@@ -507,7 +507,7 @@
 
 (defgeneric calculate-influence-weapon (object weapon-type))
 
-(defgeneric tactical-plan (object strategy-expert))
+(defgeneric tactical-plan (object strategy-expert player-entity))
 
 (defgeneric has-idle-plan-p (object))
 
@@ -803,7 +803,7 @@
         (progn ,@body))))
 
 ;; TODO add GOAP
-(defmethod tactical-plan ((object player-character) strategy-expert)
+(defmethod tactical-plan ((object player-character) strategy-expert player-entity)
   ;; TEST
   ;; (with-accessors ((current-plan current-plan)) object
   ;;   (if current-plan

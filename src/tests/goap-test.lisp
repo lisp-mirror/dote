@@ -18,6 +18,9 @@
 
 (defsuite goap-suite (all-suite))
 
+(alexandria:define-constant +goap-dir+ (concatenate 'string (test-dir) "data/goap/")
+  :test #'string=)
+
 (deftest test-heuristic-distance-state (goap-suite)
   (let ((curr (make-instance 'planner-state
                              :variables (list (cons 'a nil) (cons 'b nil))))
@@ -92,7 +95,7 @@
 
 (deftest sucide-plan (goap-suite)
   (assert-equalp '(:scout :approach :detonate-bomb)
-      (build-plan (make-planner))))
+      (build-plan (make-planner) nil nil)))
 
 (deftest shoot-plan (goap-suite)
   (let ((planner (make-planner)))
@@ -100,7 +103,7 @@
     ;; containing this action less useful
     (setf (action-cost (find-action planner :detonate-bomb)) 10)
     (assert-equalp '(:scout :load :aim :shoot)
-        (build-plan planner))))
+        (build-plan planner nil nil))))
 
 (deftest load-blocked-by-context-plan (goap-suite)
   (let ((planner (make-planner)))
@@ -108,11 +111,13 @@
     ;; containing this action less useful
     (setf (action-cost (find-action planner :detonate-bomb)) 100)
     ;; ... but the player has not got any weapon, so can not :load.
-    (push #'(lambda () nil)
+    (push #'(lambda (strategy-expert player-entity)
+              (declare (ignore strategy-expert player-entity))
+              nil)
           (goap::action-context-preconditions (find-action planner :load)))
     ;; so they are forced to use a bomb.
     (assert-equalp '(:scout :approach :detonate-bomb)
-        (build-plan planner))))
+        (build-plan planner nil nil))))
 
 (deftest test-apply-action (goap-suite)
   (let* ((start-state (make-instance 'planner-state
@@ -186,3 +191,16 @@
                                                             :effects       (list (cons 'a nil)
                                                                                  (cons 'b nil)
                                                                                  (cons 'g nil))))))
+
+(deftest planner-ps-test (goap-suite)
+  (assert-true
+      (let* ((planner        (make-planner))
+             (filename       "shoot.eps")
+             (data-filename  (concatenate 'string +goap-dir+ filename))
+             (tmp-filename   (concatenate 'string (test-dir) "/tmp/"  filename)))
+        (goap::render-action-planner-ps planner :shoot tmp-filename)
+          (let ((test (= (fs:file-hash tmp-filename)
+                         (fs:file-hash data-filename))))
+            (when test
+              (uiop/filesystem:delete-file-if-exists tmp-filename))
+            test))))

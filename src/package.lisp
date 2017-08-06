@@ -1350,6 +1350,8 @@
    :heuristic-manhattam
    :astar-search
    :dijkstra-search
+   :dfs-search
+   :bfs-search
    :graph->path
    :get-first-near
    :get-first-near-as-id

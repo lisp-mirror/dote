@@ -46,9 +46,9 @@
 
 (defgeneric dijkstra-search (object from))
 
-(defgeneric dfs (object from-id))
+(defgeneric dfs-search (object from compare-fn key-fn map-fn))
 
-(defgeneric bfs (object from-id))
+(defgeneric bfs-search (object from compare-fn key-fn map-fn))
 
 (defgeneric random-node-id (object))
 
@@ -569,7 +569,7 @@
                                              (declare (ignore a b)) 0)))
 
 (defmethod to-sexp ((object list-graph)) ;; NO
-  (let ((visit (dfs object (random-node-id object))))
+  (let ((visit (dfs-search object (random-node-id object))))
     (mapcar #'(lambda (node-id)
                 (let ((node (find-node object node-id)))
                   (concatenate 'list
@@ -594,32 +594,33 @@
         sexp)
   object)
 
-(defmacro with-container ((container) &body body)
+(defmacro with-container ((container compare-fn key-fn) &body body)
   (ecase container
     (:stack
-     `(st:with-stack (#'= #'identity)
+     `(st:with-stack (,compare-fn ,key-fn)
         ,@body))
     (:queue
-     `(qu:with-queue (#'= #'identity)
+     `(qu:with-queue (,compare-fn ,key-fn)
         ,@body))))
 
 (defmacro gen-basic-visit (name package)
   (labels ((conc-package (name)
              (alexandria:format-symbol package "~:@(~a~)" name)))
-    (alexandria:with-gensyms (visited res object from-id)
+    (alexandria:with-gensyms (visited res object)
       `(defmethod ,(alexandria:format-symbol t "~:@(~a~)" name)
-           ((,object graph) ,from-id)
-         (with-container (,(alexandria:make-keyword package))
-           (,(conc-package 'push) ,from-id)
+           ((,object graph) from compare-fn key-fn map-fn)
+         (with-container (,(alexandria:make-keyword package) compare-fn key-fn)
+           (,(conc-package 'push) from)
            (do ((,visited (,(conc-package 'pop)) (,(conc-package 'pop)))
                 (,res nil))
                ((not ,visited) ,res)
              (when (not (find ,visited ,res :key ,(conc-package '*key-function*)
                               :test ,(conc-package '*equal-function*)))
                (push ,visited ,res)
+               (funcall map-fn ,visited)
                (loop for i in (get-first-near-as-id ,object ,visited) do
                     (,(conc-package 'push) i)))))))))
 
-(gen-basic-visit dfs stack)
+(gen-basic-visit dfs-search stack)
 
-(gen-basic-visit bfs queue)
+(gen-basic-visit bfs-search queue)

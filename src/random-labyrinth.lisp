@@ -713,18 +713,20 @@
 
 (defmethod room->dot ((object lab-room))
   (let ((graph `(:graph nil)))
-    (dfs object #'(lambda (r)
-                    (setf graph (append graph
-                                        `((:node ((:id ,(format nil "~a" (id r)))
-                                                  (:label
-                                                   ,(format nil "~a" (id r))))))))))
-    (dfs object #'(lambda (r)
-                    (mapcar #'(lambda (child)
-                                (setf graph (append graph
-                                                    `((:edge ((:from ,(format nil "~a" (id r)))
-                                                              (:to ,(format nil "~a"
-                                                                            (id child)))))))))
-                            (children r))))
+    (dfs object
+         #'(lambda (r)
+             (setf graph (append graph
+                                 `((:node ((:id ,(format nil "~a" (id r)))
+                                           (:label
+                                            ,(format nil "~a" (id r))))))))))
+    (dfs object
+         #'(lambda (r)
+             (mapcar #'(lambda (child)
+                         (setf graph (append graph
+                                             `((:edge ((:from ,(format nil "~a" (id r)))
+                                                       (:to ,(format nil "~a"
+                                                                     (id child)))))))))
+                     (children r))))
     graph))
 
 (defmethod find-node ((object lab-room) id)

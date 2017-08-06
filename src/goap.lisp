@@ -94,7 +94,8 @@
 (defmethod clone ((object planner))
   (with-simple-clone (object 'planner)))
 
-(defgeneric reachables-states (object))
+(defgeneric reachables-states (object strategy-expert player-entity
+                               &key ignore-context-preconditions))
 
 (defgeneric goal-reached-p (object))
 
@@ -185,9 +186,9 @@
            (return-from action-satisfise-goal-p found-in-action))))
   nil)
 
-(defun action-context-preconditions-satisfied-p (action)
+(defun action-context-preconditions-satisfied-p (action strategy-expert player-entity)
   (loop for precondition in (action-context-preconditions action) do
-       (when (not (funcall precondition))
+       (when (not (funcall precondition strategy-expert player-entity))
          (return-from action-context-preconditions-satisfied-p nil)))
   t)
 
@@ -229,24 +230,28 @@
             (action-to-reach new-planner) action)
       new-planner))
 
-(defmethod reachables-states ((object planner))
+(defmethod reachables-states ((object planner) strategy-expert player-entity
+                              &key (ignore-context-preconditions nil))
   (with-accessors ((actions-bag actions-bag)
                    (goal-state goal-state)
                    (current-state current-state)) object
     (loop
        for action in actions-bag
-       when (and (action-context-preconditions-satisfied-p action)
+       when (and (or ignore-context-preconditions
+                     (action-context-preconditions-satisfied-p action
+                                                               strategy-expert
+                                                               player-entity))
                  (action-satisfise-goal-p current-state goal-state action))
        collect
          (apply-action object action))))
 
-(defgeneric plan-search (object))
+(defgeneric plan-search (object strategy-expert player-entity))
 
-(defgeneric build-plan (object))
+(defgeneric build-plan (object strategy-expert player-entity))
 
 (defgeneric add-action (object action))
 
-(defgeneric find-action (object action))
+(defgeneric find-action (object action-name))
 
 (defun state-equal-p (a b)
   (conditions-equals (variables a) (variables b)))
@@ -257,7 +262,7 @@
 (defmethod goal-reached-p ((object planner))
   (%goal-reached-p (current-state object) (goal-state object)))
 
-(defmethod plan-search ((object planner))
+(defmethod plan-search ((object planner) strategy-expert player-entity)
   (labels ((find-node-in-set (the-set node)
              (let ((found (find (variables (current-state node))
                                 the-set
@@ -289,7 +294,7 @@
             (when (goal-reached-p  current)
               (return-from plan-search current))
             (put-node-in-set current closed)
-            (loop for neighbor in (reachables-states current) do
+            (loop for neighbor in (reachables-states current strategy-expert player-entity) do
                  (let* ((action-to-neighbor (action-to-reach neighbor))
                         (new-cost       (+ (g-cost current)
                                            (action-cost action-to-neighbor))))
@@ -306,8 +311,8 @@
                            (action-to-reach neighbor) action-to-neighbor)
                      (pq:push-element frontier neighbor))))))))))
 
-(defmethod build-plan ((object planner))
-  (let ((raw-plan (plan-search object))
+(defmethod build-plan ((object planner) strategy-expert player-entity)
+  (let ((raw-plan (plan-search object strategy-expert player-entity))
         (results  nil))
   (labels ((%build-plan (graph)
              (when (and graph
@@ -320,5 +325,60 @@
 (defmethod add-action ((object planner) action)
   (push action (actions-bag object)))
 
-(defmethod find-action ((object planner) name)
-  (find name (actions-bag object) :test #'eq :key #'action-name))
+(defmethod find-action ((object planner) action-name)
+  (find action-name (actions-bag object) :test #'eq :key #'action-name))
+
+(defun dfs-action-search (planner action-start)
+  (labels ((action-satisfise-p (action-node action-neighbor)
+             (loop for precondition in (action-preconditions action-node) do
+                  (let ((found-in-neighbor (find-condition-in-actions-fx action-neighbor
+                                                                         precondition)))
+                    ;; note: only the value of the variables can be different
+                    (when (and found-in-neighbor
+                               (condition-equals precondition found-in-neighbor))
+                      (return-from action-satisfise-p found-in-neighbor))))
+             nil)
+           (get-connected (current-action)
+             (loop
+                for candidate in (actions-bag planner)
+                when (action-satisfise-p current-action candidate)
+                collect candidate))
+           (action->string (action)
+             (format nil "~a" (action-name action))))
+    (let ((graph `(:graph nil))
+          (edges '()))
+      (stack:with-stack (#'(lambda (a b) (eq (action-name a) (action-name b)))
+                           #'identity)
+        (stack:push action-start)
+        (do ((visited (stack:pop) (stack:pop))
+             (res nil))
+            ((not visited) res)
+          (when (not
+                 (find visited res :key stack:*key-function* :test
+                       stack:*equal-function*))
+            (push visited res)
+            (setf graph
+                  (append graph
+                          (list (list :node (list (list :id    (action->string visited))
+                                                  (list :label (action->string visited)))))))
+            (loop for i in (get-connected visited) do
+                 (setf edges
+                       (append edges
+                               (list (list :edge (list (list :from (action->string visited))
+                                                       (list :to   (action->string i)))))))
+                 (stack:push i)))))
+      (append graph edges))))
+
+(defun render-action-planner-ps (planner action-name output-file)
+  (let ((action (find-action planner action-name)))
+    (when action
+      (let ((graph (dfs-action-search planner action)))
+        (s-dot:render-s-dot output-file "ps" graph)))))
+
+(defun dump-planner-chart (planner)
+  (loop for i in (actions-bag planner) do
+       (render-action-planner-ps planner
+                                 (action-name i)
+                                 (fs:file-in-package (format nil
+                                                             "~a.eps"
+                                                             (action-name i))))))
