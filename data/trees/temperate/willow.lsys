@@ -1,53 +1,52 @@
-depth 14
-length 10
+depth  9
+length 2
 randomize-length 0.0
 angle 45.0
 randomize-angle 0.0
-radius 2
+radius 1
 colors 1.1 0.0 0.0 1.0, 0.2 0.1 0.1 0.3;
 bending-factor 0.01
 tropism 0.0 -1.0 0.0;
 texture /texture/willow/texture.tga;
 polygon-magnetic-range 0.02
 
-inline XY_AABB_QUAD = (a a=90.0 
-	     	      	 (t incr_s=0.0 incr_t=0.0 z- . z++)  
-		     	 (t incr_s=0.125 incr_t=0.0 . z- %l=2.0 :::::: z--) 
-		     	 (t incr_s=0.0 incr_t=1 .:::::  z+ %l=0.5 : z+)
-		     	 (t incr_s=0.125 incr_t=0.0 %l=2.0 .:::::  z+)
-		     	 (t incr_s=0.125 incr_t=1 %l=0.5 . z+)
-		     	 (t incr_s=0.0 incr_t=1  %l=2.0 .:::::));
-	  
+inline XY_AABB_QUAD = (a a=90.0
+                         (t incr_s=0.0 incr_t=0.0 z- . z++)
+                         (t incr_s=0.125 incr_t=0.0 . z- %l=2.0 :::::: z--)
+                         (t incr_s=0.0 incr_t=1 .:::::  z+ %l=0.5 : z+)
+                         (t incr_s=0.125 incr_t=0.0 %l=2.0 .:::::  z+)
+                         (t incr_s=0.125 incr_t=1 %l=0.5 . z+)
+                         (t incr_s=0.0 incr_t=1  %l=2.0 .:::::));
+
 inline R_SUBLEAF = (a incr_s=0.125 a=22.5 y+ XY_AABB_QUAD);
 
 inline L_SUBLEAF = (a  a=22.5 y- a=90.0 z+ : z- (a XY_AABB_QUAD));
 
-inline LEAF chance=0.5 = (a rd a=180 z-  %l=0.5 t=0.0 s=0.5  (m R_SUBLEAF L_SUBLEAF));
+inline LEAF = (a rd a=180.0 z-  a=45.0 y+ %l=0.5 t=0.0 s=0.5  (m R_SUBLEAF L_SUBLEAF))
+              (a rd a=180.0 z-  a=45.0 y- %l=0.5 t=0.0 s=0.5  (m R_SUBLEAF L_SUBLEAF));
 
-inline LEAF chance=0.5 = (a rd a=180 z-  %l=0.5 t=0.0 s=0.75  (m R_SUBLEAF L_SUBLEAF));
+ELONG_BASE = %t=40.0 %l=0.5  C;
 
-ELONG_BASE = if r > 1.0
-	        ELONG;
-		%t=50.0 %l=0.5  C;
-	        
 
 inline B = .;
 
 
-inline D chance=0.50 = a=22.5 %r=0.75 B (a z+C LEAF_GROUP)(a z-C LEAF_GROUP );
-inline D chance=0.50 = a=22.5 %r=0.75 B (a z+C LEAF_GROUP)(a z-C LEAF_GROUP );
+inline D chance=0.50 = a=22.5 %r=0.6 B (a z+C LEAF_GROUP)(a z-C LEAF_GROUP );
+inline D chance=0.50 = a=22.5 %r=0.6 B (a x+C LEAF_GROUP)(a x-C LEAF_GROUP );
 
-inline C chance=0.40 = D;
-inline C chance=0.30 = a=22.5 %r=0.8 z+B C ;
-inline C chance=0.30 = a=22.5 %r=0.8 z-B C ;
+inline C chance=0.40 = (a a=90.0 y+ LEAF_GROUP) D;
+inline C chance=0.10 = a=22.5 %r=0.8 z+B (a a=90.0 %l=0.8 y+ LEAF_GROUP) C ;
+inline C chance=0.10 = a=22.5 %r=0.8 z+B (a a=90.0 %l=0.7 y+ LEAF_GROUP) C ;
+inline C chance=0.10 = a=22.5 %r=0.8 z+B (a a=90.0 %l=0.6 y+ LEAF_GROUP) C ;
+inline C chance=0.30 = a=22.5 %r=0.8 z-B (a a=90.0 y- LEAF_GROUP) C ;
 
-inline ELONG chance=0.20 = a=22.5 %r=0.7 z+B ELONG_BASE;
-inline ELONG chance=0.30 = a=22.5 %r=0.7 z-B ELONG_BASE;
-inline ELONG chance=0.50 = a=22.5 B %r=0.7 %l=0.9 B B (a z+ELONG_BASE)(a z-ELONG_BASE)
-       	     		 	   	    	      (a x+ELONG_BASE)(a x-ELONG_BASE);
+inline ELONG = a=32.5 B %r=0.7 %l=0.9 B
+                                      (a z+ELONG_BASE)
+                                      (a z-ELONG_BASE)
+                                      (a x+ELONG_BASE)
+                                      (a x-ELONG_BASE);
 
-LEAF_GROUP = LEAF;
+inline LEAF_GROUP = LEAF;
 
 
-ROOT= sec_t=0.0 sec_t_end=0.25 .. sec_incr_t=0.25 sec_incr_t_end=0.25 B ELONG_BASE;
-
+ROOT= sec_t=0.0 sec_t_end=0.25 .. sec_incr_t=0.25 sec_incr_t_end=0.25 . ELONG ELONG_BASE;

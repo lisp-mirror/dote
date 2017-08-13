@@ -4516,7 +4516,8 @@
    :state-diff
    :add-action
    :find-action
-   :build-plan))
+   :build-plan
+   :define-planner))
 
 (defpackage :keyboard-config
   (:use :cl

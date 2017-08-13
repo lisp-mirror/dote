@@ -382,3 +382,27 @@
                                  (fs:file-in-package (format nil
                                                              "~a.eps"
                                                              (action-name i))))))
+
+(defmacro define-planner (&body forms)
+  (labels ((get-param (params a &optional (default nil))
+             (getf params a default))
+           (consify (sequence)
+             (loop for pair in sequence collect
+                  (cons (first pair) (second pair))))
+           (build-action (planner action)
+             `(add-action ,planner
+                          (make-action :name                  ,(get-param  action :name)
+                                       :preconditions         ',(consify (get-param  action
+                                                                                   :preconditions))
+                                       :effects               ',(consify (get-param  action
+                                                                                   :effects))
+                                       :cost                  ,(get-param  action :cost)
+                                       :context-preconditions
+                                       ',(get-param  action
+                                                      :context-preconditions)))))
+    (with-gensyms (planner)
+      `(let ((,planner (make-instance 'planner)))
+         (progn
+           ,@(loop for action in forms collect
+                  (build-action planner action)))
+         ,planner))))

@@ -46,7 +46,39 @@
                                                                         (cons 'e t))))))
 
 (defun make-planner ()
-  (let* ((start-state (make-instance 'planner-state
+  (let* ((planner (define-planner
+                    (:name :scout
+                           :preconditions ((:armed-with-gun t))
+                           :effects       ((:enemy-visible  t))
+                           :cost          2)
+                    (:name :approach
+                           :preconditions ((:enemy-visible t))
+                           :effects       ((:near-enemy    t))
+                           :cost          2)
+                    (:name :aim
+                           :preconditions ((:enemy-visible  t)
+                                           (:weapon-loaded  t))
+                           :effects       ((:enemy-lined-up t))
+                           :cost          2)
+                    (:name :shoot
+                           :preconditions ((:enemy-lined-up t))
+                           :effects       ((:enemy-alive    nil))
+                           :cost          2)
+                    (:name :load
+                           :preconditions ((:armed-with-gun t))
+                           :effects       ((:weapon-loaded  t))
+                           :cost          2)
+                    (:name :detonate-bomb
+                           :preconditions ((:armed-with-bomb t)
+                                           (:near-enemy      t))
+                           :effects       ((:alive           nil)
+                                           (:enemy-alive     nil))
+                           :cost          2)
+                    (:name :flee
+                           :preconditions ((:enemy-visible  t))
+                           :effects       ((:near-enemy     nil))
+                           :cost          2)))
+         (start-state (make-instance 'planner-state
                                      :variables (list (cons :enemy-visible   nil)
                                                       (cons :armed-with-gun  t)
                                                       (cons :weapon-loaded   nil)
@@ -56,41 +88,9 @@
                                                       (cons :near-enemy      nil)
                                                       (cons :alive           t))))
          (goal-state (make-instance 'planner-state
-                                    :variables (list (cons :enemy-alive nil))))
-         (planner    (make-instance 'planner
-                                    :current-state start-state
-                                    :goal-state    goal-state)))
-    (add-action planner (make-action :name          :scout
-                                     :preconditions (list (cons :armed-with-gun t))
-                                     :effects       (list (cons :enemy-visible  t))
-                                     :cost          2))
-    (add-action planner (make-action :name          :approach
-                                     :preconditions (list (cons :enemy-visible t))
-                                     :effects       (list (cons :near-enemy    t))
-                                     :cost          2))
-    (add-action planner (make-action :name          :aim
-                                     :preconditions (list (cons :enemy-visible  t)
-                                                          (cons :weapon-loaded  t))
-                                     :effects       (list (cons :enemy-lined-up t))
-                                     :cost          2))
-    (add-action planner (make-action :name          :shoot
-                                     :preconditions (list (cons :enemy-lined-up t))
-                                     :effects       (list (cons :enemy-alive    nil))
-                                     :cost          2))
-    (add-action planner (make-action :name          :load
-                                     :preconditions (list (cons :armed-with-gun t))
-                                     :effects       (list (cons :weapon-loaded  t))
-                                     :cost          2))
-    (add-action planner (make-action :name          :detonate-bomb
-                                     :preconditions (list (cons :armed-with-bomb t)
-                                                          (cons :near-enemy      t))
-                                     :effects       (list (cons :alive           nil)
-                                                          (cons :enemy-alive     nil))
-                                     :cost          2))
-    (add-action planner (make-action :name          :flee
-                                     :preconditions (list (cons :enemy-visible  t))
-                                     :effects       (list (cons :near-enemy     nil))
-                                     :cost          2))
+                                    :variables (list (cons :enemy-alive nil)))))
+    (setf (goal-state    planner) goal-state
+          (current-state planner) start-state)
     planner))
 
 (deftest sucide-plan (goap-suite)
