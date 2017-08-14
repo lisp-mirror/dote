@@ -139,6 +139,10 @@
    :+default-character-filename+
    :+default-interaction-filename+
    :+default-furniture-templates-dir+
+   :+default-planner-dir+
+   :+attack-planner-dir+
+   :+defend-planner-dir+
+   :+explore-planner-dir+
    :+mesh-placeholder-file+
    :+gui-static-text-delim+
    :+gui-static-text-nbsp+
@@ -162,7 +166,8 @@
    :+weapon-melee-range+
    :+weapon-bow-range+
    :+weapon-crossbow-range+
-   :+explore-strategy+))
+   :+explore-strategy+
+   :+attack-strategy+))
 
 (defpackage :profiling
   (:use :cl)
@@ -2796,7 +2801,8 @@
    :+idle-action+
    :+move-action+
    :+faint-action+
-   :+interrupted-action+))
+   :+interrupted-action+
+   :+go-to-attack-pos-action+))
 
 (defpackage :character
   (:use :cl
@@ -2912,6 +2918,7 @@
    :remove-from-modifiers
    :add-to-inventory
    :find-item-in-inventory
+   :find-item-in-inventory-if
    :find-entity-by-id
    :sum-modifiers
    :player-class->class-description
@@ -2932,6 +2939,7 @@
    :weapon-type-short-range
    :available-spells-list
    :calculate-influence
+   :combined-power
    :tactical-plan
    :with-no-thinking
    :set-idle-plan
@@ -4460,6 +4468,9 @@
    :target-id
    :goal-pos
    :target-pos
+   :reachable-p-w/concening-tiles
+   :reachable-p-w/concening-tiles-fn
+   :build-all-attack-tactics
    :blackboard
    :concerning-tiles
    :calc-concerning-tiles-cost-scaling

@@ -481,6 +481,8 @@
 
 (defgeneric find-item-in-inventory (object item))
 
+(defgeneric find-item-in-inventory-if (object item))
+
 (defgeneric remove-decayed-items (object turn-count))
 
 (defgeneric remove-from-inventory (object item))
@@ -507,7 +509,9 @@
 
 (defgeneric calculate-influence-weapon (object weapon-type))
 
-(defgeneric tactical-plan (object strategy-expert player-entity))
+(defgeneric combined-power (object))
+
+(defgeneric tactical-plan (object strategy-expert player-entity strategy-decision))
 
 (defgeneric has-idle-plan-p (object))
 
@@ -606,6 +610,9 @@
 
 (defmethod find-item-in-inventory ((object player-character) id)
   (find id (inventory object) :key #'id :test #'=))
+
+(defmethod find-item-in-inventory-if ((object player-character) predicate)
+  (find-if predicate (inventory object)))
 
 (defmethod remove-decayed-items ((object player-character) turn-count)
   (with-accessors ((inventory inventory)
@@ -773,7 +780,8 @@
   spell::*spells-db*)
 
 (defmethod calculate-influence ((object player-character))
-  (calculate-influence-weapon object (weapon-type object)))
+  (d+ (calculate-influence-weapon object (weapon-type object))
+      (combined-power object)))
 
 (defmethod calculate-influence-weapon ((object player-character) (weapon-type (eql nil)))
   0.0)
@@ -793,6 +801,87 @@
 (defmethod calculate-influence-weapon ((object player-character) (weapon-type (eql :pole)))
   (d +weapon-pole-range+))
 
+
+(defmacro %with-gen-simple-weight (name-weigth &body body)
+  `(flet
+       ,(loop for (name . weight) in name-weigth collect
+             `(,(misc:format-fn-symbol t "~a-weight" name) ()
+                ,weight))
+     ,@body))
+
+(defmethod combined-power ((object player-character))
+  (labels ((melee-weapon-switch (character)
+             (if (weapon-type-short-range character)
+                 1.0
+                 0.0))
+           (range-weapon-switch (character)
+             (if (weapon-type-long-range character)
+                 1.0
+                 0.0))
+           (weapon-type-switch (weapon-type desidered-weapon-type)
+             (if (eq weapon-type desidered-weapon-type)
+                 1.0
+                 0.0))
+           (weapon-flip (a weapon-type desired-weapon-type)
+             (d* (weapon-type-switch weapon-type desired-weapon-type) ; on or off
+                 a)))
+    (%with-gen-simple-weight ((movement . 0.3)
+                              (damage   . 0.9)
+                              (melee    . 1.0)
+                              (range    . 1.0)
+                              (magic    . 1.0)
+                              (dodge    . 0.2))
+      (let* ((weapon-type                        (weapon-type object))
+             (actual-damage-points               object)
+             (actual-movement-points             object)
+             (actual-magic-points                object)
+             (actual-dodge-chance                object)
+             (actual-melee-attack-chance         object)
+             (actual-melee-attack-damage         object)
+             (actual-range-attack-chance         object)
+             (actual-range-attack-damage         object)
+             (actual-edge-weapons-chance-bonus   object)
+             (actual-edge-weapons-damage-bonus   object)
+             (actual-impact-weapons-chance-bonus object)
+             (actual-impact-weapons-damage-bonus object)
+             (actual-pole-weapons-chance-bonus   object)
+             (actual-pole-weapons-damage-bonus   object)
+             (actual-spell-change                object)
+             (actual-attack-spell-chance         object)
+             (status-contribute                  (if (or (eq (status object) +status-terror+)
+                                                         (eq (status object) +status-faint+))
+                                                     0.0
+                                                     1.0))
+             (melee-contribute (d* (melee-weapon-switch object) ; on or off
+                                   (d+ (d* (d+ actual-melee-attack-damage
+                                               (weapon-flip actual-edge-weapons-damage-bonus
+                                                            weapon-type :edge)
+                                               (weapon-flip actual-impact-weapons-damage-bonus
+                                                            weapon-type :impact)
+                                               (weapon-flip actual-pole-weapons-damage-bonus
+                                                            weapon-type :pole))
+                                           (d+ actual-melee-attack-chance
+                                               (weapon-flip actual-edge-weapons-chance-bonus
+                                                            weapon-type :edge)
+                                               (weapon-flip actual-impact-weapons-chance-bonus
+                                                            weapon-type :impact)
+                                               (weapon-flip actual-pole-weapons-chance-bonus
+                                                            weapon-type :pole))))))
+             (range-contribute (d* (range-weapon-switch object) ; on or off
+                                   actual-range-attack-damage
+                                   actual-range-attack-chance))
+             (raw-power        (d+ (d* (damage-weight)   actual-damage-points)
+                                   (d* (movement-weight) actual-movement-points)
+                                   (d* (melee-weight)    melee-contribute)
+                                   (d* (range-weight)    range-contribute)
+                                   (d* (magic-weight)
+                                       actual-magic-points
+                                       (dmax actual-spell-change
+                                             actual-attack-spell-chance))
+                                   (d* (dodge-weight)
+                                       actual-dodge-chance))))
+        (d* status-contribute raw-power)))))
+
 (defmacro with-no-thinking ((character) &body body)
   (with-gensyms (saved)
     `(if ,character
@@ -803,17 +892,31 @@
         (progn ,@body))))
 
 ;; TODO add GOAP
-(defmethod tactical-plan ((object player-character) strategy-expert player-entity)
+(defmethod tactical-plan ((object player-character) strategy-expert player-entity
+                          (strategy-decision (eql nil)))
+  (declare (ignore strategy-decision))
+  ;;(blackboard:strategy-decision strategy-expert)))
   ;; TEST
-  ;; (with-accessors ((current-plan current-plan)) object
-  ;;   (if current-plan
-  ;;       current-plan
-  ;;       (let ((strategy (blackboard:strategy-decision strategy-expert)))
-  ;;         (declare (ignore strategy))
-  ;;         (setf current-plan (list planner:+move-action+))
-  ;;         (tactical-plan object strategy-expert)))))
-  (setf (current-plan object) (list planner:+idle-action+))
-  (current-plan object))
+  (with-accessors ((current-plan current-plan)) object
+    (if current-plan
+        current-plan
+        (tactical-plan object
+                       strategy-expert
+                       player-entity
+                       (blackboard:strategy-decision strategy-expert)))))
+
+(defmethod tactical-plan ((object player-character) strategy-expert player-entity
+                          (strategy-decision (eql +explore-strategy+)))
+  (declare (ignore strategy-decision))
+  ;;(blackboard:strategy-decision strategy-expert)))
+  ;; TEST
+  (with-accessors ((current-plan current-plan)) object
+    (let ((strategy (blackboard:strategy-decision strategy-expert)))
+      (declare (ignore strategy))
+      (setf current-plan (list planner:+move-action+))
+      (tactical-plan object strategy-expert player-entity nil))))
+  ;;(setf (current-plan object) (list goap:+idle-action+))
+  ;;(current-plan object))
 
 (defmethod set-idle-plan ((object player-character))
   (misc:dbg "set idle plan")

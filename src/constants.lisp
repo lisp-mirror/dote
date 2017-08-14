@@ -224,6 +224,14 @@
 
 (define-constant +default-furniture-templates-dir+ "furniture-templates"          :test #'string=)
 
+(define-constant +default-planner-dir+             '("ai" "planner")              :test #'equalp)
+
+(define-constant +attack-planner-dir+              '("ai" "planner" "attack")     :test #'equalp)
+
+(define-constant +defend-planner-dir+              '("ai" "planner" "defend")     :test #'equalp)
+
+(define-constant +explore-planner-dir+             '("ai" "planner" "explore")    :test #'equalp)
+
 (define-constant +mesh-placeholder-file+           "placeholder.lsys"             :test #'string=)
 
 (define-constant +gui-static-text-delim+           "§"                            :test #'string=)
@@ -272,3 +280,5 @@
 (define-constant +weapon-crossbow-range+          25                              :test #'=)
 
 (define-constant +explore-strategy+               :explore                        :test #'eq)
+
+(define-constant +attack-strategy+                :attack                         :test #'eq)

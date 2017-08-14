@@ -360,7 +360,7 @@
         (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
           (cl-gl-utils:with-depth-disabled
             (cl-gl-utils:with-blending
-              (gl:blend-func                :src-alpha :one)
+              (gl:blend-func                :src-alpha :one-minus-src-alpha)
               (use-program compiled-shaders :animated-billboard)
               (gl:active-texture            :texture0)
               (texture:bind-texture texture-object)

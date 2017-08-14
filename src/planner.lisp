@@ -16,10 +16,13 @@
 
 (in-package :planner)
 
-(define-constant +idle-action+        :idle      :test #'eq)
 
-(define-constant +move-action+        :move      :test #'eq)
+(define-constant +idle-action+             :idle             :test #'eq)
 
-(define-constant +faint-action+       :faint     :test #'eq)
+(define-constant +move-action+             :move             :test #'eq)
 
-(define-constant +interrupted-action+ :interrupt :test #'eq)
+(define-constant +faint-action+            :faint            :test #'eq)
+
+(define-constant +go-to-attack-pos-action+ :go-to-attack-pos :test #'eq)
+
+(define-constant +interrupted-action+      :interrupt        :test #'eq)

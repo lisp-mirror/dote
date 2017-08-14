@@ -383,6 +383,16 @@
                                                              "~a.eps"
                                                              (action-name i))))))
 
+(defun %build-precondition (sym)
+  (if (symbolp sym)
+      (let ((name (symbol-name sym)))
+        (if (char= (elt name 0) #\!)
+            `(lambda () (not (funcall (symbol-function ',(misc:format-fn-symbol t "~a"
+                                                                                (subseq name
+                                                                                        1))))))
+            `(symbol-function ',sym)))
+      sym))
+
 (defmacro define-planner (&body forms)
   (labels ((get-param (params a &optional (default nil))
              (getf params a default))
@@ -398,11 +408,50 @@
                                                                                    :effects))
                                        :cost                  ,(get-param  action :cost)
                                        :context-preconditions
-                                       ',(get-param  action
-                                                      :context-preconditions)))))
+                                       (list ,@(mapcar #'%build-precondition
+                                                 (get-param  action
+                                                             :context-preconditions)))))))
     (with-gensyms (planner)
       `(let ((,planner (make-instance 'planner)))
          (progn
            ,@(loop for action in forms collect
                   (build-action planner action)))
          ,planner))))
+
+(defun too-low-health-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (let ((ghost (entity:ghost entity)))
+    (< (character:current-damage-points ghost)
+       (* 0.5 (character:actual-damage-points ghost)))))
+
+(defun enough-health-p (strategy-expert entity)
+  (not (too-low-health-p strategy-expert entity)))
+
+(defun has-weapon-in-inventory-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (character:find-item-in-inventory-if (entity:ghost entity)
+                                       #'interactive-entity:weaponp))
+
+(defun reachable-position-p (entity attack-goals weapon-type)
+  (find-if #'(lambda (a) (= (blackboard:entity-id a) (id entity)))
+           (getf attack-goals weapon-type)))
+
+(defun reachable-w-current-weapon-p (strategy-expert entity)
+  (let ((blackboard:*reachable-p-fn* (blackboard:reachable-p-w/concening-tiles-fn
+                                      strategy-expert)))
+    (let ((weapon-type  (character:weapon-type (entity:ghost entity)))
+          (attack-goals (blackboard:build-all-attack-tactics strategy-expert)))
+    (when weapon-type
+      (reachable-position-p entity attack-goals weapon-type)))))
+
+(defun friend-needs-help-p (strategy-expert entity)
+  (declare (ignore entity))
+  (game-state:map-ai-entities (main-state strategy-expert)
+                              #'(lambda (k v)
+                                  (declare (ignore k))
+                                  (when (too-low-health-p strategy-expert v)
+                                    (return-from friend-needs-help-p t))))
+  nil)
+
+(defun no-friend-needs-help-p (strategy-expert entity)
+  (not (friend-needs-help-p strategy-expert entity)))

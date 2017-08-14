@@ -68,43 +68,51 @@
 (defun tactic-valid-p (tactic)
   (= (length tactic) 3))
 
-(defun reachable-p-w/concening-tiles (blackboard)
+(defun path-with-concerning-tiles (blackboard ai-position
+                                   defender-position ai-movement-points)
+  (with-accessors ((main-state main-state)
+                   (concerning-tiles concerning-tiles)) blackboard
+    (with-accessors ((costs-from-map costs-from-map)) main-state
+      (let ((suppress-closed-door-cost-mat (make-matrix (width  concerning-tiles)
+                                                        (height concerning-tiles)
+                                                        0.0)))
+        (nmap-matrix-xy suppress-closed-door-cost-mat
+                        #'(lambda (x y cost)
+                            (declare (ignore cost))
+                            ; check for a closed door
+                            (when (and (door@pos-p main-state x y)
+                                       (epsilon= (matrix-elt costs-from-map y x)
+                                                 +invalicable-element-cost+))
+                              (setf (matrix-elt suppress-closed-door-cost-mat y x)
+                                    (d- +open-terrain-cost+ +invalicable-element-cost+)))))
+        (let* ((concerning-tiles (concerning-tiles->costs-matrix blackboard))
+               (others-costs     (list concerning-tiles suppress-closed-door-cost-mat))
+               (path-w/concering (game-state:build-movement-path main-state
+                                                                 ai-position
+                                                                 defender-position
+                                                                 :other-costs-layer
+                                                                 others-costs)))
+          (if (and path-w/concering
+                   (> (length path-w/concering) 1))
+              (let ((cost (reduce #'(lambda (a b) (d+ (d a) (d b)))
+                                  (subseq path-w/concering 1)
+                                  :key #'(lambda (a)
+                                           (let ((cost (game-state:get-cost main-state
+                                                                             (elt a 0)
+                                                                             (elt a 1))))
+                                             cost))
+                                  :initial-value 0.0)))
+                (if (<= cost ai-movement-points)
+                    (values t path-w/concering)
+                    nil))
+              nil))))))
+
+(defun reachable-p-w/concening-tiles-fn (blackboard)
   #'(lambda (ai-position defender-position ai-movement-points)
-      (with-accessors ((main-state main-state)
-                       (concerning-tiles concerning-tiles)) blackboard
-        (with-accessors ((costs-from-map costs-from-map)) main-state
-          (let ((suppress-closed-door-cost-mat (make-matrix (width  concerning-tiles)
-                                                            (height concerning-tiles)
-                                                            0.0)))
-            (nmap-matrix-xy suppress-closed-door-cost-mat
-                            #'(lambda (x y cost)
-                                (declare (ignore cost))
-                                (when (and (door@pos-p main-state x y) ; check for a closed door
-                                           (epsilon= (matrix-elt costs-from-map y x)
-                                                     +invalicable-element-cost+))
-                                  (setf (matrix-elt suppress-closed-door-cost-mat y x)
-                                        (d- +open-terrain-cost+ +invalicable-element-cost+)))))
-            (let* ((concerning-tiles (concerning-tiles->costs-matrix blackboard))
-                   (others-costs     (list concerning-tiles suppress-closed-door-cost-mat))
-                   (path-w/concering (game-state:build-movement-path main-state
-                                                                     ai-position
-                                                                     defender-position
-                                                                     :other-costs-layer
-                                                                     others-costs)))
-              (if (and path-w/concering
-                       (> (length path-w/concering) 1))
-                  (let ((cost (reduce #'(lambda (a b) (d+ (d a) (d b)))
-                                      (subseq path-w/concering 1)
-                                      :key #'(lambda (a)
-                                               (let ((cost  (game-state:get-cost main-state
-                                                                                 (elt a 0)
-                                                                                 (elt a 1))))
-                                                 cost))
-                                      :initial-value 0.0)))
-                    (if (<= cost ai-movement-points)
-                        (values t path-w/concering)
-                        nil))
-                  nil)))))))
+      (path-with-concerning-tiles blackboard
+                                  ai-position
+                                  defender-position
+                                  ai-movement-points)))
 
 (defun reachableo (def)
   (fresh (atk-pos def-pos mp)
@@ -267,6 +275,8 @@
     (setf all (remove-if #'(lambda (plan) (every #'(lambda (a) (null (cdr a))) plan))
                          all))
     (when all
+      ;; TODO sort  tactics, the idea  is to attack the  less powerful
+      ;; enemy with the maximum number of attacker see: character:combined-power
       (setf all (misc:random-elt all))
       (setf all (remove-if-not #'tactic-valid-p all)))
     (mapcar #'(lambda (plan)

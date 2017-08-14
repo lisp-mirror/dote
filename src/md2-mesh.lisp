@@ -989,7 +989,7 @@
                  (world:actions-queue-empty-p world)
                  ghost)
         ;; TODO add a slot for the plan list and actuate the last
-        (let ((action (first (tactical-plan ghost blackboard mesh))))
+        (let ((action (first (tactical-plan ghost blackboard mesh nil))))
           (actuate-plan mesh
                         (blackboard:strategy-decision blackboard)
                         action))))))
