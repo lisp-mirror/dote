@@ -568,31 +568,32 @@
                 :heuristic-cost-function #'(lambda (a b)
                                              (declare (ignore a b)) 0)))
 
-(defmethod to-sexp ((object list-graph)) ;; NO
-  (let ((visit (dfs-search object (random-node-id object))))
-    (mapcar #'(lambda (node-id)
-                (let ((node (find-node object node-id)))
-                  (concatenate 'list
-                               (list (to-sexp (first node)))
-                               (mapcar #'(lambda (adj) (to-sexp adj))
-                                       (rest node)))))
-            visit)))
+;; TODO
+;; (defmethod to-sexp ((object list-graph)))
+;;   (let ((visit (dfs-search object (random-node-id object))))
+;;     (mapcar #'(lambda (node-id)
+;;                 (let ((node (find-node object node-id)))
+;;                   (concatenate 'list
+;;                                (list (to-sexp (first node)))
+;;                                (mapcar #'(lambda (adj) (to-sexp adj))
+;;                                        (rest node)))))
+;;             visit)))
 
-(defmethod from-sexp ((object list-graph) sexp) ;; NO
-  (mapc #'(lambda (node)
+;; (defmethod from-sexp ((object list-graph) sexp) ;; NO
+;;   (mapc #'(lambda (node)
 
-            (push
-             (concatenate 'list
-                          (list (first node))
-                          (mapcar #'(lambda (adj)
-                                      (make-instance 'arc-graph
-                                                     :start (getf adj +start-keyword+)
-                                                     :destination (getf adj +destination-keyword+)
-                                                     :cost (getf adj +cost-keyword+)))
-                                  (rest node)))
-             (adjacency-list object)))
-        sexp)
-  object)
+;;             (push
+;;              (concatenate 'list
+;;                           (list (first node))
+;;                           (mapcar #'(lambda (adj)
+;;                                       (make-instance 'arc-graph
+;;                                                      :start (getf adj +start-keyword+)
+;;                                                      :destination (getf adj +destination-keyword+)
+;;                                                      :cost (getf adj +cost-keyword+)))
+;;                                   (rest node)))
+;;              (adjacency-list object)))
+;;         sexp)
+;;   object)
 
 (defmacro with-container ((container compare-fn key-fn) &body body)
   (ecase container
@@ -606,21 +607,39 @@
 (defmacro gen-basic-visit (name package)
   (labels ((conc-package (name)
              (alexandria:format-symbol package "~:@(~a~)" name)))
-    (alexandria:with-gensyms (visited res object)
+    (alexandria:with-gensyms (visited res object key-fn compare-fn map-fn from)
       `(defmethod ,(alexandria:format-symbol t "~:@(~a~)" name)
-           ((,object graph) from compare-fn key-fn map-fn)
-         (with-container (,(alexandria:make-keyword package) compare-fn key-fn)
-           (,(conc-package 'push) from)
+           ((,object graph) ,from ,compare-fn ,key-fn ,map-fn)
+         (with-container (,(alexandria:make-keyword package) ,compare-fn ,key-fn)
+           (,(conc-package 'push) ,from)
            (do ((,visited (,(conc-package 'pop)) (,(conc-package 'pop)))
                 (,res nil))
                ((not ,visited) ,res)
-             (when (not (find ,visited ,res :key ,(conc-package '*key-function*)
-                              :test ,(conc-package '*equal-function*)))
+             (when (not (find ,visited ,res :key ,key-fn :test ,compare-fn))
                (push ,visited ,res)
-               (funcall map-fn ,visited)
+               (funcall ,map-fn ,visited)
                (loop for i in (get-first-near-as-id ,object ,visited) do
                     (,(conc-package 'push) i)))))))))
 
 (gen-basic-visit dfs-search stack)
 
 (gen-basic-visit bfs-search queue)
+
+(defmacro gen-bfs-visit-block ((graph from compare-fn key-fn map-fn get-first-near-fn res)
+                               &body body)
+  (alexandria:with-gensyms (visited)
+    `(progn
+       (qu:with-queue ((lambda (a b) (,compare-fn a b))
+                       (lambda (a)   (,key-fn     a)))
+         (qu:push ,from)
+         (do ((,visited (qu:pop) (qu:pop))
+              (,res nil))
+             ((not ,visited) ,res)
+           (when (not (find ,visited ,res
+                            :key  (lambda (a)   (,key-fn     a))
+                            :test (lambda (a b) (,compare-fn a b))))
+             (push ,visited ,res)
+             (,map-fn ,visited)
+             (loop for i in (,get-first-near-fn ,graph ,visited) do
+                  (qu:push i)))))
+       ,@body)))

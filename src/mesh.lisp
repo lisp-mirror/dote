@@ -766,6 +766,8 @@
 
 (defgeneric calculate-cost-position (object))
 
+(defgeneric inside-room-p (object))
+
 (defgeneric rendering-needed-p (object renderer))
 
 (defgeneric parent-labyrinth (object))
@@ -985,6 +987,10 @@
   (with-accessors ((pos pos)) object
     (ivec2:ivec2 (map-utils:coord-chunk->costs (elt pos 0))
                  (map-utils:coord-chunk->costs (elt pos 2)))))
+
+(defmethod inside-room-p ((object triangle-mesh))
+  (with-accessors ((state state)) object
+    (game-state:position-inside-room-p state (calculate-cost-position object))))
 
 (defmethod rendering-needed-p ((object triangle-mesh) renderer)
   (declare (ignore object renderer))

@@ -149,6 +149,8 @@
 
 (defgeneric map-element-occupied-by-character-p (object))
 
+(defgeneric map-element-occupied-by-invalicable-p (object &key include-door))
+
 (defgeneric neighborhood-by-type (object row column type &key w-offset h-offset))
 
 (defgeneric get-neighborhood (object row column predicate &key w-offset h-offset))
@@ -168,20 +170,32 @@
       (eq (el-type object)
           +npc-type+)))
 
-(defmethod insert-state-chain-after ((object map-state-element)
-                          idx entity type occlusion-value
-                          &optional (ct 0))
-  (with-accessors ((old-state-element old-state-element)) object
-    (if (= ct idx)
-        (let ((new (make-instance 'map-state-element
-                                  :entity-id         (id entity)
-                                  :el-type           type
-                                  :occlude           occlusion-value
-                                  :old-state-element :stopper)))
-          (setf (old-state-element new) (old-state-element object))
-          (setf (old-state-element object) new))
-        (insert-state-chain-after (old-state-element object)
-                                  idx entity type occlusion-value (1+ ct)))))
+(defmacro or-types (probe &body types)
+  `(or
+    ,@(loop for type in types collect
+           `(eq (el-type ,probe) ,type))))
+
+(defmethod map-element-occupied-by-invalicable-p ((object map-state-element)
+                                                  &key (include-door t))
+  (cond
+    ((or-types object
+       +wall-type+
+       +tree-type+
+       +furniture-type+
+       +magic-furniture-type+
+       +container-type+
+       +pillar-type+
+       +chair-type+
+       +table-type+)
+     :occupied)
+    ((and include-door
+          (or-types object
+            +door-n-type+
+            +door-s-type+
+            +door-w-type+
+            +door-e-type+))
+     :occupied)
+    (t nil)))
 
 (defclass movement-path ()
   ((tiles
@@ -380,6 +394,8 @@
 (defgeneric set-concerning-tile (object x y &key danger-zone-size))
 
 (defgeneric max-ai-movement-points (object))
+
+(defgeneric position-inside-room-p (object position))
 
 (defmethod fetch-render-window ((object game-state))
   (and (window-id object)
@@ -808,3 +824,33 @@
 
 (defmethod max-ai-movement-points ((object game-state))
   (max-movement-points object #'map-ai-entities))
+
+(defmethod position-inside-room-p ((object game-state) position)
+  (with-accessors ((map-state map-state)) object
+    (flet ((node-equals    (a b) (ivec2:ivec2= a b))
+           (key-fn         (a)   (identity a))
+           (gen-first-near (g visited-node)
+             (let ((all (map 'list
+                             #'ivec2:sequence->ivec2
+                             (matrix:gen-4-neighbour-counterclockwise (elt visited-node 0)
+                                                                      (elt visited-node 1)
+                                                                      :add-center nil))))
+               (remove-if #'(lambda (pos)
+                              (game-state:map-element-occupied-by-invalicable-p
+                               (matrix:matrix-elt g
+                                                  (elt pos 1)
+                                                  (elt pos 0))
+                               :include-door t))
+                          all)))
+           (escapedp (node) (if (matrix:pos@border-p map-state node)
+                                (return-from position-inside-room-p nil)
+                                node)))
+      (let ((element (element-mapstate@ object (elt position 0) (elt position 1))))
+        (if (eq (game-state:el-type element) +floor-type+)
+            (graph:gen-bfs-visit-block (map-state position
+                                                  node-equals
+                                                  key-fn escapedp
+                                                  gen-first-near
+                                                  res)
+              t)
+            nil)))))

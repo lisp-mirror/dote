@@ -49,6 +49,13 @@
 
 ;; functions utils
 
+(defun a->function (a)
+  (cond
+    ((functionp a)
+     a)
+    ((symbolp a)
+     (symbol-function a))))
+
 (defmacro gen-type-p (name)
   (alexandria:with-gensyms (a)
     (let ((fname (if (cl-ppcre:scan "-" (symbol-name name))

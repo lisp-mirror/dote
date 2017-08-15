@@ -245,6 +245,7 @@
    :defcached
    :defun-inline-function
    :format-fn-symbol
+   :a->function
    :gen-type-p
    :define-compiler-macros
    :defmethod-inline-function
@@ -1266,6 +1267,7 @@
    :row->sequence
    :valid-index-p
    :valid-coordinates-p
+   :pos@border-p
    :matrix-elt
    :matrix-elt-vec4
    :matrix-elt-ubvec4
@@ -1366,7 +1368,8 @@
    :add-arc
    :add-node
    :node->node-id
-   :node-id->node))
+   :node-id->node
+   :gen-bfs-visit-block))
 
 (defpackage :kanren-utils
   (:use :cl
@@ -2062,6 +2065,7 @@
    :map-state-element
    :map-element-empty-p
    :map-element-occupied-by-character-p
+   :map-element-occupied-by-invalicable-p
    :entity-id
    :el-type
    :occlude
@@ -2145,7 +2149,8 @@
    :make-influence-map
    :set-tile-visited
    :set-concerning-tile
-   :max-ai-movement-points))
+   :max-ai-movement-points
+   :position-inside-room-p))
 
 (defpackage :game-event
   (:use
@@ -3507,7 +3512,8 @@
    :decrement-move-points-place-trap
    :can-use-movement-points-p
    :can-use-spell-points-p
-   :calculate-cost-position))
+   :calculate-cost-position
+   :inside-room-p))
 
 (defpackage :able-to-see-mesh
   (:use :cl

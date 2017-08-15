@@ -219,6 +219,8 @@
 
   (defgeneric valid-coordinates-p (object coordinates))
 
+  (defgeneric pos@border-p (object pos))
+
   (defgeneric swap-elements (object row column row2 column2 &key destructive))
 
   (defgeneric map-matrix (object predicate))
@@ -485,6 +487,15 @@ else
 
 (defmethod valid-coordinates-p ((object matrix) (coordinates sequence))
   (valid-index-p object (elt coordinates 1) (elt coordinates 0)))
+
+(defmethod pos@border-p ((object matrix) pos)
+  (with-accessors ((w width) (h height)) object
+    (let ((x (elt pos 0))
+          (y (elt pos 1)))
+      (or (= x 0)
+          (= y 0)
+          (= x (1- w))
+          (= y (1- h))))))
 
 (defmethod %matrix-incf (matrix x y (delta number))
   (with-check-matrix-borders (matrix x y)
