@@ -1346,6 +1346,7 @@
    :tile-multilayers-graph
    :layers
    :make-tile-multilayer-graph
+   :matrix-elt
    :push-cost-layer
    :pop-cost-layer
    :with-pushed-cost-layer
@@ -2942,6 +2943,11 @@
    :weapon-type
    :weapon-type-long-range
    :weapon-type-short-range
+   :weapon-type-edge-p
+   :weapon-type-impact-p
+   :weapon-type-pole-p
+   :weapon-type-bow-p
+   :weapon-type-crossbow-p
    :available-spells-list
    :calculate-influence
    :combined-power
@@ -4474,6 +4480,9 @@
    :target-id
    :goal-pos
    :target-pos
+   :best-path-to-reach-enemy-w-current-weapon
+   :best-path-near-attack-goal-w-current-weapon
+   :best-path-w-current-weapon-reachable-p
    :reachable-p-w/concening-tiles
    :reachable-p-w/concening-tiles-fn
    :build-all-attack-tactics

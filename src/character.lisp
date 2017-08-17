@@ -774,6 +774,17 @@
                            nil)))))
    weapon-type))
 
+(defmacro gen-wear-weapon-of-type (&rest types)
+  (with-gensyms (character weapon)
+    `(progn
+       ,@(loop for i in types collect
+              (let ((name (misc:format-fn-symbol t "weapon-type-~a-p" i)))
+                `(defun ,name (,character)
+                   (let* ((,weapon (worn-weapon ,character)))
+                     (and ,weapon (eq ,weapon ,i)))))))))
+
+(gen-wear-weapon-of-type :edge :impact :pole :bow :crossbow)
+
 (defmethod available-spells-list ((object player-character))
   ;;; TEST ;;;;
   ;(spell:filter-spell-db #'(lambda (a) (> (spell:level a) (level object)))))
@@ -910,13 +921,13 @@
   (declare (ignore strategy-decision))
   ;;(blackboard:strategy-decision strategy-expert)))
   ;; TEST
-  (with-accessors ((current-plan current-plan)) object
-    (let ((strategy (blackboard:strategy-decision strategy-expert)))
-      (declare (ignore strategy))
-      (setf current-plan (list planner:+move-action+))
-      (tactical-plan object strategy-expert player-entity nil))))
-  ;;(setf (current-plan object) (list goap:+idle-action+))
-  ;;(current-plan object))
+  ;; (with-accessors ((current-plan current-plan)) object
+  ;;   (let ((strategy (blackboard:strategy-decision strategy-expert)))
+  ;;     (declare (ignore strategy))
+  ;;     (setf current-plan (list planner:+move-action+))
+  ;;     (tactical-plan object strategy-expert player-entity nil))))
+  (setf (current-plan object) (list planner:+idle-action+))
+  (current-plan object))
 
 (defmethod set-idle-plan ((object player-character))
   (misc:dbg "set idle plan")

@@ -996,6 +996,15 @@
 
 (defmethod on-game-event :after ((object md2-mesh) (event end-turn))
   ;;(misc:dbg "end turn md2mesh tooltip ct ~a" (tooltip-count object))
+  ;;;;;;;;;;;;;;;;;;;;; TEST ;;;;;;;;;;;;;;;;;;;;;;;;
+  (with-accessors ((state state)) object
+    (with-accessors ((blackboard blackboard:blackboard)) state
+      (misc:dbg "best ~a"
+                (blackboard:best-path-to-reach-enemy-w-current-weapon blackboard object))
+      (misc:dbg "near ~a"
+                (blackboard:best-path-near-attack-goal-w-current-weapon blackboard object))))
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (with-accessors ((ghost ghost)
                    (state state)) object
     (game-state:with-world (world state)
@@ -1994,7 +2003,7 @@
       (add-to-inventory (ghost body) forged-bow)
       (add-to-inventory (ghost body) forged-sword)
       (add-to-inventory (ghost body) forged-trap)
-      (setf (movement-points (ghost body)) 40.0)
+      (setf (movement-points (ghost body)) 10.0)
       (setf (magic-points    (ghost body)) 50.0)
       ;; note:   wear-item-event  will   not  be   catched  as   the
       ;; registration happens when the entity is added to world

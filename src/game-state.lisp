@@ -248,7 +248,10 @@
     :accessor movement-costs
     :initarg  :movement-costs
     :initform nil
-    :type graph:tile-multilayers-graph)
+    :type graph:tile-multilayers-graph
+    :documentation  "note  this  is  a multilayer  graph  and  hold  a
+    reference  (i.e.  sum  the  values from)  to  costs-from-maps  and
+    costs-from-players, see load-level:load-level.")
    (costs-from-map
     :accessor costs-from-map
     :initarg  :costs-from-map

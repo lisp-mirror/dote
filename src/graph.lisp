@@ -172,12 +172,16 @@
 
 (defmethod traverse-cost ((object tile-multilayers-graph) (from sequence) (to sequence))
   (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (declare (ignore from))
   (with-accessors ((layers layers)) object
     (declare ((simple-array matrix:matrix (*)) layers))
     (reduce #'(lambda (a b)
                 (num:d+ a (matrix:matrix-elt* b to)))
             layers
             :initial-value 0.0)))
+
+(defmethod matrix:matrix-elt ((object tile-multilayers-graph) row col)
+  (traverse-cost object nil (ivec2:ivec2 col row)))
 
 (defmethod node->node-id ((object tile-multilayers-graph) node)
   (matrix:matrix-elt* (ids object) node))
