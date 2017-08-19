@@ -890,7 +890,6 @@
                                                    :can-smash
                                                    :can-launch-bolt
                                                    :can-launch-arrow
-                                                   :mounted-on-pole
                                                    :can-talk
                                                    :can-be-opened
                                                    :can-open
@@ -909,7 +908,6 @@
                                                    :can-smash
                                                    :can-launch-bolt
                                                    :can-launch-arrow
-                                                   :mounted-on-pole
                                                    :can-talk
                                                    :can-be-opened
                                                    :can-open
@@ -963,7 +961,6 @@
                                                    :can-be-eaten))
                             (:path     (:mounted-on-pole)
                                        :conflicts (:can-cut
-                                                   :can-pierce
                                                    :can-smash
                                                    :can-launch-arrow
                                                    :can-launch-bolt

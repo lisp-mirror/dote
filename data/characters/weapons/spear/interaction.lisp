@@ -23,7 +23,7 @@
     can-be-held-in-hand true
     can-cut             false
     can-smash           false
-    can-pierce          false
+    can-pierce          true
     can-launch-bolt     false
     can-launch-arrow    false
     mounted-on-pole     true

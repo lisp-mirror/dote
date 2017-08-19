@@ -730,7 +730,6 @@
                    (armor-slot armor-slot) (left-hand-slot left-hand-slot)
                    (right-hand-slot right-hand-slot) (ring-slot ring-slot)
                    (b-remove-worn-item b-remove-worn-item))             object
-
     (setf (texture-object  b-chest) (chest-texture chest))
     (setf (current-texture b-chest) (chest-texture chest))
     (setf (texture-pressed b-chest) (chest-texture chest))

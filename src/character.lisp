@@ -723,9 +723,7 @@
            ((interactive-entity:shoesp item)
             'character:shoes)
            ((or (interactive-entity:weaponp item)
-                (interactive-entity:shieldp item)
-                (interactive-entity:bowp item)
-                (interactive-entity:crossbowp item))
+                (interactive-entity:shieldp item))
             (if (null left-hand)
                 'character:left-hand
                 (if (null right-hand)
