@@ -997,13 +997,20 @@
 (defmethod on-game-event :after ((object md2-mesh) (event end-turn))
   ;;(misc:dbg "end turn md2mesh tooltip ct ~a" (tooltip-count object))
   ;;;;;;;;;;;;;;;;;;;;; TEST ;;;;;;;;;;;;;;;;;;;;;;;;
-  (with-accessors ((state state)) object
-    (with-accessors ((blackboard blackboard:blackboard)) state
-      (misc:dbg "best ~a"
-                (blackboard:best-path-to-reach-enemy-w-current-weapon blackboard object))
-      (misc:dbg "near ~a"
-                (blackboard:best-path-near-attack-goal-w-current-weapon blackboard object))))
-
+  (when (faction-ai-p (state object) (id object))
+    (with-accessors ((state state)) object
+      (with-accessors ((blackboard blackboard:blackboard)) state
+        (misc:dbg "best ~a"
+                  (blackboard:best-path-to-reach-enemy-w-current-weapon blackboard object))
+        (misc:dbg "near ~a"
+                  (blackboard:best-path-near-attack-goal-w-current-weapon blackboard object))
+        (misc:dbg "exists? ~a reachable? ~a "
+                  (goap::exists-attack-goal-w-current-weapon-p blackboard object)
+                  (goap::reachable-w-current-weapon-and-mp-p blackboard object))
+        (misc:dbg "has weapon? ~a"
+                  (goap::has-weapon-inventory-or-worn-p blackboard object))
+        (misc:dbg "has spell? ~a"
+                  (goap::has-enough-sp-p blackboard object)))))
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (with-accessors ((ghost ghost)
                    (state state)) object

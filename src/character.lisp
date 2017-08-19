@@ -481,7 +481,7 @@
 
 (defgeneric find-item-in-inventory (object item))
 
-(defgeneric find-item-in-inventory-if (object item))
+(defgeneric find-item-in-inventory-if (object predicate))
 
 (defgeneric remove-decayed-items (object turn-count))
 

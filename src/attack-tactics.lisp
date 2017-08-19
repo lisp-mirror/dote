@@ -118,7 +118,7 @@ map cost (i.e. no concerning tiles)"
                     (idx 0 (1+ idx)))
                    ((or (>= idx (length costs))
                         (>= accum
-                           (character:actual-movement-points (ghost ai-player))))
+                           (character:current-movement-points (ghost ai-player))))
                     idx)
                  (incf accum (elt costs idx)))))
       (subseq path 0 max))))
@@ -141,7 +141,7 @@ map cost (i.e. no concerning tiles)"
   (multiple-value-bind (path cumulative-cost costs)
       (best-path-to-reach-enemy-w-current-weapon blackboard ai-player)
     (declare (ignore costs))
-    (and path (<= cumulative-cost (character:actual-movement-points (ghost ai-player))))))
+    (and path (<= cumulative-cost (character:current-movement-points (ghost ai-player))))))
 
 (defun path-with-concerning-tiles (blackboard ai-position
                                    defender-position)
@@ -173,9 +173,9 @@ path, again only with map cost (i.e. no concerning tiles)"
                                                                  (elt i 0))))))
                      (cumulative-cost (reduce #'(lambda (a b) (d+ (d a) (d b)))
                                               costs-terrain)))
-                (misc:dbg "path ~a ~a ~a"
-                          (subseq path-w/concering 1)
-                          cumulative-cost costs-terrain)
+                ;; (misc:dbg "path ~a ~a ~a"
+                ;;           (subseq path-w/concering 1)
+                ;;           cumulative-cost costs-terrain)
                 (values (subseq path-w/concering 1) cumulative-cost costs-terrain))
               (values nil nil)))))))
 
@@ -265,7 +265,7 @@ path, again only with map cost (i.e. no concerning tiles)"
 
 (defun attacker-class->attacker (game-state atk)
   (let* ((entity (entity:find-entity-by-id game-state (blackboard:entity-id atk)))
-         (mp     (character:actual-movement-points    (entity:ghost entity)))
+         (mp     (character:current-movement-points    (entity:ghost entity)))
          (pos    (mesh:calculate-cost-position entity)))
     (cons pos mp)))
 
@@ -304,7 +304,7 @@ path, again only with map cost (i.e. no concerning tiles)"
                                                    interactive-entity:+status-berserk+
                                                    interactive-entity:+status-faint+)))))
                    (push (cons (mesh:calculate-cost-position entity)
-                               (truncate (character:actual-movement-points ghost)))
+                               (truncate (character:current-movement-points ghost)))
                          res)))))
         (map-ai-entities main-state #'(lambda (k v)
                                         (declare (ignore k))

@@ -436,13 +436,11 @@
   (find-if #'(lambda (a) (= (blackboard:entity-id a) (id entity)))
            (getf attack-goals weapon-type)))
 
-(defun reachable-w-current-weapon-p (strategy-expert entity)
-  (let ((blackboard:*reachable-p-fn* (blackboard:reachable-p-w/concening-tiles-fn
-                                      strategy-expert)))
-    (let ((weapon-type  (character:weapon-type (entity:ghost entity)))
-          (attack-goals (blackboard:build-all-attack-tactics strategy-expert)))
-    (when weapon-type
-      (reachable-position-p entity attack-goals weapon-type)))))
+(defun exists-attack-goal-w-current-weapon-p (strategy-expert entity)
+  (best-path-to-reach-enemy-w-current-weapon strategy-expert entity))
+
+(defun reachable-w-current-weapon-and-mp-p (strategy-expert entity)
+  (best-path-w-current-weapon-reachable-p strategy-expert entity))
 
 (defun friend-needs-help-p (strategy-expert entity)
   (declare (ignore entity))
@@ -455,3 +453,13 @@
 
 (defun no-friend-needs-help-p (strategy-expert entity)
   (not (friend-needs-help-p strategy-expert entity)))
+
+(defun has-weapon-inventory-or-worn-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (with-accessors ((ghost entity::ghost)) entity
+    (or (character:weapon-type ghost)
+        (character:find-item-in-inventory-if ghost #'interactive-entity:weaponp))))
+
+(defun has-enough-sp-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (character:available-spells-list (entity:ghost entity)))
