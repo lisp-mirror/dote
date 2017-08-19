@@ -394,7 +394,7 @@
 
 (defgeneric set-tile-visited (object x y))
 
-(defgeneric set-concerning-tile (object x y &key danger-zone-size))
+(defgeneric set-concerning-tile (object x y &key danger-zone-size concerning-tile-value))
 
 (defgeneric max-ai-movement-points (object))
 
@@ -813,10 +813,15 @@
     (set-tile-visited blackboard  x y)))
 
 (defmethod set-concerning-tile ((object game-state) x y
-                                &key (danger-zone-size (let* ((level (level-difficult object)))
-                                                         (blackboard:calc-danger-zone-size level))))
+                                &key
+                                  (danger-zone-size (let* ((level (level-difficult object)))
+                                                      (blackboard:calc-danger-zone-size level)))
+                                  (concerning-tile-value nil))
+  (assert concerning-tile-value)
   (with-accessors ((blackboard blackboard)) object
-    (set-concerning-tile blackboard  x y :danger-zone-size danger-zone-size)))
+    (set-concerning-tile blackboard  x y
+                         :danger-zone-size danger-zone-size
+                         :concerning-tile-value concerning-tile-value)))
 
 (defun max-movement-points (game-state iterator-fn)
   (let ((all-mp '()))

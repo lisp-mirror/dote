@@ -95,6 +95,11 @@
     :initarg  :concerning-tiles
     :accessor concerning-tiles
     :type     matrix)
+   (concerning-tiles-facing
+    :initform nil
+    :initarg  :concerning-tiles-facing
+    :accessor concerning-tiles-facing
+    :type     matrix)
    (attack-enemy-melee-layer
     :initform nil
     :initarg  :attack-enemy-melee-layer
@@ -119,22 +124,26 @@
     :initform '()
     :initarg  :attack-enemy-melee-positions
     :accessor attack-enemy-melee-positions
-    :documentation "This holds the positions AI with melee weapon (except pole weapon) should reach to attack the enemy")
+    :documentation   "This  holds   the   positions   AI  with   melee
+    weapon (except pole weapon) should reach to attack the enemy")
    (attack-enemy-pole-positions
     :initform '()
     :initarg  :attack-enemy-pole-positions
     :accessor attack-enemy-pole-positions
-    :documentation "This holds the positions AI with pole weapon should reach to attack the enemy")
+    :documentation  "This  holds the  positions  AI  with pole  weapon
+    should reach to attack the enemy")
    (attack-enemy-bow-positions
     :initform '()
     :initarg  :attack-enemy-bow-positions
     :accessor attack-enemy-bow-positions
-    :documentation "This holds the positions AI with bow weapon should reach to attack the enemy")
+    :documentation "This holds the positions AI with bow weapon should
+    reach to attack the enemy")
    (attack-enemy-crossbow-positions
     :initform '()
     :initarg  :attack-enemy-crossbow-positions
     :accessor attack-enemy-crossbow-positions
-    :documentation "This holds the positions AI with crossbow weapon should reach to attack the enemy")
+    :documentation "This  holds the positions AI  with crossbow weapon
+    should reach to attack the enemy")
    (use-enemy-fov-when-exploring
     :initform nil
     :initarg  :use-enemy-fov-when-exploring-p
@@ -147,9 +156,10 @@
     :writer   (setf use-enemy-fov-when-attacking))))
 
 (defmethod initialize-instance :after ((object blackboard) &key &allow-other-keys)
-  (with-accessors ((visited-tiles    visited-tiles)
-                   (concerning-tiles concerning-tiles)
-                   (unexplored-layer unexplored-layer)
+  (with-accessors ((visited-tiles                visited-tiles)
+                   (concerning-tiles             concerning-tiles)
+                   (concerning-tiles-facing      concerning-tiles-facing)
+                   (unexplored-layer             unexplored-layer)
                    (attack-enemy-melee-layer     attack-enemy-melee-layer)
                    (attack-enemy-pole-layer      attack-enemy-pole-layer)
                    (attack-enemy-bow-layer       attack-enemy-bow-layer)
@@ -159,9 +169,10 @@
                    (main-state       main-state)) object
     (let ((wmap (width  (map-state main-state)))
           (hmap (height (map-state main-state))))
-      (setf visited-tiles    (make-matrix wmap hmap nil))
-      (setf concerning-tiles (make-matrix wmap hmap 0.0))
-      (setf unexplored-layer (inmap:make-dijkstra-layer wmap hmap +unexplored-tile-value+))
+      (setf visited-tiles           (make-matrix wmap hmap nil))
+      (setf concerning-tiles        (make-matrix wmap hmap 0.0))
+      (setf concerning-tiles-facing (make-matrix wmap hmap 0.0))
+      (setf unexplored-layer        (inmap:make-dijkstra-layer wmap hmap +unexplored-tile-value+))
       (setf attack-enemy-melee-layer
             (inmap:make-dijkstra-layer wmap hmap +attack-nongoal-tile-value+))
       (setf attack-enemy-pole-layer
@@ -186,7 +197,8 @@
       (game-state:set-concerning-tile state
                                       (elt pos-entity 0)
                                       (elt pos-entity 1)
-                                      :danger-zone-size dangerous-zone-size))))
+                                      :danger-zone-size dangerous-zone-size
+                                      :concerning-tile-value blackboard:+concerning-tile-value+))))
 
 (defun add-tail-concerning-zone (attacker defender)
   (with-accessors ((ghost ghost)
@@ -253,8 +265,10 @@
                                                             20)))))
 
 (defmethod game-event:on-game-event ((object blackboard) (event game-event:end-turn))
-  (with-accessors ((concerning-tiles concerning-tiles)) object
+  (with-accessors ((concerning-tiles        concerning-tiles)
+                   (concerning-tiles-facing concerning-tiles-facing)) object
     (decrease-concerning (main-state object) concerning-tiles)
+    (decrease-concerning (main-state object) concerning-tiles-facing)
     (%update-all-layers object)
     ;; test
     ;; (let ((pix (inmap:dijkstra-layer->pixmap (attack-enemy-melee-layer object))))
@@ -315,8 +329,46 @@
          10.0
          15.0))
 
+(defun increase-concerning-tile-facing-player (blackboard player concerning-matrix)
+  "increase concerning of player's facing tiles"
+    (with-accessors ((concerning-tiles concerning-tiles)
+                     (main-state main-state)) blackboard
+      (with-accessors ((map-state map-state)) main-state
+        (labels ((set-tile (facing-pos &optional (value +concerning-tile-value+))
+                   (with-check-matrix-borders (map-state (elt facing-pos 0) (elt facing-pos 1))
+                     (set-concerning-tile* main-state
+                                           concerning-matrix
+                                           (elt facing-pos 0) (elt facing-pos 1)
+                                           :danger-zone-size      1
+                                           :concerning-tile-value value
+                                           :map-element-fn #'(lambda (old new)
+                                                               (declare (ignore old))
+                                                               (d new))))))
+          (let* ((dir        (dir player))
+                 (facing-pos (map-utils:facing-pos (pos player) dir))
+                 (ghost      (ghost player)))
+            (cond
+              ((character:weapon-type-pole-p ghost)
+               (let ((actual-facing-pos (ivec2+ facing-pos (ivec2 (truncate (elt dir 0))
+                                                                  (truncate (elt dir 2))))))
+                 (set-tile actual-facing-pos +concerning-tile-value+)))
+              ((character:weapon-type-long-range ghost)
+               (let ((width (calc-danger-zone-size (level-difficult main-state)))
+                     (displ (ivec2 (truncate (elt dir 0))
+                                   (truncate (elt dir 2)))))
+                 (loop for i from 0 below width do
+                      (let ((value (dlerp (smoothstep-interpolate (d 0) (d (1- width)) (d i))
+                                          (d* (d/ (d width)
+                                                  2.0)
+                                              +concerning-tile-value+)
+                                          0.0)))
+                        (set-tile (ivec2+ facing-pos (ivec2* displ i)) value)))))
+              (t ;; melee
+               (set-tile facing-pos +concerning-tile-value+))))))))
+
 (defmethod concerning-tiles->costs-matrix ((object blackboard))
   (with-accessors ((concerning-tiles concerning-tiles)
+                   (concerning-tiles-facing concerning-tiles-facing)
                    (main-state main-state)) object
     (let ((res   (clone concerning-tiles))
           (level (level-difficult main-state)))
@@ -327,8 +379,11 @@
                                      (d* (calc-concerning-tiles-cost-scaling level)
                                          +open-terrain-cost+)
                                      0.0))))
-      (setf res
-            (matrix:pgaussian-blur-separated res #'identity 5))
+      (setf res (matrix:pgaussian-blur-separated res #'identity 5))
+      (loop-matrix (res x y)
+         (setf (matrix-elt res y x)
+               (d+ (matrix-elt res y x)
+                   (matrix-elt concerning-tiles-facing y x))))
       res)))
 
 ;; TODO use decision tree
@@ -355,11 +410,30 @@
                   4.0
                   8.0)))
 
+(defun set-concerning-tile* (main-state concerning-tiles x y
+                             &key
+                               (danger-zone-size (let* ((level (level-difficult main-state)))
+                                                   (calc-danger-zone-size level)))
+                               (concerning-tile-value +concerning-tile-value+)
+                               (map-element-fn #'(lambda (old new) (d+ old new))))
+  (let* ((dangerous-tiles-pos (gen-neighbour-position-in-box x
+                                                             y
+                                                             danger-zone-size
+                                                             danger-zone-size)))
+    (loop for point across dangerous-tiles-pos do
+         (2d-utils:displace-2d-vector (point x y)
+           (with-check-matrix-borders (concerning-tiles x y)
+             (setf (matrix-elt concerning-tiles y x)
+                   (funcall map-element-fn
+                            (matrix-elt concerning-tiles y x)
+                            concerning-tile-value)))))))
+
 (defmethod set-concerning-tile ((object blackboard) x y
                                 &key
                                   (danger-zone-size (let* ((main-state (main-state object))
                                                            (level (level-difficult main-state)))
-                                                      (calc-danger-zone-size level))))
+                                                      (calc-danger-zone-size level)))
+                                  (concerning-tile-value +concerning-tile-value+))
   (with-accessors ((concerning-tiles concerning-tiles)) object
     (let* ((dangerous-tiles-pos (gen-neighbour-position-in-box x
                                                                y
@@ -368,7 +442,7 @@
       (loop for point across dangerous-tiles-pos do
            (2d-utils:displace-2d-vector (point x y)
              (with-check-matrix-borders (concerning-tiles x y)
-               (incf (matrix-elt concerning-tiles y x) +concerning-tile-value+)))))))
+               (incf (matrix-elt concerning-tiles y x) concerning-tile-value)))))))
 
 (defun calc-enemy-danger-zone-size (player)
   (with-accessors ((main-state state)
@@ -481,6 +555,7 @@
   (with-accessors ((unexplored-layer               unexplored-layer)
                    (visited-tiles                  visited-tiles)
                    (concerning-tiles               concerning-tiles)
+                   (concerning-tiles-facing        concerning-tiles-facing)
                    (main-state                     main-state)
                    (use-enemy-fov-when-exploring-p use-enemy-fov-when-exploring-p)) object
     (with-accessors ((layer layer)) unexplored-layer
@@ -494,14 +569,20 @@
                   (dangerous-tiles-pos (gen-neighbour-position-in-box x-player
                                                                       y-player
                                                                       danger-zone-size
-                                                                      danger-zone-size)))
+                                                                      danger-zone-size))
+                  (increase-facing-p   nil))
              (loop for point across dangerous-tiles-pos do
                   (displace-2d-vector (point x y)
                     (with-check-matrix-borders (layer x y)
                       (when (not (%2d-ray-stopper player x y
                                                   use-enemy-fov-when-exploring-p))
+                        (setf increase-facing-p t)
                         (setf (matrix-elt concerning-tiles y x)
-                              +concerning-tile-value+))))))))))))
+                              +concerning-tile-value+)))))
+             (when increase-facing-p
+               (increase-concerning-tile-facing-player object
+                                                       player
+                                                       concerning-tiles-facing)))))))))
 
 (defmethod next-unexplored-position ((object blackboard) (player md2-mesh:md2-mesh))
   (with-accessors ((unexplored-layer unexplored-layer)) object

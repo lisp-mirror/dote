@@ -4486,6 +4486,7 @@
    :reachable-p-w/concening-tiles
    :reachable-p-w/concening-tiles-fn
    :build-all-attack-tactics
+   :+concerning-tile-value+
    :blackboard
    :concerning-tiles
    :calc-concerning-tiles-cost-scaling

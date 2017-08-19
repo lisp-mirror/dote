@@ -1938,6 +1938,9 @@
     (clean-effects sword)
     sword))
 
+(defun forged-spear ()
+  (random-weapon:generate-weapon 10 :spear))
+
 (defun forged-bow ()
   (let ((bow (random-weapon:generate-weapon 10 :bow))
         (effect-modifier  (make-instance 'basic-interaction-parameters:effect-parameters
@@ -1990,6 +1993,7 @@
           (forged-ring                (forged-ring))
           (forged-sword               (forged-sword))
           (forged-bow                 (forged-bow))
+          (forged-spear               (forged-spear))
           (forged-trap                (forged-trap)))
       ;; (game-event:register-for-end-turn forged-potion)
       ;; (game-event:register-for-end-turn forged-potion-cure-dmg)
@@ -2002,6 +2006,7 @@
       (add-to-inventory (ghost body) forged-ring)
       (add-to-inventory (ghost body) forged-bow)
       (add-to-inventory (ghost body) forged-sword)
+      (add-to-inventory (ghost body) forged-spear)
       (add-to-inventory (ghost body) forged-trap)
       (setf (movement-points (ghost body)) 10.0)
       (setf (magic-points    (ghost body)) 50.0)
