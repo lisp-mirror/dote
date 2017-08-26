@@ -848,10 +848,12 @@
    :maximum-color
    :sum-color
    :gradient-color
+   :gradient-color-equals
    :make-gradient-color
    :intensity
    :color
    :gradient
+   :gradient-equals
    :pick-color
    :add-color
    :make-gradient

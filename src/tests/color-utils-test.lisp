@@ -23,7 +23,7 @@
       (vec~
        (rgb->hsv* (vec 0.211 0.149 0.597))
        (vec 248.30357 0.7504188 0.597)))
-  (assert-true 
+  (assert-true
       (vec~
        (rgb->hsv* (vec 0.116 0.675 0.255))
        (vec 134.91951 0.8281481 0.675))))
@@ -31,12 +31,10 @@
 (deftest pick-color (color-utils-suite)
   (assert-equality #'vec4~
       (pick-color +rainbow-gradient+ 2.0)
-      §cffdd00ff)
+      §c0000ffff)
     (assert-equality #'vec4~
       (pick-color +rainbow-gradient+ -2.0)
-      §c00000ff)
+      §cffff00ff)
     (assert-equality #'vec4~
       (pick-color +rainbow-gradient+ 0.24)
-      (vec4 0.7272727 0.0 0.0 1.0)))
-
-
+      (vec4 1.0 0.2727273 0.0 1.0)))

@@ -16,8 +16,10 @@
 
 (in-package :quad-tree-test)
 
-(defsuite quadtree-suite (all-suite))
+(alexandria:define-constant +tmp-dir+ (concatenate 'string (test-dir) "tmp/")
+  :test #'string=)
 
+(defsuite quadtree-suite (all-suite))
 
 (deftest test-subdivision-aabb (quadtree-suite)
   (assert-equality
@@ -92,12 +94,18 @@
                                  (map 'vector #'color-utils:float->byte §cff00ffff))))
       pixmap)))
 
-
 (deftest query-subdivide-dump-test (quadtree-suite)
   (assert-true
-      (equalp
-       (pixmap:data (load-test-tga "data/quad.tga"))
-       (pixmap:data (test-quad-pixmap 5)))))
+      (let* ((pixmap    (test-quad-pixmap 5))
+             (reference (load-test-tga "data/quad.tga"))
+             (tmp-file-name (concatenate 'string +tmp-dir+ "quad-wrong.tga")))
+
+        (if (equalp (pixmap:data (load-test-tga "data/quad.tga"))
+                    (pixmap:data pixmap))
+            t
+            (progn
+              (save-pixmap pixmap tmp-file-name)
+              nil)))))
 
 (defun map-paths (aabb)
   (let ((quad (make-leaf-quad-tree (vec4 10.0 10.0 20.0 20.0) nil)))

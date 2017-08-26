@@ -272,6 +272,12 @@
   (defun make-gradient-color (intensity color)
     (make-instance 'gradient-color :intensity intensity :color color))
 
+  (defun gradient-color-equals (a b)
+    (and (epsilon= (intensity a)
+                   (intensity b))
+         (vec4~    (color a)
+                   (color b))))
+
   (defclass gradient ()
     ((colors
       :initform '()
@@ -282,6 +288,17 @@
     (make-load-form-saving-slots object
                                  :slot-names '(colors)
                                  :environment environment))
+
+  (defun gradient-equals (a b)
+    (if (alexandria:length= (colors a) (colors b))
+        (progn
+          (loop
+             for ca in (colors a)
+             for cb in (colors b) do
+               (when (not (gradient-color-equals ca cb))
+                 (return-from gradient-equals nil)))
+          t)
+        nil))
 
   (defmethod initialize-instance :after ((object gradient) &key &allow-other-keys)
      (let ((new-colors '())) ;; no same intensity
@@ -333,16 +350,16 @@
     (make-instance 'gradient :colors colors)))
 
 (alexandria:define-constant +rainbow-gradient+ (make-gradient
-                                                (make-gradient-color 1.0 §cffdd00ff)
-                                                (make-gradient-color 0.66 §c00ff00ff)
+                                                (make-gradient-color 0.0  §cffff00ff)
                                                 (make-gradient-color 0.33 §cff0000ff)
-                                                (make-gradient-color 0.0 §c00000ff))
-  :test #'(lambda (a b) (declare (ignore a b)) t))
+                                                (make-gradient-color 0.66 §c00ff00ff)
+                                                (make-gradient-color 1.0  §c0000ffff))
+  :test #'gradient-equals)
 
 (alexandria:define-constant +grayscale-gradient+ (make-gradient
                                                   (make-gradient-color 0.0 §c000000ff)
                                                   (make-gradient-color 1.0 §cffffffff))
-  :test #'(lambda (a b) (declare (ignore a b)) t))
+  :test #'gradient-equals)
 
 (alexandria:define-constant +standard-sky-sunny-color+ §c6ec0ffff :test #'vec4=)
 
@@ -355,4 +372,4 @@
                                                 (make-gradient-color (* 0.04167 20) §cf86161ff)
                                                 (make-gradient-color (* 0.04167 21) §cffa92fff)
                                                 (make-gradient-color (* 0.04167 24) §c000000ff))
-  :test #'(lambda (a b) (declare (ignore a b)) t))
+  :test #'gradient-equals)
