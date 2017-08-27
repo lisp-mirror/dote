@@ -1246,7 +1246,8 @@
    :qpick
    :qpop
    :qemptyp
-   :qfind))
+   :qfind
+   :qsize))
 
 (defpackage :stack
   (:use :cl)

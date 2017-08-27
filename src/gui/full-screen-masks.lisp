@@ -16,9 +16,13 @@
 
 (in-package :full-screen-masks)
 
-(define-constant +grid-size+ 50 :test  #'=)
+(define-constant +grid-size+      50              :test  #'=)
 
-(define-constant +burn-texture+ "burn-mask.tga" :test #' string=)
+(define-constant +burn-texture+   "burn-mask.tga" :test #'string=)
+
+(define-constant +burning-speed+  20              :test #'=)
+
+(define-constant +burning-delay+ 120              :test #'=)
 
 (alexandria:define-constant +burn-gradient+ (color-utils:make-gradient
                                              (color-utils:make-gradient-color 0.0  §c000000ff)
@@ -125,12 +129,15 @@
          (make-cell-visited* cell)
          (qpush queue cell))))))
 
-(defun update (grid)
+(defun update (grid &key (speed 200))
   (declare (optimize (safety 0) (debug 0) (speed 3)))
-  (let ((cells (grid-cells grid))
-        (queue (grid-queue grid)))
+  (declare (fixnum speed))
+  (let* ((cells (grid-cells grid))
+         (queue (grid-queue grid))
+         (qsize (qsize queue)))
+    (declare (fixnum qsize))
     (when (not (qemptyp queue))
-      (let* ((currents (loop repeat 20 collect (qpop queue))))
+      (let* ((currents (loop repeat (min qsize speed) collect (qpop queue))))
         (loop
            for current in currents
            when current do
@@ -163,7 +170,15 @@
   ((grid
     :initform (make-standard-grid +grid-size+)
     :initarg  :grid
-    :accessor grid)))
+    :accessor grid)
+   (burning-speed
+    :initform +burning-speed+
+    :initarg  :burning-speed
+    :accessor burning-speed)
+   (delay
+     :initform +burning-delay+
+     :initarg  :delay
+     :accessor delay)))
 
 (defmethod initialize-instance :after ((object burn-mask) &key &allow-other-keys)
   (with-accessors ((width width) (height height)
@@ -178,10 +193,17 @@
 
 (defmethod calculate :before ((object burn-mask) dt)
   (with-accessors ((grid           grid)
-                   (texture-object texture-object)) object
-    (update grid)
-    (draw texture-object grid)
-    (update-for-rendering texture-object)))
+                   (texture-object texture-object)
+                   (burning-speed burning-speed)
+                   (delay delay)) object
+    (declare (optimize (debug 0) (speed 3) (safety 0)))
+    (declare (fixnum delay))
+    (if (<= delay 0)
+        (progn
+          (update grid :speed burning-speed)
+          (draw texture-object grid)
+          (update-for-rendering texture-object))
+        (decf delay))))
 
 (defmethod render ((object burn-mask) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -217,11 +239,11 @@
   (every #'(lambda (a) (d> (cell-intensity a) 0.90))
          (matrix:data (grid-cells (grid object)))))
 
-(defun make-burn-mask ()
+(defun make-burn-mask (&optional (texture-file +burn-texture+))
   (let ((instance (make-instance 'burn-mask
                                  :width    (d *window-w*)
                                  :height   (d *window-h*)))
-        (texture  (texture:get-texture (res:get-resource-file +burn-texture+
+        (texture  (texture:get-texture (res:get-resource-file texture-file
                                                               +default-gui-resource+
                                                               :if-does-not-exists :error))))
     (texture:prepare-for-rendering texture)

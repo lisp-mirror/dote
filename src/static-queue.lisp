@@ -86,3 +86,7 @@
            :test  equal-function
            :start 0
            :end   (1- (static-queue-idx queue))))
+
+(defun qsize (queue)
+  (declare (optimize (safety 0) (debug 0) (speed 3)))
+  (static-queue-idx queue))
