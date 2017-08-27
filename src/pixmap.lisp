@@ -143,6 +143,10 @@
                               (the fixnum (round (d* (desired (the fixnum a)) mult))) 0 255))
        el))
 
+(defgeneric bits-pixel@ (object x y))
+
+(defgeneric (setf bits-pixel@) (color object x y))
+
 (defgeneric load-from-vector (object data))
 
 (defgeneric papply-kernel-ubvec4 (object kernel &key round-fn))
@@ -308,6 +312,17 @@
                (setf (elt data (truncate (/ i depth))) (alexandria:copy-array pixel)))))
     (h-mirror-matrix object)))
 
+(defun cristallize-bits (pixmap)
+  (with-accessors ((bits bits)) pixmap
+    (let ((v (misc:make-array-frame (length (bits pixmap))
+                                    0
+                                    'fixnum
+                                    t)))
+    (loop for i from 0 below (length v) do
+         (setf (elt v i) (elt bits i)))
+    (setf (bits pixmap) v)
+    pixmap)))
+
 (defmethod voronoize ((object pixmap) &key
                                         (size (width object))
                                         (tile-divisions (floor (/ (width object) 10)))
@@ -445,6 +460,43 @@
   (declare (pixmap object))
   (declare (fixnum x y))
   (setf (matrix-elt object y x) color))
+
+(declaim (inline %offset-bits))
+
+(defun %offset-bits (w x y)
+  (declare (optimize (safety 0) (debug 0) (speed 3)))
+  (declare (fixnum w x y))
+  (the fixnum (* 4 (+ (the fixnum (* w y)) x))))
+
+(defmethod bits-pixel@ ((object pixmap) x y)
+  "Color is an ubvec5"
+  (declare (optimize (safety 0) (debug 0) (speed 3)))
+  (declare (fixnum x y))
+  (with-accessors ((bits pixmap:bits) (width pixmap:width)) object
+    (declare (fixnum width))
+    (declare ((simple-array fixnum) bits))
+    (let* ((offset (%offset-bits width x y)))
+      (declare (fixnum offset))
+      (ubvec4 (elt bits      offset)
+              (elt bits (+ 1 offset))
+              (elt bits (+ 2 offset))
+              (elt bits (+ 3 offset))))))
+
+(defmethod (setf bits-pixel@) (color (object pixmap) x y)
+  "Color is an ubvec5"
+  (declare (optimize (safety 0) (debug 0) (speed 3)))
+  (declare (fixnum x y))
+  (declare (ubvec4 color))
+  (with-accessors ((bits pixmap:bits) (width pixmap:width)) object
+    (declare (fixnum width))
+    (declare ((simple-array fixnum) bits))
+    (let* ((offset (%offset-bits width x y)))
+      (declare (fixnum offset))
+      (setf (elt bits      offset)  (elt color 0)
+            (elt bits (+ 1 offset)) (elt color 1)
+            (elt bits (+ 2 offset)) (elt color 2)
+            (elt bits (+ 3 offset)) (elt color 3)))
+    object))
 
 (defmethod draw-normalized-coord-custom-conversion ((object pixmap) x y function conversion-fn)
   (declare (optimize (speed 3) (safety 0) (debug 0)))

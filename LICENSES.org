@@ -543,6 +543,14 @@
   https://creativecommons.org/licenses/by/3.0/
   Downloaded from: http://game-icons.net/
 
+- data/gui/default/burn-mask.tga
+  derived from work © Gaming4JC
+
+  release under https://creativecommons.org/publicdomain/zero/1.0/
+
+  according to
+  https://opengameart.org/content/old-time-3-islands-map
+
 - src/test/data/avatars/avatar0.tga
   derived from
   Licensed     under    CC-BY-3.0

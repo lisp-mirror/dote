@@ -1235,6 +1235,19 @@
    :q-sort
    :q-dbg-print))
 
+(defpackage :static-queue
+  (:use
+   :cl
+   :misc
+   :num)
+  (:export
+   :make-queue
+   :qpush
+   :qpick
+   :qpop
+   :qemptyp
+   :qfind))
+
 (defpackage :stack
   (:use :cl)
   (:nicknames :st)
@@ -1532,8 +1545,10 @@
    :depth
    :data
    :bits
+   :bits-pixel@
    :sync-data-to-bits
    :sync-bits-to-data
+   :cristallize-bits
    :voronoize
    :nrmse
    :dhash
@@ -3919,9 +3934,38 @@
    :message-window
    :make-message-box
    :make-message-box*
+   :add-quad-for-widget
    :progress-gauge
    :progress
    :make-splash-progress-gauge))
+
+(defpackage :full-screen-masks
+  (:use
+   :cl
+   :alexandria
+   :config
+   :constants
+   :ubvec4
+   :vec4
+   :misc
+   :num
+   :static-queue
+   :shaders-utils
+   :cl-gl-utils
+   :interfaces
+   :mesh-material
+   :identificable
+   :transformable
+   :entity
+   :camera
+   :game-state
+   :mesh
+   :gui-events
+   :gui
+   :widget)
+  (:shadowing-import-from :misc :shuffle :random-elt)
+  (:export
+   :make-burn-mask))
 
 (defpackage :billboard
   (:use :cl

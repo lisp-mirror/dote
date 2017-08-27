@@ -301,9 +301,10 @@
 (defmethod game-event:on-game-event ((object world) (event game-event:end-turn))
   (with-accessors ((main-state main-state)) object
     ;;(misc:dbg " end turn ~a ~a" (type-of object) (type-of event))
-    (remove-all-tooltips   object)
-    (remove-all-windows    object)
-    (remove-all-removeable object)
+    (remove-all-tooltips            object)
+    (remove-all-windows             object)
+    (remove-all-removeable          object)
+    (remove-all-removeable-from-gui object)
     ;;(remove-entity-if (gui object) #'(lambda (a) (typep a 'widget:message-window)))
     (incf (game-turn (main-state object)))
     (maphash #'(lambda (k v) (declare (ignore k)) (mesh:process-postponed-messages v))
@@ -383,6 +384,8 @@
 (defgeneric remove-all-windows (object))
 
 (defgeneric remove-all-removeable (object))
+
+(defgeneric remove-all-removeable-from-gui (object))
 
 (defgeneric activate-all-tooltips (object))
 
@@ -1027,6 +1030,11 @@
 
 (defmethod remove-all-removeable ((object world))
   (remove-entity-if (entities object)
+                    #'(lambda (a)
+                        (removeable-from-world-p a))))
+
+(defmethod remove-all-removeable-from-gui ((object world))
+  (remove-entity-if (gui object)
                     #'(lambda (a)
                         (removeable-from-world-p a))))
 
