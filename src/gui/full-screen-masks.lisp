@@ -129,7 +129,7 @@
          (make-cell-visited* cell)
          (qpush queue cell))))))
 
-(defun update (grid &key (speed 200))
+(defun update (grid &key (speed 200) (pick-random-p nil))
   (declare (optimize (safety 0) (debug 0) (speed 3)))
   (declare (fixnum speed))
   (let* ((cells (grid-cells grid))
@@ -137,7 +137,8 @@
          (qsize (qsize queue)))
     (declare (fixnum qsize))
     (when (not (qemptyp queue))
-      (let* ((currents (loop repeat (min qsize speed) collect (qpop queue))))
+      (let* ((currents (loop repeat (min qsize speed) collect
+                            (qpop queue :random pick-random-p))))
         (loop
            for current in currents
            when current do
@@ -178,7 +179,12 @@
    (delay
      :initform +burning-delay+
      :initarg  :delay
-     :accessor delay)))
+     :accessor delay)
+   (pick-random-p
+     :initform t
+     :initarg  :pick-random-p
+     :reader   pick-random-p
+     :writer   pick-random)))
 
 (defmethod initialize-instance :after ((object burn-mask) &key &allow-other-keys)
   (with-accessors ((width width) (height height)
@@ -195,12 +201,13 @@
   (with-accessors ((grid           grid)
                    (texture-object texture-object)
                    (burning-speed burning-speed)
-                   (delay delay)) object
+                   (delay delay)
+                   (pick-random-p pick-random-p)) object
     (declare (optimize (debug 0) (speed 3) (safety 0)))
     (declare (fixnum delay))
     (if (<= delay 0)
         (progn
-          (update grid :speed burning-speed)
+          (update grid :speed burning-speed :pick-random-p pick-random-p)
           (draw texture-object grid)
           (update-for-rendering texture-object))
         (decf delay))))

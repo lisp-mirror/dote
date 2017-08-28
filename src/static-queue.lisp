@@ -19,16 +19,6 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (alexandria:define-constant +queue-size+ 65536 :test #'=))
 
-(alexandria:define-constant +queue-pick-random+ t :test #'eq)
-
-(defparameter *queue* (make-array +queue-size+
-                                  :fill-pointer    nil
-                                  :adjustable      nil
-                                  :initial-element nil
-                                  :element-type      t))
-
-(defparameter *queue-idx* 0)
-
 (defstruct static-queue
   (container (make-array +queue-size+
                          :fill-pointer    nil
@@ -62,15 +52,12 @@
         val)
   (incf (the fixnum (static-queue-idx queue))))
 
-(defmacro qpick (queue)
-  (if +queue-pick-random+
-      `(random (the fixnum (static-queue-idx ,queue)))
-      0))
-
-(defun qpop (queue)
+(defun qpop (queue &key (random nil))
   (declare (optimize (safety 0) (debug 0) (speed 3)))
   (if (not (qemptyp queue))
-      (let ((elt-pos (qpick queue)))
+      (let ((elt-pos (if random
+                         (random (the fixnum (static-queue-idx queue)))
+                         0)))
         (prog1
             (aref (the (simple-vector 65536) (static-queue-container queue)) elt-pos)
           (%delete@ queue elt-pos)))
