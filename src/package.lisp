@@ -226,6 +226,7 @@
    :vector-empty-p
    :random-num-filled-vector
    :random-elt
+   :safe-random-elt
    :copy-multiply
    :list->array
    :list->simple-array
@@ -2645,7 +2646,8 @@
    :define-character
    :define-interaction
    :with-interaction-parameters
-   :with-interaction-parameters-file))
+   :with-interaction-parameters-file
+   :find-object-portrait-filename))
 
 (defpackage :player-messages-text
   (:use :cl
@@ -2894,6 +2896,13 @@
    :pclass-archer-p
    :pclass-wizard-p
    :pclass-healer-p
+   :status-poisoned-p
+   :status-terror-p
+   :status-berserk-p
+   :status-faint-p
+   :with-no-terror-status
+   :with-no-berserk-status
+   :with-no-faint-status
    :attack-spell-chance
    :actual-damage-points
    :actual-movement-points
@@ -2967,6 +2976,8 @@
    :weapon-type-bow-p
    :weapon-type-crossbow-p
    :available-spells-list
+   :available-spells-list-by-tag
+   :castable-spells-list-by-tag
    :calculate-influence
    :combined-power
    :tactical-plan
@@ -4286,15 +4297,21 @@
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:shadowing-import-from :sb-cga :rotate)
   (:export
+   :+spell-tag-damage+
+   :+spell-tag-heal+
+   :+spell-tag-remove-wall+
+   :+spell-tag-teleport+
    :db
    :clean-spell-db
    :load-spell-db
    :get-spell
    :remove-spell
+   :filter-spell-set
    :filter-spell-db
    :spell
    :spellp
    :level
+   :tags
    :use-custom-effects-p
    :attack-spell
    :attack-spell-p

@@ -3,6 +3,7 @@
 (define-spell (:vampire-3)
   :level                 10
   :element               :fire
+  :tags                  (:attack)
   :description          (_ "Steals maximum 30 dmg and poison enemy (to inflict damage a melee weapon must be worn).")
   :gui-texture           "misc/vampire-3.tga"
   :cost                  30.0

@@ -16,9 +16,9 @@
 
 (in-package :character)
 
-(alexandria:define-constant +max-inventory-slots-page+           3.0                    :test #'=)
+(define-constant +max-inventory-slots-page+           3.0                    :test #'=)
 
-(alexandria:define-constant +weight-for-half-capacity-inventory+ 20.0                   :test #'=)
+(define-constant +weight-for-half-capacity-inventory+ 20.0                   :test #'=)
 
 (defclass np-character (identificable interactive-entity entity-w-portrait m-tree)
   ((first-name
@@ -505,6 +505,10 @@
 
 (defgeneric available-spells-list (object))
 
+(defgeneric available-spells-list-by-tag (object tag))
+
+(defgeneric castable-spells-list-by-tag (object tag))
+
 (defgeneric calculate-influence (object))
 
 (defgeneric calculate-influence-weapon (object weapon-type))
@@ -526,7 +530,7 @@
     `(progn
        (defgeneric ,name-fn (object))
        (defmethod  ,name-fn ((object player-character))
-         (eq (player-class object) ,(alexandria:make-keyword name))))))
+         (eq (player-class object) ,(make-keyword name))))))
 
 (gen-player-class-test ranger)
 
@@ -537,6 +541,36 @@
 (gen-player-class-test wizard)
 
 (gen-player-class-test healer)
+
+(defmacro gen-player-status-test (status)
+  (let ((name-fn (format-fn-symbol t "status-~a-p" (symbol-name status))))
+    `(progn
+       (defgeneric ,name-fn (object))
+       (defmethod  ,name-fn ((object player-character))
+         (eq (character:status object)
+             ,(format-fn-symbol :interactive-entity "+status-~a+" status))))))
+
+(gen-player-status-test poisoned)
+
+(gen-player-status-test terror)
+
+(gen-player-status-test berserk)
+
+(gen-player-status-test faint)
+
+(defmacro gen-with-no-status (status)
+  (let ((name-macro    (format-fn-symbol t "with-no-~a-status" (symbol-name status)))
+        (name-accessor (format-fn-symbol t "status-~a-p"       (symbol-name status))))
+    `(defmacro ,name-macro ((character) &body body)
+       (let ((acc ',name-accessor))
+         `(and (not (,acc (entity:ghost ,character)))
+               ,@body)))))
+
+(gen-with-no-status terror)
+
+(gen-with-no-status berserk)
+
+(gen-with-no-status faint)
 
 (defmethod random-fill-slots ((object player-character) capital characteristics)
   (loop for charact in characteristics do
@@ -682,32 +716,32 @@
                    (right-hand right-hand)) object
     (when item
       (let ((item-id (id item)))
-         (cond
-           ((and (interactive-entity:ringp item)
-                 (ring object)
-                 (= item-id (id (ring object))))
-            'character:ring)
-           ((and (interactive-entity:armorp item)
-                 (armor object)
-                 (= item-id (id (armor object))))
-            'character:armor)
-           ((and (interactive-entity:elmp item)
-                 (elm object)
-                 (= item-id (id (elm object))))
-            'character:elm)
-           ((and (interactive-entity:shoesp item)
-                 (shoes object)
-                 (= item-id (id (shoes object))))
-            'character:shoes)
-           ((or (interactive-entity:weaponp item)
-                (interactive-entity:shieldp item))
-            (cond
-              ((and (left-hand object)
-                    (= item-id (id (left-hand object))))
-               'character:left-hand)
-              ((and (right-hand object)
-                    (= item-id (id (right-hand object))))
-               'character:right-hand))))))))
+        (cond
+          ((and (interactive-entity:ringp item)
+                (ring object)
+                (= item-id (id (ring object))))
+           'character:ring)
+          ((and (interactive-entity:armorp item)
+                (armor object)
+                (= item-id (id (armor object))))
+           'character:armor)
+          ((and (interactive-entity:elmp item)
+                (elm object)
+                (= item-id (id (elm object))))
+           'character:elm)
+          ((and (interactive-entity:shoesp item)
+                (shoes object)
+                (= item-id (id (shoes object))))
+           'character:shoes)
+          ((or (interactive-entity:weaponp item)
+               (interactive-entity:shieldp item))
+           (cond
+             ((and (left-hand object)
+                   (= item-id (id (left-hand object))))
+              'character:left-hand)
+             ((and (right-hand object)
+                   (= item-id (id (right-hand object))))
+              'character:right-hand))))))))
 
 (defmethod item->available-player-character-slot ((object player-character) item)
   (with-accessors ((left-hand  left-hand)
@@ -747,30 +781,30 @@
   nil)
 
 (defmethod weapon-type-short-range ((object player-character))
- (let* ((weapon       (worn-weapon object))
-        (weapon-type  (when weapon
-                        (cond
-                          ((can-cut-p weapon)
-                           :edge)
-                          ((can-smash-p weapon)
-                           :impact)
-                          ((mounted-on-pole-p weapon)
-                           :pole)
-                          (t
-                           nil)))))
-   weapon-type))
+  (let* ((weapon       (worn-weapon object))
+         (weapon-type  (when weapon
+                         (cond
+                           ((can-cut-p weapon)
+                            :edge)
+                           ((can-smash-p weapon)
+                            :impact)
+                           ((mounted-on-pole-p weapon)
+                            :pole)
+                           (t
+                            nil)))))
+    weapon-type))
 
 (defmethod weapon-type-long-range ((object player-character))
- (let* ((weapon       (worn-weapon object))
-        (weapon-type  (when weapon
-                        (cond
-                          ((bowp weapon)
-                           :bow)
-                          ((crossbowp weapon)
-                           :crossbow)
-                          (t
-                           nil)))))
-   weapon-type))
+  (let* ((weapon       (worn-weapon object))
+         (weapon-type  (when weapon
+                         (cond
+                           ((bowp weapon)
+                            :bow)
+                           ((crossbowp weapon)
+                            :crossbow)
+                           (t
+                            nil)))))
+    weapon-type))
 
 (defmacro gen-wear-weapon-of-type (&rest types)
   (with-gensyms (character weapon)
@@ -785,8 +819,16 @@
 
 (defmethod available-spells-list ((object player-character))
   ;;; TEST ;;;;
-  ;(spell:filter-spell-db #'(lambda (a) (> (spell:level a) (level object)))))
+  ;; (spell:filter-spell-db #'(lambda (a) (> (spell:level a) (level object)))))
   spell::*spells-db*)
+
+(defmethod available-spells-list-by-tag ((object player-character) tag)
+  (spell:filter-spell-set (available-spells-list object)
+                          #'(lambda (a) (not (find tag (spell:tags a))))))
+
+(defmethod castable-spells-list-by-tag ((object player-character) tag)
+  (spell:filter-spell-set (available-spells-list-by-tag object tag)
+                          #'(lambda (a) (> (spell:cost a) (current-magic-points object)))))
 
 (defmethod calculate-influence ((object player-character))
   (d+ (calculate-influence-weapon object (weapon-type object))
@@ -898,7 +940,7 @@
            (setf (thinker ,character) nil)
            ,@body
            (setf (thinker ,character) ,saved))
-        (progn ,@body))))
+         (progn ,@body))))
 
 ;; TODO add GOAP
 (defmethod tactical-plan ((object player-character) strategy-expert player-entity
@@ -917,15 +959,15 @@
 (defmethod tactical-plan ((object player-character) strategy-expert player-entity
                           (strategy-decision (eql +explore-strategy+)))
   (declare (ignore strategy-decision))
-  ;;(blackboard:strategy-decision strategy-expert)))
+  ;;(blackboard:strategy-decision strategy-expert)
   ;; TEST
-  ;; (with-accessors ((current-plan current-plan)) object
-  ;;   (let ((strategy (blackboard:strategy-decision strategy-expert)))
-  ;;     (declare (ignore strategy))
-  ;;     (setf current-plan (list planner:+move-action+))
-  ;;     (tactical-plan object strategy-expert player-entity nil))))
-  (setf (current-plan object) (list planner:+idle-action+))
-  (current-plan object))
+  (with-accessors ((current-plan current-plan)) object
+    (let ((strategy (blackboard:strategy-decision strategy-expert)))
+      (declare (ignore strategy))
+      (setf current-plan (list planner:+move-action+))
+      (tactical-plan object strategy-expert player-entity nil))))
+;; (setf (current-plan object) (list planner:+idle-action+))
+;; (current-plan object))
 
 (defmethod set-idle-plan ((object player-character))
   (misc:dbg "set idle plan")
@@ -981,8 +1023,8 @@
                             attack-spell-chance)
 
 (defmacro gen-make-player (player-class)
-  (alexandria:with-gensyms (char rest-capital)
-    `(defun ,(alexandria:format-symbol t "~@:(make-~a~)" player-class)
+  (with-gensyms (char rest-capital)
+    `(defun ,(format-symbol t "~@:(make-~a~)" player-class)
          (capital race
           &optional (charact nil) (slots '((strength (50 10))
                                            (stamina  (40 10))
@@ -995,46 +1037,46 @@
               (,rest-capital (random-fill-slots ,char capital slots)))
          (setf (damage-points ,char)   (d (truncate (* (stamina ,char) 0.5)))
                (movement-points ,char) (d (truncate (* (agility ,char) 0.5)))
-               (magic-points ,char) (d (truncate (/ (alexandria:lerp 0.1
-                                                                     (alexandria:lerp 0.5
-                                                                                      (smartness ,char)
-                                                                                      (empaty ,char))
-                                                                     (dexterity ,char))
+               (magic-points ,char) (d (truncate (/ (lerp 0.1
+                                                          (lerp 0.5
+                                                                (smartness ,char)
+                                                                (empaty ,char))
+                                                          (dexterity ,char))
                                                     3)))
                (dodge-chance ,char) (d (truncate (max 0 (- (agility ,char) (/ (weight ,char) 2)))))
-               (melee-attack-chance ,char) (alexandria:lerp 0.3 (strength ,char) (agility ,char))
-               (range-attack-chance ,char) (alexandria:lerp 0.1
-                                                            (dexterity ,char)
-                                                            (agility   ,char))
+               (melee-attack-chance ,char) (lerp 0.3 (strength ,char) (agility ,char))
+               (range-attack-chance ,char) (lerp 0.1
+                                                 (dexterity ,char)
+                                                 (agility   ,char))
                (melee-attack-damage ,char) (d (truncate (* (strength ,char) 0.25)))
                (range-attack-damage ,char) (d (truncate (* (dexterity ,char) 0.25)))
-               (unlock-chance ,char) (d (truncate (/ (alexandria:lerp 0.9
-                                                                   (agility ,char)
-                                                                   (dexterity ,char))
+               (unlock-chance ,char) (d (truncate (/ (lerp 0.9
+                                                           (agility ,char)
+                                                           (dexterity ,char))
 
-                                                  10)))
+                                                     10)))
                (deactivate-trap-chance ,char) (d (truncate
-                                                  (/ (alexandria:lerp 0.8
-                                                                      (agility ,char)
-                                                                      (dexterity ,char))
+                                                  (/ (lerp 0.8
+                                                           (agility ,char)
+                                                           (dexterity ,char))
                                                      10)))
                (reply-attack-chance ,char)  (d (truncate (/ (agility ,char) 5)))
                (ambush-attack-chance ,char) (d (truncate
-                                                (/ (alexandria:lerp 0.9
-                                                                    (agility ,char)
-                                                                    (strength ,char))
+                                                (/ (lerp 0.9
+                                                         (agility ,char)
+                                                         (strength ,char))
                                                    10)))
-               (spell-chance ,char) (d (truncate (/ (alexandria:lerp 0.9
-                                                                     (smartness ,char)
-                                                                     (empaty ,char))
+               (spell-chance ,char) (d (truncate (/ (lerp 0.9
+                                                          (smartness ,char)
+                                                          (empaty ,char))
                                                     3)))
-               (attack-spell-chance ,char) (d (truncate (/ (alexandria:lerp 0.9
-                                                                            (agility ,char)
-                                                                            (smartness ,char))
+               (attack-spell-chance ,char) (d (truncate (/ (lerp 0.9
+                                                                 (agility ,char)
+                                                                 (smartness ,char))
                                                            3)))
                (race ,char) race)
          (if (> ,rest-capital 0)
-             (,(alexandria:format-symbol t "~@:(make-~a~)" player-class)
+             (,(format-symbol t "~@:(make-~a~)" player-class)
                ,rest-capital race ,char slots)
              (progn
                (setf (current-magic-points    ,char) (magic-points ,char)
@@ -1244,7 +1286,7 @@
                                   :last-name                   (randomize-a-bit
                                                                 (fetch-last-name params))
                                   :portrait                    (texture:get-texture
-                                                                 (fetch-portrait params))
+                                                                (fetch-portrait params))
                                   :strength                    (randomize-a-bit
                                                                 (fetch-strength params))
                                   :stamina                     (randomize-a-bit

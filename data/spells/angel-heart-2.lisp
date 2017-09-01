@@ -2,6 +2,7 @@
 
 (define-spell (:angel-heart-2)
   :level                 10
+  :tags                  (:heal)
   :element               :fire
   :gui-texture           "cure/cure-2.tga"
   :cost                  50.0

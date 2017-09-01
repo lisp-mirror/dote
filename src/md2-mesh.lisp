@@ -202,8 +202,11 @@
        (let* ((,ghost (ghost ,object))
               (,chance (actual-reply-attack-chance ,ghost)))
          ;; TEST ;;;;;;;;;;;;,
-         (when (or t (and (not (entity:reply-attack-p ,attacked-by-entity))
-                          ( dice:pass-d100.0 ,chance)))
+         (when (or t
+                   (with-no-terror-status (,object)
+                     (with-no-terror-status (,object)
+                       (and (not (entity:reply-attack-p ,attacked-by-entity)) ; avoid 'ping pong'
+                            ( dice:pass-d100.0 ,chance)))))
            ;; attack!
            (game-state:with-world (,world ,state)
              (let ((,weapon-short-range (weapon-type-short-range ,ghost))
@@ -986,7 +989,7 @@
     (game-state:with-world (world state)
       (when (and (eq  (my-faction mesh) game-state:+npc-type+)
                  (eq  (my-faction mesh) (game-state:faction-turn state))
-                 (world:actions-queue-empty-p world)
+                 (world:actions-queue-empty-p world) ;; ensure one action at time
                  ghost)
         ;; TODO add a slot for the plan list and actuate the last
         (let ((action (first (tactical-plan ghost blackboard mesh nil))))
@@ -1010,7 +1013,7 @@
         (misc:dbg "has weapon? ~a"
                   (goap::has-weapon-inventory-or-worn-p blackboard object))
         (misc:dbg "has spell? ~a"
-                  (goap::has-enough-sp-p blackboard object)))))
+                  (goap::has-enough-sp-damage-p blackboard object)))))
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (with-accessors ((ghost ghost)
                    (state state)) object
@@ -1914,7 +1917,7 @@
     (clean-effects potion)))
 
 (defun forged-ring ()
-  (let ((ring (random-ring:generate-ring 10))
+  (let ((ring (random-ring:generate-ring 1))
         (effect-cause-berserk (make-instance 'basic-interaction-parameters:healing-effect-parameters
                                              :trigger
                                              basic-interaction-parameters:+effect-when-worn+

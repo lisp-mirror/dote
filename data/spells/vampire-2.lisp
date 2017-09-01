@@ -3,6 +3,7 @@
 (define-spell (:vampire-2)
   :level                 5
   :element               :fire
+  :tags                  (:attack)
   :description          (_ "Steals maximum 10 dmg (to inflict damage a melee weapon must be worn).")
   :gui-texture           "misc/vampire-2.tga"
   :cost                  10.0

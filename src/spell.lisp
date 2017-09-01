@@ -34,6 +34,14 @@
 (alexandria:define-constant +modifier-mean+             #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
   :test #'equalp)
 
+(alexandria:define-constant +spell-tag-damage+          :damage         :test #'eq)
+
+(alexandria:define-constant +spell-tag-heal+            :heal           :test #'eq)
+
+(alexandria:define-constant +spell-tag-remove-wall+     :remove-wall    :test #'eq)
+
+(alexandria:define-constant +spell-tag-teleport+        :teleport       :test #'eq)
+
 (defparameter *spells-db* '())
 
 (defun clean-spell-db ()
@@ -52,8 +60,11 @@
   (remove-spell (identifier spell))
   (push spell *spells-db*))
 
+(defun filter-spell-set (set remove-if-predicate)
+  (remove-if remove-if-predicate set))
+
 (defun filter-spell-db (remove-if-predicate)
-  (remove-if remove-if-predicate *spells-db*))
+  (filter-spell-set *spells-db* remove-if-predicate))
 
 (defun load-spell-db ()
   (let ((all-attack-spells (resources-utils:get-resource-files +attack-spell-dir+))
@@ -81,6 +92,10 @@
     :initform +target-self+
     :initarg  :target
     :accessor target)
+   (tags
+    :initform '()
+    :initarg  :tags
+    :accessor tags)
    (gui-texture
     :initform nil
     :initarg  :gui-texture
@@ -262,6 +277,8 @@
                                     :level                ,(%get-param params :level)
                                     :element              ,(or (%get-param params :element)
                                                                :fire)
+                                    :tags                 ',(mapcar #'alexandria:make-keyword
+                                                                   (%get-param params :tags))
 
                                     :identifier           ,id
                                     :target               +target-other+
@@ -306,6 +323,8 @@
     `(with-interaction-parameters
        (let ((,spell (make-instance 'spell
                                     :level                ,(%get-param params :level)
+                                    :tags                 ',(mapcar #'alexandria:make-keyword
+                                                                   (%get-param params :tags))
                                     :identifier           ,id
                                     :custom-description   ,(%get-param params
                                                                        :description

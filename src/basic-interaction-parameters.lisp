@@ -192,6 +192,8 @@
 
 (define-constant +duration-unlimited+          :unlimited                   :test #'eq)
 
+(define-constant +unknown-portratit-object+    "unknown-object.tga"         :test #'string=)
+
 (defun effect-unlimited-p (val)
   (not (numberp val)))
 
@@ -609,3 +611,12 @@
 (defmacro with-interaction-parameters (&body body)
   `(let ((*interaction-parameters* '()))
      ,@body))
+
+(defun find-object-portrait-filename (regex)
+  (let ((res (misc:safe-random-elt (remove-if #'(lambda (a) (not (cl-ppcre:scan regex a)))
+                                              (res:get-resource-files
+                                               +default-gui-inventory-items+)
+                                              :key #'uiop:native-namestring))))
+    (or res
+        (res:get-resource-file +unknown-portratit-object+
+                               +default-gui-inventory-items+))))

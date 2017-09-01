@@ -3,6 +3,7 @@
 (define-spell (:teleport-3)
   :level                 10
   :element               :fire
+  :tags                  (:teleport)
   :description           (_ "Teleport in a random location with maximum radius of ~27 tiles.")
   :gui-texture           "misc/teleport-3.tga"
   :cost                  30.0

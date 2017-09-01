@@ -468,8 +468,9 @@
   https://creativecommons.org/licenses/by-sa/3.0/
 
 - data/gui/default/inventory/*
+  derived from © 2015 Henrique Lazarini (a.k.a.: Ails)
   according to http://opengameart.org/content/496-pixel-art-icons-for-medievalfantasy-rpg
-  2015 Henrique Lazarini (a.k.a.: Ails) released under CC0 1.0
+  released under CC0 1.0
   https://creativecommons.org/publicdomain/zero/1.0/
 
 - data/gui/default/message-16-error.tga

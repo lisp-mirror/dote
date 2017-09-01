@@ -49,7 +49,7 @@
    (reply-attack
     :writer   (setf reply-attack)
     :reader   reply-attack-p
-    :initarg  :attacked-by-entity
+    :initarg  :reply-attack-p
     :initform nil
     :type     entity)
    (state

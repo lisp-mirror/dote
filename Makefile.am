@@ -1548,6 +1548,7 @@ data/gui/default/inventory/trap-7.tga                    \
 data/gui/default/inventory/trap-8.tga                    \
 data/gui/default/inventory/trap-9.tga                    \
 data/gui/default/inventory/trap-10.tga                   \
+data/gui/default/inventory/unknown-object.tga            \
 data/gui/default/drop-overlay.tga                        \
 data/gui/default/padlock-overlay.tga                     \
 data/gui/default/splash-progress-gauge.tga               \

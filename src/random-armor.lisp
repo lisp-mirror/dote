@@ -307,10 +307,7 @@
 (defun fill-character-plist (character interaction armor-level)
   (let* ((regex          (regexp-file-portrait interaction +type-name+ armor-level))
          (names-filename (build-file-names-db +type-name+ armor-level))
-         (portrait-file  (random-elt (remove-if #'(lambda (a) (not (cl-ppcre:scan regex a)))
-                                                (res:get-resource-files
-                                                 +default-gui-inventory-items+)
-                                                :key #'uiop:native-namestring))))
+         (portrait-file  (find-object-portrait-filename regex)))
     (n-setf-path-value character (list +portrait+) (uiop:native-namestring portrait-file))
     (random-names:load-db* +armors-names-resource+ names-filename)
     (n-setf-path-value character (list +first-name+) (random-names:generate))

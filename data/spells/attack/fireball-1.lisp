@@ -2,6 +2,7 @@
 
 (define-attack-spell (:fireball-1)
   :level                 1
+  :tags                  (:damage)
   :element               :fire
   :gui-texture           "attack/firecircle.tga"
   :cost                  2.0

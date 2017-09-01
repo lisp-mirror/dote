@@ -333,8 +333,14 @@
   (map-into (misc:make-array-frame size max (type-of max) t)
             #'(lambda () (num:lcg-next-upto max))))
 
-(defmacro random-elt (seq)
-  `(elt ,seq (num:lcg-next-upto (length ,seq))))
+(definline random-elt (seq)
+  (elt seq (num:lcg-next-upto (length seq))))
+
+(defun safe-random-elt (seq)
+  "note: values nil if (or (null seq) (= (length seq) 0))"
+  (and seq
+       (= (length seq) 0)
+       (elt seq (num:lcg-next-upto (length seq)))))
 
 (defun make-fresh-list (size &optional (el nil))
   (map-into (make-list size)

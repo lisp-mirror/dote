@@ -3,6 +3,7 @@
 (define-attack-spell (:firebolt-2)
   :level                 5
   :element               :fire
+  :tags                  (:damage)
   :gui-texture           "attack/firearrow-lvl2.tga"
   :cost                  5.0
   :visual-effect-self    nil

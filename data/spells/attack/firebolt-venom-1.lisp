@@ -3,6 +3,7 @@
 (define-attack-spell (:firebolt-venom-1)
   :level                 1
   :element               :fire
+  :tags                  (:damage)
   :gui-texture           "attack/firearrow-venom-1.tga"
   :cost                  7.0
   :visual-effect-self    nil

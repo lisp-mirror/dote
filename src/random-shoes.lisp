@@ -155,10 +155,7 @@
 
 (defun fill-character-plist (character shoes-level)
   (let* ((regex          (regexp-file-portrait shoes-level))
-         (portrait-file  (random-elt (remove-if #'(lambda (a) (not (cl-ppcre:scan regex a)))
-                                                (res:get-resource-files
-                                                 +default-gui-inventory-items+)
-                                                :key #'uiop:native-namestring))))
+         (portrait-file  (find-object-portrait-filename regex)))
     (n-setf-path-value character (list +portrait+) (uiop:native-namestring portrait-file))
     (n-setf-path-value character (list +last-name+)  "")
     (n-setf-path-value character (list +first-name+) +type-name+)))

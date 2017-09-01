@@ -64,11 +64,15 @@
                       &optional
                         (shield-level nil)
                         (armor-level  nil)
-                        (ambush       nil))
+                        (ambush       nil)
+                        (berserkp     nil))
   (if (pass-d100.0 (max (d- (d+ attack-chance bonus-attack-chance)
                             dodge-chance)
                         0.0))
-      (let* ((actual-shield-level (and shield-level
+      (let* ((actual-attack-dmg   (if berserkp
+                                      (d+ attack-dmg (d* 0.5 attack-dmg))
+                                      attack-dmg))
+             (actual-shield-level (and shield-level
                                        (if ambush
                                            (max 0.0 (d- shield-level 1.0))
                                            shield-level)))
@@ -76,7 +80,7 @@
                                       (if ambush
                                           (max 0.0 (d- armor-level 1.0))
                                           armor-level)))
-             (gaussian-fn (attack-gaussian-fn attack-dmg
+             (gaussian-fn (attack-gaussian-fn actual-attack-dmg
                                               bonus-attack-dmg
                                               weapon-level
                                               actual-shield-level
@@ -169,11 +173,12 @@
          (max-dist-atk (if (eq weapon-type :pole)
                            +weapon-pole-range+
                            +weapon-melee-range+)))
-    (and (mesh:can-use-movement-points-p attacker :minimum +attack-melee-cost+)
-         (map-utils:facingp (mesh:calculate-cost-position attacker)
-                            (entity:dir attacker)
-                            (mesh:calculate-cost-position defender)
-                            :max-distance max-dist-atk))))
+    (character:with-no-terror-status (attacker)
+      (and (mesh:can-use-movement-points-p attacker :minimum +attack-melee-cost+)
+           (map-utils:facingp (mesh:calculate-cost-position attacker)
+                              (entity:dir attacker)
+                              (mesh:calculate-cost-position defender)
+                              :max-distance max-dist-atk)))))
 
 (defun long-range-attack-possible-p (attacker defender)
   (let* ((ghost-atk    (entity:ghost attacker))
@@ -187,10 +192,11 @@
                           0.0)))
          (range-valid-p (range-weapon-valid-p attacker defender weapon-type))
          (visiblep      (able-to-see-mesh:other-visible-p attacker defender)))
-    (and (> cost 0.0)
-         range-valid-p
-         visiblep
-         (mesh:can-use-movement-points-p attacker :minimum cost))))
+    (character:with-no-terror-status (attacker)
+      (and (> cost 0.0)
+           range-valid-p
+           visiblep
+           (mesh:can-use-movement-points-p attacker :minimum cost)))))
 
 (defun launch-attack-spell-possible-p (attacker defender)
   (when-let* ((ghost-atk     (entity:ghost attacker))
@@ -201,9 +207,10 @@
     ;; the first and the second of the following checks are useless as
     ;; we  are  using when-let*,  but  harmless  and, moreover,  helps
     ;; readability.
-    (and range-valid-p
-         visiblep
-         (mesh:can-use-spell-points-p attacker :minimum cost))))
+    (character:with-no-terror-status (attacker)
+      (and range-valid-p
+           visiblep
+           (mesh:can-use-spell-points-p attacker :minimum cost)))))
 
 (defun send-attack-melee-event (attacker defender)
   (let* ((weapon-type  (character:weapon-type-short-range (entity:ghost attacker)))
@@ -277,11 +284,12 @@
                                (character:level (character:right-hand ghost-atk)))
                               (t
                                nil)))
-              (dodge-chance         (character:actual-dodge-chance ghost-defend))
-              (ambushp              (and (vec~ (entity:dir attacker)
-                                               (entity:dir defender))
-                                         (pass-d100.0 (character:actual-ambush-attack-chance
-                                                       ghost-atk)))))
+              (dodge-chance  (character:actual-dodge-chance ghost-defend))
+              (ambushp       (and (vec~ (entity:dir attacker)
+                                        (entity:dir defender))
+                                  (pass-d100.0 (character:actual-ambush-attack-chance
+                                                ghost-atk))))
+              (berserkp      (character:status-berserk-p ghost-atk)))
          (if weapon-type
              (let ((dmg (attack-damage attack-dmg bonus-attack-dmg
                                        attack-chance bonus-attack-chance
@@ -289,7 +297,8 @@
                                        dodge-chance
                                        shield-level
                                        armor-level
-                                       ambushp)))
+                                       ambushp
+                                       berserkp)))
                (if dmg
                    (values dmg ambushp)
                    (values nil nil))))))
@@ -491,6 +500,7 @@
                                                  (entity:dir defender))
                                            (pass-d100.0 (character:actual-ambush-attack-chance
                                                          ghost-atk))))
+                (berserkp      (character:status-berserk-p ghost-atk))
                 (actual-attack-chance (actual-chance-long-range-attack attacker defender)))
            (if weapon-type
                (let ((dmg (attack-damage attack-dmg 0.0
@@ -499,7 +509,8 @@
                                          dodge-chance
                                          shield-level
                                          armor-level
-                                         ambushp)))
+                                         ambushp
+                                         berserkp)))
                  (if dmg
                      (values dmg ambushp)
                      (values nil nil))))))
@@ -682,7 +693,8 @@
              defender)
     (let ((spell-loaded (character:spell-loaded (entity:ghost attacker))))
       (if spell-loaded
-          (if (range-spell-valid-p attacker defender spell-loaded)
+          (if (character:with-no-terror-status (attacker)
+                (range-spell-valid-p attacker defender spell-loaded))
               ;; enqueue is totally useless here but keep it for congruence with 'attack-spell'
               (action-scheduler:with-enqueue-action-and-send-remove-after
                   (world action-scheduler:launch-spell-action)

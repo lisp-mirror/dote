@@ -460,6 +460,43 @@
     (or (character:weapon-type ghost)
         (character:find-item-in-inventory-if ghost #'interactive-entity:weaponp))))
 
-(defun has-enough-sp-p (strategy-expert entity)
+(defun %has-enough-sp-p (entity tag)
+  (character:castable-spells-list-by-tag (entity:ghost entity) tag))
+
+(defun has-enough-sp-heal-p (strategy-expert entity)
   (declare (ignore strategy-expert))
-  (character:available-spells-list (entity:ghost entity)))
+  (%has-enough-sp-p entity spell:+spell-tag-heal+))
+
+(defun has-enough-sp-damage-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (%has-enough-sp-p entity spell:+spell-tag-damage+))
+
+(defun has-enough-sp-break-wall-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (%has-enough-sp-p entity spell:+spell-tag-remove-wall+))
+
+(defun has-enough-sp-teleport-break-wall-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (%has-enough-sp-p entity spell:+spell-tag-teleport+))
+
+
+;; TOSO
+(defun is-there-escape-way-p  (strategy-expert entity)
+  (declare (ignore strategy-expert entity))
+  nil)
+
+
+(defmacro gen-is-status-tests (status)
+  (let ((name-fn      (format-fn-symbol t "is-status-~a-p"       (symbol-name status)))
+        (name-test-fn (format-fn-symbol :character "status-~a-p" (symbol-name status))))
+    `(defun  ,name-fn (strategy-expert entity)
+       (declare (ignore strategy-expert))
+       (,name-test-fn (entity:ghost entity)))))
+
+(gen-is-status-tests poisoned)
+
+(gen-is-status-tests terror)
+
+(gen-is-status-tests berserk)
+
+(gen-is-status-tests faint)
