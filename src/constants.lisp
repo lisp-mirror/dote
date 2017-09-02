@@ -32,6 +32,8 @@
 
 (define-constant +maximum-map-size+                 256.0              :test #'=)
 
+(define-constant +debug-map-size+                    16.0              :test #'=)
+
 (define-constant +minimium-map-size+                 32.0              :test #'=)
 
 (define-constant +maximum-level-difficult+           10.0              :test #'=)
@@ -232,6 +234,8 @@
 
 (define-constant +explore-planner-dir+             '("ai" "planner" "explore")    :test #'equalp)
 
+(define-constant +retreat-planner-dir+             '("ai" "planner" "retreat")    :test #'equalp)
+
 (define-constant +mesh-placeholder-file+           "placeholder.lsys"             :test #'string=)
 
 (define-constant +gui-static-text-delim+           "§"                            :test #'string=)
@@ -282,3 +286,7 @@
 (define-constant +explore-strategy+               :explore                        :test #'eq)
 
 (define-constant +attack-strategy+                :attack                         :test #'eq)
+
+(define-constant +defend-strategy+                :defend                         :test #'eq)
+
+(define-constant +retreat-strategy+               :retreat                        :test #'eq)

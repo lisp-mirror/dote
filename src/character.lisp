@@ -947,7 +947,13 @@
                           (strategy-decision (eql nil)))
   (declare (ignore strategy-decision))
   ;;(blackboard:strategy-decision strategy-expert)))
-  ;; TEST
+  ;; TEST ;;;;;;;;;;;;;;;;;;;;;;;
+  ;; (with-accessors ((current-plan current-plan)) object
+  ;;   (let* ((planner-file (goap:find-planner-file object +attack-strategy+))
+  ;;          (planner      (goap:load-planner-file planner-file)))
+  ;;     (misc:dbg "NEW current plan ~a"
+  ;;               (goap:build-plan planner strategy-expert player-entity))))
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (with-accessors ((current-plan current-plan)) object
     (if current-plan
         current-plan
@@ -968,6 +974,17 @@
       (tactical-plan object strategy-expert player-entity nil))))
 ;; (setf (current-plan object) (list planner:+idle-action+))
 ;; (current-plan object))
+
+(defmethod tactical-plan ((object player-character) strategy-expert player-entity
+                          (strategy-decision (eql +attack-strategy+)))
+  ;; TEST
+  (with-accessors ((current-plan current-plan)) object
+    (let* ((planner-file (goap:find-planner-file object strategy-decision))
+           (planner      (goap:load-planner-file planner-file)))
+      (setf current-plan (goap:build-plan planner strategy-expert player-entity))
+      (misc:dbg "NEW current new plan ~a" current-plan)
+      (setf (current-plan object) (list planner:+idle-action+))
+      (tactical-plan object strategy-expert player-entity nil))))
 
 (defmethod set-idle-plan ((object player-character))
   (misc:dbg "set idle plan")

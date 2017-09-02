@@ -738,8 +738,9 @@
 (defun generate-map (body)
   (let ((offset 0))
      (need-phrase (body (:map :with :size) 0)
-       (let* ((size (keyword-to-int  '(:tiny :small :medium :large)
-                                     (list (truncate +minimium-map-size+)        ; 32
+       (let* ((size (keyword-to-int  '(:micro :tiny :small :medium :large)
+                                     (list (truncate +debug-map-size+)           ; 16
+                                           (truncate +minimium-map-size+)        ; 32
                                            (truncate (* +minimium-map-size+ 2))  ; 64
                                            (truncate (* +minimium-map-size+ 4))  ; 128
                                            (truncate (* +minimium-map-size+ 8))) ; 256

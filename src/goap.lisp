@@ -387,11 +387,15 @@
   (if (symbolp sym)
       (let ((name (symbol-name sym)))
         (if (char= (elt name 0) #\!)
-            `(lambda () (not (funcall (symbol-function ',(misc:format-fn-symbol t "~a"
-                                                                                (subseq name
-                                                                                        1))))))
+            `(lambda (strategy-expert player-entity)
+               (not (funcall (symbol-function ',(misc:format-fn-symbol t
+                                                                       "~a"
+                                                                       (subseq name 1)))
+                             strategy-expert player-entity)))
             `(symbol-function ',sym)))
       sym))
+
+(defparameter *planner* nil)
 
 (defmacro define-planner (&body forms)
   (labels ((get-param (params a &optional (default nil))
@@ -416,7 +420,37 @@
          (progn
            ,@(loop for action in forms collect
                   (build-action planner action)))
-         ,planner))))
+        (setf *planner* ,planner)))))
+
+(defun find-planner-file (character strategy)
+  (assert (typep character 'character:player-character))
+  (assert (find strategy
+                (list +explore-strategy+
+                      +defend-strategy+
+                      +retreat-strategy+
+                      +attack-strategy+)))
+  (let* ((resource-dir (cond
+                         ((eq strategy +explore-strategy+)
+                          +explore-planner-dir+)
+                         ((eq strategy +defend-strategy+)
+                          +defend-planner-dir+)
+                         ((eq strategy +retreat-strategy+)
+                          +retreat-planner-dir+)
+                         ((eq strategy +attack-strategy+)
+                          +attack-planner-dir+)))
+         (file-name      (string-downcase (symbol-name (character:player-class character))))
+         (file-full-path (text-utils:strcat file-name planner:+planner-file-extension+)))
+    (res:get-resource-file file-full-path resource-dir)))
+
+(defun load-planner-file (file)
+  (with-load-forms-in-var (*planner* out file)
+    (let ((goal-state  (make-instance 'planner-state
+                                      :variables (list (cons :curb-threat  t))))
+          (start-state (make-instance 'planner-state
+                                      :variables (list (cons :curb-threat  nil)))))
+      (setf (goal-state    out) goal-state
+            (current-state out) start-state)
+      out)))
 
 (defun too-low-health-p (strategy-expert entity)
   (declare (ignore strategy-expert))
@@ -475,16 +509,9 @@
   (declare (ignore strategy-expert))
   (%has-enough-sp-p entity spell:+spell-tag-remove-wall+))
 
-(defun has-enough-sp-teleport-break-wall-p (strategy-expert entity)
+(defun has-enough-sp-teleport-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (%has-enough-sp-p entity spell:+spell-tag-teleport+))
-
-
-;; TOSO
-(defun is-there-escape-way-p  (strategy-expert entity)
-  (declare (ignore strategy-expert entity))
-  nil)
-
 
 (defmacro gen-is-status-tests (status)
   (let ((name-fn      (format-fn-symbol t "is-status-~a-p"       (symbol-name status)))
@@ -500,3 +527,8 @@
 (gen-is-status-tests berserk)
 
 (gen-is-status-tests faint)
+
+;; TODO
+(defun is-there-escape-way-p  (strategy-expert entity)
+  (declare (ignore strategy-expert entity))
+  nil)

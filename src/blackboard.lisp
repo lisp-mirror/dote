@@ -389,7 +389,8 @@
 ;; TODO use decision tree
 (defmethod strategy-decision ((object blackboard))
   (declare (ignore object))
-  +explore-strategy+)
+  ;; +explore-strategy+
+  +attack-strategy+)
 
 (defmethod set-tile-visited ((object blackboard) x y)
   (call-next-method object

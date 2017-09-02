@@ -26,3 +26,5 @@
 (define-constant +go-to-attack-pos-action+ :go-to-attack-pos :test #'eq)
 
 (define-constant +interrupted-action+      :interrupt        :test #'eq)
+
+(define-constant +planner-file-extension+  ".lisp"           :test #'string=)

@@ -554,3 +554,11 @@
 
 (definline make-null-pointer ()
   (cffi:null-pointer))
+
+;; plugins, sort of
+
+(defmacro with-load-forms-in-var ((special-var output-var file) &body body)
+  `(let* ((,special-var nil))
+     (load ,file)
+     (let ((,output-var ,special-var))
+       ,@body)))

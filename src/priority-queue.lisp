@@ -157,7 +157,8 @@
                                   :key   (key-function object)
                                   :test  (equal-function object)))
             (old-length (length heap)))
-        (if (= pos 1)
+        (if (and pos
+                 (= pos 1))
             (pop-element object)
             (when pos
               (misc:swap (elt heap pos)

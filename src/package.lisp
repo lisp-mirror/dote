@@ -47,6 +47,7 @@
    :+wall-decoration-y+
    :+gravity+
    :+maximum-map-size+
+   :+debug-map-size+
    :+minimium-map-size+
    :+maximum-level-difficult+
    :+quad-tree-leaf-size+
@@ -143,6 +144,7 @@
    :+attack-planner-dir+
    :+defend-planner-dir+
    :+explore-planner-dir+
+   :+retreat-planner-dir+
    :+mesh-placeholder-file+
    :+gui-static-text-delim+
    :+gui-static-text-nbsp+
@@ -167,7 +169,9 @@
    :+weapon-bow-range+
    :+weapon-crossbow-range+
    :+explore-strategy+
-   :+attack-strategy+))
+   :+attack-strategy+
+   :+defend-strategy+
+   :+retreat-strategy+))
 
 (defpackage :profiling
   (:use :cl)
@@ -263,7 +267,8 @@
    :gen-trivial-plist-predicate
    :gen-trivial-plist-get
    :gen-trivial-plist-gets
-   :make-null-pointer))
+   :make-null-pointer
+   :with-load-forms-in-var))
 
 (defpackage :base64
   (:use :cl
@@ -2824,6 +2829,7 @@
         :constants
         :resources-utils)
   (:export
+   :+planner-file-extension+
    :+idle-action+
    :+move-action+
    :+faint-action+
@@ -4608,7 +4614,9 @@
    :add-action
    :find-action
    :build-plan
-   :define-planner))
+   :define-planner
+   :find-planner-file
+   :load-planner-file))
 
 (defpackage :keyboard-config
   (:use :cl

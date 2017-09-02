@@ -59,7 +59,7 @@
 
 (defun strcat (&rest chunks)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
-  (the string (apply #'concatenate (nconc (list 'string) chunks))))
+  (the string (apply #'concatenate (concatenate 'list (list 'string) chunks))))
 
 (defun strip-prefix (string prefix)
   (let ((re (strcat "^" prefix)))

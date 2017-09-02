@@ -1013,7 +1013,9 @@
         (misc:dbg "has weapon? ~a"
                   (goap::has-weapon-inventory-or-worn-p blackboard object))
         (misc:dbg "has spell? ~a"
-                  (goap::has-enough-sp-damage-p blackboard object)))))
+                  (goap::has-enough-sp-damage-p blackboard object))
+        (misc:dbg "planner-file ~a"
+                  (goap:load-planner-file (goap:find-planner-file (ghost object) +attack-strategy+))))))
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (with-accessors ((ghost ghost)
                    (state state)) object
@@ -2018,7 +2020,7 @@
       (add-to-inventory (ghost body) forged-sword)
       (add-to-inventory (ghost body) forged-spear)
       (add-to-inventory (ghost body) forged-trap)
-      (setf (movement-points (ghost body)) 10.0)
+      (setf (movement-points (ghost body)) 100.0)
       (setf (magic-points    (ghost body)) 50.0)
       ;; note:   wear-item-event  will   not  be   catched  as   the
       ;; registration happens when the entity is added to world
