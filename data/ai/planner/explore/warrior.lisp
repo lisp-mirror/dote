@@ -12,7 +12,7 @@
          :cost                  80)
   (:name :launch-cure-spell
          :preconditions         ()
-         :context-preconditions (has-enough-sp-heal-p)
+         :context-preconditions (has-enough-sp-heal-p !enough-health-p)
          :effects               ((:curb-threat t))
          :cost                  5)
   (:name :idle

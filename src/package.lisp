@@ -2461,12 +2461,12 @@
    :register-for-other-interaction-event
    :unregister-for-other-interaction-event
    :propagate-other-interaction-event
-   :game-idle-terminated-event
-   :register-for-game-idle-terminated-event
-   :unregister-for-game-idle-terminated-event
-   :propagate-game-idle-terminated-event
-   :send-game-idle-terminated-event
-   :with-remove-idle-character-plan
+   :game-interrupt-terminated-event
+   :register-for-game-interrupt-terminated-event
+   :unregister-for-game-interrupt-terminated-event
+   :propagate-game-interrupt-terminated-event
+   :send-game-interrupt-terminated-event
+   :with-remove-interrupt-character-plan
    ;;;; action
    :game-action-terminated
    :action-id
@@ -2477,8 +2477,8 @@
    :with-send-action-terminated
    :with-send-action-terminated-assertion
    :with-send-action-terminated-check-type
-   :with-send-action-and-idle-terminated
-   :with-send-action-and-idle-terminated-check-type
+   :with-send-action-and-interrupt-terminated
+   :with-send-action-and-interrupt-terminated-check-type
    ;;;; utils
    :check-event-targeted-to-me
    :check-event-originated-by-me))
@@ -2831,9 +2831,9 @@
   (:export
    :+planner-file-extension+
    :+idle-action+
+   :+interrupt-action+
    :+move-action+
    :+faint-action+
-   :+interrupted-action+
    :+go-to-attack-pos-action+))
 
 (defpackage :character
@@ -2988,9 +2988,9 @@
    :combined-power
    :elaborate-current-tactical-plan
    :with-no-thinking
-   :set-idle-plan
-   :unset-idle-plan
-   :has-idle-plan-p
+   :set-interrupt-plan
+   :unset-interrupt-plan
+   :has-interrupt-plan-p
    :disgregard-tactical-plan
    :pop-action-plan))
 

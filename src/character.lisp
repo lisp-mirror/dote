@@ -518,11 +518,11 @@
 (defgeneric elaborate-current-tactical-plan (object strategy-expert player-entity
                                              strategy-decision))
 
-(defgeneric has-idle-plan-p (object))
+(defgeneric has-interrupt-plan-p (object))
 
-(defgeneric set-idle-plan (object))
+(defgeneric set-interrupt-plan (object))
 
-(defgeneric unset-idle-plan (object))
+(defgeneric unset-interrupt-plan (object))
 
 (defgeneric disgregard-tactical-plan (object))
 
@@ -967,17 +967,17 @@
         (misc:dbg "NEW current new plan ~a" current-plan)
         (elaborate-current-tactical-plan object strategy-expert player-entity nil))))
 
-(defmethod set-idle-plan ((object player-character))
-  (misc:dbg "set idle plan")
-  (setf (current-plan object) (list planner:+idle-action+)))
+(defmethod set-interrupt-plan ((object player-character))
+  (misc:dbg "set interrupt plan")
+  (setf (current-plan object) (list planner:+interrupt-action+)))
 
-(defmethod unset-idle-plan ((object player-character))
+(defmethod unset-interrupt-plan ((object player-character))
   (disgregard-tactical-plan object))
 
-(defmethod has-idle-plan-p ((object player-character))
+(defmethod has-interrupt-plan-p ((object player-character))
   (with-accessors ((current-plan current-plan)) object
     (and current-plan
-         (eq (elt current-plan 0) planner:+idle-action+))))
+         (eq (elt current-plan 0) planner:+interrupt-action+))))
 
 (defmethod disgregard-tactical-plan ((object player-character))
   (with-accessors ((current-plan current-plan)) object

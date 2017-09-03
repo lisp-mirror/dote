@@ -16,8 +16,9 @@
 
 (in-package :planner)
 
-
 (define-constant +idle-action+             :idle             :test #'eq)
+
+(define-constant +interrupt-action+        :interrupt        :test #'eq)
 
 (define-constant +move-action+             :move             :test #'eq)
 

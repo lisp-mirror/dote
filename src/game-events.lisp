@@ -443,16 +443,16 @@
                                                   :id-origin      (identificable:id origin)
                                                   :id-destination (identificable:id dest))))
 
-(defevent game-idle-terminated-event () ())
+(defevent game-interrupt-terminated-event () ())
 
-(defun send-game-idle-terminated-event ()
-  (propagate-game-idle-terminated-event (make-instance 'game-idle-terminated-event)))
+(defun send-game-interrupt-terminated-event ()
+  (propagate-game-interrupt-terminated-event (make-instance 'game-interrupt-terminated-event)))
 
-(defmacro with-remove-idle-character-plan (&body body)
+(defmacro with-remove-interrupt-character-plan (&body body)
   `(progn
      ,@body
      ;; remove action form-queue
-     (game-event:send-game-idle-terminated-event)))
+     (game-event:send-game-interrupt-terminated-event)))
 
 ;;;; game-actions
 
@@ -496,12 +496,12 @@
          (game-event:with-send-action-terminated-assertion (,check)
            ,@body)))))
 
-(defmacro with-send-action-and-idle-terminated (&body body)
+(defmacro with-send-action-and-interrupt-terminated (&body body)
   `(game-event:with-send-action-terminated
-     (game-event:with-remove-idle-character-plan
+     (game-event:with-remove-interrupt-character-plan
        ,@body)))
 
-(defmacro with-send-action-and-idle-terminated-check-type ((world action-type) &body body)
+(defmacro with-send-action-and-interrupt-terminated-check-type ((world action-type) &body body)
   `(game-event:with-send-action-terminated-check-type (,world ,action-type)
-     (game-event:with-remove-idle-character-plan
+     (game-event:with-remove-interrupt-character-plan
        ,@body)))

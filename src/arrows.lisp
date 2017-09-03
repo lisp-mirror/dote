@@ -166,7 +166,7 @@
                        (approx-terrain-height@pos state
                                                   (elt pos 0)
                                                   (elt pos 2)))) ;; gone out of the map
-              (game-event:with-send-action-and-idle-terminated-check-type
+              (game-event:with-send-action-and-interrupt-terminated-check-type
                   (world (type-current-action-scheduler object))
                 ;; remove from world
                 (remove-entity-by-id world (id object))
@@ -179,7 +179,7 @@
                                  (id launcher-entity))))
                     (game-event:with-send-action-terminated-check-type
                         (world (type-current-action-scheduler object))
-                      ;; note the player receiving the attack will unset idle plan
+                      ;; note the player receiving the attack will unset interrupt plan
                       ;; send attack event
                       (funcall attack-event-fn launcher-entity intersected-entity)
                       ;; remove from world

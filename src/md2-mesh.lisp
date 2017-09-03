@@ -177,14 +177,14 @@
 (defmethod print-object ((object md2-mesh) stream)
   (print-unreadable-object (object stream :type t :identity t)))
 
-(defmethod on-game-event ((object md2-mesh) (event game-event:game-idle-terminated-event))
+(defmethod on-game-event ((object md2-mesh) (event game-event:game-interrupt-terminated-event))
   "Note no need to check for target id, because just an entity can
-   exists in idle state at any time in the game"
+   exists in interrupt state at any time in the game"
   (with-accessors ((ghost ghost)) object
     (if (and ghost
-             (has-idle-plan-p ghost))
+             (has-interrupt-plan-p ghost))
         (progn
-          (unset-idle-plan ghost)
+          (unset-interrupt-plan ghost)
           t)
         nil)))
 
@@ -223,12 +223,12 @@
 (defmethod on-game-event ((object md2-mesh) (event end-attack-melee-event))
   (with-end-attack-event (object event attacked-by-entity)
     (with-maybe-reply-attack (object attacked-by-entity)
-      (with-remove-idle-character-plan))))
+      (with-remove-interrupt-character-plan))))
 
 (defmethod on-game-event ((object md2-mesh) (event end-attack-long-range-event))
   (with-end-attack-event (object event attacked-by-entity)
     (with-maybe-reply-attack (object attacked-by-entity)
-      (with-remove-idle-character-plan))))
+      (with-remove-interrupt-character-plan))))
 
 (defmethod on-game-event ((object md2-mesh) (event end-attack-spell-event))
   (with-end-attack-event (object event attacked-by-entity) ;; no reply to spell
@@ -240,11 +240,11 @@
 
 (defmethod on-game-event ((object md2-mesh) (event end-defend-from-attack-spell-event))
   (with-end-attack-event (object event attacked-by-entity) ;; no reply to spell
-    (with-remove-idle-character-plan)))
+    (with-remove-interrupt-character-plan)))
 
 (defmethod on-game-event ((object md2-mesh) (event end-defend-from-spell-event))
   (with-end-attack-event (object event attacked-by-entity) ;; no reply to spell
-    (with-remove-idle-character-plan)))
+    (with-remove-interrupt-character-plan)))
 
 (defun manage-occurred-damage (entity
                                event
@@ -351,12 +351,12 @@
                        (cond
                          ((battle-utils:long-range-attack-possible-p entity object)
                           (game-state:with-world (world state)
-                            (set-idle-plan (ghost object))
+                            (set-interrupt-plan (ghost object))
                             (stop-movements already-stopped)
                             (battle-utils:attack-long-range world entity object)))
                          ((battle-utils:short-range-attack-possible-p entity object)
                           (game-state:with-world (world state)
-                            (set-idle-plan (ghost object))
+                            (set-interrupt-plan (ghost object))
                             (stop-movements already-stopped)
                             (battle-utils:attack-short-range world entity object))))))
                    t)
@@ -500,7 +500,7 @@
           ;; manage traps
           (let ((trap-ostile (trap-ostile-p player)))
             (when trap-ostile
-              (set-idle-plan ghost)
+              (set-interrupt-plan ghost)
               (%stop-movement player :decrement-movement-points t)
               (%try-deactivate-trap-from-ai world player trap-ostile)))
           (send-update-visibility-event player event)
@@ -961,7 +961,7 @@
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
-                         (action (eql planner:+idle-action+)))
+                         (action (eql planner:+interrupt-action+)))
   ;; "does nothing"
   )
 
@@ -2021,7 +2021,7 @@
       (add-to-inventory (ghost body) forged-sword)
       (add-to-inventory (ghost body) forged-spear)
       (add-to-inventory (ghost body) forged-trap)
-      (setf (movement-points (ghost body)) 10.0)
+      (setf (movement-points (ghost body)) 50.0)
       (setf (magic-points    (ghost body)) 50.0)
       ;; note:   wear-item-event  will   not  be   catched  as   the
       ;; registration happens when the entity is added to world

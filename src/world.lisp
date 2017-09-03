@@ -900,7 +900,7 @@
   ;; traps
   (game-event:register-for-trap-triggered-event               player)
   ;; plan, AI etc.
-  (game-event:register-for-game-idle-terminated-event         player)
+  (game-event:register-for-game-interrupt-terminated-event    player)
   ;; events registration ends here
   (game-state:place-player-on-map (main-state object)         player faction pos)
   (push-interactive-entity object                             player faction :occlude))
