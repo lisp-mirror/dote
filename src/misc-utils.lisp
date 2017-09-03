@@ -339,7 +339,7 @@
 (defun safe-random-elt (seq)
   "note: values nil if (or (null seq) (= (length seq) 0))"
   (and seq
-       (= (length seq) 0)
+       (> (length seq) 0)
        (elt seq (num:lcg-next-upto (length seq)))))
 
 (defun make-fresh-list (size &optional (el nil))
