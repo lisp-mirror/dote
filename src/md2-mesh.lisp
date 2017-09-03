@@ -992,7 +992,8 @@
                  (world:actions-queue-empty-p world) ;; ensure one action at time
                  ghost)
         ;; TODO add a slot for the plan list and actuate the last
-        (let ((action (first (tactical-plan ghost blackboard mesh nil))))
+        (elaborate-current-tactical-plan ghost blackboard mesh nil)
+        (let ((action (pop-action-plan ghost)))
           (actuate-plan mesh
                         (blackboard:strategy-decision blackboard)
                         action))))))
@@ -2020,7 +2021,7 @@
       (add-to-inventory (ghost body) forged-sword)
       (add-to-inventory (ghost body) forged-spear)
       (add-to-inventory (ghost body) forged-trap)
-      (setf (movement-points (ghost body)) 100.0)
+      (setf (movement-points (ghost body)) 10.0)
       (setf (magic-points    (ghost body)) 50.0)
       ;; note:   wear-item-event  will   not  be   catched  as   the
       ;; registration happens when the entity is added to world

@@ -515,7 +515,8 @@
 
 (defgeneric combined-power (object))
 
-(defgeneric tactical-plan (object strategy-expert player-entity strategy-decision))
+(defgeneric elaborate-current-tactical-plan (object strategy-expert player-entity
+                                             strategy-decision))
 
 (defgeneric has-idle-plan-p (object))
 
@@ -524,6 +525,8 @@
 (defgeneric unset-idle-plan (object))
 
 (defgeneric disgregard-tactical-plan (object))
+
+(defgeneric pop-action-plan (object))
 
 (defmacro gen-player-class-test (name)
   (let ((name-fn (format-symbol t "~:@(pclass-~a-p~)" name)))
@@ -852,7 +855,6 @@
 (defmethod calculate-influence-weapon ((object player-character) (weapon-type (eql :pole)))
   (d +weapon-pole-range+))
 
-
 (defmacro %with-gen-simple-weight (name-weigth &body body)
   `(flet
        ,(loop for (name . weight) in name-weigth collect
@@ -943,48 +945,27 @@
          (progn ,@body))))
 
 ;; TODO add GOAP
-(defmethod tactical-plan ((object player-character) strategy-expert player-entity
-                          (strategy-decision (eql nil)))
+(defmethod elaborate-current-tactical-plan ((object player-character) strategy-expert
+                                            player-entity
+                                            (strategy-decision (eql nil)))
   (declare (ignore strategy-decision))
-  ;;(blackboard:strategy-decision strategy-expert)))
-  ;; TEST ;;;;;;;;;;;;;;;;;;;;;;;
-  ;; (with-accessors ((current-plan current-plan)) object
-  ;;   (let* ((planner-file (goap:find-planner-file object +attack-strategy+))
-  ;;          (planner      (goap:load-planner-file planner-file)))
-  ;;     (misc:dbg "NEW current plan ~a"
-  ;;               (goap:build-plan planner strategy-expert player-entity))))
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (with-accessors ((current-plan current-plan)) object
     (if current-plan
         current-plan
-        (tactical-plan object
-                       strategy-expert
-                       player-entity
-                       (blackboard:strategy-decision strategy-expert)))))
+        (elaborate-current-tactical-plan object
+                                         strategy-expert
+                                         player-entity
+                                         (blackboard:strategy-decision strategy-expert)))))
 
-(defmethod tactical-plan ((object player-character) strategy-expert player-entity
-                          (strategy-decision (eql +explore-strategy+)))
-  (declare (ignore strategy-decision))
-  ;;(blackboard:strategy-decision strategy-expert)
-  ;; TEST
-  (with-accessors ((current-plan current-plan)) object
-    (let ((strategy (blackboard:strategy-decision strategy-expert)))
-      (declare (ignore strategy))
-      (setf current-plan (list planner:+move-action+))
-      (tactical-plan object strategy-expert player-entity nil))))
-;; (setf (current-plan object) (list planner:+idle-action+))
-;; (current-plan object))
-
-(defmethod tactical-plan ((object player-character) strategy-expert player-entity
-                          (strategy-decision (eql +attack-strategy+)))
-  ;; TEST
-  (with-accessors ((current-plan current-plan)) object
-    (let* ((planner-file (goap:find-planner-file object strategy-decision))
-           (planner      (goap:load-planner-file planner-file)))
-      (setf current-plan (goap:build-plan planner strategy-expert player-entity))
-      (misc:dbg "NEW current new plan ~a" current-plan)
-      (setf (current-plan object) (list planner:+idle-action+))
-      (tactical-plan object strategy-expert player-entity nil))))
+(defmethod elaborate-current-tactical-plan ((object player-character) strategy-expert
+                                            player-entity
+                                            strategy-decision)
+    (with-accessors ((current-plan current-plan)) object
+      (let* ((planner-file (goap:find-planner-file object strategy-decision))
+             (planner      (goap:load-planner-file planner-file)))
+        (setf current-plan (goap:build-plan planner strategy-expert player-entity))
+        (misc:dbg "NEW current new plan ~a" current-plan)
+        (elaborate-current-tactical-plan object strategy-expert player-entity nil))))
 
 (defmethod set-idle-plan ((object player-character))
   (misc:dbg "set idle plan")
@@ -1002,6 +983,10 @@
   (with-accessors ((current-plan current-plan)) object
     (misc:dbg "disg")
     (setf current-plan nil)))
+
+(defmethod pop-action-plan ((object player-character))
+  (with-accessors ((current-plan current-plan)) object
+    (pop current-plan)))
 
 (defmacro gen-actual-characteristic (name)
   (let ((fn       (format-fn-symbol t "actual-~a" name))

@@ -16,6 +16,8 @@
 
 (in-package :goap)
 
+(define-constant +ultimate-goal+ :curb-threat :test #'eq)
+
 (defstruct action
   (name          :idle :type symbol)
   (preconditions '()   :type list)
@@ -405,16 +407,16 @@
                   (cons (first pair) (second pair))))
            (build-action (planner action)
              `(add-action ,planner
-                          (make-action :name                  ,(get-param  action :name)
-                                       :preconditions         ',(consify (get-param  action
-                                                                                   :preconditions))
+                          (make-action :name                  ,(get-param action :name)
+                                       :preconditions         ',(consify (get-param action
+                                                                                    :preconditions))
                                        :effects               ',(consify (get-param  action
-                                                                                   :effects))
+                                                                                     :effects))
                                        :cost                  ,(get-param  action :cost)
                                        :context-preconditions
                                        (list ,@(mapcar #'%build-precondition
-                                                 (get-param  action
-                                                             :context-preconditions)))))))
+                                                       (get-param  action
+                                                                   :context-preconditions)))))))
     (with-gensyms (planner)
       `(let ((,planner (make-instance 'planner)))
          (progn
@@ -445,9 +447,9 @@
 (defun load-planner-file (file)
   (with-load-forms-in-var (*planner* out file)
     (let ((goal-state  (make-instance 'planner-state
-                                      :variables (list (cons :curb-threat  t))))
+                                      :variables (list (cons +ultimate-goal+  t))))
           (start-state (make-instance 'planner-state
-                                      :variables (list (cons :curb-threat  nil)))))
+                                      :variables (list (cons +ultimate-goal+  nil)))))
       (setf (goal-state    out) goal-state
             (current-state out) start-state)
       out)))
@@ -471,7 +473,8 @@
            (getf attack-goals weapon-type)))
 
 (defun exists-attack-goal-w-current-weapon-p (strategy-expert entity)
-  (best-path-to-reach-enemy-w-current-weapon strategy-expert entity))
+  (let ((res (best-path-to-reach-enemy-w-current-weapon strategy-expert entity)))
+    res))
 
 (defun reachable-w-current-weapon-and-mp-p (strategy-expert entity)
   (best-path-w-current-weapon-reachable-p strategy-expert entity))
@@ -527,6 +530,10 @@
 (gen-is-status-tests berserk)
 
 (gen-is-status-tests faint)
+
+(defun disobey-1-out-100 (strategy-expert entity)
+  (declare (ignore strategy-expert entity))
+  (dice:pass-d100.0 1))
 
 ;; TODO
 (defun is-there-escape-way-p  (strategy-expert entity)

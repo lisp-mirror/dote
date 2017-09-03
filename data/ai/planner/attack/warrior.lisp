@@ -15,7 +15,9 @@
   (:name :go-near-to-attack-pos
          :preconditions         ()
          :effects               ((:curb-threat    t))
-         :context-preconditions (!is-status-terror-p
+         :context-preconditions (enough-health-p
+                                 no-friend-needs-help-p
+                                 !is-status-terror-p
                                  exists-attack-goal-w-current-weapon-p
                                  !reachable-w-current-weapon-and-mp-p)
          :cost                  5)

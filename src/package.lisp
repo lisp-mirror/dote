@@ -2986,12 +2986,13 @@
    :castable-spells-list-by-tag
    :calculate-influence
    :combined-power
-   :tactical-plan
+   :elaborate-current-tactical-plan
    :with-no-thinking
    :set-idle-plan
    :unset-idle-plan
    :has-idle-plan-p
-   :disgregard-tactical-plan))
+   :disgregard-tactical-plan
+   :pop-action-plan))
 
 (defpackage :random-armor
   (:use :cl
