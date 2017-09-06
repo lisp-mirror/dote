@@ -944,7 +944,7 @@
           how-much)))
 
 (defmethod decrement-spell-points ((object triangle-mesh) how-much)
-   (when (can-use-movement-points-p object :minimum how-much)
+   (when (can-use-spell-points-p object :minimum how-much)
      (decf (character:current-magic-points (ghost object))
            how-much)))
 

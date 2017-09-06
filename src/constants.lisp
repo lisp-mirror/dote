@@ -290,3 +290,5 @@
 (define-constant +defend-strategy+                :defend                         :test #'eq)
 
 (define-constant +retreat-strategy+               :retreat                        :test #'eq)
+
+(define-constant +difficult-medium+                3                              :test #'=)

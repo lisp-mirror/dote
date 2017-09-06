@@ -96,7 +96,7 @@
                (:file "player-messages-text")
                (:file "interactive-entity")
                (:file "spell")
-               (:file "planner")
+               (:file "ai-utils")
                (:file "character")
                (:file "random-weapon")
                (:file "random-potion")

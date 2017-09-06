@@ -171,7 +171,8 @@
    :+explore-strategy+
    :+attack-strategy+
    :+defend-strategy+
-   :+retreat-strategy+))
+   :+retreat-strategy+
+   :+difficult-medium+))
 
 (defpackage :profiling
   (:use :cl)
@@ -248,6 +249,8 @@
    :read-array
    :definline
    :defcached
+   :unsplice
+   :defalias
    :defun-inline-function
    :format-fn-symbol
    :a->function
@@ -1072,7 +1075,8 @@
    :find-entity-by-id
    :remove-entity-by-id
    :remove-entity-if
-   :entity-dead-p))
+   :entity-dead-p
+   :with-slots-for-reasoning))
 
 (defpackage :bs-tree
   (:use
@@ -1311,6 +1315,7 @@
    :define-matrix
    :gen-neighbour-position
    :gen-4-neighbour-counterclockwise
+   :gen-4-neighbour-ccw
    :gen-neighbour-position-in-box
    :gen-ring-box-position
    :with-check-borders
@@ -2823,18 +2828,28 @@
    :entity-w-portrait
    :portrait))
 
-(defpackage :planner
+(defpackage :ai-utils
   (:use :cl
         :alexandria
         :constants
-        :resources-utils)
+        :entity
+        :interactive-entity
+        :interfaces
+        :resources-utils
+        :basic-interaction-parameters)
   (:export
    :+planner-file-extension+
    :+idle-action+
    :+interrupt-action+
    :+move-action+
    :+faint-action+
-   :+go-to-attack-pos-action+))
+   :+go-to-attack-pos-action+
+   :+launch-heal-spell-action+
+   :+launch-teleport-spell-action+
+   :friend-who-needs-help
+   :too-low-health-p
+   :go-launch-heal-spell
+   :go-launch-teleport-spell))
 
 (defpackage :character
   (:use :cl
@@ -4315,6 +4330,7 @@
    :remove-spell
    :filter-spell-set
    :filter-spell-db
+   :sort-spells-by-level
    :spell
    :spellp
    :level

@@ -84,3 +84,9 @@
 (defgeneric remove-entity-if (object predicate))
 
 (defgeneric entity-dead-p (object))
+
+(defmacro with-slots-for-reasoning ((mesh state ghost blackboard) &body body)
+  `(with-accessors ((,state state)
+                    (,ghost ghost)) ,mesh
+    (with-accessors ((,blackboard blackboard:blackboard)) ,state
+      ,@body)))

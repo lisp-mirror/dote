@@ -951,23 +951,43 @@
       (let* ((trap (game-state:find-entity-by-id state (id-origin event))))
         (battle-utils:trigger-trap-attack trap object)))))
 
-(defmacro with-slots-for-reasoning ((mesh state ghost blackboard) &body body)
-  `(with-accessors ((,state state)
-                    (,ghost ghost)) ,mesh
-    (with-accessors ((,blackboard blackboard:blackboard)) ,state
-      ,@body)))
-
 (defgeneric actuate-plan (object strategy action))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
-                         (action (eql planner:+interrupt-action+)))
+                         (action (eql ai-utils:+interrupt-action+)))
   ;; "does nothing"
   )
 
 (defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+idle-action+)))
+  ;; "does nothing"
+  ;; TODO awake other AI player
+
+  )
+
+(defmethod actuate-plan ((object md2-mesh)
                          (strategy (eql +explore-strategy+))
-                         (action   (eql planner:+move-action+)))
+                         (action   (eql ai-utils:+launch-heal-spell-action+)))
+  (with-accessors ((state state)) object
+    (game-state:with-world (world state)
+      (action-scheduler:with-enqueue-action-and-send-remove-after
+          (world action-scheduler:tactical-plane-action)
+        (ai-utils:go-launch-heal-spell object)))))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         (strategy (eql +explore-strategy+))
+                         (action   (eql ai-utils:+launch-teleport-spell-action+)))
+  (with-accessors ((state state)) object
+    (game-state:with-world (world state)
+      (action-scheduler:with-enqueue-action-and-send-remove-after
+          (world action-scheduler:tactical-plane-action)
+        (ai-utils:go-launch-teleport-spell object)))))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         (strategy (eql +explore-strategy+))
+                         (action   (eql ai-utils:+move-action+)))
   (with-accessors ((state state)) object
     (game-state:with-world (world state)
       (action-scheduler:with-enqueue-action (world action-scheduler:tactical-plane-action)
@@ -2022,10 +2042,10 @@
       (add-to-inventory (ghost body) forged-spear)
       (add-to-inventory (ghost body) forged-trap)
       (setf (movement-points (ghost body)) 50.0)
-      (setf (magic-points    (ghost body)) 50.0)
+      (setf (magic-points    (ghost body)) 40.0)
       ;; note:   wear-item-event  will   not  be   catched  as   the
       ;; registration happens when the entity is added to world
-      (wear-item body forged-sword))
+      (wear-item body forged-bow))
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     body))
 

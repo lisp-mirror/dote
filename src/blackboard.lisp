@@ -182,7 +182,7 @@
       (setf attack-enemy-crossbow-layer
             (inmap:make-dijkstra-layer wmap hmap +attack-nongoal-tile-value+))
       ;; setting smartness based on level
-      (when (>= (level-difficult main-state) 3)
+      (when (>= (level-difficult main-state) +difficult-medium+)
         (setf use-enemy-fov-when-exploring nil
               use-enemy-fov-when-attacking t)))))
 

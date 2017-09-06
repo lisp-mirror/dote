@@ -3,16 +3,18 @@
 (define-planner
   (:name :move
          :effects               ((:curb-threat t))
-         :context-preconditions (enough-health-p !disobey-1-out-100)
+         :context-preconditions (!disobey-1-out-100 enough-health-p able-to-move-p)
          :cost                  1)
-  (:name :use-teleport
+  (:name :launch-teleport-spell
          :preconditions         ()
          :context-preconditions (has-enough-sp-teleport-p)
          :effects               ((:curb-threat t))
          :cost                  80)
-  (:name :launch-cure-spell
+  (:name :launch-heal-spell
          :preconditions         ()
          :context-preconditions (has-enough-sp-heal-p !enough-health-p)
+                                 ;; "!is-status-terror-p"  is implicitly
+                                 ;; managed by has-enough-sp-heal-p
          :effects               ((:curb-threat t))
          :cost                  5)
   (:name :idle

@@ -229,6 +229,10 @@
        (loop for ,layer-count from 0 below (length ,layers) do
                (graph:pop-cost-layer ,graph)))))
 
+(defmethod matrix:pixel-inside-p ((object tile-multilayers-graph) x y)
+ "Note: assuming all layers have the same dimensions"
+  (matrix:pixel-inside-p (alexandria:first-elt (layers object)) x y))
+
 (defclass matrix-graph (graph)
   ((matrix
     :initform nil

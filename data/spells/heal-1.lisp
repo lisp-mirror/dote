@@ -1,11 +1,11 @@
 (in-package :spell)
 
 (define-spell (:heal-1)
-  :level                 1
+  :level                 3
   :element               :fire
   :tags                  (:heal)
   :gui-texture           "heal/heal-1.tga"
-  :cost                   2.0
+  :cost                  5.0
   :visual-effect-self    nil
   :range                 5   ;; in tile units
   :effective-range       1   ;; in tile units

@@ -820,10 +820,13 @@
 
 (gen-wear-weapon-of-type :edge :impact :pole :bow :crossbow)
 
+(defun %filter-spell-cost-clsr (character)
+  #'(lambda (a) (> (spell:cost a) (current-magic-points character))))
+
 (defmethod available-spells-list ((object player-character))
+  (spell:filter-spell-db (%filter-spell-cost-clsr object)))
   ;;; TEST ;;;;
-  ;; (spell:filter-spell-db #'(lambda (a) (> (spell:level a) (level object)))))
-  spell::*spells-db*)
+  ;spell::*spells-db*)
 
 (defmethod available-spells-list-by-tag ((object player-character) tag)
   (spell:filter-spell-set (available-spells-list object)
@@ -831,7 +834,7 @@
 
 (defmethod castable-spells-list-by-tag ((object player-character) tag)
   (spell:filter-spell-set (available-spells-list-by-tag object tag)
-                          #'(lambda (a) (> (spell:cost a) (current-magic-points object)))))
+                          (%filter-spell-cost-clsr object)))
 
 (defmethod calculate-influence ((object player-character))
   (d+ (calculate-influence-weapon object (weapon-type object))
@@ -969,7 +972,7 @@
 
 (defmethod set-interrupt-plan ((object player-character))
   (misc:dbg "set interrupt plan")
-  (setf (current-plan object) (list planner:+interrupt-action+)))
+  (setf (current-plan object) (list ai-utils:+interrupt-action+)))
 
 (defmethod unset-interrupt-plan ((object player-character))
   (disgregard-tactical-plan object))
@@ -977,7 +980,7 @@
 (defmethod has-interrupt-plan-p ((object player-character))
   (with-accessors ((current-plan current-plan)) object
     (and current-plan
-         (eq (elt current-plan 0) planner:+interrupt-action+))))
+         (eq (elt current-plan 0) ai-utils:+interrupt-action+))))
 
 (defmethod disgregard-tactical-plan ((object player-character))
   (with-accessors ((current-plan current-plan)) object

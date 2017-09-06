@@ -30,7 +30,7 @@
 (define-constant +decay-mean+     #(30.0 28.0 26.0 24.0 12.0 10.0 9.0 8.0 4.0 0.0)
   :test #'equalp)
 
-(define-constant +modifier-sigma+ #(1.0 2.0 3.0 4.0 5.0 6.0 6.5 7.0 7.5 8.0)
+(define-constant +modifier-sigma+ #(6.0 9.0 10.0 15.0 16.0 19.0 21.0 22.0 23.0 27.0)
   :test #'equalp)
 
 (define-constant +modifier-mean+  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)

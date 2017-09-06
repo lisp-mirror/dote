@@ -441,7 +441,7 @@
                          ((eq strategy +attack-strategy+)
                           +attack-planner-dir+)))
          (file-name      (string-downcase (symbol-name (character:player-class character))))
-         (file-full-path (text-utils:strcat file-name planner:+planner-file-extension+)))
+         (file-full-path (text-utils:strcat file-name ai-utils:+planner-file-extension+)))
     (res:get-resource-file file-full-path resource-dir)))
 
 (defun load-planner-file (file)
@@ -454,14 +454,9 @@
             (current-state out) start-state)
       out)))
 
-(defun too-low-health-p (strategy-expert entity)
-  (declare (ignore strategy-expert))
-  (let ((ghost (entity:ghost entity)))
-    (< (character:current-damage-points ghost)
-       (* 0.5 (character:actual-damage-points ghost)))))
-
 (defun enough-health-p (strategy-expert entity)
-  (not (too-low-health-p strategy-expert entity)))
+  (declare (ignore strategy-expert))
+  (not (ai-utils:too-low-health-p entity)))
 
 (defun has-weapon-in-inventory-p (strategy-expert entity)
   (declare (ignore strategy-expert))
@@ -481,12 +476,7 @@
 
 (defun friend-needs-help-p (strategy-expert entity)
   (declare (ignore entity))
-  (game-state:map-ai-entities (main-state strategy-expert)
-                              #'(lambda (k v)
-                                  (declare (ignore k))
-                                  (when (too-low-health-p strategy-expert v)
-                                    (return-from friend-needs-help-p t))))
-  nil)
+  (ai-utils:friend-who-needs-help strategy-expert))
 
 (defun no-friend-needs-help-p (strategy-expert entity)
   (not (friend-needs-help-p strategy-expert entity)))
@@ -498,7 +488,8 @@
         (character:find-item-in-inventory-if ghost #'interactive-entity:weaponp))))
 
 (defun %has-enough-sp-p (entity tag)
-  (character:castable-spells-list-by-tag (entity:ghost entity) tag))
+  (character:with-no-terror-status (entity)
+    (character:castable-spells-list-by-tag (entity:ghost entity) tag)))
 
 (defun has-enough-sp-heal-p (strategy-expert entity)
   (declare (ignore strategy-expert))
@@ -534,6 +525,23 @@
 (defun disobey-1-out-100 (strategy-expert entity)
   (declare (ignore strategy-expert entity))
   (dice:pass-d100.0 1))
+
+(defun able-to-move-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (with-accessors ((state entity:state)
+                   (ghost entity:ghost)) entity
+    (with-accessors ((costs game-state:movement-costs)) state
+      (let* ((pos        (mesh:calculate-cost-position entity))
+             (x          (elt pos 0))
+             (y          (elt pos 1))
+             (neigh      (remove-if-not #'(lambda (a)
+                                            (matrix:pixel-inside-p costs (elt a 0) (elt a 1)))
+                                        (matrix:gen-4-neighbour-ccw x y :add-center nil)))
+             (neigh-cost (mapcar #'(lambda (a)
+                                     (game-state:get-cost state (elt a 0) (elt a 1)))
+                                 neigh)))
+        (>= (character:current-movement-points ghost)
+            (num:find-max neigh-cost))))))
 
 ;; TODO
 (defun is-there-escape-way-p  (strategy-expert entity)

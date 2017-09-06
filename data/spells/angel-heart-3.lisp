@@ -5,7 +5,7 @@
   :tags                  (:heal)
   :element               :fire
   :gui-texture           "cure/cure-3.tga"
-  :cost                  90.0
+  :cost                  120.0
   :visual-effect-self    nil
   :range                 10   ;; in tile units
   :effective-range       7   ;; in tile units

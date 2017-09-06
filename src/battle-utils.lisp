@@ -346,20 +346,25 @@
             t)
           nil))))
 
+(defun every-faction-ai-p (game-state &rest entities)
+  (every #'(lambda (a) (faction-ai-p game-state (id a))) entities))
+
 (defun spell-animation (attacker defender)
-  (when (renderp defender) ;; does it means: "is visible for someone?"
-    (let* ((ghost-atk    (entity:ghost attacker))
-           (spell        (character:spell-loaded ghost-atk))
-           (cost         (if spell
-                             (spell:cost spell)
-                             0.0)))
-      (if (and (> cost 0.0)
-               (mesh:can-use-spell-points-p attacker :minimum cost))
-          (progn
-            (mesh:decrement-spell-points attacker cost)
-            (mesh:set-spell-status attacker)
-            t)
-          nil))))
+  (with-accessors ((state entity:state)) attacker
+    (when (or (renderp defender) ;; does it means: "is visible for someone?"
+              (every-faction-ai-p state attacker defender))
+      (let* ((ghost-atk    (entity:ghost attacker))
+             (spell        (character:spell-loaded ghost-atk))
+             (cost         (if spell
+                               (spell:cost spell)
+                               0.0)))
+        (if (and (> cost 0.0)
+                 (mesh:can-use-spell-points-p attacker :minimum cost))
+            (progn
+              (mesh:decrement-spell-points attacker cost)
+              (mesh:set-spell-status attacker)
+              t)
+            nil)))))
 
 (defun long-range-attack-cost (attacker)
   (let* ((ghost-atk    (entity:ghost attacker))
@@ -396,16 +401,18 @@
       (game-event:send-refresh-toolbar-event))))
 
 (defun send-spell-event (attacker defender)
-  (when (renderp defender) ;; does it means: "is visible for someone?"
-    (let* ((ghost-atk    (entity:ghost attacker))
-           (spell        (character:spell-loaded ghost-atk))
-           (msg (make-instance 'game-event:spell-event
-                               :id-origin       (identificable:id attacker)
-                               :id-destination  (identificable:id defender)
-                               :attacker-entity attacker
-                               :spell           spell)))
-      (game-event:propagate-spell-event msg)
-      (game-event:send-refresh-toolbar-event))))
+  (with-accessors ((state entity:state)) attacker
+    (when (or (renderp defender) ;; does it means: "is visible for someone?"
+              (every-faction-ai-p state attacker defender))
+      (let* ((ghost-atk    (entity:ghost attacker))
+             (spell        (character:spell-loaded ghost-atk))
+             (msg (make-instance 'game-event:spell-event
+                                 :id-origin       (identificable:id attacker)
+                                 :id-destination  (identificable:id defender)
+                                 :attacker-entity attacker
+                                 :spell           spell)))
+        (game-event:propagate-spell-event msg)
+        (game-event:send-refresh-toolbar-event)))))
 
 (defun trigger-trap-attack (trap-entity attacked-entity)
   (with-accessors ((id id) (state entity:state)) attacked-entity
@@ -695,7 +702,6 @@
       (if spell-loaded
           (if (character:with-no-terror-status (attacker)
                 (range-spell-valid-p attacker defender spell-loaded))
-              ;; enqueue is totally useless here but keep it for congruence with 'attack-spell'
               (action-scheduler:with-enqueue-action-and-send-remove-after
                   (world action-scheduler:launch-spell-action)
                 (when (spell-animation attacker defender)

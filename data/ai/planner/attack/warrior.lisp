@@ -40,7 +40,7 @@
          :cost                  1)
   (:name :launch-spell
          :preconditions         ()
-         :context-preconditions (has-enough-sp-damage-p !is-status-terror-p)
+         :context-preconditions (has-enough-sp-damage-p)
          :effects               ((:curb-threat t))
          :cost                  50)
   (:name :flee
@@ -52,7 +52,7 @@
          :context-preconditions (is-there-escape-way-p) ; TODO
          :effects               ((:has-escape t))
          :cost                  5)
-  (:name :use-teleport
+  (:name :launch-teleport-spell
          :preconditions         ()
          :context-preconditions (has-enough-sp-teleport-p)
          :effects               ((:has-escape t))
@@ -67,7 +67,7 @@
          :context-preconditions (friend-needs-help-p)
          :effects               ((:protect-friend t))
          :cost                  5)
-  (:name :launch-cure-spell
+  (:name :launch-heal-spell
          :preconditions         ()
          :context-preconditions (friend-needs-help-p has-enough-sp-heal-p)
          :effects               ((:protect-friend t))

@@ -121,6 +121,30 @@
          (and ,clear-cache (setf ,cache-name (make-hash-table :test (quote ,test))))
          ,@(list body)))))
 
+(defun unsplice (form)
+  (and form
+       (list form)))
+
+(defmacro defalias (alias &body (def &optional docstring))
+  "Define a value as a top-level function.
+     (defalias string-gensym (compose #'gensym #'string))
+Like (setf (fdefinition ALIAS) DEF), but with a place to put
+documentation and some niceties to placate the compiler.
+Name from Emacs Lisp."
+  `(progn
+     ;; Give the function a temporary definition at compile time so
+     ;; the compiler doesn't complain about it's being undefined.
+     (eval-when (:compile-toplevel)
+       (unless (fboundp ',alias)
+         (defun ,alias (&rest args)
+           (declare (ignore args)))))
+     (eval-when (:load-toplevel :execute)
+       (compile ',alias ,def)
+       ,@(unsplice
+          (when docstring
+            `(setf (documentation ',alias 'function) ,docstring))))
+     ',alias))
+
 (defun nest-expressions (data &optional (leaf nil))
   (if (null data)
       (list leaf)

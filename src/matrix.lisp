@@ -420,6 +420,8 @@ else
            (list (1- x) y)
            (list x (1+ y)))))
 
+(misc:defalias gen-4-neighbour-ccw #'gen-4-neighbour-counterclockwise)
+
 (defun gen-neighbour-position-in-box (x y w-offset h-offset &key (add-center t))
   "note: no bounds checking is done"
   (let ((results (misc:make-fresh-array 0 nil 'ivec2:ivec2 nil)))

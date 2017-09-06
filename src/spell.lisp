@@ -28,7 +28,7 @@
 (alexandria:define-constant +minimum-chance-healing-fx+ 0.05
   :test #'=)
 
-(alexandria:define-constant +modifier-sigma+            #(1.0 2.0 3.0 4.0 5.0 6.0 6.5 7.0 7.5 8.0)
+(alexandria:define-constant +modifier-sigma+            #(6.0 9.0 10.0 15.0 16.0 19.0 21.0 22.0 23.0 27.0)
   :test #'equalp)
 
 (alexandria:define-constant +modifier-mean+             #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
@@ -71,6 +71,11 @@
         (all-other-spells  (resources-utils:get-resource-files +spell-dir+)))
     (dolist (spell-file (concatenate 'list all-attack-spells all-other-spells))
       (load spell-file))))
+
+(defun sort-spells-by-level (&optional (desc t))
+  #'(lambda (a b) (if desc
+                      (>= (spell:level a) (spell:level b))
+                      (<  (spell:level a) (spell:level b)))))
 
 (defun db ()
   *spells-db*)
