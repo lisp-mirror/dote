@@ -50,13 +50,14 @@
 	      (when displacement
                 (let ((texture-flash (res:get-resource-file "shock-1.tga"
                                                             +animation-texture-dir+)))
-                  (billboard:enqueue-animated-billboard displacement
-                                                        texture-flash
-                                                        state
-                                                        (compiled-shaders defender)
-                                                        :texture-horizontal-offset 0.2
-                                                        :duration/2                1.0
-                                                        :loop-p                    t)
+                  (when (not (faction-ai-p state (id defender)))
+                    (billboard:enqueue-animated-billboard displacement
+                                                          texture-flash
+                                                          state
+                                                          (compiled-shaders defender)
+                                                          :texture-horizontal-offset 0.2
+                                                          :duration/2                1.0
+                                                          :loop-p                    t))
                   (setf (pos defender) displacement)
                   ;; update state matrix and quadtree
                   (world:move-entity world defender old-tile)))))))))

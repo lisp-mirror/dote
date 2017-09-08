@@ -51,12 +51,13 @@
                 (let ((texture-flash (res:get-resource-file "flash-1.tga"
                                                             +animation-texture-dir+))
                       (size          (num:d* 5.0 constants:+terrain-chunk-tile-size+)))
-                  (billboard:enqueue-animated-billboard displacement
-                                                        texture-flash
-                                                        state
-                                                        (compiled-shaders defender)
-                                                        :w size
-                                                        :h size)
+                  (when (not (faction-ai-p state (id defender)))
+                    (billboard:enqueue-animated-billboard displacement
+                                                          texture-flash
+                                                          state
+                                                          (compiled-shaders defender)
+                                                          :w size
+                                                          :h size))
                   (setf (pos defender) displacement)
                   ;; update state matrix and quadtree
                   (world:move-entity world defender old-tile)))))))))
