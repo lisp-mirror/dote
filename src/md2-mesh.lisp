@@ -1011,7 +1011,6 @@
                  (eq  (my-faction mesh) (game-state:faction-turn state))
                  (world:actions-queue-empty-p world) ;; ensure one action at time
                  ghost)
-        ;; TODO add a slot for the plan list and actuate the last
         (elaborate-current-tactical-plan ghost blackboard mesh nil)
         (let ((action (pop-action-plan ghost)))
           (actuate-plan mesh

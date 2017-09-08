@@ -16,7 +16,9 @@
 
 (in-package :goap)
 
-(define-constant +ultimate-goal+ :curb-threat :test #'eq)
+(define-constant +ultimate-goal+   :curb-threat :test #'eq)
+
+(define-constant +action-max-cost+ 1000000      :test #'eq)
 
 (defstruct action
   (name          :idle :type symbol)
@@ -417,12 +419,18 @@
                                        (list ,@(mapcar #'%build-precondition
                                                        (get-param  action
                                                                    :context-preconditions)))))))
-    (with-gensyms (planner)
-      `(let ((,planner (make-instance 'planner)))
+    (with-gensyms (planner idle-action)
+      `(let ((,planner (make-instance 'planner))
+             (,idle-action (make-action :name                  ai-utils:+idle-action+
+                                        :preconditions         nil
+                                        :context-preconditions nil
+                                        :effects               (list (cons +ultimate-goal+ t))
+                                        :cost                  +action-max-cost+)))
          (progn
            ,@(loop for action in forms collect
-                  (build-action planner action)))
-        (setf *planner* ,planner)))))
+                  (build-action planner action))
+           (add-action ,planner ,idle-action))
+         (setf *planner* ,planner)))))
 
 (defun find-planner-file (character strategy)
   (assert (typep character 'character:player-character))

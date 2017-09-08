@@ -16,9 +16,4 @@
                                  ;; "!is-status-terror-p"  is implicitly
                                  ;; managed by has-enough-sp-heal-p
          :effects               ((:curb-threat t))
-         :cost                  5)
-  (:name :idle
-         :preconditions         ()
-         :context-preconditions ()
-         :effects               ((:curb-threat t))
-         :cost                  100000))
+         :cost                  5))

@@ -34,6 +34,8 @@
 
 (define-constant +launch-teleport-spell-action+ :launch-teleport-spell :test #'eq)
 
+(define-constant +min-chain-teleport+           3                      :test #'=)
+
 (defun too-low-health-p (entity)
   (let ((ghost (entity:ghost entity)))
     (< (character:current-damage-points ghost)
@@ -59,6 +61,12 @@
     (or spell
         (last-elt sorted-spell-db))))
 
+(defmacro if-difficult-level>medium ((game-state) if-more if-less)
+  `(if (> (game-state:level-difficult ,game-state)
+          +difficult-medium+)
+       ,if-more
+       ,if-less))
+
 (defun go-launch-heal-spell (entity)
   (with-slots-for-reasoning (entity state ghost blackboard)
     (game-state:with-world (world state)
@@ -66,14 +74,17 @@
                   (character:castable-spells-list-by-tag ghost
                                                          spell:+spell-tag-heal+))
                  (friend-to-help   (friend-who-needs-help blackboard)))
-        (let* ((difficult (game-state:level-difficult state))
-               (spell     (if (> difficult +difficult-medium+)
-                              (find-best-heal-spell available-spells entity)
-                              (first-elt (num:shellsort available-spells
-                                                        (spell:sort-spells-by-level t))))))
+        (let* ((spell (if-difficult-level>medium (state)
+                        (find-best-heal-spell available-spells entity)
+                        (first-elt (num:shellsort available-spells
+                                                  (spell:sort-spells-by-level t))))))
           (when spell
             (setf (character:spell-loaded ghost) spell)
             (battle-utils:launch-spell world entity friend-to-help)))))))
+
+(defun at-least-n-teleport-chain-p (ghost spell n)
+  (< (* n (spell:cost spell))
+     (character:current-magic-points ghost)))
 
 (defun go-launch-teleport-spell (entity)
   (with-slots-for-reasoning (entity state ghost blackboard)
@@ -81,7 +92,19 @@
       (when-let* ((available-spells
                    (character:castable-spells-list-by-tag ghost
                                                           spell:+spell-tag-teleport+))
-                  (spell (first-elt (num:shellsort available-spells
-                                                   (spell:sort-spells-by-level t)))))
+                  (spells         (num:shellsort available-spells
+                                                 (spell:sort-spells-by-level t)))
+                  (min-cost-spell (last-elt  spells))
+                  (max-cost-spell (first-elt spells))
+                  (cost-pos       (mesh:calculate-cost-position entity))
+                  (spell          (if-difficult-level>medium (state)
+                                    (if (and (at-least-n-teleport-chain-p ghost
+                                                                          min-cost-spell
+                                                                          +min-chain-teleport+)
+                                             (game-state:position-inside-room-p state
+                                                                                cost-pos))
+                                        min-cost-spell
+                                        max-cost-spell)
+                                    max-cost-spell)))
         (setf (character:spell-loaded ghost) spell)
         (battle-utils:launch-spell world entity entity)))))
