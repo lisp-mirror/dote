@@ -300,6 +300,7 @@
 
 (defmethod game-event:on-game-event ((object world) (event game-event:end-turn))
   (with-accessors ((main-state main-state)) object
+    ;(tg:gc :full t)
     ;;(misc:dbg " end turn ~a ~a" (type-of object) (type-of event))
     (remove-all-tooltips            object)
     (remove-all-windows             object)
@@ -311,7 +312,7 @@
              (game-state:player-entities main-state))
     (maphash #'(lambda (k v) (declare (ignore k)) (mesh:process-postponed-messages v))
              (game-state:ai-entities main-state))
-    ;(tg:gc :full t)
+    (calc-ai-entities-action-order main-state)
     nil))
 
 (defmethod remove-entity-by-id ((object world) id)
@@ -996,7 +997,7 @@
       (setf (current-magic-points    ghost) (magic-points    ghost))
       ;; setup model
       (let* ((dir (text-utils:strcat (fs:path-first-element (first preview-paths))
-                                  fs:*directory-sep*))
+                                     fs:*directory-sep*))
              (model (md2:load-md2-player ghost
                                          dir
                                          (compiled-shaders object)
@@ -1008,7 +1009,8 @@
         (setf (character:model-origin-dir ghost) dir)
         (setf (portrait (entity:ghost model)) portrait-texture)
         (setf (renderp  model) nil)
-        (world:place-player-on-map object  model game-state:+npc-type+ #(0 0))))))
+        (world:place-player-on-map object model game-state:+npc-type+ #(0 0))
+        model))))
 
 (defmethod world-aabb ((object world))
   (if (cached-aabb object)

@@ -2104,6 +2104,7 @@
    :game-hour
    :game-minutes
    :game-turn
+   :ai-entities-action-order
    :current-time
    :sky-bg-color
    :celestial-body-position
@@ -2180,7 +2181,8 @@
    :set-tile-visited
    :set-concerning-tile
    :max-ai-movement-points
-   :position-inside-room-p))
+   :position-inside-room-p
+   :calc-ai-entities-action-order))
 
 (defpackage :game-event
   (:use
@@ -2848,8 +2850,10 @@
    :+launch-teleport-spell-action+
    :friend-who-needs-help
    :too-low-health-p
+   :if-difficult-level>medium
    :go-launch-heal-spell
-   :go-launch-teleport-spell))
+   :go-launch-teleport-spell
+   :combined-power-compare-clsr))
 
 (defpackage :character
   (:use :cl

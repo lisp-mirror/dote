@@ -1111,3 +1111,11 @@
   (map-ai-entities game-state #'(lambda (k v)
                                   (declare (ignore k))
                                   (character:disgregard-tactical-plan (ghost v)))))
+
+(defmethod calc-ai-entities-action-order ((object blackboard))
+  (with-accessors ((main-state main-state)) object
+    (with-accessors ((ai-entities-action-order ai-entities-action-order)) main-state
+      (let ((all-ai-entities (num:shellsort (hash-table-values (ai-entities main-state))
+                                            (ai-utils:combined-power-compare-clsr nil))))
+        (setf all-ai-entities (remove-if #'entity-dead-p all-ai-entities))
+        (setf ai-entities-action-order all-ai-entities)))))

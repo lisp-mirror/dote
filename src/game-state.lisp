@@ -223,6 +223,10 @@
     :accessor game-turn
     :initarg :game-turn
     :initform 0)
+   (ai-entities-action-order
+    :accessor ai-entities-action-order
+    :initarg  :ai-entities-action-order
+    :initform '())
    (current-time
     :accessor current-time
     :initarg :current-time
@@ -399,6 +403,8 @@
 (defgeneric max-ai-movement-points (object))
 
 (defgeneric position-inside-room-p (object position))
+
+(defgeneric calc-ai-entities-action-order (object))
 
 (defmethod fetch-render-window ((object game-state))
   (and (window-id object)
@@ -862,3 +868,6 @@
                                                   res)
               t)
             nil)))))
+
+(defmethod calc-ai-entities-action-order ((object game-state))
+  (calc-ai-entities-action-order (blackboard object)))

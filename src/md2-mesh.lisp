@@ -962,10 +962,11 @@
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+idle-action+)))
-  ;; "does nothing"
-  ;; TODO awake other AI player
-
-  )
+  (with-accessors ((state state)) object
+    (with-accessors ((ai-entities-action-order game-state:ai-entities-action-order)) state
+      ;; awake other AI player
+      (and ai-entities-action-order
+           (pop ai-entities-action-order)))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          (strategy (eql +explore-strategy+))
@@ -1007,15 +1008,19 @@
 (defun actuate-strategy (mesh)
   (with-slots-for-reasoning (mesh state ghost blackboard)
     (game-state:with-world (world state)
-      (when (and (eq  (my-faction mesh) game-state:+npc-type+)
-                 (eq  (my-faction mesh) (game-state:faction-turn state))
-                 (world:actions-queue-empty-p world) ;; ensure one action at time
-                 ghost)
-        (elaborate-current-tactical-plan ghost blackboard mesh nil)
-        (let ((action (pop-action-plan ghost)))
-          (actuate-plan mesh
-                        (blackboard:strategy-decision blackboard)
-                        action))))))
+      (with-accessors ((ai-entities-action-order game-state:ai-entities-action-order)) state
+        (when (and (eq  (my-faction mesh) game-state:+npc-type+)
+                   (eq  (my-faction mesh) (game-state:faction-turn state))
+                   (world:actions-queue-empty-p world) ;; ensure one action at time
+                   ai-entities-action-order            ;; if nil all ai players made a move
+                   (= (id mesh)
+                      (id (alexandria:first-elt ai-entities-action-order))) ;; ensure it's my turn
+                   ghost)
+          (elaborate-current-tactical-plan ghost blackboard mesh nil)
+          (let ((action (pop-action-plan ghost)))
+            (actuate-plan mesh
+                          (blackboard:strategy-decision blackboard)
+                          action)))))))
 
 (defmethod on-game-event :after ((object md2-mesh) (event end-turn))
   ;;(misc:dbg "end turn md2mesh tooltip ct ~a" (tooltip-count object))

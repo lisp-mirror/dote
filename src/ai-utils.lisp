@@ -101,10 +101,19 @@
                                     (if (and (at-least-n-teleport-chain-p ghost
                                                                           min-cost-spell
                                                                           +min-chain-teleport+)
-                                             (game-state:position-inside-room-p state
-                                                                                cost-pos))
+                                             (mesh:inside-room-p entity))
                                         min-cost-spell
                                         max-cost-spell)
                                     max-cost-spell)))
         (setf (character:spell-loaded ghost) spell)
         (battle-utils:launch-spell world entity entity)))))
+
+(defun combined-power-compare-clsr (&optional (desc t))
+  #'(lambda (a b)
+      (let* ((ghost-a (entity:ghost a))
+             (ghost-b (entity:ghost b))
+             (power-a (character:combined-power ghost-a))
+             (power-b (character:combined-power ghost-b)))
+        (if desc
+            (>= power-a power-b)
+            (<  power-a power-b)))))
