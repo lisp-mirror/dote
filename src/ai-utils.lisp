@@ -50,9 +50,9 @@
   nil)
 
 (defun find-best-heal-spell (spell-db entity)
-  (let* ((sorted-spell-db (num:shellsort spell-db (spell:sort-spells-by-level nil)))
+  (let* ((sorted-spell-db (shellsort spell-db (spell:sort-spells-by-level nil)))
          (spell (find-if #'(lambda (s)
-                             (let ((heal-fx (misc:plist-path-value
+                             (let ((heal-fx (plist-path-value
                                              (basic-interaction-params s)
                                              '(:healing-effects :heal-damage-points))))
                                (>= (points heal-fx)
@@ -76,8 +76,8 @@
                  (friend-to-help   (friend-who-needs-help blackboard)))
         (let* ((spell (if-difficult-level>medium (state)
                         (find-best-heal-spell available-spells entity)
-                        (first-elt (num:shellsort available-spells
-                                                  (spell:sort-spells-by-level t))))))
+                        (first-elt (shellsort available-spells
+                                              (spell:sort-spells-by-level t))))))
           (when spell
             (setf (character:spell-loaded ghost) spell)
             (battle-utils:launch-spell world entity friend-to-help)))))))
@@ -92,8 +92,8 @@
       (when-let* ((available-spells
                    (character:castable-spells-list-by-tag ghost
                                                           spell:+spell-tag-teleport+))
-                  (spells         (num:shellsort available-spells
-                                                 (spell:sort-spells-by-level t)))
+                  (spells         (shellsort available-spells
+                                             (spell:sort-spells-by-level t)))
                   (min-cost-spell (last-elt  spells))
                   (max-cost-spell (first-elt spells))
                   (cost-pos       (mesh:calculate-cost-position entity))
@@ -117,3 +117,69 @@
         (if desc
             (>= power-a power-b)
             (<  power-a power-b)))))
+
+(defstruct hiding-place
+  (pos)
+  (cost)
+  (average-cost-opponents))
+
+(defun find-hiding-place-box (entity)
+  (flet ((get-path-cost (blackboard from to)
+           (multiple-value-bind (path total-cost costs)
+               (blackboard:path-with-concerning-tiles blackboard from to)
+             (declare (ignore path costs))
+             total-cost)))
+    (with-slots-for-reasoning (entity state ghost blackboard)
+      (let* ((difficult         (game-state:level-difficult state))
+             (box-size          (* difficult 5))
+             (player-position   (mesh:calculate-cost-position entity))
+             (player-x          (elt player-position 0))
+             (player-y          (elt player-position 1))
+             (all-hiding-pos
+              (absee-mesh:tiles-placeholder-visibility-in-box-by-faction state
+                                                                         player-x
+                                                                         player-y
+                                                                         box-size
+                                                                         game-state:+pc-type+))
+             (all-hiding-places (loop for hiding-pos in all-hiding-pos collect
+                                     (let ((cost (get-path-cost  blackboard
+                                                                 player-position
+                                                                 hiding-pos)))
+                                       (make-hiding-place :pos  hiding-pos
+                                                          :cost cost)))))
+        ;; remove not reachable pos
+        (setf all-hiding-places
+              (remove-if #'(lambda (h)
+                             (let ((cost (get-path-cost blackboard
+                                                        player-position
+                                                        (hiding-place-pos h))))
+                               (> cost (character:current-movement-points ghost))))
+                         all-hiding-places))
+        (when all-hiding-places
+          ;; calculate average
+          (loop for hiding-place in all-hiding-places do
+               (let ((sum 0)
+                     (ct  0))
+                 (game-state:map-ai-entities state
+                                             #'(lambda (k player-ent)
+                                                 (declare (ignore k))
+                                                 (let ((from (mesh:calculate-cost-position player-ent)))
+                                                   (incf sum
+                                                         (get-path-cost blackboard
+                                                                        from
+                                                                        (hiding-place-pos hiding-place)))
+                                                   (incf ct 1))))
+                 (setf (hiding-place-average-cost-opponents hiding-place)
+                       (d (/ sum ct)))))
+          ;; sort
+          (setf all-hiding-places (shellsort all-hiding-places
+                                             #'(lambda (a b)
+                                                 (d> (hiding-place-average-cost-opponents a)
+                                                     (hiding-place-average-cost-opponents b)))))
+          (misc:dbg "~{~a~%~}" all-hiding-places)
+          (if-difficult-level>medium (state)
+            (let* ((difficult-scaling (* difficult 2))
+                   (max-lenght (max 1 (lcg-next-upto (ceiling (/ (length all-hiding-pos)
+                                                                 difficult-scaling))))))
+              (hiding-place-pos (random-elt (subseq all-hiding-places 0 max-lenght))))
+            (hiding-place-pos (random-elt all-hiding-places))))))))

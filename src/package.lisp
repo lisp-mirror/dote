@@ -225,6 +225,7 @@
    :permutation
    :shuffle
    :make-fresh-list
+   :seq->list
    :make-array-frame
    :make-fresh-array
    :sequence->list
@@ -1046,7 +1047,8 @@
    :*entity-id-counter*
    :valid-id-p
    :identificable
-   :id))
+   :id
+   :test-id=))
 
 (defpackage :entity
   (:use :cl
@@ -1317,6 +1319,7 @@
    :gen-4-neighbour-counterclockwise
    :gen-4-neighbour-ccw
    :gen-neighbour-position-in-box
+   :gen-valid-neighbour-position-in-box
    :gen-ring-box-position
    :with-check-borders
    :with-check-matrix-borders
@@ -2132,9 +2135,11 @@
    :get-cost-insecure
    :el-type-in-pos
    :entity-id-in-pos
+   :entity-in-pos
    :occludep-in-pos
    :element-mapstate@
    :door@pos-p
+   :empty@pos-p
    :selected-pc
    :selected-path
    :build-movement-path
@@ -2154,6 +2159,9 @@
    :fetch-from-ai-entities
    :map-player-entities
    :map-ai-entities
+   :all-player-id-by-faction
+   :faction->map-faction-fn
+   :faction->opposite-faction
    :find-player-id-by-position
    :find-ai-id-by-position
    :faction-player-p
@@ -2834,11 +2842,14 @@
   (:use :cl
         :alexandria
         :constants
+        :num
+        :misc
         :entity
         :interactive-entity
         :interfaces
         :resources-utils
         :basic-interaction-parameters)
+  (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :+planner-file-extension+
    :+idle-action+
@@ -2853,7 +2864,8 @@
    :if-difficult-level>medium
    :go-launch-heal-spell
    :go-launch-teleport-spell
-   :combined-power-compare-clsr))
+   :combined-power-compare-clsr
+   :find-hiding-place-box))
 
 (defpackage :character
   (:use :cl
@@ -3603,13 +3615,18 @@
         :entity
         :camera
         :game-state)
+  (:nicknames :absee-mesh)
   (:shadowing-import-from :sb-cga :matrix     :rotate)
   (:shadowing-import-from :misc   :random-elt :shuffle)
   (:export
    :*visibility-target-placeholder*
+   :*ray-test-id-entities-ignored*
    :setup-placeholder
    :with-placeholder@
    :placeholder-visible-p
+   :tiles-placeholder-visible-in-box
+   :tiles-placeholder-visibility-in-box-by-faction
+   :with-invisible-ids
    :placeholder-visible-ray-p
    :able-to-see-mesh
    :visibility-cone
@@ -3617,6 +3634,7 @@
    :update-visibility-cone
    :visible-players
    :other-faction-visible-players
+   :visible-players-in-state-from-faction
    :other-visible-p
    :other-visible-cone-p
    :other-visible-ray-p
@@ -4577,6 +4595,7 @@
    :reachable-p-w/concening-tiles
    :reachable-p-w/concening-tiles-fn
    :build-all-attack-tactics
+   :path-with-concerning-tiles
    :+concerning-tile-value+
    :blackboard
    :concerning-tiles

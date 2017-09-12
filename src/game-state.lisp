@@ -326,6 +326,8 @@
 
 (defgeneric entity-id-in-pos (object x y))
 
+(defgeneric entity-in-pos (object x y))
+
 (defgeneric build-movement-path (object start end &key other-costs-layer))
 
 (defgeneric terrain-aabb-2d (object))
@@ -357,6 +359,8 @@
 (defgeneric map-player-entities (object function))
 
 (defgeneric map-ai-entities (object function))
+
+(defgeneric all-player-id-by-faction (object faction))
 
 (defgeneric terrain-height@pos (object x z))
 
@@ -452,9 +456,15 @@
 
 (gen-map-state-reader el-type entity-id occludep)
 
+(defmethod entity-in-pos ((object game-state) (x fixnum) (y fixnum))
+  (let ((id (entity-id (matrix-elt (map-state object) y x))))
+    (find-entity-by-id object id)))
+
 (defgeneric element-mapstate@ (object x y))
 
 (defgeneric door@pos-p (object x y))
+
+(defgeneric empty@pos-p (object x y))
 
 (defmethod element-mapstate@ ((object game-state) (x fixnum) (y fixnum))
   (declare (optimize (speed 0) (safety 3) (debug 3)))
@@ -465,6 +475,9 @@
       (eq (el-type-in-pos object x y) +door-s-type+)
       (eq (el-type-in-pos object x y) +door-w-type+)
       (eq (el-type-in-pos object x y) +door-e-type+)))
+
+(defmethod empty@pos-p ((object game-state) (x fixnum) (y fixnum))
+  (map-element-empty-p (element-mapstate@ object x y)))
 
 (defmethod prepare-map-state ((object game-state) (map random-terrain))
   (with-accessors ((map-state map-state)) object
@@ -621,6 +634,25 @@
 (defmethod map-ai-entities ((object game-state) function)
   (with-accessors ((ai-entities ai-entities)) object
     (maphash function ai-entities)))
+
+(defun faction->map-faction-fn (faction)
+   (if (eq faction +npc-type+)
+       #'map-ai-entities
+       #'map-player-entities))
+
+(defun faction->opposite-faction (faction)
+  (if (eq faction +npc-type+)
+       +pc-type+
+       +npc-type+))
+
+(defmethod all-player-id-by-faction ((object game-state) faction)
+  (let ((res '())
+        (fn  (faction->map-faction-fn faction)))
+    (funcall fn object
+             #'(lambda (k v)
+                 (declare (ignore k))
+                 (push (id v) res)))
+    res))
 
 (defun find-faction-entity-id-by-position (game-state probe faction)
   (flet ((fn (k entity)

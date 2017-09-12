@@ -43,5 +43,8 @@
     (setf (id to) (id from)))
   to)
 
+(defun test-id= (a b)
+  (= (id a) (id b)))
+
 (defmethod cl-kanren:equivp ((lhs identificable) (rhs identificable))
   (= (id lhs) (id rhs)))

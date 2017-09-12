@@ -433,6 +433,14 @@ else
                 (vector-push-extend (ivec2:ivec2 x-box y-box) results))))
     results))
 
+(defun gen-valid-neighbour-position-in-box (matrix x y w-offset h-offset &key (add-center t))
+  "note: bounds checking is done"
+  (let ((results (gen-neighbour-position-in-box x y w-offset h-offset :add-center add-center)))
+    (remove-if-not #'(lambda (a)
+                       (2d-utils:displace-2d-vector (a x y)
+                         (element@-inside-p matrix  x y)))
+                   results)))
+
 (defun gen-ring-box-position (x y w-offset h-offset)
   "note: no bounds checking is done, inefficient also"
   (let ((results (gen-neighbour-position-in-box x y w-offset h-offset)))

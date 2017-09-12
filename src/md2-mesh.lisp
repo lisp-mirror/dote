@@ -1028,19 +1028,29 @@
   (when (faction-ai-p (state object) (id object))
     (with-accessors ((state state)) object
       (with-accessors ((blackboard blackboard:blackboard)) state
-        (misc:dbg "best ~a"
-                  (blackboard:best-path-to-reach-enemy-w-current-weapon blackboard object))
-        (misc:dbg "near ~a"
-                  (blackboard:best-path-near-attack-goal-w-current-weapon blackboard object))
-        (misc:dbg "exists? ~a reachable? ~a "
-                  (goap::exists-attack-goal-w-current-weapon-p blackboard object)
+        (let ((cost-pos (calculate-cost-position object)))
+          (misc:dbg "best ~a"
+                    (blackboard:best-path-to-reach-enemy-w-current-weapon blackboard object))
+          (misc:dbg "near ~a"
+                    (blackboard:best-path-near-attack-goal-w-current-weapon blackboard object))
+          (misc:dbg "exists? ~a reachable? ~a "
+                    (goap::exists-attack-goal-w-current-weapon-p blackboard object)
                   (goap::reachable-w-current-weapon-and-mp-p blackboard object))
-        (misc:dbg "has weapon? ~a"
-                  (goap::has-weapon-inventory-or-worn-p blackboard object))
-        (misc:dbg "has spell? ~a"
-                  (goap::has-enough-sp-damage-p blackboard object))
-        (misc:dbg "planner-file ~a"
-                  (goap:load-planner-file (goap:find-planner-file (ghost object) +attack-strategy+))))))
+          (misc:dbg "has weapon? ~a"
+                    (goap::has-weapon-inventory-or-worn-p blackboard object))
+          (misc:dbg "has spell? ~a"
+                    (goap::has-enough-sp-damage-p blackboard object))
+          (misc:dbg "planner-file ~a"
+                    (goap:load-planner-file (goap:find-planner-file (ghost object) +attack-strategy+)))
+          (misc:dbg "invisible-tiles ~a -> ~a"
+                    (id object)
+                    (able-to-see-mesh:tiles-placeholder-visibility-in-box-by-faction
+                     state
+                     (elt cost-pos 0) (elt cost-pos 1)
+                     10
+                     game-state:+pc-type+))
+          (misc:dbg "best hiding place = ~a"
+                    (ai-utils:find-hiding-place-box object))))))
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (with-accessors ((ghost ghost)
                    (state state)) object
@@ -2049,7 +2059,7 @@
       (setf (magic-points    (ghost body)) 40.0)
       ;; note:   wear-item-event  will   not  be   catched  as   the
       ;; registration happens when the entity is added to world
-      (wear-item body forged-bow))
+      (wear-item body forged-sword))
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     body))
 

@@ -49,7 +49,7 @@
          :cost                  20)
   (:name :find-way-escape
          :preconditions         ()
-         :context-preconditions (is-there-escape-way-p) ; TODO
+         :context-preconditions (is-there-escape-way-p)
          :effects               ((:has-escape t))
          :cost                  5)
   (:name :launch-teleport-spell

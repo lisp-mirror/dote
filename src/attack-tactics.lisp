@@ -97,9 +97,9 @@
 ;; Best...well...
 (defun build-best-path-to-attack (blackboard ai-player weapon-tactic)
   "return tre values: the path (taking into account concerning tiles),
-the total-cost  (taking into account  terrain and other  objects, like
-building or players)  and the total cost of the  path (again only with
-map cost (i.e. no concerning tiles)"
+the cost of each move (taking  into account terrain and other objects,
+like building or  players) and the total cost of  the path (again only
+with map cost (i.e. no concerning tiles)"
   (when-let* ((all-tactics        (build-all-attack-tactics blackboard))
               (all-weapon-tactics (getf all-tactics weapon-tactic))
               (my-tactic   (find-if #'(lambda (a) (= (id ai-player) (entity-id a)))
@@ -146,9 +146,9 @@ map cost (i.e. no concerning tiles)"
 (defun path-with-concerning-tiles (blackboard ai-position
                                    defender-position)
   "return three values: the path (taking into account concerning tiles),
-the total-cost  (taking into account  terrain and other  objects, like
-building or  players *but NOT  the doors*) and  the total cost  of the
-path, again only with map cost (i.e. no concerning tiles)"
+the  total cost of (taking  into account terrain and other objects,
+like building  or players *but NOT  the doors*) and the cost of each move of
+the path, again only with map cost (i.e. no concerning tiles)"
   (with-accessors ((main-state main-state)
                    (concerning-tiles concerning-tiles)) blackboard
     (with-accessors ((main-state main-state)) blackboard

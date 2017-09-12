@@ -551,7 +551,6 @@
         (>= (character:current-movement-points ghost)
             (num:find-max neigh-cost))))))
 
-;; TODO
 (defun is-there-escape-way-p  (strategy-expert entity)
-  (declare (ignore strategy-expert entity))
-  nil)
+  (declare (ignore strategy-expert))
+  (ai-utils:find-hiding-place-box entity))

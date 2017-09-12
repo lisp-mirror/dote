@@ -18,6 +18,9 @@
 
 (defparameter *visibility-target-placeholder* nil)
 
+(defparameter *ray-test-id-entities-ignored* nil
+  "a list of id that the ray will ignore" )
+
 (defun setup-placeholder (world shaders)
   (setf *visibility-target-placeholder* (trees:gen-tree
                                          (res:get-resource-file +mesh-placeholder-file+
@@ -63,6 +66,107 @@
                         *visibility-target-placeholder* nil :update-costs nil)
       (values ray entity))))
 
+(defun tiles-placeholder-visible-in-box (matrix player x-center y-center size)
+  "x-center y-center size logical map space (integer)"
+  (let ((tiles (matrix:gen-valid-neighbour-position-in-box matrix
+                                                           x-center
+                                                           y-center
+                                                           size size
+                                                           :add-center t)))
+    (loop
+       for tile across tiles
+       when
+         (placeholder-visible-p player (elt tile 0) (elt tile 1))
+       collect tile)))
+
+(defmacro with-invisible-ids ((ids) &body body)
+  `(let ((*ray-test-id-entities-ignored* ,ids))
+     ,@body))
+
+(defun tiles-placeholder-visibility-in-box-by-faction (game-state x-center y-center size faction
+                                                    &key
+                                                      (remove-non-empty-tiles t)
+                                                      (discard-non-visible-opponents t))
+  " TODO: write this docstring in a better english. :))
+x-center y-center size logical map space (integer).
+Note:  entity of  the  same  faction of  'faction'  parameter will  be
+ignored in visibility test.
+
+Here 'opponents' means character of faction opposite of 'faction' parameter.
+
+If remove-non-empty-tiles is non nil  occupied tiles (but not occupied
+by *visible* character of faction 'faction') will be discarded.
+
+*visible* means visible from character of opponents.
+
+If discard-non-visible-opponents  is not nil *invisible*  opponents will
+be ignored.
+
+*invisible* means not visible from character of opponents.
+
+Faction is  usual  human  player character
+
+Returns two values: *invisibles* and *visibles* tiles"
+  (flet ((remove-from-unvisible-tiles (visibles-of-faction x y)
+           (if  (empty@pos-p game-state x y)
+                nil                         ;; empty tile, maintain
+                (let ((entity@pos (game-state:entity-in-pos game-state x y)))
+                  (if (my-faction entity@pos)              ; interactive entity?
+                      (if (eq faction (my-faction entity@pos)) ; yes, check faction
+                          (if (find entity@pos
+                                    visibles-of-faction
+                                    :test #'identificable:test-id=)
+                              t    ; same faction of 'faction' and visible, remove
+                              nil)
+                          t)       ; opposite faction, remove
+                      t))))) ;non interactive entity (wall, tree etc.) remove
+    (let* ((map-state  (map-state game-state))
+           (tiles (misc:seq->list
+                   (matrix:gen-valid-neighbour-position-in-box map-state
+                                                               x-center
+                                                               y-center
+                                                               size size
+                                                               :add-center nil)))
+           (visibles         '())
+           (map-fn           (faction->map-faction-fn faction))
+           ;; opposite faction is AI usually
+           (opposite-faction (faction->opposite-faction faction))
+           ;; friend of opposite-faction (friend of AI usually)
+           (friends-opposite-faction-id
+            (game-state:all-player-id-by-faction game-state
+                                                 opposite-faction))
+           ;; friend of faction (friend of human's character usually)
+           (visibles-faction-entities
+            (visible-players-in-state-from-faction game-state
+                                                   opposite-faction)))
+      ;; remove non empty tile if required
+      (when remove-non-empty-tiles
+        (setf tiles
+              (remove-if #'(lambda (p)
+                             (remove-from-unvisible-tiles visibles-faction-entities
+                                                          (elt p 0) (elt p 1)))
+                         tiles)))
+      (funcall map-fn game-state
+               #'(lambda (k v)
+                   (declare (ignore k))
+                   ;; ignore  player   of the 'opposite-faction'  (usually
+                   ;; AI's characters)
+                   (with-invisible-ids (friends-opposite-faction-id)
+                     ;; do not  test for visibility  of a tile  if the
+                     ;; opponent is not visible  from opponents of 'v'
+                     ;; (usually v is an opponent of the AI)
+                     (when (or (not discard-non-visible-opponents)
+                               (find v
+                                     visibles-faction-entities
+                                     :test #'identificable:test-id=))
+                       (loop
+                          for tile in tiles
+                          when (placeholder-visible-p v (elt tile 0) (elt tile 1))
+                          do
+                            (pushnew tile visibles :test #'ivec2:ivec2=))))))
+      (values (set-difference tiles visibles :test #'ivec2:ivec2=)
+              visibles))))
+
 (defun placeholder-visible-ray-p (player x y)
   "x y z logical map space (integer)"
   (%placeholder-visible-p-wrapper (player x y)
@@ -87,6 +191,8 @@
 (defgeneric visible-players (object &key predicate))
 
 (defgeneric other-faction-visible-players (object))
+
+(defgeneric visible-players-in-state-from-faction (object faction))
 
 (defgeneric other-visible-p (object target))
 
@@ -119,14 +225,14 @@
           (mines  (if (faction-player-p state id)
                       (game-state:player-entities state)
                       (game-state:ai-entities     state))))
-      (nconc
-       (loop for ent being the hash-value in others
-          when (and (other-visible-p object ent)
-                    (funcall predicate ent))
-          collect ent)
-       (loop for ent being the hash-value in mines
-          when (funcall predicate ent)
-          collect ent)))))
+      (concatenate 'list
+                   (loop for ent being the hash-value in others
+                      when (and (other-visible-p object ent)
+                                (funcall predicate ent))
+                      collect ent)
+                   (loop for ent being the hash-value in mines
+                      when (funcall predicate ent)
+                      collect ent)))))
 
 (defmethod other-faction-visible-players ((object able-to-see-mesh))
   (visible-players object
@@ -134,7 +240,26 @@
                                   (not (eq (my-faction object)
                                            (my-faction a))))))
 
+(defmethod visible-players-in-state-from-faction ((object game-state) faction)
+  "all visible player seen by faction (list of entities)"
+  (let ((opposite-faction (faction->opposite-faction faction))
+        (map-fn           (faction->map-faction-fn faction))
+        (res              '()))
+    (funcall map-fn
+             object
+             #'(lambda (k ent)
+                 (declare (ignore k))
+                 (let ((visibles (visible-players ent
+                                                  :predicate #'(lambda (a)
+                                                                 (eq (my-faction a)
+                                                                     opposite-faction)))))
+                   (loop for visible in visibles do
+                        (pushnew visible res :test #'test-id=)))))
+    res))
+
+
 (defmethod other-visible-p ((object able-to-see-mesh) (target triangle-mesh))
+    "is target visible from object?"
   (let ((in-cone-p (other-visible-cone-p object target)))
     (when in-cone-p
       ;;(misc:dbg "visible for cone ~a" (id target))
@@ -145,11 +270,13 @@
             (values nil        entity-hitted))))))
 
 (defmethod other-visible-cone-p ((object able-to-see-mesh) (target triangle-mesh))
+  "is target visible from object (cone test)?"
   (with-accessors ((visibility-cone visibility-cone)) object
     (let ((center (aabb-center (aabb target))))
       (point-in-cone-p visibility-cone center))))
 
 (defmethod other-visible-ray-p ((object able-to-see-mesh) (target triangle-mesh))
+  "is target visible from object (ray test)?"
   (multiple-value-bind (ray-nonlab-hitted entity-nonlab-hitted)
       (nonlabyrinth-element-hitted-by-ray object target)
     (let ((ray-lab-hitted (labyrinth-element-hitted-by-ray object target)))
@@ -185,7 +312,10 @@
                                                        (vec2 (elt ends 0)
                                                              (elt ends 2)))))
              (when leaf
-               (loop for d across (quad-tree:data leaf) do
+               (loop for d across (quad-tree:data leaf)
+                  ;; check if this entity should be ignored
+                  when (not (find (id d) *ray-test-id-entities-ignored* :test #'=))
+                  do
                     (cond
                       ((terrain-chunk:terrain-chunk-p d)
                        (let* ((x-chunk (elt ends 0))
