@@ -422,6 +422,13 @@ else
 
 (misc:defalias gen-4-neighbour-ccw #'gen-4-neighbour-counterclockwise)
 
+(defun gen-valid-4-neighbour-counterclockwise (matrix x y &key (add-center t))
+  "note: bounds checking is done"
+  (remove-if-not #'(lambda (a) (pixel-inside-p matrix (elt a 0) (elt a 1)))
+                 (gen-4-neighbour-counterclockwise x y :add-center add-center)))
+
+(misc:defalias gen-valid-4-neighbour-ccw #'gen-valid-4-neighbour-counterclockwise)
+
 (defun gen-neighbour-position-in-box (x y w-offset h-offset &key (add-center t))
   "note: no bounds checking is done"
   (let ((results (misc:make-fresh-array 0 nil 'ivec2:ivec2 nil)))
@@ -447,6 +454,17 @@ else
     (remove-if #'(lambda (a) (and (/= (abs (- (elt a 0) x)) (/ w-offset 2))
                                   (/= (abs (- (elt a 1) y)) (/ h-offset 2))))
                results)))
+
+(defun gen-valid-fat-ring-positions (matrix x y
+                                        w-offset h-offset
+                                        w-delete-offset h-delete-offset)
+  "note: inefficient"
+  (let ((ext    (misc:seq->list (gen-valid-neighbour-position-in-box matrix x y w-offset h-offset)))
+        (inside (misc:seq->list (gen-valid-neighbour-position-in-box matrix
+                                                                     x y
+                                                                     w-delete-offset
+                                                                     h-delete-offset))))
+    (set-difference ext inside :test #'ivec2:ivec2=)))
 
 (defmacro with-check-borders ((x y x-bond y-bond w h) then else)
   `(if (and

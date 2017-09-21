@@ -144,11 +144,16 @@ with map cost (i.e. no concerning tiles)"
     (and path (<= cumulative-cost (character:current-movement-points (ghost ai-player))))))
 
 (defun path-with-concerning-tiles (blackboard ai-position
-                                   defender-position)
+                                   defender-position
+                                   &key (cut-off-first-tile t))
   "return three values: the path (taking into account concerning tiles),
 the  total cost of (taking  into account terrain and other objects,
 like building  or players *but NOT  the doors*) and the cost of each move of
-the path, again only with map cost (i.e. no concerning tiles)"
+the path, again only with map cost (i.e. no concerning tiles)
+
+if cut-off-first-tile is  not nil the first element  of the calculated
+path is removed
+"
   (with-accessors ((main-state main-state)
                    (concerning-tiles concerning-tiles)) blackboard
     (with-accessors ((main-state main-state)) blackboard
@@ -172,11 +177,14 @@ the path, again only with map cost (i.e. no concerning tiles)"
                                                                  (elt i 1)
                                                                  (elt i 0))))))
                      (cumulative-cost (reduce #'(lambda (a b) (d+ (d a) (d b)))
-                                              costs-terrain)))
+                                              costs-terrain))
+                     (result-path     (if cut-off-first-tile
+                                          (subseq path-w/concering 1)
+                                          path-w/concering)))
                 ;; (misc:dbg "path ~a ~a ~a"
                 ;;           (subseq path-w/concering 1)
                 ;;           cumulative-cost costs-terrain)
-                (values (subseq path-w/concering 1) cumulative-cost costs-terrain))
+                (values result-path cumulative-cost costs-terrain))
               (values nil nil)))))))
 
 (defun reachable-p-w/concening-tiles-fn (blackboard)
@@ -306,9 +314,7 @@ the path, again only with map cost (i.e. no concerning tiles)"
                    (push (cons (mesh:calculate-cost-position entity)
                                (truncate (character:current-movement-points ghost)))
                          res)))))
-        (map-ai-entities main-state #'(lambda (k v)
-                                        (declare (ignore k))
-                                        (fetch v)))
+        (map-ai-entities main-state #'(lambda (v) (fetch v)))
       res))))
 
 (defun find-defender-id-by-goal-position (blackboard position)

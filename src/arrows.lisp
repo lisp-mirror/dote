@@ -394,8 +394,12 @@
                     (pos       (map-utils:pos->game-state-pos entity))
                     (dist      (map-utils:map-manhattam-distance pos-defender pos)))
                (when (<= dist range)
-                 (battle-utils:send-attack-spell-event attacker entity))))
-        (battle-utils:send-attack-spell-event attacker defender))))
+                 (battle-utils:send-attack-spell-event attacker
+                                                       entity
+                                                       :assume-visible t))))
+        (battle-utils:send-attack-spell-event attacker
+                                              defender
+                                              :assume-visible nil))))
 
 (defun launch-attack-spell (spell world attacker defender
                             &key (invisiblep nil))
@@ -448,7 +452,7 @@
       (world:push-entity world target-effect))
     (with-enqueue-action-and-send-remove-after
         (world action-scheduler:send-spell-fx-action)
-      (battle-utils:send-attack-spell-event attacker defender :ignore-visible t))
+      (battle-utils:send-attack-spell-event attacker defender :assume-visible t))
     (with-enqueue-action-and-send-remove-after
         (world action-scheduler:end-attack-spell-action)
       (game-event:send-end-defend-from-attack-spell-event defender))))
@@ -477,8 +481,10 @@
                     (pos       (map-utils:pos->game-state-pos entity))
                     (dist      (map-utils:map-manhattam-distance pos-defender pos)))
                (when (<= dist range)
-                 (battle-utils:send-spell-event attacker entity))))
-        (battle-utils:send-spell-event attacker defender))))
+                 (battle-utils:send-spell-event attacker
+                                                entity
+                                                :assume-visible t))))
+        (battle-utils:send-spell-event attacker defender :assume-visible nil))))
 
 (defun %enqueue-tooltip (entity message)
   (billboard:enqueue-tooltip entity

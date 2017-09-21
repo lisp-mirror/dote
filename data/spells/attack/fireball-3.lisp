@@ -2,7 +2,7 @@
 
 (define-attack-spell (:fireball-3)
   :level                 10
-  :tags                  (:damage :remove-wall)
+  :tags                  (:damage)
   :element               :fire
   :gui-texture           "attack/fireburst.tga"
   :cost                  40.0

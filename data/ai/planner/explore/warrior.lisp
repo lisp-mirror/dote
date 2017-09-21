@@ -12,7 +12,9 @@
          :cost                  80)
   (:name :launch-heal-spell
          :preconditions         ()
-         :context-preconditions (has-enough-sp-heal-p !enough-health-p)
+         :context-preconditions (has-enough-sp-heal-p !enough-health-p
+                                 friend-needs-help-p
+                                 there-is-reachable-help-needed-friend-spell-p)
                                  ;; "!is-status-terror-p"  is implicitly
                                  ;; managed by has-enough-sp-heal-p
          :effects               ((:curb-threat t))

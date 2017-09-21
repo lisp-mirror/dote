@@ -22,8 +22,9 @@
        (let ((,dice-roll (lcg-next-upto ,max)))
          (< ,dice-roll val)))))
 
-(gen-pass-dice 2)
+(defmacro gen-pass-multiple-dice (&rest dice-max-values)
+  `(progn
+     ,@(loop for i in dice-max-values collect
+            `(gen-pass-dice ,i))))
 
-(gen-pass-dice 1.0)
-
-(gen-pass-dice 100.0)
+(gen-pass-multiple-dice 2 1.0 100.0 10.0 20 6)

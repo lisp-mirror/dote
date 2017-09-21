@@ -298,20 +298,24 @@
            (game-state:remove-entity-by-id main-state id))
       object)))
 
+(defun clear-all-memoized-function-cache ()
+  (ai-utils:go-find-hiding-place-clear-cache))
+
 (defmethod game-event:on-game-event ((object world) (event game-event:end-turn))
   (with-accessors ((main-state main-state)) object
     ;(tg:gc :full t)
     ;;(misc:dbg " end turn ~a ~a" (type-of object) (type-of event))
+    (clear-all-memoized-function-cache)
     (remove-all-tooltips            object)
     (remove-all-windows             object)
     (remove-all-removeable          object)
     (remove-all-removeable-from-gui object)
     ;;(remove-entity-if (gui object) #'(lambda (a) (typep a 'widget:message-window)))
     (incf (game-turn (main-state object)))
-    (maphash #'(lambda (k v) (declare (ignore k)) (mesh:process-postponed-messages v))
-             (game-state:player-entities main-state))
-    (maphash #'(lambda (k v) (declare (ignore k)) (mesh:process-postponed-messages v))
-             (game-state:ai-entities main-state))
+    (flet ((%process-postponed-messages (entity)
+             (mesh:process-postponed-messages entity)))
+      (map-player-entities main-state #'%process-postponed-messages)
+      (map-ai-entities     main-state #'%process-postponed-messages))
     (calc-ai-entities-action-order main-state)
     nil))
 

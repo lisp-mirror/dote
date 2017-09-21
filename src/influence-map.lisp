@@ -146,11 +146,10 @@
                       (elt coord 0)
                       (elt coord 1)))))
 
-(defmethod apply-influence ((object matrix) (influencer hash-table))
-  (maphash #'(lambda (k v)
-               (declare (ignore k))
-               (apply-influence object v))
-           influencer))
+(defmethod apply-influence ((object matrix) (influencer list))
+  (map nil
+       #'(lambda (v) (apply-influence object v))
+       influencer))
 
 (defun im->pixmap (map)
   (layer->pixmap map))

@@ -129,7 +129,8 @@
    (old-state-element
     :initform nil
     :initarg  :old-state-element
-    :accessor old-state-element)))
+    :accessor old-state-element
+    :documentation "a pointer to the nest element (as in a linked list)")))
 
 (defmethod initialize-instance :after ((object map-state-element) &key &allow-other-keys)
   (when (not (eq (old-state-element object) :stopper))
@@ -156,6 +157,21 @@
 (defgeneric get-neighborhood (object row column predicate &key w-offset h-offset))
 
 (defgeneric insert-state-chain-after (object idx entity type occlusion-value &optional ct))
+
+(defmethod insert-state-chain-after ((object map-state-element)
+                                      idx entity type occlusion-value
+                                      &optional (ct 0))
+  (with-accessors ((old-state-element old-state-element)) object
+    (if (= ct idx)
+        (let ((new-element (make-instance 'map-state-element
+                                          :old-state-element old-state-element
+                                          :occlude           occlusion-value
+                                          :el-type           type
+                                          :entity-id         (id entity))))
+          (setf old-state-element new-element)
+          object)
+        (insert-state-chain-after object idx entity type occlusion-value (1+ ct)))))
+
 
 (defmethod map-element-empty-p ((object map-state-element))
   (or (eq (el-type object)
@@ -291,15 +307,15 @@
     :initarg  :labyrinth-entities
     :accessor labyrinth-entities)
    (player-entities
-    :initform (make-hash-table :test 'equal)
+    :initform '()
     :initarg  :player-entities
     :accessor player-entities
-    :type     :md2-mesh)
+    :type     :list)
    (ai-entities
-    :initform (make-hash-table :test 'equal)
+    :initform ()
     :initarg  :ai-entities
     :accessor ai-entities
-    :type     :md2-mesh)
+    :type     :list)
    (selected-pc
     :initform nil
     :initarg  :selected-pc
@@ -403,6 +419,8 @@
 (defgeneric set-tile-visited (object x y))
 
 (defgeneric set-concerning-tile (object x y &key danger-zone-size concerning-tile-value))
+
+(defgeneric set-concerning-tile-fn (object x y &key danger-zone-size concerning-tile-fn))
 
 (defgeneric max-ai-movement-points (object))
 
@@ -613,27 +631,27 @@
   (with-accessors ((player-entities player-entities)) object
     ;; test
     (character:reset-movement-points (ghost entity))
-    (setf (gethash (id entity) player-entities) entity)))
+    (push entity player-entities)))
 
 (defmethod add-to-ai-entities ((object game-state) entity)
   (with-accessors ((ai-entities ai-entities)) object
-    (setf (gethash (id entity) ai-entities) entity)))
+    (push entity ai-entities)))
 
 (defmethod fetch-from-player-entities ((object game-state) id-entity)
   (with-accessors ((player-entities player-entities)) object
-    (gethash id-entity player-entities)))
+    (find id-entity player-entities :test #'= :key #'id)))
 
 (defmethod fetch-from-ai-entities ((object game-state) id-entity)
   (with-accessors ((ai-entities ai-entities)) object
-    (gethash id-entity ai-entities)))
+    (find id-entity ai-entities :test #'= :key #'id)))
 
 (defmethod map-player-entities ((object game-state) function)
   (with-accessors ((player-entities player-entities)) object
-    (maphash function player-entities)))
+    (mapcar function player-entities)))
 
 (defmethod map-ai-entities ((object game-state) function)
   (with-accessors ((ai-entities ai-entities)) object
-    (maphash function ai-entities)))
+    (mapcar function ai-entities)))
 
 (defun faction->map-faction-fn (faction)
    (if (eq faction +npc-type+)
@@ -649,14 +667,12 @@
   (let ((res '())
         (fn  (faction->map-faction-fn faction)))
     (funcall fn object
-             #'(lambda (k v)
-                 (declare (ignore k))
+             #'(lambda (v)
                  (push (id v) res)))
     res))
 
 (defun find-faction-entity-id-by-position (game-state probe faction)
-  (flet ((fn (k entity)
-           (declare (ignore k))
+  (flet ((fn (entity)
            (let ((pos (mesh:calculate-cost-position entity)))
              (when (ivec2:ivec2= pos probe)
                (return-from find-faction-entity-id-by-position (id entity))))))
@@ -788,6 +804,7 @@
 
 (defmethod get-neighborhood ((object game-state) row column predicate
                              &key (w-offset 2) (h-offset 2))
+  "Return (entity . position-of-entity)"
   (with-accessors ((map-state map-state)) object
     (let ((pos (remove-if-not
                 #'(lambda (a) (element@-inside-p map-state (elt a 0) (elt a 1)))
@@ -861,10 +878,21 @@
                          :danger-zone-size danger-zone-size
                          :concerning-tile-value concerning-tile-value)))
 
+(defmethod set-concerning-tile-fn ((object game-state) x y
+                                &key
+                                  (danger-zone-size (let* ((level (level-difficult object)))
+                                                      (blackboard:calc-danger-zone-size level)))
+                                  (concerning-tile-fn
+                                   (blackboard:concerning-tile-default-mapping-clsr x y
+                                                                                    danger-zone-size)))
+  (with-accessors ((blackboard blackboard)) object
+    (set-concerning-tile-fn blackboard  x y
+                            :danger-zone-size danger-zone-size
+                            :concerning-tile-fn concerning-tile-fn)))
+
 (defun max-movement-points (game-state iterator-fn)
   (let ((all-mp '()))
-    (funcall iterator-fn game-state #'(lambda (k v)
-                                        (declare (ignore k))
+    (funcall iterator-fn game-state #'(lambda (v)
                                         (push (character:actual-movement-points (ghost v)) all-mp)))
     (find-max all-mp)))
 

@@ -233,4 +233,10 @@
 
 (defgeneric my-faction (object))
 
+(defgeneric pawnp (object))
+
+(defmethod pawnp (object)
+  (declare (ignore object))
+  nil)
+
 (defgeneric (setf my-faction) (object value))

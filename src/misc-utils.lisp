@@ -111,9 +111,11 @@
 (defmacro defcached (name (arg &key (test 'equalp) (clear-cache nil))
                      declaration
                      (&body body))
-  (let* ((function-name (alexandria:format-symbol t "~:@(~a~)" name))
-         (cache-name (alexandria:format-symbol t "~:@(cache~)")))
+  (let* ((function-clear-cache-name (format-fn-symbol t "~a-clear-cache" name))
+         (function-name             (format-fn-symbol t "~:@(~a~)" name))
+         (cache-name                (format-fn-symbol t "~:@(cache~)")))
     `(let ((,cache-name (make-hash-table :test (quote ,test))))
+       (defun ,function-clear-cache-name () (clrhash ,cache-name))
        (defun ,function-name (,@arg) ,(if declaration
                                   declaration
                                           `(declare (optimize (speed 0) (safety 3) (debug 3))))

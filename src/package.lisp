@@ -327,6 +327,7 @@
    :*default-epsilon*
    :with-epsilon
    :epsilon=
+   :normalize-value-in-range
    :smoothstep
    :sinstep
    :cosstep
@@ -416,7 +417,10 @@
    :gen-pass-dice
    :pass-d1.0
    :pass-d2
-   :pass-d100.0))
+   :pass-d100.0
+   :pass-d10.0
+   :pass-d20
+   :pass-d6))
 
 (defpackage :filesystem-utils
   (:use :cl)
@@ -595,7 +599,8 @@
    :apply-damage
    :faction-player-p
    :faction-ai-p
-   :my-faction))
+   :my-faction
+   :pawnp))
 
 (defpackage :ivec2
   (:use :cl
@@ -1078,7 +1083,9 @@
    :remove-entity-by-id
    :remove-entity-if
    :entity-dead-p
-   :with-slots-for-reasoning))
+   :calculate-cost-position
+   :with-slots-for-reasoning
+   :with-player-cost-pos))
 
 (defpackage :bs-tree
   (:use
@@ -1318,9 +1325,12 @@
    :gen-neighbour-position
    :gen-4-neighbour-counterclockwise
    :gen-4-neighbour-ccw
+   :gen-valid-4-neighbour-counterclockwise
+   :gen-valid-4-neighbour-ccw
    :gen-neighbour-position-in-box
    :gen-valid-neighbour-position-in-box
    :gen-ring-box-position
+   :gen-valid-fat-ring-positions
    :with-check-borders
    :with-check-matrix-borders
    :with-check-matrix-borders-then-else
@@ -2188,6 +2198,7 @@
    :make-influence-map
    :set-tile-visited
    :set-concerning-tile
+   :set-concerning-tile-fn
    :max-ai-movement-points
    :position-inside-room-p
    :calc-ai-entities-action-order))
@@ -2848,7 +2859,8 @@
         :interactive-entity
         :interfaces
         :resources-utils
-        :basic-interaction-parameters)
+        :basic-interaction-parameters
+        :game-state)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :+planner-file-extension+
@@ -2859,13 +2871,28 @@
    :+go-to-attack-pos-action+
    :+launch-heal-spell-action+
    :+launch-teleport-spell-action+
+   :+launch-wall-break-spell-action+
+   :+hide-action+
+   :+flee-action+
+   :+find-hiding-place-action+
+   :+place-trap-action+
+   :gen-neigh-costs
+   :gen-neigh
    :friend-who-needs-help
    :too-low-health-p
    :if-difficult-level>medium
+   :available-heal-spells
+   :reachable-help-needed-friend-spell-p
+   :combined-power-compare-clsr
+   :sort-by-manhattam-dist-clsr
+   :find-nearest-wall
+   :go-launch-wall-breaking-spell
+   :go-next-flee-position
    :go-launch-heal-spell
    :go-launch-teleport-spell
-   :combined-power-compare-clsr
-   :find-hiding-place-box))
+   :go-find-hiding-place-clear-cache
+   :go-find-hiding-place
+   :go-place-trap))
 
 (defpackage :character
   (:use :cl
@@ -3625,7 +3652,7 @@
    :with-placeholder@
    :placeholder-visible-p
    :tiles-placeholder-visible-in-box
-   :tiles-placeholder-visibility-in-box-by-faction
+   :tiles-placeholder-visibility-in-ring-by-faction
    :with-invisible-ids
    :placeholder-visible-ray-p
    :able-to-see-mesh
@@ -3776,6 +3803,7 @@
    :defend-from-attack-spell
    :defend-from-spell
    :attack-damage
+   :range-spell-valid-p
    ;; high level routines
    :attack-short-range
    :attack-long-range
@@ -4392,6 +4420,7 @@
   (:nicknames :md2)
   (:shadow :load)
   (:use :cl
+        :alexandria
         :sb-cga
         :sb-cga-utils
         :constants
@@ -4412,6 +4441,8 @@
         :mesh-material
         :mesh
         :able-to-see-mesh)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:shadowing-import-from :sb-cga :rotate)
   (:export
    :+tag-head-key+
    :+tag-left-weapon-key+
@@ -4617,7 +4648,9 @@
    :set-tile-visited
    :calc-danger-zone-size
    :set-concerning-tile
+   :set-concerning-tile-fn
    :update-unexplored-layer
+   :concerning-tile-default-mapping-clsr
    :next-unexplored-position
    :disgregard-all-plans))
 
@@ -4629,6 +4662,7 @@
         :graph
         :identificable
         :interfaces
+        :ai-utils
         :blackboard
         :game-state)
   (:shadowing-import-from :misc :shuffle :random-elt)

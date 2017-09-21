@@ -140,6 +140,7 @@
                (:file "arrows")
                (:file "md2-mesh-normal-lut")
                (:file "md2-mesh")
+               (:file "md2-mesh-ai")
                (:file "obj-mesh")
                (:file "trap-mesh-shell")
                (:file "trees")
@@ -187,5 +188,7 @@
                                      (:file "goap-test")))))
 
 (progn
-  (pushnew :debug-mode *features*)
-  (pushnew :debug-ai   *features*))
+  ;; debug
+  ;(pushnew :inhibit-planner *features*)
+  (pushnew :debug-mode      *features*)
+  (pushnew :debug-ai        *features*))

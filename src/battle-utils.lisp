@@ -198,12 +198,13 @@
            visiblep
            (mesh:can-use-movement-points-p attacker :minimum cost)))))
 
-(defun launch-attack-spell-possible-p (attacker defender)
+(defun launch-attack-spell-possible-p (attacker defender &key (assume-visible nil))
   (when-let* ((ghost-atk     (entity:ghost attacker))
               (spell         (character:spell-loaded ghost-atk))
               (cost          (spell:cost spell))
               (range-valid-p (range-spell-valid-p attacker defender spell))
-              (visiblep      (able-to-see-mesh:other-visible-p attacker defender)))
+              (visiblep      (or assume-visible
+                                 (able-to-see-mesh:other-visible-p attacker defender))))
     ;; the first and the second of the following checks are useless as
     ;; we  are  using when-let*,  but  harmless  and, moreover,  helps
     ;; readability.
@@ -387,8 +388,8 @@
       (game-event:send-refresh-toolbar-event)
       (game-event:propagate-attack-long-range-event msg))))
 
-(defun send-attack-spell-event (attacker defender &key (ignore-visible nil))
-  (when (or ignore-visible
+(defun send-attack-spell-event (attacker defender &key (assume-visible nil))
+  (when (or assume-visible
             (renderp defender)) ;; does it means: "is visible for someone?"
     (let* ((ghost-atk    (entity:ghost attacker))
            (spell        (character:spell-loaded ghost-atk))
@@ -400,9 +401,10 @@
       (game-event:propagate-attack-spell-event msg)
       (game-event:send-refresh-toolbar-event))))
 
-(defun send-spell-event (attacker defender)
+(defun send-spell-event (attacker defender &key (assume-visible nil))
   (with-accessors ((state entity:state)) attacker
-    (when (or (renderp defender) ;; does it means: "is visible for someone?"
+    (when (or assume-visible
+              (renderp defender) ;; does it means: "is visible for someone?"
               (every-faction-ai-p state attacker defender))
       (let* ((ghost-atk    (entity:ghost attacker))
              (spell        (character:spell-loaded ghost-atk))
@@ -675,14 +677,17 @@
        (< (map-utils:map-manhattam-distance pos-atk pos-def)
           +weapon-melee-range+)))))
 
-(defun attack-launch-spell (world attacker defender)
+(defun attack-launch-spell (world attacker defender &key (assume-visible nil))
   (when (and attacker
              defender)
-    (when (able-to-see-mesh:other-visible-p attacker defender)
+    (when (or assume-visible
+              (able-to-see-mesh:other-visible-p attacker defender))
       (let ((spell-loaded (character:spell-loaded (entity:ghost attacker))))
         (if spell-loaded
             (if (range-spell-valid-p attacker defender spell-loaded)
-                (when (launch-attack-spell-possible-p attacker defender)
+                (when (launch-attack-spell-possible-p attacker
+                                                      defender
+                                                      :assume-visible assume-visible)
                   (action-scheduler:with-enqueue-action
                       (world action-scheduler:attack-launch-spell-action)
                     (when (attack-spell-animation attacker defender)

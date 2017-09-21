@@ -515,6 +515,11 @@
   (declare (ignore strategy-expert))
   (%has-enough-sp-p entity spell:+spell-tag-teleport+))
 
+(defun there-is-reachable-help-needed-friend-spell-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (when-let ((available-spells (ai-utils:available-heal-spells entity)))
+    (ai-utils:reachable-help-needed-friend-spell-p available-spells entity)))
+
 (defmacro gen-is-status-tests (status)
   (let ((name-fn      (format-fn-symbol t "is-status-~a-p"       (symbol-name status)))
         (name-test-fn (format-fn-symbol :character "status-~a-p" (symbol-name status))))
@@ -534,23 +539,69 @@
   (declare (ignore strategy-expert entity))
   (dice:pass-d100.0 1))
 
+(defun pass-1d10 (strategy-expert entity)
+  (declare (ignore strategy-expert entity))
+  (dice:pass-d10.0 1))
+
 (defun able-to-move-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (with-accessors ((state entity:state)
                    (ghost entity:ghost)) entity
-    (with-accessors ((costs game-state:movement-costs)) state
-      (let* ((pos        (mesh:calculate-cost-position entity))
-             (x          (elt pos 0))
-             (y          (elt pos 1))
-             (neigh      (remove-if-not #'(lambda (a)
-                                            (matrix:pixel-inside-p costs (elt a 0) (elt a 1)))
-                                        (matrix:gen-4-neighbour-ccw x y :add-center nil)))
-             (neigh-cost (mapcar #'(lambda (a)
-                                     (game-state:get-cost state (elt a 0) (elt a 1)))
-                                 neigh)))
-        (>= (character:current-movement-points ghost)
-            (num:find-max neigh-cost))))))
+    (let* ((neigh-cost (gen-neigh-costs entity
+                                        #'(lambda (a)
+                                            (game-state:get-cost state (elt a 0) (elt a 1))))))
+      (>= (character:current-movement-points ghost)
+          (num:find-max neigh-cost)))))
 
-(defun is-there-escape-way-p  (strategy-expert entity)
+(defun is-able-to-flee-p (strategy-expert entity)
+  (with-accessors ((state entity:state)
+                   (ghost entity:ghost)) entity
+    (multiple-value-bind (pos cost-next-flee-pos)
+        (ai-utils:go-next-flee-position strategy-expert entity)
+      (declare (ignore pos))
+      (>= (character:current-movement-points ghost)
+          cost-next-flee-pos))))
+
+(defun is-there-hiding-place-p (strategy-expert entity)
   (declare (ignore strategy-expert))
-  (ai-utils:find-hiding-place-box entity))
+  (ai-utils:go-find-hiding-place entity))
+
+(defun is-visible-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (with-accessors ((state entity:state)) entity
+    (let* ((opposite-faction (faction->opposite-faction (my-faction entity)))
+           (visibles-from-pcs
+            (absee-mesh:visible-players-in-state-from-faction state opposite-faction)))
+      (find entity visibles-from-pcs :test #'test-id=))))
+
+(defun has-wall-near-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (let ((wall (find-nearest-wall entity)))
+    (misc:dbg "wall test ~a" wall)
+    wall))
+
+(defun has-trap-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (with-accessors ((ghost entity:ghost)) entity
+    (character:find-item-in-inventory-if ghost #'interactive-entity:trapp)))
+
+(defun can-place-trap-p (strategy-expert entity)
+  (with-accessors ((main-state main-state)) strategy-expert
+    (with-accessors ((map-state map-state)) main-state
+      (entity:with-player-cost-pos (entity x y)
+        (let ((neigh (matrix:gen-valid-4-neighbour-ccw map-state
+                                                       x y
+                                                       :add-center nil)))
+          (when (=  (length neigh) 4) ; just the most simple case
+            (flet ((tile-high-cost-p (pos)
+                     (> (get-cost main-state (elt pos 0) (elt pos 1))
+                        (/ +invalicable-element-cost+ 4))))
+              (let ((a (elt neigh 0))
+                    (b (elt neigh 1))
+                    (c (elt neigh 2))
+                    (d (elt neigh 3)))
+                (and (or (and (tile-high-cost-p a)
+                              (tile-high-cost-p c))
+                         (and (tile-high-cost-p b)
+                              (tile-high-cost-p d)))
+                     (mesh:trap-can-be-placed-p entity))))))))))

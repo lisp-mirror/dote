@@ -45,16 +45,22 @@
          :cost                  50)
   (:name :flee
          :preconditions         ((:has-escape t))
+         :context-preconditions (!is-visible-p)
          :effects               ((:curb-threat t))
          :cost                  20)
-  (:name :find-way-escape
-         :preconditions         ()
-         :context-preconditions (is-there-escape-way-p)
+  (:name :hide
+         :preconditions         ((:has-hiding-place t))
+         :context-preconditions (is-visible-p)
          :effects               ((:has-escape t))
          :cost                  5)
+  (:name :move-to-hiding-place
+         :preconditions         ()
+         :context-preconditions (is-there-hiding-place-p)
+         :effects               ((:has-hiding-place t))
+         :cost                  1)
   (:name :launch-teleport-spell
          :preconditions         ()
-         :context-preconditions (has-enough-sp-teleport-p)
+         :context-preconditions (has-enough-sp-teleport-p is-visible-p)
          :effects               ((:has-escape t))
          :cost                  8)
   (:name :launch-spell-wall

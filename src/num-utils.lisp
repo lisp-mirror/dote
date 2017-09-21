@@ -359,6 +359,14 @@
 (defun epsilon= (a b &optional (epsilon *default-epsilon*))
   (and (<= (- b epsilon) a (+ b epsilon))))
 
+(defun normalize-value-in-range (v min max &key (clamp nil))
+  "if  min < v <  max return a value remapped in range [0, 1]
+Return a simple-float"
+  (let ((res (/ (- v min) (- max min))))
+    (if clamp
+        (d (alexandria:clamp res 0.0 1.0))
+        (d res))))
+
 (defun smoothstep (x)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (d* (dexpt x (d 2)) (d- (d 3) (d* (d 2) x))))

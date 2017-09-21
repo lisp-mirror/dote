@@ -30,9 +30,16 @@
   "convert from terrain chunk to costs matrix"
   (coord-chunk->matrix (num:d a)))
 
-(definline map-manhattam-distance (from to)
+(defgeneric map-manhattam-distance (from to))
+
+(defmethod map-manhattam-distance (from to)
   (+ (abs (- (elt to 0) (elt from 0)))
      (abs (- (elt to 1) (elt from 1)))))
+
+(defmethod map-manhattam-distance ((from entity) (to entity))
+  (entity:with-player-cost-pos (from x1 y1)
+    (entity:with-player-cost-pos (from x2 y2)
+      (map-manhattam-distance (ivec2 x1 y1) (ivec2 x2 y2)))))
 
 (definline map-manhattam-distance-cost (from to)
   (* +open-terrain-cost+ (map-manhattam-distance from to)))

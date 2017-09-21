@@ -303,19 +303,25 @@
 
 (defmethod on-game-event ((object md2-mesh) (event attack-spell-event))
   (check-event-targeted-to-me (object event)
-    (multiple-value-bind (damage ambush)
-        (battle-utils:defend-from-attack-spell event)
-      (when damage
-        (update-concernining-tiles-on-event event))
-      #+debug-mode (misc:dbg "apply ~a" damage)
-      (manage-occurred-damage object
-                              event
-                              damage
-                              ambush
-                              #'register-for-end-attack-spell-event
-                              #'send-end-attack-spell-event
-                              (game-event:spell event))
-        t)))
+      (with-accessors ((state state)
+                       (id id)) object
+        (multiple-value-bind (damage ambush)
+            (battle-utils:defend-from-attack-spell event)
+          (when (and damage
+                     ;; ignore  spell if  launched  by friends  that's
+                     ;; concerning but from another point of view! :)
+                     (not (eq (my-faction object)
+                              (my-faction (find-entity-by-id state (id-origin event))))))
+            (update-concernining-tiles-on-event event))
+          #+debug-mode (misc:dbg "apply ~a" damage)
+          (manage-occurred-damage object
+                                  event
+                                  damage
+                                  ambush
+                                  #'register-for-end-attack-spell-event
+                                  #'send-end-attack-spell-event
+                                  (game-event:spell event))
+          t))))
 
 (defmethod on-game-event ((object md2-mesh) (event spell-event))
   (check-event-targeted-to-me (object event)
@@ -330,11 +336,9 @@
     (labels ((stop-movements (already-stopped)
                (when (not already-stopped)
                  (%stop-movement object :decrement-movement-points t)))
-             (seenp (hash-key entity
-                              &key
-                              (from-render-p nil)
-                              (maintain-render nil))
-               (declare (ignore hash-key))
+             (seenp (entity &key
+                            (from-render-p nil)
+                            (maintain-render nil))
                (let ((already-stopped nil))
                  (when (find-if #'(lambda (a) (= id (id a))) (visible-players entity))
                    (when (not maintain-render)
@@ -371,35 +375,31 @@
       (if (= (id object) (id-origin event))
           (let ((saved-renderp (renderp object)))
             (game-state:map-player-entities state
-                                            #'(lambda (k v)
-                                                (declare (ignore k))
+                                            #'(lambda (v)
                                                 (update-visibility-cone v)))
             (game-state:map-ai-entities state
-                                        #'(lambda (k v)
-                                            (declare (ignore k))
+                                        #'(lambda (v)
                                             (update-visibility-cone v)))
             (if (faction-ai-p state id)
                 (progn
                   (setf (renderp object) nil)
                   (game-state:map-player-entities state
-                                                  #'(lambda (k v)
-                                                      (seenp k v
+                                                  #'(lambda (v)
+                                                      (seenp v
                                                              :maintain-render nil
                                                              :from-render-p   saved-renderp)))
                   (seep object))
                 (progn
                   (game-state:map-ai-entities state
-                                              #'(lambda (k v)
-                                                  (seenp k v
+                                              #'(lambda (v)
+                                                  (seenp v
                                                          :maintain-render t
                                                          :from-render-p   saved-renderp)))
                   (game-state:map-ai-entities state
-                                              #'(lambda (k v)
-                                                  (declare (ignore k))
+                                              #'(lambda (v)
                                                   (setf (renderp v) nil)))
                   (game-state:map-player-entities state
-                                                  #'(lambda (k v)
-                                                      (declare (ignore k))
+                                                  #'(lambda (v)
                                                       (seep v)))))
             t)
           nil))))
@@ -951,76 +951,6 @@
       (let* ((trap (game-state:find-entity-by-id state (id-origin event))))
         (battle-utils:trigger-trap-attack trap object)))))
 
-(defgeneric actuate-plan (object strategy action))
-
-(defmethod actuate-plan ((object md2-mesh)
-                         strategy
-                         (action (eql ai-utils:+interrupt-action+)))
-  ;; "does nothing"
-  )
-
-(defmethod actuate-plan ((object md2-mesh)
-                         strategy
-                         (action (eql ai-utils:+idle-action+)))
-  (with-accessors ((state state)) object
-    (with-accessors ((ai-entities-action-order game-state:ai-entities-action-order)) state
-      ;; awake other AI player
-      (and ai-entities-action-order
-           (pop ai-entities-action-order)))))
-
-(defmethod actuate-plan ((object md2-mesh)
-                         (strategy (eql +explore-strategy+))
-                         (action   (eql ai-utils:+launch-heal-spell-action+)))
-  (with-accessors ((state state)) object
-    (game-state:with-world (world state)
-      (action-scheduler:with-enqueue-action-and-send-remove-after
-          (world action-scheduler:tactical-plane-action)
-        (ai-utils:go-launch-heal-spell object)))))
-
-(defmethod actuate-plan ((object md2-mesh)
-                         (strategy (eql +explore-strategy+))
-                         (action   (eql ai-utils:+launch-teleport-spell-action+)))
-  (with-accessors ((state state)) object
-    (game-state:with-world (world state)
-      (action-scheduler:with-enqueue-action-and-send-remove-after
-          (world action-scheduler:tactical-plane-action)
-        (ai-utils:go-launch-teleport-spell object)))))
-
-(defmethod actuate-plan ((object md2-mesh)
-                         (strategy (eql +explore-strategy+))
-                         (action   (eql ai-utils:+move-action+)))
-  (with-accessors ((state state)) object
-    (game-state:with-world (world state)
-      (action-scheduler:with-enqueue-action (world action-scheduler:tactical-plane-action)
-        (let ((new-pos (validate-player-path object
-                                             (next-move-position object +explore-strategy+))))
-          (when new-pos
-            ;;(misc:dbg "~a go to ~a dir ~a" (id object) (game-state:tiles new-pos) (dir object))
-            (setf (game-state:selected-path state) new-pos)
-            (let* ((tiles          (game-state:tiles (game-state:selected-path state)))
-                   (cost           (game-state:cost  (game-state:selected-path state)))
-                   (movement-event (make-instance 'game-event:move-entity-along-path-event
-                                                  :path           tiles
-                                                  :cost           cost
-                                                  :id-destination (id object))))
-              (game-event:propagate-move-entity-along-path-event movement-event))))))))
-
-(defun actuate-strategy (mesh)
-  (with-slots-for-reasoning (mesh state ghost blackboard)
-    (game-state:with-world (world state)
-      (with-accessors ((ai-entities-action-order game-state:ai-entities-action-order)) state
-        (when (and (eq  (my-faction mesh) game-state:+npc-type+)
-                   (eq  (my-faction mesh) (game-state:faction-turn state))
-                   (world:actions-queue-empty-p world) ;; ensure one action at time
-                   ai-entities-action-order            ;; if nil all ai players made a move
-                   (= (id mesh)
-                      (id (alexandria:first-elt ai-entities-action-order))) ;; ensure it's my turn
-                   ghost)
-          (elaborate-current-tactical-plan ghost blackboard mesh nil)
-          (let ((action (pop-action-plan ghost)))
-            (actuate-plan mesh
-                          (blackboard:strategy-decision blackboard)
-                          action)))))))
 
 (defmethod on-game-event :after ((object md2-mesh) (event end-turn))
   ;;(misc:dbg "end turn md2mesh tooltip ct ~a" (tooltip-count object))
@@ -1028,29 +958,26 @@
   (when (faction-ai-p (state object) (id object))
     (with-accessors ((state state)) object
       (with-accessors ((blackboard blackboard:blackboard)) state
-        (let ((cost-pos (calculate-cost-position object)))
-          (misc:dbg "best ~a"
-                    (blackboard:best-path-to-reach-enemy-w-current-weapon blackboard object))
-          (misc:dbg "near ~a"
-                    (blackboard:best-path-near-attack-goal-w-current-weapon blackboard object))
-          (misc:dbg "exists? ~a reachable? ~a "
-                    (goap::exists-attack-goal-w-current-weapon-p blackboard object)
+        (misc:dbg "best ~a"
+                  (blackboard:best-path-to-reach-enemy-w-current-weapon blackboard object))
+        (misc:dbg "near ~a"
+                  (blackboard:best-path-near-attack-goal-w-current-weapon blackboard object))
+        (misc:dbg "exists? ~a reachable? ~a "
+                  (goap::exists-attack-goal-w-current-weapon-p blackboard object)
                   (goap::reachable-w-current-weapon-and-mp-p blackboard object))
-          (misc:dbg "has weapon? ~a"
-                    (goap::has-weapon-inventory-or-worn-p blackboard object))
-          (misc:dbg "has spell? ~a"
-                    (goap::has-enough-sp-damage-p blackboard object))
-          (misc:dbg "planner-file ~a"
-                    (goap:load-planner-file (goap:find-planner-file (ghost object) +attack-strategy+)))
-          (misc:dbg "invisible-tiles ~a -> ~a"
-                    (id object)
-                    (able-to-see-mesh:tiles-placeholder-visibility-in-box-by-faction
-                     state
-                     (elt cost-pos 0) (elt cost-pos 1)
-                     10
-                     game-state:+pc-type+))
-          (misc:dbg "best hiding place = ~a"
-                    (ai-utils:find-hiding-place-box object))))))
+        (misc:dbg "has weapon? ~a"
+                  (goap::has-weapon-inventory-or-worn-p blackboard object)))))
+        ;; (let ((cost-pos (calculate-cost-position object)))
+        ;;  (misc:dbg "invisible-tiles ~a -> ~a"
+        ;;           (id object)
+        ;;           (absee-mesh:tiles-placeholder-visibility-in-ring-by-faction
+        ;;            state
+        ;;            (elt cost-pos 0) (elt cost-pos 1)
+        ;;            20
+        ;;            8
+        ;;            game-state:+pc-type+)))))))
+        ;; (misc:dbg "best hiding place = ~a"
+        ;;           (ai-utils:go-find-hiding-place object))))))
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (with-accessors ((ghost ghost)
                    (state state)) object
@@ -1080,6 +1007,10 @@
        game-state:+pc-type+)
       (t
        game-state:+npc-type+))))
+
+(defmethod pawnp ((object md2-mesh))
+  (declare (ignore object))
+  t)
 
 (defun blood-spill-level (damage max-damage)
   (cond

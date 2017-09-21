@@ -741,7 +741,7 @@
                                           (truncate (+ x (map-utils:coord-layer->map-state min-x)))
                                           (truncate (+ y (map-utils:coord-layer->map-state min-y)))
                                           +floor-type+
-                                          (Identificable:id mesh)
+                                          (identificable:id mesh)
                                           nil)))
     mesh))
 

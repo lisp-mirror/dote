@@ -191,14 +191,16 @@
                    (dir dir)
                    (id id)
                    (state state)) entity
-    (let* ((pos-entity (mesh:calculate-cost-position entity))
-           (difficult  (game-state:level-difficult state))
-           (dangerous-zone-size (max 2 (blackboard:calc-danger-zone-size difficult))))
-      (game-state:set-concerning-tile state
-                                      (elt pos-entity 0)
-                                      (elt pos-entity 1)
-                                      :danger-zone-size dangerous-zone-size
-                                      :concerning-tile-value blackboard:+concerning-tile-value+))))
+    (with-player-cost-pos (entity x y)
+      (let* ((difficult        (game-state:level-difficult state))
+             (danger-zone-size (max 2 (blackboard:calc-danger-zone-size difficult)))
+             (concerning-fn    (concerning-tile-default-mapping-clsr x y
+                                                                     danger-zone-size)))
+        (game-state:set-concerning-tile-fn state
+                                           x
+                                           y
+                                           :danger-zone-size   danger-zone-size
+                                           :concerning-tile-fn concerning-fn)))))
 
 (defun add-tail-concerning-zone (attacker defender)
   (with-accessors ((ghost ghost)
@@ -220,7 +222,7 @@
             (loop for point in tail do
                  (let ((coord (elt point 0)))
                    (2d-utils:displace-2d-vector (coord x y)
-                     (setf (matrix:matrix-elt concerning-tiles y x)
+                     (incf (matrix:matrix-elt concerning-tiles y x)
                            cost))))))))))
 
 (defun decrease-concerning (game-state concerning-map)
@@ -336,14 +338,15 @@
       (with-accessors ((map-state map-state)) main-state
         (labels ((set-tile (facing-pos &optional (value +concerning-tile-value+))
                    (with-check-matrix-borders (map-state (elt facing-pos 0) (elt facing-pos 1))
-                     (set-concerning-tile* main-state
-                                           concerning-matrix
-                                           (elt facing-pos 0) (elt facing-pos 1)
-                                           :danger-zone-size      1
-                                           :concerning-tile-value value
-                                           :map-element-fn #'(lambda (old new)
-                                                               (declare (ignore old))
-                                                               (d new))))))
+                     (set-concerning-tile-custom-map-fn main-state
+                                                        concerning-matrix
+                                                        (elt facing-pos 0) (elt facing-pos 1)
+                                                        :danger-zone-size      1
+                                                        :concerning-tile-value value
+                                                        :map-element-fn
+                                                        #'(lambda (x y old new)
+                                                            (declare (ignore x y old))
+                                                            (d new))))))
           (let* ((dir        (dir player))
                  (facing-pos (map-utils:facing-pos (pos player) dir))
                  (ghost      (ghost player)))
@@ -370,16 +373,23 @@
   (with-accessors ((concerning-tiles concerning-tiles)
                    (concerning-tiles-facing concerning-tiles-facing)
                    (main-state main-state)) object
-    (let ((res   (clone concerning-tiles))
-          (level (level-difficult main-state)))
+    (let ((res   (clone concerning-tiles)))
       (setf res
             (matrix:map-matrix res
                                #'(lambda (a)
-                                   (if (not (epsilon= 0.0 a))
-                                     (d* (calc-concerning-tiles-cost-scaling level)
-                                         +open-terrain-cost+)
-                                     0.0))))
-      (setf res (matrix:pgaussian-blur-separated res #'identity 5))
+                                   (let* ((min-value           0.0)
+                                          (min-value-normalize 0.0)
+                                          (max-value          (d/ +invalicable-element-cost+
+                                                                  2.0))
+                                          (max-normalize      +concerning-tile-value+))
+                                     (if (not (epsilon= min-value a))
+                                         (d* (normalize-value-in-range a
+                                                                       min-value-normalize
+                                                                       max-normalize)
+                                             max-value)
+                                         min-value)))))
+      ;; commented out: the concerning tiles value would leak across not visible tiles
+      ;; (setf res (matrix:pgaussian-blur-separated res #'identity 1))
       (loop-matrix (res x y)
          (setf (matrix-elt res y x)
                (d+ (matrix-elt res y x)
@@ -389,7 +399,8 @@
 ;; TODO use decision tree
 (defmethod strategy-decision ((object blackboard))
   (declare (ignore object))
-  +explore-strategy+)
+  +retreat-strategy+)
+  ;+explore-strategy+)
   ;+attack-strategy+)
 
 (defmethod set-tile-visited ((object blackboard) x y)
@@ -411,12 +422,16 @@
                   4.0
                   8.0)))
 
-(defun set-concerning-tile* (main-state concerning-tiles x y
-                             &key
-                               (danger-zone-size (let* ((level (level-difficult main-state)))
-                                                   (calc-danger-zone-size level)))
-                               (concerning-tile-value +concerning-tile-value+)
-                               (map-element-fn #'(lambda (old new) (d+ old new))))
+(defun set-concerning-tile-custom-map-fn (main-state concerning-tiles x y
+                                          &key
+                                            (danger-zone-size
+                                             (let* ((level (level-difficult main-state)))
+                                               (calc-danger-zone-size level)))
+                                            (concerning-tile-value +concerning-tile-value+)
+                                            (map-element-fn
+                                             #'(lambda (x y old new)
+                                                 (declare (ignore x y))
+                                                 (d+ old new))))
   (let* ((dangerous-tiles-pos (gen-neighbour-position-in-box x
                                                              y
                                                              danger-zone-size
@@ -426,6 +441,7 @@
            (with-check-matrix-borders (concerning-tiles x y)
              (setf (matrix-elt concerning-tiles y x)
                    (funcall map-element-fn
+                            x y
                             (matrix-elt concerning-tiles y x)
                             concerning-tile-value)))))))
 
@@ -443,7 +459,33 @@
       (loop for point across dangerous-tiles-pos do
            (2d-utils:displace-2d-vector (point x y)
              (with-check-matrix-borders (concerning-tiles x y)
-               (incf (matrix-elt concerning-tiles y x) concerning-tile-value)))))))
+               (incf (matrix-elt concerning-tiles y x) concerning-tile-value))))))
+  object)
+
+(defmethod set-concerning-tile-fn ((object blackboard) x y
+                                   &key
+                                     (danger-zone-size (let* ((main-state (main-state object))
+                                                              (level (level-difficult main-state)))
+                                                         (calc-danger-zone-size level)))
+                                     (concerning-tile-fn
+                                      (concerning-tile-default-mapping-clsr x y
+                                                                            danger-zone-size)))
+  (with-accessors ((concerning-tiles concerning-tiles)) object
+    (let* ((dangerous-tiles-pos (gen-neighbour-position-in-box x
+                                                               y
+                                                               danger-zone-size
+                                                               danger-zone-size)))
+      (loop for point across dangerous-tiles-pos do
+           (2d-utils:displace-2d-vector (point x y)
+             (with-check-matrix-borders (concerning-tiles x y)
+               (incf (matrix-elt concerning-tiles y x)
+                     (setf (matrix-elt concerning-tiles y x)
+                              (funcall concerning-tile-fn
+                                       x y
+                                       0.0         ; ignored
+                                       0.0)))))))) ; ignored
+  object)
+
 
 (defun calc-enemy-danger-zone-size (player)
   (with-accessors ((main-state state)
@@ -480,11 +522,19 @@
 (defun reset-attack-layer (unexplored-layer)
   (reset-layer unexplored-layer +attack-nongoal-tile-value+))
 
+(defun all-player-id-visible-from-faction (game-state )
+  (let ((all-visibles '()))
+    (map-ai-entities game-state
+                     #'(lambda (v)
+                         (let ((visibles (able-to-see-mesh:other-faction-visible-players v)))
+                           (loop for visible in visibles do
+                                (pushnew visible all-visibles :key #'id :test #'=)))))
+    (map 'list #'id all-visibles)))
+
 (defun all-player-id-visible-from-ai (game-state)
   (let ((all-visibles '()))
     (map-ai-entities game-state
-                     #'(lambda (k v)
-                         (declare (ignore k))
+                     #'(lambda (v)
                          (let ((visibles (able-to-see-mesh:other-faction-visible-players v)))
                            (loop for visible in visibles do
                                 (pushnew visible all-visibles :key #'id :test #'=)))))
@@ -514,8 +564,7 @@
       (let ((all-visibles (all-player-id-visible-from-ai main-state)))
         ;; calculate concerning tiles tiles occupied by enemies
         (map-player-entities main-state
-                             #'(lambda (k player)
-                                 (declare (ignore k))
+                             #'(lambda (player)
                                  (update-unexplored-layer-player object
                                                                  player
                                                                  :all-visibles-from-ai
@@ -543,11 +592,25 @@
   "x  and y  in  cost-map  space (integer  coordinates),  values t  if
    somenthing prevented the ray to reach the target position"
   (with-accessors ((state state)) player
-    (let* ((visiblep        (if use-fov
-                                (able-to-see-mesh:placeholder-visible-p     player x y)
-                                (able-to-see-mesh:placeholder-visible-ray-p player x y))))
+    (let* ((visiblep (if use-fov
+                         (able-to-see-mesh:placeholder-visible-p     player x y)
+                         (able-to-see-mesh:placeholder-visible-ray-p player x y))))
       (or (not (map-element-empty-p (element-mapstate@ state x y)))
           (not visiblep)))))
+
+(defun concerning-tile-default-mapping-clsr (x-center y-center size)
+  #'(lambda (x y old new)
+      (declare (ignore old new))
+      (let* ((max  (map-manhattam-distance (ivec2 x-center y-center)
+                                           (ivec2 (f+ x-center size)
+                                                  (f+ y-center size))))
+             (min  0)
+             (dist (map-manhattam-distance (ivec2 x-center y-center)
+                                           (ivec2 x y)))
+             (normalized-param (normalize-value-in-range dist min max))
+             (t+1              (d+ 1.0 normalized-param))
+             (scale-factor     (dexpt (d* t+1 (d- 2.0 t+1)) 4.0)))
+        (d* scale-factor +concerning-tile-value+))))
 
 (defmethod update-unexplored-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
                                            &key
@@ -570,7 +633,11 @@
                   (dangerous-tiles-pos (gen-neighbour-position-in-box x-player
                                                                       y-player
                                                                       danger-zone-size
-                                                                      danger-zone-size))
+                                                                      danger-zone-size
+                                                                      :add-center nil))
+                  (concerning-fn      (concerning-tile-default-mapping-clsr x-player
+                                                                            y-player
+                                                                            danger-zone-size))
                   (increase-facing-p   nil))
              (loop for point across dangerous-tiles-pos do
                   (displace-2d-vector (point x y)
@@ -579,7 +646,15 @@
                                                   use-enemy-fov-when-exploring-p))
                         (setf increase-facing-p t)
                         (setf (matrix-elt concerning-tiles y x)
-                              +concerning-tile-value+)))))
+                              (funcall concerning-fn
+                                       x y
+                                       0.0       ; ignored
+                                       0.0)))))) ; ignored
+             ;; add the player position
+             (setf (matrix-elt concerning-tiles y-player x-player)
+                   +concerning-tile-value+)
+             ;; increase the  tile the player  is facing based  on the
+             ;; weapon they are carrying
              (when increase-facing-p
                (increase-concerning-tile-facing-player object
                                                        player
@@ -690,8 +765,7 @@
 (defun %update-attack-pos (blackboard update-fn)
   (with-accessors ((main-state main-state)) blackboard
     (let ((all-visibles (all-player-id-visible-from-ai main-state)))
-      (map-player-entities main-state  #'(lambda (k player)
-                                           (declare (ignore k))
+      (map-player-entities main-state  #'(lambda (player)
                                            (funcall update-fn
                                                     blackboard
                                                     player
@@ -708,8 +782,7 @@
       (let ((all-visibles (all-player-id-visible-from-ai main-state)))
         ;; add-concerning tiles
         (nsuperimpose-layer concerning-tiles layer :fn #'max)
-        (map-player-entities main-state  #'(lambda (k player)
-                                             (declare (ignore k))
+        (map-player-entities main-state  #'(lambda (player)
                                              (funcall update-fn
                                                       blackboard
                                                       player
@@ -1072,8 +1145,7 @@
                           #'update-attack-crossbow-layer-player)))
 
 (defun 2d-tile-visible-p (game-state tile-position ray-stopper-fn)
-  (map-ai-entities game-state #'(lambda (k entity)
-                                  (declare (ignore k))
+  (map-ai-entities game-state #'(lambda (entity)
                                   (displace-2d-vector (tile-position x y)
                                     (when (not (funcall ray-stopper-fn entity x y))
                                       (return-from 2d-tile-visible-p t)))))
@@ -1087,8 +1159,7 @@
                  (setf (dir entity) dir)
                  (able-to-see-mesh:update-visibility-cone entity)))
         (map-ai-entities game-state
-                         #'(lambda (k entity)
-                             (declare (ignore k))
+                         #'(lambda (entity)
                              (let ((saved-dir (dir entity)))
                                (loop for temp-dir in +entity-all-direction+ do
                                     (change-viewpoint entity temp-dir)
@@ -1108,14 +1179,13 @@
         nil)))))
 
 (defun disgregard-all-plans (game-state)
-  (map-ai-entities game-state #'(lambda (k v)
-                                  (declare (ignore k))
+  (map-ai-entities game-state #'(lambda (v)
                                   (character:disgregard-tactical-plan (ghost v)))))
 
 (defmethod calc-ai-entities-action-order ((object blackboard))
   (with-accessors ((main-state main-state)) object
     (with-accessors ((ai-entities-action-order ai-entities-action-order)) main-state
-      (let ((all-ai-entities (num:shellsort (hash-table-values (ai-entities main-state))
+      (let ((all-ai-entities (num:shellsort (ai-entities main-state)
                                             (ai-utils:combined-power-compare-clsr nil))))
         (setf all-ai-entities (remove-if #'entity-dead-p all-ai-entities))
         (setf ai-entities-action-order all-ai-entities)))))

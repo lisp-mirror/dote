@@ -85,8 +85,17 @@
 
 (defgeneric entity-dead-p (object))
 
+(defgeneric calculate-cost-position (object))
+
 (defmacro with-slots-for-reasoning ((mesh state ghost blackboard) &body body)
   `(with-accessors ((,state state)
                     (,ghost ghost)) ,mesh
     (with-accessors ((,blackboard blackboard:blackboard)) ,state
       ,@body)))
+
+(defmacro with-player-cost-pos ((entity x y) &body body)
+  (alexandria:with-gensyms (pos)
+    `(let* ((,pos (calculate-cost-position ,entity))
+            (,x   (elt ,pos 0))
+            (,y   (elt ,pos 1)))
+       ,@body)))

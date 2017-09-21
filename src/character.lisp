@@ -947,38 +947,37 @@
            (setf (thinker ,character) ,saved))
          (progn ,@body))))
 
-;;; TEST, block planning for debug
-
+#+inhibit-planner
 (defmethod elaborate-current-tactical-plan ((object player-character) strategy-expert
                                             player-entity strategy-decision)
-  (declare (ignore strategy-expert
-                   player-entity strategy-decision))
+  (declare (ignore strategy-expert player-entity strategy-decision))
   (setf (current-plan object) (list ai-utils:+idle-action+))
   (current-plan object))
 
-;;;;;;;;
+#-inhibit-planner
+(defmethod elaborate-current-tactical-plan ((object player-character) strategy-expert
+                                            player-entity
+                                            (strategy-decision (eql nil)))
+  (declare (ignore strategy-decision))
+  (with-accessors ((current-plan current-plan)) object
+    (if current-plan
+        current-plan
+        (elaborate-current-tactical-plan object
+                                         strategy-expert
+                                         player-entity
+                                         (blackboard:strategy-decision strategy-expert)))))
 
-;; (defmethod elaborate-current-tactical-plan ((object player-character) strategy-expert
-;;                                             player-entity
-;;                                             (strategy-decision (eql nil)))
-;;   (declare (ignore strategy-decision))
-;;   (with-accessors ((current-plan current-plan)) object
-;;     (if current-plan
-;;         current-plan
-;;         (elaborate-current-tactical-plan object
-;;                                          strategy-expert
-;;                                          player-entity
-;;                                          (blackboard:strategy-decision strategy-expert)))))
+#-inhibit-planner
+(defmethod elaborate-current-tactical-plan ((object player-character) strategy-expert
+                                            player-entity
+                                            strategy-decision)
+    (with-accessors ((current-plan current-plan)) object
+      (let* ((planner-file (goap:find-planner-file object strategy-decision))
+             (planner      (goap:load-planner-file planner-file)))
+        (setf current-plan (goap:build-plan planner strategy-expert player-entity))
+        (misc:dbg "NEW current new plan ~a" current-plan)
+        (elaborate-current-tactical-plan object strategy-expert player-entity nil))))
 
-;; (defmethod elaborate-current-tactical-plan ((object player-character) strategy-expert
-;;                                             player-entity
-;;                                             strategy-decision)
-;;     (with-accessors ((current-plan current-plan)) object
-;;       (let* ((planner-file (goap:find-planner-file object strategy-decision))
-;;              (planner      (goap:load-planner-file planner-file)))
-;;         (setf current-plan (goap:build-plan planner strategy-expert player-entity))
-;;         (misc:dbg "NEW current new plan ~a" current-plan)
-;;         (elaborate-current-tactical-plan object strategy-expert player-entity nil))))
 
 (defmethod set-interrupt-plan ((object player-character))
   (misc:dbg "set interrupt plan")

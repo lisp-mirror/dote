@@ -764,8 +764,6 @@
 
 (defgeneric can-use-spell-points-p (object &key minimum))
 
-(defgeneric calculate-cost-position (object))
-
 (defgeneric inside-room-p (object))
 
 (defgeneric rendering-needed-p (object renderer))
@@ -1040,7 +1038,8 @@
                             (find-value-by-index object i :what :normal))
                    (loop for i across (vertex-index tr) collect
                         (find-value-by-index object i))))))
-      (print-unreadable-object (object stream :type t :identity t))))
+      (print-unreadable-object (object stream :type t :identity nil)
+        (format stream "~a" (id object)))))
 
 (defmacro gen-recursive-writer (what argname)
   (let ((fn-name (alexandria:format-symbol t "~:@(~a~)" what)))
