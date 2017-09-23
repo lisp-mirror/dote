@@ -574,8 +574,10 @@
   (with-accessors ((ghost ghost)
                    (dir dir)) object
     (if (= (id object) (id-destination event))
-        (when (> (current-movement-points ghost) 0)
-          (decrement-move-points-rotate object)
+        (when (or (not (decrement-movement-points-p event))
+                  (> (current-movement-points ghost) 0))
+          (when (decrement-movement-points-p event)
+            (decrement-move-points-rotate object))
           (setf (current-action object) :rotate)
           (setf dir (sb-cga:transform-direction dir (rotate-around +y-axe+ +pi/2+)))
           (update-visibility-cone object)
@@ -955,18 +957,18 @@
 (defmethod on-game-event :after ((object md2-mesh) (event end-turn))
   ;;(misc:dbg "end turn md2mesh tooltip ct ~a" (tooltip-count object))
   ;;;;;;;;;;;;;;;;;;;;; TEST ;;;;;;;;;;;;;;;;;;;;;;;;
-  (when (faction-ai-p (state object) (id object))
-    (with-accessors ((state state)) object
-      (with-accessors ((blackboard blackboard:blackboard)) state
-        (misc:dbg "best ~a"
-                  (blackboard:best-path-to-reach-enemy-w-current-weapon blackboard object))
-        (misc:dbg "near ~a"
-                  (blackboard:best-path-near-attack-goal-w-current-weapon blackboard object))
-        (misc:dbg "exists? ~a reachable? ~a "
-                  (goap::exists-attack-goal-w-current-weapon-p blackboard object)
-                  (goap::reachable-w-current-weapon-and-mp-p blackboard object))
-        (misc:dbg "has weapon? ~a"
-                  (goap::has-weapon-inventory-or-worn-p blackboard object)))))
+  ;; (when (faction-ai-p (state object) (id object))
+  ;;   (with-accessors ((state state)) object
+  ;;     (with-accessors ((blackboard blackboard:blackboard)) state
+  ;;       (misc:dbg "best ~a"
+  ;;                 (blackboard:best-path-to-reach-enemy-w-current-weapon blackboard object))
+  ;;       (misc:dbg "near ~a"
+  ;;                 (blackboard:best-path-near-attack-goal-w-current-weapon blackboard object))
+  ;;       (misc:dbg "exists? ~a reachable? ~a "
+  ;;                 (goap::exists-attack-goal-w-current-weapon-p blackboard object)
+  ;;                 (goap::reachable-w-current-weapon-and-mp-p blackboard object))
+  ;;       (misc:dbg "has weapon? ~a"
+  ;;                 (goap::has-weapon-inventory-or-worn-p blackboard object)))))
         ;; (let ((cost-pos (calculate-cost-position object)))
         ;;  (misc:dbg "invisible-tiles ~a -> ~a"
         ;;           (id object)
@@ -1890,10 +1892,20 @@
                                              :trigger
                                              basic-interaction-parameters:+effect-when-worn+
                                              :duration 2
-                                             :chance   0.9)))
+                                             :chance   0.9))
+        (immune-terror                (make-instance 'basic-interaction-parameters:healing-effect-parameters
+                                                     :trigger  basic-interaction-parameters:+effect-when-worn+
+                                                     :duration 2
+                                                     :chance 0.99
+                                                     :target basic-interaction-parameters:+target-self+)))
+
     (n-setf-path-value (basic-interaction-params ring)
                        '(:healing-effects :cause-berserk)
                        effect-cause-berserk)
+    (n-setf-path-value (basic-interaction-params ring)
+                       '(:healing-effects :immune-terror)
+                        immune-terror)
+
     (clean-effects ring)
     ring))
 

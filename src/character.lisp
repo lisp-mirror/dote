@@ -131,10 +131,15 @@
                     to accomplish to the last")
    (thinker
     :initform nil
-    :initarg  :current-plan
+    :initarg  :thinkerp
     :reader   thinkerp
     :writer   (setf thinker)
     :documentation "Should this character 'think'?")
+   (planner-working-memory
+    :initform '()
+    :initarg  :planner-working-memory
+    :accessor planner-working-memory
+    :documentation "during the plan some data will be saved here")
    (gender
     :initarg :gender
     :initform :male
@@ -528,6 +533,8 @@
 
 (defgeneric pop-action-plan (object))
 
+(defgeneric erase-working-memory (object))
+
 (defmacro gen-player-class-test (name)
   (let ((name-fn (format-symbol t "~:@(pclass-~a-p~)" name)))
     `(progn
@@ -810,13 +817,13 @@
     weapon-type))
 
 (defmacro gen-wear-weapon-of-type (&rest types)
-  (with-gensyms (character weapon)
+  (with-gensyms (character weapon-type)
     `(progn
        ,@(loop for i in types collect
               (let ((name (misc:format-fn-symbol t "weapon-type-~a-p" i)))
                 `(defun ,name (,character)
-                   (let* ((,weapon (worn-weapon ,character)))
-                     (and ,weapon (eq ,weapon ,i)))))))))
+                   (let* ((,weapon-type (weapon-type ,character)))
+                     (and ,weapon-type (eq ,weapon-type ,i)))))))))
 
 (gen-wear-weapon-of-type :edge :impact :pole :bow :crossbow)
 
@@ -999,6 +1006,10 @@
 (defmethod pop-action-plan ((object player-character))
   (with-accessors ((current-plan current-plan)) object
     (pop current-plan)))
+
+(defmethod erase-working-memory ((object player-character))
+  (with-accessors ((planner-working-memory planner-working-memory)) object
+    (setf planner-working-memory '())))
 
 (defmacro gen-actual-characteristic (name)
   (let ((fn       (format-fn-symbol t "actual-~a" name))

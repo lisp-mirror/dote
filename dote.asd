@@ -190,5 +190,6 @@
 (progn
   ;; debug
   ;(pushnew :inhibit-planner *features*)
-  (pushnew :debug-mode      *features*)
-  (pushnew :debug-ai        *features*))
+  (pushnew :debug-mode              *features*)
+  (pushnew :debug-blackboard-layers *features*)
+  (pushnew :debug-ai                *features*))

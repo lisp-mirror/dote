@@ -243,28 +243,31 @@
         (attack-enemy-bow-positions      blackboard) nil
         (attack-enemy-crossbow-positions blackboard) nil)
   (update-unexplored-layer               blackboard)
-  (update-attack-melee-layer             blackboard)
-  (update-attack-pole-layer              blackboard)
-  (update-attack-bow-layer               blackboard)
-  (update-attack-crossbow-layer          blackboard)
+  #+(and debug-ai debug-blackboard-layers)
+  ;; it takes ~ 0.5s to calculate
+  (progn
+    (update-attack-melee-layer             blackboard)
+    (update-attack-pole-layer              blackboard)
+    (update-attack-bow-layer               blackboard)
+    (update-attack-crossbow-layer          blackboard))
   ;; positions
   (update-pole-attackable-pos            blackboard)
   (update-melee-attackable-pos           blackboard)
   (update-bow-attackable-pos             blackboard)
   (update-crossbow-attackable-pos        blackboard)
-  (misc:dbg "pole  ~a" (attack-enemy-pole-positions  blackboard))
-  (misc:dbg "melee ~a" (attack-enemy-melee-positions blackboard))
-  (misc:dbg "bow   ~a" (attack-enemy-bow-positions blackboard))
+  (misc:dbg "pole  ~a"      (attack-enemy-pole-positions  blackboard))
+  (misc:dbg "melee ~a"      (attack-enemy-melee-positions blackboard))
+  (misc:dbg "bow   ~a"      (attack-enemy-bow-positions blackboard))
   (misc:dbg "crossbow   ~a" (attack-enemy-crossbow-positions blackboard))
-  (misc:dbg "def-pos ~a" (fetch-defender-positions blackboard))
-  (misc:dbg "atk-pos ~a" (fetch-attacker-positions blackboard))
-  (let ((*reachable-p-fn* (reachable-p-w/concening-tiles-fn blackboard)))
-    (misc:dbg "all-tactics ~a" (build-all-attack-tactics blackboard)))
-  (misc:dbg "ids ~a"     (multiple-value-list
-                          (attack-tactic->id-entities blackboard
-                                                      (list (ivec2 5 1)
-                                                            (ivec2 3 8)
-                                                            20)))))
+  (misc:dbg "def-pos ~a"    (fetch-defender-positions blackboard))
+  (misc:dbg "atk-pos ~a" (fetch-attacker-positions blackboard)))
+  ;; (let ((*reachable-p-fn* (reachable-p-w/concening-tiles-fn blackboard)))
+  ;;   (misc:dbg "all-tactics ~a" (build-all-attack-tactics blackboard)))
+  ;; (misc:dbg "ids ~a"     (multiple-value-list
+  ;;                         (attack-tactic->id-entities blackboard
+  ;;                                                     (list (ivec2 5 1)
+  ;;                                                           (ivec2 3 8)
+  ;;                                                           20)))))
 
 (defmethod game-event:on-game-event ((object blackboard) (event game-event:end-turn))
   (with-accessors ((concerning-tiles        concerning-tiles)
@@ -399,9 +402,9 @@
 ;; TODO use decision tree
 (defmethod strategy-decision ((object blackboard))
   (declare (ignore object))
-  +retreat-strategy+)
+  ;+retreat-strategy+)
   ;+explore-strategy+)
-  ;+attack-strategy+)
+  +attack-strategy+)
 
 (defmethod set-tile-visited ((object blackboard) x y)
   (call-next-method object
@@ -1063,7 +1066,7 @@
                                              &key
                                                (all-visibles-from-ai
                                                 (all-player-id-visible-from-ai (state player))))
-  (with-accessors ((attack-enemy-bow-layer attack-enemy-bow-layer)
+  (with-accessors ((attack-enemy-bow-layer     attack-enemy-bow-layer)
                    (attack-enemy-bow-positions attack-enemy-bow-positions)) object
     (setf attack-enemy-bow-positions
           (%update-attack-long-range-position-player object

@@ -29,9 +29,12 @@
       *entity-id-counter*
     (incf *entity-id-counter* 1)))
 
+(defun not-valid-id ()
+  (1- +start-id-counter+))
+
 (defclass identificable ()
   ((id
-    :initform (1- +start-id-counter+)
+    :initform (not-valid-id)
     :initarg :id
     :accessor id)))
 

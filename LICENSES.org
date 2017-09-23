@@ -390,7 +390,6 @@
   https://creativecommons.org/licenses/by-sa/3.0/
 
 - data/gui/default/next-turn-overlay.tga
-  data/gui/default/move-overlay.tga
   data/gui/default/portrait-unknown.tga
   data/gui/default/preview-unknown.tga
   data/gui/default/up-overlay.tga
@@ -410,6 +409,7 @@
   data/gui/default/immune-poison.tga
   data/gui/default/immune-terror.tga
   data/gui/default/use-item-overlay.tga
+  data/gui/default/move-overlay.tga
   based on the works
   © 2015
   - Lorc;

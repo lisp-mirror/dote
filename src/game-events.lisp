@@ -139,7 +139,12 @@
 
 (defevent rotate-entity-cw-event (game-event-w-destination) ())
 
-(defevent rotate-entity-ccw-event (game-event-w-destination) ())
+(defevent rotate-entity-ccw-event (game-event-w-destination)
+  ((decrement-movement-points
+    :initform t
+    :initarg  :decrement-movement-points
+    :reader    decrement-movement-points-p
+    :writer   (setf decrement-movement-points-p))))
 
 (defevent window-accept-input-event ()
   ((accept-input-p

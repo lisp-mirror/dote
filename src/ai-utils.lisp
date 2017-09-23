@@ -44,6 +44,14 @@
 
 (define-constant +place-trap-action+              :place-trap            :test #'eq)
 
+(define-constant +attack-action+                  :attack                :test #'eq)
+
+(define-constant +go-to-attack-pos-action+        :go-to-attack-pos      :test #'eq)
+
+(define-constant +find-attack-pos-action+         :find-attack-position  :test #'eq)
+
+(define-constant +load-weapon-action+             :load-weapon           :test #'eq)
+
 (define-constant +min-chain-teleport+             3                      :test #'=)
 
 (defun gen-neigh-costs (entity cost-map-fn)
@@ -305,9 +313,6 @@
                   (min-concerning-pos (position (num:find-min neigh-conc-cost)
                                                 neigh-conc-cost
                                                 :test #'num:epsilon=)))
-        (misc:dbg "flee-test conc cost ~a cost ~a pos min conc cost ~a"
-                  neigh-conc-cost neigh-cost min-concerning-pos
-                  (elt neigh      min-concerning-pos))
         (values (elt neigh      min-concerning-pos)
                 (elt neigh-cost min-concerning-pos))))))
 

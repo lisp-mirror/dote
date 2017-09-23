@@ -1051,6 +1051,7 @@
    :*clone-id*
    :*entity-id-counter*
    :valid-id-p
+   :not-valid-id
    :identificable
    :id
    :test-id=))
@@ -1085,7 +1086,8 @@
    :entity-dead-p
    :calculate-cost-position
    :with-slots-for-reasoning
-   :with-player-cost-pos))
+   :with-player-cost-pos
+   :with-player-cost-pos-ivec2))
 
 (defpackage :bs-tree
   (:use
@@ -2266,6 +2268,7 @@
    :unregister-for-rotate-entity-cw-event
    :propagate-rotate-entity-cw-event
    :rotate-entity-ccw-event
+   :decrement-movement-points-p
    :register-for-rotate-entity-ccw-event
    :unregister-for-rotate-entity-ccw-event
    :propagate-rotate-entity-ccw-event
@@ -2876,6 +2879,10 @@
    :+flee-action+
    :+find-hiding-place-action+
    :+place-trap-action+
+   :+attack-action+
+   :+go-to-attack-pos-action+
+   :+find-attack-pos-action+
+   :+load-weapon-action+
    :gen-neigh-costs
    :gen-neigh
    :friend-who-needs-help
@@ -2914,6 +2921,8 @@
    :basic-interaction-params ; reexported from interactive-entity
    :np-character
    :restart-age
+   :working-memory
+   :working-memory-id-target
    :player-character
    :portrait
    :first-name
@@ -2923,6 +2932,7 @@
    :current-plan
    :thinker
    :thinkerp
+   :planner-working-memory
    :gender
    :player-class
    :strength
@@ -3050,7 +3060,8 @@
    :unset-interrupt-plan
    :has-interrupt-plan-p
    :disgregard-tactical-plan
-   :pop-action-plan))
+   :pop-action-plan
+   :erase-working-memory))
 
 (defpackage :random-armor
   (:use :cl
@@ -3785,6 +3796,9 @@
   (:shadowing-import-from :sb-cga :rotate)
   (:export
    :+recover-from-faint-dmg-fraction+
+   :weapon-case
+   :attack-w-current-weapon
+   :cost-attack-w-current-weapon
    :short-range-attack-possible-p
    :long-range-attack-possible-p
    :launch-attack-spell-possible-p
@@ -4625,6 +4639,7 @@
    :best-path-w-current-weapon-reachable-p
    :reachable-p-w/concening-tiles
    :reachable-p-w/concening-tiles-fn
+   :find-defender-id-by-goal-position
    :build-all-attack-tactics
    :path-with-concerning-tiles
    :+concerning-tile-value+

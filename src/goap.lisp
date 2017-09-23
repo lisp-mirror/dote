@@ -482,6 +482,16 @@
 (defun reachable-w-current-weapon-and-mp-p (strategy-expert entity)
   (best-path-w-current-weapon-reachable-p strategy-expert entity))
 
+(defun reachable-and-attack-w-current-weapon-and-mp-p (strategy-expert entity)
+  (multiple-value-bind (reachablep cost)
+      (best-path-w-current-weapon-reachable-p strategy-expert entity)
+    (let ((attack-cost (battle-utils:cost-attack-w-current-weapon entity)))
+      (and reachablep
+           attack-cost ;; attack-cost is nil if no weapon is carried
+           (<= cost
+               (+ (character:current-movement-points (entity:ghost entity))
+                  attack-cost))))))
+
 (defun friend-needs-help-p (strategy-expert entity)
   (declare (ignore entity))
   (ai-utils:friend-who-needs-help strategy-expert))
@@ -577,7 +587,6 @@
 (defun has-wall-near-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (let ((wall (find-nearest-wall entity)))
-    (misc:dbg "wall test ~a" wall)
     wall))
 
 (defun has-trap-p (strategy-expert entity)

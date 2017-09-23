@@ -99,3 +99,9 @@
             (,x   (elt ,pos 0))
             (,y   (elt ,pos 1)))
        ,@body)))
+
+(defmacro with-player-cost-pos-ivec2 ((entity v) &body body)
+  (with-gensyms (x y)
+    `(with-player-cost-pos (,entity ,x ,y)
+       (let ((,v (ivec2:ivec2 ,x ,y)))
+         ,@body))))

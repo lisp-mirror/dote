@@ -168,6 +168,49 @@
                              all-effects)))
     (random-object-messages:propagate-effects-msg weapon defender effects-to-others)))
 
+(defmacro weapon-case ((entity) &body body)
+  (let ((all-keywords (loop for i in body when (keywordp i) collect i))
+        (ammited      '(:pole :bow :crossbow :melee :none)))
+    (loop for i in all-keywords do
+         (when (not (find i ammited :test #'eq))
+           (error (format nil
+                          "weapon case keyword must be one of ~a, but ~a was found"
+                          ammited
+                          i))))
+    (with-gensyms (ghost weapon-type)
+      `(let* ((,ghost (entity:ghost ,entity))
+              (,weapon-type (character:weapon-type ,ghost)))
+         (when ,weapon-type
+           (cond
+             ((character:weapon-type-pole-p ,ghost)
+              ,(getf body (elt ammited 0)))
+             ((character:weapon-type-bow-p ,ghost)
+              ,(getf body (elt ammited 1)))
+             ((character:weapon-type-crossbow-p ,ghost)
+              ,(getf body (elt ammited 2)))
+             ((or (character:weapon-type-edge-p   ,ghost)
+                  (character:weapon-type-impact-p ,ghost))
+              ,(getf body (elt ammited 3)))
+             (t ;; no weapon
+              ,(getf body (elt ammited 4)))))))))
+
+(defun attack-w-current-weapon (attacker defender)
+  (with-accessors ((state entity:state)) attacker
+    (game-state:with-world (world state)
+      (weapon-case (attacker)
+        :pole     (attack-short-range world attacker defender)
+        :melee    (attack-short-range world attacker defender)
+        :bow      (attack-long-range world attacker defender)
+        :crossbow (attack-long-range world attacker defender)))))
+
+(defun cost-attack-w-current-weapon (entity)
+  "Note: attack-cost is nil if no weapon is carried"
+  (weapon-case (entity)
+    :pole     +attack-melee-cost+
+    :melee    +attack-melee-cost+
+    :bow      +attack-long-range-bow-cost+
+    :crossbow +attack-long-range-crossbow-cost+))
+
 (defun short-range-attack-possible-p (attacker defender)
   (let* ((weapon-type  (character:weapon-type-short-range (entity:ghost attacker)))
          (max-dist-atk (if (eq weapon-type :pole)
