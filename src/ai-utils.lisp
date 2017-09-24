@@ -52,6 +52,8 @@
 
 (define-constant +load-weapon-action+             :load-weapon           :test #'eq)
 
+(define-constant +go-near-to-attack-pos-action+   :go-near-to-attack-pos :test #'eq)
+
 (define-constant +min-chain-teleport+             3                      :test #'=)
 
 (defun gen-neigh-costs (entity cost-map-fn)

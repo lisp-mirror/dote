@@ -96,18 +96,21 @@
 
 ;; Best...well...
 (defun build-best-path-to-attack (blackboard ai-player weapon-tactic
-                                  &key (cut-off-first-tile t))
+                                  &key
+                                    (cut-off-first-tile t)
+                                    (reachable-fn-p (reachable-p-w/concening-tiles-fn blackboard)))
   "returns four values:
 - the path (taking into account concerning tiles);
 - the cost of each move (taking  into account terrain and other objects;
   like building or  players)
 - the total cost of  the path (again only with map cost (i.e. no concerning tiles);
 - the id of the target entity."
-  (when-let* ((all-tactics        (build-all-attack-tactics blackboard))
+  (when-let* ((all-tactics        (build-all-attack-tactics blackboard
+                                                            reachable-fn-p))
               (all-weapon-tactics (getf all-tactics weapon-tactic))
               (my-tactic   (find-if #'(lambda (a) (= (id ai-player) (entity-id a)))
                                     all-weapon-tactics)))
-    ;(misc:dbg "all ~a melee ~a my ~a" all-tactics all-weapon-tactics  my-tactic)
+    ;;(misc:dbg "all ~a melee ~a my ~a" all-tactics all-weapon-tactics  my-tactic)
     (let ((start-pos          (mesh:calculate-cost-position ai-player))
           (end-pos            (target-pos my-tactic)))
       ;;(misc:dbg "from ~a -> ~a" start-pos end-pos)
@@ -119,11 +122,13 @@
         (values result-path cumulative-cost costs-terrain (target-id my-tactic))))))
 
 (defun best-path-near-attack-goal-w-current-weapon (blackboard ai-player
-                                                    &key (cut-off-first-tile t))
-  (multiple-value-bind (path cumulative-cost costs)
+                                                    &key
+                                                      (cut-off-first-tile t)
+                                                      (reachable-fn-p #'reachablep))
+  (multiple-value-bind (path cumulative-cost costs target-id)
       (best-path-to-reach-enemy-w-current-weapon blackboard ai-player
-                                                 :cut-off-first-tile cut-off-first-tile)
-    (declare (ignore cumulative-cost))
+                                                 :cut-off-first-tile cut-off-first-tile
+                                                 :reachable-fn-p reachable-fn-p)
     (let ((max (do ((accum 0.0)
                     (idx 0 (1+ idx)))
                    ((or (>= idx (length costs))
@@ -131,26 +136,36 @@
                            (character:current-movement-points (ghost ai-player))))
                     idx)
                  (incf accum (elt costs idx)))))
-      (subseq path 0 max))))
+      (values (subseq path 0 max)
+              cumulative-cost
+              costs
+              target-id))))
 
 (defun best-path-to-reach-enemy-w-current-weapon (blackboard ai-player
-                                                  &key (cut-off-first-tile t))
+                                                  &key
+                                                    (cut-off-first-tile t)
+                                                    (reachable-fn-p
+                                                     (reachable-p-w/concening-tiles-fn blackboard)))
   (with-accessors ((ghost ghost)) ai-player
     (let ((weapon-type (character:weapon-type ghost)))
       (when weapon-type
         (cond
           ((character:weapon-type-pole-p ghost)
            (build-best-path-to-attack blackboard ai-player +pole-key-tactics+
-                                      :cut-off-first-tile cut-off-first-tile))
+                                      :cut-off-first-tile cut-off-first-tile
+                                      :reachable-fn-p reachable-fn-p))
           ((character:weapon-type-bow-p ghost)
            (build-best-path-to-attack blackboard ai-player +bow-key-tactics+
-                                      :cut-off-first-tile cut-off-first-tile))
+                                      :cut-off-first-tile cut-off-first-tile
+                                      :reachable-fn-p reachable-fn-p))
           ((character:weapon-type-crossbow-p ghost)
            (build-best-path-to-attack blackboard ai-player +crossbow-key-tactics+
-                                      :cut-off-first-tile cut-off-first-tile))
+                                      :cut-off-first-tile cut-off-first-tile
+                                      :reachable-fn-p reachable-fn-p))
           (t ;; any other melee weapon
            (build-best-path-to-attack blackboard ai-player +melee-key-tactics+
-                                      :cut-off-first-tile cut-off-first-tile)))))))
+                                      :cut-off-first-tile cut-off-first-tile
+                                      :reachable-fn-p reachable-fn-p)))))))
 
 (defun best-path-w-current-weapon-reachable-p (blackboard ai-player)
   (multiple-value-bind (path cumulative-cost costs)
@@ -375,27 +390,27 @@ path is removed
                                    :entity-id  attacker-id)))
             all)))
 
-(defun build-all-attack-tactics (blackboard)
-  (let ((*reachable-p-fn* (reachable-p-w/concening-tiles-fn blackboard)))
-    (let* ((all-defender-pos (fetch-defender-positions blackboard))
-           (all-attacker-pos (fetch-attacker-positions blackboard)))
-      (when (> (length all-attacker-pos)
-               (length all-defender-pos))
-        (setf all-attacker-pos (subseq all-attacker-pos 0 (length all-defender-pos))))
-      (list
-       +pole-key-tactics+     (build-single-attack-tactics blackboard
-                                                           all-attacker-pos
-                                                           (getf all-defender-pos
-                                                                 +pole-key-tactics+))
-       +melee-key-tactics+    (build-single-attack-tactics blackboard
-                                                           all-attacker-pos
-                                                           (getf all-defender-pos
-                                                                 +melee-key-tactics+))
-       +bow-key-tactics+      (build-single-attack-tactics blackboard
-                                                           all-attacker-pos
-                                                           (getf all-defender-pos
-                                                                 +bow-key-tactics+))
-       +crossbow-key-tactics+ (build-single-attack-tactics blackboard
-                                                           all-attacker-pos
-                                                           (getf all-defender-pos
-                                                                 +crossbow-key-tactics+))))))
+(defun build-all-attack-tactics (blackboard reachable-fn-p)
+  (let* ((*reachable-p-fn* reachable-fn-p)
+         (all-defender-pos (fetch-defender-positions blackboard))
+         (all-attacker-pos (fetch-attacker-positions blackboard)))
+    (when (> (length all-attacker-pos)
+             (length all-defender-pos))
+      (setf all-attacker-pos (subseq all-attacker-pos 0 (length all-defender-pos))))
+    (list
+     +pole-key-tactics+     (build-single-attack-tactics blackboard
+                                                         all-attacker-pos
+                                                         (getf all-defender-pos
+                                                               +pole-key-tactics+))
+     +melee-key-tactics+    (build-single-attack-tactics blackboard
+                                                         all-attacker-pos
+                                                         (getf all-defender-pos
+                                                               +melee-key-tactics+))
+     +bow-key-tactics+      (build-single-attack-tactics blackboard
+                                                         all-attacker-pos
+                                                         (getf all-defender-pos
+                                                               +bow-key-tactics+))
+     +crossbow-key-tactics+ (build-single-attack-tactics blackboard
+                                                         all-attacker-pos
+                                                         (getf all-defender-pos
+                                                               +crossbow-key-tactics+)))))

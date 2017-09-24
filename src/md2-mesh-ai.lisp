@@ -166,23 +166,32 @@
 
 ;;;; attack
 
+(defun %rotate-until-visible (state a b &optional (max 4))
+  "rotate a until b is visible or give up after 4 attempts
+Note: all attackable position will be updated as well"
+  (game-state:with-world (world state)
+    (with-accessors ((blackboard blackboard:blackboard)) state
+      (when (and (> max 0)
+                 (not (able-to-see-mesh:other-visible-p a b)))
+        (let ((event (make-instance 'game-event:rotate-entity-ccw-event
+                                    :id-destination (id a)
+                                    :decrement-movement-points nil)))
+          (action-scheduler:with-enqueue-action-and-send-remove-after
+              (world action-scheduler:tactical-plane-action)
+            (game-event:propagate-rotate-entity-ccw-event event)
+            (blackboard:update-all-attacking-pos blackboard)
+            (%rotate-until-visible state a b (1- max))))))))
+
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+attack-action+)))
-  (labels ((rotate-until-visible (a b)
-           (when (not (able-to-see-mesh:other-visible-p a b))
-             (let ((event (make-instance 'game-event:rotate-entity-ccw-event
-                                         :id-destination (id a)
-                                         :decrement-movement-points nil)))
-               (game-event:propagate-rotate-entity-ccw-event event)
-               (rotate-until-visible a b)))))
-    (with-slots-for-reasoning (object state ghost blackboard)
-      (let* ((id-defender (get-from-working-mem object +w-memory-target-id+))
-             (defender    (find-entity-by-id state id-defender)))
-        (misc:dbg "atk id ~a" id-defender)
-        (rotate-until-visible object defender)
-        (battle-utils:attack-w-current-weapon object
-                                              (find-entity-by-id state id-defender))))))
+  (with-slots-for-reasoning (object state ghost blackboard)
+    (let* ((id-defender (get-from-working-mem object +w-memory-target-id+))
+           (defender    (find-entity-by-id state id-defender)))
+      (misc:dbg "atk id ~a" id-defender)
+      (%rotate-until-visible state object defender)
+      (battle-utils:attack-w-current-weapon object
+                                            (find-entity-by-id state id-defender)))))
 
 (defun %do-simple-move (mesh path-struct state world)
   (action-scheduler:with-enqueue-action (world action-scheduler:tactical-plane-action)
@@ -202,6 +211,21 @@
     (game-state:with-world (world state)
       (let ((path-struct (get-from-working-mem object +w-memory-path-struct+)))
         (%do-simple-move object path-struct state world)))))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+go-near-to-attack-pos-action+)))
+  (with-slots-for-reasoning (object state ghost blackboard)
+    (game-state:with-world (world state)
+      (multiple-value-bind (path total-cost costs target-id)
+          (blackboard:best-path-near-attack-goal-w-current-weapon blackboard
+                                                                  object
+                                                                  :cut-off-first-tile nil)
+        (declare (ignore costs))
+        (let* ((path-struct (game-state:make-movement-path path total-cost))
+               (defender    (find-entity-by-id state target-id)))
+          (%do-simple-move object path-struct state world)
+          (%rotate-until-visible state object defender))))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy

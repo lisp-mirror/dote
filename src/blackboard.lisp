@@ -237,6 +237,12 @@
                (setf (matrix-elt concerning-map y x) new-value)
                (setf (matrix-elt concerning-map y x) 0.0)))))))
 
+(defun update-all-attacking-pos (blackboard)
+  (update-pole-attackable-pos     blackboard)
+  (update-melee-attackable-pos    blackboard)
+  (update-bow-attackable-pos      blackboard)
+  (update-crossbow-attackable-pos blackboard))
+
 (defun %update-all-layers (blackboard)
   (setf (attack-enemy-melee-positions    blackboard) nil
         (attack-enemy-pole-positions     blackboard) nil
@@ -251,10 +257,7 @@
     (update-attack-bow-layer               blackboard)
     (update-attack-crossbow-layer          blackboard))
   ;; positions
-  (update-pole-attackable-pos            blackboard)
-  (update-melee-attackable-pos           blackboard)
-  (update-bow-attackable-pos             blackboard)
-  (update-crossbow-attackable-pos        blackboard)
+  (update-all-attacking-pos blackboard)
   (misc:dbg "pole  ~a"      (attack-enemy-pole-positions  blackboard))
   (misc:dbg "melee ~a"      (attack-enemy-melee-positions blackboard))
   (misc:dbg "bow   ~a"      (attack-enemy-bow-positions blackboard))

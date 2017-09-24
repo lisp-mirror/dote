@@ -2883,6 +2883,7 @@
    :+go-to-attack-pos-action+
    :+find-attack-pos-action+
    :+load-weapon-action+
+   :+go-near-to-attack-pos-action+
    :gen-neigh-costs
    :gen-neigh
    :friend-who-needs-help
@@ -4665,6 +4666,7 @@
    :set-concerning-tile
    :set-concerning-tile-fn
    :update-unexplored-layer
+   :update-all-attacking-pos
    :concerning-tile-default-mapping-clsr
    :next-unexplored-position
    :disgregard-all-plans))

@@ -979,7 +979,7 @@
         ;;            8
         ;;            game-state:+pc-type+)))))))
         ;; (misc:dbg "best hiding place = ~a"
-        ;;           (ai-utils:go-find-hiding-place object))))))
+  ;;           (ai-utils:go-find-hiding-place object))))))
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (with-accessors ((ghost ghost)
                    (state state)) object
@@ -1910,7 +1910,7 @@
     ring))
 
 (defun forged-sword ()
-  (let ((sword (random-weapon:generate-weapon 10 :sword))
+  (let ((sword (random-weapon:generate-weapon 1 :sword))
         (effect-modifier  (make-instance 'basic-interaction-parameters:effect-parameters
                                          :trigger basic-interaction-parameters:+effect-when-worn+
                                          :duration basic-interaction-parameters:+duration-unlimited+

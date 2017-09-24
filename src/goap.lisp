@@ -471,21 +471,27 @@
   (character:find-item-in-inventory-if (entity:ghost entity)
                                        #'interactive-entity:weaponp))
 
+;; unused
 (defun reachable-position-p (entity attack-goals weapon-type)
   (find-if #'(lambda (a) (= (blackboard:entity-id a) (id entity)))
            (getf attack-goals weapon-type)))
 
 (defun exists-attack-goal-w-current-weapon-p (strategy-expert entity)
-  (let ((res (best-path-to-reach-enemy-w-current-weapon strategy-expert entity)))
+  (let ((res (best-path-to-reach-enemy-w-current-weapon strategy-expert entity
+                                                        :reachable-fn-p #'blackboard:reachablep)))
+    (misc:dbg "exists-attack-goal-w-current-weapon-p ~a" res)
     res))
 
 (defun reachable-w-current-weapon-and-mp-p (strategy-expert entity)
-  (best-path-w-current-weapon-reachable-p strategy-expert entity))
+  (let ((res (best-path-w-current-weapon-reachable-p strategy-expert entity)))
+    (misc:dbg "reachable-w-current-weapon-and-mp-p ~a" res)
+    res))
 
 (defun reachable-and-attack-w-current-weapon-and-mp-p (strategy-expert entity)
   (multiple-value-bind (reachablep cost)
       (best-path-w-current-weapon-reachable-p strategy-expert entity)
     (let ((attack-cost (battle-utils:cost-attack-w-current-weapon entity)))
+      (misc:dbg "reachable? ~a ~a" reachablep attack-cost)
       (and reachablep
            attack-cost ;; attack-cost is nil if no weapon is carried
            (<= cost
