@@ -203,6 +203,25 @@
         :bow      (attack-long-range world attacker defender)
         :crossbow (attack-long-range world attacker defender)))))
 
+(defun attack-w-current-weapon-in-range-p (attacker defender)
+  (weapon-case (attacker)
+    :pole     (short-range-attack-possible-p attacker defender)
+    :melee    (short-range-attack-possible-p attacker defender)
+    :bow      (long-range-attack-possible-p attacker defender)
+    :crossbow (long-range-attack-possible-p attacker defender)))
+
+(defun find-attackable-with-current-weapon (entity)
+  (with-accessors ((state entity:state)) entity
+    (let ((map-fn (game-state:faction->map-faction-fn
+                   (game-state:faction->opposite-faction entity))))
+      (funcall map-fn
+               state
+               #'(lambda (v)
+                   (when (and (absee-mesh:other-visible-p entity  v)
+                              (attack-w-current-weapon-in-range-p entity v))
+                     (return-from find-attackable-with-current-weapon v))))
+      nil)))
+
 (defun cost-attack-w-current-weapon (entity)
   "Note: attack-cost is nil if no weapon is carried"
   (weapon-case (entity)

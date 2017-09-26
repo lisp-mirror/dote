@@ -2318,11 +2318,11 @@
 
 (defun dump-skydomes ()
   (loop for i from 0 below 24 do (format t "~a~%" i)
-       (save-pixmap (time (pixmap::skydome i))
+       (save-pixmap (pixmap::skydome i)
                     (format nil (fs:file-in-package "skydome-~a.tga") i))))
 
 (defun test-single-skydome* (num)
-    (save-pixmap (time (pixmap::skydome num))
+    (save-pixmap (pixmap::skydome num)
      (format nil (fs:file-in-package "skydome-~a.tga") num))
     t)
 
@@ -2605,7 +2605,7 @@
     (loop for i in tests do
          (num:with-lcg-seed (1)
            (misc:dbg "test ~a" i)
-           (time (funcall (symbol-function i)))))))
+           (funcall (symbol-function i))))))
 
 (defun dump-gradient (&optional (gradient
                                  (make-instance 'gradient

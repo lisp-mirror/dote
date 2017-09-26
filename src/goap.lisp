@@ -318,13 +318,14 @@
 (defmethod build-plan ((object planner) strategy-expert player-entity)
   (let ((raw-plan (plan-search object strategy-expert player-entity))
         (results  nil))
-  (labels ((%build-plan (graph)
-             (when (and graph
-                        (action-to-reach graph))
-               (push (action-name (action-to-reach graph)) results)
-               (%build-plan (parent-state graph)))))
-    (%build-plan raw-plan)
-    (reverse results))))
+    (labels ((%build-plan (graph)
+               (when (and graph
+                          (action-to-reach graph))
+                 (push (action-name (action-to-reach graph)) results)
+                 (%build-plan (parent-state graph)))))
+      (%build-plan raw-plan)
+      (push ai-utils:+plan-stopper+ results)
+      (reverse results))))
 
 (defmethod add-action ((object planner) action)
   (push action (actions-bag object)))
@@ -462,6 +463,28 @@
             (current-state out) start-state)
       out)))
 
+(define-constant +cache-invalid-value+ :invalid :test #'eq)
+
+(defmacro defgoap-test (name args &body body)
+  (let* ((function-clear-cache-name (format-fn-symbol t "~a-clear-cache" name))
+         (function-name             (format-fn-symbol t "~:@(~a~)" name))
+         (cache-name                (format-fn-symbol t "~:@(cache~)")))
+    (multiple-value-bind (forms declaration)
+        (parse-body body)
+      (with-gensyms (res)
+        `(let ((,cache-name +cache-invalid-value+))
+           (defun ,function-clear-cache-name ()
+             (setf ,cache-name +cache-invalid-value+))
+           (defun ,function-name (,@args)
+             ,@declaration
+             (if (not (eq ,cache-name +cache-invalid-value+))
+                 (progn
+                   #+debug-mode (misc:dbg "using goap cache for ~a ~a" ',function-name ,cache-name)
+                   ,cache-name)
+                 (let ((,res (progn ,@forms)))
+                   (setf ,cache-name ,res)
+                   ,cache-name))))))))
+
 (defun enough-health-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (not (ai-utils:too-low-health-p entity)))
@@ -476,29 +499,57 @@
   (find-if #'(lambda (a) (= (blackboard:entity-id a) (id entity)))
            (getf attack-goals weapon-type)))
 
-(defun exists-attack-goal-w-current-weapon-p (strategy-expert entity)
-  (let ((res (best-path-to-reach-enemy-w-current-weapon strategy-expert entity
-                                                        :reachable-fn-p #'blackboard:reachablep)))
-    (misc:dbg "exists-attack-goal-w-current-weapon-p ~a" res)
+(defun invalidate-tests-cache ()
+  (exists-attack-goal-w-current-weapon-p-clear-cache)
+  (reachable-opt/path-attack-current-weapon-and-mp-clear-cache)
+  (friend-needs-help-p-clear-cache)
+  (there-is-reachable-help-needed-friend-spell-p-clear-cache)
+  (is-there-hiding-place-p-clear-cache)
+  (is-visible-p-clear-cache)
+  (reachable-opt/path-current-weapon-and-mp-clear-cache)
+  (is-in-attack-pos-p-clear-cache)
+  ( can-move-near-attack-pos-clear-cache))
+
+(defgoap-test reachable-opt/path-current-weapon-and-mp (strategy-expert entity)
+  "using  the current  movement points  of the  entity is  possible to
+reach and attack the enemy with optimal path?"
+  (let* ((reachable-fn (reachable-p-w/concening-tiles-fn strategy-expert))
+         (res          (attackable-position-exists-path strategy-expert entity reachable-fn)))
     res))
 
-(defun reachable-w-current-weapon-and-mp-p (strategy-expert entity)
-  (let ((res (best-path-w-current-weapon-reachable-p strategy-expert entity)))
-    (misc:dbg "reachable-w-current-weapon-and-mp-p ~a" res)
+(defgoap-test is-in-attack-pos-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (battle-utils:find-attackable-with-current-weapon entity))
+
+(defgoap-test can-move-near-attack-pos (strategy-expert entity)
+  (let* ((reachable-fn (reachable-p-w/concening-tiles-unlimited-cost-fn strategy-expert))
+         (res
+          (blackboard:best-path-near-attack-goal-w-current-weapon strategy-expert
+                                                                  entity
+                                                                  :cut-off-first-tile nil
+                                                                  :reachable-fn-p
+                                                                  reachable-fn)))
+    (and res
+         (> (length res) 1))))
+
+
+(defgoap-test exists-attack-goal-w-current-weapon-p (strategy-expert entity)
+  (let ((res (attackable-position-exists-path strategy-expert entity
+                                              #'blackboard:reachablep)))
     res))
 
-(defun reachable-and-attack-w-current-weapon-and-mp-p (strategy-expert entity)
-  (multiple-value-bind (reachablep cost)
-      (best-path-w-current-weapon-reachable-p strategy-expert entity)
-    (let ((attack-cost (battle-utils:cost-attack-w-current-weapon entity)))
-      (misc:dbg "reachable? ~a ~a" reachablep attack-cost)
-      (and reachablep
-           attack-cost ;; attack-cost is nil if no weapon is carried
-           (<= cost
-               (+ (character:current-movement-points (entity:ghost entity))
-                  attack-cost))))))
+(defgoap-test reachable-opt/path-attack-current-weapon-and-mp (strategy-expert entity)
+  (let* ((reachable-fn (reachable-p-w/concening-tiles-fn strategy-expert)))
+    (multiple-value-bind (reachablep cost)
+        (attackable-position-exists-path strategy-expert entity reachable-fn)
+      (let ((attack-cost (battle-utils:cost-attack-w-current-weapon entity)))
+        (and reachablep
+             attack-cost ;; attack-cost is nil if no weapon is carried
+             (<= cost
+                 (+ (character:current-movement-points (entity:ghost entity))
+                    attack-cost)))))))
 
-(defun friend-needs-help-p (strategy-expert entity)
+(defgoap-test friend-needs-help-p (strategy-expert entity)
   (declare (ignore entity))
   (ai-utils:friend-who-needs-help strategy-expert))
 
@@ -531,7 +582,7 @@
   (declare (ignore strategy-expert))
   (%has-enough-sp-p entity spell:+spell-tag-teleport+))
 
-(defun there-is-reachable-help-needed-friend-spell-p (strategy-expert entity)
+(defgoap-test there-is-reachable-help-needed-friend-spell-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (when-let ((available-spells (ai-utils:available-heal-spells entity)))
     (ai-utils:reachable-help-needed-friend-spell-p available-spells entity)))
@@ -559,15 +610,22 @@
   (declare (ignore strategy-expert entity))
   (dice:pass-d10.0 1))
 
-(defun able-to-move-p (strategy-expert entity)
-  (declare (ignore strategy-expert))
+(defun able-to-move-if (entity predicate)
   (with-accessors ((state entity:state)
                    (ghost entity:ghost)) entity
     (let* ((neigh-cost (gen-neigh-costs entity
                                         #'(lambda (a)
                                             (game-state:get-cost state (elt a 0) (elt a 1))))))
       (>= (character:current-movement-points ghost)
-          (num:find-max neigh-cost)))))
+          (funcall predicate neigh-cost)))))
+
+(defun can-minimally-move-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (able-to-move-if entity #'num:find-min))
+
+(defun able-to-move-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+    (able-to-move-if entity #'num:find-max))
 
 (defun is-able-to-flee-p (strategy-expert entity)
   (with-accessors ((state entity:state)
@@ -578,11 +636,11 @@
       (>= (character:current-movement-points ghost)
           cost-next-flee-pos))))
 
-(defun is-there-hiding-place-p (strategy-expert entity)
+(defgoap-test is-there-hiding-place-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (ai-utils:go-find-hiding-place entity))
 
-(defun is-visible-p (strategy-expert entity)
+(defgoap-test is-visible-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (with-accessors ((state entity:state)) entity
     (let* ((opposite-faction (faction->opposite-faction (my-faction entity)))

@@ -2866,6 +2866,7 @@
         :game-state)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
+   :+plan-stopper+
    :+planner-file-extension+
    :+idle-action+
    :+interrupt-action+
@@ -2890,6 +2891,7 @@
    :too-low-health-p
    :if-difficult-level>medium
    :available-heal-spells
+   :attackable-position-exists-path
    :reachable-help-needed-friend-spell-p
    :combined-power-compare-clsr
    :sort-by-manhattam-dist-clsr
@@ -3799,6 +3801,8 @@
    :+recover-from-faint-dmg-fraction+
    :weapon-case
    :attack-w-current-weapon
+   :attack-w-current-weapon-in-range-p
+   :find-attackable-with-current-weapon
    :cost-attack-w-current-weapon
    :short-range-attack-possible-p
    :long-range-attack-possible-p
@@ -4638,8 +4642,8 @@
    :best-path-to-reach-enemy-w-current-weapon
    :best-path-near-attack-goal-w-current-weapon
    :best-path-w-current-weapon-reachable-p
-   :reachable-p-w/concening-tiles
    :reachable-p-w/concening-tiles-fn
+   :reachable-p-w/concening-tiles-unlimited-cost-fn
    :find-defender-id-by-goal-position
    :build-all-attack-tactics
    :path-with-concerning-tiles
@@ -4707,7 +4711,8 @@
    :build-plan
    :define-planner
    :find-planner-file
-   :load-planner-file))
+   :load-planner-file
+   :invalidate-tests-cache))
 
 (defpackage :keyboard-config
   (:use :cl

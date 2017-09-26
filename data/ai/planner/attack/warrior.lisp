@@ -16,16 +16,19 @@
   (:name :go-near-to-attack-pos
          :preconditions         ()
          :effects               ((:curb-threat    t))
-         :context-preconditions (enough-health-p
+         :context-preconditions (can-minimally-move-p
+                                 enough-health-p
                                  no-friend-needs-help-p
                                  !is-status-terror-p
+                                 !is-in-attack-pos-p
                                  exists-attack-goal-w-current-weapon-p
-                                 !reachable-w-current-weapon-and-mp-p)
+                                 !reachable-opt/path-current-weapon-and-mp
+                                 can-move-near-attack-pos)
          :cost                  5)
   (:name :find-attack-position
          :preconditions         ((:weapon-loaded             t))
          :context-preconditions (exists-attack-goal-w-current-weapon-p
-                                 reachable-and-attack-w-current-weapon-and-mp-p)
+                                 reachable-opt/path-attack-current-weapon-and-mp)
          :effects               ((:reach-with-current-weapon t))
          :cost                  1)
   (:name :load-weapon

@@ -39,10 +39,18 @@
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
+                         (action (eql ai-utils:+plan-stopper+)))
+  (with-accessors ((ghost ghost)) object
+    (misc:dbg "clear cache nil action")
+    (erase-working-memory ghost)
+    (goap:invalidate-tests-cache)))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
                          (action (eql ai-utils:+interrupt-action+)))
-   ;; TODO erase working memory
-  ;; clean all goap cached function
-  )
+  (with-accessors ((ghost ghost)) object
+    (erase-working-memory ghost)
+    (goap:invalidate-tests-cache)))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
@@ -56,6 +64,7 @@
   (with-accessors ((state state) (ghost ghost)) object
     (with-accessors ((ai-entities-action-order game-state:ai-entities-action-order)) state
       (erase-working-memory ghost)
+      (goap:invalidate-tests-cache)
       ;; awake other AI player
       (and ai-entities-action-order
            (pop ai-entities-action-order)))))
@@ -204,39 +213,52 @@ Note: all attackable position will be updated as well"
                                           :id-destination (id mesh))))
       (game-event:propagate-move-entity-along-path-event movement-event))))
 
+(defun need-to-move-to-attack-p (entity)
+  (get-from-working-mem entity +w-memory-path-struct+))
+
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+go-to-attack-pos-action+)))
   (with-slots-for-reasoning (object state ghost blackboard)
     (game-state:with-world (world state)
-      (let ((path-struct (get-from-working-mem object +w-memory-path-struct+)))
-        (%do-simple-move object path-struct state world)))))
+      (when (need-to-move-to-attack-p object)
+        (let ((path-struct (get-from-working-mem object +w-memory-path-struct+)))
+          (%do-simple-move object path-struct state world))))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+go-near-to-attack-pos-action+)))
   (with-slots-for-reasoning (object state ghost blackboard)
     (game-state:with-world (world state)
-      (multiple-value-bind (path total-cost costs target-id)
+      (let ((reachable-fn (blackboard:reachable-p-w/concening-tiles-unlimited-cost-fn
+                           blackboard)))
+        (multiple-value-bind (path total-cost costs target-id)
           (blackboard:best-path-near-attack-goal-w-current-weapon blackboard
                                                                   object
-                                                                  :cut-off-first-tile nil)
-        (declare (ignore costs))
-        (let* ((path-struct (game-state:make-movement-path path total-cost))
-               (defender    (find-entity-by-id state target-id)))
-          (%do-simple-move object path-struct state world)
-          (%rotate-until-visible state object defender))))))
+                                                                  :cut-off-first-tile nil
+                                                                  :reachable-fn-p
+                                                                  reachable-fn)
+          (declare (ignore costs))
+          (let* ((path-struct (game-state:make-movement-path path total-cost))
+                 (defender    (find-entity-by-id state target-id)))
+            (%do-simple-move object path-struct state world)
+            (%rotate-until-visible state object defender)))))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+find-attack-pos-action+)))
   (with-slots-for-reasoning (object state ghost blackboard)
-    (multiple-value-bind (path total-cost costs target-id)
+    (multiple-value-bind (path total-cost costs target-id-move)
         (blackboard:best-path-to-reach-enemy-w-current-weapon blackboard
                                                               object
                                                               :cut-off-first-tile nil)
       (declare (ignore costs))
-      (let ((path-struct (game-state:make-movement-path path total-cost)))
+      (let* ((target-next (battle-utils:find-attackable-with-current-weapon object))
+             (target-id (if target-next
+                            (id target-next)
+                            target-id-move))
+             (path-struct (and (not target-next)
+                               (game-state:make-movement-path path total-cost))))
         (put-in-working-memory object +w-memory-path-struct+ path-struct)
         (put-in-working-memory object +w-memory-target-id+   target-id)))))
 
@@ -260,6 +282,7 @@ Note: all attackable position will be updated as well"
                    ghost)
           (elaborate-current-tactical-plan ghost blackboard mesh nil)
           (let ((action (pop-action-plan ghost)))
-              (actuate-plan mesh
-                            (blackboard:strategy-decision blackboard)
-                            action)))))))
+            (misc:dbg "popped action ~a" action)
+            (actuate-plan mesh
+                          (blackboard:strategy-decision blackboard)
+                          action)))))))

@@ -985,7 +985,6 @@
         (misc:dbg "NEW current new plan ~a" current-plan)
         (elaborate-current-tactical-plan object strategy-expert player-entity nil))))
 
-
 (defmethod set-interrupt-plan ((object player-character))
   (misc:dbg "set interrupt plan")
   (setf (current-plan object) (list ai-utils:+interrupt-action+)))

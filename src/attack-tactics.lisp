@@ -128,7 +128,7 @@
   (multiple-value-bind (path cumulative-cost costs target-id)
       (best-path-to-reach-enemy-w-current-weapon blackboard ai-player
                                                  :cut-off-first-tile cut-off-first-tile
-                                                 :reachable-fn-p reachable-fn-p)
+                                                 :reachable-fn-p     reachable-fn-p)
     (let ((max (do ((accum 0.0)
                     (idx 0 (1+ idx)))
                    ((or (>= idx (length costs))
@@ -225,6 +225,17 @@ path is removed
           (path-with-concerning-tiles blackboard ai-position defender-position)
         (declare (ignore costs))
         (and path (<= cumulative-cost ai-movement-points)))))
+
+(defun reachable-p-w/concening-tiles-unlimited-cost-fn (blackboard)
+  "pretends all players have unlimited movement points"
+  #'(lambda (ai-position defender-position ai-movement-points)
+      (declare (ignore ai-movement-points))
+      (multiple-value-bind (path cumulative-cost costs)
+          (path-with-concerning-tiles blackboard ai-position defender-position)
+        (declare (ignore cumulative-cost costs))
+        (if path
+            t
+            nil))))
 
 (defun reachableo (def)
   (fresh (atk-pos def-pos mp)

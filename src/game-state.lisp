@@ -658,8 +658,13 @@
        #'map-ai-entities
        #'map-player-entities))
 
-(defun faction->opposite-faction (faction)
-  (if (eq faction +npc-type+)
+(defgeneric faction->opposite-faction (object))
+
+(defmethod faction->opposite-faction ((object entity))
+  (faction->opposite-faction (my-faction object)))
+
+(defmethod faction->opposite-faction (object)
+  (if (eq object +npc-type+)
        +pc-type+
        +npc-type+))
 

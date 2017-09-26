@@ -18,6 +18,8 @@
 
 (define-constant +planner-file-extension+         ".lisp"                :test #'string=)
 
+(define-constant +plan-stopper+                   :end                   :test #'eq)
+
 (define-constant +idle-action+                    :idle                  :test #'eq)
 
 (define-constant +interrupt-action+               :interrupt             :test #'eq)
@@ -129,6 +131,12 @@
   (< (* n (spell:cost spell))
      (character:current-magic-points ghost)))
 
+(defun attackable-position-exists-path (strategy-expert entity reachable-fn)
+  (if (battle-utils:find-attackable-with-current-weapon entity)
+      (values (calculate-cost-position entity) 0.0)
+      (blackboard:best-path-to-reach-enemy-w-current-weapon strategy-expert entity
+                                                            :reachable-fn-p
+                                                            reachable-fn)))
 (defun combined-power-compare-clsr (&optional (desc t))
   #'(lambda (a b)
       (let* ((ghost-a (entity:ghost a))
