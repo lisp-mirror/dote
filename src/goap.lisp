@@ -512,7 +512,7 @@
 
 (defgoap-test reachable-opt/path-current-weapon-and-mp (strategy-expert entity)
   "using  the current  movement points  of the  entity is  possible to
-reach and attack the enemy with optimal path?"
+reach the enemy with optimal path?"
   (let* ((reachable-fn (reachable-p-w/concening-tiles-fn strategy-expert))
          (res          (attackable-position-exists-path strategy-expert entity reachable-fn)))
     res))
@@ -539,15 +539,16 @@ reach and attack the enemy with optimal path?"
     res))
 
 (defgoap-test reachable-opt/path-attack-current-weapon-and-mp (strategy-expert entity)
+    "using  the current  movement points  of the  entity is  possible to
+reach and attack the enemy with optimal path?"
   (let* ((reachable-fn (reachable-p-w/concening-tiles-fn strategy-expert)))
     (multiple-value-bind (reachablep cost)
         (attackable-position-exists-path strategy-expert entity reachable-fn)
       (let ((attack-cost (battle-utils:cost-attack-w-current-weapon entity)))
         (and reachablep
              attack-cost ;; attack-cost is nil if no weapon is carried
-             (<= cost
-                 (+ (character:current-movement-points (entity:ghost entity))
-                    attack-cost)))))))
+             (<= (+ cost attack-cost)
+                 (character:current-movement-points (entity:ghost entity))))))))
 
 (defgoap-test friend-needs-help-p (strategy-expert entity)
   (declare (ignore entity))

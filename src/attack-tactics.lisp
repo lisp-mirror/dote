@@ -255,8 +255,7 @@ path is removed
                                               reachable-p-w/concening-tiles-fn-search-cache)
         (let ((cached (get-from-cache ai-position defender-position ai-movement-points)))
           (if cached
-              (progn
-                (reachable-cache-value-res cached))
+              (reachable-cache-value-res cached)
               (multiple-value-bind (path cumulative-cost costs)
                   (path-with-concerning-tiles blackboard ai-position defender-position)
                 (declare (ignore costs))

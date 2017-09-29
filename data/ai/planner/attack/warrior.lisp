@@ -22,7 +22,7 @@
                                  !is-status-terror-p
                                  !is-in-attack-pos-p
                                  exists-attack-goal-w-current-weapon-p
-                                 !reachable-opt/path-current-weapon-and-mp
+                                 !reachable-opt/path-attack-current-weapon-and-mp
                                  can-move-near-attack-pos)
          :cost                  5)
   (:name :find-attack-position
