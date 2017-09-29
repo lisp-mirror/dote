@@ -299,6 +299,7 @@
       object)))
 
 (defun clear-all-memoized-function-cache ()
+  (goap:invalidate-tests-cache)
   (ai-utils:go-find-hiding-place-clear-cache))
 
 (defmethod game-event:on-game-event ((object world) (event game-event:end-turn))

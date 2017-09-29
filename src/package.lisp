@@ -250,6 +250,7 @@
    :read-array
    :definline
    :defcached
+   :defcached-list
    :unsplice
    :defalias
    :defun-inline-function
@@ -4605,6 +4606,7 @@
         :ivec2
         :vec2
         :num
+        :misc
         :matrix
         :2d-utils
         :identificable
@@ -4613,6 +4615,7 @@
         :map-utils
         :influence-map
         :game-state)
+  (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    ;; attack tactics
    :atk-mp
@@ -4642,7 +4645,9 @@
    :best-path-to-reach-enemy-w-current-weapon
    :best-path-near-attack-goal-w-current-weapon
    :best-path-w-current-weapon-reachable-p
+   :reachable-p-w/concening-tiles-fn-clear-cache
    :reachable-p-w/concening-tiles-fn
+   :reachable-p-w/concening-tiles-unlimited-cost-fn-clear-cache
    :reachable-p-w/concening-tiles-unlimited-cost-fn
    :find-defender-id-by-goal-position
    :build-all-attack-tactics

@@ -123,6 +123,27 @@
          (and ,clear-cache (setf ,cache-name (make-hash-table :test (quote ,test))))
          ,@(list body)))))
 
+(defmacro defcached-list (name (args &key (equal-fn #'=))
+                          &body body)
+  "Uses a list as cache storage, good only with few elements!"
+  (let* ((function-clear-cache-name  (format-fn-symbol t "~a-clear-cache" name))
+         (function-search-cache-name (format-fn-symbol t "~a-search-cache" name))
+         (function-ins-cache-name    (format-fn-symbol t "~a-insert-cache" name))
+         (function-name              (format-fn-symbol t "~:@(~a~)" name)))
+    (multiple-value-bind (forms declaration)
+        (alexandria:parse-body body)
+      (alexandria:with-gensyms (cache)
+        `(let ((,cache '()))
+           (defun ,function-clear-cache-name ()
+             (setf ,cache '()))
+           (defun ,function-search-cache-name (d)
+             (find d ,cache :test ,equal-fn))
+           (defun ,function-ins-cache-name (d)
+             (pushnew d ,cache :test ,equal-fn))
+           (defun ,function-name (,@args)
+             ,@declaration
+             ,@forms))))))
+
 (defun unsplice (form)
   (and form
        (list form)))

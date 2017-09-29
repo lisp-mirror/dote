@@ -258,15 +258,15 @@
     (update-attack-crossbow-layer          blackboard))
   ;; positions
   (update-all-attacking-pos blackboard)
-  (misc:dbg "pole  ~a"      (attack-enemy-pole-positions  blackboard))
-  (misc:dbg "melee ~a"      (attack-enemy-melee-positions blackboard))
-  (misc:dbg "bow   ~a"      (attack-enemy-bow-positions blackboard))
-  (misc:dbg "crossbow   ~a" (attack-enemy-crossbow-positions blackboard))
-  (misc:dbg "def-pos ~a"    (fetch-defender-positions blackboard))
-  (misc:dbg "atk-pos ~a" (fetch-attacker-positions blackboard)))
+  (dbg "pole  ~a"      (attack-enemy-pole-positions  blackboard))
+  (dbg "melee ~a"      (attack-enemy-melee-positions blackboard))
+  (dbg "bow   ~a"      (attack-enemy-bow-positions blackboard))
+  (dbg "crossbow   ~a" (attack-enemy-crossbow-positions blackboard))
+  (dbg "def-pos ~a"    (fetch-defender-positions blackboard))
+  (dbg "atk-pos ~a" (fetch-attacker-positions blackboard)))
   ;; (let ((*reachable-p-fn* (reachable-p-w/concening-tiles-fn blackboard)))
-  ;;   (misc:dbg "all-tactics ~a" (build-all-attack-tactics blackboard)))
-  ;; (misc:dbg "ids ~a"     (multiple-value-list
+  ;;   (dbg "all-tactics ~a" (build-all-attack-tactics blackboard)))
+  ;; (dbg "ids ~a"     (multiple-value-list
   ;;                         (attack-tactic->id-entities blackboard
   ;;                                                     (list (ivec2 5 1)
   ;;                                                           (ivec2 3 8)

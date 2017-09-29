@@ -21,6 +21,10 @@
 
 (define-constant +w-memory-path-struct+      :path-struct         :test #'eq)
 
+(define-constant +channel-planner-timeout+   0.008                :test #'=)
+
+(defparameter    *planner-channel*           nil)
+
 (defun put-in-working-memory (entity key value)
   (with-accessors ((ghost entity:ghost)) entity
       (with-accessors ((planner-working-memory planner-working-memory)) ghost
@@ -33,6 +37,14 @@
     (with-accessors ((planner-working-memory planner-working-memory)) ghost
       (getf planner-working-memory key nil))))
 
+(defun %clean-plan (ghost)
+  #+debug-ai (misc:dbg "clear planner cache")
+  (blackboard:reachable-p-w/concening-tiles-fn-clear-cache)
+  (blackboard:reachable-p-w/concening-tiles-unlimited-cost-fn-clear-cache)
+  (erase-working-memory ghost)
+  (ai-utils:go-find-hiding-place-clear-cache)
+  (goap:invalidate-tests-cache))
+
 ;;;; planning
 
 (defgeneric actuate-plan (object strategy action))
@@ -41,16 +53,13 @@
                          strategy
                          (action (eql ai-utils:+plan-stopper+)))
   (with-accessors ((ghost ghost)) object
-    (misc:dbg "clear cache nil action")
-    (erase-working-memory ghost)
-    (goap:invalidate-tests-cache)))
+    (%clean-plan ghost)))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+interrupt-action+)))
   (with-accessors ((ghost ghost)) object
-    (erase-working-memory ghost)
-    (goap:invalidate-tests-cache)))
+    (%clean-plan ghost)))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
@@ -280,9 +289,19 @@ Note: all attackable position will be updated as well"
                    (= (id mesh)
                       (id (first-elt ai-entities-action-order))) ;; ensure it's my turn
                    ghost)
-          (elaborate-current-tactical-plan ghost blackboard mesh nil)
-          (let ((action (pop-action-plan ghost)))
-            (misc:dbg "popped action ~a" action)
-            (actuate-plan mesh
-                          (blackboard:strategy-decision blackboard)
-                          action)))))))
+          (if (null *planner-channel*)
+              (progn
+                (setf *planner-channel* (lparallel:make-channel))
+                (lparallel:submit-task *planner-channel*
+                                       'elaborate-current-tactical-plan
+                                       ghost blackboard mesh nil))
+              (if (lparallel:try-receive-result *planner-channel*
+                                                :timeout +channel-planner-timeout+)
+                  (progn
+                    (setf *planner-channel* nil)
+                    (let ((action (pop-action-plan ghost)))
+                      (misc:dbg "popped action ~a" action)
+                      (actuate-plan mesh
+                                    (blackboard:strategy-decision blackboard)
+                                    action))))))))))
+;                  (misc:dbg "plan not ready."))))))))

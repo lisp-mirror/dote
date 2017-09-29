@@ -988,8 +988,8 @@
         (reset-magic-points    ghost)
         (reset-movement-points ghost)
         ;;; TEST
-        ;; (when (faction-ai-p (state object) (id object))
-        ;;   (setf (character:current-movement-points (ghost object)) 10.0))
+        (when (faction-ai-p (state object) (id object))
+          (setf (character:current-movement-points (ghost object)) 15.0))
         ;;;;;;;;;;;;;;;;;;;;;;;
         (traverse-recurrent-effects      object)
         (let ((decayed-items (remove-decayed-items ghost (end-turn-count event))))

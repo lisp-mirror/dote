@@ -110,10 +110,10 @@
               (all-weapon-tactics (getf all-tactics weapon-tactic))
               (my-tactic   (find-if #'(lambda (a) (= (id ai-player) (entity-id a)))
                                     all-weapon-tactics)))
-    ;;(misc:dbg "all ~a melee ~a my ~a" all-tactics all-weapon-tactics  my-tactic)
+    ;;(dbg "all ~a melee ~a my ~a" all-tactics all-weapon-tactics  my-tactic)
     (let ((start-pos          (mesh:calculate-cost-position ai-player))
           (end-pos            (target-pos my-tactic)))
-      ;;(misc:dbg "from ~a -> ~a" start-pos end-pos)
+      ;;(dbg "from ~a -> ~a" start-pos end-pos)
       (multiple-value-bind (result-path cumulative-cost costs-terrain)
           (path-with-concerning-tiles blackboard
                                       start-pos
@@ -213,29 +213,80 @@ path is removed
                      (result-path     (if cut-off-first-tile
                                           (subseq path-w/concering 1)
                                           path-w/concering)))
-                ;; (misc:dbg "path ~a ~a ~a"
+                ;; (dbg "path ~a ~a ~a"
                 ;;           (subseq path-w/concering 1)
                 ;;           cumulative-cost costs-terrain)
                 (values result-path cumulative-cost costs-terrain))
-              (values nil nil)))))))
+              (values nil nil nil)))))))
 
-(defun reachable-p-w/concening-tiles-fn (blackboard)
+(defstruct reachable-cache-value
+  (ai-pos)
+  (def-pos)
+  (mp)
+  (res))
+
+(defun %reach-cache-value-eq (a b)
+  (and (ivec2=   (reachable-cache-value-ai-pos  a)
+                 (reachable-cache-value-ai-pos  b))
+       (ivec2=   (reachable-cache-value-def-pos a)
+                 (reachable-cache-value-def-pos b))
+       (epsilon= (reachable-cache-value-mp a)
+                 (reachable-cache-value-mp b))))
+
+(defmacro with-reachable-cache-fns ((put-cache-fn-name get-cache-fn-name
+                                                       defcached-put-fn defcached-get-fn)
+                                    &body body)
+  `(flet ((,put-cache-fn-name (ai-position defender-position ai-movement-points res)
+            (,defcached-put-fn (make-reachable-cache-value :ai-pos  ai-position
+                                                           :def-pos defender-position
+                                                           :mp      ai-movement-points
+                                                           :res     res)))
+          (,get-cache-fn-name (ai-position defender-position ai-movement-points)
+            (,defcached-get-fn (make-reachable-cache-value :ai-pos  ai-position
+                                                           :def-pos defender-position
+                                                           :mp      ai-movement-points))))
+     ,@body))
+
+(defcached-list reachable-p-w/concening-tiles-fn ((blackboard)
+                                                       :equal-fn #'%reach-cache-value-eq)
   #'(lambda (ai-position defender-position ai-movement-points)
-      (multiple-value-bind (path cumulative-cost costs)
-          (path-with-concerning-tiles blackboard ai-position defender-position)
-        (declare (ignore costs))
-        (and path (<= cumulative-cost ai-movement-points)))))
+      (with-reachable-cache-fns (put-in-cache get-from-cache
+                                              reachable-p-w/concening-tiles-fn-insert-cache
+                                              reachable-p-w/concening-tiles-fn-search-cache)
+        (let ((cached (get-from-cache ai-position defender-position ai-movement-points)))
+          (if cached
+              (progn
+                (reachable-cache-value-res cached))
+              (multiple-value-bind (path cumulative-cost costs)
+                  (path-with-concerning-tiles blackboard ai-position defender-position)
+                (declare (ignore costs))
+                (let ((res (and path (<= cumulative-cost ai-movement-points))))
+                  (put-in-cache ai-position defender-position ai-movement-points res)
+                  (reachable-cache-value-res (get-from-cache ai-position
+                                                             defender-position
+                                                             ai-movement-points)))))))))
 
-(defun reachable-p-w/concening-tiles-unlimited-cost-fn (blackboard)
+(defcached-list reachable-p-w/concening-tiles-unlimited-cost-fn
+    ((blackboard) :equal-fn #'%reach-cache-value-eq)
   "pretends all players have unlimited movement points"
   #'(lambda (ai-position defender-position ai-movement-points)
-      (declare (ignore ai-movement-points))
-      (multiple-value-bind (path cumulative-cost costs)
-          (path-with-concerning-tiles blackboard ai-position defender-position)
-        (declare (ignore cumulative-cost costs))
-        (if path
-            t
-            nil))))
+      (with-reachable-cache-fns (put-in-cache get-from-cache
+                                 reachable-p-w/concening-tiles-unlimited-cost-fn-insert-cache
+                                 reachable-p-w/concening-tiles-unlimited-cost-fn-search-cache)
+        (let ((cached (get-from-cache ai-position defender-position ai-movement-points)))
+          (if cached
+              (reachable-cache-value-res cached)
+              (multiple-value-bind (path cumulative-cost costs)
+                  (path-with-concerning-tiles blackboard ai-position defender-position)
+                (declare (ignore cumulative-cost costs))
+                (let ((res (if path
+                               t
+                               nil)))
+                  (put-in-cache ai-position defender-position ai-movement-points res)
+                  (reachable-cache-value-res (get-from-cache ai-position
+                                                             defender-position
+                                                             ai-movement-points)))))))))
+
 
 (defun reachableo (def)
   (fresh (atk-pos def-pos mp)
