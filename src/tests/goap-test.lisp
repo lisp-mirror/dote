@@ -94,7 +94,7 @@
     planner))
 
 (deftest sucide-plan (goap-suite)
-  (assert-equalp '(:scout :approach :detonate-bomb)
+  (assert-equalp (list :scout :approach :detonate-bomb ai-utils:+plan-stopper+)
       (build-plan (make-planner) nil nil)))
 
 (deftest shoot-plan (goap-suite)
@@ -102,7 +102,7 @@
     ;; increase  the  cost  for   :detonate-bomb  to  make  the  plans
     ;; containing this action less useful
     (setf (action-cost (find-action planner :detonate-bomb)) 10)
-    (assert-equalp '(:scout :load :aim :shoot)
+    (assert-equalp (list :scout :load :aim :shoot ai-utils:+plan-stopper+)
         (build-plan planner nil nil))))
 
 (deftest load-blocked-by-context-plan (goap-suite)
@@ -116,7 +116,7 @@
               nil)
           (goap::action-context-preconditions (find-action planner :load)))
     ;; so they are forced to use a bomb.
-    (assert-equalp '(:scout :approach :detonate-bomb)
+    (assert-equalp (list :scout :approach :detonate-bomb ai-utils:+plan-stopper+)
         (build-plan planner nil nil))))
 
 (deftest test-apply-action (goap-suite)

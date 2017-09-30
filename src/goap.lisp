@@ -324,7 +324,9 @@
                  (push (action-name (action-to-reach graph)) results)
                  (%build-plan (parent-state graph)))))
       (%build-plan raw-plan)
-      (push ai-utils:+plan-stopper+ results)
+      (when (and results
+                 (not (eq (first-elt results) ai-utils:+idle-action+)))
+        (push ai-utils:+plan-stopper+ results))
       (reverse results))))
 
 (defmethod add-action ((object planner) action)

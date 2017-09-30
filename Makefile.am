@@ -1618,6 +1618,7 @@ data/gui/default/message-16-help.tga                     \
 data/gui/default/message-16-info.tga                     \
 data/gui/default/message-16-ok.tga                       \
 data/gui/default/message-16-warning.tga                  \
+data/gui/default/loading-spin-pixelart.tga               \
 data/gui/default/burn-mask.tga                           \
 data/spells/heal-1.lisp                                  \
 data/spells/heal-2.lisp                                  \
