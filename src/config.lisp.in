@@ -28,7 +28,7 @@
 
 (alexandria:define-constant +random-last-names-filename+    "surnames.lisp"   :test #'string=)
 
-(alexandria:define-constant +game-fps+ 60 :test #'=)
+(alexandria:define-constant +game-fps+ 30 :test #'=)
 
 (make-dispatch-macro-character #\§)
 

@@ -1,9 +1,12 @@
 # List of source files which contain translatable strings.
 src/2d-utils.lisp
+src/Makefile.am
 src/able-to-see-mesh.lisp
 src/action-scheduler.lisp
+src/ai-utils.lisp
 src/ann.lisp
 src/arrows.lisp
+src/attack-tactics.lisp
 src/avatar-portrait.lisp
 src/base64.lisp
 src/basic-interaction-parameters.lisp
@@ -32,6 +35,7 @@ src/fountain-mesh-shell.lisp
 src/furniture-mesh-shell.lisp
 src/game-events.lisp
 src/game-state.lisp
+src/goap.lisp
 src/graph.lisp
 src/id3.lisp
 src/identificable.lisp
@@ -47,9 +51,11 @@ src/keyboard-config.lisp
 src/labyrinth-mesh.lisp
 src/level-config.lisp
 src/load-level.lisp
+src/main-window-noshare.lisp
 src/main-window.lisp
 src/map-utils.lisp
 src/matrix.lisp
+src/md2-mesh-ai.lisp
 src/md2-mesh-normal-lut.lisp
 src/md2-mesh.lisp
 src/mesh-material.lisp
@@ -66,7 +72,6 @@ src/parser.lisp
 src/particles.lisp
 src/pickable-mesh.lisp
 src/pixmap.lisp
-src/planner.lisp
 src/player-messages-text.lisp
 src/priority-queue.lisp
 src/procedural-pixmap-library.lisp
@@ -98,6 +103,7 @@ src/sdl2.kit-utils.lisp
 src/shaders-utils.lisp
 src/spell.lisp
 src/stack.lisp
+src/static-queue.lisp
 src/terrain-chunk.lisp
 src/text-utils.lisp
 src/texture.lisp
@@ -116,12 +122,14 @@ src/with-rgb-texture.lisp
 src/world.lisp
 src/xmls-utils.lisp
 # GUI
+src/gui/full-screen-masks.lisp
 src/gui/gui-events.lisp
 src/gui/gui.lisp
-src/gui/widget.lisp
-src/gui/player-report-window.lisp
 src/gui/inventory-window.lisp
+src/gui/player-report-window.lisp
 src/gui/spell-window.lisp
+src/gui/splash-screen-progress-gauge.lisp
+src/gui/widget.lisp
 # spells
 data/spells/vampire-1.lisp
 data/spells/vampire-2.lisp

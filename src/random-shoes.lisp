@@ -158,4 +158,4 @@
          (portrait-file  (find-object-portrait-filename regex)))
     (n-setf-path-value character (list +portrait+) (uiop:native-namestring portrait-file))
     (n-setf-path-value character (list +last-name+)  "")
-    (n-setf-path-value character (list +first-name+) +type-name+)))
+    (n-setf-path-value character (list +first-name+) (_ "shoes"))))

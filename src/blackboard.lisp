@@ -38,6 +38,11 @@
 
 (defparameter *reachable-p-fn* #'reachablep)
 
+(definline cost-limit-concernint-tiles ()
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
+  (d/ +invalicable-element-cost+
+      10.0))
+
 (defclass entity-taker ()
   ((entity-id
     :initform nil
@@ -385,8 +390,7 @@
                                #'(lambda (a)
                                    (let* ((min-value           0.0)
                                           (min-value-normalize 0.0)
-                                          (max-value          (d/ +invalicable-element-cost+
-                                                                  2.0))
+                                          (max-value           (cost-limit-concernint-tiles))
                                           (max-normalize      +concerning-tile-value+))
                                      (if (not (epsilon= min-value a))
                                          (d* (normalize-value-in-range a
@@ -451,11 +455,13 @@
                             (matrix-elt concerning-tiles y x)
                             concerning-tile-value)))))))
 
+;;;; unused
 (defmethod set-concerning-tile ((object blackboard) x y
                                 &key
-                                  (danger-zone-size (let* ((main-state (main-state object))
-                                                           (level (level-difficult main-state)))
-                                                      (calc-danger-zone-size level)))
+                                  (danger-zone-size
+                                   (let* ((main-state (main-state object))
+                                          (level (level-difficult main-state)))
+                                     (calc-danger-zone-size level)))
                                   (concerning-tile-value +concerning-tile-value+))
   (with-accessors ((concerning-tiles concerning-tiles)) object
     (let* ((dangerous-tiles-pos (gen-neighbour-position-in-box x
@@ -484,12 +490,11 @@
       (loop for point across dangerous-tiles-pos do
            (2d-utils:displace-2d-vector (point x y)
              (with-check-matrix-borders (concerning-tiles x y)
-               (incf (matrix-elt concerning-tiles y x)
-                     (setf (matrix-elt concerning-tiles y x)
-                              (funcall concerning-tile-fn
-                                       x y
-                                       0.0         ; ignored
-                                       0.0)))))))) ; ignored
+               (setf (matrix-elt concerning-tiles y x)
+                     (funcall concerning-tile-fn
+                              x y
+                              (matrix-elt concerning-tiles y x)
+                              0.0))))))) ; ignored
   object)
 
 
@@ -606,7 +611,7 @@
 
 (defun concerning-tile-default-mapping-clsr (x-center y-center size)
   #'(lambda (x y old new)
-      (declare (ignore old new))
+      (declare (ignore new))
       (let* ((max  (map-manhattam-distance (ivec2 x-center y-center)
                                            (ivec2 (f+ x-center size)
                                                   (f+ y-center size))))
@@ -616,7 +621,10 @@
              (normalized-param (normalize-value-in-range dist min max))
              (t+1              (d+ 1.0 normalized-param))
              (scale-factor     (dexpt (d* t+1 (d- 2.0 t+1)) 4.0)))
-        (d* scale-factor +concerning-tile-value+))))
+        (min (max old
+                  (d* scale-factor
+                      +concerning-tile-value+))
+             +concerning-tile-value+))))
 
 (defmethod update-unexplored-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
                                            &key
@@ -654,7 +662,7 @@
                         (setf (matrix-elt concerning-tiles y x)
                               (funcall concerning-fn
                                        x y
-                                       0.0       ; ignored
+                                       (matrix-elt concerning-tiles y x)
                                        0.0)))))) ; ignored
              ;; add the player position
              (setf (matrix-elt concerning-tiles y-player x-player)

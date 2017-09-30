@@ -202,17 +202,16 @@
                    (frames-count       frames-count)
                    (fps fps))                              object
     (if *map-loaded-p*
-        (progn
-          (let* ((now      (sdl2:get-ticks))
-                 (dt       (num:f- now delta-time-elapsed))
-                 (float-dt (num:d dt)))
-            (setf delta-time-elapsed now)
-            (incf cpu-time-elapsed float-dt)
-            (do ((fdt (num:d/ float-dt 1000.0)))
-                ((not (num:d> fdt 0.0)))
-              (let ((actual-dt (min (/ +game-fps+ 1000) fdt)))
-                (decf fdt actual-dt)
-                (interfaces:calculate world (d actual-dt)))))
+        (let* ((now      (sdl2:get-ticks))
+               (dt       (num:f- now delta-time-elapsed))
+               (float-dt (num:d dt)))
+          (setf delta-time-elapsed now)
+          (incf cpu-time-elapsed float-dt)
+          (do ((fdt (num:d/ float-dt 1000.0)))
+              ((not (num:d> fdt 0.0)))
+            (let ((actual-dt (min (/ 1.0 +game-fps+) fdt)))
+              (decf fdt actual-dt)
+              (interfaces:calculate world (d actual-dt))))
           ;; rendering
           (gl:clear :color-buffer :depth-buffer)
           (interfaces:render world world)
@@ -388,6 +387,15 @@
           (when (eq :scancode-escape scancode)
             (setf *placeholder* nil)
             (close-window object))
+          (when (eq :scancode-f3 scancode)
+            (with-accessors ((world world) (mesh mesh)) object
+              (let* ((game-state         (game-state object))
+                     (blackboard         (blackboard game-state)))
+                (with-accessors ((selected-pc selected-pc)) world
+                  (misc:dbg "ppp ~a"
+                            (blackboard:path-with-concerning-tiles blackboard
+                                                                   (mesh:calculate-cost-position selected-pc)
+                                                                   (ivec2 2 10)))))))
           (when (eq :scancode-f2 scancode)
             (with-accessors ((world world) (mesh mesh)) object
               (cl-gl-utils:with-render-to-file ((fs:file-in-package "screenshot.tga")
