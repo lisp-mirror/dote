@@ -291,6 +291,7 @@ Note: all attackable position will be updated as well"
                    ghost)
           (if (null *planner-channel*)
               (progn
+                (widget:activate-planner-icon world)
                 (setf *planner-channel* (lparallel:make-channel))
                 (lparallel:submit-task *planner-channel*
                                        'elaborate-current-tactical-plan
@@ -298,6 +299,7 @@ Note: all attackable position will be updated as well"
               (if (lparallel:try-receive-result *planner-channel*
                                                 :timeout +channel-planner-timeout+)
                   (progn
+                    (widget:deactivate-planner-icon world)
                     (setf *planner-channel* nil)
                     (let ((action (pop-action-plan ghost)))
                       (misc:dbg "popped action ~a" action)

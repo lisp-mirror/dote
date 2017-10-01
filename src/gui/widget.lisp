@@ -760,6 +760,107 @@
             (d+ el-time
                 (d* (animation-speed object) dt))))))
 
+(defclass animated-icon (signalling-light inner-animation animated-spritesheet)
+  ())
+
+(defmethod initialize-instance :after ((object animated-icon) &key &allow-other-keys)
+  (with-accessors ((starting-s-texture starting-s-texture)
+                   (width width)
+                   (height height)) object
+    (remove-mesh-data object)
+    (destroy object)
+    (setf (use-blending-p object) t)
+    (quad object width height
+          0.0 0.0 starting-s-texture 1.0
+          +zero-vec+
+          nil t)
+    (remove-orphaned-vertices object)
+    (prepare-for-rendering object)))
+
+(defmethod calculate :before ((object animated-icon) dt)
+  (with-accessors ((calculatep calculatep)
+                   (frequency-animation frequency-animation)
+                   (el-time el-time)
+                   (starting-s-texture starting-s-texture)
+                   (texture-horizontal-offset texture-horizontal-offset)
+                   (animation-loop-p animation-loop-p)
+                   (frame-count frame-count)) object
+    (when calculatep
+      (incf (el-time object) (d* dt (animation-speed object)))
+      (incf frame-count)
+      (when (or animation-loop-p
+                (not (billboard:animated-billboard-last-frame-reached-p object)))
+        (when (= (rem frame-count frequency-animation) 0)
+          (incf texture-horizontal-offset starting-s-texture))))))
+
+(defmethod render ((object animated-icon) renderer)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((duration/2 duration/2)
+                   (projection-matrix projection-matrix)
+                   (compiled-shaders compiled-shaders)
+                   (el-time el-time)
+                   (texture-horizontal-offset texture-horizontal-offset)
+                   (model-matrix model-matrix)
+                   (triangles triangles)
+                   (texture-object texture-object)
+                   (vao vao)
+                   (view-matrix view-matrix)
+                   (shown shown)) object
+    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
+    (declare (list triangles))
+    (when shown
+      (with-camera-view-matrix (camera-vw-matrix renderer)
+        (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+          (cl-gl-utils:with-blending
+            (gl:blend-func                :src-alpha :one-minus-src-alpha)
+            (use-program compiled-shaders :gui-animated-icon)
+            (gl:active-texture            :texture0)
+            (texture:bind-texture texture-object)
+            (uniformi  compiled-shaders :texture-object            +texture-unit-diffuse+)
+            (uniformf  compiled-shaders :texture-horizontal-offset texture-horizontal-offset)
+            (uniform-matrix compiled-shaders :modelview-matrix 4
+                            (vector (sb-cga:matrix* camera-vw-matrix
+                                                    (elt view-matrix 0)
+                                                    (elt model-matrix 0)))
+                            nil)
+            (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+            (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+            (gl:draw-arrays :triangles 0 (* 3 (length triangles)))))))))
+
+(defun make-loader-icon (x y &key
+                               (texture-name          +elaborating-plan-spinner-texture-name+)
+                               (w (square-button-size *reference-sizes*))
+                               (h (square-button-size *reference-sizes*))
+                               (animation-loop t)
+                               (h-offset       0.25)
+                               (freq-anim      20)
+                               (compiled-shaders nil)
+                               (shown            t))
+  (make-instance 'animated-icon
+                 :compiled-shaders          compiled-shaders
+                 :texture-name              texture-name
+                 :x                         x
+                 :y                         y
+                 :width                     w
+                 :height                    h
+                 :texture-horizontal-offset h-offset
+                 :starting-s-texture        h-offset
+                 :animation-loop-p          animation-loop
+                 :frequency-animation       freq-anim
+                 :shown                     shown))
+
+(defun make-planning-progress-icon (&key (shown nil) (compiled-shaders nil))
+  (make-loader-icon (d- (d *window-w*) (square-button-size *reference-sizes*))
+                     (square-button-size *reference-sizes*)
+                     :compiled-shaders compiled-shaders
+                     :texture-name     +elaborating-plan-spinner-texture-name+
+                     :w                (square-button-size *reference-sizes*)
+                     :h                (square-button-size *reference-sizes*)
+                     :animation-loop   t
+                     :h-offset         0.25
+                     :freq-anim        15
+                     :shown            shown))
+
 (defclass button (naked-button) ())
 
 (defmethod initialize-instance :after ((object button) &key &allow-other-keys)
@@ -2338,6 +2439,10 @@
                              :justified nil)
     :initarg  :text-sp
     :accessor text-sp)
+   (icon-planner-running
+    :initform (widget:make-planning-progress-icon :shown nil)
+    :initarg  :icon-planner-running
+    :accessor icon-planner-running)
    (text-fps
     :initform (make-instance 'widget:simple-label
                              :label "0.0"
@@ -2368,26 +2473,29 @@
   (add-child object (b-move                  object))
   (add-child object (text-communication      object))
   ;; second row
-  (add-child object (b-save        object))
-  (add-child object (b-load        object))
-  (add-child object (b-options     object))
-  (add-child object (b-quit        object))
-  (add-child object (b-next        object))
-  (add-child object (b-previous    object))
-  (add-child object (b-next-turn   object))
-  (add-child object (b-rotate-cw   object))
-  (add-child object (b-rotate-ccw  object))
-  (add-child object (b-spell       object))
-  (add-child object (b-open        object))
-  (add-child object (b-close       object))
-  (add-child object (bar-mp        object))
-  (add-child object (bar-dmg       object))
-  (add-child object (bar-sp        object))
-  (add-child object (text-mp       object))
-  (add-child object (text-dmg      object))
-  (add-child object (text-sp       object))
-  (add-child object (b-zoom        object))
-  (add-child object (b-unzoom      object))
+  (add-child object (b-save       object))
+  (add-child object (b-load       object))
+  (add-child object (b-options    object))
+  (add-child object (b-quit       object))
+  (add-child object (b-next       object))
+  (add-child object (b-previous   object))
+  (add-child object (b-next-turn  object))
+  (add-child object (b-rotate-cw  object))
+  (add-child object (b-rotate-ccw object))
+  (add-child object (b-spell      object))
+  (add-child object (b-open       object))
+  (add-child object (b-close      object))
+  (add-child object (bar-mp       object))
+  (add-child object (bar-dmg      object))
+  (add-child object (bar-sp       object))
+  (add-child object (text-mp      object))
+  (add-child object (text-dmg     object))
+  (add-child object (text-sp      object))
+  (add-child object (b-zoom       object))
+  (add-child object (b-unzoom     object))
+  ;; spinners
+  (add-child object (icon-planner-running object))
+  ;; debug
   (add-child object (text-fps      object)))
 
 (defmethod destroy :after ((object main-toolbar))
@@ -2398,6 +2506,10 @@
 (defgeneric sync-influence-map (object map))
 
 (defgeneric reset-toolbar-selected-action (object))
+
+(defgeneric activate-planner-icon (object))
+
+(defgeneric deactivate-planner-icon (object))
 
 (defun sync-bar-with-player (bar bar-label value-fn current-value-fn ghost)
   (let* ((slot-value          (funcall value-fn ghost))
@@ -2523,6 +2635,14 @@
 
 (defmethod reset-toolbar-selected-action ((object main-toolbar))
   (setf (selected-action object) nil))
+
+(defmethod activate-planner-icon ((object main-toolbar))
+  (with-accessors ((icon-planner-running icon-planner-running)) object
+    (setf (shown icon-planner-running) t)))
+
+(defmethod deactivate-planner-icon ((object main-toolbar))
+  (with-accessors ((icon-planner-running icon-planner-running)) object
+    (setf (shown icon-planner-running) nil)))
 
 (defun make-pgen-button (x y plus)
   (make-instance 'naked-button

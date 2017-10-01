@@ -254,7 +254,7 @@
         (when additional-action-enqueued-fn
           (funcall additional-action-enqueued-fn))))))
 
-(defclass animated-billboard (triangle-mesh inner-animation end-life-trigger)
+(defclass animated-billboard (triangle-mesh inner-animation end-life-trigger animated-spritesheet)
   ((duration/2
     :initform (lcg-next-in-range 3.0 4.0)
     :initarg  :duration/2
@@ -262,28 +262,7 @@
    (gravity
     :initform (num:lcg-next-in-range 1.0 2.0)
     :initarg  :gravity
-    :accessor gravity)
-   (frequency-animation
-    :initform 10
-    :initarg  :frequency-animation
-    :accessor frequency-animation)
-   (frame-count
-    :initform 0
-    :initarg  :frame-count
-    :accessor frame-count)
-   (starting-s-texture
-    :initform 0.1
-    :initarg  :starting-s-texture
-    :accessor starting-s-texture)
-   (texture-horizontal-offset
-    :initform 0.0
-    :initarg  :texture-horizontal-offset
-    :accessor texture-horizontal-offset)
-   (animation-loop
-    :initform nil
-    :initarg  :animation-loop-p
-    :reader animation-loop-p
-    :writer (setf animation-loop)))
+    :accessor gravity))
   (:documentation "Note: the tooltip will add and remove itself from action-queue automatically
                    see: make instance and keyworld enqueuedp"))
 
@@ -306,11 +285,6 @@
       (when enqueuedp
         (action-scheduler:end-of-life-remove-from-action-scheduler object
                                                                    action-scheduler:animated-billboard-show-action)))))
-
-(definline animated-billboard-last-frame-reached-p (animation)
-  (with-accessors ((texture-horizontal-offset texture-horizontal-offset)
-                   (starting-s-texture starting-s-texture)) animation
-    (not (< texture-horizontal-offset (d- 1.0 starting-s-texture)))))
 
 (defmethod calculate ((object animated-billboard) dt)
   (with-accessors ((calculatep calculatep)

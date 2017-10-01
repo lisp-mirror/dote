@@ -587,6 +587,14 @@
    :animation-speed
    :fading-away-fn
    :standard-tremor-fn
+   :animated-spritesheet
+   :frequency-animation
+   :frame-count
+   :starting-s-texture
+   :texture-horizontal-offset
+   :animation-loop
+   :animation-loop-p
+   :animated-billboard-last-frame-reached-p
    :end-life-trigger
    :repeat-trigger
    :repeat-trigger-p
@@ -3923,6 +3931,7 @@
    :+zoom-overlay-texture-name+
    :+unzoom-overlay-texture-name+
    :+portrait-unknown-texture-name+
+   :+elaborating-plan-spinner-texture-name+
    :+preview-unknown-texture-name+
    :+silhouette-texture-name+
    :+bag-texture-name+
@@ -4004,6 +4013,8 @@
    :text-field
    :check-button
    :signalling-light
+   :make-loader-icon
+   :make-planning-progress-icon
    :button-state
    :flip-state
    :common-setup-label
@@ -4024,6 +4035,8 @@
    :sync-with-player
    :sync-influence-map
    :reset-toolbar-selected-action
+   :activate-planner-icon
+   :deactivate-planner-icon
    :text-communication
    :text-fps
    :b-save
@@ -4122,6 +4135,7 @@
    :apply-tooltip
    :enqueue-tooltip
    :enqueue-animated-billboard
+   :animated-billboard-last-frame-reached-p
    :tree-impostor-shell
    :make-impostor-pixmap
    :make-impostor-texture

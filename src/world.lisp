@@ -1050,3 +1050,9 @@
     (when (typep entity 'billboard:tooltip)
       (setf (renderp    entity) t
             (calculatep entity) t))))
+
+(defmethod widget:activate-planner-icon ((object world))
+  (widget:activate-planner-icon (toolbar object)))
+
+(defmethod widget:deactivate-planner-icon ((object world))
+  (widget:deactivate-planner-icon (toolbar object)))

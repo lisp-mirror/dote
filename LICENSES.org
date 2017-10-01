@@ -554,10 +554,19 @@
 
 - data/gui/default/loading-spin-pixelart.tga
   derived from work © 2012 qubodup
+
+
   release under https://creativecommons.org/publicdomain/zero/1.0/
 
   according to
   https://opengameart.org/content/pixel-art-loading-icon-2
+
+  and © Mandi Paugh
+
+  release under https://creativecommons.org/publicdomain/zero/1.0/
+
+  according to
+  https://opengameart.org/content/sword-sprite
 
 - src/test/data/avatars/avatar0.tga
   derived from

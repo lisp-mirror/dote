@@ -179,6 +179,34 @@
                                          0.0))
            duration)))))
 
+(defclass animated-spritesheet ()
+  ((frequency-animation
+    :initform 5
+    :initarg  :frequency-animation
+    :accessor frequency-animation)
+   (frame-count
+    :initform 0
+    :initarg  :frame-count
+    :accessor frame-count)
+   (starting-s-texture
+    :initform 0.0
+    :initarg  :starting-s-texture
+    :accessor starting-s-texture)
+   (texture-horizontal-offset
+    :initform 0.1
+    :initarg  :texture-horizontal-offset
+    :accessor texture-horizontal-offset)
+   (animation-loop
+    :initform nil
+    :initarg  :animation-loop-p
+    :reader animation-loop-p
+    :writer (setf animation-loop))))
+
+(definline animated-billboard-last-frame-reached-p (animation)
+  (with-accessors ((texture-horizontal-offset texture-horizontal-offset)
+                   (starting-s-texture starting-s-texture)) animation
+    (not (< texture-horizontal-offset (num:d- 1.0 starting-s-texture)))))
+
 (defclass end-life-trigger ()
   ((repeat-trigger
     :initform nil

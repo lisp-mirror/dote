@@ -180,7 +180,10 @@
                                           (subseq f 2)
                                           nil))))))
 
-(gen-texture-bulk (portrait-unknown.tga
+(gen-texture-bulk (elaborating-plan-spinner.tga
+                   +default-gui-resource+
+                   (setf (interpolation-type bg) :linear))
+                  (portrait-unknown.tga
                    +default-gui-resource+
                    (setf (interpolation-type bg) :linear))
                   (preview-unknown.tga
@@ -543,6 +546,7 @@
   (setup-bg-next-turn-overlay)
   (setup-bg-move-overlay)
   (setup-bg-option-overlay)
+  (setup-bg-elaborating-plan-spinner)
   (setup-bg-portrait-unknown)
   (setup-bg-preview-unknown)
   (setup-bg-berserk)

@@ -247,6 +247,9 @@
 (defun init-texture-coordinates-slot ()
   (misc:make-array-frame 0 (vec2 0.0 0.0) 'vec2 nil))
 
+(defun init-edges-slot ()
+  (misc:make-array-frame 0))
+
 (defmacro with-camera ((camera renderer) &body body)
   `(let* ((,camera (camera ,renderer)))
      ,@body))
@@ -413,7 +416,7 @@
     :initarg :material-params
     :accessor material-params)
    (edges
-    :initform (misc:make-array-frame 0)
+    :initform (init-edges-slot)
     :initarg :edges
     :accessor edges)
    (parent-mesh
@@ -787,12 +790,16 @@
 (defgeneric trap-can-be-placed-p (object))
 
 (defmethod remove-mesh-data ((object triangle-mesh))
-  (setf (normals       object) nil
-        (vertices      object) nil
-        (edges         object) nil
-        (tangents      object) nil
-        (texture-coord object) nil
-        (triangles     object) nil))
+  (setf (normals        object) (init-normals-slot)
+        (vertices       object) (init-vertices-slot)
+        (edges          object) (init-edges-slot)
+        (tangents       object) (init-tangents-slot)
+        (texture-coord  object) (init-texture-coordinates-slot)
+        (triangles      object) nil
+        (vertices-count object) 0
+        (texture-count  object) 0
+        (normals-count  object) 0
+        (tangents-count object) 0))
 
 (defmethod use-lod-p ((object triangle-mesh) threshold  renderer)
   (with-accessors ((aabb aabb)) object

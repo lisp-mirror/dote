@@ -542,6 +542,14 @@ active program (set by sdk2.kit:use-program)."
                 :ia)
      (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
                :fragment-shader ,(get-shader-source "gui-naked-button.frag")))
+    (:gui-animated-icon
+     (:uniforms :modelview-matrix
+                :proj-matrix
+                :texture-object
+                :texture-horizontal-offset)
+     (:shaders :vertex-shader   ,(get-shader-source "animated-icon.vert")
+               :fragment-shader ,(get-shader-source "animated-icon.frag")))
+
     (:tree-impostor
      (:uniforms :modelview-matrix
                 :proj-matrix
