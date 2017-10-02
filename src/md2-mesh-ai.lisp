@@ -256,20 +256,20 @@ Note: all attackable position will be updated as well"
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+find-attack-pos-action+)))
-  (with-slots-for-reasoning (object state ghost blackboard)
-    (multiple-value-bind (path total-cost costs target-id-move)
-        (blackboard:best-path-to-reach-enemy-w-current-weapon blackboard
-                                                              object
-                                                              :cut-off-first-tile nil)
-      (declare (ignore costs))
-      (let* ((target-next (battle-utils:find-attackable-with-current-weapon object))
-             (target-id (if target-next
-                            (id target-next)
-                            target-id-move))
-             (path-struct (and (not target-next)
-                               (game-state:make-movement-path path total-cost))))
-        (put-in-working-memory object +w-memory-path-struct+ path-struct)
-        (put-in-working-memory object +w-memory-target-id+   target-id)))))
+  (flet ((put-in-memory (target-id path-struct)
+           (put-in-working-memory object +w-memory-path-struct+ path-struct)
+           (put-in-working-memory object +w-memory-target-id+   target-id)))
+    (with-slots-for-reasoning (object state ghost blackboard)
+      (let* ((target-next (battle-utils:find-attackable-with-current-weapon object)))
+        (if target-next ;; if non nil we are in an attack position
+            (put-in-memory (id target-next) nil)
+            (multiple-value-bind (path total-cost costs target-id-move)
+                (blackboard:best-path-to-reach-enemy-w-current-weapon blackboard
+                                                                      object
+                                                                      :cut-off-first-tile nil)
+              (declare (ignore costs))
+              (let* ((path-struct (game-state:make-movement-path path total-cost)))
+                (put-in-memory target-id-move path-struct))))))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
