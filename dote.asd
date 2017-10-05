@@ -187,7 +187,7 @@
                                      (:file "attack-tactics-test")
                                      (:file "goap-test")))))
 
-;(progn
+(progn
   ;; debug
   (pushnew :inhibit-planner *features*)
   (pushnew :debug-mode              *features*)
