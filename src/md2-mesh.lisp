@@ -1401,6 +1401,7 @@
             (gl-arr-aabb     (slot-value object 'renderer-data-aabb-obj-space))
             (vbos            (slot-value object 'vbo))
             (vaos            (slot-value object 'vao))
+            #+debug-mode
             (id              (slot-value object 'id)))
         (tg:finalize object
                      #'(lambda ()

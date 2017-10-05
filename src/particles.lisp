@@ -727,7 +727,8 @@
     (populate-particles-alpha-array            object 0.0 :force t)
     (populate-particles-color-array            object 0.0 :force t)
     ;; setup finalizer
-    (let ((id             (slot-value object 'id))
+    (let (#+debug-mode
+          (id             (slot-value object 'id))
           (pos-in         (slot-value object 'particles-positions))
           (velo-t0        (slot-value object 'particles-v0))
           (velo-t         (slot-value object 'particles-vt))

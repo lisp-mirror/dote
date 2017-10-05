@@ -1376,6 +1376,7 @@
               (gl-arr-aabb     (slot-value object 'renderer-data-aabb-obj-space))
               (vbos            (slot-value object 'vbo))
               (vaos            (slot-value object 'vao))
+              #+debug-mode
               (id              (slot-value object 'id)))
           (tg:finalize object
                        #'(lambda ()
@@ -3113,7 +3114,8 @@
     (setf (framebuffer object)  (elt framebuffers 0)
           (depthbuffer object) (elt depthbuffers 0))
     ;; setup finalizer
-    (let ((id (slot-value object 'id)))
+    (let (#+debug-mode
+          (id (slot-value object 'id)))
       (tg:finalize object
                    #'(lambda ()
                        #+debug-mode (misc:dbg "finalize water ~a" id)

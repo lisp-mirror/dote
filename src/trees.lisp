@@ -1391,7 +1391,7 @@
                     (mtree-utils:top-down-visit
                      (mesh the-tree)
                      #'(lambda (n) (incf triangles-count (length (triangles n)))))
-                    (misc:dbg "tree triangles: ~a" triangles-count))
+                    #+debug-mode (misc:dbg "tree triangles: ~a" triangles-count))
                   (if flatten
                       (let ((actual-mesh (flatten-mesh (mesh the-tree))))
                         (prepare-for-rendering actual-mesh)

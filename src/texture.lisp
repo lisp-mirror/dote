@@ -417,6 +417,7 @@
 
 (defmethod setup-finalizer ((object texture))
   (let ((handle   (slot-value object 'handle))
+        #+debug-mode
         (filename (slot-value object 'filename)))
     (tg:finalize object #'(lambda ()
                             #+debug-mode (misc:dbg "finalize texture ~a ~a" handle filename)

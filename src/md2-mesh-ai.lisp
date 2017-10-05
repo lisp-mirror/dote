@@ -206,7 +206,7 @@ Note: all attackable position will be updated as well"
   (with-slots-for-reasoning (object state ghost blackboard)
     (let* ((id-defender (get-from-working-mem object +w-memory-target-id+))
            (defender    (find-entity-by-id state id-defender)))
-      (misc:dbg "atk id ~a" id-defender)
+      #+debug-ai (misc:dbg "atk id ~a" id-defender)
       (%rotate-until-visible state object defender)
       (battle-utils:attack-w-current-weapon object
                                             (find-entity-by-id state id-defender)))))
@@ -302,7 +302,7 @@ Note: all attackable position will be updated as well"
                     (widget:deactivate-planner-icon world)
                     (setf *planner-channel* nil)
                     (let ((action (pop-action-plan ghost)))
-                      (misc:dbg "popped action ~a" action)
+                      #+debug-ai (misc:dbg "popped action ~a" action)
                       (actuate-plan mesh
                                     (blackboard:strategy-decision blackboard)
                                     action))))))))))

@@ -286,7 +286,6 @@ path is removed
                                                              defender-position
                                                              ai-movement-points)))))))))
 
-
 (defun reachableo (def)
   (fresh (atk-pos def-pos mp)
     (def-pos-o def  def-pos)

@@ -101,6 +101,7 @@
       (setf renderer-data-count-position (* 3 (length raw-pos))))
     ;; setup finalizer
     (let ((gl-arr-pos (slot-value object 'renderer-data-position))
+          #+debug-mode
           (id            (slot-value object 'id)))
       (tg:finalize object #'(lambda ()
                               #+debug-mode (misc:dbg "finalize destroy instanced-mesh ~a" id)

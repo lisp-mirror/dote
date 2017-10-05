@@ -134,6 +134,7 @@
       (setf renderer-data-count-pick-overlay (* 3 (length (triangles object)))))
     ;; setup finalizer
     (let ((gl-arr-weight (slot-value object 'renderer-data-pick-overlay))
+          #+debug-mode
           (id            (slot-value object 'id)))
       (tg:finalize object #'(lambda ()
                               #+debug-mode (misc:dbg "finalize destroy pickable ~a" id)

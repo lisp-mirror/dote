@@ -148,7 +148,7 @@
       (setf renderer-data-count-weights (* 6 (length (triangles object)))))
     ;; setup finalizer
     (let ((gl-arr-weight (slot-value object 'renderer-data-text-weights))
-          (id            (slot-value object 'id)))
+          #+debug-mode (id            (slot-value object 'id)))
       (tg:finalize object #'(lambda ()
                               #+debug-mode (misc:dbg "finalize destroy terrain ~a" id)
                               (free-memory* (list (gl:free-gl-array gl-arr-weight)) nil nil)

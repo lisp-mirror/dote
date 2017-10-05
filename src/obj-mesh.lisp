@@ -106,6 +106,7 @@
          (next-token-simple *file*)
          (parse-face))
         (t
+         #+debug-mode
          (let-noerr ((discarded (next-token-simple *file*)))
            (misc:dbg "obj mesh: discard ~a ~a" type discarded))))
       (parse-line))))

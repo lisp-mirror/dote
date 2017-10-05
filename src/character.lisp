@@ -982,7 +982,7 @@
       (let* ((planner-file (goap:find-planner-file object strategy-decision))
              (planner      (goap:load-planner-file planner-file)))
         (setf current-plan (goap:build-plan planner strategy-expert player-entity))
-        (misc:dbg "NEW current new plan ~a" current-plan)
+        #+debug-ai (misc:dbg "NEW current new plan ~a" current-plan)
         (elaborate-current-tactical-plan object strategy-expert player-entity nil))))
 
 (defmethod set-interrupt-plan ((object player-character))

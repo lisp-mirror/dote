@@ -213,7 +213,7 @@ valid."
          do (setf (gethash name programs) program)
            (loop for entry in (cdr program-spec)
               do
-                (misc:dbg "preprocess  ~a" (car entry))
+                #+debug-mode (misc:dbg "preprocess  ~a" (car entry))
                 (preprocess-program-entry
                  (car entry) (cdr entry) program))
            (loop for entry in (cdr program-spec)
