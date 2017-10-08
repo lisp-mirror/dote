@@ -2214,7 +2214,8 @@
    :set-concerning-tile-fn
    :max-ai-movement-points
    :position-inside-room-p
-   :calc-ai-entities-action-order))
+   :calc-ai-entities-action-order
+   :door-in-next-path-tile-p))
 
 (defpackage :game-event
   (:use

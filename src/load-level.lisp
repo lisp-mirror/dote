@@ -132,7 +132,8 @@
                        +door-e-type+)
                       (:door-w
                        +door-w-type+)))
-         (door-shell (mesh:fill-shell-from-mesh-w-renderer-data (funcall door-type-fn (doors-bag world))
+         (door-shell (mesh:fill-shell-from-mesh-w-renderer-data (funcall door-type-fn
+                                                                         (doors-bag world))
                                                                 'mesh:door-mesh-shell)))
     (setf (compiled-shaders door-shell) (compiled-shaders world))
     ;; set the mesh

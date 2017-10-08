@@ -482,7 +482,7 @@
                    (state state)) player
     (with-accessors ((current-path current-path)) ghost
       (let ((leaving-tile (alexandria:first-elt current-path))
-            (pos-entity (calculate-cost-position player)))
+            (pos-entity   (calculate-cost-position player)))
         (setf current-path (subseq current-path 1))
         (if (= (length current-path) 1) ;; entering in last tile, stop
             (%stop-movement player :decrement-movement-points t)
@@ -498,11 +498,25 @@
           ;; update visited tiles in blackboard
           (game-state:set-tile-visited state (elt pos-entity 0) (elt pos-entity 1))
           ;; manage traps
-          (let ((trap-ostile (trap-ostile-p player)))
+          (let ((trap-ostile    (trap-ostile-p player))
+                (step-on-trap-p nil))
             (when trap-ostile
+              (setf step-on-trap-p t)
               (set-interrupt-plan ghost)
               (%stop-movement player :decrement-movement-points t)
-              (%try-deactivate-trap-from-ai world player trap-ostile)))
+              (%try-deactivate-trap-from-ai world player trap-ostile))
+            ;; manage doors
+            (when (and (not step-on-trap-p)
+                       (game-state:door-in-next-path-tile-p state current-path))
+              (let* ((id-door (game-state:door-in-next-path-tile-p state current-path))
+                     (door    (game-state:find-entity-by-id state id-door))
+                     (door-event (game-event:make-simple-event-w-dest 'game-event:open-door-event
+                                                                      (id player)
+                                                                      id-door)))
+                (when (not (openp door))
+                  (game-event:propagate-open-door-event door-event)
+                  (set-interrupt-plan ghost)
+                  (%stop-movement player :decrement-movement-points t)))))
           (send-update-visibility-event player event)
           (send-refresh-toolbar-event))))))
 
@@ -957,8 +971,9 @@
 (defmethod on-game-event :after ((object md2-mesh) (event end-turn))
   ;;(misc:dbg "end turn md2mesh tooltip ct ~a" (tooltip-count object))
   ;;;;;;;;;;;;;;;;;;;;; TEST ;;;;;;;;;;;;;;;;;;;;;;;;
-  ;; (when (faction-ai-p (state object) (id object))
-  ;;   (with-accessors ((state state)) object
+   ;; (when (faction-ai-p (state object) (id object))
+   ;;   (with-accessors ((state state)) object
+   ;;     (game-state:with-world (world state)
   ;;     (with-accessors ((blackboard blackboard:blackboard)) state
   ;;       (misc:dbg "best ~a"
   ;;                 (blackboard:best-path-to-reach-enemy-w-current-weapon blackboard object))
@@ -989,7 +1004,7 @@
         (reset-movement-points ghost)
         ;;; TEST
         (when (faction-ai-p (state object) (id object))
-          (setf (character:current-movement-points (ghost object)) 15.0))
+          (setf (character:current-movement-points (ghost object)) 150.0))
         ;;;;;;;;;;;;;;;;;;;;;;;
         (traverse-recurrent-effects      object)
         (let ((decayed-items (remove-decayed-items ghost (end-turn-count event))))
