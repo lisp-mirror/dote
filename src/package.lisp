@@ -226,6 +226,7 @@
    :shuffle
    :make-fresh-list
    :seq->list
+   :lcat
    :make-array-frame
    :make-fresh-array
    :sequence->list
@@ -2073,7 +2074,7 @@
    :*chair-e*
    :*chair-w*
    :update-progress
-   :clean-global-wars
+   :clean-global-vars
    :gen-normalmap-if-needed))
 
 (defpackage :game-state
@@ -2183,6 +2184,7 @@
    :all-player-id-by-faction
    :faction->map-faction-fn
    :faction->opposite-faction
+   :opposite-faction-map-fn
    :find-player-id-by-position
    :find-ai-id-by-position
    :faction-player-p
@@ -3811,7 +3813,7 @@
    :weapon-case
    :attack-w-current-weapon
    :attack-w-current-weapon-in-range-p
-   :find-attackable-with-current-weapon
+   :find-in-range-attackable-w-curr-weapon
    :cost-attack-w-current-weapon
    :short-range-attack-possible-p
    :long-range-attack-possible-p
@@ -4666,12 +4668,18 @@
    :find-defender-id-by-goal-position
    :build-all-attack-tactics
    :path-with-concerning-tiles
+   :entity-in-valid-attackable-pos-p
    :+concerning-tile-value+
    :blackboard
    :concerning-tiles
    :calc-concerning-tiles-cost-scaling
    :visited-tiles
    :unexplored-layer
+   :pole-weapon-goal-generator-fn
+   :long-range-weapon-goal-generator-fn
+   :melee-weapon-goal-generator-fn
+   :crossbow-range-for-attack-goal
+   :bow-range-for-attack-goal
    :attack-enemy-melee-layer
    :attack-enemy-pole-layer
    :attack-enemy-bow-layer

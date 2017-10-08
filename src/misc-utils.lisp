@@ -400,6 +400,10 @@ Name from Emacs Lisp."
       (copy-list sequence)
       (map-into (make-list (length sequence)) #'identity sequence)))
 
+(defun lcat (&rest l)
+  (declare (optimize (speed 3) (safety 1) (debug 0)))
+  (apply #'concatenate (concatenate 'list (list 'list) l)))
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun make-array-frame (size &optional (el nil) (type t) (simplep nil))
     "All elements points to the same address/reference!"

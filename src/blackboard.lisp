@@ -847,14 +847,17 @@
        (setf old-position-bag (push-target-position old-position-bag player position)))
   old-position-bag)
 
+(defun melee-weapon-goal-generator-fn ()
+  #'(lambda (x y)
+      (mapcar #'ivec2:sequence->ivec2
+              (gen-4-neighbour-counterclockwise x y
+                                                :add-center nil))))
+
 (defun %calc-melee-attack-position-player (blackboard player all-visibles-from-ai)
   (with-accessors ((attack-enemy-melee-layer     attack-enemy-melee-layer)
                    (attack-enemy-melee-positions attack-enemy-melee-positions)) blackboard
     (with-accessors ((layer layer)) attack-enemy-melee-layer
-      (let* ((goal-generator-fn #'(lambda (x y)
-                                    (mapcar #'ivec2:sequence->ivec2
-                                            (gen-4-neighbour-counterclockwise x y
-                                                                              :add-center nil))))
+      (let* ((goal-generator-fn (melee-weapon-goal-generator-fn))
              (goal-tiles-pos    (%attack-layer-player-goal-pos blackboard
                                                                layer
                                                                player
@@ -951,7 +954,7 @@
                                      0.0)))))
       (> sum-neighbour (calc-goal-canceled-for-neighbour-threshold player)))))
 
-(defun %pole-weapon-goal-generator-fn (player)
+(defun pole-weapon-goal-generator-fn (player)
   (let ((level (level-difficult (state player))))
     #'(lambda (x y)
         (let ((size (* 2 +weapon-pole-range+)))
@@ -972,7 +975,7 @@
   (with-accessors ((attack-enemy-pole-layer attack-enemy-pole-layer)
                    (attack-enemy-pole-positions attack-enemy-pole-positions)) blackboard
     (with-accessors ((layer layer)) attack-enemy-pole-layer
-      (let* ((goal-generator-fn (%pole-weapon-goal-generator-fn player))
+      (let* ((goal-generator-fn (pole-weapon-goal-generator-fn player))
              (goal-tiles-pos    (%attack-layer-player-goal-pos blackboard
                                                                layer
                                                                player
@@ -1014,7 +1017,7 @@
                  (setf (matrix-elt layer y x)
                        +goal-tile-value+)))))))
 
-(defun %long-range-weapon-goal-generator-fn (player range)
+(defun long-range-weapon-goal-generator-fn (player range)
   (let ((level (level-difficult (state player))))
     #'(lambda (x y)
         (let ((size (* 2 range)))
@@ -1031,7 +1034,7 @@
 (defun %calc-attack-long-range-position-player (blackboard player djk-map
                                                 all-visibles-from-ai range)
   (with-accessors ((layer layer)) djk-map
-    (let* ((goal-generator-fn (%long-range-weapon-goal-generator-fn player range))
+    (let* ((goal-generator-fn (long-range-weapon-goal-generator-fn player range))
            (goal-tiles-pos    (%attack-layer-player-goal-pos blackboard
                                                              layer
                                                              player
@@ -1073,6 +1076,9 @@
              (setf (matrix-elt layer y x)
                    +goal-tile-value+))))))
 
+(defun bow-range-for-attack-goal ()
+  (floor (d/ (d +weapon-bow-range+) 2.0)))
+
 (defmethod update-bow-attackable-pos-player ((object blackboard) (player md2-mesh:md2-mesh)
                                              &key
                                                (all-visibles-from-ai
@@ -1085,7 +1091,7 @@
                                                      attack-enemy-bow-layer
                                                      attack-enemy-bow-positions
                                                      all-visibles-from-ai
-                                                     (floor (d/ (d +weapon-bow-range+) 2.0))))))
+                                                     (bow-range-for-attack-goal)))))
 
 (defmethod update-attack-bow-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
                                              &key
@@ -1097,7 +1103,10 @@
                                               player
                                               attack-enemy-bow-layer
                                               all-visibles-from-ai
-                                              (floor (d/ (d +weapon-bow-range+) 2.0)))))
+                                              (bow-range-for-attack-goal))))
+
+(defun crossbow-range-for-attack-goal ()
+  (floor (d/ (d +weapon-crossbow-range+) 2.0)))
 
 (defmethod update-crossbow-attackable-pos-player ((object blackboard) (player md2-mesh:md2-mesh)
                                                   &key
@@ -1111,8 +1120,7 @@
                                                      attack-enemy-crossbow-layer
                                                      attack-enemy-crossbow-positions
                                                      all-visibles-from-ai
-                                                     (floor (d/ (d +weapon-crossbow-range+)
-                                                                2.0))))))
+                                                     (crossbow-range-for-attack-goal)))))
 
 (defmethod update-attack-crossbow-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
                                              &key
@@ -1124,7 +1132,7 @@
                                               player
                                               attack-enemy-crossbow-layer
                                               all-visibles-from-ai
-                                              (floor (d/ (d +weapon-crossbow-range+) 2.0)))))
+                                              (crossbow-range-for-attack-goal))))
 
 (defmethod update-bow-attackable-pos ((object blackboard))
   (%update-attack-pos object #'update-bow-attackable-pos-player))

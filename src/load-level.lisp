@@ -956,7 +956,7 @@
       (setup-water                 world  *map*)
       (update-progress 1.0)
       ;; free memory associated with *map*, *wall* etc.
-      (clean-global-wars)
+      (clean-global-vars)
       ;; initialize blackboard
       (let ((blackboard (make-instance 'blackboard:blackboard
                                        :main-state game-state)))

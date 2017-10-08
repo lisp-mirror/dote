@@ -663,10 +663,19 @@
 (defmethod faction->opposite-faction ((object entity))
   (faction->opposite-faction (my-faction object)))
 
-(defmethod faction->opposite-faction (object)
+(defmethod faction->opposite-faction ((object symbol))
   (if (eq object +npc-type+)
        +pc-type+
        +npc-type+))
+
+(defgeneric opposite-faction-map-fn (object))
+
+(defmethod opposite-faction-map-fn ((object symbol))
+  (let* ((opposite-faction (faction->opposite-faction object)))
+    (faction->map-faction-fn opposite-faction)))
+
+(defmethod opposite-faction-map-fn ((object entity))
+  (opposite-faction-map-fn (my-faction object)))
 
 (defmethod all-player-id-by-faction ((object game-state) faction)
   (let ((res '())

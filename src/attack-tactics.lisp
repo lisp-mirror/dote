@@ -474,3 +474,49 @@ path is removed
                                                          all-attacker-pos
                                                          (getf all-defender-pos
                                                                +crossbow-key-tactics+)))))
+
+(defun entity-in-valid-attackable-pos-p (entity &key (use-ray-test-only t))
+  "is the entity in a valid attacking position with the current weapon?"
+  (with-accessors ((state state)) entity
+    (with-accessors ((map-state map-state)) state
+      (let* ((entity-pos  (calculate-cost-position entity))
+             (map-fn      (game-state:opposite-faction-map-fn entity))
+             (goals-fn    (battle-utils:weapon-case (entity)
+                            :pole
+                            (pole-weapon-goal-generator-fn entity)
+                            :melee
+                            (melee-weapon-goal-generator-fn)
+                            :bow
+                            (long-range-weapon-goal-generator-fn entity
+                                                                 (bow-range-for-attack-goal))
+                            :crossbow
+                            (long-range-weapon-goal-generator-fn entity
+                                                                 (crossbow-range-for-attack-goal))))
+             (goals-raw   (funcall map-fn
+                                   state
+                                   #'(lambda (enemy)
+                                       (let ((enemy-pos (calculate-cost-position enemy)))
+                                         (displace-2d-vector (enemy-pos x y)
+                                           (funcall goals-fn x y))))))
+             (goals      (remove-if-not #'(lambda (c) (valid-coordinates-p map-state c))
+                                        (reduce #'(lambda (a b)
+                                                    (if (listp b)
+                                                        (lcat a b)
+                                                        (lcat a (seq->list b))))
+                                                goals-raw
+                                                :initial-value '())))
+             (test-vis-fn (if use-ray-test-only
+                              #'(lambda (o)
+                                  (absee-mesh:other-visible-ray-p entity o
+                                                                  :exclude-if-labyrinth-entity t))
+                              #'(lambda (o)
+                                  (absee-mesh:other-visible-p entity o
+                                                              :exclude-if-labyrinth-entity t)))))
+        (dolist (pos goals)
+          (when (ivec2= pos entity-pos) ; entity is in attackable position...
+            (funcall map-fn             ; but can it see an enemy?
+                     state
+                     #'(lambda (v)
+                         (when (funcall test-vis-fn v) ; yes; return
+                           (return-from entity-in-valid-attackable-pos-p v))))))
+        nil)))) ; not a valid attack position

@@ -338,7 +338,7 @@
      (interfaces:prepare-for-rendering mesh)
      (setf *floor* mesh)))
 
-(defun clean-global-wars ()
+(defun clean-global-vars ()
   (setf *particle-names*             0
         *progress*                   0.0
         *main-window*                nil
@@ -369,7 +369,7 @@
 (defmacro define-level (&body body)
   (ensure-cache-running
     ;; clean a bit and free the memory associated with global variables
-    ;(clean-global-wars)
+    ;(clean-global-vars)
     (need-keyword ((first body) :set)
       (need-keyword ((second body) :seed)
         (need-type ((third body) 'string)

@@ -521,7 +521,7 @@ reach the enemy with optimal path?"
 
 (defgoap-test is-in-attack-pos-p (strategy-expert entity)
   (declare (ignore strategy-expert))
-  (battle-utils:find-attackable-with-current-weapon entity))
+  (blackboard:entity-in-valid-attackable-pos-p entity))
 
 (defgoap-test can-move-near-attack-pos (strategy-expert entity)
   (let* ((reachable-fn (reachable-p-w/concening-tiles-unlimited-cost-fn strategy-expert))

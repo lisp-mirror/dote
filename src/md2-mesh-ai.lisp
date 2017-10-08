@@ -260,7 +260,7 @@ Note: all attackable position will be updated as well"
            (put-in-working-memory object +w-memory-path-struct+ path-struct)
            (put-in-working-memory object +w-memory-target-id+   target-id)))
     (with-slots-for-reasoning (object state ghost blackboard)
-      (let* ((target-next (battle-utils:find-attackable-with-current-weapon object)))
+      (let* ((target-next (blackboard:entity-in-valid-attackable-pos-p object)))
         (if target-next ;; if non nil we are in an attack position
             (put-in-memory (id target-next) nil)
             (multiple-value-bind (path total-cost costs target-id-move)

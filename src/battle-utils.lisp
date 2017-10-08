@@ -210,16 +210,15 @@
     :bow      (long-range-attack-possible-p attacker defender)
     :crossbow (long-range-attack-possible-p attacker defender)))
 
-(defun find-attackable-with-current-weapon (entity)
+(defun find-in-range-attackable-w-curr-weapon (entity)
   (with-accessors ((state entity:state)) entity
-    (let ((map-fn (game-state:faction->map-faction-fn
-                   (game-state:faction->opposite-faction entity))))
+    (let* ((map-fn (game-state:opposite-faction-map-fn entity)))
       (funcall map-fn
                state
                #'(lambda (v)
-                   (when (and (absee-mesh:other-visible-p entity  v)
+                   (when (and (absee-mesh:other-visible-p entity v)
                               (attack-w-current-weapon-in-range-p entity v))
-                     (return-from find-attackable-with-current-weapon v))))
+                     (return-from  find-in-range-attackable-w-curr-weapon v))))
       nil)))
 
 (defun cost-attack-w-current-weapon (entity)

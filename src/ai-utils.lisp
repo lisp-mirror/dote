@@ -132,7 +132,7 @@
      (character:current-magic-points ghost)))
 
 (defun attackable-position-exists-path (strategy-expert entity reachable-fn)
-  (if (battle-utils:find-attackable-with-current-weapon entity)
+  (if (blackboard:entity-in-valid-attackable-pos-p entity)
       (values (calculate-cost-position entity) 0.0)
       (blackboard:best-path-to-reach-enemy-w-current-weapon strategy-expert entity
                                                             :reachable-fn-p
