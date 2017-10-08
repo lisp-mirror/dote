@@ -925,24 +925,27 @@
 (defmethod post-entity-message ((object world) entity text
                                 suppress-default-action
                                 &rest actions)
+  "note: if entity is from AI does nothing"
   (with-accessors ((gui gui)
                    (compiled-shaders compiled-shaders)) object
-    (with-accessors ((ghost ghost)) entity
-      (with-accessors ((portrait portrait)) ghost
-        (let* ((image          (or (texture:handle portrait) :info))
-               (default-action (if (not suppress-default-action)
-                                   (list (cons (_ "OK")
-                                               #'widget:hide-and-remove-parent-cb))
-                                   nil))
-               (all-actions    (concatenate 'list
-                                            default-action
-                                            actions))
-               (message-box (widget:make-message-box* text
-                                                      (_ "Message")
-                                                      image
-                                                      all-actions)))
-          (setf (compiled-shaders message-box) compiled-shaders)
-          (mtree:add-child gui message-box))))))
+    (with-accessors ((ghost ghost)
+                     (state state)) entity
+      (when (faction-player-p state (id entity))
+        (with-accessors ((portrait portrait)) ghost
+          (let* ((image          (or (texture:handle portrait) :info))
+                 (default-action (if (not suppress-default-action)
+                                     (list (cons (_ "OK")
+                                                 #'widget:hide-and-remove-parent-cb))
+                                     nil))
+                 (all-actions    (concatenate 'list
+                                              default-action
+                                              actions))
+                 (message-box (widget:make-message-box* text
+                                                        (_ "Message")
+                                                        image
+                                                        all-actions)))
+            (setf (compiled-shaders message-box) compiled-shaders)
+            (mtree:add-child gui message-box)))))))
 
 (defun point-to-entity-and-hide-cb (world entity)
   #'(lambda (w e)

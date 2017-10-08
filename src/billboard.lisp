@@ -272,12 +272,12 @@
                                          (w         1.0)
                                          (h         1.0)
                                          &allow-other-keys)
-  (with-accessors ((starting-s-texture starting-s-texture)) object
+  (with-accessors ((texture-window-width texture-window-width)) object
     (setf (use-blending-p object) t)
     (let ((w/2 (d* w 0.5))
           (h/2 (d* h 0.5)))
       (quad object w h
-                 0.0 0.0 starting-s-texture 1.0
+                 0.0 0.0 texture-window-width 1.0
                  (vec (d- w/2) (d- h/2) 0.0) ; centering
                  nil t)
       (remove-orphaned-vertices object)
@@ -290,7 +290,7 @@
   (with-accessors ((calculatep calculatep)
                    (frequency-animation frequency-animation)
                    (el-time el-time)
-                   (starting-s-texture starting-s-texture)
+                   (texture-window-width texture-window-width)
                    (texture-horizontal-offset texture-horizontal-offset)
                    (animation-loop-p animation-loop-p)
                    (frame-count frame-count)) object
@@ -300,7 +300,7 @@
       (when (or animation-loop-p
                 (not (animated-billboard-last-frame-reached-p object)))
         (when (= (rem frame-count frequency-animation) 0)
-          (incf texture-horizontal-offset starting-s-texture)))
+          (incf texture-horizontal-offset texture-window-width)))
       (bubbleup-modelmatrix object)
       (with-maybe-trigger-end-of-life (object (removeable-from-world-p object))))))
 
@@ -377,7 +377,7 @@
                                 :animation-speed           1.0
                                 :frequency-animation       frequency-animation
                                 :texture-horizontal-offset texture-horizontal-offset
-                                :starting-s-texture        texture-horizontal-offset
+                                :texture-window-width      texture-horizontal-offset
                                 :gravity                   gravity
                                 :renderp                   activep
                                 :calculatep                activep

@@ -764,14 +764,14 @@
   ())
 
 (defmethod initialize-instance :after ((object animated-icon) &key &allow-other-keys)
-  (with-accessors ((starting-s-texture starting-s-texture)
+  (with-accessors ((texture-window-width texture-window-width)
                    (width width)
                    (height height)) object
     (remove-mesh-data object)
     (destroy object)
     (setf (use-blending-p object) t)
     (quad object width height
-          0.0 0.0 starting-s-texture 1.0
+          0.0 0.0 texture-window-width 1.0
           +zero-vec+
           nil t)
     (remove-orphaned-vertices object)
@@ -781,7 +781,7 @@
   (with-accessors ((calculatep calculatep)
                    (frequency-animation frequency-animation)
                    (el-time el-time)
-                   (starting-s-texture starting-s-texture)
+                   (texture-window-width texture-window-width)
                    (texture-horizontal-offset texture-horizontal-offset)
                    (animation-loop-p animation-loop-p)
                    (frame-count frame-count)) object
@@ -791,7 +791,7 @@
       (when (or animation-loop-p
                 (not (billboard:animated-billboard-last-frame-reached-p object)))
         (when (= (rem frame-count frequency-animation) 0)
-          (incf texture-horizontal-offset starting-s-texture))))))
+          (incf texture-horizontal-offset texture-window-width))))))
 
 (defmethod render ((object animated-icon) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -844,7 +844,7 @@
                  :width                     w
                  :height                    h
                  :texture-horizontal-offset h-offset
-                 :starting-s-texture        h-offset
+                 :texture-window-width        h-offset
                  :animation-loop-p          animation-loop
                  :frequency-animation       freq-anim
                  :shown                     shown))

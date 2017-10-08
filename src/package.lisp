@@ -591,7 +591,7 @@
    :animated-spritesheet
    :frequency-animation
    :frame-count
-   :starting-s-texture
+   :texture-window-width
    :texture-horizontal-offset
    :animation-loop
    :animation-loop-p

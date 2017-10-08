@@ -188,10 +188,10 @@
     :initform 0
     :initarg  :frame-count
     :accessor frame-count)
-   (starting-s-texture
+   (texture-window-width
     :initform 0.0
-    :initarg  :starting-s-texture
-    :accessor starting-s-texture)
+    :initarg  :texture-window-width
+    :accessor texture-window-width)
    (texture-horizontal-offset
     :initform 0.1
     :initarg  :texture-horizontal-offset
@@ -204,8 +204,8 @@
 
 (definline animated-billboard-last-frame-reached-p (animation)
   (with-accessors ((texture-horizontal-offset texture-horizontal-offset)
-                   (starting-s-texture starting-s-texture)) animation
-    (not (< texture-horizontal-offset (num:d- 1.0 starting-s-texture)))))
+                   (texture-window-width texture-window-width)) animation
+    (not (< texture-horizontal-offset (num:d- 1.0 texture-window-width)))))
 
 (defclass end-life-trigger ()
   ((repeat-trigger
