@@ -292,7 +292,6 @@
                                          :test #'conditions-equals))))
       (let ((closed '()))
         (pq:with-min-queue (frontier #'queue-eq #'queue-comp #'identity)
-          (misc:dbg "push in frontier ~a" (action-to-reach object))
           (pq:push-element frontier object)
           (do ((current (pq:pop-element frontier) (pq:pop-element frontier)))
               ((not current) ; the exit condition
