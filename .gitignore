@@ -33,4 +33,6 @@ po/remove-potcdate.sed
 /*.ppm
 /*.tga
 
+*.diff
+
 src/config.lisp

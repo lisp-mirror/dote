@@ -87,23 +87,15 @@
         ;; clear memoized results coming from the planner
         ;; (test precondition is-there-hiding-place-p)
         (ai-utils:go-find-hiding-place-clear-cache)
-        (action-scheduler:with-enqueue-action (world action-scheduler:tactical-plane-action)
-          (let ((entity-pos (calculate-cost-position object)))
-            (multiple-value-bind (path total-cost costs)
-                (blackboard:path-with-concerning-tiles blackboard
-                                                       entity-pos
-                                                       hiding-tile
-                                                       :cut-off-first-tile nil)
-              (declare (ignore costs))
-              (let ((path-struct (game-state:make-movement-path path total-cost)))
-                (setf (game-state:selected-path state) path-struct)
-                (let* ((tiles          (game-state:tiles (game-state:selected-path state)))
-                       (cost           (game-state:cost  (game-state:selected-path state)))
-                       (movement-event (make-instance 'game-event:move-entity-along-path-event
-                                                      :path           tiles
-                                                      :cost           cost
-                                                      :id-destination (id object))))
-                  (game-event:propagate-move-entity-along-path-event movement-event))))))))))
+        (let ((entity-pos (calculate-cost-position object)))
+          (multiple-value-bind (path total-cost costs)
+              (blackboard:path-with-concerning-tiles blackboard
+                                                     entity-pos
+                                                     hiding-tile
+                                                     :cut-off-first-tile nil)
+            (declare (ignore costs))
+            (let ((path-struct (game-state:make-movement-path path total-cost)))
+              (%do-simple-move object path-struct state world))))))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy

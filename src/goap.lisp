@@ -630,7 +630,7 @@ reach and attack the enemy with optimal path?"
   (declare (ignore strategy-expert))
     (able-to-move-if entity #'num:find-max))
 
-(defun is-able-to-flee-p (strategy-expert entity)
+(defgoap-test is-able-to-flee-p (strategy-expert entity)
   (with-accessors ((state entity:state)
                    (ghost entity:ghost)) entity
     (multiple-value-bind (pos cost-next-flee-pos)

@@ -248,14 +248,15 @@
               (loop for hiding-place in all-hiding-places do
                    (let ((sum 0)
                          (ct  0))
-                     (map-ai-entities state
-                                      #'(lambda (player-ent)
-                                          (let ((from (mesh:calculate-cost-position player-ent)))
-                                            (incf sum
-                                                  (get-path-cost blackboard
-                                                                 from
-                                                                 (hiding-place-pos hiding-place)))
-                                            (incf ct 1))))
+                     (map-player-entities state
+                                          #'(lambda (player-ent)
+                                              (let ((from     (calculate-cost-position player-ent))
+                                                    (hiding-place (hiding-place-pos hiding-place)))
+                                                (incf sum
+                                                      (get-path-cost blackboard
+                                                                     from
+                                                                     hiding-place))
+                                                (incf ct 1))))
                      (setf (hiding-place-average-cost-opponents hiding-place)
                            (d (/ sum ct)))))
               ;; sort
@@ -263,7 +264,6 @@
                                                  #'(lambda (a b)
                                                      (d> (hiding-place-average-cost-opponents a)
                                                          (hiding-place-average-cost-opponents b)))))
-              ;(misc:dbg "~{~a~%~}" all-hiding-places)
               (if-difficult-level>medium (state)
                 (let* ((difficult-scaling (* difficult 2))
                        (max-lenght (max 1 (lcg-next-upto (ceiling (/ (length all-hiding-places)
