@@ -241,11 +241,12 @@
                    (current-state current-state)) object
     (loop
        for action in actions-bag
-       when (and (or ignore-context-preconditions
+       ;; action-satisfise-goal-p comes for first to exploit short circuit effect of 'and'
+       when (and (action-satisfise-goal-p current-state goal-state action)
+                 (or ignore-context-preconditions
                      (action-context-preconditions-satisfied-p action
                                                                strategy-expert
-                                                               player-entity))
-                 (action-satisfise-goal-p current-state goal-state action))
+                                                               player-entity)))
        collect
          (apply-action object action))))
 
@@ -291,6 +292,7 @@
                                          :test #'conditions-equals))))
       (let ((closed '()))
         (pq:with-min-queue (frontier #'queue-eq #'queue-comp #'identity)
+          (misc:dbg "push in frontier ~a" (action-to-reach object))
           (pq:push-element frontier object)
           (do ((current (pq:pop-element frontier) (pq:pop-element frontier)))
               ((not current) ; the exit condition
@@ -486,6 +488,11 @@
                  (let ((,res (progn ,@forms)))
                    (setf ,cache-name ,res)
                    ,cache-name))))))))
+
+(defun debug-break (strategy-expert entity)
+  (declare (ignore strategy-expert entity))
+  (break)
+  t)
 
 (defun enough-health-p (strategy-expert entity)
   (declare (ignore strategy-expert))
