@@ -204,7 +204,7 @@
   (cost)
   (average-cost-opponents))
 
-(defcached go-find-hiding-place ((entity) :test eq)
+(defcached go-find-hiding-place ((entity opponents-can-see-entity) :test eq)
   (declare (optimize (speed 0) (safety 0) (debug 3)))
   (flet ((get-path-cost (blackboard from to)
            (multiple-value-bind (path total-cost costs)
@@ -213,7 +213,7 @@
              total-cost))
          (put-in-cache (a)
            (setf (gethash entity cache) a)
-           (go-find-hiding-place entity)))
+           (go-find-hiding-place entity opponents-can-see-entity)))
     (or (gethash entity cache)
         (with-slots-for-reasoning (entity state ghost blackboard)
           (let* ((difficult         (level-difficult state))
@@ -228,7 +228,8 @@
                                                                               player-y
                                                                               box-size
                                                                               internal-box-size
-                                                                              +pc-type+))
+                                                                              +pc-type+
+                                                                              opponents-can-see-entity))
                  (all-hiding-places (loop for hiding-pos in all-hiding-pos collect
                                          (let ((cost (get-path-cost  blackboard
                                                                      player-position
@@ -264,6 +265,7 @@
                                                  #'(lambda (a b)
                                                      (d> (hiding-place-average-cost-opponents a)
                                                          (hiding-place-average-cost-opponents b)))))
+              ;(dbg "all hiding places~%~a" all-hiding-places)
               (if-difficult-level>medium (state)
                 (let* ((difficult-scaling (* difficult 2))
                        (max-lenght (max 1 (lcg-next-upto (ceiling (/ (length all-hiding-places)
@@ -305,26 +307,58 @@
             (setf (character:spell-loaded ghost) spell)
             (battle-utils:launch-spell world entity friend-to-help)))))))
 
+(defstruct %neigh
+  (pos)
+  (cost)
+  (conc-cost)
+  (visitedp))
+
 (defun go-next-flee-position (strategy-expert entity)
-  "return the flee position next to entity and its cost"
+  "return the flee position next to entity and its cost, if any"
   (with-accessors ((state entity:state)
                    (ghost entity:ghost)) entity
-    (flet ((find-cost (a)
-             (game-state:get-cost state (elt a 0) (elt a 1)))
-           (find-cost-matrix (matrix a)
-             (matrix:matrix-elt matrix (elt a 1) (elt a 0))))
+    (labels ((find-cost (a)
+               (game-state:get-cost state (elt a 0) (elt a 1)))
+             (find-cost-matrix (matrix a)
+               (matrix:matrix-elt matrix (elt a 1) (elt a 0)))
+             (visited-values (positions)
+               (mapcar #'(lambda (pos)
+                              (blackboard:get-value-turn-visited-tiles strategy-expert
+                                                                       entity
+                                                                       (elt pos 0)
+                                                                       (elt pos 1)))
+                       positions))
+             (sort-predicate (a b)
+               (let ((a-cost      (%neigh-conc-cost a))
+                     (b-cost      (%neigh-conc-cost b))
+                     (a-visited-p (%neigh-visitedp  a))
+                     (b-visited-p (%neigh-visitedp  b)))
+                 (if a-visited-p
+                     nil
+                     (if b-visited-p
+                         t                      ; a is visited b is not
+                         (< a-cost b-cost)))))) ; both not visited
       (when-let* ((concerning-matrix  (blackboard:concerning-tiles->costs-matrix strategy-expert))
                   (neigh              (gen-neigh       entity))
+                  (neigh-visited      (visited-values  neigh))
                   (neigh-cost         (gen-neigh-costs entity #'find-cost))
                   (neigh-conc-cost    (gen-neigh-costs entity
-                                                       #'(lambda (a)
-                                                           (find-cost-matrix concerning-matrix
-                                                                             a))))
-                  (min-concerning-pos (position (num:find-min neigh-conc-cost)
-                                                neigh-conc-cost
-                                                :test #'num:epsilon=)))
-        (values (elt neigh      min-concerning-pos)
-                (elt neigh-cost min-concerning-pos))))))
+                                                        #'(lambda (a)
+                                                            (find-cost-matrix concerning-matrix
+                                                                              a))))
+                  (all                (loop
+                                         for n   in neigh
+                                         for nv  in neigh-visited
+                                         for nc  in neigh-cost
+                                         for ncc in neigh-conc-cost collect
+                                           (make-%neigh :pos       n
+                                                        :cost      nc
+                                                        :conc-cost ncc
+                                                        :visitedp  nv)))
+                  (sorted             (shellsort all #'sort-predicate))
+                  (selected           (first-elt sorted)))
+        (values (%neigh-pos       selected)
+                (%neigh-cost      selected))))))
 
 (defun go-place-trap (entity)
   (with-accessors ((ghost entity:ghost)) entity

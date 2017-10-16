@@ -89,7 +89,15 @@
     :initform nil
     :initarg  :visited-tiles
     :accessor visited-tiles
-    :type matrix)
+    :type matrix
+    :documentation "matrix element @ (x, y) is non nil if the tile has been visited,
+                   false otherwise")
+   (per-turn-visited-tiles
+    :initform '()
+    :initarg  :per-turn-visited-tiles
+    :accessor per-turn-visited-tiles
+    :type list
+    :documentation "an alist (entity . matrix-of-visited-tiles), see slot visited-tiles")
    (unexplored-layer
     :initform nil
     :initarg  :unexplored-layer
@@ -186,6 +194,7 @@
             (inmap:make-dijkstra-layer wmap hmap +attack-nongoal-tile-value+))
       (setf attack-enemy-crossbow-layer
             (inmap:make-dijkstra-layer wmap hmap +attack-nongoal-tile-value+))
+      (reset-per-turn-visited-tiles object)
       ;; setting smartness based on level
       (when (>= (level-difficult main-state) +difficult-medium+)
         (setf use-enemy-fov-when-exploring nil
@@ -260,29 +269,42 @@
     (update-attack-melee-layer             blackboard)
     (update-attack-pole-layer              blackboard)
     (update-attack-bow-layer               blackboard)
-    (update-attack-crossbow-layer          blackboard))
-  ;; positions
-  (update-all-attacking-pos blackboard)
-  (dbg "pole  ~a"      (attack-enemy-pole-positions  blackboard))
-  (dbg "melee ~a"      (attack-enemy-melee-positions blackboard))
-  (dbg "bow   ~a"      (attack-enemy-bow-positions blackboard))
-  (dbg "crossbow   ~a" (attack-enemy-crossbow-positions blackboard))
-  (dbg "def-pos ~a"    (fetch-defender-positions blackboard))
-  (dbg "atk-pos ~a" (fetch-attacker-positions blackboard)))
-  ;; (let ((*reachable-p-fn* (reachable-p-w/concening-tiles-fn blackboard)))
-  ;;   (dbg "all-tactics ~a" (build-all-attack-tactics blackboard)))
-  ;; (dbg "ids ~a"     (multiple-value-list
-  ;;                         (attack-tactic->id-entities blackboard
-  ;;                                                     (list (ivec2 5 1)
-  ;;                                                           (ivec2 3 8)
-  ;;                                                           20)))))
+    (update-attack-crossbow-layer          blackboard)))
+
+(defun reset-per-turn-visited-tiles (blackboard)
+  (with-accessors ((tiles per-turn-visited-tiles)
+                   (main-state       main-state)) blackboard
+    (let ((wmap (width  (map-state main-state)))
+          (hmap (height (map-state main-state))))
+      (setf tiles (map-ai-entities main-state
+                                   #'(lambda (a)
+                                       (cons a
+                                             (make-matrix wmap hmap nil))))))))
+
+(defun get-matrix-turn-visited-tiles (blackboard entity)
+  (cdr (assoc entity (per-turn-visited-tiles blackboard) :test #'eq)))
+
+(defun get-value-turn-visited-tiles (blackboard entity x y)
+  (when-let ((tiles (get-matrix-turn-visited-tiles blackboard entity)))
+    (matrix-elt tiles y x)))
+
+(defun %update-all-infos (blackboard)
+  (%update-all-layers       blackboard)
+  (update-all-attacking-pos blackboard))
 
 (defmethod game-event:on-game-event ((object blackboard) (event game-event:end-turn))
   (with-accessors ((concerning-tiles        concerning-tiles)
                    (concerning-tiles-facing concerning-tiles-facing)) object
     (decrease-concerning (main-state object) concerning-tiles)
     (decrease-concerning (main-state object) concerning-tiles-facing)
-    (%update-all-layers object)
+    (%update-all-infos            object)
+    (reset-per-turn-visited-tiles object)
+    (dbg "pole  ~a"      (attack-enemy-pole-positions     object))
+    (dbg "melee ~a"      (attack-enemy-melee-positions    object))
+    (dbg "bow   ~a"      (attack-enemy-bow-positions      object))
+    (dbg "crossbow   ~a" (attack-enemy-crossbow-positions object))
+    (dbg "def-pos ~a"    (fetch-defender-positions        object))
+    (dbg "atk-pos ~a" (fetch-attacker-positions           object))
     ;; test
     ;; (let ((pix (inmap:dijkstra-layer->pixmap (attack-enemy-melee-layer object))))
     ;;   (pixmap:save-pixmap pix (fs:file-in-package "attack.tga")))
@@ -413,18 +435,23 @@
   ;+explore-strategy+)
   ;+attack-strategy+)
 
-(defmethod set-tile-visited ((object blackboard) x y)
+(defmethod set-tile-visited ((object blackboard) entity-visiting x y)
   (call-next-method object
+                    entity-visiting
                     (map-utils:coord-chunk->matrix x)
                     (map-utils:coord-chunk->matrix y)))
 
-(defmethod set-tile-visited ((object blackboard) (x fixnum) (y fixnum))
+(defmethod set-tile-visited ((object blackboard) entity-visiting (x fixnum) (y fixnum))
   (with-accessors ((visited-tiles visited-tiles)
                    (main-state main-state)
                    (unexplored-layer unexplored-layer)) object
-    ;; mark visited
+    ;; mark visited global table
     (setf (matrix-elt visited-tiles y x) t)
-    (%update-all-layers object)))
+    ;; mark visited for the entity single table
+    (when entity-visiting
+      (when-let ((per-turn-tiles (get-matrix-turn-visited-tiles object entity-visiting)))
+        (setf (matrix-elt per-turn-tiles y x) t)))
+    (%update-all-infos object)))
 
 (defun calc-danger-zone-size (difficult-level)
   "The size of the concerning zone when when some concerning event occurs"
@@ -533,7 +560,7 @@
 (defun reset-attack-layer (unexplored-layer)
   (reset-layer unexplored-layer +attack-nongoal-tile-value+))
 
-(defun all-player-id-visible-from-faction (game-state )
+(defun all-player-id-visible-from-faction (game-state)
   (let ((all-visibles '()))
     (map-ai-entities game-state
                      #'(lambda (v)
@@ -550,6 +577,15 @@
                            (loop for visible in visibles do
                                 (pushnew visible all-visibles :key #'id :test #'=)))))
     (map 'list #'id all-visibles)))
+
+(defun all-other-factions-can-see-entity (game-state entity)
+  (let ((all-able-to-see '())
+        (map-fn (opposite-faction-map-fn entity)))
+    (funcall map-fn game-state
+             #'(lambda (v)
+                 (when (able-to-see-mesh:other-visible-p v entity)
+                   (pushnew v all-able-to-see :key #'id :test #'=))))
+    all-able-to-see))
 
 (defun nsuperimpose-layer (from destination &key (fn #'(lambda (a b)
                                                          (declare (ignore b))

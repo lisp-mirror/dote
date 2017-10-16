@@ -83,19 +83,23 @@
                          (action (eql ai-utils:+hide-action+)))
   (with-slots-for-reasoning (object state ghost blackboard)
     (game-state:with-world (world state)
-      (when-let ((hiding-tile (ai-utils:go-find-hiding-place object)))
-        ;; clear memoized results coming from the planner
-        ;; (test precondition is-there-hiding-place-p)
-        (ai-utils:go-find-hiding-place-clear-cache)
-        (let ((entity-pos (calculate-cost-position object)))
-          (multiple-value-bind (path total-cost costs)
-              (blackboard:path-with-concerning-tiles blackboard
-                                                     entity-pos
-                                                     hiding-tile
-                                                     :cut-off-first-tile nil)
-            (declare (ignore costs))
-            (let ((path-struct (game-state:make-movement-path path total-cost)))
-              (%do-simple-move object path-struct state world))))))))
+      (let ((all-opponents-can-see-me (blackboard:all-other-factions-can-see-entity state
+                                                                                    object)))
+        (when-let ((hiding-tile (ai-utils:go-find-hiding-place object
+                                                               all-opponents-can-see-me)))
+          ;; clear memoized results coming from the planner
+          ;; (test precondition is-there-hiding-place-p)
+          ;;(ai-utils:go-find-hiding-place-clear-cache)
+          (dbg "hiding tile chosen ~a" hiding-tile)
+          (let ((entity-pos (calculate-cost-position object)))
+            (multiple-value-bind (path total-cost costs)
+                (blackboard:path-with-concerning-tiles blackboard
+                                                       entity-pos
+                                                       hiding-tile
+                                                       :cut-off-first-tile nil)
+              (declare (ignore costs))
+              (let ((path-struct (game-state:make-movement-path path total-cost)))
+                (%do-simple-move object path-struct state world)))))))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy

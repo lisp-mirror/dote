@@ -416,7 +416,7 @@
 
 (defgeneric make-influence-map (object))
 
-(defgeneric set-tile-visited (object x y))
+(defgeneric set-tile-visited (object entity-visiting x y))
 
 (defgeneric set-concerning-tile (object x y &key danger-zone-size concerning-tile-value))
 
@@ -758,7 +758,7 @@
             (add-to-player-entities object player)
             (let ((pos-entity (mesh:calculate-cost-position player)))
               (add-to-ai-entities     object player)
-              (set-tile-visited object (elt pos-entity 0) (elt pos-entity 1))))))))
+              (set-tile-visited object player (elt pos-entity 0) (elt pos-entity 1))))))))
 
 (defmethod set-invalicable-cost-player-layer@ ((object game-state) x y)
   (with-accessors ((costs-from-players costs-from-players)) object
@@ -879,9 +879,9 @@
       (inmap:apply-influence im ai-entities)
       im)))
 
-(defmethod set-tile-visited ((object game-state) x y)
+(defmethod set-tile-visited ((object game-state) entity-visiting x y)
   (with-accessors ((blackboard blackboard)) object
-    (set-tile-visited blackboard  x y)))
+    (set-tile-visited blackboard entity-visiting x y)))
 
 (defmethod set-concerning-tile ((object game-state) x y
                                 &key

@@ -399,6 +399,7 @@
        (list 0 0 nil t))
       (t
        (list (/ dy dx) (- (elt a 1) (* (/ dy dx) (elt a 0))) nil nil)))))
+
 (defmacro funcall-if-not-null (func val)
   (if (not (null func))
       `(funcall ,func ,val)

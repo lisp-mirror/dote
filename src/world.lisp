@@ -1018,6 +1018,11 @@
         (setf (portrait (entity:ghost model)) portrait-texture)
         (setf (renderp  model) nil)
         (world:place-player-on-map object model game-state:+npc-type+ #(0 0))
+        ;; initialize visited tiles per turn for new AI's pawn
+        (let ((position (calculate-cost-position model)))
+          (2d-utils:displace-2d-vector (position x y)
+            (blackboard:reset-per-turn-visited-tiles (blackboard (state model)))
+            (set-tile-visited (state model) model x y)))
         model))))
 
 (defmethod world-aabb ((object world))

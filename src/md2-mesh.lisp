@@ -496,7 +496,7 @@
                                                           :tile-pos current-path))
           (update-visibility-cone player)
           ;; update visited tiles in blackboard
-          (game-state:set-tile-visited state (elt pos-entity 0) (elt pos-entity 1))
+          (game-state:set-tile-visited state player (elt pos-entity 0) (elt pos-entity 1))
           ;; manage traps
           (let ((trap-ostile    (trap-ostile-p player))
                 (step-on-trap-p nil))

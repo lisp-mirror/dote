@@ -87,6 +87,7 @@
                                                         ext-size
                                                         int-size
                                                         faction
+                                                        entities-checks-even-if-invisible
                                                         &key
                                                           (remove-non-empty-tiles t)
                                                           (discard-non-visible-opponents t))
@@ -160,6 +161,9 @@ Returns two values: *invisibles* and *visibles* tiles"
                      ;; opponent is not visible  from opponents of 'v'
                      ;; (usually v is an opponent of the AI)
                      (when (or (not discard-non-visible-opponents)
+                               (find v
+                                     entities-checks-even-if-invisible
+                                     :test #'identificable:test-id=)
                                (find v
                                      visibles-faction-entities
                                      :test #'identificable:test-id=))

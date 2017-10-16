@@ -4675,6 +4675,7 @@
    :concerning-tiles
    :calc-concerning-tiles-cost-scaling
    :visited-tiles
+   :reset-per-turn-visited-tiles
    :unexplored-layer
    :pole-weapon-goal-generator-fn
    :long-range-weapon-goal-generator-fn
@@ -4693,10 +4694,13 @@
    :add-tail-concerning-zone
    :update-concerning-zones-around-entity
    :strategy-decision
+   :get-value-turn-visited-tiles
+   :get-matrix-turn-visited-tiles
    :set-tile-visited
    :calc-danger-zone-size
    :set-concerning-tile
    :set-concerning-tile-fn
+   :all-other-factions-can-see-entity
    :update-unexplored-layer
    :update-all-attacking-pos
    :concerning-tile-default-mapping-clsr

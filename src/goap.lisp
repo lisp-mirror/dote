@@ -513,10 +513,11 @@
   (friend-needs-help-p-clear-cache)
   (there-is-reachable-help-needed-friend-spell-p-clear-cache)
   (is-there-hiding-place-p-clear-cache)
+  (is-able-to-flee-p-clear-cache)
   (is-visible-p-clear-cache)
   (reachable-opt/path-current-weapon-and-mp-clear-cache)
   (is-in-attack-pos-p-clear-cache)
-  ( can-move-near-attack-pos-clear-cache))
+  (can-move-near-attack-pos-clear-cache))
 
 (defgoap-test reachable-opt/path-current-weapon-and-mp (strategy-expert entity)
   "using  the current  movement points  of the  entity is  possible to
@@ -641,13 +642,15 @@ reach and attack the enemy with optimal path?"
                    (ghost entity:ghost)) entity
     (multiple-value-bind (pos cost-next-flee-pos)
         (ai-utils:go-next-flee-position strategy-expert entity)
-      (declare (ignore pos))
-      (>= (character:current-movement-points ghost)
-          cost-next-flee-pos))))
+      (and pos
+           (>= (character:current-movement-points ghost)
+               cost-next-flee-pos)))))
 
 (defgoap-test is-there-hiding-place-p (strategy-expert entity)
   (declare (ignore strategy-expert))
-  (ai-utils:go-find-hiding-place entity))
+  (with-accessors ((state entity:state)) entity
+    (let ((all-opponents-can-see-me (all-other-factions-can-see-entity state entity)))
+      (ai-utils:go-find-hiding-place entity all-opponents-can-see-me))))
 
 (defgoap-test is-visible-p (strategy-expert entity)
   (declare (ignore strategy-expert))
