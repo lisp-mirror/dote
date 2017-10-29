@@ -83,6 +83,14 @@
   `(let ((*ray-test-id-entities-ignored* ,ids))
      ,@body))
 
+(defun tile-placeholder-visible-by-faction-p (main-state pos-tile faction)
+  (let ((map-fn (faction->map-faction-fn faction)))
+    (funcall map-fn main-state
+             #'(lambda (entity)
+                 (when (placeholder-visible-p entity (elt pos-tile 0) (elt pos-tile 1))
+                   (return-from tile-placeholder-visible-by-faction-p t))))
+    nil))
+
 (defun tiles-placeholder-visibility-in-ring-by-faction (game-state x-center y-center
                                                         ext-size
                                                         int-size
@@ -103,8 +111,8 @@ by *visible* character of faction 'faction') will be discarded.
 
 *visible* means visible from character of opponents.
 
-If discard-non-visible-opponents  is not nil *invisible*  opponents will
-block the be ignored.
+If discard-non-visible-opponents is not nil *invisible* opponents will
+be ignored.
 
 *invisible* means not visible from character of opponents.
 
@@ -137,13 +145,11 @@ Returns two values: *invisibles* and *visibles* tiles"
            (opposite-faction (faction->opposite-faction faction))
            (friends-id       (game-state:all-player-id-by-faction game-state faction))
            ;; friend of opposite-faction (friend of AI usually)
-           (friends-opposite-faction-id
-            (game-state:all-player-id-by-faction game-state
-                                                 opposite-faction))
+           (friends-opposite-faction-id (game-state:all-player-id-by-faction game-state
+                                                                             opposite-faction))
            ;; friend of faction (friend of human's character usually)
-           (visibles-faction-entities
-            (visible-players-in-state-from-faction game-state
-                                                   opposite-faction)))
+           (visibles-faction-entities   (visible-players-in-state-from-faction game-state
+                                                                               opposite-faction)))
       ;; remove non empty tile if required
       (when remove-non-empty-tiles
         (setf tiles
@@ -194,7 +200,7 @@ Returns two values: *invisibles* and *visibles* tiles"
 
 (defgeneric other-visible-p (object target &key exclude-if-labyrinth-entity))
 
-(defgeneric update-visibility-cone (object))
+(defgeneric update-visibility-cone (object &key rebuild-modelmatrix))
 
 (defgeneric visible-players (object &key predicate))
 
@@ -210,13 +216,16 @@ Returns two values: *invisibles* and *visibles* tiles"
 
 (defgeneric nonlabyrinth-element-hitted-by-ray (object target))
 
-(defmethod update-visibility-cone ((object able-to-see-mesh))
+(defmethod update-visibility-cone ((object able-to-see-mesh) &key (rebuild-modelmatrix t))
   (with-accessors ((visibility-cone visibility-cone)
                    (pos  pos)
                    (dir dir)
                    (aabb aabb)) object
     (setf (cone-apex   visibility-cone) (aabb-center aabb))
-    (setf (cone-height visibility-cone) (vec* dir (vec-length (cone-height visibility-cone))))))
+    (setf (cone-height visibility-cone) (vec* dir (vec-length (cone-height visibility-cone))))
+    (when rebuild-modelmatrix
+      (bubbleup-modelmatrix object))
+    object))
 
 (defmethod visible-players ((object able-to-see-mesh) &key (predicate #'identity))
   "A list containing all visible pc satisfing predicate"
@@ -247,7 +256,7 @@ Returns two values: *invisibles* and *visibles* tiles"
                                            (my-faction a))))))
 
 (defmethod visible-players-in-state-from-faction ((object game-state) faction)
-  "all visible player seen by faction (list of entities)"
+  "all visible opponents seen by faction (list of entities)"
   (let ((opposite-faction (faction->opposite-faction faction))
         (map-fn           (faction->map-faction-fn faction))
         (res              '()))
@@ -318,8 +327,6 @@ invisible if part of a labyrinth"
              (values ray-lab-hitted entity-lab-hitted))
             (t ;; not visible
              (values nil nil)))))))
-
-
 
 (defmethod nonlabyrinth-element-hitted-by-ray ((object able-to-see-mesh) (target triangle-mesh))
   (with-accessors ((dir dir)

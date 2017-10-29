@@ -28,15 +28,17 @@
 (alexandria:define-constant +minimum-chance-healing-fx+ 0.05
   :test #'=)
 
-(alexandria:define-constant +modifier-sigma+            #(6.0 9.0 10.0 15.0 16.0 19.0 21.0 22.0 23.0 27.0)
+(alexandria:define-constant +modifier-sigma+ #(6.0 9.0 10.0 15.0 16.0 19.0 21.0 22.0 23.0 27.0)
   :test #'equalp)
 
-(alexandria:define-constant +modifier-mean+             #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
+(alexandria:define-constant +modifier-mean+  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0)
   :test #'equalp)
 
 (alexandria:define-constant +spell-tag-damage+          :damage         :test #'eq)
 
 (alexandria:define-constant +spell-tag-heal+            :heal           :test #'eq)
+
+(alexandria:define-constant +spell-tag-heal-reward+     :heal-reward    :test #'eq)
 
 (alexandria:define-constant +spell-tag-remove-wall+     :remove-wall    :test #'eq)
 
@@ -72,10 +74,14 @@
     (dolist (spell-file (concatenate 'list all-attack-spells all-other-spells))
       (load spell-file))))
 
-(defun sort-spells-by-level (&optional (desc t))
+(defun sort-spells-by-level-fn (&optional (desc t))
   #'(lambda (a b) (if desc
                       (>= (spell:level a) (spell:level b))
                       (<  (spell:level a) (spell:level b)))))
+
+(defun spells-list-by-tag (tag)
+  (spell:filter-spell-set (spell:db)
+                          #'(lambda (a) (not (find tag (spell:tags a))))))
 
 (defun db ()
   *spells-db*)
@@ -127,6 +133,10 @@
     :accessor visual-effect-target)))
 
 (gen-type-p spell)
+
+(defmethod print-object ((object spell) stream)
+  (print-unreadable-object (object stream :type t :identity t)
+    (format stream "~a" (identifier object))))
 
 (defgeneric use-custom-effects-p (object))
 

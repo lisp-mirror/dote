@@ -16,14 +16,6 @@
 
 (in-package :blackboard)
 
-(define-constant +pole-key-tactics+     :pole     :test #'eq)
-
-(define-constant +melee-key-tactics+    :melee    :test #'eq)
-
-(define-constant +bow-key-tactics+      :bow      :test #'eq)
-
-(define-constant +crossbow-key-tactics+ :crossbow :test #'eq)
-
 ;; atk := (pos . mp)
 (defun atk-mp (atk)
   (cdr atk))
@@ -175,13 +167,15 @@
                  (<= cumulative-cost (character:current-movement-points (ghost ai-player))))
             cumulative-cost)))
 
-(defun path-with-concerning-tiles (blackboard ai-position
-                                   defender-position
-                                   &key (cut-off-first-tile t))
-  "return three values: the path (taking into account concerning tiles),
+(defun calc-path-tiles-no-doors (blackboard ai-position
+                                 defender-position
+                                 &key
+                                   (cut-off-first-tile t)
+                                   (other-costs        '()))
+  "return three values: the path (taking into account other-costs),
 the  total cost of (taking  into account terrain and other objects,
 like building  or players *but NOT  the doors*) and the cost of each move of
-the path, again only with map cost (i.e. no concerning tiles)
+the path, again only with map cost (i.e. no other-costs)
 
 if cut-off-first-tile is  not nil the first element  of the calculated
 path is removed
@@ -190,14 +184,13 @@ path is removed
                    (concerning-tiles concerning-tiles)) blackboard
     (with-accessors ((main-state main-state)) blackboard
       (with-accessors ((movement-costs movement-costs)) main-state
-        (let* ((suppress-door-math (suppress-closed-door-cost-mat blackboard))
-               (concerning-tiles   (concerning-tiles->costs-matrix blackboard))
-               (others-costs       (list concerning-tiles suppress-door-math))
+        (let* ((suppress-door-mat  (suppress-closed-door-cost-mat blackboard))
+               (actual-other-costs (append other-costs (list suppress-door-mat)))
                (path-w/concering   (game-state:build-movement-path main-state
                                                                    ai-position
                                                                    defender-position
                                                                    :other-costs-layer
-                                                                   others-costs)))
+                                                                   actual-other-costs)))
           (if (and path-w/concering
                    (> (length path-w/concering) 1))
               (let* ((costs-terrain   (loop for i across (subseq path-w/concering 1) collect
@@ -205,7 +198,7 @@ path is removed
                                                  (d+ (d (matrix-elt movement-costs
                                                                     (elt i 1)
                                                                     (elt i 0)))
-                                                     (matrix-elt suppress-door-math
+                                                     (matrix-elt suppress-door-mat
                                                                  (elt i 1)
                                                                  (elt i 0))))))
                      (cumulative-cost (reduce #'(lambda (a b) (d+ (d a) (d b)))
@@ -218,6 +211,55 @@ path is removed
                 ;;           cumulative-cost costs-terrain)
                 (values result-path cumulative-cost costs-terrain))
               (values nil nil nil)))))))
+
+
+(defun path-with-concerning-tiles (blackboard ai-position
+                                   defender-position
+                                   &key (cut-off-first-tile t))
+  "return three values: the path (taking into account concerning tiles),
+the  total cost of (taking  into account terrain and other objects,
+like building  or players *but NOT  the doors*) and the cost of each move of
+the path, again only with map cost (i.e. no concerning tiles)
+
+if cut-off-first-tile is  not nil the first element  of the calculated
+path is removed
+"
+  (let* ((concerning-tiles (concerning-tiles->costs-matrix blackboard))
+         (others-costs     (list concerning-tiles)))
+    (calc-path-tiles-no-doors blackboard ai-position defender-position
+                              :cut-off-first-tile cut-off-first-tile
+                              :other-costs        others-costs)))
+
+(defun path-w/o-concerning-tiles (blackboard ai-position
+                                  defender-position
+                                  &key (cut-off-first-tile t))
+  "see calc-path-tiles-no-doors"
+  (calc-path-tiles-no-doors blackboard ai-position defender-position
+                              :cut-off-first-tile cut-off-first-tile
+                              :other-costs        '()))
+
+(defun pos-longest-reachable-path (entity costs)
+  (do ((accum 0.0)
+       (idx 0 (1+ idx)))
+      ((or (>= idx (length costs))
+           (>= accum
+               (character:current-movement-points (ghost entity))))
+       (1+ idx))
+    (incf accum (elt costs idx))))
+
+(defun path-near-goal-w/o-concerning-tiles (blackboard entity goal-pos
+                                            &key
+                                              (cut-off-first-tile t))
+  "note: doors are ignored"
+  (multiple-value-bind (path cumulative-cost costs)
+      (path-w/o-concerning-tiles blackboard
+                                 (calculate-cost-position entity)
+                                 goal-pos
+                                 :cut-off-first-tile cut-off-first-tile)
+    (let ((max (pos-longest-reachable-path entity costs)))
+      (values (subseq path 0 max)
+              cumulative-cost
+              costs))))
 
 (defstruct reachable-cache-value
   (ai-pos)
@@ -285,6 +327,22 @@ path is removed
                   (reachable-cache-value-res (get-from-cache ai-position
                                                              defender-position
                                                              ai-movement-points)))))))))
+
+(defun cost-w/o-concening-tiles (entity goal-pos)
+  (multiple-value-bind (path cumulative-cost costs)
+      (path-w/o-concerning-tiles (blackboard (state entity))
+                                 (calculate-cost-position entity)
+                                 goal-pos)
+        (declare (ignore costs))
+        (and path cumulative-cost)))
+
+(defun reachable-p-w/o-concening-tiles-fn (blackboard)
+  #'(lambda (ai-position defender-position ai-movement-points)
+      (multiple-value-bind (path cumulative-cost costs)
+          (path-w/o-concerning-tiles blackboard ai-position defender-position)
+        (declare (ignore costs))
+        (and path (<= cumulative-cost ai-movement-points)))))
+
 
 (defun reachableo (def)
   (fresh (atk-pos def-pos mp)
@@ -481,7 +539,7 @@ path is removed
     (with-accessors ((map-state map-state)) state
       (let* ((entity-pos  (calculate-cost-position entity))
              (map-fn      (game-state:opposite-faction-map-fn entity))
-             (goals-fn    (battle-utils:weapon-case (entity)
+             (goals-fn    (character:weapon-case (entity)
                             :pole
                             (pole-weapon-goal-generator-fn entity)
                             :melee

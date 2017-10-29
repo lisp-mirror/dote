@@ -34,9 +34,9 @@
          :cost                  5)
   (:name :launch-heal-spell
          :preconditions         ()
-         :context-preconditions (has-enough-sp-heal-p !enough-health-p
-                                 friend-needs-help-p
-                                 there-is-reachable-help-needed-friend-spell-p)
+         :context-preconditions (has-enough-sp-heal-p
+                                 someone-needs-help-p
+                                 there-is-reachable-help-needed-friend-heal-spell-p)
                                  ;; "!is-status-terror-p"  is implicitly
                                  ;; managed by has-enough-sp-heal-p
          :effects               ((:curb-threat t))

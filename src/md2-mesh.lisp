@@ -175,7 +175,8 @@
     :accessor current-action)))
 
 (defmethod print-object ((object md2-mesh) stream)
-  (print-unreadable-object (object stream :type t :identity t)))
+  (print-unreadable-object (object stream :type t :identity t)
+    (format stream "~a" (id object))))
 
 (defmethod on-game-event ((object md2-mesh) (event game-event:game-interrupt-terminated-event))
   "Note no need to check for target id, because just an entity can
@@ -971,10 +972,14 @@
 (defmethod on-game-event :after ((object md2-mesh) (event end-turn))
   ;;(misc:dbg "end turn md2mesh tooltip ct ~a" (tooltip-count object))
   ;;;;;;;;;;;;;;;;;;;;; TEST ;;;;;;;;;;;;;;;;;;;;;;;;
-   ;; (when (faction-ai-p (state object) (id object))
-   ;;   (with-accessors ((state state)) object
-   ;;     (game-state:with-world (world state)
-  ;;     (with-accessors ((blackboard blackboard:blackboard)) state
+  (when (faction-ai-p (state object) (id object))
+    (with-accessors ((state state)) object
+      ;(game-state:with-world (world state)
+      (with-accessors ((blackboard blackboard:blackboard)) state)))
+        ;; (misc:dbg "def (~a) places ~{~a~%~}"
+        ;;           (id object)
+        ;;           (ai-utils:places-near-weak-friend blackboard object)))))
+
   ;;       (misc:dbg "best ~a"
   ;;                 (blackboard:best-path-to-reach-enemy-w-current-weapon blackboard object))
   ;;       (misc:dbg "near ~a"
@@ -1930,7 +1935,7 @@
     ring))
 
 (defun forged-sword ()
-  (let ((sword (random-weapon:generate-weapon 1 :sword))
+  (let ((sword (random-weapon:generate-weapon 10 :sword))
         (effect-modifier  (make-instance 'basic-interaction-parameters:effect-parameters
                                          :trigger basic-interaction-parameters:+effect-when-worn+
                                          :duration basic-interaction-parameters:+duration-unlimited+

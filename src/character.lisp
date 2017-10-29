@@ -514,6 +514,8 @@
 
 (defgeneric castable-spells-list-by-tag (object tag))
 
+(defgeneric castable-attack-spells-list (object))
+
 (defgeneric calculate-influence (object))
 
 (defgeneric calculate-influence-weapon (object weapon-type))
@@ -840,8 +842,11 @@
                           #'(lambda (a) (not (find tag (spell:tags a))))))
 
 (defmethod castable-spells-list-by-tag ((object player-character) tag)
-  (spell:filter-spell-set (available-spells-list-by-tag object tag)
-                          (%filter-spell-cost-clsr object)))
+  (available-spells-list-by-tag object tag))
+
+(defmethod castable-attack-spells-list ((object player-character))
+  (spell:filter-spell-set (available-spells-list object)
+                          #'(lambda (a) (not (spell:attack-spell-p a)))))
 
 (defmethod calculate-influence ((object player-character))
   (d+ (calculate-influence-weapon object (weapon-type object))
@@ -982,7 +987,7 @@
       (let* ((planner-file (goap:find-planner-file object strategy-decision))
              (planner      (goap:load-planner-file planner-file)))
         (setf current-plan (goap:build-plan planner strategy-expert player-entity))
-        #+debug-ai (misc:dbg "NEW current new plan ~a" current-plan)
+        #+debug-ai (misc:dbg "NEW current new plan (~a) ~a" (id player-entity) current-plan)
         (elaborate-current-tactical-plan object strategy-expert player-entity nil))))
 
 (defmethod set-interrupt-plan ((object player-character))

@@ -96,6 +96,8 @@
                (:file "player-messages-text")
                (:file "interactive-entity")
                (:file "spell")
+               (:file "weapon-case")
+               (:file "ai-utils-const")
                (:file "ai-utils")
                (:file "character")
                (:file "random-weapon")
@@ -189,7 +191,7 @@
 
 (progn
   ;; debug
-  ;(pushnew :inhibit-planner *features*)
+  (pushnew :inhibit-planner *features*)
   (pushnew :debug-mode              *features*)
   (pushnew :debug-blackboard-layers *features*)
   (pushnew :debug-ai                *features*))

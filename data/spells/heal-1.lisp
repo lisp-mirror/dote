@@ -3,7 +3,7 @@
 (define-spell (:heal-1)
   :level                 3
   :element               :fire
-  :tags                  (:heal)
+  :tags                  (:heal :heal-reward)
   :gui-texture           "heal/heal-1.tga"
   :cost                  5.0
   :visual-effect-self    nil

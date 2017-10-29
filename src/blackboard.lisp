@@ -431,9 +431,9 @@
 ;; TODO use decision tree
 (defmethod strategy-decision ((object blackboard))
   (declare (ignore object))
-  +retreat-strategy+)
+  ;+retreat-strategy+)
   ;+explore-strategy+)
-  ;+attack-strategy+)
+  +attack-strategy+)
 
 (defmethod set-tile-visited ((object blackboard) entity-visiting x y)
   (call-next-method object
@@ -741,7 +741,10 @@
         (list (sequence->ivec2 min))))))
 
 (defun %2d-ray-stopper-melee-fn (player x y)
-  "x and y in cost-map space (integer coordinates)"
+  "x and y in cost-map space (integer coordinates)
+
+note: if a character of human faction is blocking visibility this form
+values nil, i. e. the ray is not blocked"
   (with-accessors ((state state)) player
     (multiple-value-bind (visiblep entity-hitted)
         (able-to-see-mesh:placeholder-visible-p player x y)
@@ -975,7 +978,7 @@
         ((<= 2 level 3)
          3.0)
         (t
-         5.0)))))
+         4.0)))))
 
 (defun goal-canceled-for-neighbour-p (all-visibles-from-ai player goal-pos)
   (with-accessors ((state state)) player
@@ -1215,6 +1218,7 @@
       (with-accessors ((layer layer)) unexplored-layer
         (flet ((change-viewpoint (entity dir)
                  (setf (dir entity) dir)
+                 ;; (mesh:bubbleup-modelmatrix entity)
                  (able-to-see-mesh:update-visibility-cone entity)))
         (map-ai-entities game-state
                          #'(lambda (entity)

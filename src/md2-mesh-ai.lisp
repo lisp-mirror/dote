@@ -133,6 +133,15 @@
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
+                         (action (eql ai-utils:+launch-heal-spell-friend-action+)))
+  (with-accessors ((state state)) object
+    (game-state:with-world (world state)
+      (action-scheduler:with-enqueue-action-and-send-remove-after
+          (world action-scheduler:tactical-plane-action)
+        (ai-utils:go-launch-heal-spell-friend object)))))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
                          (action (eql ai-utils:+launch-teleport-spell-action+)))
   (with-accessors ((state state)) object
     (game-state:with-world (world state)
@@ -178,9 +187,114 @@
                                                   :id-destination (id object))))
               (game-event:propagate-move-entity-along-path-event movement-event))))))))
 
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+go-near-weak-friend-atk-action+)))
+  (with-slots-for-reasoning (object state ghost blackboard)
+    (game-state:with-world (world state)
+      (let* ((weak-friend   (ai-utils:friend-who-needs-help blackboard
+                                                            object
+                                                            :exclude-me t))
+             (place-near    (first-elt (ai-utils:places-near-weak-friend blackboard
+                                                                         object
+                                                                         :weak-friend
+                                                                         weak-friend)))
+             (cost-to-reach (ai-utils:cost-to-reach-w/o-concerning-place blackboard
+                                                                         object
+                                                                         place-near))
+             (place-pos     (ai-utils:protect-place-pos place-near)))
+        (when (> cost-to-reach 0.0)
+          (multiple-value-bind (path total-cost costs)
+              (blackboard:path-near-goal-w/o-concerning-tiles blackboard
+                                                              object
+                                                              place-pos
+                                                              :cut-off-first-tile nil)
+            (declare (ignore costs))
+            (let* ((path-struct (game-state:make-movement-path path total-cost)))
+              (%do-simple-move object path-struct state world))))))))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+go-near-weak-friend-action+)))
+  (with-slots-for-reasoning (object state ghost blackboard)
+    (game-state:with-world (world state)
+      (let* ((weak-friend   (ai-utils:friend-who-needs-help blackboard
+                                                            object
+                                                            :exclude-me t))
+             (place-near    (first-elt (ai-utils:places-near-weak-friend blackboard
+                                                                         object
+                                                                         :weak-friend
+                                                                         weak-friend)))
+             (cost-to-reach (ai-utils:cost-to-reach-w/o-concerning-place blackboard
+                                                                         object
+                                                                         place-near))
+             (place-pos     (ai-utils:protect-place-pos place-near)))
+        (when (> cost-to-reach 0.0)
+          (multiple-value-bind (path total-cost costs)
+              (blackboard:path-near-goal-w/o-concerning-tiles blackboard
+                                                              object
+                                                              place-pos
+                                                              :cut-off-first-tile nil)
+            (declare (ignore costs))
+            (let* ((path-struct (game-state:make-movement-path path total-cost)))
+              (%do-simple-move object path-struct state world))))))))
+
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+protect-attack-action+)))
+  (with-slots-for-reasoning (object state ghost blackboard)
+    (game-state:with-world (world state)
+      (action-scheduler:with-enqueue-action-and-send-remove-after
+          (world action-scheduler:tactical-plane-action)
+        (%rotate-until-someone-visible state object t)
+        (let* ((defender-id (ai-utils:attackable-opponents-id blackboard object)))
+          (battle-utils:attack-w-current-weapon object
+                                                (find-entity-by-id state defender-id)))))))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+protect-attack-spell-action+)))
+  (with-accessors ((state state)) object
+    (game-state:with-world (world state)
+      (action-scheduler:with-enqueue-action-and-send-remove-after
+          (world action-scheduler:tactical-plane-action)
+        (ai-utils:go-launch-attack-spell object)))))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+protect-action+)))
+  (with-accessors ((state state)) object
+    (game-state:with-world (world state)
+      (action-scheduler:with-enqueue-action-and-send-remove-after
+          (world action-scheduler:tactical-plane-action)
+        (%rotate-until-someone-visible state object t)
+        (when (ai-utils:reward-possible-p state)
+          (ai-utils:go-reward-heal-spell object))))))
+
 ;;;; attack
 
-(defun %rotate-until-visible (state a b &optional (max 4))
+(defun %rotate-until-someone-visible (state entity
+                                      &optional
+                                        (decrement-movement-point nil) (max 4))
+  "rotate a until someone is visible or give up after 4 attempts
+Note: all attackable position will be updated as well"
+  (game-state:with-world (world state)
+    (with-accessors ((blackboard blackboard:blackboard)) state
+      (when (and (> max 0)
+                 (not (able-to-see-mesh:other-faction-visible-players entity)))
+        (let ((event (make-instance 'game-event:rotate-entity-ccw-event
+                                    :id-destination            (id entity)
+                                    :decrement-movement-points decrement-movement-point)))
+          (action-scheduler:with-enqueue-action-and-send-remove-after
+              (world action-scheduler:tactical-plane-action)
+            (game-event:propagate-rotate-entity-ccw-event event)
+            (blackboard:update-all-attacking-pos blackboard)
+            (%rotate-until-someone-visible state entity
+                                           decrement-movement-point
+                                           (1- max))))))))
+
+(defun %rotate-until-visible (state a b &optional (decrement-movement-point nil) (max 4))
   "rotate a until b is visible or give up after 4 attempts
 Note: all attackable position will be updated as well"
   (game-state:with-world (world state)
@@ -188,13 +302,13 @@ Note: all attackable position will be updated as well"
       (when (and (> max 0)
                  (not (able-to-see-mesh:other-visible-p a b)))
         (let ((event (make-instance 'game-event:rotate-entity-ccw-event
-                                    :id-destination (id a)
-                                    :decrement-movement-points nil)))
+                                    :id-destination            (id a)
+                                    :decrement-movement-points decrement-movement-point)))
           (action-scheduler:with-enqueue-action-and-send-remove-after
               (world action-scheduler:tactical-plane-action)
             (game-event:propagate-rotate-entity-ccw-event event)
             (blackboard:update-all-attacking-pos blackboard)
-            (%rotate-until-visible state a b (1- max))))))))
+            (%rotate-until-visible state a b decrement-movement-point (1- max))))))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy

@@ -511,7 +511,8 @@
   (exists-attack-goal-w-current-weapon-p-clear-cache)
   (reachable-opt/path-attack-current-weapon-and-mp-clear-cache)
   (friend-needs-help-p-clear-cache)
-  (there-is-reachable-help-needed-friend-spell-p-clear-cache)
+  (someone-needs-help-p-clear-cache)
+  (there-is-reachable-help-needed-friend-heal-spell-p-clear-cache)
   (is-there-hiding-place-p-clear-cache)
   (is-able-to-flee-p-clear-cache)
   (is-visible-p-clear-cache)
@@ -560,11 +561,16 @@ reach and attack the enemy with optimal path?"
                  (character:current-movement-points (entity:ghost entity))))))))
 
 (defgoap-test friend-needs-help-p (strategy-expert entity)
-  (declare (ignore entity))
-  (ai-utils:friend-who-needs-help strategy-expert))
+  (ai-utils:friend-who-needs-help strategy-expert entity :exclude-me t))
 
 (defun no-friend-needs-help-p (strategy-expert entity)
   (not (friend-needs-help-p strategy-expert entity)))
+
+(defgoap-test someone-needs-help-p (strategy-expert entity)
+  (ai-utils:friend-who-needs-help strategy-expert entity :exclude-me nil))
+
+(defun none-needs-help-p (strategy-expert entity)
+  (not (someone-needs-help-p strategy-expert entity)))
 
 (defun has-weapon-inventory-or-worn-p (strategy-expert entity)
   (declare (ignore strategy-expert))
@@ -592,10 +598,18 @@ reach and attack the enemy with optimal path?"
   (declare (ignore strategy-expert))
   (%has-enough-sp-p entity spell:+spell-tag-teleport+))
 
-(defgoap-test there-is-reachable-help-needed-friend-spell-p (strategy-expert entity)
+(defgoap-test there-is-reachable-help-needed-friend-heal-spell-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (when-let ((available-spells (ai-utils:available-heal-spells entity)))
-    (ai-utils:reachable-help-needed-friend-spell-p available-spells entity)))
+    (ai-utils:reachable-help-needed-friend-heal-spell-p available-spells entity)))
+
+(defun there-is-attackable-opponents-attack-spell-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (when-let ((available-spells (ai-utils:available-attack-spells entity)))
+    (let ((res (ai-utils:attackable-opponents-attack-spell available-spells entity)))
+      (dbg "there-is-attackable-opponents-attack-spell-p ~a"
+           res)
+      res)))
 
 (defmacro gen-is-status-tests (status)
   (let ((name-fn      (format-fn-symbol t "is-status-~a-p"       (symbol-name status)))
@@ -677,7 +691,7 @@ reach and attack the enemy with optimal path?"
         (let ((neigh (matrix:gen-valid-4-neighbour-ccw map-state
                                                        x y
                                                        :add-center nil)))
-          (when (=  (length neigh) 4) ; just the most simple case
+          (when (= (length neigh) 4) ; just the most simple case
             (flet ((tile-high-cost-p (pos)
                      (> (get-cost main-state (elt pos 0) (elt pos 1))
                         (/ +invalicable-element-cost+ 4))))
@@ -690,3 +704,24 @@ reach and attack the enemy with optimal path?"
                          (and (tile-high-cost-p b)
                               (tile-high-cost-p d)))
                      (mesh:trap-can-be-placed-p entity))))))))))
+
+(defun find-good-places-to-protect (strategy-expert entity)
+  (ai-utils:good-places-to-protect strategy-expert entity))
+
+(defun is-near-weak-friend-p (strategy-expert entity)
+  (let ((res (ai-utils:near-weak-friend-p strategy-expert entity)))
+    (dbg "is-near-weak-friend-p -> ~a" res)
+    res))
+
+(defun can-attack-when-near-pos-p (strategy-expert entity)
+  "note: places-near contains only reachable tiles so
+path-near-goal-w/o-concerning-tiles always returns a non nil value"
+  (let ((res (ai-utils:attack-when-near-pos-p strategy-expert entity)))
+    (dbg "can-attack-when-near-pos-p -> ~a" res)
+    res))
+
+(defun enough-mp-to-attack-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (when-let ((attack-cost (battle-utils:cost-attack-w-current-weapon entity)))
+    (<= attack-cost
+        (character:current-movement-points (entity:ghost entity)))))

@@ -1335,6 +1335,7 @@
    :make-matrix-with-trim
    :define-matrix
    :gen-neighbour-position
+   :gen-valid-neighbour-position
    :gen-4-neighbour-counterclockwise
    :gen-4-neighbour-ccw
    :gen-valid-4-neighbour-counterclockwise
@@ -2870,6 +2871,7 @@
         :constants
         :num
         :misc
+        :identificable
         :entity
         :interactive-entity
         :interfaces
@@ -2878,6 +2880,10 @@
         :game-state)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
+   :+pole-key-tactics+
+   :+melee-key-tactics+
+   :+bow-key-tactics+
+   :+crossbow-key-tactics+
    :+plan-stopper+
    :+planner-file-extension+
    :+idle-action+
@@ -2886,6 +2892,7 @@
    :+faint-action+
    :+go-to-attack-pos-action+
    :+launch-heal-spell-action+
+   :+launch-heal-spell-friend-action+
    :+launch-teleport-spell-action+
    :+launch-wall-break-spell-action+
    :+hide-action+
@@ -2897,20 +2904,48 @@
    :+find-attack-pos-action+
    :+load-weapon-action+
    :+go-near-to-attack-pos-action+
+   :+go-near-weak-friend-atk-action+
+   :+go-near-weak-friend-action+
+   :+protect-attack-action+
+   :+protect-attack-spell-action+
+   :+protect-action+
    :gen-neigh-costs
    :gen-neigh
    :friend-who-needs-help
    :too-low-health-p
    :if-difficult-level>medium
+   :reward-possible-p
    :available-heal-spells
+   :available-attack-spells
    :attackable-position-exists-path
-   :reachable-help-needed-friend-spell-p
+   :reachable-help-needed-friend-heal-spell-p
+   :target-reachable-attack-spell
+   :attackable-opponents-attack-spell
    :combined-power-compare-clsr
    :sort-by-manhattam-dist-clsr
    :find-nearest-wall
+   :protect-place
+   :protect-place-pos
+   :protect-place-points
+   :protect-place-attack-pos-p
+   :places-near-weak-friend
+   :good-places-to-protect
+   :visible-opponents-sorted
+   :near-weak-friend-p
+   :near-weak-friend-in-attack-pos-long-range-p
+   :near-weak-friend-in-attack-pos-short-range-p
+   :near-weak-friend-in-attack-pos-p
+   :attackable-opponents-id
+   :cost-to-reach-w/o-concerning-place
+   :attack-when-near-pos-long-range-p
+   :attack-when-near-pos-short-range-p
+   :attack-when-near-pos-p
    :go-launch-wall-breaking-spell
+   :go-launch-attack-spell
    :go-next-flee-position
    :go-launch-heal-spell
+   :go-launch-heal-spell-friend
+   :go-reward-heal-spell
    :go-launch-teleport-spell
    :go-find-hiding-place-clear-cache
    :go-find-hiding-place
@@ -3067,6 +3102,7 @@
    :available-spells-list
    :available-spells-list-by-tag
    :castable-spells-list-by-tag
+   :castable-attack-spells-list
    :calculate-influence
    :combined-power
    :elaborate-current-tactical-plan
@@ -3076,7 +3112,8 @@
    :has-interrupt-plan-p
    :disgregard-tactical-plan
    :pop-action-plan
-   :erase-working-memory))
+   :erase-working-memory
+   :weapon-case))
 
 (defpackage :random-armor
   (:use :cl
@@ -3677,6 +3714,7 @@
    :setup-placeholder
    :with-placeholder@
    :placeholder-visible-p
+   :tile-placeholder-visible-by-faction-p
    :tiles-placeholder-visible-in-box
    :tiles-placeholder-visibility-in-ring-by-faction
    :with-invisible-ids
@@ -3811,11 +3849,12 @@
   (:shadowing-import-from :sb-cga :rotate)
   (:export
    :+recover-from-faint-dmg-fraction+
-   :weapon-case
    :attack-w-current-weapon
    :attack-w-current-weapon-in-range-p
    :find-in-range-attackable-w-curr-weapon
    :cost-attack-w-current-weapon
+   :range-spell-valid-p
+   :range-weapon-valid-p
    :short-range-attack-possible-p
    :long-range-attack-possible-p
    :launch-attack-spell-possible-p
@@ -4408,6 +4447,7 @@
   (:export
    :+spell-tag-damage+
    :+spell-tag-heal+
+   :+spell-tag-heal-reward+
    :+spell-tag-remove-wall+
    :+spell-tag-teleport+
    :db
@@ -4417,7 +4457,8 @@
    :remove-spell
    :filter-spell-set
    :filter-spell-db
-   :sort-spells-by-level
+   :sort-spells-by-level-fn
+   :spells-list-by-tag
    :spell
    :spellp
    :level
@@ -4631,6 +4672,7 @@
         :interfaces
         :map-utils
         :influence-map
+        :ai-utils
         :game-state)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
@@ -4666,9 +4708,13 @@
    :reachable-p-w/concening-tiles-fn
    :reachable-p-w/concening-tiles-unlimited-cost-fn-clear-cache
    :reachable-p-w/concening-tiles-unlimited-cost-fn
+   :cost-w/o-concening-tiles
+   :reachable-p-w/o-concening-tiles-fn
    :find-defender-id-by-goal-position
    :build-all-attack-tactics
    :path-with-concerning-tiles
+   :path-w/o-concerning-tiles
+   :path-near-goal-w/o-concerning-tiles
    :entity-in-valid-attackable-pos-p
    :+concerning-tile-value+
    :blackboard

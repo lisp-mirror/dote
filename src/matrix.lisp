@@ -411,6 +411,10 @@ else
            (list (1+ x) (1- y))
            (list (1- x) (1+ y)))))
 
+(defun gen-valid-neighbour-position (matrix x y &key (add-center t))
+  (remove-if-not #'(lambda (a) (pixel-inside-p matrix (elt a 0) (elt a 1)))
+                 (gen-neighbour-position x y :add-center add-center)))
+
 (defun gen-4-neighbour-counterclockwise (x y &key (add-center t))
   "note: no bounds checking is done"
   (append (and add-center (list (list x y)))
@@ -456,8 +460,8 @@ else
                results)))
 
 (defun gen-valid-fat-ring-positions (matrix x y
-                                        w-offset h-offset
-                                        w-delete-offset h-delete-offset)
+                                     w-offset h-offset
+                                     w-delete-offset h-delete-offset)
   "note: inefficient"
   (let ((ext    (misc:seq->list (gen-valid-neighbour-position-in-box matrix x y w-offset h-offset)))
         (inside (misc:seq->list (gen-valid-neighbour-position-in-box matrix

@@ -16,47 +16,17 @@
 
 (in-package :ai-utils)
 
-(define-constant +planner-file-extension+         ".lisp"                :test #'string=)
+(define-constant +inc-point-attackable+                   10.0 :test #'=)
 
-(define-constant +plan-stopper+                   :end                   :test #'eq)
+(define-constant +scaling-target-damage-best-attack-spell+ 1.2 :test #'=)
 
-(define-constant +idle-action+                    :idle                  :test #'eq)
+(define-constant +reward-possible-hi-level+               33.0 :test #'=)
 
-(define-constant +interrupt-action+               :interrupt             :test #'eq)
+(define-constant +reward-possible-low-level+              10.0 :test #'=)
 
-(define-constant +move-action+                    :move                  :test #'eq)
+(define-constant +attack-least-powerful-hi-level-chance+  70.0 :test #'=)
 
-(define-constant +faint-action+                   :faint                 :test #'eq)
-
-(define-constant +go-to-attack-pos-action+        :go-to-attack-pos      :test #'eq)
-
-(define-constant +interrupted-action+             :interrupt             :test #'eq)
-
-(define-constant +launch-heal-spell-action+       :launch-heal-spell     :test #'eq)
-
-(define-constant +launch-teleport-spell-action+   :launch-teleport-spell :test #'eq)
-
-(define-constant +launch-wall-break-spell-action+ :launch-spell-wall     :test #'eq)
-
-(define-constant +hide-action+                    :hide                  :test #'eq)
-
-(define-constant +flee-action+                    :flee                  :test #'eq)
-
-(define-constant +find-hiding-place-action+       :find-hiding-place     :test #'eq)
-
-(define-constant +place-trap-action+              :place-trap            :test #'eq)
-
-(define-constant +attack-action+                  :attack                :test #'eq)
-
-(define-constant +go-to-attack-pos-action+        :go-to-attack-pos      :test #'eq)
-
-(define-constant +find-attack-pos-action+         :find-attack-position  :test #'eq)
-
-(define-constant +load-weapon-action+             :load-weapon           :test #'eq)
-
-(define-constant +go-near-to-attack-pos-action+   :go-near-to-attack-pos :test #'eq)
-
-(define-constant +min-chain-teleport+             3                      :test #'=)
+(define-constant +attack-least-powerful-low-level-chance+ 50.0 :test #'=)
 
 (defun gen-neigh-costs (entity cost-map-fn)
   (with-accessors ((state entity:state)) entity
@@ -85,27 +55,46 @@
     (< (character:current-damage-points ghost)
        (* 0.5 (character:actual-damage-points ghost)))))
 
-(defun friend-who-needs-help (strategy-expert)
+(defun friend-who-needs-help (strategy-expert entity &key (exclude-me nil))
   (map-ai-entities (interfaces:main-state strategy-expert)
                    #'(lambda (v)
-                       (when (too-low-health-p v)
-                         (return-from friend-who-needs-help v))))
+                       (when (and (too-low-health-p v)
+                                  (or (not exclude-me)
+                                      (/= (identificable:id v) (identificable:id entity))))
+                           (return-from friend-who-needs-help v))))
   nil)
 
-(defun find-best-heal-spell-most-powerful (spell-db)
-  (first-elt (shellsort spell-db (spell:sort-spells-by-level t))))
+(defun find-best-spell-most-powerful (spell-db)
+  (first-elt (shellsort spell-db (spell:sort-spells-by-level-fn t))))
 
-(defun find-best-heal-spell-clever (spell-db entity)
-  (let* ((sorted-spell-db (shellsort spell-db (spell:sort-spells-by-level nil)))
-         (spell (find-if #'(lambda (s)
-                             (let ((heal-fx (plist-path-value
-                                             (basic-interaction-params s)
-                                             '(:healing-effects :heal-damage-points))))
-                               (>= (points heal-fx)
-                                   (character:actual-damage-points (ghost entity)))))
+(defun find-best-heal-spell-clever-predicate (entity)
+  #'(lambda (s)
+      (let ((heal-fx (plist-path-value
+                      (basic-interaction-params s)
+                      '(:healing-effects :heal-damage-points))))
+        (>= (points heal-fx)
+            (character:actual-damage-points (ghost entity))))))
+
+(defun find-best-attack-spell-clever-predicate (target-entity)
+  #'(lambda (s)
+      (let ((damage-spell         (spell:damage-inflicted s))
+            (damage-points-target (character:actual-damage-points (ghost target-entity))))
+        (>= damage-spell
+            (d* +scaling-target-damage-best-attack-spell+
+                damage-points-target)))))
+
+(defun find-best-spell-clever (spell-db predicate)
+  (let* ((sorted-spell-db (shellsort spell-db (spell:sort-spells-by-level-fn nil)))
+         (spell (find-if predicate
                          sorted-spell-db)))
     (or spell
         (last-elt sorted-spell-db))))
+
+(defun find-best-heal-spell-clever (spell-db entity)
+  (find-best-spell-clever spell-db (find-best-heal-spell-clever-predicate entity)))
+
+(defun find-best-attack-spell-clever (spell-db target-entity)
+  (find-best-spell-clever spell-db (find-best-attack-spell-clever-predicate target-entity)))
 
 (defmacro if-difficult-level>medium ((game-state) if-more if-less)
   `(if (> (level-difficult ,game-state)
@@ -115,17 +104,49 @@
 
 (defun find-best-heal-spell (state spell-db entity)
   (if-difficult-level>medium (state)
-    (find-best-heal-spell-clever         spell-db entity)
-    (find-best-heal-spell-most-powerful  spell-db)))
+    (find-best-heal-spell-clever   spell-db entity)
+    (find-best-spell-most-powerful spell-db)))
+
+(defun find-best-attack-spell (state spell-db target-entity)
+  (if-difficult-level>medium (state)
+    (find-best-attack-spell-clever   spell-db target-entity)
+    (find-best-spell-most-powerful spell-db)))
+
+(defun reward-possible-p (state)
+  (if-difficult-level>medium (state)
+    (dice:pass-d100.0 +reward-possible-hi-level+)
+    (dice:pass-d100.0 +reward-possible-low-level+)))
 
 (defun available-heal-spells (entity)
   (character:castable-spells-list-by-tag (entity:ghost entity) spell:+spell-tag-heal+))
 
-(defun reachable-help-needed-friend-spell-p (available-spells launcher-entity)
+(defun available-attack-spells (entity)
+  (character:castable-attack-spells-list (entity:ghost entity)))
+
+(defun reachable-help-needed-friend-heal-spell-p (available-spells launcher-entity)
   (with-slots-for-reasoning (launcher-entity state ghost blackboard)
-    (when-let ((friend-to-help   (friend-who-needs-help blackboard))
-               (spell (find-best-heal-spell state available-spells launcher-entity)))
+    (when-let ((friend-to-help (friend-who-needs-help blackboard launcher-entity))
+               (spell          (find-best-heal-spell state available-spells launcher-entity)))
       (battle-utils:range-spell-valid-p launcher-entity friend-to-help spell))))
+
+(defun target-reachable-attack-spell (entity)
+  (with-accessors ((state state)) entity
+    (with-accessors ((blackboard blackboard:blackboard)) state
+      (when-let ((all-visibles (visible-opponents-sorted blackboard entity))
+                 (chance       (if-difficult-level>medium (state)
+                                 +attack-least-powerful-hi-level-chance+
+                                 +attack-least-powerful-low-level-chance+)))
+        (if (dice:pass-d100.0 chance)
+            (least-powerful-visible-opponents blackboard entity)
+            (random-elt all-visibles))))))
+
+(defun attackable-opponents-attack-spell (available-spells launcher-entity)
+   (with-slots-for-reasoning (launcher-entity state ghost blackboard)
+    (when-let* ((target-entity (target-reachable-attack-spell launcher-entity))
+                (spell         (find-best-attack-spell state available-spells target-entity)))
+      (if (battle-utils:range-spell-valid-p launcher-entity target-entity spell)
+          (values target-entity spell)
+          (values nil nil)))))
 
 (defun at-least-n-teleport-chain-p (ghost spell n)
   (< (* n (spell:cost spell))
@@ -181,16 +202,263 @@
                   (values nearest (ivec2:ivec2 x y)))
                 nil))))))))
 
+(defstruct protect-place
+  (pos          nil :type ivec2:ivec2)
+  (points       0.0 :type desired-type)
+  (attack-pos-p nil))
+
+(defun linear-decay-manahattam-dist (size a b &key (dist-scaling 1.0))
+  (d- (d size)
+      (d* dist-scaling
+          (d (map-utils:map-manhattam-distance a b)))))
+
+(defun find-pos-in-place (places pos)
+  (find-if #'(lambda (a)
+               (ivec2:ivec2= (protect-place-pos a)
+                             pos))
+           places))
+
+(defun places-near-weak-friend (strategy-expert entity
+                                &key (weak-friend (friend-who-needs-help strategy-expert
+                                                                         entity
+                                                                         :exclude-me t)))
+  (when weak-friend
+    (with-accessors ((ghost ghost)) entity
+      (with-accessors ((main-state main-state)) strategy-expert
+        (with-accessors ((map-state map-state)) main-state
+          (when-let* ((pos-weak    (entity:calculate-cost-position weak-friend))
+                      (pos-entity  (entity:calculate-cost-position entity))
+                      (x-weak      (elt pos-weak 0))
+                      (y-weak      (elt pos-weak 1))
+                      (size        (if-difficult-level>medium (main-state)
+                                     (truncate (/ +weapon-bow-range+ 3))
+                                     (truncate (/ +weapon-bow-range+ 4))))
+                      (neighs      (matrix:gen-valid-neighbour-position-in-box map-state
+                                                                               x-weak
+                                                                               y-weak
+                                                                               size size
+                                                                               :add-center nil)))
+            (setf neighs (seq->list (remove-if-not #'(lambda (p)
+                                                       (empty@pos-p main-state
+                                                                    (elt p 0)
+                                                                    (elt p 1)))
+                                                   neighs)))
+            ;; add entity position
+            (push pos-entity neighs)
+            ;; points decrease with manhattam-distance
+            (let* ((places   (map 'list
+                                  #'(lambda (p)
+                                      (let ((max (d* (d size) 0.2)))
+                                        (make-protect-place :pos    p
+                                                            :points
+                                                            (linear-decay-manahattam-dist max
+                                                                                          pos-weak
+                                                                                          p))))
+                                  neighs))
+                   (reach-fn (blackboard:reachable-p-w/o-concening-tiles-fn strategy-expert))
+                   (tactic   (character:weapon-case (entity)
+                               :pole     (blackboard:attack-enemy-pole-positions strategy-expert)
+                               :melee    (blackboard:attack-enemy-melee-positions strategy-expert)
+                               :bow      nil
+                               :crossbow nil)))
+              ;; increase points (and set flag) if is a valid attack place
+              (loop for tc in tactic do
+                   (loop for p in (blackboard:goal-pos tc) do
+                        (when-let ((increase (find-pos-in-place places p)))
+                          (incf (protect-place-points increase) +inc-point-attackable+)
+                          (setf (protect-place-attack-pos-p increase) t))))
+              ;; the same as above for current-position
+              (when (attackable-opponents-id strategy-expert entity)
+                (let ((place-entity (find-pos-in-place places pos-entity)))
+                  (incf (protect-place-points       place-entity) (d* +inc-point-attackable+ 2.0))
+                  (setf (protect-place-attack-pos-p place-entity) t)))
+              ;; remove non reachable places
+              (remove-if-not #'(lambda (p)
+                                 (funcall reach-fn
+                                          pos-entity
+                                          (protect-place-pos p)
+                                          (character:current-movement-points ghost)))
+                             places)
+              ;; increase points of visible (by opponents)
+              (loop
+                 for p in places
+                 when (absee-mesh:tile-placeholder-visible-by-faction-p main-state
+                                                                        (protect-place-pos p)
+                                                                        +pc-type+)
+                 do
+                   (incf (protect-place-points p) (/ +inc-point-attackable+ 4.0)))
+              ;; increase points if near opponents
+              (let ((ids-ai (blackboard::all-player-id-visible-from-ai main-state)))
+                (loop for id in ids-ai do
+                     (loop for p in places do
+                          (incf (protect-place-points p)
+                                (max 0.0
+                                     (linear-decay-manahattam-dist (d* (d size) 1.5)
+                                                                   pos-entity
+                                                                   (protect-place-pos p)
+                                                                   :dist-scaling 4.5))))))
+              ;; decrease by cost to reach
+              (loop for p in places do
+                   (let ((cost (blackboard:cost-w/o-concening-tiles entity
+                                                                    (protect-place-pos p))))
+                     (when cost ;; the cost to reach the tile where the player is values null
+                       (decf (protect-place-points p) (d* cost 0.2)))))
+              ;; sort by points (descending order)
+              (shellsort places #'(lambda (a b) (> (protect-place-points a)
+                                                   (protect-place-points b)))))))))))
+
+(define-constant +max-places-near-weak-friend-low+ 5)
+
+(define-constant +max-places-near-weak-friend-hi+  3)
+
+(defun good-places-to-protect (strategy-expert entity)
+  (with-accessors ((main-state main-state)) strategy-expert
+    (with-accessors ((map-state map-state)) main-state
+      (when-let* ((weak-friend    (ai-utils:friend-who-needs-help strategy-expert
+                                                                  entity
+                                                                  :exclude-me t))
+                  (pos-near       (places-near-weak-friend strategy-expert
+                                                           entity
+                                                           :weak-friend weak-friend))
+                  (cutoff         (if-difficult-level>medium (main-state)
+                                    +max-places-near-weak-friend-hi+
+                                    +max-places-near-weak-friend-low+))
+                  (good-places    (subseq pos-near 0 (min (length pos-near) cutoff))))
+        good-places))))
+
+(defun near-weak-friend-p (strategy-expert entity)
+  (when-let* ((pos            (mesh:calculate-cost-position entity))
+              (good-places    (good-places-to-protect strategy-expert entity))
+              (good-positions (map 'list
+                                   #'ai-utils:protect-place-pos
+                                   good-places)))
+    (find pos good-positions :test #'ivec2:ivec2=)))
+
+(defun all-visibles-opponents (strategy-expert entity)
+  "the visible opponents of AI, if such exist."
+  (with-accessors ((main-state main-state)) strategy-expert
+    (absee-mesh:visible-players-in-state-from-faction main-state
+                                                      (my-faction entity))))
+
+(defun visible-opponents-sorted (strategy-expert entity)
+  "the visible opponents of AI in attack range, if such exists,
+sorted from the most powerful to the least one.
+see: character:combined-power"
+  (with-accessors ((main-state main-state)) strategy-expert
+    (when-let* ((all     (all-visibles-opponents strategy-expert entity))
+                (sorted  (shellsort all (combined-power-compare-clsr t))))
+      sorted)))
+
+(defun most-powerful-visible-opponents (strategy-expert entity)
+  "the most powerful visible opponents of AI in attack range, if such exists.
+see: character:combined-power"
+  (when-let ((all (visible-opponents-sorted strategy-expert entity)))
+    (first-elt all)))
+
+(defun least-powerful-visible-opponents (strategy-expert entity)
+  "the least powerful visible opponents of AI in attack range, if such exists.
+see: character:combined-power"
+  (when-let ((all (visible-opponents-sorted strategy-expert entity)))
+    (last-elt all)))
+
+(defun attackable-opponents-id (strategy-expert entity)
+  "the first visible opponents of AI in attack range, if such exists.
+TODO: refactorting, use all-visibles-opponents function above"
+  (with-accessors ((main-state main-state)) strategy-expert
+    (when-let ((weapon-type    (character:weapon-type (entity:ghost entity)))
+               (visibles-pcs   (absee-mesh:visible-players-in-state-from-faction
+                                main-state
+                                (my-faction entity)))
+               (pos            (mesh:calculate-cost-position entity)))
+      (loop for defender in visibles-pcs do
+           (when (battle-utils:range-weapon-valid-p pos defender weapon-type)
+             (return-from attackable-opponents-id (id defender))))))
+  nil)
+
+(defun cost-to-reach-w/o-concerning-place (strategy-expert entity place-near)
+  (if (ivec2:ivec2= (calculate-cost-position entity)
+                    (protect-place-pos place-near))
+      0.0
+      (let ((res (multiple-value-list ;(path total-cost costs)
+                  (blackboard:path-near-goal-w/o-concerning-tiles strategy-expert
+                                                                  entity
+                                                                  (protect-place-pos place-near)
+                                                                  :cut-off-first-tile
+                                                                  nil))))
+        (second res))))
+
+(defun attack-when-near-pos-long-range-p (strategy-expert entity)
+  "note: places-near contains only reachable tiles so
+path-near-goal-w/o-concerning-tiles always returns a non nil value"
+  (with-accessors ((main-state main-state)) strategy-expert
+    (with-accessors ((map-state map-state)) main-state
+      (when-let* ((weak-friend    (ai-utils:friend-who-needs-help strategy-expert
+                                                                  entity
+                                                                  :exclude-me t))
+                  (pos            (mesh:calculate-cost-position entity))
+                  (weapon-type    (character:weapon-type-long-range (entity:ghost entity)))
+                  (visibles-pcs   (absee-mesh:visible-players-in-state-from-faction
+                                   main-state
+                                   (my-faction entity)))
+                  (places-near    (places-near-weak-friend strategy-expert
+                                                           entity
+                                                           :weak-friend weak-friend))
+                  (place-near     (first-elt places-near))
+                  (pos-near       (protect-place-pos place-near))
+                  (cost-to-reach  (cost-to-reach-w/o-concerning-place strategy-expert
+                                                                      entity
+                                                                      place-near))
+                  (attack-cost    (battle-utils:cost-attack-w-current-weapon entity)))
+        (loop for defender in visibles-pcs do
+             (when (and (battle-utils:range-weapon-valid-p pos-near defender weapon-type)
+                        (<= (+ cost-to-reach attack-cost)
+                            (character:current-movement-points (entity:ghost entity))))
+               (return-from attack-when-near-pos-long-range-p t)))
+        nil))))
+
+(defun attack-when-near-pos-short-range-p (strategy-expert entity)
+  "note: places-near contains only reachable tiles so
+path-near-goal-w/o-concerning-tiles always returns a non nil value,
+also check for pole weapon"
+  (with-accessors ((main-state main-state)) strategy-expert
+    (with-accessors ((map-state map-state)) main-state
+      (when-let* ((weak-friend    (ai-utils:friend-who-needs-help strategy-expert
+                                                                  entity
+                                                                  :exclude-me t))
+                  (pos            (mesh:calculate-cost-position entity))
+                  (places-near    (places-near-weak-friend strategy-expert
+                                                           entity
+                                                           :weak-friend weak-friend))
+                  (place-near     (first-elt places-near))
+                  (cost-to-reach  (cost-to-reach-w/o-concerning-place strategy-expert
+                                                                      entity
+                                                                      place-near))
+                  (attack-cost    (battle-utils:cost-attack-w-current-weapon entity)))
+        (and (protect-place-attack-pos-p place-near)
+             (<= (+ cost-to-reach attack-cost)
+                 (character:current-movement-points (entity:ghost entity))))))))
+
+(defun attack-when-near-pos-p (strategy-expert entity)
+  "note: places-near contains only reachable tiles so
+path-near-goal-w/o-concerning-tiles always returns a non nil value"
+  (character:weapon-case (entity)
+    :pole     (attack-when-near-pos-short-range-p strategy-expert entity)
+    :melee    (attack-when-near-pos-short-range-p strategy-expert entity)
+    :bow      (attack-when-near-pos-long-range-p  strategy-expert entity)
+    :crossbow (attack-when-near-pos-long-range-p  strategy-expert entity)))
+
 (defun find-wall-breaking-spells (entity)
   (character:castable-spells-list-by-tag (entity:ghost entity)
                                          spell:+spell-tag-remove-wall+))
+
+;;; actions
 
 (defun go-launch-wall-breaking-spell (entity)
   (with-slots-for-reasoning (entity state ghost blackboard)
     (with-world (world state)
       (when-let ((available-spells (find-wall-breaking-spells entity))
                  (nearest-wall     (find-nearest-wall     entity)))
-        (let* ((spells (shellsort available-spells (spell:sort-spells-by-level nil)))
+        (let* ((spells (shellsort available-spells (spell:sort-spells-by-level-fn nil)))
                (spell  (first-elt spells)))
           (when spell
             (setf (character:spell-loaded ghost) spell)
@@ -198,6 +466,19 @@
                                               entity
                                               nearest-wall
                                               :assume-visible t)))))))
+
+(defun go-launch-attack-spell (entity)
+  (with-slots-for-reasoning (entity state ghost blackboard)
+    (with-world (world state)
+      (multiple-value-bind (target-entity spell)
+          (attackable-opponents-attack-spell (ai-utils:available-attack-spells entity)
+                                             entity)
+        (when target-entity
+          (setf (character:spell-loaded ghost) spell)
+          (battle-utils:attack-launch-spell world
+                                            entity
+                                            target-entity
+                                          :assume-visible t))))))
 
 (defstruct hiding-place
   (pos)
@@ -282,7 +563,7 @@
                    (character:castable-spells-list-by-tag ghost
                                                           spell:+spell-tag-teleport+))
                   (spells         (shellsort available-spells
-                                             (spell:sort-spells-by-level t)))
+                                             (spell:sort-spells-by-level-fn t)))
                   (min-cost-spell (last-elt  spells))
                   (max-cost-spell (first-elt spells))
                   (cost-pos       (mesh:calculate-cost-position entity))
@@ -297,15 +578,36 @@
         (setf (character:spell-loaded ghost) spell)
         (battle-utils:launch-spell world entity entity)))))
 
-(defun go-launch-heal-spell (entity)
+(defun %go-launch-heal-spell (entity exclude-me)
   (with-slots-for-reasoning (entity state ghost blackboard)
     (with-world (world state)
       (when-let ((available-spells (available-heal-spells entity))
-                 (friend-to-help   (friend-who-needs-help blackboard)))
+                 (friend-to-help   (friend-who-needs-help blackboard
+                                                          entity
+                                                          :exclude-me exclude-me)))
         (let* ((spell (find-best-heal-spell state available-spells entity)))
           (when spell
             (setf (character:spell-loaded ghost) spell)
             (battle-utils:launch-spell world entity friend-to-help)))))))
+
+(defun %go-launch-spell (spell launcher target)
+  (with-slots-for-reasoning (launcher state ghost blackboard)
+    (with-world (world state)
+      (setf (character:spell-loaded ghost) spell)
+      (battle-utils:launch-spell world launcher target))))
+
+(defun go-launch-heal-spell-friend (entity)
+  (%go-launch-heal-spell entity t))
+
+(defun go-launch-heal-spell (entity)
+  (%go-launch-heal-spell entity nil))
+
+(defun go-reward-heal-spell (entity)
+  (when-let* ((spells (spell:spells-list-by-tag spell:+spell-tag-heal-reward+))
+              (spell  (first-elt spells)))
+    (incf (character:current-magic-points (ghost entity))
+          (spell:cost spell))
+    (%go-launch-spell spell entity entity)))
 
 (defstruct %neigh
   (pos)
