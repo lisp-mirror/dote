@@ -2909,6 +2909,7 @@
    :+protect-attack-action+
    :+protect-attack-spell-action+
    :+protect-action+
+   :+attack-spell-action+
    :gen-neigh-costs
    :gen-neigh
    :friend-who-needs-help

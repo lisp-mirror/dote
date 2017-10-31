@@ -387,6 +387,16 @@ Note: all attackable position will be updated as well"
   ;; TODO
   )
 
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+attack-spell-action+)))
+  (with-accessors ((state state)) object
+    (game-state:with-world (world state)
+      (action-scheduler:with-enqueue-action-and-send-remove-after
+          (world action-scheduler:tactical-plane-action)
+        ;(%rotate-until-someone-visible state object t)
+        (ai-utils:go-launch-attack-spell object)))))
+
 ;;;; strategy
 (defun actuate-strategy (mesh)
   (with-slots-for-reasoning (mesh state ghost blackboard)

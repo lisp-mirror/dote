@@ -77,4 +77,6 @@
 
 (define-constant +protect-action+                  :protect                    :test #'eq)
 
+(define-constant +attack-spell-action+             :launch-attack-spell        :test #'eq)
+
 (define-constant +min-chain-teleport+              3                           :test #'=)

@@ -497,7 +497,8 @@ path is removed
     (when all
       ;; TODO sort  tactics, the idea  is to attack the  less powerful
       ;; enemy with the maximum number of attacker see: character:combined-power
-      (setf all (elt all 0))
+      (setf all (find-min-max #'(lambda (a b) (> (length (flatten a)) (length (flatten b))))
+                              all))
       (setf all (remove-if-not #'tactic-valid-p all)))
     (mapcar #'(lambda (plan)
                 (multiple-value-bind (attacker-id defender-id)
