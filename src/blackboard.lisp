@@ -33,7 +33,7 @@
 (define-constant +concerning-tiles-cost->graph-scaling+    3.0 :test #'=)
 
 (defun reachablep (atk-pos def-pos mp)
-  (<= (ivec2-length (ivec2- atk-pos def-pos))
+  (<= (map-manhattam-distance atk-pos def-pos)
       mp))
 
 (defparameter *reachable-p-fn* #'reachablep)
@@ -78,6 +78,12 @@
 
 (defmethod print-object ((object attacker) stream)
   (format stream "~a -> ~a@~a" (entity-id object) (target-id object) (target-pos object)))
+
+(defun make-attacker-instance (target-pos defender-id attacker-id)
+  (make-instance 'attacker
+                 :target-pos target-pos
+                 :target-id  defender-id
+                 :entity-id  attacker-id))
 
 (defclass blackboard ()
   ((main-state

@@ -227,6 +227,7 @@
    :make-fresh-list
    :seq->list
    :lcat
+   :fresh-list-insert-at
    :make-array-frame
    :make-fresh-array
    :sequence->list

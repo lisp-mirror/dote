@@ -970,37 +970,6 @@
 
 
 (defmethod on-game-event :after ((object md2-mesh) (event end-turn))
-  ;;(misc:dbg "end turn md2mesh tooltip ct ~a" (tooltip-count object))
-  ;;;;;;;;;;;;;;;;;;;;; TEST ;;;;;;;;;;;;;;;;;;;;;;;;
-  (when (faction-ai-p (state object) (id object))
-    (with-accessors ((state state)) object
-      ;(game-state:with-world (world state)
-      (with-accessors ((blackboard blackboard:blackboard)) state)))
-        ;; (misc:dbg "def (~a) places ~{~a~%~}"
-        ;;           (id object)
-        ;;           (ai-utils:places-near-weak-friend blackboard object)))))
-
-  ;;       (misc:dbg "best ~a"
-  ;;                 (blackboard:best-path-to-reach-enemy-w-current-weapon blackboard object))
-  ;;       (misc:dbg "near ~a"
-  ;;                 (blackboard:best-path-near-attack-goal-w-current-weapon blackboard object))
-  ;;       (misc:dbg "exists? ~a reachable? ~a "
-  ;;                 (goap::exists-attack-goal-w-current-weapon-p blackboard object)
-  ;;                 (goap::reachable-w-current-weapon-and-mp-p blackboard object))
-  ;;       (misc:dbg "has weapon? ~a"
-  ;;                 (goap::has-weapon-inventory-or-worn-p blackboard object)))))
-        ;; (let ((cost-pos (calculate-cost-position object)))
-        ;;  (misc:dbg "invisible-tiles ~a -> ~a"
-        ;;           (id object)
-        ;;           (absee-mesh:tiles-placeholder-visibility-in-ring-by-faction
-        ;;            state
-        ;;            (elt cost-pos 0) (elt cost-pos 1)
-        ;;            20
-        ;;            8
-        ;;            game-state:+pc-type+)))))))
-        ;; (misc:dbg "best hiding place = ~a"
-  ;;           (ai-utils:go-find-hiding-place object))))))
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (with-accessors ((ghost ghost)
                    (state state)) object
     (game-state:with-world (world state)

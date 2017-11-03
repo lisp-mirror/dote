@@ -404,6 +404,13 @@ Name from Emacs Lisp."
   (declare (optimize (speed 3) (safety 1) (debug 0)))
   (apply #'concatenate (concatenate 'list (list 'list) l)))
 
+(defun fresh-list-insert-at (a v pos)
+  (declare (optimize (speed 3) (safety 1) (debug 0)))
+  (declare (list a))
+  (lcat (subseq a 0 pos)
+        (list v)
+        (subseq a (1+ pos))))
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun make-array-frame (size &optional (el nil) (type t) (simplep nil))
     "All elements points to the same address/reference!"

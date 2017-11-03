@@ -44,3 +44,56 @@
                             attack-enemy-pole-positions)
                      (every #'(lambda (a) (null (blackboard::goal-pos a)))
                             attack-enemy-melee-positions))))))))
+
+(defun %comp-tactics (a b)
+  (equalp (flatten a)
+          (flatten b)))
+
+(defun make-tactics-3-9 ()
+  (let* ((def (list (cons (ivec2 1  0) nil)
+                    (cons (ivec2 18 0) nil)
+                    (cons (ivec2 19 0) nil)))
+          (atk (list (cons (ivec2 20 0) 30)
+                     (cons (ivec2 21 0) 31)
+                     (cons (ivec2 11 0) 7)
+                     (cons (ivec2 11 1) 8)
+                     (cons (ivec2 11 2) 9)
+                     (cons (ivec2 14 0) 7)
+                     (cons (ivec2 15 0) 7)
+                     (cons (ivec2 16 0) 7))))
+    (blackboard::%build-single-attack-tactics def (rest atk) (first atk) nil)))
+
+(defun make-tactics-compete ()
+  (let* ((def (list (cons (ivec2 10 0) nil)
+                    (cons (ivec2 10 1) nil)))
+         (atk (list (cons (ivec2 9 0) 1)
+                    (cons (ivec2 11 0) 1))))
+    (blackboard::%build-single-attack-tactics def (rest atk) (first atk) nil)))
+
+(defun make-tactics-random ()
+  (let* ((def (loop repeat 50 collect
+                   (cons (ivec2 (num:lcg-next-upto 50) 0)
+                         nil)))
+         (atk (loop repeat 50 collect
+                   (cons (ivec2 (num:lcg-next-upto 50) 1)
+                         (num:lcg-next-upto 50)))))
+    (blackboard::%build-single-attack-tactics def (rest atk) (first atk) nil)))
+
+(deftest test-attack-tactic (attack-tactics-suite)
+  (let ((*reachable-p-fn* #'blackboard:reachablep))
+    (assert-true
+        (%comp-tactics (make-tactics-3-9)
+                       '((#(1 0) #(20 0) 30) (#(18 0) #(16 0) 7) (#(19 0) #(21 0) 31))))
+    (assert-true
+        (%comp-tactics (make-tactics-compete)
+                       '((#(10 0) #(11 0) 1) (#(10 1)))))))
+
+(deftest test-attack-tactic-random (attack-tactics-suite)
+  (let ((*reachable-p-fn* #'blackboard:reachablep))
+    (assert-true
+         (every #'(lambda (a)
+             (if (= (length a) 3)
+                 (<= (map-utils:map-manhattam-distance (first a) (second a))
+                     (third a))
+                 t))
+                (make-tactics-random)))))

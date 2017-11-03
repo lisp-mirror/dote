@@ -254,6 +254,7 @@
         :clunit
         :all-test
         :alexandria
+        :ivec2
         :blackboard))
 
 (defpackage :goap-test

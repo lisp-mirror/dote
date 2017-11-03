@@ -17,17 +17,17 @@
 (in-package :blackboard)
 
 ;; atk := (pos . mp)
+
+(defun make-atk (pos mp)
+  (cons pos mp))
+
 (defun atk-mp (atk)
   (cdr atk))
 
 (defun atk-pos (atk)
   (car atk))
 
-(defun atk-mp-o (atk out)
-  (cdro atk out))
-
-(defun atk-pos-o (atk out)
-  (caro atk out))
+;; def := (def-slot-pos atk-pos mp)
 
 (defun def-pos (def)
   (car def))
@@ -35,17 +35,11 @@
 (defun def-goal-pos (def)
   (second def))
 
-(defun def-pos-o (def out)
-  (caro def out))
-
-(defun def-goal-pos-o (def out)
-  (secondo def out))
-
-(defun def-mp-o (def out)
-  (thirdo def out))
-
 (defun def-mp (def)
   (third def))
+
+(defun def-free-goal-p (def)
+  (null (def-goal-pos def)))
 
 (defun attack-equals-p (a b)
   (and (ivec2= (def-goal-pos a) (def-goal-pos b))
@@ -55,9 +49,8 @@
 ;; atk := (pos . mp)
 ;; def := (def-slot-pos atk-pos mp)
 
-(defun make-def-o (def-pos atk-pos atk-mp out)
-  (project (def-pos atk-pos atk-mp)
-    (== out `(,def-pos ,atk-pos ,atk-mp))))
+(defun make-def (def-pos atk-pos atk-mp)
+  (list def-pos atk-pos atk-mp))
 
 (defun tactic-attacker-pos (tactic)
   (elt tactic 1))
@@ -67,6 +60,85 @@
 
 (defun tactic-valid-p (tactic)
   (= (length tactic) 3))
+
+
+
+(defmacro with-position-vaild-slot ((tactics candidate) &body additional-constrains)
+  (with-gensyms (atk-pos atk-mp)
+    `(let ((,atk-pos (atk-pos ,candidate))
+           (,atk-mp   (atk-mp  ,candidate)))
+       (position-if #'(lambda (a)
+                        (and ,@(if (null additional-constrains)
+                                   (list t)
+                                   additional-constrains)
+                             (funcall *reachable-p-fn* ,atk-pos (def-pos a) ,atk-mp)))
+                    ,tactics))))
+
+(defun position-vaild-in-free-slot (tactics candidate)
+  (with-position-vaild-slot (tactics candidate)
+    (def-free-goal-p a)))
+
+(defun position-vaild-in-occupied-slot (tactics candidate)
+  (with-position-vaild-slot (tactics candidate)
+    (not (def-free-goal-p a))))
+
+;; this is suboptimal at best...
+(defun %build-single-attack-tactics (tactics position-attackers candidate
+                                     &optional (substituted-by-idx nil))
+  (labels ((make-new-tactics (old-tactics attacker position)
+             (let* ((old-tactic  (elt old-tactics position))
+                    (new-tactic  (make-def (def-pos old-tactic)
+                                           (atk-pos attacker)
+                                           (atk-mp  attacker))))
+               (fresh-list-insert-at old-tactics
+                                     new-tactic
+                                     position)))
+           (discard-and-restart (tactics position-attackers)
+             (%build-single-attack-tactics tactics
+                                           (rest  position-attackers)
+                                           (first position-attackers)
+                                           nil)))
+    (macrolet ((swap-and-restart (tactics candidate position-occupied)
+                 (with-gensyms (old-tactic new-tactics new-candidate)
+                   `(let* ((,old-tactic    (elt ,tactics ,position-occupied))
+                           (,new-tactics   (make-new-tactics ,tactics
+                                                             ,candidate
+                                                             ,position-occupied))
+                           (,new-candidate (make-atk (def-goal-pos ,old-tactic)
+                                                     (def-mp       ,old-tactic))))
+                      (%build-single-attack-tactics ,new-tactics
+                                                    position-attackers
+                                                    ,new-candidate
+                                                    ,position-occupied)))))
+      (if (null candidate)
+          tactics
+          (let ((position-free (position-vaild-in-free-slot tactics candidate)))
+            (if position-free
+                (%build-single-attack-tactics (make-new-tactics tactics
+                                                                candidate
+                                                                position-free)
+                                              (rest  position-attackers)
+                                              (first position-attackers)
+                                              nil)
+                (let ((position-occupied (position-vaild-in-occupied-slot tactics candidate)))
+                  (if position-occupied
+                      (if substituted-by-idx
+                          (if (= position-occupied substituted-by-idx) ; trying to swap
+                                        ; againg with the
+                                        ; old pos, invalid
+                              (discard-and-restart tactics position-attackers)
+                              (swap-and-restart tactics candidate position-occupied))
+                          (swap-and-restart tactics candidate position-occupied))
+                      ;; valid position not found, discard
+                      (discard-and-restart tactics position-attackers)))))))))
+
+(defun build-single-attack-tactics (blackboard position-attackers position-defenders)
+  (let ((all (%build-single-attack-tactics position-defenders
+                                           (rest  position-attackers)
+                                           (first position-attackers)
+                                           nil)))
+    (when all
+      (tactics-as-list->tactics-as-attacker-instance blackboard all))))
 
 (defun suppress-closed-door-cost-mat (blackboard)
   (with-accessors ((main-state main-state)
@@ -125,7 +197,7 @@
                     (idx 0 (1+ idx)))
                    ((or (>= idx (length costs))
                         (>= accum
-                           (character:current-movement-points (ghost ai-player))))
+                            (character:current-movement-points (ghost ai-player))))
                     idx)
                  (incf accum (elt costs idx)))))
       (values (subseq path 0 max)
@@ -235,8 +307,8 @@ path is removed
                                   &key (cut-off-first-tile t))
   "see calc-path-tiles-no-doors"
   (calc-path-tiles-no-doors blackboard ai-position defender-position
-                              :cut-off-first-tile cut-off-first-tile
-                              :other-costs        '()))
+                            :cut-off-first-tile cut-off-first-tile
+                            :other-costs        '()))
 
 (defun pos-longest-reachable-path (entity costs)
   (do ((accum 0.0)
@@ -290,7 +362,7 @@ path is removed
      ,@body))
 
 (defcached-list reachable-p-w/concening-tiles-fn ((blackboard)
-                                                       :equal-fn #'%reach-cache-value-eq)
+                                                  :equal-fn #'%reach-cache-value-eq)
   #'(lambda (ai-position defender-position ai-movement-points)
       (with-reachable-cache-fns (put-in-cache get-from-cache
                                               reachable-p-w/concening-tiles-fn-insert-cache
@@ -312,8 +384,8 @@ path is removed
   "pretends all players have unlimited movement points"
   #'(lambda (ai-position defender-position ai-movement-points)
       (with-reachable-cache-fns (put-in-cache get-from-cache
-                                 reachable-p-w/concening-tiles-unlimited-cost-fn-insert-cache
-                                 reachable-p-w/concening-tiles-unlimited-cost-fn-search-cache)
+                                              reachable-p-w/concening-tiles-unlimited-cost-fn-insert-cache
+                                              reachable-p-w/concening-tiles-unlimited-cost-fn-search-cache)
         (let ((cached (get-from-cache ai-position defender-position ai-movement-points)))
           (if cached
               (reachable-cache-value-res cached)
@@ -333,8 +405,8 @@ path is removed
       (path-w/o-concerning-tiles (blackboard (state entity))
                                  (calculate-cost-position entity)
                                  goal-pos)
-        (declare (ignore costs))
-        (and path cumulative-cost)))
+    (declare (ignore costs))
+    (and path cumulative-cost)))
 
 (defun reachable-p-w/o-concening-tiles-fn (blackboard)
   #'(lambda (ai-position defender-position ai-movement-points)
@@ -342,84 +414,6 @@ path is removed
           (path-w/o-concerning-tiles blackboard ai-position defender-position)
         (declare (ignore costs))
         (and path (<= cumulative-cost ai-movement-points)))))
-
-
-(defun reachableo (def)
-  (fresh (atk-pos def-pos mp)
-    (def-pos-o def  def-pos)
-    (def-goal-pos-o def atk-pos)
-    (def-mp-o       def mp)
-    (project (atk-pos def-pos mp)
-      (let ((res (funcall *reachable-p-fn* atk-pos def-pos mp)))
-        (== res t)))))
-
-(defun attach-attacker@-o (defenders attacker list-length pos out &optional (ct 0))
-  (conda
-   ((project (ct list-length)    ;; after position
-      (== (>= ct list-length) t)
-      (== out '())))
-   ((project  (ct  pos)            ; position  of  the element  where
-      (== (= ct pos) t)            ; attacker must be attached to
-      (fresh (c d cdd tmp new-defender)
-        (conso c d defenders)
-        (cdro  c cdd)
-        (conda
-            ((nullo cdd)
-             (fresh (def-pos atk-pos atk-mp)
-               (def-pos-o c def-pos)
-               (atk-mp-o  attacker atk-mp)
-               (atk-pos-o attacker atk-pos)
-               (make-def-o def-pos atk-pos atk-mp new-defender)
-               (reachableo new-defender)))
-            (else
-             (== c new-defender)))
-        (attach-attacker@-o d attacker list-length pos tmp (1+ ct))
-        (conso new-defender tmp out))))
-   (else
-    (project (ct pos)
-      (fresh (c d tmp)
-        (conso c d defenders)
-        (attach-attacker@-o d attacker list-length pos tmp (1+ ct))
-        (conso  c tmp out))))))
-
-(defun attach-attacker-o (defender attacker list-length ct out)
-  (conda
-   ((project (ct list-length)
-      (== (>= ct list-length) t)
-      (== out '())))
-   (else
-    (project (ct)
-      (fresh (tmp tmp2)
-        (attach-attacker@-o defender attacker list-length ct tmp)
-        (attach-attacker-o  defender attacker list-length (1+ ct)  tmp2)
-        (conso tmp tmp2 out))))))
-
-;; defenders (list (def1 def2 def3 ...) ...)
-(defun substo-all (defenders defender-number attacker out)
-  (conde
-   ((nullo defenders)
-    (== out '()))
-   (else
-    (fresh (car-def cdr-def tmp tmp2)
-      (conso  car-def cdr-def defenders)
-      (attach-attacker-o car-def attacker defender-number 0 tmp)
-      (substo-all cdr-def   defender-number attacker tmp2)
-      (appendo tmp tmp2 out)))))
-
-(defun %make-attack-tactics (defenders defender-number attackers out)
-  (conde
-   ((nullo attackers)
-    (== out '()))
-   (else
-    (fresh (car-atk cdr-atk tmp res)
-      (conso car-atk cdr-atk attackers)
-      (substo-all defenders defender-number car-atk tmp)
-      (%make-attack-tactics tmp defender-number cdr-atk res)
-      (appendo tmp res out)))))
-
-(defun make-attack-tactics (defenders attackers)
-  (car (run* (q)
-         (%make-attack-tactics (list defenders) (length defenders) attackers q))))
 
 (defun attacker-class->attacker (game-state atk)
   (let* ((entity (entity:find-entity-by-id game-state (blackboard:entity-id atk)))
@@ -459,13 +453,13 @@ path is removed
                  (when (or (not status)
                            (and (not (member status
                                              (list interactive-entity:+status-terror+
-                                                   interactive-entity:+status-berserk+
+                                                   ;; interactive-entity:+status-berserk+
                                                    interactive-entity:+status-faint+)))))
                    (push (cons (mesh:calculate-cost-position entity)
                                (truncate (character:current-movement-points ghost)))
                          res)))))
         (map-ai-entities main-state #'(lambda (v) (fetch v)))
-      res))))
+        res))))
 
 (defun find-defender-id-by-goal-position (blackboard position)
   (with-accessors ((attack-enemy-pole-positions     attack-enemy-pole-positions)
@@ -490,32 +484,20 @@ path is removed
       (values (game-state:find-ai-id-by-position main-state attacker-position)
               (find-defender-id-by-goal-position blackboard defender-position)))))
 
-(defun build-single-attack-tactics (blackboard position-attakers position-defenders)
-  (let ((all (blackboard:make-attack-tactics position-defenders position-attakers)))
-    (setf all (remove-if #'(lambda (plan) (every #'(lambda (a) (null (cdr a))) plan))
-                         all))
-    (when all
-      ;; TODO sort  tactics, the idea  is to attack the  less powerful
-      ;; enemy with the maximum number of attacker see: character:combined-power
-      (setf all (find-min-max #'(lambda (a b) (> (length (flatten a)) (length (flatten b))))
-                              all))
-      (setf all (remove-if-not #'tactic-valid-p all)))
-    (mapcar #'(lambda (plan)
-                (multiple-value-bind (attacker-id defender-id)
-                    (attack-tactic->id-entities blackboard plan)
-                    (make-instance 'attacker
-                                   :target-pos (tactic-defender-slot-pos plan)
-                                   :target-id  defender-id
-                                   :entity-id  attacker-id)))
-            all)))
+(defun tactics-as-list->tactics-as-attacker-instance (blackboard tactics)
+  (setf tactics (remove-if-not #'tactic-valid-p tactics))
+  (mapcar #'(lambda (plan)
+              (multiple-value-bind (attacker-id defender-id)
+                  (attack-tactic->id-entities blackboard plan)
+                (make-attacker-instance (tactic-defender-slot-pos plan)
+                                        defender-id
+                                        attacker-id)))
+          tactics))
 
 (defun build-all-attack-tactics (blackboard reachable-fn-p)
   (let* ((*reachable-p-fn* reachable-fn-p)
          (all-defender-pos (fetch-defender-positions blackboard))
          (all-attacker-pos (fetch-attacker-positions blackboard)))
-    (when (> (length all-attacker-pos)
-             (length all-defender-pos))
-      (setf all-attacker-pos (subseq all-attacker-pos 0 (length all-defender-pos))))
     (list
      +pole-key-tactics+     (build-single-attack-tactics blackboard
                                                          all-attacker-pos
