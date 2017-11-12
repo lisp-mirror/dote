@@ -374,7 +374,8 @@
 (defun send-attack-spell-events-fn (spell)
   #'(lambda (attacker defender)
       (let* ((state            (state attacker))
-             (range            (spell:effective-range           spell))
+             (range            (f* (spell:effective-range       spell)
+                                   2))
              (pos-defender     (map-utils:pos->game-state-pos   defender))
              (accetable-type   (list +empty-type+
                                      +unknown-type+))
@@ -460,7 +461,8 @@
 (defun send-spell-events-fn (spell attacker defender)
   #'(lambda ()
       (let* ((state            (state attacker))
-             (range            (spell:effective-range           spell))
+             (range            (f* (spell:effective-range       spell)
+                                   2))
              (pos-defender     (map-utils:pos->game-state-pos   defender))
              (neighborhood-pc  (neighborhood-by-type state
                                                      (elt pos-defender 1)

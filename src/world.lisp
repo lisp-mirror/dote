@@ -302,11 +302,18 @@
   (goap:invalidate-tests-cache)
   (ai-utils:go-find-hiding-place-clear-cache))
 
+(defun rebuild-all-ai-planners (world)
+  (map-ai-entities (main-state world)
+                   #'(lambda (a)
+                       (character:setup-planners (ghost a)))))
+
 (defmethod game-event:on-game-event ((object world) (event game-event:end-turn))
   (with-accessors ((main-state main-state)) object
     ;(tg:gc :full t)
     ;;(misc:dbg " end turn ~a ~a" (type-of object) (type-of event))
     (clear-all-memoized-function-cache)
+    (md2-mesh:blacklist-clear-id)
+    (rebuild-all-ai-planners        object)
     (remove-all-tooltips            object)
     (remove-all-windows             object)
     (remove-all-removeable          object)

@@ -21,11 +21,61 @@
 (define-constant +action-max-cost+ 1000000      :test #'eq)
 
 (defstruct action
-  (name          :idle :type symbol)
-  (preconditions '()   :type list)
+  (name                   :idle :type symbol)
+  (preconditions          '()   :type list)
   (context-preconditions  '()   :type list)
-  (effects       '()   :type list)
-  (cost          1     :type fixnum))
+  (effects                '()   :type list)
+  (cost                     1   :type fixnum))
+
+(defun maximize-action-cost (action)
+  (setf (action-cost action) +action-max-cost+))
+
+(defmacro gen-add-symbol-to-action-list-slot (slot)
+  (let* ((fn-name      (format-fn-symbol t "add-action-~a" slot))
+         (slot-fn-name (format-fn-symbol t "action-~as"    slot)))
+    `(defun ,fn-name (action ,slot)
+       (pushnew ,slot (,slot-fn-name action) :test #'condition-equals)
+       action)))
+
+(defmacro gen-find-symbol-to-action-list-slot (slot)
+  (let* ((fn-name      (format-fn-symbol t "find-action-~a" slot))
+         (slot-fn-name (format-fn-symbol t "action-~as"    slot)))
+    `(defun ,fn-name (action ,slot)
+       (find ,slot (,slot-fn-name action) :test #'eq :key #'condition-name))))
+
+(defmacro gen-remove-symbol-to-action-list-slot (slot)
+  (let* ((fn-name      (format-fn-symbol t "remove-action-~a" slot))
+         (slot-fn-name (format-fn-symbol t "action-~as"    slot)))
+    `(defun ,fn-name (action ,slot)
+       (setf (,slot-fn-name action)
+             (remove ,slot (,slot-fn-name action) :test #'eq :key #'condition-name)))))
+
+(gen-add-symbol-to-action-list-slot effect)
+
+(gen-add-symbol-to-action-list-slot precondition)
+
+(gen-add-symbol-to-action-list-slot context-precondition)
+
+(gen-find-symbol-to-action-list-slot effect)
+
+(gen-find-symbol-to-action-list-slot precondition)
+
+(gen-find-symbol-to-action-list-slot context-precondition)
+
+(gen-remove-symbol-to-action-list-slot effect)
+
+(gen-remove-symbol-to-action-list-slot precondition)
+
+(gen-remove-symbol-to-action-list-slot context-precondition)
+
+(defun find-link-between-action (parent child)
+  "find an effect of a that is precondition of b"
+  (loop for parent-effect in (action-effects parent) do
+       (let ((found (find-action-precondition child (condition-name parent-effect))))
+         (when (and found
+                    (condition-equals parent-effect found))
+           (return-from find-link-between-action parent-effect))))
+  nil)
 
 (defclass planner-state ()
   ((variables
@@ -258,6 +308,8 @@
 
 (defgeneric find-action (object action-name))
 
+(defgeneric fetch-sink-action (object))
+
 (defun state-equal-p (a b)
   (conditions-equals (variables a) (variables b)))
 
@@ -296,13 +348,13 @@
           (do ((current (pq:pop-element frontier) (pq:pop-element frontier)))
               ((not current) ; the exit condition
                current)      ; the return value when exit condition is not nil
-            (when (goal-reached-p  current)
+            (when (goal-reached-p current)
               (return-from plan-search current))
             (put-node-in-set current closed)
             (loop for neighbor in (reachables-states current strategy-expert player-entity) do
                  (let* ((action-to-neighbor (action-to-reach neighbor))
-                        (new-cost       (+ (g-cost current)
-                                           (action-cost action-to-neighbor))))
+                        (new-cost           (+ (g-cost current)
+                                               (action-cost action-to-neighbor))))
                    (when (and (find-node-in-frontier frontier neighbor)
                               (< new-cost (g-cost (find-node-in-frontier frontier neighbor))))
                      (pq:remove-element frontier neighbor))
@@ -335,6 +387,9 @@
 
 (defmethod find-action ((object planner) action-name)
   (find action-name (actions-bag object) :test #'eq :key #'action-name))
+
+(defmethod fetch-sink-action ((object planner))
+  (find-action object ai-utils:+sink-action+))
 
 (defun dfs-action-search (planner action-start)
   (labels ((action-satisfise-p (action-node action-neighbor)
@@ -403,6 +458,10 @@
             `(symbol-function ',sym)))
       sym))
 
+(defun sink-precondition-test (a b)
+  (declare (ignore a b))
+  nil)
+
 (defparameter *planner* nil)
 
 (defmacro define-planner (&body forms)
@@ -423,17 +482,23 @@
                                        (list ,@(mapcar #'%build-precondition
                                                        (get-param  action
                                                                    :context-preconditions)))))))
-    (with-gensyms (planner idle-action)
+    (with-gensyms (planner idle-action sink-action)
       `(let ((,planner (make-instance 'planner))
              (,idle-action (make-action :name                  ai-utils:+idle-action+
                                         :preconditions         nil
                                         :context-preconditions nil
                                         :effects               (list (cons +ultimate-goal+ t))
+                                        :cost                  +action-max-cost+))
+             (,sink-action (make-action :name                  ai-utils:+sink-action+
+                                        :preconditions         nil
+                                        :context-preconditions (list #'sink-precondition-test)
+                                        :effects               nil
                                         :cost                  +action-max-cost+)))
          (progn
            ,@(loop for action in forms collect
                   (build-action planner action))
-           (add-action ,planner ,idle-action))
+           (add-action ,planner ,idle-action)
+           (add-action ,planner ,sink-action))
          (setf *planner* ,planner)))))
 
 (defun find-planner-file (character strategy)
@@ -457,14 +522,18 @@
     (res:get-resource-file file-full-path resource-dir)))
 
 (defun load-planner-file (file)
-  (with-load-forms-in-var (*planner* out file)
-    (let ((goal-state  (make-instance 'planner-state
-                                      :variables (list (cons +ultimate-goal+  t))))
-          (start-state (make-instance 'planner-state
-                                      :variables (list (cons +ultimate-goal+  nil)))))
-      (setf (goal-state    out) goal-state
-            (current-state out) start-state)
-      out)))
+  (fs:file-is-link-if-else (file link)
+    (progn
+      #+debug-mode (misc:dbg "planner ~a point to ~a" file link)
+      (load-planner-file link))
+    (with-load-forms-in-var (*planner* out file)
+      (let ((goal-state  (make-instance 'planner-state
+                                        :variables (list (cons +ultimate-goal+  t))))
+            (start-state (make-instance 'planner-state
+                                        :variables (list (cons +ultimate-goal+  nil)))))
+        (setf (goal-state    out) goal-state
+              (current-state out) start-state)
+        out))))
 
 (define-constant +cache-invalid-value+ :invalid :test #'eq)
 
@@ -496,6 +565,10 @@
 (defun enough-health-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (not (ai-utils:too-low-health-p entity)))
+
+(defun near-to-death-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (ai-utils:near-to-death-health-p entity))
 
 (defun has-weapon-in-inventory-p (strategy-expert entity)
   (declare (ignore strategy-expert))
@@ -630,6 +703,10 @@ reach and attack the enemy with optimal path?"
   (declare (ignore strategy-expert entity))
   (dice:pass-d100.0 1))
 
+(defun disobey-1-out-10 (strategy-expert entity)
+  (declare (ignore strategy-expert entity))
+  (dice:pass-d10.0 1))
+
 (defun pass-1d10 (strategy-expert entity)
   (declare (ignore strategy-expert entity))
   (dice:pass-d10.0 1))
@@ -642,6 +719,12 @@ reach and attack the enemy with optimal path?"
                                             (game-state:get-cost state (elt a 0) (elt a 1))))))
       (>= (character:current-movement-points ghost)
           (funcall predicate neigh-cost)))))
+
+(defun can-rotate-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (with-accessors ((ghost ghost)) entity
+    (>= (character:current-movement-points ghost)
+        +rotate-entity-cost-cost+)))
 
 (defun can-minimally-move-p (strategy-expert entity)
   (declare (ignore strategy-expert))

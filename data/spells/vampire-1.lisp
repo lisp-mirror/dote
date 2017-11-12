@@ -9,7 +9,7 @@
   :cost                  2.0
   :visual-effect-self    nil
   :range                 20  ;; in tile units
-  :effective-range        1  ;; in tile units
+  :effective-range        0  ;; in tile units
   :visual-effect-target  particles:make-poison-level-0
   :effects
   (lambda (attacker defender)

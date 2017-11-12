@@ -2534,7 +2534,8 @@
 
 (defmethod entity-dead-p ((object triangle-mesh))
   (with-accessors ((ghost ghost)) object
-    (<= (character:current-damage-points ghost) 0)))
+    (or (d< (character:current-damage-points ghost) 0.0)
+        (epsilon= (character:current-damage-points ghost) 0.0))))
 
 (alexandria:define-constant +magic-num-md2-tag-file '(74 68 80 50) :test #'equalp)
 

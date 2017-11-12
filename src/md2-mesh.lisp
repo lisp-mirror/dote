@@ -334,12 +334,15 @@
 (defmethod on-game-event ((object md2-mesh) (event update-visibility))
   (with-accessors ((state state)
                    (id id)) object
-    (labels ((stop-movements (already-stopped)
+    (labels ((stop-movements (already-stopped interrupt-if-ai)
                (when (not already-stopped)
-                 (%stop-movement object :decrement-movement-points t)))
+                 (%stop-movement object
+                                 :decrement-movement-points t
+                                 :interrupt-plan-if-ai      interrupt-if-ai)))
              (seenp (entity &key
-                            (from-render-p nil)
-                            (maintain-render nil))
+                            (saved-render-p nil)
+                            (maintain-render nil)
+                            (interrupt-plan-if-ai t))
                (let ((already-stopped nil))
                  (when (find-if #'(lambda (a) (= id (id a))) (visible-players entity))
                    (when (not maintain-render)
@@ -348,21 +351,19 @@
                                      'move-entity-entered-in-tile-event)
                               (current-path (ghost object))
                               (not (eq (my-faction object) (my-faction entity))))
-                     (when (not from-render-p)
+                     (when (not saved-render-p)
                        (setf already-stopped t)
-                       (stop-movements nil))
+                       (stop-movements nil interrupt-plan-if-ai))
                      ;;;;; TEST;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                      (when (or t (dice:pass-d100.0 (actual-ambush-attack-chance (ghost entity))))
                        (cond
                          ((battle-utils:long-range-attack-possible-p entity object)
                           (game-state:with-world (world state)
-                            (set-interrupt-plan (ghost object))
-                            (stop-movements already-stopped)
+                            (stop-movements already-stopped t)
                             (battle-utils:attack-long-range world entity object)))
                          ((battle-utils:short-range-attack-possible-p entity object)
                           (game-state:with-world (world state)
-                            (set-interrupt-plan (ghost object))
-                            (stop-movements already-stopped)
+                            (stop-movements already-stopped t)
                             (battle-utils:attack-short-range world entity object))))))
                    t)
                  nil))
@@ -388,14 +389,14 @@
                                                   #'(lambda (v)
                                                       (seenp v
                                                              :maintain-render nil
-                                                             :from-render-p   saved-renderp)))
+                                                             :saved-render-p   saved-renderp)))
                   (seep object))
                 (progn
                   (game-state:map-ai-entities state
                                               #'(lambda (v)
                                                   (seenp v
                                                          :maintain-render t
-                                                         :from-render-p   saved-renderp)))
+                                                         :saved-render-p   saved-renderp)))
                   (game-state:map-ai-entities state
                                               #'(lambda (v)
                                                   (setf (renderp v) nil)))
@@ -417,8 +418,7 @@
   (with-accessors ((ghost ghost)
                    (dir dir)
                    (stop-animation  stop-animation)
-                   (cycle-animation cycle-animation)
-                   (setf cycle-animation nil)) object
+                   (cycle-animation cycle-animation))  object
     (with-accessors ((current-path current-path)) ghost
       (if (= (id object) (id-destination event))
           (let ((disable-input-event (make-instance 'window-accept-input-event
@@ -434,7 +434,9 @@
             t)
           nil))))
 
-(defun %stop-movement (player &key (decrement-movement-points t))
+(defun %stop-movement (player &key
+                                (decrement-movement-points t)
+                                (interrupt-plan-if-ai      t))
   (with-accessors ((ghost ghost)
                    (dir dir)
                    (id id)
@@ -445,6 +447,9 @@
                                       :tile-pos  (alexandria:last-elt current-path))))
         (when decrement-movement-points
           (decrement-move-points-entering-tile player))
+        (when (and interrupt-plan-if-ai
+                   (faction-ai-p state (id player)))
+          (set-interrupt-plan ghost))
         (propagate-move-entity-along-path-end-event end-event)))))
 
 (defun %try-deactivate-trap-cb (world player trap)
@@ -486,7 +491,9 @@
             (pos-entity   (calculate-cost-position player)))
         (setf current-path (subseq current-path 1))
         (if (= (length current-path) 1) ;; entering in last tile, stop
-            (%stop-movement player :decrement-movement-points t)
+            (%stop-movement player
+                            :decrement-movement-points t
+                            :interrupt-plan-if-ai      nil)
             (progn
               (decrement-move-points-entering-tile player)
               (setf dir (path->dir current-path :start-index 0))))
@@ -503,8 +510,9 @@
                 (step-on-trap-p nil))
             (when trap-ostile
               (setf step-on-trap-p t)
-              (set-interrupt-plan ghost)
-              (%stop-movement player :decrement-movement-points t)
+              (%stop-movement player
+                              :decrement-movement-points t
+                              :interrupt-plan-if-ai      t)
               (%try-deactivate-trap-from-ai world player trap-ostile))
             ;; manage doors
             (when (and (not step-on-trap-p)
@@ -516,8 +524,9 @@
                                                                       id-door)))
                 (when (not (openp door))
                   (game-event:propagate-open-door-event door-event)
-                  (set-interrupt-plan ghost)
-                  (%stop-movement player :decrement-movement-points t)))))
+                  (%stop-movement player
+                                  :decrement-movement-points t
+                                  :interrupt-plan-if-ai      t)))))
           (send-update-visibility-event player event)
           (send-refresh-toolbar-event))))))
 
@@ -534,7 +543,6 @@
               (setf current-path (subseq current-path 1))
               (if (= (length current-path) 1)
                   (%stop-movement object :decrement-movement-points t)
-
                   (progn
                     (decrement-move-points-entering-tile object)
                     (setf dir (path->dir current-path :start-index 0))))
@@ -579,7 +587,7 @@
           (setf dir (sb-cga:transform-direction dir (rotate-around +y-axe+ (d- +pi/2+))))
           (update-visibility-cone object)
           ;; test
-          (misc:dbg "visibility test: ~a" (mapcar #'id (visible-players object)))
+          ;;(misc:dbg "visibility test: ~a" (mapcar #'id (visible-players object)))
           (send-update-visibility-event object event)
           (send-refresh-toolbar-event)
           t)
@@ -968,7 +976,6 @@
       (let* ((trap (game-state:find-entity-by-id state (id-origin event))))
         (battle-utils:trigger-trap-attack trap object)))))
 
-
 (defmethod on-game-event :after ((object md2-mesh) (event end-turn))
   (with-accessors ((ghost ghost)
                    (state state)) object
@@ -978,7 +985,7 @@
         (reset-movement-points ghost)
         ;;; TEST
         (when (faction-ai-p (state object) (id object))
-          (setf (character:current-movement-points (ghost object)) 150.0))
+          (setf (character:movement-points (ghost object)) 150.0))
         ;;;;;;;;;;;;;;;;;;;;;;;
         (traverse-recurrent-effects      object)
         (let ((decayed-items (remove-decayed-items ghost (end-turn-count event))))
@@ -991,6 +998,8 @@
                                        nil
                                        (cons (_ "Move to")
                                              (world:point-to-entity-and-hide-cb world object)))))
+        ;; clear blacklisted actions for planner
+        (character:clear-blacklist ghost)
         (send-refresh-toolbar-event)
         nil))))
 

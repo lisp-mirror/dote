@@ -111,10 +111,10 @@
 (defun strip-dirs-from-path (p)
   (multiple-value-bind (all registers)
       (cl-ppcre:scan-to-strings (concatenate 'string
-                                           *directory-sep*
-                                           "([^"
-                                           *directory-sep*
-                                           "]+)$")
+                                             *directory-sep*
+                                             "([^"
+                                             *directory-sep*
+                                             "]+)$")
                                 p)
     (declare (ignore all))
     (and (> (length registers) 0)
@@ -244,3 +244,25 @@
 
 (defun file-in-package (name)
   (concatenate 'string (namestring (package-path)) name))
+
+(defparameter *file-link-to* nil)
+
+(defmacro see-file (&body forms)
+  (if (> (length forms) 1)
+      (warn "see-file: too many elements in forms, must be exactly 2"))
+  (let ((path (alexandria:first-elt forms)))
+    (when (not (stringp path))
+      (warn "see-file: the path is not a string in forms"))
+    (setf *file-link-to* path)))
+
+(defun link-file-path (file)
+  (misc:with-load-forms-in-var (*file-link-to* link-file file)
+    (if link-file
+        (cat-parent-dir (parent-dir-path file) link-file)
+        nil)))
+
+(defmacro file-is-link-if-else ((file link-file-pointed) is-link-forms is-not-link-forms)
+  `(let ((,link-file-pointed (link-file-path ,file)))
+     (if ,link-file-pointed
+         ,is-link-forms
+         ,is-not-link-forms)))

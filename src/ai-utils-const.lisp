@@ -27,11 +27,16 @@
 (define-constant +planner-file-extension+          ".lisp"
   :test #'string=)
 
+(define-constant +sink-action+                     :sink                       :test #'eq
+ :documentation "This is the default action of the planner for blacklisting")
+
 (define-constant +plan-stopper+                    :end                        :test #'eq)
 
 (define-constant +idle-action+                     :idle                       :test #'eq)
 
 (define-constant +interrupt-action+                :interrupt                  :test #'eq)
+
+(define-constant +rotate-action+                   :rotate                     :test #'eq)
 
 (define-constant +move-action+                     :move                       :test #'eq)
 

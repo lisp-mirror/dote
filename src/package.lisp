@@ -236,6 +236,7 @@
    :random-elt
    :safe-random-elt
    :copy-multiply
+   :all-but-last-elt
    :list->array
    :list->simple-array
    :copy-list-into-array
@@ -257,6 +258,7 @@
    :defalias
    :defun-inline-function
    :format-fn-symbol
+   :format-keyword
    :a->function
    :gen-type-p
    :define-compiler-macros
@@ -461,7 +463,9 @@
    :preprocess-include-file
    :preprocess
    :package-path
-   :file-in-package))
+   :file-in-package
+   :link-file-path
+   :file-is-link-if-else))
 
 (defpackage :os-utils
   (:use :cl)
@@ -2885,10 +2889,12 @@
    :+melee-key-tactics+
    :+bow-key-tactics+
    :+crossbow-key-tactics+
+   :+sink-action+
    :+plan-stopper+
    :+planner-file-extension+
    :+idle-action+
    :+interrupt-action+
+   :+rotate-action+
    :+move-action+
    :+faint-action+
    :+go-to-attack-pos-action+
@@ -2915,6 +2921,7 @@
    :gen-neigh
    :friend-who-needs-help
    :too-low-health-p
+   :near-to-death-health-p
    :if-difficult-level>medium
    :reward-possible-p
    :available-heal-spells
@@ -2973,8 +2980,6 @@
    :basic-interaction-params ; reexported from interactive-entity
    :np-character
    :restart-age
-   :working-memory
-   :working-memory-id-target
    :player-character
    :portrait
    :first-name
@@ -2982,9 +2987,17 @@
    :model-origin-dir
    :current-path
    :current-plan
+   :original-current-plan
+   :planners
    :thinker
    :thinkerp
    :planner-working-memory
+   :force-idle-plan
+   :force-idle-plan-p
+   :build-planners
+   :setup-planners
+   :clear-blacklist
+   :find-plan
    :gender
    :player-class
    :strength
@@ -3115,6 +3128,9 @@
    :disgregard-tactical-plan
    :pop-action-plan
    :erase-working-memory
+   :clear-blacklisted-plan-goals
+   :push-in-blacklisted-plan-goals
+   :action-terminal-p
    :weapon-case))
 
 (defpackage :random-armor
@@ -4535,7 +4551,8 @@
    :set-animation
    :my-faction
    :place-trap
-   :clean-db))
+   :clean-db
+   :blacklist-clear-id))
 
 (defpackage :obj-mesh
   (:shadow :load)
@@ -4763,11 +4780,27 @@
         :graph
         :identificable
         :interfaces
+        :entity
         :ai-utils
         :blackboard
         :game-state)
   (:shadowing-import-from :misc :shuffle :random-elt)
   (:export
+   :+action-max-cost+
+   :add-action-effect
+   :add-action-precondition
+   :add-action-contest-precondition
+   :find-action-effect
+   :find-action-precondition
+   :find-action-contest-precondition
+   :find-link-between-action
+   :remove-action-effect
+   :remove-action-precondition
+   :remove-action-contest-precondition
+   :remove-link-between-action
+   :condition-name
+   :condition-value
+   :make-action-condition
    :planner-state
    :action-to-reach
    :h-cost
@@ -4783,11 +4816,13 @@
    :action-preconditions
    :action-effects
    :action-cost
+   :maximize-action-cost
    :make-action
    :action-satisfise-condition-p
    :state-diff
    :add-action
    :find-action
+   :fetch-sink-action
    :build-plan
    :define-planner
    :find-planner-file

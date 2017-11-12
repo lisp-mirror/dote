@@ -8,7 +8,7 @@
   :cost                  5.0
   :visual-effect-self    nil
   :range                 20 ;; in tile units
-  :effective-range       1  ;; in tile units
+  :effective-range       0  ;; in tile units
   :visual-effect-target  particles:make-aerial-explosion-level-1
   :effective-aabb-size  #'(lambda (spell)
 			    (declare (ignore spell))

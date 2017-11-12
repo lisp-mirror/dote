@@ -6,7 +6,7 @@
                                  (:near-enemy    t))
          :effects               ((:curb-threat   t))
          :context-preconditions (enough-health-p none-needs-help-p !is-status-terror-p)
-         :cost                  1)
+         :cost                  20)
   (:name :go-to-attack-pos
          :preconditions         ((:weapon-loaded             t)
                                  (:reach-with-current-weapon t))
@@ -46,7 +46,7 @@
                                  (:weapon-loaded         t))
          :effects               ((:protecting  t))
          :context-preconditions (friend-needs-help-p)
-         :cost                  10)
+         :cost                  20)
   (:name :protect-attack-spell
          :preconditions         ((:protect-friend-attack t))
          :effects               ((:protecting  t))
@@ -55,7 +55,7 @@
                                  ;; "!is-status-terror-p"  is implicitly
                                  ;; managed by has-enough-sp-damage-p
                                  there-is-attackable-opponents-attack-spell-p)
-         :cost                  20)
+         :cost                   5)
   (:name :go-near-weak-friend-attack
          :preconditions         ()
          :context-preconditions (can-minimally-move-p
@@ -88,7 +88,7 @@
                                  ;; "!is-status-terror-p"  is implicitly
                                  ;; managed by has-enough-sp-heal-p
          :effects               ((:curb-threat t))
-         :cost                  20)
+         :cost                  15)
   (:name :launch-attack-spell
          :preconditions         ()
          :context-preconditions (none-needs-help-p
@@ -97,12 +97,12 @@
                                  ;; managed by has-enough-sp-damage-p
                                  there-is-attackable-opponents-attack-spell-p)
          :effects               ((:curb-threat t))
-         :cost                  20)
+         :cost                  2)
   (:name :hide
          :preconditions         ((:has-hiding-place t))
          :context-preconditions (!enough-health-p is-visible-p)
          :effects               ((:curb-threat t))
-         :cost                  10)
+         :cost                  5)
   (:name :find-hiding-place
          :preconditions         ()
          :context-preconditions (is-there-hiding-place-p)
@@ -112,7 +112,7 @@
          :preconditions         ()
          :context-preconditions (!enough-health-p has-enough-sp-teleport-p is-visible-p)
          :effects               ((:curb-threat t))
-         :cost                  80)
+         :cost                  20)
   (:name :rotate
          :preconditions         ()
          :effects               ((:curb-threat   t))

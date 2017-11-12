@@ -20,7 +20,7 @@
 
 (define-constant +attack-min-sigma+               20.0  :test #'=)
 
-(define-constant +attack-max-sigma+               200.0  :test #'=)
+(define-constant +attack-max-sigma+              200.0  :test #'=)
 
 (define-constant +weapon-combination-bonus+        0.1  :test #'=)
 
@@ -209,7 +209,8 @@
                            +weapon-pole-range+
                            +weapon-melee-range+)))
     (character:with-no-terror-status (attacker)
-      (and (mesh:can-use-movement-points-p attacker :minimum +attack-melee-cost+)
+      (and (not (entity:entity-dead-p defender))
+           (mesh:can-use-movement-points-p attacker :minimum +attack-melee-cost+)
            (map-utils:facingp (mesh:calculate-cost-position attacker)
                               (entity:dir attacker)
                               (mesh:calculate-cost-position defender)
@@ -228,7 +229,8 @@
          (range-valid-p (range-weapon-valid-p attacker defender weapon-type))
          (visiblep      (able-to-see-mesh:other-visible-p attacker defender)))
     (character:with-no-terror-status (attacker)
-      (and (> cost 0.0)
+      (and (not (entity:entity-dead-p defender))
+           (> cost 0.0)
            range-valid-p
            visiblep
            (mesh:can-use-movement-points-p attacker :minimum cost)))))
@@ -244,7 +246,8 @@
     ;; we  are  using when-let*,  but  harmless  and, moreover,  helps
     ;; readability.
     (character:with-no-terror-status (attacker)
-      (and range-valid-p
+      (and (not (entity:entity-dead-p defender))
+           range-valid-p
            visiblep
            (mesh:can-use-spell-points-p attacker :minimum cost)))))
 

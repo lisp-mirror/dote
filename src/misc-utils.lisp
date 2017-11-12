@@ -47,6 +47,9 @@
   `(alexandria:format-symbol ,package ,(concatenate 'string "~:@(" format "~)")
                              ,@format-args))
 
+(defun format-keyword (thing)
+  (alexandria:make-keyword (format nil "~:@(~a~)" thing)))
+
 ;; functions utils
 
 (defun a->function (a)
@@ -581,6 +584,15 @@ Name from Emacs Lisp."
             (setf (elt to (+ ct2 ct3))
                   (elt from (+ ct (mod ct3 source-step))))))
   to)
+
+(defun all-but-last-elt (s)
+  (if s
+      (let ((length (length s)))
+        (if (> length 0)
+            (subseq s 0 (1- length))
+            s))
+      s))
+
 
 ;; iterations
 

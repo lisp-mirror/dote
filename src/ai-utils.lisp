@@ -50,10 +50,16 @@
                                                        x y
                                                        :add-center nil)))))
 
-(defun too-low-health-p (entity)
+(defun health-under-threshold-p (entity threshold)
   (let ((ghost (entity:ghost entity)))
     (< (character:current-damage-points ghost)
-       (* 0.5 (character:actual-damage-points ghost)))))
+       (* threshold (character:actual-damage-points ghost)))))
+
+(defun too-low-health-p (entity)
+  (health-under-threshold-p entity 0.5))
+
+(defun near-to-death-health-p (entity)
+  (health-under-threshold-p entity 0.1))
 
 (defun friend-who-needs-help (strategy-expert entity &key (exclude-me nil))
   (map-ai-entities (interfaces:main-state strategy-expert)
@@ -75,26 +81,46 @@
         (>= (points heal-fx)
             (character:actual-damage-points (ghost entity))))))
 
-(defun find-best-attack-spell-clever-predicate (target-entity)
-  #'(lambda (s)
-      (let ((damage-spell         (spell:damage-inflicted s))
-            (damage-points-target (character:actual-damage-points (ghost target-entity))))
-        (>= damage-spell
-            (d* +scaling-target-damage-best-attack-spell+
-                damage-points-target)))))
+(defun find-best-attack-spell-clever-predicate (launcher-entity target-entity)
+  (let ((dist (map-utils:map-manhattam-distance (mesh:calculate-cost-position launcher-entity)
+                                                (mesh:calculate-cost-position target-entity))))
+    #'(lambda (s)
+        (let ((damage-spell          (spell:damage-inflicted s))
+              (effective-range-spell (spell:effective-range s))
+              (damage-points-target  (character:current-damage-points (ghost target-entity))))
+          (and (< effective-range-spell dist)
+               (>= damage-spell
+                   (d* +scaling-target-damage-best-attack-spell+
+                       damage-points-target)))))))
 
-(defun find-best-spell-clever (spell-db predicate)
+(defun find-best-attack-spell-harmless-to-launcher-clrs (launcher-entity target-entity)
+  (let ((dist (map-utils:map-manhattam-distance (mesh:calculate-cost-position launcher-entity)
+                                                (mesh:calculate-cost-position target-entity))))
+    #'(lambda (s)
+        (let ((effective-range-spell (spell:effective-range s)))
+          (< effective-range-spell dist)))))
+
+(defun find-best-spell-clever (spell-db predicate &key (use-best-if-not-found t))
   (let* ((sorted-spell-db (shellsort spell-db (spell:sort-spells-by-level-fn nil)))
          (spell (find-if predicate
                          sorted-spell-db)))
     (or spell
-        (last-elt sorted-spell-db))))
+        (and use-best-if-not-found
+             (last-elt sorted-spell-db)))))
 
 (defun find-best-heal-spell-clever (spell-db entity)
-  (find-best-spell-clever spell-db (find-best-heal-spell-clever-predicate entity)))
+  (find-best-spell-clever spell-db (find-best-heal-spell-clever-predicate entity)
+                          :use-best-if-not-found t))
 
-(defun find-best-attack-spell-clever (spell-db target-entity)
-  (find-best-spell-clever spell-db (find-best-attack-spell-clever-predicate target-entity)))
+(defun find-best-attack-spell-clever (spell-db launcher-entity target-entity)
+  (or (find-best-spell-clever spell-db
+                              (find-best-attack-spell-clever-predicate launcher-entity
+                                                                       target-entity)
+                              :use-best-if-not-found nil)
+      (find-best-spell-clever spell-db
+                              (find-best-attack-spell-harmless-to-launcher-clrs launcher-entity
+                                                                                target-entity)
+                              :use-best-if-not-found nil)))
 
 (defmacro if-difficult-level>medium ((game-state) if-more if-less)
   `(if (> (level-difficult ,game-state)
@@ -107,9 +133,9 @@
     (find-best-heal-spell-clever   spell-db entity)
     (find-best-spell-most-powerful spell-db)))
 
-(defun find-best-attack-spell (state spell-db target-entity)
+(defun find-best-attack-spell (state spell-db launcher-entity target-entity)
   (if-difficult-level>medium (state)
-    (find-best-attack-spell-clever   spell-db target-entity)
+    (find-best-attack-spell-clever spell-db launcher-entity target-entity)
     (find-best-spell-most-powerful spell-db)))
 
 (defun reward-possible-p (state)
@@ -143,7 +169,10 @@
 (defun attackable-opponents-attack-spell (available-spells launcher-entity)
    (with-slots-for-reasoning (launcher-entity state ghost blackboard)
     (when-let* ((target-entity (target-reachable-attack-spell launcher-entity))
-                (spell         (find-best-attack-spell state available-spells target-entity)))
+                (spell         (find-best-attack-spell state
+                                                       available-spells
+                                                       launcher-entity
+                                                       target-entity)))
       (if (battle-utils:range-spell-valid-p launcher-entity target-entity spell)
           (values target-entity spell)
           (values nil nil)))))

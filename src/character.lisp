@@ -20,6 +20,12 @@
 
 (define-constant +weight-for-half-capacity-inventory+ 20.0                   :test #'=)
 
+(define-constant +all-strategies+ (list +explore-strategy+
+                                        +attack-strategy+
+                                        ;;+defend-strategy+
+                                        +retreat-strategy+ )
+  :test #'equalp)
+
 (defclass np-character (identificable interactive-entity entity-w-portrait m-tree)
   ((first-name
     :initform ""
@@ -112,23 +118,26 @@
   (setf (pq:equal-function   pq) #'=)
   pq)
 
-(defparameter *standard-capital-characteristic* 200)
-
-(defclass player-character (np-character)
-  ((model-origin-dir
-    :initform ""
-    :initarg  :model-origin-dir
-    :accessor model-origin-dir)
-   (current-path
-    :initform nil
-    :initarg  :current-path
-    :accessor current-path)
-   (current-plan
+(defclass planner-character ()
+  ((current-plan
     :initform nil
     :initarg  :current-plan
     :accessor current-plan
     :documentation "A list with the current plan sorted from the first
                     to accomplish to the last")
+   (original-current-plan
+    :initform nil
+    :initarg  :original-current-plan
+    :accessor original-current-plan
+    :documentation "A list with the original current plan sorted from the first
+                    to accomplish to the last")
+   (planners
+    :initform '()
+    :initarg  :planners
+    :accessor planners
+    :documentation "An alist of current planners, key is a strategy as in contsnt.lisp (i.e)
+                    +explore-strategy+, +attack-strategy+, +defend-strategy+
+                    +retreat-strategy+")
    (thinker
     :initform nil
     :initarg  :thinkerp
@@ -140,6 +149,166 @@
     :initarg  :planner-working-memory
     :accessor planner-working-memory
     :documentation "during the plan some data will be saved here")
+   (force-idle-plan
+    :initform nil
+    :initarg  :force-idle-plan
+    :reader   force-idle-plan-p
+    :writer   (setf force-idle-plan))))
+
+(defgeneric set-plan (object plan))
+
+(defgeneric build-planner (object strategy-decision))
+
+(defgeneric build-planners (object))
+
+(defgeneric setup-planners (object))
+
+(defgeneric clear-blacklist (object))
+
+(defgeneric find-plan (object strategy))
+
+(defgeneric elaborate-current-tactical-plan (object strategy-expert player-entity
+                                             strategy-decision))
+
+(defgeneric has-interrupt-plan-p (object))
+
+(defgeneric set-interrupt-plan (object))
+
+(defgeneric unset-interrupt-plan (object))
+
+(defgeneric disgregard-tactical-plan (object))
+
+(defgeneric pop-action-plan (object))
+
+(defgeneric erase-working-memory (object))
+
+(defgeneric action-terminal-p (object action))
+
+(defmacro with-no-thinking ((character) &body body)
+  (with-gensyms (saved)
+    `(if ,character
+         (let ((,saved (thinkerp ,character)))
+           (setf (thinker ,character) nil)
+           ,@body
+           (setf (thinker ,character) ,saved))
+         (progn ,@body))))
+
+
+(defmacro with-one-shot-force-idle ((character-instance) &body body)
+  `(with-accessors ((force-idle-plan-p force-idle-plan-p)
+                    (current-plan          current-plan)) ,character-instance
+     (if force-idle-plan-p
+         (progn
+           (misc:dbg "forced idle!")
+           (set-plan ,character-instance (list ai-utils:+idle-action+))
+           (setf (force-idle-plan ,character-instance) nil)
+           current-plan)
+         (progn ,@body))))
+
+(defmethod set-plan ((object planner-character) plan)
+  (with-accessors ((current-plan current-plan)
+                   (original-current-plan original-current-plan)) object
+    (setf current-plan          plan)
+    (setf original-current-plan (copy-list current-plan))))
+
+(defmethod build-planner ((object planner-character) strategy-decision)
+  (let* ((planner-file (goap:find-planner-file object strategy-decision)))
+    (goap:load-planner-file planner-file)))
+
+(defmethod build-planners ((object planner-character))
+  (loop for strategy in +all-strategies+ collect
+       (cons strategy (build-planner object strategy))))
+
+(defmethod setup-planners ((object planner-character))
+  (setf (planners object) (build-planners object)))
+
+(defmethod clear-blacklist ((object planner-character))
+  (setup-planners object))
+
+(defmethod find-plan ((object planner-character) strategy)
+  (cdr (assoc strategy (planners object) :test #'eq)))
+
+#+inhibit-planner
+(defmethod elaborate-current-tactical-plan ((object planner-character) strategy-expert
+                                            player-entity strategy-decision)
+  (declare (ignore strategy-expert player-entity strategy-decision))
+  (set-plan object (list ai-utils:+idle-action+))
+  (current-plan object))
+
+#-inhibit-planner
+(defmethod elaborate-current-tactical-plan ((object planner-character) strategy-expert
+                                            player-entity
+                                            (strategy-decision (eql nil)))
+  (declare (ignore strategy-decision))
+  (with-one-shot-force-idle (object)
+    (with-accessors ((current-plan current-plan)) object
+      (if current-plan
+          current-plan
+          (elaborate-current-tactical-plan object
+                                             strategy-expert
+                                             player-entity
+                                             (blackboard:strategy-decision strategy-expert))))))
+
+#-inhibit-planner
+(defmethod elaborate-current-tactical-plan ((object planner-character) strategy-expert
+                                            player-entity
+                                            strategy-decision)
+  (with-one-shot-force-idle (object)
+    (with-accessors ((blacklisted-plan-goals blacklisted-plan-goals)
+                     (planners planners)) object
+      (let ((planner (find-plan object strategy-decision)))
+        (set-plan object (goap:build-plan planner strategy-expert player-entity))
+        #+debug-ai (misc:dbg "NEW current new plan (~a) ~a" (id player-entity) current-plan)
+        (elaborate-current-tactical-plan object strategy-expert player-entity nil)))))
+
+(defmethod set-interrupt-plan ((object planner-character))
+  (misc:dbg "set interrupt plan")
+  (setf (current-plan object) (list ai-utils:+interrupt-action+)))
+
+(defmethod unset-interrupt-plan ((object planner-character))
+  (disgregard-tactical-plan object))
+
+(defmethod has-interrupt-plan-p ((object planner-character))
+  (with-accessors ((current-plan current-plan)) object
+    (and current-plan
+         (eq (elt current-plan 0) ai-utils:+interrupt-action+))))
+
+(defmethod disgregard-tactical-plan ((object planner-character))
+  (with-accessors ((current-plan current-plan)) object
+    (misc:dbg "disg")
+    (setup-planners object)
+    (setf current-plan nil)))
+
+(defmethod pop-action-plan ((object planner-character))
+  (with-accessors ((current-plan current-plan)) object
+    (pop current-plan)))
+
+(defmethod erase-working-memory ((object planner-character))
+  (with-accessors ((planner-working-memory planner-working-memory)) object
+    (setf planner-working-memory '())))
+
+(defmethod action-terminal-p ((object planner-character) action)
+  (with-accessors ((original-current-plan original-current-plan)) object
+    (let ((pos (position action original-current-plan :test #'eq)))
+      (and pos
+           (>= (length original-current-plan)
+               2)
+           (eq (last-elt original-current-plan)
+               ai-utils:+plan-stopper+)
+           (= pos
+              (- (length original-current-plan) 2))))))
+
+(defparameter *standard-capital-characteristic* 200)
+
+(defclass player-character (np-character planner-character)
+  ((model-origin-dir
+    :initform ""
+    :initarg  :model-origin-dir
+    :accessor model-origin-dir)
+   (current-path
+    :initform nil
+    :initarg  :current-path
+    :accessor current-path)
    (gender
     :initarg :gender
     :initform :male
@@ -521,21 +690,6 @@
 (defgeneric calculate-influence-weapon (object weapon-type))
 
 (defgeneric combined-power (object))
-
-(defgeneric elaborate-current-tactical-plan (object strategy-expert player-entity
-                                             strategy-decision))
-
-(defgeneric has-interrupt-plan-p (object))
-
-(defgeneric set-interrupt-plan (object))
-
-(defgeneric unset-interrupt-plan (object))
-
-(defgeneric disgregard-tactical-plan (object))
-
-(defgeneric pop-action-plan (object))
-
-(defgeneric erase-working-memory (object))
 
 (defmacro gen-player-class-test (name)
   (let ((name-fn (format-symbol t "~:@(pclass-~a-p~)" name)))
@@ -950,71 +1104,6 @@
                                        actual-dodge-chance))))
         (d* status-contribute raw-power)))))
 
-(defmacro with-no-thinking ((character) &body body)
-  (with-gensyms (saved)
-    `(if ,character
-         (let ((,saved (thinkerp ,character)))
-           (setf (thinker ,character) nil)
-           ,@body
-           (setf (thinker ,character) ,saved))
-         (progn ,@body))))
-
-#+inhibit-planner
-(defmethod elaborate-current-tactical-plan ((object player-character) strategy-expert
-                                            player-entity strategy-decision)
-  (declare (ignore strategy-expert player-entity strategy-decision))
-  (setf (current-plan object) (list ai-utils:+idle-action+))
-  (current-plan object))
-
-#-inhibit-planner
-(defmethod elaborate-current-tactical-plan ((object player-character) strategy-expert
-                                            player-entity
-                                            (strategy-decision (eql nil)))
-  (declare (ignore strategy-decision))
-  (with-accessors ((current-plan current-plan)) object
-    (if current-plan
-        current-plan
-        (elaborate-current-tactical-plan object
-                                         strategy-expert
-                                         player-entity
-                                         (blackboard:strategy-decision strategy-expert)))))
-
-#-inhibit-planner
-(defmethod elaborate-current-tactical-plan ((object player-character) strategy-expert
-                                            player-entity
-                                            strategy-decision)
-    (with-accessors ((current-plan current-plan)) object
-      (let* ((planner-file (goap:find-planner-file object strategy-decision))
-             (planner      (goap:load-planner-file planner-file)))
-        (setf current-plan (goap:build-plan planner strategy-expert player-entity))
-        #+debug-ai (misc:dbg "NEW current new plan (~a) ~a" (id player-entity) current-plan)
-        (elaborate-current-tactical-plan object strategy-expert player-entity nil))))
-
-(defmethod set-interrupt-plan ((object player-character))
-  (misc:dbg "set interrupt plan")
-  (setf (current-plan object) (list ai-utils:+interrupt-action+)))
-
-(defmethod unset-interrupt-plan ((object player-character))
-  (disgregard-tactical-plan object))
-
-(defmethod has-interrupt-plan-p ((object player-character))
-  (with-accessors ((current-plan current-plan)) object
-    (and current-plan
-         (eq (elt current-plan 0) ai-utils:+interrupt-action+))))
-
-(defmethod disgregard-tactical-plan ((object player-character))
-  (with-accessors ((current-plan current-plan)) object
-    (misc:dbg "disg")
-    (setf current-plan nil)))
-
-(defmethod pop-action-plan ((object player-character))
-  (with-accessors ((current-plan current-plan)) object
-    (pop current-plan)))
-
-(defmethod erase-working-memory ((object player-character))
-  (with-accessors ((planner-working-memory planner-working-memory)) object
-    (setf planner-working-memory '())))
-
 (defmacro gen-actual-characteristic (name)
   (let ((fn       (format-fn-symbol t "actual-~a" name))
         (accessor (format-fn-symbol t "~a"        name))
@@ -1030,6 +1119,8 @@
      ,@(loop for name in names collect
             `(gen-actual-characteristic ,name))))
 
+;; "actual" means  the actual (no  pun intended) maximum value  of the
+;; characteristic
 (gen-actual-characteristics damage-points
                             movement-points
                             magic-points

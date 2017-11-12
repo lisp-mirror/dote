@@ -8,7 +8,7 @@
   :cost                  90.0
   :visual-effect-self    nil
   :range                 7   ;; in tile units
-  :effective-range       1   ;; in tile units
+  :effective-range       0   ;; in tile units
   :visual-effect-target  particles:make-heal-level-2
   :effects (define-interaction
 	     effects         (define-effects)

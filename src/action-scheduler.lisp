@@ -148,6 +148,10 @@
 
 (defparameter *equeue-merge-to-subscheduler-p* t)
 
+;; to make a sub-scheduler
+;;    (with-enqueue-action
+;;        (world action-scheduler:action-scheduler))
+
 (defmethod enqueue-action ((object action-scheduler) (new-action game-action))
   (with-accessors ((current-action current-action)
                    (scheduled-actions scheduled-actions)

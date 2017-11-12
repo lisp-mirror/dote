@@ -6,8 +6,8 @@
   :gui-texture           "cure/cure-coma.tga"
   :cost                  50.0
   :visual-effect-self    nil
-  :range                 5   ;; in tile units
-  :effective-range       1  ;; in tile units
+  :range                 5  ;; in tile units
+  :effective-range       0  ;; in tile units
   :visual-effect-target  particles:make-cure-level-0
   :effects               (define-interaction
 			   effects         (define-effects)
