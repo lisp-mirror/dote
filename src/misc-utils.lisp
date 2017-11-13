@@ -407,7 +407,14 @@ Name from Emacs Lisp."
   (declare (optimize (speed 3) (safety 1) (debug 0)))
   (apply #'concatenate (concatenate 'list (list 'list) l)))
 
-(defun fresh-list-insert-at (a v pos)
+(defun fresh-list-insert@ (a v pos)
+  (declare (optimize (speed 3) (safety 1) (debug 0)))
+  (declare (list a))
+  (lcat (subseq a 0 pos)
+        (list v)
+        (subseq a pos)))
+
+(defun fresh-list-subst@ (a v pos)
   (declare (optimize (speed 3) (safety 1) (debug 0)))
   (declare (list a))
   (lcat (subseq a 0 pos)

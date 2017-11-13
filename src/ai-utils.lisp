@@ -203,7 +203,7 @@
             (d2 (map-utils:map-manhattam-distance entity-pivot b)))
         (funcall comp-fn d1 d2))))
 
-(defun find-nearest-wall (entity)
+(defun find-nearest-visible-wall (entity)
   (flet ((invisible-wall-p-fn (a)
            (absee-mesh:other-visible-p entity
                                        a
@@ -486,7 +486,7 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
   (with-slots-for-reasoning (entity state ghost blackboard)
     (with-world (world state)
       (when-let ((available-spells (find-wall-breaking-spells entity))
-                 (nearest-wall     (find-nearest-wall     entity)))
+                 (nearest-wall     (find-nearest-visible-wall entity)))
         (let* ((spells (shellsort available-spells (spell:sort-spells-by-level-fn nil)))
                (spell  (first-elt spells)))
           (when spell
@@ -494,7 +494,7 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
             (battle-utils:attack-launch-spell world
                                               entity
                                               nearest-wall
-                                              :assume-visible t)))))))
+                                              :assume-visible nil)))))))
 
 (defun go-launch-attack-spell (entity)
   (with-slots-for-reasoning (entity state ghost blackboard)
@@ -507,7 +507,7 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
           (battle-utils:attack-launch-spell world
                                             entity
                                             target-entity
-                                          :assume-visible t))))))
+                                            :assume-visible nil))))))
 
 (defstruct hiding-place
   (pos)

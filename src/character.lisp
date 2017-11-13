@@ -22,8 +22,8 @@
 
 (define-constant +all-strategies+ (list +explore-strategy+
                                         +attack-strategy+
-                                        ;;+defend-strategy+
-                                        +retreat-strategy+ )
+                                        +defend-strategy+
+                                        +retreat-strategy+)
   :test #'equalp)
 
 (defclass np-character (identificable interactive-entity entity-w-portrait m-tree)

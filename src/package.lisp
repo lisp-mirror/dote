@@ -227,7 +227,8 @@
    :make-fresh-list
    :seq->list
    :lcat
-   :fresh-list-insert-at
+   :fresh-list-insert@
+   :fresh-list-subst@
    :make-array-frame
    :make-fresh-array
    :sequence->list
@@ -428,7 +429,9 @@
    :pass-d6))
 
 (defpackage :filesystem-utils
-  (:use :cl)
+  (:use
+   :cl
+   :alexandria)
   (:nicknames :fs)
   (:export
    :+preprocess-include+
@@ -2932,7 +2935,7 @@
    :attackable-opponents-attack-spell
    :combined-power-compare-clsr
    :sort-by-manhattam-dist-clsr
-   :find-nearest-wall
+   :find-nearest-visible-wall
    :protect-place
    :protect-place-pos
    :protect-place-points

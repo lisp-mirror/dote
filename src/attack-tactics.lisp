@@ -90,9 +90,9 @@
                     (new-tactic  (make-def (def-pos old-tactic)
                                            (atk-pos attacker)
                                            (atk-mp  attacker))))
-               (fresh-list-insert-at old-tactics
-                                     new-tactic
-                                     position)))
+               (fresh-list-subst@ old-tactics
+                                  new-tactic
+                                  position)))
            (discard-and-restart (tactics position-attackers)
              (%build-single-attack-tactics tactics
                                            (rest  position-attackers)
@@ -124,8 +124,8 @@
                   (if position-occupied
                       (if substituted-by-idx
                           (if (= position-occupied substituted-by-idx) ; trying to swap
-                                        ; againg with the
-                                        ; old pos, invalid
+                                                                       ; againg with the
+                                                                       ; old pos: not allowed
                               (discard-and-restart tactics position-attackers)
                               (swap-and-restart tactics candidate position-occupied))
                           (swap-and-restart tactics candidate position-occupied))

@@ -46,7 +46,7 @@
                                  (:weapon-loaded         t))
          :effects               ((:protecting  t))
          :context-preconditions (friend-needs-help-p)
-         :cost                  20)
+         :cost                  30)
   (:name :protect-attack-spell
          :preconditions         ((:protect-friend-attack t))
          :effects               ((:protecting  t))
@@ -55,7 +55,7 @@
                                  ;; "!is-status-terror-p"  is implicitly
                                  ;; managed by has-enough-sp-damage-p
                                  there-is-attackable-opponents-attack-spell-p)
-         :cost                   10)
+         :cost                   20)
   (:name :go-near-weak-friend-attack
          :preconditions         ()
          :context-preconditions (can-minimally-move-p
@@ -78,7 +78,7 @@
                                  ;; "!is-status-terror-p"  is implicitly
                                  ;; managed by has-enough-sp-heal-p
           :effects                ((:protect-friend t))
-          :cost                  20)
+          :cost                  2)
 
   (:name :launch-heal-spell
          :preconditions         ()
@@ -88,7 +88,7 @@
                                  ;; "!is-status-terror-p"  is implicitly
                                  ;; managed by has-enough-sp-heal-p
          :effects               ((:curb-threat t))
-         :cost                  2)
+         :cost                  10)
   (:name :launch-attack-spell
          :preconditions         ()
          :context-preconditions (none-needs-help-p

@@ -16,9 +16,9 @@
 
 (in-package :filesystem-utils)
 
-(alexandria:define-constant +preprocess-include+ "^%include" :test #'string=)
+(define-constant +preprocess-include+ "^%include" :test #'string=)
 
-(alexandria:define-constant +file-path-regex+ "[\\p{L},\\/,\\\\,\\.]+" :test 'string=)
+(define-constant +file-path-regex+ "[\\p{L},\\/,\\\\,\\.]+" :test 'string=)
 
 (defparameter *directory-sep-regexp*
   #+windows "\\"
@@ -52,7 +52,7 @@
   (format nil "~a~a~a" parent *directory-sep* direntry))
 
 (defmacro do-directory ((var) root &body body)
-  (alexandria:with-gensyms (dir)
+  (with-gensyms (dir)
     `(let ((,dir (nix:opendir ,root)))
        (unwind-protect
             (handler-case
@@ -96,12 +96,12 @@
 (defun path-last-element (path)
   (let ((elements (cl-ppcre:split *directory-sep-regexp* path)))
     (and elements
-         (alexandria:last-elt elements))))
+         (last-elt elements))))
 
 (defun path-first-element (path)
   (let ((elements (cl-ppcre:split *directory-sep-regexp* path)))
     (and elements
-         (alexandria:first-elt elements))))
+         (first-elt elements))))
 
 (defun path-to-hidden-file-p (path)
   "unix-like only"
@@ -138,12 +138,12 @@
        path))))
 
 (defmacro define-stat-time (slot-name)
-  (alexandria:with-gensyms (stat)
-    `(defun ,(alexandria:format-symbol t "~:@(get-stat-~a~)" slot-name) (file)
+  (with-gensyms (stat)
+    `(defun ,(format-symbol t "~:@(get-stat-~a~)" slot-name) (file)
        (restart-case
            (let ((,stat (nix:stat file)))
              (if ,stat
-                 (,(alexandria:format-symbol :nix "~:@(stat-~a~)" slot-name)
+                 (,(format-symbol :nix "~:@(stat-~a~)" slot-name)
                    ,stat)))
          (use-value (value) value)))))
 
@@ -239,7 +239,7 @@
 (defun package-path ()
   (uiop:pathname-parent-directory-pathname
    (asdf:component-pathname
-    (asdf:find-component (alexandria:symbolicate (string-upcase config:+program-name+))
+    (asdf:find-component (symbolicate (string-upcase config:+program-name+))
                          nil))))
 
 (defun file-in-package (name)
@@ -247,18 +247,30 @@
 
 (defparameter *file-link-to* nil)
 
+(define-constant +rel-link+ :rel)
+
+(define-constant +abs-link+ :abs)
+
 (defmacro see-file (&body forms)
   (if (> (length forms) 1)
       (warn "see-file: too many elements in forms, must be exactly 2"))
-  (let ((path (alexandria:first-elt forms)))
+  (let ((path (first-elt forms)))
     (when (not (stringp path))
-      (warn "see-file: the path is not a string in forms"))
-    (setf *file-link-to* path)))
+      (error (format nil "see-file: the path ~a is not a string" path)))
+    (when (= (length path) 0)
+      (error (format nil "see-file: the path ~a is to short" path)))
+    (if (string= *directory-sep* (string (first-elt path)))
+        (setf *file-link-to* (cons path +abs-link+))
+        (setf *file-link-to* (cons path +rel-link+)))))
 
 (defun link-file-path (file)
   (misc:with-load-forms-in-var (*file-link-to* link-file file)
     (if link-file
-        (cat-parent-dir (parent-dir-path file) link-file)
+        (destructuring-bind (path type)
+            link-file
+          (if (eq type +rel-link+)
+              (cat-parent-dir (parent-dir-path file) path)
+              path))
         nil)))
 
 (defmacro file-is-link-if-else ((file link-file-pointed) is-link-forms is-not-link-forms)

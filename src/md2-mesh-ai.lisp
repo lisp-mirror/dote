@@ -101,8 +101,10 @@
             (blacklist-action-with-parent entity planner action-name))))))
 
 (defun blacklist-action-if-no-cost (entity strategy-decision action)
-  #+debug-ai (dbg "blacklisting ~a? ~a" entity
-       (not (get-from-working-memory entity +w-memory-action-did-costs+)))
+  #+debug-ai (dbg "blacklisting ~a, ~a? ~a"
+                  entity
+                  action
+                  (not (cost-occurred-p entity)))
   (when (not (cost-occurred-p entity))
     #+debug-ai (misc:dbg "blacklisting ~s" action)
     (blacklist entity strategy-decision action)))
@@ -124,8 +126,9 @@
   (with-gensyms (ghost)
     `(with-accessors ((,ghost ghost)) ,entity
        (progn ,@body)
-       ;; (misc:dbg "saved ~a ~a, ~a ~a" ,saved-mp (current-movement-points ,ghost)
-       ;;           ,saved-sp (current-magic-points   ,ghost))
+       #+debug-ai (misc:dbg "cost? saved ~a ~a, ~a ~a"
+                            ,saved-mp (current-movement-points ,ghost)
+                            ,saved-sp (current-magic-points   ,ghost))
        (when (or (> ,saved-mp (current-movement-points ,ghost))
                  (> ,saved-sp (current-magic-points    ,ghost)))
          (set-cost-occurred ,entity)))))
@@ -144,18 +147,22 @@
   #+debug-ai (misc:dbg "clear planner cache and blacklist")
   (clear-blacklist ghost))
 
-(defmacro with-maybe-blacklist ((entity strategy-decision action) &body body)
+(defmacro with-maybe-blacklist ((entity strategy-decision action
+                                        &key (ignore-points-difference nil))
+                                &body body)
   (with-gensyms (saved-mp saved-sp ghost state world)
     `(with-accessors ((,state state)
                       (,ghost ghost)) ,entity
        (game-state:with-world (,world ,state)
          (let ((,saved-mp (current-movement-points ,ghost))
                (,saved-sp (current-magic-points    ,ghost)))
+           (declare (ignorable ,saved-mp ,saved-sp))
            ;; (clear-blacklist-if-cost-occurred ,entity)
            ,@body
-           (action-scheduler:with-enqueue-action-and-send-remove-after
-               (,world action-scheduler:tactical-plane-action)
-             (with-maybe-set-cost-occurred (,entity ,saved-mp ,saved-sp)))
+           ,(when (not ignore-points-difference)
+              `(action-scheduler:with-enqueue-action-and-send-remove-after
+                   (,world action-scheduler:tactical-plane-action)
+                 (with-maybe-set-cost-occurred (,entity ,saved-mp ,saved-sp))))
            (when (action-terminal-p ,ghost ,action)
              #+debug-ai
              (misc:dbg "~a is terminal in ~a!" ,action (original-current-plan (ghost ,entity)))
@@ -206,9 +213,9 @@
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+rotate-action+)))
-  (with-maybe-blacklist (object strategy action)
+  (with-maybe-blacklist (object strategy action :ignore-points-difference t)
     (with-accessors ((state state)) object
-      (%rotate-until-someone-visible state object t))))
+      (%rotate-until-someone-visible state object :decrement-movement-points t))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
@@ -386,7 +393,7 @@
   (with-maybe-blacklist (object strategy action)
     (with-slots-for-reasoning (object state ghost blackboard)
       (game-state:with-world (world state)
-        (%rotate-until-someone-visible state object t)
+        (%rotate-until-someone-visible state object :decrement-movement-points t)
         (action-scheduler:with-enqueue-action-and-send-remove-after
             (world action-scheduler:tactical-plane-action)
           (let* ((defender-id (ai-utils:attackable-opponents-id blackboard object)))
@@ -410,7 +417,7 @@
     (with-accessors ((state state)
                      (ghost ghost)) object
       (game-state:with-world (world state)
-        (%rotate-until-someone-visible state object t)
+        (%rotate-until-someone-visible state object :decrement-movement-points t)
         (action-scheduler:with-enqueue-action-and-send-remove-after
             (world action-scheduler:tactical-plane-action)
           (when (ai-utils:reward-possible-p state)
@@ -419,34 +426,49 @@
 ;;;; attack
 
 (defmacro %gen-rotate-until-visible (name state entity target-entity
-                                     decrement-movement-point
+                                     decrement-movement-points
                                      set-cost-occurred-p
                                      max
                                      count)
   (with-gensyms (world blackboard event)
     `(game-state:with-world (,world ,state)
+       (assert (<= ,count ,max))
        (with-accessors ((,blackboard blackboard:blackboard)) ,state
-         (if (and (> ,max 0)
-                  (not ,(if target-entity
-                            `(absee-mesh:other-visible-p ,entity ,target-entity)
-                            `(absee-mesh:other-faction-visible-players ,entity))))
-             (let ((,event (make-instance 'game-event:rotate-entity-ccw-event
-                                          :id-destination            (id ,entity)
-                                          :decrement-movement-points ,decrement-movement-point)))
-               (action-scheduler:with-enqueue-action-and-send-remove-after
-                   (,world action-scheduler:tactical-plane-action)
-                 (game-event:propagate-rotate-entity-ccw-event ,event)
-                 (blackboard:update-all-attacking-pos ,blackboard)
-                 (,name ,state ,entity ,target-entity ,decrement-movement-point
-                        (1- ,max) (1+ ,count))))
-             (progn
-               (when (and (> count 0)
-                          ,set-cost-occurred-p)
+         (cond
+           ((= ,count ,max)
+            count)
+           (,(if target-entity
+                 `(absee-mesh:other-visible-p ,entity ,target-entity)
+                 `(absee-mesh:other-faction-visible-players ,entity))
+            (misc:dbg "rotation end with see in ~a times" count)
+             (when (and (> count 0)
+                        ,set-cost-occurred-p)
+               (misc:dbg "setting cost!")
                  (set-cost-occurred ,entity))
-               ,count))))))
+               ,count)
+           (t
+            (let ((,event (make-instance 'game-event:rotate-entity-ccw-event
+                                         :id-destination            (id ,entity)
+                                         :decrement-movement-points ,decrement-movement-points)))
+              (action-scheduler:with-enqueue-action-and-send-remove-after
+                  (,world action-scheduler:tactical-plane-action)
+                (game-event:propagate-rotate-entity-ccw-event ,event)
+                (blackboard:update-all-attacking-pos ,blackboard)
+                ,(let ((function-recursive-call (list name state entity
+                                                      :decrement-movement-points
+                                                      decrement-movement-points
+                                                      :set-cost-occurred-p
+                                                      set-cost-occurred-p
+                                                      :max
+                                                      max
+                                                      :count
+                                                      `(1+ ,count))))
+                   (if target-entity
+                       (fresh-list-insert@ function-recursive-call target-entity 3)
+                       function-recursive-call))))))))))
 
-(defun %rotate-until-someone-visible (state entity &optional
-                                                     (decrement-movement-point nil)
+(defun %rotate-until-someone-visible (state entity &key
+                                                     (decrement-movement-points nil)
                                                      (set-cost-occurred-p t)
                                                      (max 4)
                                                      (count 0))
@@ -457,23 +479,23 @@ Note:  all attackable position will be updated as well"
                              state
                              entity
                              nil
-                             decrement-movement-point
+                             decrement-movement-points
                              set-cost-occurred-p
                              max
                              count))
 
-(defun %rotate-until-visible (state entity target-entity &optional
-                                                           (decrement-movement-point nil)
+(defun %rotate-until-visible (state entity target-entity &key
+                                                           (decrement-movement-points nil)
                                                            (max 4)
                                                            (set-cost-occurred-p t)
                                                            (count 0))
   "rotate entity  until target-entity  is visible or  give up  after 4
 attempts Note: all attackable position will be updated as well"
-  (%gen-rotate-until-visible %rotate-until-someone-visible
+  (%gen-rotate-until-visible %rotate-until-visible
                              state
                              entity
                              target-entity
-                             decrement-movement-point
+                             decrement-movement-points
                              set-cost-occurred-p
                              max
                              count))

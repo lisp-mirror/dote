@@ -759,7 +759,7 @@ reach and attack the enemy with optimal path?"
 
 (defun has-wall-near-p (strategy-expert entity)
   (declare (ignore strategy-expert))
-  (let ((wall (find-nearest-wall entity)))
+  (let ((wall (find-nearest-visible-wall entity)))
     wall))
 
 (defun has-trap-p (strategy-expert entity)
