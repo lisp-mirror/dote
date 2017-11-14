@@ -242,8 +242,8 @@
               (range-valid-p (range-spell-valid-p attacker defender spell))
               (visiblep      (or assume-visible
                                  (able-to-see-mesh:other-visible-p attacker defender))))
-    ;; the first and the second of the following checks are useless as
-    ;; we  are  using when-let*,  but  harmless  and, moreover,  helps
+    ;; the second and third of the  following checks are useless as we
+    ;; are  using   when-let*,  but   harmless  and,   moreover,  help
     ;; readability.
     (character:with-no-terror-status (attacker)
       (and (not (entity:entity-dead-p defender))

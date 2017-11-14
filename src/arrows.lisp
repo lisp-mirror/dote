@@ -264,6 +264,7 @@
                       (funcall attack-event-fn launcher-entity intersected-entity)
                       (particles::set-respawn (elt (mtree:children object) 0) nil)
                       (setf (renderp (elt (mtree:children object) 0)) nil)
+                      (remove-entity-by-id world (id object))
                       (setf (hitted object) t)
                       (setf (camera:followed-entity camera) nil)
                       (setf (camera:mode camera) :fp))

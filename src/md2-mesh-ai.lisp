@@ -297,6 +297,9 @@
   (with-maybe-blacklist (object strategy action)
     (with-accessors ((state state)) object
       (game-state:with-world (world state)
+        (let ((nearest-wall (ai-utils:find-nearest-visible-wall object)))
+          (assert nearest-wall)
+          (%rotate-until-visible state object nearest-wall))
         (action-scheduler:with-enqueue-action-and-send-remove-after
             (world action-scheduler:tactical-plane-action)
           (ai-utils:go-launch-wall-breaking-spell object))))))
