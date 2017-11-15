@@ -6,7 +6,7 @@
   :element               :fire
   :gui-texture           "heal/heal-2.tga"
   :cost                  10.0
-  :visual-effect-self    nil
+  :visual-effect-self    none
   :range                 10  ;; in tile units
   :effective-range        2  ;; in tile units
   :visual-effect-target  particles:make-heal-level-1

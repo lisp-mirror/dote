@@ -6,7 +6,7 @@
   :element               :fire
   :gui-texture           "attack/firecircle.tga"
   :cost                  2.0
-  :visual-effect-self    nil
+  :visual-effect-self    none
   :range                 20 ;; in tile units
   :effective-range       2  ;; in tile units
   :visual-effect-target  particles:make-aerial-explosion-level-0

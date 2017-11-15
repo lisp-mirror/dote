@@ -2067,7 +2067,7 @@
       (when bound-player
         (setf selected-action +action-attack-long-range-imprecise+)))))
 
-(defun toolbar-conversation-cb (w e)
+(defun toolbar-activation-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
     (with-accessors ((bound-player bound-player)
@@ -2225,15 +2225,15 @@
                                   :small t)
     :initarg  :b-attack-long-imprecise
     :accessor b-attack-long-imprecise)
-   (b-conversation
+   (b-activation
     :initform (make-square-button (d+ (d* 3.0 *square-button-size*)
                                       (d* 3.0 *small-square-button-size*))
                                   *small-square-button-size*
-                                  +conversation-overlay-texture-name+
-                                  #'toolbar-conversation-cb
+                                  +activation-overlay-texture-name+
+                                  #'toolbar-activation-cb
                                   :small t)
-    :initarg  :b-conversation
-    :accessor b-conversation)
+    :initarg  :b-activation
+    :accessor b-activation)
    (b-move
     :initform (make-square-button (d+ (d* 3.0 *square-button-size*)
                                       (d* 4.0 *small-square-button-size*))
@@ -2469,7 +2469,7 @@
   (add-child object (b-attack-short          object))
   (add-child object (b-attack-long           object))
   (add-child object (b-attack-long-imprecise object))
-  (add-child object (b-conversation          object))
+  (add-child object (b-activation            object))
   (add-child object (b-move                  object))
   (add-child object (text-communication      object))
   ;; second row

@@ -282,6 +282,10 @@
             (set-healing-effect (list +healing-effects+ i) level interaction)))))
   interaction)
 
+(defun none (a b)
+  (declare (ignore a b))
+  nil)
+
 (defun %get-param (params a &optional (default nil))
   (getf params a default))
 
@@ -301,25 +305,20 @@
                                                                                   params
                                                                                   :gui-texture))
                                     :cost                 ,(%get-param params :cost)
-                                    :visual-effect-self   ,(and (%get-param
-                                                                 params
-                                                                 :visual-effect-self)
-                                                                `(function (%get-param
-                                                                            params
-                                                                            :visual-effect-self)))
+                                    :visual-effect-self   ,(%get-fn-param params
+                                                                          :visual-effect-self)
+
                                     :range                ,(%get-param params :range 0.0)
                                     :effective-range      ,(%get-param params
                                                                        :effective-range
                                                                        +terrain-chunk-tile-size+)
-                                    :effective-aabb-size  ,(%get-param params
-                                                                       :effective-aabb-size
-                                                                        #'%default-effective-aabb-size)
-                                    :visual-effect-target ,(and (%get-param
-                                                                 params
-                                                                 :visual-effect-target)
-                                                                `(function ,(%get-param
-                                                                             params
-                                                                             :visual-effect-target)))
+                                    :effective-aabb-size
+                                    ,(%get-param params
+                                                 :effective-aabb-size
+                                                 #'%default-effective-aabb-size)
+                                    :visual-effect-target ,(%get-fn-param params
+                                                                          :visual-effect-target)
+
                                     :damage-inflicted     ,(%get-param
                                                             params
                                                             :damage-inflicted 0.0)
@@ -333,6 +332,10 @@
                                       ,(%get-param params :level)))
          (add-spell ,spell)))))
 
+(defun %get-fn-param (params a &optional (default nil))
+  (let ((raw (%get-param params a default)))
+    `(function ,raw)))
+
 (defmacro define-spell ((id) &body params)
   (alexandria:with-gensyms (spell)
     `(with-interaction-parameters
@@ -341,30 +344,24 @@
                                     :tags                 ',(mapcar #'alexandria:make-keyword
                                                                    (%get-param params :tags))
                                     :identifier           ,id
-                                    :custom-description   ,(%get-param params
-                                                                       :description
-                                                                       (_ "No description available"))
+                                    :custom-description
+                                    ,(%get-param params
+                                                 :description
+                                                 (_ "No description available"))
                                     :target               +target-other+
                                     :gui-texture          ,(make-gui-texture (%get-param
                                                                               params
                                                                               :gui-texture))
                                     :cost                 ,(%get-param params :cost)
-                                    :visual-effect-self   ,(and (%get-param params
-                                                                            :visual-effect-self)
-                                                                `(function (%get-param
-                                                                            params
-                                                                            :visual-effect-self)))
+                                    :visual-effect-self   ,(%get-fn-param params
+                                                                          :visual-effect-self)
                                     :range                ,(%get-param params :range 0.0)
                                     :effective-range      ,(%get-param
                                                             params
                                                             :effective-range
                                                             +terrain-chunk-tile-size+)
-                                    :visual-effect-target ,(and (%get-param
-                                                                 params
-                                                                 :visual-effect-target)
-                                                                `(function ,(%get-param
-                                                                             params
-                                                                             :visual-effect-target))))))
+                                    :visual-effect-target ,(%get-fn-param params
+                                                                          :visual-effect-target))))
          (let ((effects ,(%get-param params :effects)))
            (if (%use-custom-effects-p effects)
                (setf (basic-interaction-params ,spell) effects)

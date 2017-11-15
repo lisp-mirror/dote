@@ -400,10 +400,10 @@
 (defun enqueue-animated-billboard (pos texture-name game-state shaders
                                    &key
                                      (duration/2                .0001)
-                                     (w                     (d* 2.0
-                                                                +terrain-chunk-tile-size+))
-                                     (h                     (d* 2.0
-                                                                +terrain-chunk-tile-size+))
+                                     (w                         (d* 2.0
+                                                                    +terrain-chunk-tile-size+))
+                                     (h                         (d* 2.0
+                                                                    +terrain-chunk-tile-size+))
                                      (loop-p                    nil)
                                      (frequency-animation       5)
                                      (texture-horizontal-offset 0.125)
@@ -417,7 +417,7 @@
       (let ((billboard (make-animated-billboard pos
                                                 shaders
                                                 texture-name
-                                                :duration/2                 duration/2
+                                                :duration/2                duration/2
                                                 :w                         w
                                                 :h                         h
                                                 :loop-p                    loop-p

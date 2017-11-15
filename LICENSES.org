@@ -399,7 +399,7 @@
   © 2015 cage released under Creative Commons Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0)
   https://creativecommons.org/licenses/by-sa/3.0/
 
-- data/gui/default/conversation-overlay.tga
+- data/gui/default/activation-overlay.tga
   data/gui/default/berserk.tga
   data/gui/default/coma.tga
   data/gui/default/poison.tga
@@ -412,15 +412,16 @@
   data/gui/default/move-overlay.tga
   based on the works
   © 2015
-  - Lorc;
-  - Delapouite;
-  - John Colburn;
-  - Felbrigg;
-  - John Redman;
   - Carl Olsen;
-  - sbed;
+  - Delapouite;
+  - Felbrigg;
+  - John Colburn;
+  - John Redman;
+  - Lorc;
   - PriorBlue;
-  - Willdabeast.
+  - Skoll;
+  - Willdabeast;
+  - sbed.
   released under released under Creative Commons Attribution 3.0 Unported (CC BY 3.0)
   https://creativecommons.org/licenses/by/3.0/
   Downloaded from: http://game-icons.net/
@@ -743,6 +744,17 @@
   derived from © Tiamalt released under
   https://creativecommons.org/licenses/by/3.0/
   according to https://opengameart.org/content/giant-wasp
+
+- data/textures/animation/bat.tga
+- data/textures/animation/vampire-bite.tga
+  derived from © thomaswp released under
+  https://creativecommons.org/licenses/by-sa/3.0/
+  according to https://opengameart.org/content/bat
+
+  original site says:
+
+  Attribution Instructions: Please attribute this art to the PlatForge
+  project, as well as the artist: Stafford McIntyre.
 
 ** Source code
 

@@ -4007,7 +4007,7 @@
    :+immune-coma-texture-name+
    :+immune-terror-texture-name+
    :+immune-poison-texture-name+
-   :+conversation-overlay-texture-name+
+   :+activation-overlay-texture-name+
    :+attack-short-range-overlay-texture-name+
    :+attack-long-range-overlay-texture-name+
    :+attack-long-range-imprecise-overlay-texture-name+
@@ -4406,6 +4406,7 @@
    :make-poison-level-2
    :make-poison-level-1
    :make-poison-level-0
+   :make-vampire-level-0
    :make-vampire-level-2
    :make-heal-level-2
    :make-heal-level-1

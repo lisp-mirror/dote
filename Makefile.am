@@ -1571,7 +1571,7 @@ data/gui/default/chest-closed-locked.tga                 \
 data/gui/default/chest-opened.tga                        \
 data/gui/default/close-overlay.tga                       \
 data/gui/default/coma.tga                                \
-data/gui/default/conversation-overlay.tga                \
+data/gui/default/activation-overlay.tga                  \
 data/gui/default/down-arrow-overlay.tga                  \
 data/gui/default/down-overlay.tga                        \
 data/gui/default/green-bar.tga                           \
@@ -1664,6 +1664,8 @@ data/textures/spells/misc/vampire-2.tga                  \
 data/textures/spells/misc/teleport-1.tga                 \
 data/textures/spells/misc/teleport-2.tga                 \
 data/textures/spells/misc/teleport-3.tga                 \
+data/textures/animation/bat.tga                          \
+data/textures/animation/vampire-bite.tga                 \
 data/textures/animation/flash-1.tga                      \
 data/textures/animation/heal-1.tga                       \
 data/textures/animation/shock-1.tga                      \

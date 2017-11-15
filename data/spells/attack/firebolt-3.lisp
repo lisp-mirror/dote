@@ -6,7 +6,7 @@
   :tags                  (:damage :remove-wall)
   :gui-texture           "attack/firearrow-lvl3.tga"
   :cost                  20.0
-  :visual-effect-self    nil
+  :visual-effect-self    none
   :range                 20 ;; in tile units
   :effective-range       2  ;; in tile units
   :effective-aabb-size   #'(lambda (spell)

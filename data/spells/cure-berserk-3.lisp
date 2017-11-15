@@ -5,7 +5,7 @@
   :element               :fire
   :gui-texture           "cure/cure-berserk-3.tga"
   :cost                  10.0
-  :visual-effect-self    nil
+  :visual-effect-self    none
   :range                 5   ;; in tile units
   :effective-range       10  ;; in tile units
   :visual-effect-target  particles:make-cure-level-2

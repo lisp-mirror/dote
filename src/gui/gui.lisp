@@ -375,7 +375,7 @@
                     (setf (s-wrap-mode  bg) :clamp-to-border)
                     (setf (t-wrap-mode  bg) :clamp-to-border)
                     (setf (border-color bg) §c00000000))
-                   (conversation-overlay.tga
+                   (activation-overlay.tga
                     +default-gui-resource+
                     (setf (s-wrap-mode  bg) :clamp-to-border)
                     (setf (t-wrap-mode  bg) :clamp-to-border)
@@ -557,7 +557,7 @@
   (setup-bg-immune-coma)
   (setup-bg-immune-terror)
   (setup-bg-immune-poison)
-  (setup-bg-conversation-overlay)
+  (setup-bg-activation-overlay)
   (setup-bg-attack-short-range-overlay)
   (setup-bg-attack-long-range-overlay)
   (setup-bg-attack-long-range-imprecise-overlay)

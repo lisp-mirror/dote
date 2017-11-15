@@ -7,7 +7,7 @@
   :description          (_ "Steals maximum 30 dmg and poison enemy (to inflict damage a melee weapon must be worn).")
   :gui-texture           "misc/vampire-3.tga"
   :cost                  30.0
-  :visual-effect-self    nil
+  :visual-effect-self    none
   :range                 20  ;; in tile units
   :effective-range        0  ;; in tile units
   :visual-effect-target  particles:make-vampire-level-2

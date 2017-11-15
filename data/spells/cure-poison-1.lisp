@@ -5,7 +5,7 @@
   :element               :fire
   :gui-texture           "cure/cure-poison-1.tga"
   :cost                  2.0
-  :visual-effect-self    nil
+  :visual-effect-self    none
   :range                 5   ;; in tile units
   :effective-range       0  ;; in tile units
   :visual-effect-target  particles:make-cure-level-0

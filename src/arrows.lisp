@@ -513,11 +513,12 @@
                    (target-effect (funcall (spell:visual-effect-target spell)
                                            (copy-vec (aabb-center (aabb defender)))
                                            shaders)))
-              (end-of-life-remove-from-action-scheduler target-effect
-                                                        action-scheduler:particle-effect-action)
-              (with-enqueue-action
-                   (world action-scheduler:particle-effect-action)
-                (world:push-entity world target-effect))
+              (when target-effect
+                (end-of-life-remove-from-action-scheduler target-effect
+                                                          action-scheduler:particle-effect-action)
+                (with-enqueue-action
+                    (world action-scheduler:particle-effect-action)
+                  (world:push-entity world target-effect)))
               (with-enqueue-action-and-send-remove-after
                   (world action-scheduler:send-spell-fx-action)
                 (funcall (send-spell-events-fn spell attacker defender)))

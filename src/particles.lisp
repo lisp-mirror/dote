@@ -2815,9 +2815,9 @@
     (setf (global-life spark) 150)
     spark))
 
-(defun %enqueue-poison-1-effect-billboard (particles-mesh pos)
+(defun %enqueue-effect-billboard (particles-mesh pos image-file texture-horizontal-offset)
   (billboard:enqueue-animated-billboard pos
-                                        (res:get-resource-file "wasp.tga" +animation-texture-dir+)
+                                        (res:get-resource-file image-file +animation-texture-dir+)
                                         (state            particles-mesh)
                                         (compiled-shaders particles-mesh)
                                         :w
@@ -2826,7 +2826,10 @@
                                         (d* +terrain-chunk-tile-size+ 6.0)
                                         :duration/2                2.5
                                         :loop-p                    t
-                                        :texture-horizontal-offset 0.02631579))
+                                        :texture-horizontal-offset texture-horizontal-offset))
+
+(defun %enqueue-poison-1-effect-billboard (particles-mesh pos)
+  (%enqueue-effect-billboard particles-mesh pos "wasp.tga" 0.02631579))
 
 (defun make-poison-level-1 (pos compiled-shaders)
   (let* ((min-y (d- (d- (elt pos 1) +zero-height+)))
@@ -2926,6 +2929,58 @@
                                         :respawn t)))
     (setf (global-life spark) 150)
     spark))
+
+(defun make-vampire-level-0 (pos compiled-shaders)
+  (flet ((particle-pos-fn ()
+           #'(lambda (cluster)
+               (let ((xy
+                      (elt (bivariate-sampling (d/ +terrain-chunk-tile-size+ 3.5)
+                                               (d/ +terrain-chunk-tile-size+ 3.5)
+                                               1)
+                           0)))
+                 (vec (elt xy 0)
+                      (d* (particle-height cluster)
+                          (lcg-next-upto (d* (particle-height cluster)
+                                             60.0)))
+                      (elt xy 1))))))
+    (let* ((min-y (d- (d- (elt pos 1) +zero-height+)))
+           (texture  (random-elt (list-of-texture-by-tag +texture-tag-poison-particle+)))
+           (size-fn  #'(lambda (c)
+                         (declare (ignore c))
+                         (max 0.0 (gaussian-probability .02 .005))))
+           (gradient (color-utils:make-gradient
+                      (color-utils:make-gradient-color 0.0 billboard:+poison-damage-color+)
+                      (color-utils:make-gradient-color 0.2 §c7000a8ff)
+                      (color-utils:make-gradient-color 1.0 §c380054ff)))
+           (spark (make-particles-cluster 'cure-spark
+                                          20
+                                          compiled-shaders
+                                          :remove-starting-delay t
+                                          :forces   (vector (attraction-force-clsr 10.0))
+                                          :texture  texture
+                                          :pos      pos
+                                          :min-y   min-y
+                                          :particle-pos-fn (particle-pos-fn)
+                                          :v0-fn    (gaussian-velocity-distribution-fn +y-axe+
+                                                                                       2.0
+                                                                                       1.0
+                                                                                       (d/ +pi/2+
+                                                                                           5.0))
+                                          :mass-fn  (gaussian-distribution-fn 0.8 .2)
+                                          :life-fn  (gaussian-distribution-fn 2.0 0.2)
+                                          :delay-fn (gaussian-distribution-fn 0.0 0.01)
+                                          :gravity    (vec 0.0 1e-5 0.0)
+                                          :scaling-fn (%limited-scaling-clsr 0.1 10.0)
+                                          :rotation-fn (%no-rotation-clrs)
+                                          :alpha-fn   (%smooth-alpha-fading-clsr 2.0)
+                                          :color-fn   (%smooth-gradient-color-clsr gradient 3.0)
+                                          :width  .2
+                                          :height .2
+                                          :particle-height-fn nil    ;; will use particle-width-fn
+                                          :particle-width-fn  size-fn
+                                          :respawn t)))
+      (setf (global-life spark) 15)
+      spark)))
 
 (defun make-vampire-level-2 (pos compiled-shaders)
   (let* ((min-y (d- (d- (elt pos 1) +zero-height+)))

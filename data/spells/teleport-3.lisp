@@ -7,7 +7,7 @@
   :description           (_ "Teleport in a random location with maximum radius of ~27 tiles.")
   :gui-texture           "misc/teleport-3.tga"
   :cost                  30.0
-  :visual-effect-self    nil
+  :visual-effect-self    none
   :range                 20  ;; in tile units
   :effective-range        0  ;; in tile units
   :visual-effect-target  particles:make-teleport-level-3
