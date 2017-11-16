@@ -108,10 +108,10 @@
 
 (define-typed-op dfloor floor desired-type)
 
-(defun dlerp (v a b)
+(defun dlerp (w a b)
   (declare (optimize (debug 0) (safety 0) (speed 3))
-           (type desired-type v))
-  (d+ a (d* v (d- b a))))
+           (type desired-type w a b))
+  (d+ a (d* w (d- b a))))
 
 (defun secure-dacos (a)
   (declare (optimize (speed 3) (debug 0) (safety 0)))

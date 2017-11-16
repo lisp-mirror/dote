@@ -16,21 +16,23 @@
 
 (in-package :battle-utils)
 
-(define-constant +recover-from-faint-dmg-fraction+ 0.25 :test #'=)
+(define-constant +recover-from-faint-dmg-fraction+       0.25 :test #'=)
 
-(define-constant +attack-min-sigma+               20.0  :test #'=)
+(define-constant +attack-min-sigma+                     20.0  :test #'=)
 
-(define-constant +attack-max-sigma+              200.0  :test #'=)
+(define-constant +attack-max-sigma+                    200.0  :test #'=)
 
-(define-constant +weapon-combination-bonus+        0.1  :test #'=)
+(define-constant +weapon-combination-bonus+              0.1  :test #'=)
 
-(define-constant +weapon-pole-range+                 2  :test #'=)
+(define-constant +weapon-pole-range+                     2    :test #'=)
 
-(define-constant +weapon-melee-range+                1  :test #'=)
+(define-constant +weapon-melee-range+                    1    :test #'=)
 
-(define-constant +weapon-bow-range+                 15  :test #'=)
+(define-constant +weapon-bow-range+                     15    :test #'=)
 
-(define-constant +weapon-crossbow-range+            25  :test #'=)
+(define-constant +weapon-crossbow-range+                25    :test #'=)
+
+(define-constant +accuracy-decrease-for-multiple-shots+  0.25 :test #'=)
 
 (defun 2d-gaussian (x y sigma h)
   (d* h (dexp (d- (d+ (d/ (dexpt x 2.0) (d* 2.0 (dexpt sigma 2.0)))
@@ -651,6 +653,29 @@
         (make-attacker-message-gui-no-weapon-error world attacker))
     (world:reset-toolbar-selected-action world)))
 
+(defun imprecision-change-by-dmg (attacker)
+  (with-accessors ((ghost entity:ghost)) attacker
+    (let* ((dmg-max (character:actual-damage-points  ghost))
+           (dmg     (character:current-damage-points ghost))
+           (ratio   (d/ dmg dmg-max)))
+      (- 1.0 (smoothstep-interpolate 0.0 .8 ratio)))))
+
+(defun imprecision-change-by-dist (attacker defender)
+  (let ((range (d (character:weapon-case (attacker)
+                    :pole     0.0
+                    :melee    0.0
+                    :bow      +weapon-bow-range+
+                    :crossbow +weapon-crossbow-range+
+                    :none     0.0))))
+    (with-accessors ((ghost entity:ghost)) attacker
+      (entity:with-player-cost-pos (attacker x-atk y-atk)
+        (entity:with-player-cost-pos (defender x-def y-def)
+          (let* ((level (d (character:level ghost)))
+                 (dist  (d (manhattam-distance (ivec2:ivec2 x-atk y-atk)
+                                               (ivec2:ivec2 x-def y-def)))))
+            (dlerp (smoothstep-interpolate 0.0 (d* level range) dist)
+                                           0.0 1.0)))))))
+
 (defun attack-long-range (world attacker defender &key (imprecision-increase 0.0))
   "This is the most high level attack routine"
   (when (able-to-see-mesh:other-visible-p attacker defender)
@@ -662,11 +687,18 @@
               (action-scheduler:with-enqueue-action
                   (world action-scheduler:attack-long-range-action)
                 (attack-long-range-animation attacker defender)
-                (arrows:launch-arrow +default-arrow-name+
-                                     world
-                                     attacker
-                                     defender
-                                     imprecision-increase)))
+                (let* ((imprecision-dmg  (imprecision-change-by-dmg attacker))
+                       (imprecision-dist (imprecision-change-by-dist attacker defender))
+                       (imprecision      (clamp (d+ imprecision-dmg
+                                                    imprecision-dist
+                                                    imprecision-increase)
+                                                0.0
+                                                1.0)))
+                  (arrows:launch-arrow +default-arrow-name+
+                                       world
+                                       attacker
+                                       defender
+                                       imprecision))))
             (make-attacker-message-gui-out-range-error world attacker))
         (make-attacker-message-gui-no-weapon-error world attacker)))
   (world:reset-toolbar-selected-action world)
@@ -678,7 +710,10 @@
        (action-scheduler:with-enqueue-action-and-send-remove-after
            (world action-scheduler:attack-long-range-imprecise-action
                   (action-scheduler:next-minimum-priority (world:actions-queue world)))
-         (attack-long-range world attacker defender :imprecision-increase 0.25))))
+         (attack-long-range world
+                            attacker
+                            defender
+                            :imprecision-increase +accuracy-decrease-for-multiple-shots+))))
 
 (defun make-gui-attacker-message (world attacker message)
   (world:post-entity-message world attacker message nil))

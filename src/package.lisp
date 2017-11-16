@@ -4852,6 +4852,7 @@
    :*upward*
    :*downward*
    :*go-to-active-player*
+   :*smooth-movements*
    :slide-forward
    :slide-back
    :slide-left

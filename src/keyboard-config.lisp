@@ -14,6 +14,8 @@
 
 (defparameter *go-to-active-player* "e")
 
+(defparameter *smooth-movements*     t)
+
 (define-constant +slide-velocity-scaling+ 3.0 :test #'=)
 
 (defun slide-camera (world displacement)

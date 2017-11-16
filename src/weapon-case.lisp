@@ -25,10 +25,11 @@
                           "weapon case keyword must be one of ~a, but ~a was found"
                           ammitted
                           i))))
-    (with-gensyms (ghost weapon-type)
-      `(let* ((,ghost (entity:ghost ,entity))
-              (,weapon-type (character:weapon-type ,ghost)))
-         (when ,weapon-type
+    (with-gensyms (ghost) ; weapon-type)
+      `(let* ((,ghost (entity:ghost ,entity)))
+         #+sbcl (declare (sb-ext:muffle-conditions sb-ext:compiler-note))
+              ;(,weapon-type (character:weapon-type ,ghost)))
+         ;(when ,weapon-type
            (cond
              ((character:weapon-type-pole-p ,ghost)
               ,(getf body (elt ammitted 0)))
@@ -40,4 +41,4 @@
                   (character:weapon-type-impact-p ,ghost))
               ,(getf body (elt ammitted 3)))
              (t ;; no weapon
-              ,(getf body (elt ammitted 4)))))))))
+              ,(getf body (elt ammitted 4))))))))
