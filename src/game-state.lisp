@@ -956,3 +956,6 @@
           (if (door@pos-p       object x y)
               (entity-id-in-pos object x y)
               nil)))))
+
+(defmethod skydome-bottom-color ((object game-state))
+  (pixmap:skydome-bottom-color (game-hour object)))

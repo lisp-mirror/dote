@@ -47,7 +47,7 @@ src/ivec2.lisp
 src/ivec4.lisp
 src/kanren-utils.lisp
 src/kd-tree.lisp
-src/keyboard-config.lisp
+src/keyboard-world-navigation.lisp
 src/labyrinth-mesh.lisp
 src/level-config.lisp
 src/load-level.lisp

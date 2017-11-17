@@ -1586,7 +1586,7 @@
                       (vec 0.0 1.0 0.0)
                       (normalize new-dir)))))
       (if (not (vec~ (pos object) end (d/ +terrain-chunk-tile-size+ 8.0)))
-          (if keyboard-config:*smooth-movements*
+          (if (gconf:smooth-movements)
               (setf (pos object)
                     (vec+ (pos object) (vec* dir +model-move-speed+)))
               (setf (pos object) end))

@@ -1,20 +1,20 @@
-(in-package :keyboard-config)
+;; dawn of the Era: a tactical game.
+;; Copyright (C) 2015  cage
 
-(defparameter *forward*             "w")
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
 
-(defparameter *back*                "s")
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
 
-(defparameter *left*                "d")
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(defparameter *right*               "a")
-
-(defparameter *upward*              "u")
-
-(defparameter *downward*            "j")
-
-(defparameter *go-to-active-player* "e")
-
-(defparameter *smooth-movements*     t)
+(in-package :keyboard-world-navigation)
 
 (define-constant +slide-velocity-scaling+ 3.0 :test #'=)
 

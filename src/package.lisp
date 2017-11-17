@@ -1559,6 +1559,29 @@
    :gen-abs-fbm3
    :with-random-perlin-gradient-offset))
 
+(defpackage :game-configuration
+  (:use :cl
+        :alexandria)
+  (:nicknames :gconf)
+  (:export
+   :config-forward
+   :config-back
+   :config-left
+   :config-right
+   :config-upward
+   :config-downward
+   :config-go-to-active-player
+   :config-smooth-movements
+   :forward
+   :back
+   :left
+   :right
+   :upward
+   :downward
+   :go-to-active-player
+   :smooth-movements
+   :*game-config*))
+
 (defpackage :pixmap
   (:use :cl
         :constants
@@ -2224,7 +2247,8 @@
    :max-ai-movement-points
    :position-inside-room-p
    :calc-ai-entities-action-order
-   :door-in-next-path-tile-p))
+   :door-in-next-path-tile-p
+   :skydome-bottom-color))
 
 (defpackage :game-event
   (:use
@@ -4833,7 +4857,7 @@
    :load-planner-file
    :invalidate-tests-cache))
 
-(defpackage :keyboard-config
+(defpackage :keyboard-world-navigation
   (:use :cl
         :alexandria
         :config
@@ -4845,14 +4869,6 @@
         :world)
   (:shadowing-import-from :sb-cga :rotate)
   (:export
-   :*forward*
-   :*back*
-   :*left*
-   :*right*
-   :*upward*
-   :*downward*
-   :*go-to-active-player*
-   :*smooth-movements*
    :slide-forward
    :slide-back
    :slide-left
@@ -4875,7 +4891,7 @@
         :transformable
         :camera
         :game-state
-        :keyboard-config
+        :keyboard-world-navigation
         :world
         :sdl2.kit
         :shaders-utils

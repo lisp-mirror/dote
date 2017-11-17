@@ -2141,13 +2141,13 @@
   (save-pixmap (skydome-mountains 512 384) (fs:file-in-package "smountains.tga"))
   t)
 
-(alexandria:define-constant +skydome-width+  3600  :test #'=)
+#-debug-mode (alexandria:define-constant +skydome-width+  3600  :test #'=)
 
-(alexandria:define-constant +skydome-height+ 1350 :test #'=)
+#-debug-mode (alexandria:define-constant +skydome-height+ 1350 :test #'=)
 
-;;(alexandria:define-constant +skydome-width+  180  :test #'=)
+#+debug-mode (alexandria:define-constant +skydome-width+  180  :test #'=)
 
-;;(alexandria:define-constant +skydome-height+ 67 :test #'=)
+#+debug-mode (alexandria:define-constant +skydome-height+ 67 :test #'=)
 
 (defun hour->act-hour (h)
   (d- (desired h) 6.0))
@@ -2294,7 +2294,9 @@
 (defun skydome-daytime-p (hour)
   (<= 6 hour 20))
 
-(defun skydome-bottom-color (hour)
+(defgeneric skydome-bottom-color (object))
+
+(defmethod  skydome-bottom-color (hour)
   (if (skydome-daytime-p hour)
       (vec4 (elt +outside-map-day-color+ 0)
             (elt +outside-map-day-color+ 1)

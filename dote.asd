@@ -73,6 +73,7 @@
                (:file "interpolation")
                (:file "buffered-input-file")
                (:file "parser")
+               (:file "game-configuration")
                (:file "noise")
                (:file "pixmap")
                (:file "with-rgb-texture")
@@ -153,7 +154,7 @@
                (:file "blackboard")
                (:file "attack-tactics")
                (:file "goap")
-               (:file "keyboard-config")
+               (:file "keyboard-world-navigation")
                (:file "main-window")
                (:module tests
                         :components ((:file "package")
