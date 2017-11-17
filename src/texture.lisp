@@ -102,7 +102,7 @@
 
 (alexandria:define-constant +texture-tag-ext-decal+            "ext-decal"          :test #'string=)
 
-(alexandria:define-constant +texture-tag-soil-decal+           "soil-decal"         :test #'string=)
+(alexandria:define-constant +texture-tag-muddy-soil-decal+     "muddy-soil-decal"   :test #'string=)
 
 (alexandria:define-constant +texture-tag-road-decal+           "road-decal"         :test #'string=)
 

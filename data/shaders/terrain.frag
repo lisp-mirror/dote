@@ -21,9 +21,9 @@ const int thrs_grass = 1;
 const int thrs_empty = 2;
 const int thrs_snow  = 3;
 
-const int idx_decal_road     = 0;
-const int idx_decal_building = 1;
-const int idx_decal_soil     = 2;
+const int idx_decal_road       = 0;
+const int idx_decal_building   = 1;
+const int idx_decal_muddy_soil = 2;
 
 uniform vec4 height_texture_thrs = vec4(0.02, 0.03, 0.2, 0.65);
 
@@ -41,31 +41,33 @@ uniform sampler2D texture_terrain_level_3;
 uniform sampler2D texture_terrain_rock_level_1;
 // stratigraphic rock
 uniform sampler2D texture_terrain_rock_level_2;
-// dry soil
-uniform sampler2D texture_soil_decal;
+// muddy soil
+uniform sampler2D texture_muddy_soil_decal;
 // roads
 uniform sampler2D texture_roads_decal;
 // buildings
 uniform sampler2D texture_building_decal;
 
-// channel 0 street channel 1 building channel 2 soil
+// channel 0 road, channel 1 building, channel 2 muddy muddy_soil, channel 3 border
 uniform sampler2D decals_weights;
 
-uniform vec3  ia=vec3(.2,.2,.2);
-uniform vec3  id=vec3(1.0,1.0,1.0);
-uniform vec3  is=vec3(1.0,1.0,1.0);
+uniform vec3  ia = vec3(.2,.2,.2);
+uniform vec3  id = vec3(1.0,1.0,1.0);
+uniform vec3  is = vec3(1.0,1.0,1.0);
 
-uniform float  ka   =  1.0;
-uniform float  kd   =  1.0;
-uniform float  ks   =  1.0;
+uniform float  ka = 1.0;
+uniform float  kd = 1.0;
+uniform float  ks = 1.0;
 
 uniform float shine = 12.0;
 
-uniform float scale_building_text_coord = 10.0;
+uniform float scale_building_text_coord   = 10.0;
 
-uniform float scale_road_text_coord     = 10.0;
+uniform float scale_road_text_coord       = 10.0;
 
-uniform float scale_soil_text_coord     = 2.0;
+uniform float scale_muddy_soil_text_coord = 2.0;
+
+uniform vec4  color_border = vec4(0.0, 0.0, 0.0, 1.0);
 
 out vec4 color;
 
@@ -107,10 +109,10 @@ vec4 terrain_color_by_height() {
 
 
 vec4 rock_color_by_height() {
-  vec4 col_soil  = texture2D(texture_terrain_rock_level_1, frag_text_coord);
+  vec4 col_muddy_soil  = texture2D(texture_terrain_rock_level_1, frag_text_coord);
   vec4 col_rock  = texture2D(texture_terrain_rock_level_2, frag_text_coord);
-  //col_rock       = mix(col_soil, col_rock, smoothstep(0.0, 1.0, 2.0*facing_z*facing_z));
-  col_rock       = mix(col_soil, col_rock, smoothstep(0.0, 1.0, 10.0*height*height));
+  //col_rock       = mix(col_muddy_soil, col_rock, smoothstep(0.0, 1.0, 2.0*facing_z*facing_z));
+  col_rock       = mix(col_muddy_soil, col_rock, smoothstep(0.0, 1.0, 10.0*height*height));
   return col_rock;
 }
 
@@ -122,6 +124,15 @@ vec4 sample_decal_weigths (){
   return texture2D(decals_weights, frag_text_coord_decals);
 }
 
+vec4 h_border (in vec4 c1, in vec4 c2, float w) {
+  return mix(c1, c2, smoothstep(0.999, 1.0, w));
+}
+
+vec4 v_border (in vec4 c1, in vec4 c2, float w) {
+  return mix(c1, c2, smoothstep(0.0, 0.001, w));
+}
+
+
 vec4 terrain_color (){
   vec4 terrain     = terrain_color_by_height();
   vec4 rocks       = rock_color_by_height();
@@ -129,9 +140,9 @@ vec4 terrain_color (){
 
   vec4 weights = sample_decal_weigths();
 
-  vec4 color_soil = texture2D(texture_soil_decal,
-			      frag_text_coord * scale_soil_text_coord);
-  raw_terrain = mix(raw_terrain, color_soil, weights[idx_decal_soil]);
+  vec4 color_muddy_soil = texture2D(texture_muddy_soil_decal,
+			      frag_text_coord * scale_muddy_soil_text_coord);
+  raw_terrain = mix(raw_terrain, color_muddy_soil, weights[idx_decal_muddy_soil]);
 
   vec4 color_building = texture2D(texture_building_decal,
 				  frag_text_coord  * scale_building_text_coord);
@@ -141,12 +152,17 @@ vec4 terrain_color (){
 			       frag_text_coord * scale_road_text_coord);
   raw_terrain = mix(raw_terrain, color_roads, weights[idx_decal_road]);
 
+  raw_terrain = h_border(raw_terrain, color_border, frag_text_coord_decals.s);
+
+  raw_terrain = v_border(color_border, raw_terrain, frag_text_coord_decals.s);
+
+  raw_terrain = h_border(raw_terrain, color_border, frag_text_coord_decals.t);
+
+  raw_terrain = v_border(color_border, raw_terrain, frag_text_coord_decals.t);
 
   //raw_terrain = weights;
   return raw_terrain;
-
 }
-
 
 void main () {
   vec3 N = normalize(N);

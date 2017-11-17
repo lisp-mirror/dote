@@ -85,7 +85,7 @@
 
   generate dry-soil              from function pixmap:dry-soil
   with parameters (512)
-  with tags ("soil-decal")
+  with tags ("muddy-soil-decal")
   with normalmap-parameters      (ka 0.0 kd 1.0 ks 0.0 roughness 0.1 shininess 128.0) and
   with postprocess pixmap:tileize
 

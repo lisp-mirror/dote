@@ -86,10 +86,10 @@
     :initform (initform-terrain texture:+texture-tag-soil-terrain-level-2+)
     :initarg  :texture-soil-level-2
     :accessor  texture-soil-level-2)
-   (texture-soil-decal
-    :initform (initform-terrain texture:+texture-tag-soil-decal+)
-    :initarg  :texture-soil-decal
-    :accessor texture-soil-decal)
+   (texture-muddy-soil-decal
+    :initform (initform-terrain texture:+texture-tag-muddy-soil-decal+)
+    :initarg  :texture-muddy-soil-decal
+    :accessor texture-muddy-soil-decal)
    (texture-road-decal
     :initform (initform-terrain texture:+texture-tag-road-decal+)
     :initarg  :texture-road-decal
@@ -98,6 +98,10 @@
     :initform (initform-terrain texture:+texture-tag-building-decal+)
     :initarg  :texture-building-decal
     :accessor texture-building-decal)
+   (map-border-color
+    :initform (vec4 1.0 0.0 1.0 1.0)
+    :initarg  :map-border-color
+    :accessor map-border-color)
    (decal-weights
     :initform nil
     :reader decal-weights)))
@@ -106,7 +110,7 @@
   (typep a 'terrain-chunk:terrain-chunk))
 
 (defmethod marshal:class-persistant-slots ((object terrain-chunk))
-  (append '()
+  (append '(map-border-color)
           (call-next-method)))
 
 (defmethod find-index-by-value ((object terrain-chunk) value &key (what :vertex) (from-end t))
@@ -206,36 +210,38 @@
     object))
 
 (defmethod clone-into :after ((from terrain-chunk) (to terrain-chunk))
-  (setf (heightmap              to)     (matrix:clone (heightmap  from))
-        (text-coord-weights     to)     (copy-array (text-coord-weights from))
-        (texture-shore          to)     (texture-shore          from)
-        (texture-grass          to)     (texture-grass          from)
-        (texture-snow           to)     (texture-snow           from)
-        (texture-soil-level-1   to)     (texture-soil-level-1   from)
-        (texture-soil-level-2   to)     (texture-soil-level-2   from)
-        (texture-soil-decal     to)     (texture-soil-decal     from)
-        (texture-road-decal     to)     (texture-road-decal     from)
-        (texture-building-decal to)     (texture-building-decal from)
+  (setf (heightmap                to)     (matrix:clone (heightmap        from))
+        (text-coord-weights       to)     (copy-array (text-coord-weights from))
+        (texture-shore            to)     (texture-shore                  from)
+        (texture-grass            to)     (texture-grass                  from)
+        (texture-snow             to)     (texture-snow                   from)
+        (texture-soil-level-1     to)     (texture-soil-level-1           from)
+        (texture-soil-level-2     to)     (texture-soil-level-2           from)
+        (texture-muddy-soil-decal to)     (texture-muddy-soil-decal       from)
+        (texture-road-decal       to)     (texture-road-decal             from)
+        (texture-building-decal   to)     (texture-building-decal         from)
+        (map-border-color         to)     (copy-vec4 (map-border-color    from))
         ;; we need to use the slot because the accessor is *not* a mere setf, see below.
-        (slot-value to 'decal-weights) (decal-weights          from))
+        (slot-value to 'decal-weights) (decal-weights                     from))
   to)
 
 (defmethod clone ((object terrain-chunk))
   (with-simple-clone (object 'terrain-chunk)))
 
 (defmethod copy-flat-into :after ((from terrain-chunk) (to terrain-chunk))
-  (setf (heightmap              to)     (heightmap              from)
-        (text-coord-weights     to)     (text-coord-weights     from)
-        (texture-shore          to)     (texture-shore          from)
-        (texture-grass          to)     (texture-grass          from)
-        (texture-snow           to)     (texture-snow           from)
-        (texture-soil-level-1   to)     (texture-soil-level-1   from)
-        (texture-soil-level-2   to)     (texture-soil-level-2   from)
-        (texture-soil-decal     to)     (texture-soil-decal     from)
-        (texture-road-decal     to)     (texture-road-decal     from)
-        (texture-building-decal to)     (texture-building-decal from)
+  (setf (heightmap                to)     (heightmap                from)
+        (text-coord-weights       to)     (text-coord-weights       from)
+        (texture-shore            to)     (texture-shore            from)
+        (texture-grass            to)     (texture-grass            from)
+        (texture-snow             to)     (texture-snow             from)
+        (texture-soil-level-1     to)     (texture-soil-level-1     from)
+        (texture-soil-level-2     to)     (texture-soil-level-2     from)
+        (texture-muddy-soil-decal to)     (texture-muddy-soil-decal from)
+        (texture-road-decal       to)     (texture-road-decal       from)
+        (texture-building-decal   to)     (texture-building-decal   from)
+        (map-border-color         to)     (map-border-color         from)
         ;; we need to use the slot because the accessor is *not* a mere setf, see below.
-        (slot-value to 'decal-weights) (decal-weights          from))
+        (slot-value to 'decal-weights) (decal-weights               from))
   to)
 
 (defmethod copy-flat ((object terrain-chunk))
@@ -276,12 +282,13 @@
   (with-accessors ((el-time el-time)
                    (vbo vbo)
                    (vao vao)
+                   (map-border-color map-border-color)
                    (texture-shore texture-shore)
                    (texture-grass texture-grass)
                    (texture-snow texture-snow)
                    (texture-soil-level-1 texture-soil-level-1)
                    (texture-soil-level-2 texture-soil-level-2)
-                   (texture-soil-decal texture-soil-decal)
+                   (texture-muddy-soil-decal texture-muddy-soil-decal)
                    (texture-road-decal texture-road-decal)
                    (texture-building-decal texture-building-decal)
                    (decal-weights decal-weights)
@@ -293,7 +300,7 @@
                    (fog-density fog-density)) object
     (declare (texture:texture texture-shore texture-grass texture-snow
                               texture-soil-level-1   texture-soil-level-2
-                              texture-soil-decal     texture-road-decal
+                              texture-muddy-soil-decal texture-road-decal
                               texture-building-decal decal-weights ))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
@@ -318,8 +325,8 @@
             (texture:bind-texture texture-soil-level-2)
             (uniformi compiled-shaders :texture-terrain-rock-level-2 4)
             (gl:active-texture :texture5)
-            (texture:bind-texture texture-soil-decal)
-            (uniformi compiled-shaders :texture-soil-decal 5)
+            (texture:bind-texture texture-muddy-soil-decal)
+            (uniformi compiled-shaders :texture-muddy-soil-decal 5)
             (gl:active-texture :texture6)
             (texture:bind-texture texture-road-decal)
             (uniformi compiled-shaders :texture-roads-decal 6)
@@ -328,9 +335,10 @@
             (uniformi compiled-shaders :texture-building-decal 7)
             (gl:active-texture :texture8)
             (texture:bind-texture decal-weights)
-            (uniformi compiled-shaders :decals-weights 8)
+            (uniformi  compiled-shaders :decals-weights 8)
             (uniformf  compiled-shaders :time  el-time)
             (uniformf  compiled-shaders :fog-density fog-density)
+            (uniformfv compiled-shaders :color-border (the vec4 map-border-color))
             (uniformfv compiled-shaders :light-pos
                        (the vec (main-light-pos-eye-space renderer)))
             (uniformfv compiled-shaders :ia        (the vec (main-light-color renderer)))
@@ -612,26 +620,32 @@
                  (second-triangle           (elt (triangles object)
                                                  (pickable-mesh:index-tr-1 lookup-tile)))
                  (second-triangle-indices   (vertex-index second-triangle))
-                 (second-triangle-vertices  (vector (find-value-by-index object
-                                                                         (elt second-triangle-indices 0)
-                                                                         :what :vertex)
-                                                    (find-value-by-index object
-                                                                         (elt second-triangle-indices 1)
-                                                                         :what :vertex)
-                                                    (find-value-by-index object
-                                                                         (elt second-triangle-indices 2)
-                                                                         :what :vertex)))
+                 (second-triangle-vertices  (vector
+                                             (find-value-by-index object
+                                                                  (elt second-triangle-indices 0)
+                                                                  :what :vertex)
+                                             (find-value-by-index object
+                                                                  (elt second-triangle-indices 1)
+                                                                  :what :vertex)
+                                             (find-value-by-index object
+                                                                  (elt second-triangle-indices 2)
+                                                                  :what :vertex)))
                  (barycenter-second-triangle (triangle-centroid (elt second-triangle-vertices 0)
                                                                 (elt second-triangle-vertices 1)
                                                                 (elt second-triangle-vertices 2))))
             (elt (vec-average barycenter-first-triangle barycenter-second-triangle) 1))
-          +zero-height+)))) ; if we are here  you are in a hole of the
-                            ; terrain or out of its boundaries
+          +zero-height+)))) ;; if we are here  you are in a hole of the
+                            ;; terrain or out of its boundaries
 
-(defun make-terrain-chunk (map shaders &key (generate-rendering-data nil))
+(defun make-terrain-chunk (map shaders
+                           &key
+                             (generate-rendering-data nil)
+                             (map-border-color        (vec4 1.0 0.0 0.0 1.0)))
+  (assert (typep map-border-color 'vec4:vec4))
   (let ((res (make-instance 'terrain-chunk:terrain-chunk
                             :heightmap        (random-terrain:matrix map)
-                            :compiled-shaders shaders)))
+                            :compiled-shaders shaders
+                            :map-border-color map-border-color)))
     (setf (decal-weights res) (random-terrain:texture-weights map))
     (setf (texture:use-mipmap (texture-road-decal res)) t)
     (setf (texture:interpolation-type (texture-road-decal res)) :linear)

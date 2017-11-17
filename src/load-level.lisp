@@ -854,8 +854,10 @@
     chunk))
 
 (defun setup-terrain (world map)
-  (let* ((whole          (terrain-chunk:make-terrain-chunk map
+  (let* ((border-color   (skydome-bottom-color (main-state world)))
+         (whole          (terrain-chunk:make-terrain-chunk map
                                                            (compiled-shaders world)
+                                                           :map-border-color        border-color
                                                            :generate-rendering-data nil))
          (quadtree-depth (quad-tree:quad-sizes->level
                           (aabb2-max-x (game-state:terrain-aabb-2d (main-state world)))

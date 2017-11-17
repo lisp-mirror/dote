@@ -1408,11 +1408,11 @@
                                                      (num:desired (matrix:height res)))
                                              (num:d/ (num:desired x)
                                                      (num:desired (matrix:width  res))))
-                             pixmap:+blue-channel+))))
-      (loop for i in (trees object) do
-           (setf (elt (matrix:matrix-elt res (elt i 1) (elt i 0)) pixmap:+alpha-channel+)
-                 0)))
-    (setf (texture-weights object) res)
+                             pixmap:+blue-channel+)))))
+    ;;; we use alpha channel just to show the tree when in debug mode
+    (loop for i in (trees object) do
+          (setf (elt (matrix:matrix-elt res (elt i 1) (elt i 0)) pixmap:+alpha-channel+)
+                0))
     res))
 
 (defun %apply-cost-modifier (src dest channel modifier bonusp)

@@ -2013,7 +2013,7 @@
    :+texture-tag-floor-level-3+
    :+texture-tag-int-decal+
    :+texture-tag-ext-decal+
-   :+texture-tag-soil-decal+
+   :+texture-tag-muddy-soil-decal+
    :+texture-tag-road-decal+
    :+texture-tag-building-decal+
    :+texture-tag-home-terrain+
@@ -4362,6 +4362,7 @@
    :terrain-chunk
    :terrain-chunk-p
    :heightmap
+   :map-border-color
    :decal-weights
    :build-mesh-dbg
    :build-mesh

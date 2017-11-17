@@ -268,6 +268,7 @@ active program (set by sdk2.kit:use-program)."
   `((:terrain
      (:uniforms
       ;; fragment
+      :color-border
       :height-texture-thrs
       :pick-color
       :fog-density
@@ -277,7 +278,7 @@ active program (set by sdk2.kit:use-program)."
       :texture-terrain-level-3
       :texture-terrain-rock-level-1
       :texture-terrain-rock-level-2
-      :texture-soil-decal
+      :texture-muddy-soil-decal
       :texture-roads-decal
       :texture-building-decal
       :scale-building-text-coord
