@@ -1413,7 +1413,8 @@
     (loop for i in (trees object) do
           (setf (elt (matrix:matrix-elt res (elt i 1) (elt i 0)) pixmap:+alpha-channel+)
                 0))
-    res))
+    (setf (texture-weights object) res)
+    res)) ;; superfluous
 
 (defun %apply-cost-modifier (src dest channel modifier bonusp)
   (loop-matrix (dest x y)
