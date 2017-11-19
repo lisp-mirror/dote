@@ -48,7 +48,11 @@
    :+gravity+
    :+maximum-map-size+
    :+debug-map-size+
-   :+minimium-map-size+
+   :+minimum-map-size+
+   :+tiny-map-size+
+   :+small-map-size+
+   :+medium-map-size+
+   :+large-map-size+
    :+maximum-level-difficult+
    :+quad-tree-leaf-size+
    :+zero-height+
@@ -911,6 +915,7 @@
    :iaabb2-max-x
    :iaabb2-min-y
    :iaabb2-max-y
+   :make-iaabb2
    :iaabb2~
    :valid-iaabb2
    :expand-iaabb2
@@ -933,6 +938,7 @@
    :aabb2-max-x
    :aabb2-min-y
    :aabb2-max-y
+   :make-aabb2
    :aabb2~
    :valid-aabb2-p
    :expand-aabb2

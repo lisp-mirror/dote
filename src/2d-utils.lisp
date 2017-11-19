@@ -45,6 +45,12 @@
 (misc:definline iaabb2-max-y (aabb)
   (elt aabb 3))
 
+(defmacro gen-make-aabb (name vec-type)
+  `(defun ,(misc:format-fn-symbol t "~a" name) (min-x min-y max-x max-y)
+     (,vec-type min-x min-y max-x max-y)))
+
+(gen-make-aabb make-iaabb2 ivec4)
+
 (defun iaabb2~ (a b)
   (and
    (= (elt a 0) (elt b 0))
@@ -183,6 +189,8 @@
                    (let ((*sigma-rand* sigmah))
                      (funcall randomfunc (elt rect 3))))))
 ;;; float aabb
+
+(gen-make-aabb make-aabb2 vec4)
 
 (defun aabb2~ (a b)
   (and

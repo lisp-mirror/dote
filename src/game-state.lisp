@@ -624,7 +624,7 @@
 
 (defmethod map-level ((object game-state))
   (truncate (/ (+ (level-difficult object)
-                  (1+ (* 8 (num:smoothstep-interpolate (d +minimium-map-size+)
+                  (1+ (* 8 (num:smoothstep-interpolate (d +minimum-map-size+)
                                                        (d +maximum-map-size+)
                                                        (d (width (map-state object)))))))
                2)))

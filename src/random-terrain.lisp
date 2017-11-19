@@ -1036,6 +1036,7 @@
                               (door-fn    #'(lambda (x a) (declare (ignore a)) (if (< x 1) 3 4)))
                               (win-fn     #'(lambda (x a) (declare (ignore a)) (if (< x 1) 3 4)))
                               (furn-fn    #'(lambda (x a) (declare (ignore a)) (if (< x 1) 3 4))))
+  "note: the labyrinth is scaled using +terrain-chunk-tile-size+"
   (setf (labyrinths object)
         (loop for rectangles in (map 'list #'2d-utils:aabb2->rect2 (labyrinths-aabb object))
            collect

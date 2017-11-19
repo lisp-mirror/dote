@@ -739,11 +739,11 @@
   (let ((offset 0))
      (need-phrase (body (:map :with :size) 0)
        (let* ((size (keyword-to-int  '(:micro :tiny :small :medium :large)
-                                     (list (truncate +debug-map-size+)           ; 16
-                                           (truncate +minimium-map-size+)        ; 32
-                                           (truncate (* +minimium-map-size+ 2))  ; 64
-                                           (truncate (* +minimium-map-size+ 4))  ; 128
-                                           (truncate (* +minimium-map-size+ 8))) ; 256
+                                     (list (truncate +debug-map-size+)  ; 16
+                                           (truncate +tiny-map-size+)   ; 32
+                                           (truncate +small-map-size+)  ; 48
+                                           (truncate +medium-map-size+) ; 64
+                                           (truncate +large-map-size+)) ; 96
                                      (first (process-parameter-list (elt body 3)))
                                      64))
               (map (make-instance 'random-terrain:random-terrain :matrix (gen-empty-terrain size size))))

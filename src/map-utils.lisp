@@ -85,7 +85,12 @@
   (num:d+ (num:d* (num:desired a) +terrain-chunk-size-scale+) tile-offset))
 
 (defun coord-terrain->chunk (a &key (tile-offset (num:d/ +terrain-chunk-tile-size+ 2.0)))
-  "convert from terrain matrix to actual rendering coordinate"
+  "convert  from terrain  matrix to  actual rendering  coordinate.
+
+  This function supposed  to be used only to  convert coordinates from
+  element  correlated  to 'random-terrain-instances'  (labyrinths  and
+  trees,  but not  labyrinths as  they are  scaled when  random-map is
+  generated)."
   (num:d+ (num:d* (num:desired a)
                   (num:d+ +terrain-chunk-tile-size+ +terrain-chunk-size-scale+))
           tile-offset))

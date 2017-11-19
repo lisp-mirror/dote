@@ -447,6 +447,7 @@
               |    \-  |    \-  |
               |      \-|      \-|
               +--------\--------\ ...
+Note: two tiles for each matrix element see 'inc-x' and 'inc-z' below.
 "
   (with-accessors ((heightmap heightmap) (lookup-tile-triangle lookup-tile-triangle)) object
     (let* ((d-width  (desired (matrix:width heightmap)))
@@ -569,7 +570,8 @@
         (let ((mat (lookup-tile-triangle results))
               (nw-triangles '()))
           (matrix:loop-matrix (mat x y)
-            (when (matrix:matrix-elt mat y x)
+            (when (and (matrix:matrix-elt mat y x)
+                       (typep (matrix:matrix-elt mat y x) 'pickable-tile))
               (push (triangle-1 (matrix:matrix-elt mat y x)) nw-triangles)
               (push (triangle-2 (matrix:matrix-elt mat y x)) nw-triangles)))
           (setf (triangles results) nw-triangles))

@@ -34,7 +34,15 @@
 
 (define-constant +debug-map-size+                    16.0              :test #'=)
 
-(define-constant +minimium-map-size+                 32.0              :test #'=)
+(define-constant +minimum-map-size+                  32.0              :test #'=)
+
+(define-constant +tiny-map-size+       +minimum-map-size+              :test #'=)
+
+(define-constant +small-map-size+                    48.0              :test #'=)
+
+(define-constant +medium-map-size+                   64.0              :test #'=)
+
+(define-constant +large-map-size+                    96.0              :test #'=)
 
 (define-constant +maximum-level-difficult+           10.0              :test #'=)
 

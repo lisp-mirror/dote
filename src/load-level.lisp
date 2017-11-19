@@ -373,6 +373,18 @@
                                                       (d* 0.5 +terrain-chunk-tile-size+)))))
         (push-interactive-entity world shell +wall-decoration-type+ nil)))))
 
+(defun %wall-position (min-x min-y x y)
+  "note we have to take into account  the fact that whe have two tiles
+in the map for each element of the heightmap of the terrain. So we use
+'coord-terrain->chunk' for the corner of the labyrinth but not for the
+wall's    coordinates    as    they   are    already    scaled:    see
+'random-terrain:make-labyrinths'"
+  (vec (d+ (map-utils:coord-terrain->chunk min-x :tile-offset 0.0)
+           (map-utils:coord-map->chunk x))
+       +zero-height+
+       (d+ (map-utils:coord-terrain->chunk min-y :tile-offset 0.0)
+           (map-utils:coord-map->chunk y))))
+
 (defun setup-wall (world bmp min-x min-y x y labyrinth-mesh &key (chance 5))
   (let* ((dice-roll       (lcg-next-upto chance))
          (mesh            (walls-bag world))
@@ -388,12 +400,7 @@
                               (mesh:fill-shell-from-mesh mesh type)
                               (mesh:fill-shell-from-mesh-w-renderer-data mesh type))))
     (setf (compiled-shaders shell) (compiled-shaders world))
-    (setf (entity:pos shell)
-          (vec (d+ (d* +terrain-chunk-size-scale+ min-x)
-                   (map-utils:coord-map->chunk (d (+ x min-x))))
-               +zero-height+
-               (d+ (d* +terrain-chunk-size-scale+ min-y)
-                   (map-utils:coord-map->chunk (d (+ y min-y))))))
+    (setf (entity:pos shell) (%wall-position min-x min-y x y))
     (setf (entity:ghost shell)
           (random-inert-object:generate-inert-object (game-state:map-level (main-state world))))
     ;; events
@@ -428,12 +435,7 @@
          (shell           (mesh:fill-shell-from-mesh-w-renderer-data mesh
                                                                      'mesh:window-mesh-shell)))
     (setf (compiled-shaders shell) (compiled-shaders world))
-    (setf (entity:pos shell)
-          (vec (d+ (d* +terrain-chunk-size-scale+ min-x)
-                   (map-utils:coord-map->chunk (d (+ x min-x))))
-               +zero-height+
-               (d+ (d* +terrain-chunk-size-scale+ min-y)
-                   (map-utils:coord-map->chunk (d (+ y min-y))))))
+    (setf (entity:pos shell) (%wall-position min-x min-y x y))
     (setf (entity:ghost shell)
           (random-inert-object:generate-inert-object (game-state:map-level (main-state world))))
     (game-event:register-for-end-turn shell)
@@ -657,8 +659,8 @@
                                (shared-matrix        a))
                                    (labyrinths map))
        do
-         (let* ((min-x   (iaabb2-min-x aabb))
-                (min-y   (iaabb2-min-y aabb))
+         (let* ((min-x   (aabb2-min-x aabb))
+                (min-y   (aabb2-min-y aabb))
                 (labyrinth-mesh (make-instance 'mesh:labyrinth-mesh)))
            (loop-matrix (bmp x y)
               (cond
@@ -833,11 +835,17 @@
     (mesh:reset-aabb chunk)
     chunk))
 
+(defun chunk-best-aabb (whole x z)
+  (let ((hmap (heightmap whole)))
+    (vec4:vec4 x z
+               (dmin (d+ x +quad-tree-leaf-size+)
+                     (map-utils:coord-terrain->chunk (width  hmap) :tile-offset 0.0))
+               (dmin (d+ z +quad-tree-leaf-size+)
+                     (map-utils:coord-terrain->chunk (height hmap) :tile-offset 0.0)))))
+
 (defun build-and-cache-terrain-chunk (x z whole cache-key)
   (let* ((chunk (terrain-chunk:clip-with-aabb whole
-                                             (vec4:vec4 x z
-                                                        (d+ x +quad-tree-leaf-size+)
-                                                        (d+ z +quad-tree-leaf-size+))
+                                              (chunk-best-aabb whole x z)
                                              :remove-orphaned-vertices t
                                              :regenerate-rendering-data t
                                              :clip-if-inside nil))
@@ -865,23 +873,29 @@
          (channel (lparallel:make-channel))
          (cache-channels-count  0))
     (loop for aabb in (labyrinths-aabb map) do
-         (terrain-chunk:nclip-with-aabb whole
-                                        (map 'vector
-                                             #'(lambda (a)
-                                                 (map-utils:coord-terrain->chunk a
-                                                                                 :tile-offset 0.0))
-                                             aabb)
-                                        :remove-orphaned-vertices  nil
-                                        :regenerate-rendering-data nil
-                                        :clip-if-inside              t))
+         (let* ((offset (d/ +terrain-chunk-tile-size+ 2.0))
+                (act-aabb (2d-utils:make-aabb2
+                           (map-utils:coord-terrain->chunk (2d-utils:aabb2-min-x aabb)
+                                                           :tile-offset (d- offset))
+                           (map-utils:coord-terrain->chunk (2d-utils:aabb2-min-y aabb)
+                                                           :tile-offset  (d- offset))
+                           (map-utils:coord-terrain->chunk (2d-utils:aabb2-max-x aabb)
+                                                           :tile-offset offset)
+                           (map-utils:coord-terrain->chunk (2d-utils:aabb2-max-y aabb)
+                                                           :tile-offset offset))))
+           (terrain-chunk:nclip-with-aabb whole
+                                          act-aabb
+                                          :remove-orphaned-vertices  nil
+                                          :regenerate-rendering-data nil
+                                          :clip-if-inside              t)))
     (pickable-mesh:populate-lookup-triangle-matrix whole)
     (setf (quad-tree:aabb (entities world)) (entity:aabb-2d whole))
     (quad-tree:subdivide  (entities world)  quadtree-depth)
     ;; I guess this loop works  only because labyrinths can not extend
     ;; beyond the borders of the whole map...
     (loop for x from 0.0 below (aabb2-max-x (entity:aabb-2d whole)) by +quad-tree-leaf-size+ do
-         (loop for z from 0.0 below (aabb2-max-y (entity:aabb-2d whole))
-            by +quad-tree-leaf-size+ do
+         (loop
+            for z from 0.0 below (aabb2-max-y (entity:aabb-2d whole)) by +quad-tree-leaf-size+ do
               (let ((chunk-cache-key (make-terrain-chunk-cache-key world z x)))
                 (incf cache-channels-count)
                 (if (resource-cache:cache-miss* chunk-cache-key)
