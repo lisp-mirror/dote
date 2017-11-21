@@ -48,6 +48,8 @@
 
 (alexandria:define-constant +feedback-new-velocity+  :new-velocity :test #'eq)
 
+(alexandria:define-constant +feedback-out-mixed+     :mixed        :test #'eq)
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun get-shader-source (name)
     (let ((actual-file (fs:preprocess (res:get-resource-file name +shaders-resource+)
@@ -96,7 +98,7 @@
                      (gl:delete-shader shader))))
       program)))
 
-(defun compile-and-link-feedback-program (&rest shaders)
+(defun compile-and-link-feedback-particles-program (&rest shaders)
   "(compile-and-link-program :vertex-shader STRING :fragment-shader STRING ...)"
   (let (compiled-shaders)
     (loop for type in shaders by #'cddr
@@ -130,7 +132,39 @@
             (loop for shader in compiled-shaders do
                  (gl:detach-shader program shader)
                  (gl:delete-shader shader))))
+      program)))
 
+(defun compile-and-link-feedback-lerp-program (&rest shaders)
+  "(compile-and-link-program :vertex-shader STRING :fragment-shader STRING ...)"
+  (let (compiled-shaders)
+    (loop for type in shaders by #'cddr
+       for text in (cdr shaders) by #'cddr
+       do (let ((shader (gl:create-shader type)))
+            (alexandria:when-let ((log (compile-and-check-shader shader text)))
+              (format *error-output* "Compile Log for ~A:~%~A~%shader ~a" type log text))
+            (push shader compiled-shaders)))
+    (let ((program (gl:create-program)))
+      (if (= 0 program)
+          (progn
+            (loop for shader in compiled-shaders
+               do (gl:delete-shader shader))
+            (error "Error creating program"))
+          (progn
+            (loop for shader in compiled-shaders
+               do (gl:attach-shader program shader))
+            ;; set varyings output variable name
+            (cffi:with-foreign-object (string-array :pointer 1)
+              (setf (cffi:mem-aref string-array :pointer 0)
+                    (cffi:foreign-string-alloc (symbol-to-uniform +feedback-out-mixed+)))
+              (%gl:transform-feedback-varyings-ext program 1 string-array :interleaved-attribs)
+              (cffi:foreign-string-free (cffi:mem-aref string-array :pointer 0)))
+            (gl:link-program program)
+            (let ((log (gl:get-program-info-log program)))
+              (unless (string= "" log)
+                (format *error-output* "Link Log:~%~A~%" log)))
+            (loop for shader in compiled-shaders do
+                 (gl:detach-shader program shader)
+                 (gl:delete-shader shader))))
       program)))
 
 (defclass program ()
@@ -171,8 +205,14 @@
     (with-slots (id) program
       (setf id p))))
 
-(defmethod preprocess-program-entry ((type (eql :feedback-shaders)) entry program)
-  (let ((p (apply #'compile-and-link-feedback-program entry)))
+(defmethod preprocess-program-entry ((type (eql :feedback-particles-shaders)) entry program)
+  (let ((p (apply #'compile-and-link-feedback-particles-program entry)))
+    (gl:use-program p)
+    (with-slots (id) program
+      (setf id p))))
+
+(defmethod preprocess-program-entry ((type (eql :feedback-lerp-shaders)) entry program)
+  (let ((p (apply #'compile-and-link-feedback-lerp-program entry)))
     (gl:use-program p)
     (with-slots (id) program
       (setf id p))))
@@ -612,16 +652,22 @@ active program (set by sdk2.kit:use-program)."
       (:shaders :vertex-shader   ,(get-shader-source "generic-particle.vert")
                 :fragment-shader ,(get-shader-source "aerial-explosion.frag")))
     ;;;;; transform feedback
+    (:array-lerp
+     (:uniforms :w)
+     (:feedback-lerp-shaders :vertex-shader
+                             ,(get-shader-source "lerp-feedback.vert")))
     (:blood-integrator
      (:uniforms :dt
                 :noise-scale
                 :gravity
                 :min-y)
-     (:feedback-shaders :vertex-shader ,(get-shader-source "particle-blood-feedback.vert")))
+     (:feedback-particles-shaders :vertex-shader
+                                  ,(get-shader-source "particle-blood-feedback.vert")))
     (:fire-dart-integrator
      (:uniforms :dt
                 :gravity)
-     (:feedback-shaders :vertex-shader ,(get-shader-source "particle-fire-dart-feedback.vert")))))
+     (:feedback-particles-shaders :vertex-shader
+                                  ,(get-shader-source "particle-fire-dart-feedback.vert")))))
 
 (defun compile-library ()
   (let ((*error-output* (make-string-output-stream)))

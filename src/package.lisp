@@ -1858,11 +1858,16 @@
    :seq->gl-array
    :copy-gl-array
    :gl-array->list
+   :array-byte-size
+   :array-size
    :lerp-gl-array
    :render-to-memory-texture
    :with-render-to-file
    :with-render-to-pixmap
-   :pick-position))
+   :pick-position
+   :gen-populate-array-vec
+   :gen-populate-array
+   :gl-array-copy-multiply))
 
 (defpackage :shaders-utils
   (:use :cl
@@ -3495,6 +3500,17 @@
    :frustum-planes
    :calculate-aabb
    :fit-to-aabb))
+
+(defpackage :gpu-array-lerp
+  (:use :cl
+        :alexandria
+        :interfaces)
+  (:nicknames :gpu-lerp)
+  (:export
+   :compiled-shaders
+   :array-mixer
+   :prepare
+   :mix))
 
 (defpackage :mesh
   (:use :cl

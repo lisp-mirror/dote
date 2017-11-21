@@ -458,52 +458,15 @@
                 (particle-saved-position particle) pos))))
     (remove-starting-delay object)))
 
-(defmacro gen-populate-array-vec (slot-array slot-struct)
-  (let ((fn-name (format-fn-symbol t "populate-~a-array" slot-array)))
-    `(progn
-       (defgeneric ,fn-name (object))
-       (defmethod ,fn-name  ((object particles-cluster))
-         (with-accessors ((particles particles)
-                          (,slot-array ,slot-array)) object
-             (loop
-                for particle across particles
-                for i from 0 by 3             do
-                  (setf (cl-gl-utils:fast-glaref ,slot-array i)
-                        (elt (,slot-struct particle) 0))
-                  (setf (cl-gl-utils:fast-glaref ,slot-array (+ i 1))
-                        (elt (,slot-struct particle) 1))
-                  (setf (cl-gl-utils:fast-glaref ,slot-array (+ i 2))
-                        (elt (,slot-struct particle) 2))))))))
+(gen-populate-array-vec particles-cluster particles particles-positions      particle-position)
 
-(defmacro gen-populate-array (slot-array slot-struct)
-  (let ((fn-name (format-fn-symbol t "populate-~a-array" slot-array)))
-    `(progn
-       (defgeneric ,fn-name (object))
-       (defmethod ,fn-name  ((object particles-cluster))
-         (with-accessors ((particles particles)
-                          (,slot-array ,slot-array)) object
-             (loop
-                for particle across particles
-                for i from 0 by 1             do
-                  (setf (cl-gl-utils:fast-glaref ,slot-array i) (,slot-struct particle))))))))
+(gen-populate-array-vec particles-cluster particles particles-v0             particle-v0)
 
-(gen-populate-array-vec particles-positions particle-position)
+(gen-populate-array     particles-cluster particles particles-masses         particle-mass)
 
-(gen-populate-array-vec particles-v0             particle-v0)
+(gen-populate-array-vec particles-cluster particles particles-vt             particle-v0)
 
-(gen-populate-array     particles-masses         particle-mass)
-
-(gen-populate-array-vec particles-vt             particle-v0)
-
-(gen-populate-array     particles-delay-feedback particle-delay)
-
-(defun gl-array-copy-multiply (from to length source-step copy-num)
-  (loop for ct from 0 below (* source-step length) by source-step
-     for ct2 from 0 below (* length source-step copy-num) by (* source-step copy-num) do
-       (loop for ct3 from 0 below (* source-step copy-num) by 1 do
-            (setf (fast-glaref to (+ ct2 ct3))
-                  (fast-glaref from (+ ct (mod ct3 source-step))))))
-  to)
+(gen-populate-array     particles-cluster particles particles-delay-feedback particle-delay)
 
 (defgeneric populate-particles-output-positions-array (object))
 
@@ -664,7 +627,7 @@
                    (transform-vao transform-vao)
                    (transform-vbo-input transform-vbo-input)
                    (transform-vbo-output transform-vbo-output)) object
-    #+debug-mode+ (misc:dbg "destroy particle cluster ~a" (id object))
+    #+debug-mode (misc:dbg "destroy particle cluster ~a" (id object))
     (setf particles-positions        nil
           particles-v0               nil
           particles-vt               nil

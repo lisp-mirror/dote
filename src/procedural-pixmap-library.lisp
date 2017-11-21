@@ -2141,13 +2141,13 @@
   (save-pixmap (skydome-mountains 512 384) (fs:file-in-package "smountains.tga"))
   t)
 
-#-debug-mode (alexandria:define-constant +skydome-width+  3600  :test #'=)
+#-small-skydome (alexandria:define-constant +skydome-width+  3600  :test #'=)
 
-#-debug-mode (alexandria:define-constant +skydome-height+ 1350 :test #'=)
+#-small-skydome (alexandria:define-constant +skydome-height+ 1350 :test #'=)
 
-#+debug-mode (alexandria:define-constant +skydome-width+  180  :test #'=)
+#+small-skydome (alexandria:define-constant +skydome-width+  180  :test #'=)
 
-#+debug-mode (alexandria:define-constant +skydome-height+ 67 :test #'=)
+#+small-skydome (alexandria:define-constant +skydome-height+ 67 :test #'=)
 
 (defun hour->act-hour (h)
   (d- (desired h) 6.0))

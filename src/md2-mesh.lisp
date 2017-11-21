@@ -156,6 +156,10 @@
     :initarg :current-animation-time
     :accessor current-animation-time
     :type single-float)
+   (array-mixer
+    :initform  (make-instance 'gpu-lerp:array-mixer)
+    :initarg   :array-mixer
+    :accessor  array-mixer)
    (fps
     :initform 20
     :initarg :fps
@@ -173,6 +177,11 @@
     :initform :stand
     :initarg :current-action
     :accessor current-action)))
+
+(defmethod initialize-instance :after ((object md2-mesh) &key &allow-other-keys)
+  (with-accessors ((array-mixer array-mixer)) object
+    (setf (gpu-lerp:compiled-shaders array-mixer) (compiled-shaders object))
+    (gpu-lerp:prepare array-mixer)))
 
 (defmethod print-object ((object md2-mesh) stream)
   (print-unreadable-object (object stream :type t :identity t)
@@ -1616,6 +1625,7 @@
                    (renderer-data-count-vertices renderer-data-count-vertices)
                    (renderer-data-normals renderer-data-normals)
                    (renderer-data-count-normals renderer-data-count-normals)
+                   (array-mixer array-mixer)
                    (tags-table tags-table)
                    (tags-matrices tags-matrices)
                    (tag-key-parent tag-key-parent)
@@ -1700,20 +1710,34 @@
           (when (and (not cycle-animation)
                      (= next-frame-offset 0))
             (setf stop-animation t))
-          (gl-utils:lerp-gl-array (renderer-data-vertices
-                                   (svref frames starting-frame-idx))
-                                  (renderer-data-vertices
-                                   (svref frames next-frame-idx))
-                                  renderer-data-vertices
-                                  renderer-data-count-vertices
+          #+md2-gpu-lerp
+          (progn
+            (gpu-lerp:mix array-mixer
+                          interpolation-factor
+                          (renderer-data-vertices (svref frames starting-frame-idx))
+                          (renderer-data-vertices (svref frames next-frame-idx))
+                          renderer-data-vertices)
+            (gpu-lerp:mix array-mixer
+                          interpolation-factor
+                          (renderer-data-normals (svref frames starting-frame-idx))
+                          (renderer-data-normals (svref frames next-frame-idx))
+                          renderer-data-normals))
+          #-md2-gpu-lerp
+          (progn
+            (gl-utils:lerp-gl-array (renderer-data-vertices
+                                     (svref frames starting-frame-idx))
+                                    (renderer-data-vertices
+                                     (svref frames next-frame-idx))
+                                    renderer-data-vertices
+                                    renderer-data-count-vertices
                                   interpolation-factor)
-          (gl-utils:lerp-gl-array (renderer-data-normals
-                                   (svref frames starting-frame-idx))
-                                  (renderer-data-normals
-                                   (svref frames next-frame-idx))
-                                  renderer-data-normals
-                                  renderer-data-count-normals
-                                  interpolation-factor)
+            (gl-utils:lerp-gl-array (renderer-data-normals
+                                     (svref frames starting-frame-idx))
+                                    (renderer-data-normals
+                                     (svref frames next-frame-idx))
+                                    renderer-data-normals
+                                    renderer-data-count-normals
+                                    interpolation-factor))
           (when tags-table
             (loop for i in tags-matrices do
                  (let* ((orn1   (elt (the (simple-array (simple-array * (*)))
@@ -1729,6 +1753,13 @@
                    (declare ((simple-array (simple-array single-float (3)) (4)) orn1 orn2))
                    (nsetup-tag-matrix (cdr i) orn))))
           (when (render-normals object)
+            #+md2-gpu-lerp
+            (gpu-lerp:mix array-mixer
+                          interpolation-factor
+                          (renderer-data-normals-obj-space (svref frames starting-frame-idx))
+                          (renderer-data-normals-obj-space (svref frames next-frame-idx))
+                          renderer-data-normals-obj-space)
+            #-md2-gpu-lerp
             (gl-utils:lerp-gl-array (renderer-data-normals-obj-space
                                      (svref frames starting-frame-idx))
                                     (renderer-data-normals-obj-space
@@ -1830,6 +1861,7 @@
                                             :if-does-not-exists :error))))
 
 (defun load-md2-model (modeldir &key
+                                  (shaders  nil)
                                   (material (make-mesh-material .1 1.0 0.1 0.0 128.0))
                                   (mesh-file +model-filename+)
                                   (texture-file +model-texture-filename+)
@@ -1849,6 +1881,8 @@
     (load model (res:get-resource-file (text-utils:strcat modeldir mesh-file)
                                        resource-path
                                        :if-does-not-exists :error))
+    (setf (compiled-shaders model) shaders)
+    (setf (compiled-shaders (array-mixer model)) shaders)
     #+debug-mode (misc:dbg "error md2 parsing ~a" (parsing-errors model))
     (prepare-for-rendering model)
     ;;(map nil #'mesh:remove-mesh-data (frames model))
@@ -1961,13 +1995,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun load-md2-player (ghost dir compiled-shaders resource-path)
-  (let ((body (get-md2-shell      :dir            dir
-                                  :mesh-file      "body01.md2"
-                                  :animation-file "body-animation.lisp"
-                                  :texture-file   "body-texture.tga"
-                                  :tags-file      "body01.tag"
-                                  :resource-path  resource-path))
-        (head (get-md2-shell :dir            dir
+  (let ((body (get-md2-shell :shaders        compiled-shaders
+                             :dir            dir
+                             :mesh-file      "body01.md2"
+                             :animation-file "body-animation.lisp"
+                             :texture-file   "body-texture.tga"
+                             :tags-file      "body01.tag"
+                             :resource-path  resource-path))
+        (head (get-md2-shell :shaders        compiled-shaders
+                             :dir            dir
                              :mesh-file      "head01.md2"
                              :animation-file "head-animation.lisp"
                              :texture-file   "head-texture.tga"
@@ -1975,6 +2011,8 @@
                              :resource-path  resource-path)))
     (setf (interfaces:compiled-shaders body) compiled-shaders
           (interfaces:compiled-shaders head) compiled-shaders)
+    (setf (compiled-shaders (array-mixer body)) compiled-shaders)
+    (setf (compiled-shaders (array-mixer head)) compiled-shaders)
     (set-animation body :stand :recalculate t)
     (set-animation head :stand :recalculate t)
     (setf (md2:tag-key-parent head) md2:+tag-head-key+)
@@ -2233,6 +2271,7 @@
        (tree-equal resource-path (resource-path (fs-resources a)) :test #'string=))))
 
 (defun get-md2-shell (&key
+                        (shaders        nil)
                         (material       (make-mesh-material .1 1.0 0.1 0.0 128.0))
                         (dir            nil)
                         (mesh-file      "body01.md2")
@@ -2259,6 +2298,7 @@
           (prepare-for-rendering shell)
           shell)
         (let ((model (load-md2-model dir
+                                     :shaders        shaders
                                      :material       material
                                      :mesh-file      mesh-file
                                      :texture-file   texture-file

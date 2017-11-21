@@ -115,6 +115,12 @@
   (loop for i fixnum from 0 below (gl::gl-array-size seq) collect
          (fast-glaref seq i)))
 
+(defun array-byte-size (a)
+  (gl:gl-array-byte-size a))
+
+(defun array-size (a)
+  (gl::gl-array-size a))
+
 (defun prepare-framebuffer-for-rendering  (framebuffer depthbuffer texture w h)
   (gl:bind-framebuffer :framebuffer framebuffer)
   (gl:bind-texture  :texture-2d texture)
@@ -207,3 +213,40 @@
     ;; Note gl:read-pixels return a vector
     (3d-utils:unproject dx (d (f- win-h y)) z modelview-matrix projection-matrix
                         0.0 0.0 (d win-w) (d win-h))))
+
+(defmacro gen-populate-array-vec (class slot-bag slot-array slot-struct)
+  (let ((fn-name (format-fn-symbol t "populate-~a-array" slot-array)))
+    `(progn
+       (defgeneric ,fn-name (object))
+       (defmethod ,fn-name  ((object ,class))
+         (with-accessors ((,slot-bag ,slot-bag)
+                          (,slot-array ,slot-array)) object
+             (loop
+                for elem across ,slot-bag
+                for i from 0 by 3             do
+                  (setf (cl-gl-utils:fast-glaref ,slot-array i)
+                        (elt (,slot-struct elem) 0))
+                  (setf (cl-gl-utils:fast-glaref ,slot-array (+ i 1))
+                        (elt (,slot-struct elem) 1))
+                  (setf (cl-gl-utils:fast-glaref ,slot-array (+ i 2))
+                        (elt (,slot-struct elem) 2))))))))
+
+(defmacro gen-populate-array (class slot-bag slot-array slot-struct)
+  (let ((fn-name (format-fn-symbol t "populate-~a-array" slot-array)))
+    `(progn
+       (defgeneric ,fn-name (object))
+       (defmethod ,fn-name  ((object ,class))
+         (with-accessors ((,slot-bag ,slot-bag)
+                          (,slot-array ,slot-array)) object
+             (loop
+                for elem across ,slot-bag
+                for i from 0 by 1             do
+                  (setf (cl-gl-utils:fast-glaref ,slot-array i) (,slot-struct elem))))))))
+
+(defun gl-array-copy-multiply (from to length source-step copy-num)
+  (loop for ct from 0 below (* source-step length) by source-step
+     for ct2 from 0 below (* length source-step copy-num) by (* source-step copy-num) do
+       (loop for ct3 from 0 below (* source-step copy-num) by 1 do
+            (setf (fast-glaref to (+ ct2 ct3))
+                  (fast-glaref from (+ ct (mod ct3 source-step))))))
+  to)

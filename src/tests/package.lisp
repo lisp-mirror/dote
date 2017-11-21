@@ -266,3 +266,10 @@
         :identificable
         :graph
         :goap))
+
+(defpackage :gl-test
+  (:use :cl
+        :clunit
+        :all-test
+        :alexandria
+        :cl-gl-utils))

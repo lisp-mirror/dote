@@ -115,6 +115,7 @@
                (:file "random-inert-object")
                (:file "random-object-messages")
                (:file "camera")
+               (:file "gpu-array-lerp")
                (:file "mesh")
                (:file "wall-mesh-shell")
                (:file "window-mesh-shell")
@@ -188,11 +189,15 @@
                                      (:file "kanren-test")
                                      (:file "action-scheduler-test")
                                      (:file "attack-tactics-test")
-                                     (:file "goap-test")))))
+                                     (:file "goap-test")
+                                     (:file "gl-test")))))
 
 (progn
   ;; debug
   (pushnew :inhibit-planner *features*)
   (pushnew :debug-mode              *features*)
+  ; (pushnew :small-skydome           *features*)
   (pushnew :debug-blackboard-layers *features*)
-  (pushnew :debug-ai                *features*))
+  (pushnew :debug-ai                *features*)
+  ;; config
+  (pushnew :md2-gpu-lerp            *features*))
