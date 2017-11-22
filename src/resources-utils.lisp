@@ -35,16 +35,21 @@
   (join-with-srings* *directory-sep*
                      +sys-data-dir+))
 
-(defun find-in-home-datadir (file)
+(defun init ()
+  #+debug-mode (misc:dbg "creating ~a" (home-datadir))
+  (fs:make-directory (home-datadir)))
+
+(defun find-in-home-datadir (file &key (return-always-path nil))
   (let ((actual-path (join-with-srings* *directory-sep*
                                          (home-datadir)
                                          (construct-path file))))
     (cond
       ((not (uiop:getenvp "HOME"))
-        nil)
+        (error "Home directory not present"))
       ((or
          (uiop:directory-exists-p actual-path)
-         (uiop:file-exists-p actual-path))
+         (uiop:file-exists-p actual-path)
+         return-always-path)
        actual-path)
       (t
        nil))))
@@ -93,10 +98,18 @@
              (format stream "Resource not writable: resource ~s path ~s"
                      (resource condition) (file-error-pathname condition)))))
 
+(defun create-home-resource (path resource)
+  (let ((home-path (find-in-home-datadir (construct-resource-path resource path)
+                                         :return-always-path t)))
+    (fs:create-file home-path)))
+
 (defun get-resource-file (path resource &key (if-does-not-exists :error))
   (let ((home-path   (find-in-home-datadir   (construct-resource-path resource path)))
         (shared-path (find-in-shared-datadir (construct-resource-path resource path))))
     (cond
+      ((eq if-does-not-exists :create)
+       (when (not home-path)
+         (create-home-resource path resource)))
       ((eq if-does-not-exists :error)
        (or (or home-path shared-path)
            (error 'resource-not-found-error :pathname path :resource resource)))

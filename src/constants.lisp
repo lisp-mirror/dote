@@ -130,9 +130,15 @@
 
 (define-constant +outside-map-night-color+ #(0.0 0.0 0.0 1.0)                     :test #'equalp)
 
-(define-constant +start-id-counter+ 2                                             :test #'=)
+(define-constant +start-id-counter+              2                                :test #'=)
 
-(define-constant +obj-mesh-file-extension+  "obj"                                 :test #'string=)
+(define-constant +obj-mesh-file-extension+       "obj"                            :test #'string=)
+
+(define-constant +game-config-resource+          "config"                         :test #'string=)
+
+(define-constant +game-config-filename+          "configuration"                  :test #'string=)
+
+(define-constant +game-saves-resource+           "saves"                          :test #'string=)
 
 (define-constant +trees-resource+                "trees"                          :test #'string=)
 

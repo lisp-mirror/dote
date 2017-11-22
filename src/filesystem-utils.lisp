@@ -44,6 +44,29 @@
                           :if-does-not-exist :create)
     (write-sequence seq stream)))
 
+(defun create-file (file)
+  "create file and parent dir, if necessary"
+  (let ((path-splitted (fs:split-path-elements file)))
+    (misc:dbg "path-splitted ~a" (subseq path-splitted 0 (1- (length path-splitted))))
+    (when (and path-splitted
+               (> (length path-splitted) 1))
+      (do* ((path-rest (subseq path-splitted 0 (1- (length path-splitted))) (rest path-rest))
+            (path-so-far "" (if (and path-rest
+                                     (not (string= "" (first-elt path-rest))))
+                                (concatenate 'string
+                                             path-so-far
+                                             *directory-sep*
+                                             (first-elt path-rest)
+                                             *directory-sep*)
+                                path-so-far)))
+           ((null path-rest))
+        (when (not (directory-exists-p path-so-far))
+          (make-directory path-so-far)))
+      (with-open-file (stream file
+                              :direction :output
+                              :if-exists :supersede
+                              :if-does-not-exist :create)))))
+
 (defun has-extension (path ext)
   (let ((re (concatenate 'string ext "$")))
     (cl-ppcre:scan re path)))
@@ -169,8 +192,16 @@
 (defun file-exists-p (f)
   (uiop:file-exists-p f))
 
+(defun directory-exists-p (d)
+  (uiop:directory-exists-p d))
+
 (defun delete-file-if-exists (f)
   (uiop:delete-file-if-exists f))
+
+(defun file-length-if-exists (f)
+  (when (file-exists-p f)
+    (with-open-file (stream f :element-type '(unsigned-byte 8))
+      (file-length stream))))
 
 (defun temporary-filename (&optional (temp-directory nil))
   (let ((tmpdir (or temp-directory (nix:getenv "TMPDIR"))))
@@ -208,6 +239,11 @@
 
 (defun directory-files (path)
   (uiop:directory-files path))
+
+(defun make-directory (path)
+  (if (not (cl-ppcre:scan (concatenate 'string *directory-sep* "$") path))
+      (make-directory (concatenate 'string path *directory-sep*))
+      (ensure-directories-exist path)))
 
 (defun preprocess-include-file (line resource)
   (let ((included-filepath (second (cl-ppcre:split "\\p{Z}" line))))

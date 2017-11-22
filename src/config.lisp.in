@@ -15,7 +15,7 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-(alexandria:define-constant +home-data-dir+ (concatenate 'string "./" +program-name+ "/")
+(alexandria:define-constant +home-data-dir+ (concatenate 'string "." +program-name+ "/")
   :test #'string=)
 
 (alexandria:define-constant +model-animations-filename+     "animations.lisp" :test #'string=)

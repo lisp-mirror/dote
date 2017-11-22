@@ -94,6 +94,9 @@
    :+outside-map-night-color+
    :+start-id-counter+
    :+obj-mesh-file-extension+
+   :+game-config-resource+
+   :+game-config-filename+
+   :+game-saves-resource+
    :+trees-resource+
    :+names-resource+
    :+weapons-names-resource+
@@ -444,6 +447,7 @@
    :*directory-sep*
    :slurp-file
    :dump-sequence-to-file
+   :create-file
    :cat-parent-dir
    :has-extension
    :do-directory
@@ -459,6 +463,8 @@
    :get-stat-atime
    :file-outdated-p
    :file-exists-p
+   :directory-exists-p
+   :file-length-if-exists
    :delete-file-if-exists
    :file-hash
    :temporary-filename
@@ -467,6 +473,7 @@
    :file-can-write-p
    :cached-directory-files
    :directory-files
+   :make-directory
    :preprocess-include-file
    :preprocess
    :package-path
@@ -508,6 +515,7 @@
         :text-utils)
   (:nicknames :res)
   (:export
+   :init
    :home-datadir
    :shared-datadir
    :get-resource-file
@@ -1567,9 +1575,13 @@
 
 (defpackage :game-configuration
   (:use :cl
-        :alexandria)
+        :alexandria
+        :config
+        :constants
+        :interfaces)
   (:nicknames :gconf)
   (:export
+   :game-config
    :config-forward
    :config-back
    :config-left
@@ -1578,15 +1590,16 @@
    :config-downward
    :config-go-to-active-player
    :config-smooth-movements
-   :forward
-   :back
-   :left
-   :right
-   :upward
-   :downward
-   :go-to-active-player
-   :smooth-movements
-   :*game-config*))
+   :set-forward
+   :set-back
+   :set-left
+   :set-right
+   :set-upward
+   :set-downward
+   :set-go-to-active-player
+   :set-smooth-movements
+   :*game-config*
+   :init))
 
 (defpackage :pixmap
   (:use :cl
