@@ -16,33 +16,65 @@
 
 (in-package :game-configuration)
 
+(define-constant +forward+             "w" :test #'string=)
+
+(define-constant +back+                "s" :test #'string=)
+
+(define-constant +left+                "d" :test #'string=)
+
+(define-constant +right+               "a" :test #'string=)
+
+(define-constant +upward+              "u" :test #'string=)
+
+(define-constant +downward+            "j" :test #'string=)
+
+(define-constant +rotate-camera-cw+    "e" :test #'string=)
+
+(define-constant +rotate-camera-ccw+   "q" :test #'string=)
+
+(define-constant +reset-camera+        "r" :test #'string=)
+
+(define-constant +go-to-active-player+ "t" :test #'string=)
+
 (defclass game-config ()
   ((forward
-    :initform "w"
+    :initform +forward+
     :initarg  :forward
     :accessor forward)
    (back
-    :initform "s"
+    :initform +back+
     :initarg  :back
     :accessor back)
    (left
-    :initform "d"
+    :initform +left+
     :initarg  :left
     :accessor left)
    (right
-    :initform "a"
+    :initform +right+
     :initarg :right
     :accessor right)
    (upward
-    :initform "u"
+    :initform +upward+
     :initarg  :upward
     :accessor upward)
    (downward
-    :initform "j"
+    :initform +downward+
     :initarg  :downward
     :accessor downward)
+   (rotate-camera-cw
+    :initform +rotate-camera-cw+
+    :initarg  :rotate-camera-cw
+    :accessor rotate-camera-cw)
+   (rotate-camera-ccw
+    :initform +rotate-camera-ccw+
+    :initarg  :rotate-camera-ccw
+    :accessor rotate-camera-ccw)
+   (reset-camera
+    :initform +reset-camera+
+    :initarg  :reset-camera
+    :accessor reset-camera)
    (go-to-active-player
-    :initform "e"
+    :initform +go-to-active-player+
     :initarg  :go-to-active-player
     :accessor go-to-active-player)
    (smooth-movements
@@ -57,6 +89,9 @@
       right
       upward
       downward
+      rotate-camera-cw
+      rotate-camera-ccw
+      reset-camera
       go-to-active-player
       smooth-movements))
 
@@ -65,17 +100,40 @@
 
 (defparameter *game-config* (make-default-config))
 
-(defun init ()
+(defun get-file-path (&key (create t))
+  (when create
+    (res:get-resource-file +game-config-resource+
+                           +game-config-filename+
+                           :if-does-not-exists :create))
   (res:get-resource-file +game-config-resource+
                          +game-config-filename+
-                         :if-does-not-exists :create)
-  (let* ((config-file (res:get-resource-file +game-config-resource+
-                                             +game-config-filename+
-                                             :if-does-not-exists :error))
+                         :if-does-not-exists :error))
+
+
+(defun dump (&optional (object-config *game-config*))
+  (let* ((config-file (get-file-path :create t)))
+    (fs:dump-sequence-to-file (serialize object-config) config-file)))
+
+(defun init ()
+  (let* ((config-file (get-file-path :create t))
          (size        (fs:file-length-if-exists config-file)))
     (if (= size 0)
-        (fs:dump-sequence-to-file (serialize (make-default-config)) config-file)
+        (dump (make-default-config))
         (setf *game-config* (deserialize 'game-config config-file)))))
+
+(defun reset-keybindings ()
+  (set-forward             +forward+)
+  (set-rotate-camera-cw    +rotate-camera-cw+)
+  (set-upward              +upward+)
+  (set-go-to-active-player +go-to-active-player+)
+  (set-left                +left+)
+  (set-right               +right+)
+  (set-back                +back+)
+  (set-rotate-camera-ccw   +rotate-camera-ccw+)
+  (set-downward            +downward+)
+  (set-reset-camera        +reset-camera+)
+  (dump))
+
 
 (defmacro gen-acc-fn (name)
   `(progn
@@ -98,6 +156,12 @@
 (gen-acc-fn upward)
 
 (gen-acc-fn downward)
+
+(gen-acc-fn rotate-camera-cw)
+
+(gen-acc-fn rotate-camera-ccw)
+
+(gen-acc-fn reset-camera)
 
 (gen-acc-fn go-to-active-player)
 

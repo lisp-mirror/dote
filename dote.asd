@@ -135,6 +135,7 @@
                                      (:file "inventory-window")
                                      (:file "spell-window")
                                      (:file "player-report-window")
+                                     (:file "configuration-windows")
                                      (:file "splash-screen-progress-gauge")
                                      (:file "full-screen-masks")))
                (:file "billboard")

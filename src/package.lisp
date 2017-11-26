@@ -1581,6 +1581,16 @@
         :interfaces)
   (:nicknames :gconf)
   (:export
+   :+forward+
+   :+back+
+   :+left+
+   :+right+
+   :+upward+
+   :+downward+
+   :+rotate-camera-cw+
+   :+rotate-camera-ccw+
+   :+reset-camera+
+   :+go-to-active-player+
    :game-config
    :config-forward
    :config-back
@@ -1588,6 +1598,9 @@
    :config-right
    :config-upward
    :config-downward
+   :config-rotate-camera-cw
+   :config-rotate-camera-ccw
+   :config-reset-camera
    :config-go-to-active-player
    :config-smooth-movements
    :set-forward
@@ -1596,10 +1609,15 @@
    :set-right
    :set-upward
    :set-downward
+   :set-rotate-camera-cw
+   :set-rotate-camera-ccw
+   :set-reset-camera
    :set-go-to-active-player
    :set-smooth-movements
    :*game-config*
-   :init))
+   :dump
+   :init
+   :reset-keybindings))
 
 (defpackage :pixmap
   (:use :cl
@@ -4018,6 +4036,11 @@
    :+chest-closed-texture-name+
    :+chest-closed-locked-texture-name+
    :+chest-opened-texture-name+
+   :+config-camera-elevation-texture-name+
+   :+config-change-selected-character-texture-name+
+   :+config-look-at-texture-name+
+   :+config-move-texture-name+
+   :+config-rotation-texture-name+
    :+transparent-texture-name+
    :+blue-h-bar+
    :+red-h-bar+
@@ -4116,6 +4139,38 @@
    :+action-attack-long-range+
    :+action-attack-long-range-imprecise+
    :+action-launch-spell+
+   :with-parent-widget
+   :with-root-widget
+   :reference-sizes
+   :top-bar-h
+   :top-bar-relative-offset
+   :top-bar-space-for-title
+   :frame-relative-offset
+   :button-x-relative
+   :button-y-relative
+   :button-h-relative
+   :title-font-size
+   :title-font-size-scaling
+   :left-frame-offset
+   :top-frame-offset
+   :bottom-frame-offset
+   :h1-font-size
+   :h2-font-size
+   :h3-font-size
+   :h4-font-size
+   :standard-font-size
+   :button-text-offset-x
+   :button-text-fit-height
+   :button-label-max-size
+   :button-label-color
+   :checkbutton-h
+   :input-text-w
+   :input-text-h
+   :spacing
+   :square-button-size
+   :small-square-button-size
+   :tiny-square-button-size
+   :*reference-sizes*
    :widget
    :x
    :y
@@ -4123,16 +4178,20 @@
    :height
    :label
    :hide
+   :focus
    :on-mouse-pressed
    :on-mouse-released
    :on-mouse-dragged
    :on-key-pressed
+   :inner-frame
    :flip-y
    :hide-parent-cb
    :hide-and-remove-parent-cb
+   :add-window-button-cb-hide-remove
    :naked-button
    :button
    :text-field
+   :char-field
    :check-button
    :signalling-light
    :make-loader-icon
@@ -4144,7 +4203,11 @@
    :static-text
    :h-bar
    :fill-level
+   :adjust-window-h
+   :adjust-window-w
    :window
+   :toggle-button
+   :labeled-toggle-button
    :labeled-check-button
    :file-chooser
    :b-ok
@@ -4177,6 +4240,23 @@
    :progress-gauge
    :progress
    :make-splash-progress-gauge))
+
+(defpackage :configuration-windows
+  (:use :cl
+        :config
+        :constants
+        :num
+        :misc
+        :mtree-utils
+        :text-utils
+        :filesystem-utils
+        :interfaces
+        :gui-events
+        :gui
+        :widget
+        :game-configuration)
+  (:export
+   :make-main-window))
 
 (defpackage :full-screen-masks
   (:use

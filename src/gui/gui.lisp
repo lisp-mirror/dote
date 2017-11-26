@@ -420,8 +420,32 @@
                     +default-gui-resource+
                     (setf (s-wrap-mode  bg) :clamp-to-border)
                     (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (config-camera-elevation.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (config-change-selected-character.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (config-look-at.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (config-move.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
+                    (setf (border-color bg) §c00000000))
+                   (config-rotation.tga
+                    +default-gui-resource+
+                    (setf (s-wrap-mode  bg) :clamp-to-border)
+                    (setf (t-wrap-mode  bg) :clamp-to-border)
                     (setf (border-color bg) §c00000000)))
-
 
 (gen-simple-bg-setup frame
                      +frame-texture-name+
@@ -568,4 +592,9 @@
   (setup-bg-unzoom-overlay)
   (setup-bg-chest-closed)
   (setup-bg-chest-closed-locked)
-  (setup-bg-chest-opened))
+  (setup-bg-chest-opened)
+  (setup-bg-config-camera-elevation)
+  (setup-bg-config-change-selected-character)
+  (setup-bg-config-look-at)
+  (setup-bg-config-move)
+  (setup-bg-config-rotation))

@@ -52,6 +52,10 @@
       (find-root-widget (parent widget))
       widget))
 
+(defmacro with-root-widget ((root child) &body body)
+  `(let ((,root (find-root-widget ,child)))
+     ,@body))
+
 (defclass font-mesh-shell (triangle-mesh-shell)
   ((font-color
     :initform §cffffffff
@@ -337,6 +341,8 @@
       (do-children-mesh (c object)
         (render c renderer)))))
 
+;;(defgeneric inner-frame-h (object))
+
 (defgeneric flip-y (object child))
 
 (defgeneric width (object))
@@ -543,6 +549,8 @@
                               (declare (ignore a))
                               (typep b (class-of grandparent)))))))
 
+(defun add-window-button-cb-hide-remove (w)
+  (setf (callback (close-button w)) #'hide-and-remove-grandparent-cb))
 
 (defmethod initialize-instance :after ((object naked-button) &key &allow-other-keys)
   (with-accessors ((width width) (height height)
@@ -627,7 +635,19 @@
     :initarg  :group
     :accessor   group)))
 
-(defmethod initialize-instance :after ((object toggle-button) &key &allow-other-keys))
+(defmethod initialize-instance :after ((object toggle-button) &key
+                                                               (theme :green)
+                                                               &allow-other-keys)
+  (with-accessors ((width width) (height height)
+                   (label-font-size label-font-size)) object
+    (case theme
+      (:green
+       (setf (texture-object  object) (get-texture +check-button-texture-name+))
+       (setf (texture-pressed object) (get-texture +check-button-checked-green+))
+       (setf (texture-overlay object) (get-texture +check-button-overlay+))
+       (setf (current-texture object) (texture-object object))))
+    (setf (current-texture object) (texture-object object))))
+
 
 (defgeneric (setf button-state) (new-state object))
 
@@ -666,18 +686,7 @@
 
 (defclass check-button (toggle-button) ())
 
-(defmethod initialize-instance :after ((object check-button) &key
-                                                               (theme :green)
-                                                               &allow-other-keys)
-  (with-accessors ((width width) (height height)
-                   (label-font-size label-font-size)) object
-    (case theme
-      (:green
-       (setf (texture-object  object) (get-texture +check-button-texture-name+))
-       (setf (texture-pressed object) (get-texture +check-button-checked-green+))
-       (setf (texture-overlay object) (get-texture +check-button-overlay+))
-       (setf (current-texture object) (texture-object object))))
-    (setf (current-texture object) (texture-object object))))
+(defmethod initialize-instance :after ((object check-button) &key &allow-other-keys))
 
 (defmethod flip-state ((object check-button))
   (with-slots (button-state) object
@@ -688,6 +697,95 @@
                      (when (/= (id a) (id object))
                        (setf (button-state a) nil)))
              group)))))
+
+(defclass labeled-check-button (widget)
+  ((button
+    :initform nil
+    :initarg  :button
+    :accessor button)
+   (text
+    :initform nil
+    :initarg  :text
+    :accessor text)))
+
+(defmethod initialize-instance :after ((object labeled-check-button)
+                                       &key
+                                         (callback           nil)
+                                         (color              :green)
+                                         (button-toggle-type nil)
+                                         &allow-other-keys)
+  (with-accessors ((button button) (text text)
+                   (width width) (height height)
+                   (label label)
+                   (label-font-size label-font-size)) object
+    (let ((button-type (if button-toggle-type
+                           'toggle-button
+                           'check-button)))
+      (setf button (make-instance button-type
+                                  :width    height
+                                  :height   height
+                                  :color    color
+                                  :callback callback
+                                  :x        (d- width height)
+                                  :y        0.0)))
+    (let ((text-font-size (min label-font-size
+                               (d* (label-font-size object)
+                                   (d/ (d- width height) (label-width object))))))
+      (setf text (make-instance 'simple-label
+                                :x               0.0
+                                :y               (d- (d/ height 2.0)
+                                                     (d/ text-font-size 2.0))
+                                :width           (d- width height)
+                                :label           label
+                                :justified       nil
+                                :label-font-size text-font-size)))
+    (add-child object text)
+    (add-child object button)))
+
+(defmethod render :after ((object labeled-check-button) renderer)
+  (do-children-mesh (c object)
+    (render c renderer)))
+
+(defmethod group ((object labeled-check-button))
+  (group (button object)))
+
+(defmethod (setf group) (new-group (object labeled-check-button))
+  (setf (group (button object)) new-group))
+
+(defmethod flip-state ((object labeled-check-button))
+  (flip-state (button object)))
+
+(defmethod button-state ((object labeled-check-button))
+  (button-state (button object)))
+
+(defmethod (setf button-state) (value (object labeled-check-button))
+  (setf (button-state (button object)) value))
+
+(defmethod callback ((object labeled-check-button))
+  (callback (button object)))
+
+(defmethod (setf callback) (value (object labeled-check-button))
+  (setf (callback (button object)) value))
+
+(defmethod on-mouse-pressed ((object labeled-check-button) event)
+  (on-mouse-pressed (button object) event))
+
+(defmethod on-mouse-released ((object labeled-check-button) event)
+  (on-mouse-released (button object) event))
+
+(defun make-check-group (buttons)
+  (let ((res (make-fresh-array (length buttons) t 'check-button t)))
+    (loop
+       for b in buttons
+       for i from 0 by 1 do
+         (setf (elt res i)
+                (if (typep b 'labeled-check-button)
+                    (button b)
+                    b)))
+    res))
+
+(defun make-check-group* (&rest buttons)
+  (make-check-group buttons))
 
 (defclass signalling-light (check-button) ())
 
@@ -989,6 +1087,7 @@
                    (width width)
                    (children children)) object
     (declare (desired-type width height label-font-size))
+    (misc:dbg "called with: ~a" new-label)
     (common-setup-label object new-label)
     (let* ((label-width     (label-width object))
            (scaling-width   (d/ (d- width (d* 2.0
@@ -1016,10 +1115,10 @@
     (with-accessors ((current-texture current-texture)
                      (texture-pressed texture-pressed)
                      (texture-object  texture-object)) object
-      (setf focus             new-state)
-      (setf current-texture   (if focus
-                                  texture-pressed
-                                  texture-object)))))
+      (setf focus            new-state)
+      (setf current-texture  (if focus
+                                 texture-pressed
+                                 texture-object)))))
 
 (defmethod on-mouse-pressed ((object text-field) event)
   (if (mouse-over object (x-event event) (y-event event))
@@ -1043,6 +1142,22 @@
              (setf (label object) (subseq old-label 0 (f- (length old-label) 1)))))
           t)
       nil)))
+
+(defclass char-field (text-field) ())
+
+(defmethod on-key-pressed ((object char-field) event)
+  (if (focus object)
+      (when (gui-printable-p (char-event event))
+        (setf (label object) (string (char-event event)))
+        t)
+      nil))
+
+(defmethod (setf label) (new-label (object char-field))
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (declare (simple-string new-label))
+  #+debug-mode (assert new-label)
+  #+debug-mode (assert (> (length new-label) 0))
+  (call-next-method new-label object))
 
 (defclass simple-label (widget) ())
 
@@ -1253,6 +1368,18 @@
       (setf fill-level (alexandria:clamp value 0.0 1.0))
       (setf (scaling actual-bar) (sb-cga:vec fill-level 1.0 1.0)))))
 
+(defun adjust-window-h (frame)
+  "use this function to have the inner frame height matching the size of the whole frame"
+  (d+ frame
+      (top-bar-h               *reference-sizes*)
+      (d* (top-frame-offset    *reference-sizes*) frame)
+      (d* (bottom-frame-offset *reference-sizes*) frame)))
+
+(defun adjust-window-w (frame)
+  "use this function to have the inner frame width matching the size of the whole frame"
+  (d+ frame
+      (d* 2.0 (left-frame-offset *reference-sizes*) frame)))
+
 (defclass window (widget)
   ((top-bar
     :initform (make-instance 'widget
@@ -1311,8 +1438,8 @@
           (setf (close-button object) button)
           (prepare-for-rendering top-bar)
           ;; add main frame
-          (add-quad-for-widget frame)
-          (transform-vertices frame    (sb-cga:scale* (width object) (d- height top-bar-h) 1.0))
+          (add-quad-for-widget  frame)
+          (transform-vertices   frame  (sb-cga:scale* (width object) (d- height top-bar-h) 1.0))
           (setf (texture-object frame) (get-texture +frame-texture-name+)
                 (pos            frame) (sb-cga:vec 0.0 0.0 0.0)
                 (width          frame) (width object)
@@ -1400,6 +1527,11 @@
       (do-children-mesh (c object)
         (render c renderer)))))
 
+;; (defmethod inner-frame-h ((object window))
+;;   (with-accessors ((frame frame)) object
+;;     (d- (height frame)
+;;         (d* (top-frame-offset *reference-sizes*) (height (frame object))))))
+
 (defmethod flip-y ((object window) (child widget))
   (declare (optimize (debug 3) (speed 0) (safety 3)))
   (with-accessors ((parent-h height) (frame frame)) object
@@ -1467,86 +1599,6 @@
                 (setf dragging-mode t)
                 t)
               nil)))))
-
-(defclass labeled-check-button (widget)
-  ((button
-    :initform nil
-    :initarg  :button
-    :accessor button)
-   (text
-    :initform nil
-    :initarg  :text
-    :accessor text)))
-
-(defmethod initialize-instance :after ((object labeled-check-button) &key
-                                                                       (callback nil)
-                                                                       (color :green)
-                                                                       &allow-other-keys)
-  (with-accessors ((button button) (text text)
-                   (width width) (height height)
-                   (label label)
-                   (label-font-size label-font-size)) object
-    (setf button (make-instance 'check-button :width height :height height
-                                :color color
-                                :callback callback
-                                :x (d- width height) :y 0.0))
-    (let ((text-font-size (min label-font-size
-                               (d* (label-font-size object)
-                                   (d/ (d- width height) (label-width object))))))
-      (setf text (make-instance 'simple-label
-                                :x 0.0
-                                :y (d- (d/ height 2.0) (d/ text-font-size 2.0))
-                                :width (d- width height)
-                                :label label
-                                :justified nil
-                                :label-font-size text-font-size)))
-    (add-child object text)
-    (add-child object button)))
-
-(defmethod render :after ((object labeled-check-button) renderer)
-  (do-children-mesh (c object)
-    (render c renderer)))
-
-(defmethod group ((object labeled-check-button))
-  (group (button object)))
-
-(defmethod (setf group) (new-group (object labeled-check-button))
-  (setf (group (button object)) new-group))
-
-(defmethod flip-state ((object labeled-check-button))
-  (flip-state (button object)))
-
-(defmethod button-state ((object labeled-check-button))
-  (button-state (button object)))
-
-(defmethod (setf button-state) (value (object labeled-check-button))
-  (setf (button-state (button object)) value))
-
-(defmethod callback ((object labeled-check-button))
-  (callback (button object)))
-
-(defmethod (setf callback) (value (object labeled-check-button))
-  (setf (callback (button object)) value))
-
-(defmethod on-mouse-pressed ((object labeled-check-button) event)
-  (on-mouse-pressed (button object) event))
-
-(defmethod on-mouse-released ((object labeled-check-button) event)
-  (on-mouse-released (button object) event))
-
-(defun make-check-group (buttons)
-  (let ((res (make-fresh-array (length buttons) t 'check-button t)))
-    (loop
-       for b in buttons
-       for i from 0 by 1 do
-         (setf (elt res i)
-                (if (typep b 'labeled-check-button)
-                    (button b)
-                    b)))
-    res))
-
-(defun make-check-group* (&rest buttons)
-  (make-check-group buttons))
 
 (defun fchooser-init-dirs-file-slots ()
   (make-fresh-array 0 t 'button nil))
@@ -2104,19 +2156,25 @@
         (setf (mode camera) :drag)
         (camera:drag-camera (world:camera world) (sb-cga:vec .0 +gui-zoom-entity+ .0))))))
 
+(defun toolbar-open-configuration-window (w e)
+  (declare (ignore e))
+  (with-parent-widget (toolbar) w
+    (add-child toolbar
+               (configuration-windows:make-main-window (compiled-shaders toolbar)))))
+
 (defclass main-toolbar (widget)
   (#+debug-ai
-   (influence-map-dump
-    :initform (make-instance 'signalling-light
-                             :x               (d 0)
-                             :y               (d (- *window-h* +influence-map-h+))
-                             :width           (d +influence-map-w+)
-                             :height          (d +influence-map-h+)
-                             :texture-name    +influence-map+
-                             :shown           t
-                             :button-status   t)
-    :initarg  :influence-map-dump
-    :accessor influence-map-dump)
+   (influence-map-dump :initform (make-instance 'signalling-light
+                                                :x             (d 0)
+                                                :y             (d (- *window-h*
+                                                                     +influence-map-h+))
+                                                :width         (d +influence-map-w+)
+                                                :height        (d +influence-map-h+)
+                                                :texture-name  +influence-map+
+                                                :shown         t
+                                                :button-status t)
+                       :initarg  :influence-map-dump
+                       :accessor influence-map-dump)
    (selected-action
     :initform nil
     :initarg  :selected-action
@@ -2274,7 +2332,7 @@
    (b-options
     :initform (make-square-button 0.0 0.0
                                   +option-overlay-texture-name+
-                                  nil  ;; TODO callback
+                                  #'toolbar-open-configuration-window
                                   :small t)
     :initarg :b-options
     :accessor b-options)
@@ -2852,35 +2910,35 @@
     :accessor lb-class)
    (checkb-warrior
     :initform (make-instance 'labeled-check-button
-                             :height (checkbutton-h *reference-sizes*)
-                             :width  (pgen-chk-button-w)
-                             :x 0.0
-                             :y (pgen-chk-button-y 0.0)
-                             :label (_ "Warrior ")
+                             :height   (checkbutton-h *reference-sizes*)
+                             :width    (pgen-chk-button-w)
+                             :x        0.0
+                             :y        (pgen-chk-button-y 0.0)
+                             :label    (_ "Warrior ")
                              :callback (update-preview-class-cb :warrior)
-                             :color :green)
+                             :color    :green)
     :initarg  :checkb-warrior
     :accessor checkb-warrior)
    (checkb-wizard
     :initform (make-instance 'labeled-check-button
-                             :height (checkbutton-h *reference-sizes*)
-                             :width  (pgen-chk-button-w)
-                             :x 0.0
-                             :y (pgen-chk-button-y 1.0)
-                             :label (_ "Wizard ")
+                             :height   (checkbutton-h *reference-sizes*)
+                             :width    (pgen-chk-button-w)
+                             :x        0.0
+                             :y        (pgen-chk-button-y 1.0)
+                             :label    (_ "Wizard ")
                              :callback (update-preview-class-cb :wizard)
-                             :color :green)
+                             :color    :green)
     :initarg  :checkb-wizard
     :accessor checkb-wizard)
    (checkb-healer
     :initform (make-instance 'labeled-check-button
-                             :height (checkbutton-h *reference-sizes*)
-                             :width  (pgen-chk-button-w)
-                             :x 0.0
-                             :y (pgen-chk-button-y 2.0)
-                             :label (_ "Healer ")
+                             :height   (checkbutton-h *reference-sizes*)
+                             :width    (pgen-chk-button-w)
+                             :x        0.0
+                             :y        (pgen-chk-button-y 2.0)
+                             :label    (_ "Healer ")
                              :callback (update-preview-class-cb :healer)
-                             :color :green)
+                             :color    :green)
     :initarg  :checkb-healer
     :accessor checkb-healer)
    (checkb-archer
@@ -2981,11 +3039,11 @@
     :accessor b-accept)
    (img-portrait
     :initform (make-instance 'signalling-light
-                             :width  +portrait-size+
-                             :height +portrait-size+
-                             :x (pgen-label-ability-x)
-                             :y 0.0
-                             :texture-name +portrait-unknown-texture-name+
+                             :width         +portrait-size+
+                             :height        +portrait-size+
+                             :x             (pgen-label-ability-x)
+                             :y             0.0
+                             :texture-name  +portrait-unknown-texture-name+
                              :button-status t)
     :initarg :img-portrait
     :accessor img-portrait)
