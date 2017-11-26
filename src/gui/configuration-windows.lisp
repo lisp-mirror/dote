@@ -38,8 +38,8 @@
           nil))))
 
 (defun keyboard-window-w ()
-  (let ((frame (d+ (d* (keyboard-text-entry-size) 4.0)
-                   (d* (icon-size) 4.0))))
+  (let ((frame (d+ (d* (keyboard-text-entry-size) 5.0)
+                   (d* (icon-size) 5.0))))
     (adjust-window-w frame)))
 
 (defun keyboard-window-h ()
@@ -99,29 +99,33 @@
 (defun save-keybindings-configuration-cb (w e)
   (declare (ignore e))
   (with-parent-widget (window) w
-    (gconf:set-forward             (label (input-forward window)))
-    (gconf:set-rotate-camera-cw    (label (input-cw window)))
-    (gconf:set-upward              (label (input-upward window)))
-    (gconf:set-go-to-active-player (label (input-go-to-active window)))
-    (gconf:set-left                (label (input-left window)))
-    (gconf:set-right               (label (input-right window)))
-    (gconf:set-back                (label (input-back window)))
-    (gconf:set-rotate-camera-ccw   (label (input-ccw window)))
-    (gconf:set-downward            (label (input-downward window)))
-    (gconf:set-reset-camera        (label (input-reset-camera window)))
+    (gconf:set-forward                (label (input-forward window)))
+    (gconf:set-rotate-camera-cw       (label (input-cw window)))
+    (gconf:set-upward                 (label (input-upward window)))
+    (gconf:set-go-to-active-character (label (input-go-to-active window)))
+    (gconf:set-next-character         (label (input-next window)))
+    (gconf:set-left                   (label (input-left window)))
+    (gconf:set-right                  (label (input-right window)))
+    (gconf:set-back                   (label (input-back window)))
+    (gconf:set-rotate-camera-ccw      (label (input-ccw window)))
+    (gconf:set-downward               (label (input-downward window)))
+    (gconf:set-reset-camera           (label (input-reset-camera window)))
+    (gconf:set-prev-character         (label (input-prev window)))
     (gconf:dump)))
 
 (defun sync-keybinding-conf->gui (window)
   (setf (label (input-forward window))       (gconf:config-forward))
   (setf (label (input-cw window))            (gconf:config-rotate-camera-cw))
   (setf (label (input-upward window))        (gconf:config-upward))
-  (setf (label (input-go-to-active window))  (gconf:config-go-to-active-player))
+  (setf (label (input-go-to-active window))  (gconf:config-go-to-active-character))
+  (setf (label (input-next window))          (gconf:config-next-character))
   (setf (label (input-left window))          (gconf:config-left))
   (setf (label (input-right window))         (gconf:config-right))
   (setf (label (input-back window))          (gconf:config-back))
   (setf (label (input-ccw window))           (gconf:config-rotate-camera-ccw))
   (setf (label (input-downward window))      (gconf:config-downward))
-  (setf (label (input-reset-camera window))  (gconf:config-reset-camera)))
+  (setf (label (input-reset-camera window))  (gconf:config-reset-camera))
+  (setf (label (input-prev window))          (gconf:config-prev-character)))
 
 (defun reset-keybindings-configuration-cb (w e)
   (declare (ignore e))
@@ -157,6 +161,13 @@
                                 +config-look-at-texture-name+)
     :initarg  :s-camera-reset
     :accessor s-camera-reset)
+   (s-change-character
+    :initform (make-icon-config (d+ (d* 5.0 (keyboard-text-entry-size))
+                                    (d* 4.0 (small-square-button-size *reference-sizes*)))
+                                (keyboard-text-entry-size)
+                                +config-change-selected-character-texture-name+)
+    :initarg  :s-change-character
+    :accessor s-change-character)
    (input-forward
     :initform (make-keyboard-text-entry (char-field-stacked-x 0)
                                         0.0
@@ -178,9 +189,15 @@
    (input-go-to-active
     :initform (make-keyboard-text-entry (char-field-stacked-x 3)
                                         0.0
-                                        (gconf:config-go-to-active-player))
+                                        (gconf:config-go-to-active-character))
     :initarg :input-go-to-active
     :accessor input-go-to-active)
+   (input-next
+    :initform (make-keyboard-text-entry (char-field-stacked-x 4)
+                                        0.0
+                                        (gconf:config-next-character))
+    :initarg :input-next
+    :accessor input-next)
    (input-left
     :initform (make-keyboard-text-entry (char-field-inbetween-x 0)
                                         (char-field-inbetween-y)
@@ -217,6 +234,12 @@
                                         (gconf:config-reset-camera))
     :initarg :input-reset-camera
     :accessor input-reset-camera)
+   (input-prev
+    :initform (make-keyboard-text-entry (char-field-stacked-x 4)
+                                        (char-field-stacked-y)
+                                        (gconf:config-prev-character))
+    :initarg :input-prev
+    :accessor input-prev)
    (b-save
     :initform (make-instance 'button
                              :width    (keyboard-button-w)
@@ -226,7 +249,7 @@
                                            (small-square-button-size *reference-sizes*)
                                            (spacing *reference-sizes*))
                              :callback #'save-keybindings-configuration-cb
-                             :label (_ "Save"))
+                             :label    (_ "Save"))
     :initarg :b-save
     :accessor b-save)
    (b-reset
@@ -248,32 +271,38 @@
                    (s-rotation         s-rotation)
                    (s-elevation        s-elevation)
                    (s-camera-reset     s-camera-reset)
+                   (s-change-character s-change-character)
                    (input-forward      input-forward)
                    (input-cw           input-cw)
                    (input-upward       input-upward)
                    (input-go-to-active input-go-to-active)
+                   (input-next         input-next)
                    (input-left         input-left)
                    (input-right        input-right)
                    (input-back         input-back)
                    (input-ccw          input-ccw)
                    (input-downward     input-downward)
                    (input-reset-camera input-reset-camera)
+                   (input-prev         input-prev)
                    (b-save             b-save)
                    (b-reset            b-reset)) object
   (add-child object s-move)
   (add-child object s-rotation)
   (add-child object s-elevation)
   (add-child object s-camera-reset)
+  (add-child object s-change-character)
   (add-child object input-forward)
   (add-child object input-cw)
   (add-child object input-upward)
   (add-child object input-go-to-active)
+  (add-child object input-next)
   (add-child object input-left)
   (add-child object input-right)
   (add-child object input-back)
   (add-child object input-ccw)
   (add-child object input-downward)
   (add-child object input-reset-camera)
+  (add-child object input-prev)
   (add-child object b-save)
   (add-child object b-reset)))
 

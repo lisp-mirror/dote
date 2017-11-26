@@ -270,7 +270,7 @@
         (when (find text (list (gconf:config-forward)
                                (gconf:config-back) (gconf:config-left) (gconf:config-right)
                                (gconf:config-upward) (gconf:config-downward)
-                               (gconf:config-go-to-active-player)
+                               (gconf:config-go-to-active-character)
                                "o" "i" "u" "d" "V" "B"
                                "n" "N" "V" "v" "U" "D"
                                "L" "p")
@@ -287,7 +287,7 @@
             (slide-upward (world object)))
           (when (string= text (gconf:config-downward))
             (slide-downward (world object)))
-          (when (string= text (gconf:config-go-to-active-player))
+          (when (string= text (gconf:config-go-to-active-character))
             (slide-to-active-player (world object)))
           (when (string= text "v")
             (incf *fov* +1.0))

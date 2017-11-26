@@ -1590,7 +1590,9 @@
    :+rotate-camera-cw+
    :+rotate-camera-ccw+
    :+reset-camera+
-   :+go-to-active-player+
+   :+go-to-active-character+
+   :+next-character+
+   :+prev-character+
    :game-config
    :config-forward
    :config-back
@@ -1601,7 +1603,9 @@
    :config-rotate-camera-cw
    :config-rotate-camera-ccw
    :config-reset-camera
-   :config-go-to-active-player
+   :config-go-to-active-character
+   :config-next-character
+   :config-prev-character
    :config-smooth-movements
    :set-forward
    :set-back
@@ -1612,8 +1616,10 @@
    :set-rotate-camera-cw
    :set-rotate-camera-ccw
    :set-reset-camera
-   :set-go-to-active-player
+   :set-go-to-active-character
    :set-smooth-movements
+   :set-next-character
+   :set-prev-character
    :*game-config*
    :dump
    :init
