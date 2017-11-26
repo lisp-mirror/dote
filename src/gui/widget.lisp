@@ -4244,13 +4244,15 @@
             (label lb-exp-points)  (format nil "~d" (exp-points player))))))
 
 (defun make-player-generator (world)
-  (make-instance 'player-generator
-                 :world  world
-                 :x      0.0
-                 :y      200.0
-                 :width  (pgen-window-w)
-                 :height (pgen-window-h)
-                 :label  (_ "Generate character")))
+  (let ((window (make-instance 'player-generator
+                               :world  world
+                               :x      0.0
+                               :y      200.0
+                               :width  (pgen-window-w)
+                               :height (pgen-window-h)
+                               :label  (_ "Generate character"))))
+    (add-window-button-cb-hide-remove window)
+    window))
 
 (defun message-window-w ()
   (d* 8.0 (small-square-button-size *reference-sizes*)))
