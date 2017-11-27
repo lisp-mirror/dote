@@ -185,6 +185,10 @@
                                               :if-does-not-exists :error)
                        map-level)))
 
+(defun add-spell (character)
+  (when-let* ((spells (spell:spells-list-by-tag spell:+spell-tag-heal+)))
+    (setf (character:spell-loaded character) (random-elt spells))))
+
 (defun %generate-fountain (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
@@ -213,4 +217,5 @@
         (let ((fountain-character (params->np-character char-template)))
           (setf (basic-interaction-params fountain-character) template)
           (randomize-damage-points fountain-character fountain-level)
+          (add-spell fountain-character)
           fountain-character)))))

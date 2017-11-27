@@ -57,6 +57,10 @@
     :initform 0.0
     :accessor current-damage-points
     :type integer)
+   (spell-loaded
+    :initarg  :spell-loaded
+    :initform nil
+    :accessor spell-loaded)
    (level
     :initarg :level
     :initform 1
@@ -516,10 +520,6 @@
     :initarg :ring
     :initform nil
     :accessor ring)
-   (spell-loaded
-    :initarg  :spell-loaded
-    :initform nil
-    :accessor spell-loaded)
    (inventory
     :initarg :inventory
     :initform '()

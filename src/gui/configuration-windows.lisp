@@ -347,6 +347,7 @@
                              :y                  0.0
                              :label              (_ "Character smooth movements")
                              :callback           #'update-config-smooth-movements-cb
+                             :initial-state      (gconf:config-smooth-movements)
                              :color              :green)
     :initarg  :checkb-smooth-movement
     :accessor checkb-smooth-movement)))

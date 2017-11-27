@@ -16,18 +16,25 @@
 
 (in-package :mesh)
 
-(defclass fountain-mesh-shell (triangle-mesh-shell) ())
+(defclass fountain-mesh-shell (triangle-mesh-shell)
+  ((spell-recharge-count
+   :initform 0
+   :initarg  :spell-recharge-count
+   :accessor spell-recharge-count)))
 
 (defmethod game-event:on-game-event ((object fountain-mesh-shell) (event game-event:end-turn))
   ;;(misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
   nil)
 
 (defmethod game-event:on-game-event ((object fountain-mesh-shell)
-                                     (event game-event:other-interaction-event))
+                                     (event game-event:activate-switch-event))
   (game-event:check-event-targeted-to-me (object event)
-    (let ((player (find-entity-by-id (state object) (game-event:id-origin event))))
-      (when player
-        (battle-utils:defend-from-fountain-interaction object player)))))
+    (with-accessors ((spell-recharge-count spell-recharge-count)) object
+      (let ((player (find-entity-by-id (state object) (game-event:id-origin event))))
+        (when (and player
+                   (> spell-recharge-count 0))
+          (decf spell-recharge-count)
+          (battle-utils:defend-from-fountain-interaction object player))))))
 
 (defmethod rendering-needed-p ((object fountain-mesh-shell) renderer)
   (declare (optimize (debug 0) (safety 0) (speed 3)))

@@ -153,7 +153,11 @@
   (send-effects-after-attack opened opener :weapon (entity:ghost opened)))
 
 (defun defend-from-fountain-interaction (fountain player)
-  (send-effects-after-attack fountain player :weapon (entity:ghost fountain)))
+  #+debug-mode (assert (character:spell-loaded (entity:ghost fountain)))
+  #+debug-mode (assert (spell:spellp (character:spell-loaded (entity:ghost fountain))))
+  (with-accessors ((state entity:state)) fountain
+    (game-state:with-world (world state)
+      (launch-spell-from-npc world fountain player))))
 
 (defun send-effects-after-attack (attacker defender
                                   &key (weapon (character:worn-weapon (entity:ghost attacker))))
@@ -802,6 +806,21 @@
                                        defender)))
               (make-attacker-message-gui-out-range-error world attacker))
           (make-attacker-message-gui-no-spell-error world attacker))
+      (world:reset-toolbar-selected-action world)
+      (game-event:send-refresh-toolbar-event))))
+
+(defun launch-spell-from-npc (world attacker defender)
+  (when (and attacker
+             defender)
+    (let ((spell-loaded (character:spell-loaded (entity:ghost attacker))))
+      (when (and spell-loaded
+                 (range-spell-valid-p attacker defender spell-loaded))
+        (action-scheduler:with-enqueue-action-and-send-remove-after
+            (world action-scheduler:launch-spell-action)
+          (arrows:launch-spell spell-loaded
+                                 world
+                                 attacker
+                                 defender)))
       (world:reset-toolbar-selected-action world)
       (game-event:send-refresh-toolbar-event))))
 

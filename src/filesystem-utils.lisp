@@ -47,7 +47,6 @@
 (defun create-file (file)
   "create file and parent dir, if necessary"
   (let ((path-splitted (fs:split-path-elements file)))
-    (misc:dbg "path-splitted ~a" (subseq path-splitted 0 (1- (length path-splitted))))
     (when (and path-splitted
                (> (length path-splitted) 1))
       (do* ((path-rest (subseq path-splitted 0 (1- (length path-splitted))) (rest path-rest))

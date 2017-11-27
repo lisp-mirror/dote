@@ -2578,6 +2578,11 @@
    :unregister-for-deactivate-trap-event
    :propagate-deactivate-trap-event
    :send-deactivate-trap-event
+   :activate-switch-event
+   :register-for-activate-switch-event
+   :unregister-for-activate-switch-event
+   :propagate-activate-switch-event
+   :send-activate-switch-event
    :other-interaction-event
    :send-other-interaction-event
    :register-for-other-interaction-event
@@ -3765,6 +3770,7 @@
    :chair-w-instanced
    :openp
    :fountain-mesh-shell
+   :spell-recharge-count
    :container-mesh-shell
    :furniture-mesh-shell
    :setup-projective-texture

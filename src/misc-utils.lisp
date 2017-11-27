@@ -67,7 +67,7 @@
                      (alexandria:format-symbol t "~:@(~ap~)"
                                                (symbol-name name)))))
       `(defun ,fname (,a)
-         (typep ,a ',name)))))
+         (eql (type-of ,a) ',name)))))
 
 (defmacro define-compiler-macros (name &body args)
   (let* ((function-name (alexandria:format-symbol t "~:@(~a~)" name))

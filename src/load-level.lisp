@@ -16,7 +16,9 @@
 
 (in-package :load-level)
 
-(alexandria:define-constant +terrain-chunk-cache-name+ "terrain-chunk" :test #'string=)
+(alexandria:define-constant +terrain-chunk-cache-name+    "terrain-chunk" :test #'string=)
+
+(alexandria:define-constant +min-fountain-spell-recharge+ 2               :test #'=)
 
 (defparameter *available-objects-generators*
   (list (list :weapons
@@ -186,6 +188,11 @@
     (t
      'mesh:furniture-mesh-shell)))
 
+(defun calc-recharge-spell-fountain-count (world)
+  (let ((level (game-state:map-level (main-state world))))
+    (truncate (max +min-fountain-spell-recharge+
+                  (- +maximum-level-difficult+ (lcg-next-upto level))))))
+
 (defun setup-furnitures (world min-x min-y x y freq keychain)
   (when (all-furnitures-but-pillars-not-empty-p world)
     (let* ((dice-roll      (random-select-by-frequency freq :key #'car :sort nil :normalize nil))
@@ -220,6 +227,10 @@
                (game-event:register-for-unlock-object-event shell)
                (random-container:generate-container (game-state:map-level (main-state world))
                                                     :keychain keychain))))
+      (when (eq furniture-type +magic-furniture-type+)
+        (setf (mesh:spell-recharge-count shell)
+              (calc-recharge-spell-fountain-count world))
+        (game-event:register-for-activate-switch-event shell))
       ;; event
       ;; attack
       (game-event:register-for-attack-melee-event      shell)

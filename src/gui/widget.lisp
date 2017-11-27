@@ -713,6 +713,7 @@
                                          (callback           nil)
                                          (color              :green)
                                          (button-toggle-type nil)
+                                         (initial-state      nil)
                                          &allow-other-keys)
   (with-accessors ((button button) (text text)
                    (width width) (height height)
@@ -728,6 +729,7 @@
                                   :callback callback
                                   :x        (d- width height)
                                   :y        0.0)))
+    (setf (button-state button) initial-state)
     (let ((text-font-size (min label-font-size
                                (d* (label-font-size object)
                                    (d/ (d- width height) (label-width object))))))
@@ -1087,7 +1089,6 @@
                    (width width)
                    (children children)) object
     (declare (desired-type width height label-font-size))
-    (misc:dbg "called with: ~a" new-label)
     (common-setup-label object new-label)
     (let* ((label-width     (label-width object))
            (scaling-width   (d/ (d- width (d* 2.0
@@ -2130,7 +2131,7 @@
           (when (and facing-entity
                      (eq (game-state:el-type map-element)
                          +magic-furniture-type+))
-            (game-event:send-other-interaction-event bound-player facing-entity)))))))
+            (game-event:send-activate-switch-event bound-player facing-entity)))))))
 
 (defun toolbar-launch-spell-cb (w e)
   (declare (ignore e))

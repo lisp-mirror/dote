@@ -448,6 +448,13 @@
                                                   :id-origin      (identificable:id origin)
                                                   :id-destination (identificable:id dest))))
 
+(defevent activate-switch-event (game-event-w-destination) ())
+
+(defun send-activate-switch-event (origin dest)
+  (propagate-activate-switch-event (make-instance 'activate-switch-event
+                                                  :id-origin      (identificable:id origin)
+                                                  :id-destination (identificable:id dest))))
+
 (defevent game-interrupt-terminated-event () ())
 
 (defun send-game-interrupt-terminated-event ()
