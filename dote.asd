@@ -195,7 +195,6 @@
 
 (progn
   ;; debug
-  (pushnew :inhibit-planner *features*)
   (pushnew :debug-mode              *features*)
   ; (pushnew :small-skydome           *features*)
   (pushnew :debug-blackboard-layers *features*)

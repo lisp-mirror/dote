@@ -232,29 +232,30 @@
 (defmethod find-plan ((object planner-character) strategy)
   (cdr (assoc strategy (planners object) :test #'eq)))
 
-#+inhibit-planner
-(defmethod elaborate-current-tactical-plan ((object planner-character) strategy-expert
-                                            player-entity strategy-decision)
-  (declare (ignore strategy-expert player-entity strategy-decision))
-  (set-plan object (list ai-utils:+idle-action+))
-  (current-plan object))
+(defun %inhibit-current-tactical-plan (character)
+  #+debug-mode (misc:dbg "planner is inhibited, switching to idle")
+  (set-plan character (list ai-utils:+idle-action+))
+  (current-plan character))
 
-#-inhibit-planner
-(defmethod elaborate-current-tactical-plan ((object planner-character) strategy-expert
+(defmethod elaborate-current-tactical-plan ((object planner-character)
+                                            strategy-expert
                                             player-entity
                                             (strategy-decision (eql nil)))
   (declare (ignore strategy-decision))
-  (with-one-shot-force-idle (object)
-    (with-accessors ((current-plan current-plan)) object
-      (if current-plan
-          current-plan
-          (elaborate-current-tactical-plan object
-                                             strategy-expert
-                                             player-entity
-                                             (blackboard:strategy-decision strategy-expert))))))
+  (if (gconf:config-inhibit-planner)
+      (%inhibit-current-tactical-plan object)
+      (with-one-shot-force-idle (object)
+        (with-accessors ((current-plan current-plan)) object
+          (if current-plan
+              current-plan
+              (elaborate-current-tactical-plan object
+                                               strategy-expert
+                                               player-entity
+                                               (blackboard:strategy-decision strategy-expert)))))))
 
-#-inhibit-planner
-(defmethod elaborate-current-tactical-plan ((object planner-character) strategy-expert
+
+(defmethod elaborate-current-tactical-plan ((object planner-character)
+                                            strategy-expert
                                             player-entity
                                             strategy-decision)
   (with-one-shot-force-idle (object)

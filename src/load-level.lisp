@@ -193,6 +193,24 @@
     (truncate (max +min-fountain-spell-recharge+
                   (- +maximum-level-difficult+ (lcg-next-upto level))))))
 
+(defun create-furniture-ghost (world furniture-shell furniture-type keychain)
+  (cond
+    ((eq furniture-type +furniture-type+)
+     (random-inert-object:generate-inert-object (game-state:map-level (main-state world))))
+    ((eq furniture-type +magic-furniture-type+)
+     (random-fountain:generate-fountain (game-state:map-level (main-state world))))
+    ((eq furniture-type +container-type+)
+     ;; lock unlock event
+     (game-event:register-for-lock-object-event   furniture-shell)
+     (game-event:register-for-unlock-object-event furniture-shell)
+     (random-container:generate-container (game-state:map-level (main-state world))
+                                          :keychain keychain))))
+
+(defun tune-magic-furniture (world furniture-shell)
+  (setf (mesh:spell-recharge-count furniture-shell)
+        (calc-recharge-spell-fountain-count world))
+  (game-event:register-for-activate-switch-event furniture-shell))
+
 (defun setup-furnitures (world min-x min-y x y freq keychain)
   (when (all-furnitures-but-pillars-not-empty-p world)
     (let* ((dice-roll      (random-select-by-frequency freq :key #'car :sort nil :normalize nil))
@@ -207,40 +225,27 @@
            (mesh-x         (d+ (d* +terrain-chunk-size-scale+ min-x)
                                (map-utils:coord-map->chunk (d (+ x min-x)))))
            (mesh-y         (d+ (d* +terrain-chunk-size-scale+ min-y)
-                               (map-utils:coord-map->chunk (d (+ y min-y))))))
+                               (map-utils:coord-map->chunk (d (+ y min-y)))))
+           (ghost          (%create-furniture-ghost world shell furniture-type keychain)))
       (setf (compiled-shaders shell)  (compiled-shaders world)
             (entity:pos shell)        (vec mesh-x +zero-height+ mesh-y)
             (entity:dir shell)        (random-elt (vector (vec  1.0 0.0  0.0)
                                                           (vec  0.0 0.0  1.0)
                                                           (vec -1.0 0.0  0.0)
-                                                          (vec  0.0 0.0 -1.0))))
-      (setf (entity:ghost shell)
-            (cond
-              ((eq furniture-type +furniture-type+)
-               (random-inert-object:generate-inert-object
-                (game-state:map-level (main-state world))))
-              ((eq furniture-type +magic-furniture-type+)
-               (random-fountain:generate-fountain (game-state:map-level (main-state world))))
-              ((eq furniture-type +container-type+)
-               ;; lock unlock event
-               (game-event:register-for-lock-object-event   shell)
-               (game-event:register-for-unlock-object-event shell)
-               (random-container:generate-container (game-state:map-level (main-state world))
-                                                    :keychain keychain))))
+                                                          (vec  0.0 0.0 -1.0)))
+            (entity:ghost shell)      ghost)
       (when (eq furniture-type +magic-furniture-type+)
         (setf (mesh:spell-recharge-count shell)
-              (calc-recharge-spell-fountain-count world))
-        (game-event:register-for-activate-switch-event shell))
-      ;; event
+              (calc-recharge-spell-fountain-count world)))
+      ;; events
       ;; attack
       (game-event:register-for-attack-melee-event      shell)
       (game-event:register-for-attack-long-range-event shell)
       ;; attack-spell
       (game-event:register-for-attack-spell-event shell)
-      ;; if magic-furniture other interactions are possible
-      (cond
-        ((eq furniture-type +magic-furniture-type+)
-         (game-event:register-for-other-interaction-event shell)))
+      ;; if magic-furniture other interactions are possibles
+      (when (eq furniture-type +magic-furniture-type+)
+        (tune-magic-furniture world shell))
       (push-interactive-entity world shell furniture-type nil))))
 
 (defun %relative-coord-furniture->cood-mat-state (min rel-coord)

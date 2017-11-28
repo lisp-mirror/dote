@@ -92,7 +92,11 @@
    (smooth-movements
     :initform t
     :initarg  :smooth-movements
-    :accessor smooth-movements)))
+    :accessor smooth-movements)
+   (inhibit-planner
+    :initform t
+    :initarg  :inhibit-planner
+    :accessor inhibit-planner)))
 
 (defmethod marshal:class-persistant-slots ((object game-config))
     '(forward
@@ -107,7 +111,8 @@
       go-to-active-character
       next-character
       prev-character
-      smooth-movements))
+      smooth-movements
+      inhibit-planner))
 
 (defun make-default-config ()
   (make-instance 'game-config))
@@ -185,3 +190,5 @@
 (gen-acc-fn prev-character)
 
 (gen-acc-fn smooth-movements)
+
+(gen-acc-fn inhibit-planner)

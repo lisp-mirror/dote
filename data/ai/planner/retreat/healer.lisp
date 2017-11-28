@@ -23,7 +23,9 @@
          :cost                  1)
   (:name :launch-teleport-spell
          :preconditions         ()
-         :context-preconditions (has-enough-sp-teleport-p is-visible-p)
+         :context-preconditions (!disobey-1-out-100
+                                 has-enough-sp-teleport-p
+                                 is-visible-p)
          :effects               ((:curb-threat t))
          :cost                  80)
   (:name :launch-spell-wall

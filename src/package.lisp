@@ -1607,6 +1607,7 @@
    :config-next-character
    :config-prev-character
    :config-smooth-movements
+   :config-inhibit-planner
    :set-forward
    :set-back
    :set-left
@@ -1617,9 +1618,10 @@
    :set-rotate-camera-ccw
    :set-reset-camera
    :set-go-to-active-character
-   :set-smooth-movements
    :set-next-character
    :set-prev-character
+   :set-smooth-movements
+   :set-inhibit-planner
    :*game-config*
    :dump
    :init

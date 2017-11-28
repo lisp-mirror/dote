@@ -367,6 +367,57 @@
     (setf (compiled-shaders w) compiled-shaders)
     w))
 
+(defun debug-window-w ()
+  (let ((frame (debug-button-w)))
+    (adjust-window-w frame)))
+
+(defun debug-window-h ()
+  (let ((frame (d+ (debug-button-h)
+                   (spacing *reference-sizes*))))
+    (adjust-window-h frame)))
+
+(defun debug-button-w ()
+  (d* 2.0 (square-button-size *reference-sizes*)))
+
+(defun debug-button-h ()
+  (checkbutton-h *reference-sizes*))
+
+(defun update-config-planner-cb (button event)
+  (declare (ignore event))
+  (gconf:set-inhibit-planner (button-state button))
+  (gconf:dump))
+
+(defclass debug-window (window)
+  ((checkb-smooth-movement
+    :initform (make-instance 'labeled-check-button
+                             :button-toggle-type t
+                             :height             (debug-button-h)
+                             :width              (debug-button-w)
+                             :x                  0.0
+                             :y                  0.0
+                             :label              (_ "Inhibit AI planner")
+                             :callback           #'update-config-planner-cb
+                             :initial-state      (gconf:config-inhibit-planner)
+                             :color              :green)
+    :initarg  :checkb-smooth-movement
+    :accessor checkb-smooth-movement)))
+
+(defmethod initialize-instance :after ((object debug-window) &key &allow-other-keys)
+  (with-accessors ((checkb-smooth-movement checkb-smooth-movement)) object
+    (add-child object checkb-smooth-movement)))
+
+(defun make-debug-window (compiled-shaders)
+  (let ((w (make-instance 'debug-window
+                          :x      (main-window-w)
+                          :y      (d (- *window-h* (debug-window-h)))
+                          :width  (debug-window-w)
+                          :height (debug-window-h)
+                          :label  (_ "Debug Configuration"))))
+    (add-window-button-cb-hide-remove w)
+    (setf (compiled-shaders w) compiled-shaders)
+    w))
+
+
 (defun main-window-w ()
   (adjust-window-w (d/ (d *window-w*) 4.0)))
 
@@ -383,17 +434,22 @@
           (left-frame-offset *reference-sizes*)
           (main-window-w))))
 
-(defun open-keyboard-window-cb (widget event)
-  (declare (ignore event))
+(defun %open-conf-window (widget make-fn)
   (with-root-widget (root widget)
     (add-child root
-               (make-keyboard-window (compiled-shaders widget)))))
+               (funcall make-fn (compiled-shaders widget)))))
+
+(defun open-keyboard-window-cb (widget event)
+  (declare (ignore event))
+  (%open-conf-window widget #'make-keyboard-window))
 
 (defun open-appearance-window-cb (widget event)
   (declare (ignore event))
-  (with-root-widget (root widget)
-    (add-child root
-               (make-appearance-window (compiled-shaders widget)))))
+  (%open-conf-window widget #'make-appearance-window))
+
+(defun open-debug-window-cb (widget event)
+  (declare (ignore event))
+    (%open-conf-window widget #'make-debug-window))
 
 (defclass main-window (window)
   ((b-keyboard
@@ -416,13 +472,26 @@
                              :callback #'open-appearance-window-cb
                              :label (_ "Appearance"))
     :initarg :b-appearance
-    :accessor b-appearance)))
+    :accessor b-appearance)
+   #+debug-mode
+   (b-debug
+    :initform (make-instance 'button
+                             :width    (main-window-button-w)
+                             :height   (main-window-button-h)
+                             :x        0.0
+                             :y        (d+ (d* 3.0 (main-window-button-h))
+                                           (spacing *reference-sizes*))
+                             :callback #'open-debug-window-cb
+                             :label (_ "Debug"))
+    :initarg :b-debug
+    :accessor b-debug)))
 
 (defmethod initialize-instance :after ((object main-window) &key &allow-other-keys)
   (with-accessors ((b-keyboard b-keyboard)
                    (b-appearance b-appearance)) object
     (add-child object b-keyboard)
-    (add-child object b-appearance)))
+    (add-child object b-appearance)
+    #+debug-mode (add-child object (b-debug object))))
 
 (defun make-main-window (compiled-shaders)
   (let ((w (make-instance 'main-window
