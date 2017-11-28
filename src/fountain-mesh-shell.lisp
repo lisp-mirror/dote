@@ -22,6 +22,8 @@
    :initarg  :spell-recharge-count
    :accessor spell-recharge-count)))
 
+(gen-type-p fountain-mesh-shell)
+
 (defmethod game-event:on-game-event ((object fountain-mesh-shell) (event game-event:end-turn))
   ;;(misc:dbg " end turn ~a(~a) ~a" (type-of object) (id object) (type-of event))
   nil)
@@ -29,12 +31,21 @@
 (defmethod game-event:on-game-event ((object fountain-mesh-shell)
                                      (event game-event:activate-switch-event))
   (game-event:check-event-targeted-to-me (object event)
-    (with-accessors ((spell-recharge-count spell-recharge-count)) object
-      (let ((player (find-entity-by-id (state object) (game-event:id-origin event))))
-        (when (and player
-                   (> spell-recharge-count 0))
-          (decf spell-recharge-count)
-          (battle-utils:defend-from-fountain-interaction object player))))))
+    (with-accessors ((spell-recharge-count spell-recharge-count)
+                     (state state)) object
+      (with-world (world state)
+        (let ((player (find-entity-by-id (state object) (game-event:id-origin event))))
+          #+debug-mode (assert player)
+          (if (<= spell-recharge-count 0)
+              (world:post-entity-message world ;; note: only shown when not AI
+                                         player
+                                         (_ "The source of this power is exhausted...")
+                                         nil)
+              (let ((cost (calculate-decrement-move-points-activate-switch player object)))
+                (when (can-use-movement-points-p player :minimum cost)
+                  (decrement-move-points-activate-switch player object)
+                  (decf spell-recharge-count)
+                  (battle-utils:defend-from-fountain-interaction object player)))))))))
 
 (defmethod rendering-needed-p ((object fountain-mesh-shell) renderer)
   (declare (optimize (debug 0) (safety 0) (speed 3)))

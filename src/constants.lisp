@@ -92,6 +92,8 @@
 
 (define-constant +place-trap-cost+                  3.0                :test #'=)
 
+(define-constant +activate-switch-cost+             4.0                :test #'=)
+
 (define-constant +default-size+                     256                :test '=)
 
 (define-constant +map-max-size+                     512                :test '=)

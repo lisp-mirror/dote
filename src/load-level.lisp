@@ -226,7 +226,7 @@
                                (map-utils:coord-map->chunk (d (+ x min-x)))))
            (mesh-y         (d+ (d* +terrain-chunk-size-scale+ min-y)
                                (map-utils:coord-map->chunk (d (+ y min-y)))))
-           (ghost          (%create-furniture-ghost world shell furniture-type keychain)))
+           (ghost          (create-furniture-ghost world shell furniture-type keychain)))
       (setf (compiled-shaders shell)  (compiled-shaders world)
             (entity:pos shell)        (vec mesh-x +zero-height+ mesh-y)
             (entity:dir shell)        (random-elt (vector (vec  1.0 0.0  0.0)

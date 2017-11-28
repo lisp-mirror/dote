@@ -749,6 +749,8 @@
 
 (defgeneric calculate-decrement-move-points-place-trap (object))
 
+(defgeneric calculate-decrement-move-points-activate-switch (object switch-entity))
+
 (defgeneric decrement-move-points (object how-much))
 
 (defgeneric decrement-spell-points (object how-much))
@@ -762,6 +764,8 @@
 (defgeneric decrement-move-points-attack-melee (object))
 
 (defgeneric decrement-move-points-place-trap (object))
+
+(defgeneric decrement-move-points-activate-switch (object switch-entity))
 
 (defgeneric can-use-movement-points-p (object &key minimum))
 
@@ -943,6 +947,18 @@
         +place-trap-cost+
         (d/ +place-trap-cost+ 3.0))))
 
+(defmethod calculate-decrement-move-points-activate-switch ((object triangle-mesh)
+                                                            (entity-switch entity))
+  (with-accessors ((ghost ghost)) object
+    (cond
+      ((fountain-mesh-shell-p entity-switch)
+       (if (or (character:pclass-wizard-p ghost)
+               (character:pclass-healer-p ghost))
+           +activate-switch-cost+
+           (d/  +activate-switch-cost+ 2.0)))
+      (t
+       (error "calculate-decrement-move-points-activate-switch, no valid type")))))
+
 (defmethod decrement-move-points ((object triangle-mesh) how-much)
   (when (can-use-movement-points-p object :minimum how-much)
     (decf (character:current-movement-points (ghost object))
@@ -976,6 +992,12 @@
 
 (defmethod decrement-move-points-place-trap ((object triangle-mesh))
   (let ((cost (calculate-decrement-move-points-place-trap object)))
+    (when (can-use-movement-points-p object :minimum cost)
+      (decf (character:current-movement-points (ghost object))
+            cost))))
+
+(defmethod decrement-move-points-activate-switch ((object triangle-mesh) entity-switch)
+  (let ((cost (calculate-decrement-move-points-activate-switch object entity-switch)))
     (when (can-use-movement-points-p object :minimum cost)
       (decf (character:current-movement-points (ghost object))
             cost))))

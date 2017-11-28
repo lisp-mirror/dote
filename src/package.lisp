@@ -75,6 +75,7 @@
    :+attack-long-range-bow-chance-decrement+
    :+attack-long-range-crossbow-chance-decrement+
    :+place-trap-cost+
+   :+activate-switch-cost+
    :+default-size+
    :+map-max-size+
    :+pi+
@@ -3772,12 +3773,14 @@
    :chair-w-instanced
    :openp
    :fountain-mesh-shell
+   :fountain-mesh-shell-p
    :spell-recharge-count
    :container-mesh-shell
    :furniture-mesh-shell
    :setup-projective-texture
    :calculate-decrement-move-points-entering-tile
    :calculate-decrement-move-points-place-trap
+   :calculate-decrement-move-points-activate-switch
    :decrement-move-points
    :decrement-spell-points
    :decrement-move-points-rotate
@@ -3785,6 +3788,7 @@
    :decrement-move-points-wear
    :decrement-move-points-attack-melee
    :decrement-move-points-place-trap
+   :decrement-move-points-activate-switch
    :can-use-movement-points-p
    :can-use-spell-points-p
    :calculate-cost-position

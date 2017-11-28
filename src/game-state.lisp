@@ -434,8 +434,8 @@
   (and (window-id object)
        (sdl2.kit-utils:fetch-window (window-id object))))
 
-(defmacro with-world ((world object) &body body)
-  `(let ((,world (fetch-world ,object)))
+(defmacro with-world ((world game-state) &body body)
+  `(let ((,world (fetch-world ,game-state)))
      ,@body))
 
 (defmethod fetch-world ((object game-state))
