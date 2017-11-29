@@ -334,11 +334,15 @@ invisible if part of a labyrinth"
                    (state state)
                    (visibility-cone visibility-cone)) object
     ;; launch a ray
-    (let* ((ray (make-instance 'ray
-                               :ray-direction (normalize (vec- (aabb-center (aabb target))
-                                                               (aabb-center (aabb object))))))
-           (world-ref (game-state:fetch-world (state object)))
-           (quad-tree (world:entities world-ref)))
+    (let* ((center-target (if (tree-mesh-shell-p target)
+                              (aabb-center (tree-trunk-aabb target))
+                              (aabb-center (aabb target))))
+           (ray           (make-instance 'ray
+                                         :ray-direction
+                                         (normalize (vec- center-target
+                                                          (aabb-center (aabb object))))))
+           (world-ref     (game-state:fetch-world (state object)))
+           (quad-tree     (world:entities world-ref)))
       (loop
          for dt from 0.0
          below (vec-length (cone-height visibility-cone))
@@ -371,13 +375,14 @@ invisible if part of a labyrinth"
                       ((trap-mesh-shell-p d)
                        ;;does nothing, continue to the next iteration
                        )
-
                       ((tree-mesh-shell-p d)
                        ;;(misc:dbg "tree trunk ~%~a ~a -> ~a" (tree-trunk-aabb d)
                        ;;        ends (insidep (tree-trunk-aabb d) ends))
                        (when (and (insidep (aabb d) ends)
                                   (insidep (tree-trunk-aabb d) ends))
-                         (return-from nonlabyrinth-element-hitted-by-ray nil)))
+                         (if (= (id d) (id target))
+                             (return-from nonlabyrinth-element-hitted-by-ray (values ray d))
+                             (return-from nonlabyrinth-element-hitted-by-ray nil))))
                       (t
                        (when (insidep (aabb d) (ray-ends ray pos)) ;; O_O
                          (if (= (id d) (id target))

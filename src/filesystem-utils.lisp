@@ -295,13 +295,13 @@
     (when (= (length path) 0)
       (error (format nil "see-file: the path ~a is to short" path)))
     (if (string= *directory-sep* (string (first-elt path)))
-        (setf *file-link-to* (cons path +abs-link+))
-        (setf *file-link-to* (cons path +rel-link+)))))
+        `(setf *file-link-to* (cons ,path +abs-link+))
+        `(setf *file-link-to* (cons ,path +rel-link+)))))
 
 (defun link-file-path (file)
   (misc:with-load-forms-in-var (*file-link-to* link-file file)
     (if link-file
-        (destructuring-bind (path type)
+        (destructuring-bind (path . type)
             link-file
           (if (eq type +rel-link+)
               (cat-parent-dir (parent-dir-path file) path)
