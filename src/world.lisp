@@ -1037,6 +1037,9 @@
       (cached-aabb object)
       (let ((res (make-instance 'aabb)))
         (walk-quad-tree-anyway (object)
+          #+debug-mode
+          (when (terrain-chunk:terrain-chunk-p entity) ; just to be sure
+            (assert (triangles entity)))
           (when (every #'(lambda (a) (d>= a 0.0)) (aabb-p1 (aabb entity)))
             (expand res (aabb-p1 (aabb entity))))
           (when (every #'(lambda (a) (d>= a 0.0)) (aabb-p2 (aabb entity)))

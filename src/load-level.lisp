@@ -849,23 +849,27 @@ wall's    coordinates    as    they   are    already    scaled:    see
     (setf (mesh:vertices  chunk) (mesh:vertices revived))
     (setf (pick-overlay-values chunk) (pick-overlay-values whole))
     (mesh:reset-aabb chunk)
-    chunk))
+    (values chunk
+            (terrain-chunk:chunk-occupy-space-p chunk))))
 
 (defun chunk-best-aabb (whole x z)
   (let ((hmap (heightmap whole)))
-    (vec4:vec4 x z
-               (dmin (d+ x +quad-tree-leaf-size+)
-                     (map-utils:coord-terrain->chunk (width  hmap) :tile-offset 0.0))
-               (dmin (d+ z +quad-tree-leaf-size+)
-                     (map-utils:coord-terrain->chunk (height hmap) :tile-offset 0.0)))))
+    (values (vec4:vec4 x z
+                       (dmin (d+ x +quad-tree-leaf-size+)
+                             (map-utils:coord-terrain->chunk (width  hmap) :tile-offset 0.0))
+                       (dmin (d+ z +quad-tree-leaf-size+)
+                             (map-utils:coord-terrain->chunk (height hmap) :tile-offset 0.0)))
+            (and (< x (width  hmap))
+                 (< z (height hmap))))))
 
 (defun build-and-cache-terrain-chunk (x z whole cache-key)
-  (let* ((chunk (terrain-chunk:clip-with-aabb whole
-                                              (chunk-best-aabb whole x z)
-                                             :remove-orphaned-vertices t
-                                             :regenerate-rendering-data t
-                                             :clip-if-inside nil))
-         (min-y (3d-utils:min-y (mesh:aabb chunk))))
+  (let* ((clip-aabb (chunk-best-aabb whole x z))
+         (chunk     (terrain-chunk:clip-with-aabb whole
+                                                  clip-aabb
+                                                  :remove-orphaned-vertices t
+                                                  :regenerate-rendering-data t
+                                                  :clip-if-inside nil))
+         (min-y     (3d-utils:min-y (mesh:aabb chunk))))
     (setf (pickable-mesh:origin-offset chunk) (vec x min-y z))
     (pickable-mesh:populate-lookup-triangle-matrix chunk)
     (let ((in-cache (copy-flat chunk)))
@@ -875,7 +879,8 @@ wall's    coordinates    as    they   are    already    scaled:    see
                               :if-exists :supersede
                               :if-does-not-exist :create)
         (interfaces:serialize-to-stream in-cache stream)))
-    chunk))
+    (values chunk
+            (terrain-chunk:chunk-occupy-space-p chunk))))
 
 (defun setup-terrain (world map)
   (let* ((border-color   (skydome-bottom-color (main-state world)))
@@ -927,8 +932,11 @@ wall's    coordinates    as    they   are    already    scaled:    see
                                            chunk-cache-key)))))
     (loop for i from cache-channels-count above 0 do
          (let ((chunk  (lparallel:receive-result channel)))
-           (prepare-for-rendering chunk)
-           (push-entity world chunk)))))
+           (when (terrain-chunk:chunk-occupy-space-p chunk) ; if  chunk has not triangles it is
+                                                            ; because  the  clipping region  is
+                                                            ; outside of the map
+             (prepare-for-rendering chunk)
+             (push-entity world chunk))))))
 
 (defun load-level (window world game-state compiled-shaders file)
   (let* ((actual-file (res:get-resource-file file +maps-resource+

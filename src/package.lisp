@@ -4493,6 +4493,7 @@
   (:export
    :+pick-color-lerp-weight+
    :terrain-chunk
+   :chunk-occupy-space-p
    :terrain-chunk-p
    :heightmap
    :map-border-color

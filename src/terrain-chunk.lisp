@@ -106,8 +106,10 @@
     :initform nil
     :reader decal-weights)))
 
-(defun terrain-chunk-p (a)
-  (typep a 'terrain-chunk:terrain-chunk))
+(defun chunk-occupy-space-p (chunk)
+  (mesh:triangles chunk))
+
+(gen-type-p terrain-chunk)
 
 (defmethod marshal:class-persistant-slots ((object terrain-chunk))
   (append '(map-border-color)
