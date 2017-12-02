@@ -1283,7 +1283,7 @@
                                                 #'(lambda (el)
                                                     (let ((num:*default-epsilon* 0.5))
                                                       (if (or (num:epsilon= el +lake-height+)
-                                                              (num:epsilon= el +labirinth-height+))
+                                                              (num:epsilon= el +labyrinth-height+))
                                                           +invalicable-element-cost+
                                                           el)))))
                (graph-costs (make-instance 'graph:tile-based-graph

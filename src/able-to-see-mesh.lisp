@@ -309,7 +309,7 @@ invisible if part of a labyrinth"
              (values nil entity-nonlab-hitted))
             ((null ray-lab-hitted)
              (values ray-nonlab-hitted entity-nonlab-hitted))
-            (t ;hitted both labirinth and player
+            (t ;hitted both labyrinth and player
              (if (d< (displacement ray-lab-hitted)
                      (displacement ray-nonlab-hitted))
                  (values nil               entity-nonlab-hitted)

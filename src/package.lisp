@@ -60,7 +60,7 @@
    :+lake-height+
    :+water-mesh-starting-y+
    :+terrain-noclip-plane-dist+
-   :+labirinth-height+
+   :+labyrinth-height+
    :+road-height+
    :+maximum-mountain-height+
    :+minimum-mountain-height+

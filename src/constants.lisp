@@ -62,7 +62,7 @@
 
 (define-constant +water-mesh-starting-y+              9.0              :test '=)
 
-(define-constant +labirinth-height+                   1.0              :test '=)
+(define-constant +labyrinth-height+                   1.0              :test '=)
 
 (define-constant +road-height+                        2.0              :test '=)
 
