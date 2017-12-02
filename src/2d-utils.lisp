@@ -70,16 +70,23 @@
   (let ((cp (copy-ivec4 aabb)))
     (when (< (elt coord 0) (elt aabb 0))
       (setf (elt cp 0) (elt coord 0)))
-
     (when (> (elt coord 0) (elt aabb 2))
       (setf (elt cp 2) (elt coord 0)))
-
     (when (< (elt coord 1) (elt aabb 1))
       (setf (elt cp 1) (elt coord 1)))
-
     (when (> (elt coord 1) (elt aabb 3))
       (setf (elt cp 3) (elt coord 1)))
     cp))
+
+(defun expand-corners-iaabb2 (aabb size)
+  (let* ((res       (copy-vec4 aabb))
+         (new-min-x (f- (iaabb2-min-x aabb) size))
+         (new-min-y (f- (iaabb2-min-y aabb) size))
+         (new-max-x (f+ (iaabb2-max-x aabb) size))
+         (new-max-y (f+ (iaabb2-max-y aabb) size)))
+    (setf res (expand-aabb2 res (vec2 new-min-x new-min-y)))
+    (setf res (expand-aabb2 res (vec2 new-max-x new-max-y)))
+    res))
 
 (defun union-iaabb2 (aabb aabb2)
   (let ((cp (copy-ivec4 aabb)))
@@ -107,6 +114,9 @@
         (h (elt coords 3)))
   (ivec4 x1 y1 (+ x1 w) (+ y1 h))))
 
+(defun irect2->iaabb2* (&rest coords)
+  (irect2->iaabb2 coords))
+
 (defun inside-iaabb2-p (aabb x y)
   "t if x y is inside this bounding box
    aabb is: (upper-left-x upper-left-y bottom-right-x bottom-right-y)"
@@ -117,14 +127,12 @@
    (<= y (elt aabb 3))))
 
 (defun iaabb2-intersect-p (aabb1 aabb2)
-  (if
-   (or
-    (>= (elt aabb1 0) (elt aabb2 2))
-    (<= (elt aabb1 2) (elt aabb2 0))
-    (>= (elt aabb1 1) (elt aabb2 3))
-    (<= (elt aabb1 3) (elt aabb2 1)))
-   nil
-   t))
+  (if (or (>= (iaabb2-min-x aabb1) (iaabb2-max-x aabb2))
+          (<= (iaabb2-max-x aabb1) (iaabb2-min-x aabb2))
+          (>= (iaabb2-min-y aabb1) (iaabb2-max-y aabb2))
+          (<= (iaabb2-max-y aabb1) (iaabb2-min-y aabb2)))
+      nil
+      t))
 
 (defun iaabb2-inglobe-p (host guest)
   (and (inside-iaabb2-p host (iaabb2-min-x guest) (iaabb2-min-x guest))
@@ -231,27 +239,31 @@
   (let ((cp (copy-vec4 aabb)))
     (when (< (elt coord 0) (elt aabb 0))
       (setf (elt cp 0) (elt coord 0)))
-
     (when (> (elt coord 0) (elt aabb 2))
       (setf (elt cp 2) (elt coord 0)))
-
     (when (< (elt coord 1) (elt aabb 1))
       (setf (elt cp 1) (elt coord 1)))
-
     (when (> (elt coord 1) (elt aabb 3))
       (setf (elt cp 3) (elt coord 1)))
     cp))
 
+(defun expand-corners-aabb2 (aabb size)
+  (let* ((res       (copy-vec4 aabb))
+         (new-min-x (d- (aabb2-min-x aabb) size))
+         (new-min-y (d- (aabb2-min-y aabb) size))
+         (new-max-x (d+ (aabb2-max-x aabb) size))
+         (new-max-y (d+ (aabb2-max-y aabb) size)))
+    (nexpand-aabb2 res (vec2 new-min-x new-min-y))
+    (nexpand-aabb2 res (vec2 new-max-x new-max-y))
+    res))
+
 (defun nexpand-aabb2 (aabb coord)
   (when (< (elt coord 0) (elt aabb 0))
     (setf (elt aabb 0) (elt coord 0)))
-
   (when (> (elt coord 0) (elt aabb 2))
     (setf (elt aabb 2) (elt coord 0)))
-
   (when (< (elt coord 1) (elt aabb 1))
     (setf (elt aabb 1) (elt coord 1)))
-
   (when (> (elt coord 1) (elt aabb 3))
     (setf (elt aabb 3) (elt coord 1)))
   aabb)
@@ -278,9 +290,12 @@
    (upper-left-x upper-left-y bottom-right-x bottom-right-y)"
   (let ((x1 (elt coords 0))
         (y1 (elt coords 1))
-        (w (elt coords 2))
-        (h (elt coords 3)))
+        (w  (elt coords 2))
+        (h  (elt coords 3)))
   (vec4 x1 y1 (+ x1 w) (+ y1 h))))
+
+(defun rect2->aabb2* (&rest coords)
+  (rect2->aabb2 coords))
 
 (defun inside-aabb2-p (aabb x y)
   "t if x y is inside this bounding box
@@ -292,14 +307,16 @@
    (<= y (elt aabb 3))))
 
 (defun aabb2-intersect-p (aabb1 aabb2)
-  (if
-   (or
-    (>= (elt aabb1 0) (elt aabb2 2))
-    (<= (elt aabb1 2) (elt aabb2 0))
-    (>= (elt aabb1 1) (elt aabb2 3))
-    (<= (elt aabb1 3) (elt aabb2 1)))
-   nil
-   t))
+  (if (or (d>       (aabb2-min-x aabb1) (aabb2-max-x aabb2))
+          (epsilon= (aabb2-min-x aabb1) (aabb2-max-x aabb2))
+          (d<       (aabb2-max-x aabb1) (aabb2-min-x aabb2))
+          (epsilon= (aabb2-max-x aabb1) (aabb2-min-x aabb2))
+          (d>       (aabb2-min-y aabb1) (aabb2-max-y aabb2))
+          (epsilon= (aabb2-min-y aabb1) (aabb2-max-y aabb2))
+          (d<       (aabb2-max-y aabb1) (aabb2-min-y aabb2))
+          (epsilon= (aabb2-max-y aabb1) (aabb2-min-y aabb2)))
+      nil
+      t))
 
 (defun aabb2-inglobe-p (host guest)
   (and (inside-aabb2-p host (aabb2-min-x guest) (aabb2-min-y guest))

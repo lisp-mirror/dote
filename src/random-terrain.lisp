@@ -680,13 +680,18 @@
               (format stream "element with aabb ~a out of map" (aabb condition))))
    (:documentation "Error when an element go beyond the map limits"))
 
-(defmacro check-overlap (map x y w h)
+(defmacro check-overlap (map aabb &optional (expand-size) nil)
   (alexandria:with-gensyms (overlapped)
-    `(let ((,overlapped (overlap-any-aabb ,map (list ,x ,y (+ ,x ,w) (+ ,y ,h)))))
+    (let ((actual-aabb (if (and expand-size
+                                (numberp expand-size)
+                                (> (d expand-size) 0.0))
+                           `(expand-corners-aabb2 ,aabb ,expand-size)
+                           aabb)))
+    `(let ((,overlapped (overlap-any-aabb ,map ,actual-aabb)))
        (when ,overlapped
          (error 'overlap-error
-                :aabb1 (list ,x ,y (+ ,x ,w)  (+ ,y ,h))
-                :aabb2 ,overlapped)))))
+                :aabb1 ,aabb
+                :aabb2 ,overlapped))))))
 
 (defmethod grow-mountain ((object random-terrain) x y w h height sigma-w sigma-h
                           &key (fast-reject t))
@@ -706,7 +711,7 @@
                      (> (+ y h) (height matrix)))
                 (error 'out-of-map-error :aabb
                        (list x y (+ x w) (+ y h))))
-              (check-overlap object x y w h))
+              (check-overlap object (rect2->aabb2* (d x) (d y) (d w) (d h))))
             (generate-mountain mountain
                                (round (- (/ (width (matrix mountain)) 2) (/ w 2)))
                                (round (- (/ (height (matrix mountain)) 2) (/ h 2)))
@@ -770,10 +775,8 @@
 (defmethod grow-labyrinth-space ((object random-terrain) x y w h)
   (with-accessors ((matrix matrix)) object
     (restart-case
-        (progn
-          (check-overlap object (1- x) (1- y) (1+ w) (1+ h))
-          (when (inside-any-aabb object (1- x) (1- y))
-            (error 'invalid-position-error :coord (list x y)))
+        (let ((aabb (rect2->aabb2* (d x) (d y) (d w) (d h))))
+          (check-overlap object aabb 2.0)
           (when (or
                  (< x 1)
                  (< y 1)

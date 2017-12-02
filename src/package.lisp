@@ -928,9 +928,11 @@
    :iaabb2~
    :valid-iaabb2
    :expand-iaabb2
+   :expand-corners-iaabb2
    :union-iaabb2
    :iaabb2->irect2
    :irect2->iaabb2
+   :irect2->iaabb2*
    :inside-iaabb2-p
    :iaabb2-intersect-p
    :iaabb2-inglobe-p
@@ -951,10 +953,12 @@
    :aabb2~
    :valid-aabb2-p
    :expand-aabb2
+   :expand-corners-aabb2
    :nexpand-aabb2
    :union-aabb2
    :aabb2->rect2
    :rect2->aabb2
+   :rect2->aabb2*
    :inside-aabb2-p
    :aabb2-intersect-p
    :aabb2-inglobe-p

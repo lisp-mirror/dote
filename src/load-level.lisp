@@ -998,6 +998,7 @@ wall's    coordinates    as    they   are    already    scaled:    see
       (update-progress 1.0)
       ;; free memory associated with *map*, *wall* etc.
       (clean-global-vars)
+      #+debug-mode (misc:dbg "aabb world ~a" (world:world-aabb world))
       ;; initialize blackboard
       (let ((blackboard (make-instance 'blackboard:blackboard
                                        :main-state game-state)))

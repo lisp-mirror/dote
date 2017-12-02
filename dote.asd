@@ -183,6 +183,7 @@
                                      (:file "pixmap-test")
                                      (:file "color-utils-test")
                                      (:file "sb-cga-utils-test")
+                                     (:file "2d-utils-test")
                                      (:file "procedural-texture-test")
                                      (:file "terrain-chunk-test")
                                      (:file "avatar-test")

@@ -208,6 +208,13 @@
           :sb-cga-utils)
   (:export :test-look@))
 
+(defpackage :2d-utils-test
+    (:use :cl
+          :clunit
+          :all-test
+          :2d-utils)
+  (:export :aabb-overlap-test))
+
 (defpackage :terrain-chunk-test
     (:use :cl
           :clunit
