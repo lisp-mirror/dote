@@ -5,7 +5,7 @@
          :preconditions         ()
          :context-preconditions (!is-visible-p is-able-to-flee-p)
          :effects               ((:curb-threat t))
-         :cost                  1)
+         :cost                  5)
   (:name :hide
          :preconditions         ((:has-hiding-place t))
          :context-preconditions (is-visible-p)
@@ -38,7 +38,7 @@
          :preconditions         ((:has-fountain-facing t))
          :context-preconditions (!enough-health-p pass-1d4)
          :effects               ((:curb-threat t))
-         :cost                  10)
+         :cost                  1)
   (:name :go-to-fountain
          :preconditions         ((:has-fountain-near t))
          :context-preconditions ()
