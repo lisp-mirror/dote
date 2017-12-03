@@ -226,9 +226,6 @@
                                                                                     object)))
         (when-let ((hiding-tile (ai-utils:go-find-hiding-place object
                                                                all-opponents-can-see-me)))
-          ;; clear memoized results coming from the planner
-          ;; (test precondition is-there-hiding-place-p)
-          ;;(ai-utils:go-find-hiding-place-clear-cache)
           #+debug-ai (dbg "hiding tile chosen ~a" hiding-tile)
           (let ((entity-pos (calculate-cost-position object)))
             (multiple-value-bind (path total-cost costs)
@@ -313,6 +310,39 @@
         (action-scheduler:with-enqueue-action-and-send-remove-after
             (world action-scheduler:tactical-plane-action)
           (ai-utils:go-place-trap object))))))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+use-fountain+)))
+  (with-accessors ((state state)) object
+    (let ((nearest-fountain (ai-utils:useful-reachable-fountain object)))
+      (assert nearest-fountain)
+      (%rotate-until-visible state object nearest-fountain)
+      (game-event:send-activate-switch-event object nearest-fountain))))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+go-to-fountain-action+)))
+  ;; note: no  need to  blacklist the  context precondition  of action
+  ;; ":find-fountain"  ensure  the  fountain is  valid  and  reachable
+  ;; goap:lint-planner   will  take   care   of   that  checking   for
+  ;; goap:is-there-useful-reachable-fountain-p                      if
+  ;; ai-utils:+use-fountain+ is present in the planner.
+  (with-accessors ((state state)) object
+    (game-state:with-world (world state)
+      (multiple-value-bind (fountain path-to-reach-fountain cost-to-reach-fountain)
+          (ai-utils:useful-reachable-fountain object :include-first-path-tile t)
+        (assert fountain)
+        (when (not (epsilon= cost-to-reach-fountain 0.0)) ;; we are just next to fountain
+          (let ((path-struct (game-state:make-movement-path path-to-reach-fountain
+                                                            cost-to-reach-fountain)))
+            (%do-simple-move object path-struct state world)))))))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+find-fountain-action+)))
+  ;; does nothing
+  )
 
 ;;;; explore
 

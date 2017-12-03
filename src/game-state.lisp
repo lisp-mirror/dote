@@ -820,7 +820,7 @@
 
 (defmethod get-neighborhood ((object game-state) row column predicate
                              &key (w-offset 2) (h-offset 2))
-  "Return (entity . position-of-entity)"
+  "Return (map-element . position-of-entity)"
   (with-accessors ((map-state map-state)) object
     (let ((pos (remove-if-not
                 #'(lambda (a) (element@-inside-p map-state (elt a 0) (elt a 1)))

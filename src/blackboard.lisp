@@ -91,6 +91,10 @@
     :initarg  :main-state
     :accessor main-state
     :type     game-state)
+   (exhausted-fountains-ids
+    :initform '()
+    :initarg  :exhausted-fountains-ids
+    :accessor exhausted-fountains-ids)
    (visited-tiles
     :initform nil
     :initarg  :visited-tiles
@@ -270,8 +274,7 @@
         (attack-enemy-crossbow-positions blackboard) nil)
   (update-unexplored-layer               blackboard)
   #+(and debug-ai debug-blackboard-layers)
-  ;; it takes ~ 0.5s to calculate
-  (progn
+  (progn ; it takes ~ 0.5s to calculate
     (update-attack-melee-layer             blackboard)
     (update-attack-pole-layer              blackboard)
     (update-attack-bow-layer               blackboard)
@@ -314,6 +317,13 @@
     ;; test
     ;; (let ((pix (inmap:dijkstra-layer->pixmap (attack-enemy-melee-layer object))))
     ;;   (pixmap:save-pixmap pix (fs:file-in-package "attack.tga")))
+    nil))
+
+(defmethod game-event:on-game-event ((object blackboard)
+                                     (event game-event:fountain-exhausted-event))
+  (with-accessors ((exhausted-fountains-ids exhausted-fountains-ids)) object
+    (pushnew (game-event:id-origin event) exhausted-fountains-ids :test #'=)
+    ;; values nil to pass the event to other registered entities, if any.
     nil))
 
 (defmethod main-state ((object blackboard))
@@ -364,6 +374,8 @@
 (defgeneric update-attack-crossbow-layer-player (object player &key all-visibles-from-ai))
 
 (defgeneric update-crossbow-attackable-pos (object))
+
+(defgeneric fountain-exhausted-p (object entity))
 
 (defun calc-concerning-tiles-cost-scaling (difficult-level)
   (dlerp (smoothstep-interpolate 2.0 5.0 (d difficult-level))
@@ -437,10 +449,10 @@
 ;; TODO use decision tree
 (defmethod strategy-decision ((object blackboard))
   (declare (ignore object))
-  ;; +retreat-strategy+
-  ;; +explore-strategy+
-  ;; +attack-strategy+
-  +defend-strategy+)
+  +retreat-strategy+)
+  ;; +explore-strategy+)
+  ;; +attack-strategy+)
+  ;; +defend-strategy+)
 
 (defmethod set-tile-visited ((object blackboard) entity-visiting x y)
   (call-next-method object
@@ -1258,3 +1270,7 @@ values nil, i. e. the ray is not blocked"
                                             (ai-utils:combined-power-compare-clsr nil))))
         (setf all-ai-entities (remove-if #'entity-dead-p all-ai-entities))
         (setf ai-entities-action-order all-ai-entities)))))
+
+(defmethod fountain-exhausted-p ((object blackboard) (entity mesh:fountain-mesh-shell))
+  (with-accessors ((exhausted-fountains-ids exhausted-fountains-ids)) object
+    (find (id entity) exhausted-fountains-ids :test #'=)))

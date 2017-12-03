@@ -27,4 +27,4 @@
      ,@(loop for i in dice-max-values collect
             `(gen-pass-dice ,i))))
 
-(gen-pass-multiple-dice 2 1.0 100.0 10.0 20 6)
+(gen-pass-multiple-dice 2 1.0 100.0 10.0 20 6 4)

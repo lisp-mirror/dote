@@ -600,7 +600,6 @@ Name from Emacs Lisp."
             s))
       s))
 
-
 ;; iterations
 
 (defmacro do-while (declaration return-form &body body)

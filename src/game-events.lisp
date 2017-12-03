@@ -455,6 +455,12 @@
                                                   :id-origin      (identificable:id origin)
                                                   :id-destination (identificable:id dest))))
 
+(defevent fountain-exhausted-event () ())
+
+(defun send-fountain-exhausted-event (origin)
+  (propagate-fountain-exhausted-event (make-instance 'fountain-exhausted-event
+                                                     :id-origin (identificable:id origin))))
+
 (defevent game-interrupt-terminated-event () ())
 
 (defun send-game-interrupt-terminated-event ()

@@ -499,6 +499,7 @@
       (let ((leaving-tile (alexandria:first-elt current-path))
             (pos-entity   (calculate-cost-position player)))
         (setf current-path (subseq current-path 1))
+        ;; note: starting  from now first element of the path is my tile position
         (if (= (length current-path) 1) ;; entering in last tile, stop
             (%stop-movement player
                             :decrement-movement-points t

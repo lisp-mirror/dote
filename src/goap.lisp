@@ -60,7 +60,10 @@
 
 (gen-find-symbol-to-action-list-slot precondition)
 
-(gen-find-symbol-to-action-list-slot context-precondition)
+(defun find-action-context-precondition (action context-precondition)
+  (find context-precondition
+        (action-context-preconditions action)
+        :test #'eq))
 
 (gen-remove-symbol-to-action-list-slot effect)
 
@@ -217,9 +220,9 @@
   (let ((sum 0))
     (loop for goal in (variables goals) do
          (let ((found-in-current (find-condition-in-state current goal)))
-           (when (or  (not found-in-current)
-                      (not (compare-condition-value (condition-value goal)
-                                                    (condition-value found-in-current))))
+           (when (or (not found-in-current)
+                     (not (compare-condition-value (condition-value goal)
+                                                   (condition-value found-in-current))))
              (incf sum))))
     sum))
 
@@ -464,6 +467,16 @@
 
 (defparameter *planner* nil)
 
+(defun lint-planner (planner)
+  (let ((action-find-fountain (find-action planner ai-utils:+find-fountain-action+))
+        (mandatory-test-name  #'is-there-useful-reachable-fountain-p))
+    (when action-find-fountain
+      (when (not (find-action-context-precondition action-find-fountain
+                                                   mandatory-test-name))
+        (error (format nil "error: action ~a need context precondition ~a"
+                       ai-utils:+find-fountain-action+
+                       #'is-there-useful-reachable-fountain-p))))))
+
 (defmacro define-planner (&body forms)
   (labels ((get-param (params a &optional (default nil))
              (getf params a default))
@@ -494,11 +507,12 @@
                                         :context-preconditions (list #'sink-precondition-test)
                                         :effects               nil
                                         :cost                  +action-max-cost+)))
-         (progn
-           ,@(loop for action in forms collect
-                  (build-action planner action))
-           (add-action ,planner ,idle-action)
-           (add-action ,planner ,sink-action))
+
+         ,@(loop for action in forms collect
+                (build-action planner action))
+         (add-action ,planner ,idle-action)
+         (add-action ,planner ,sink-action)
+         (lint-planner ,planner)
          (setf *planner* ,planner)))))
 
 (defun find-planner-file (character strategy)
@@ -711,6 +725,10 @@ reach and attack the enemy with optimal path?"
   (declare (ignore strategy-expert entity))
   (dice:pass-d10.0 1))
 
+(defun pass-1d4 (strategy-expert entity)
+  (declare (ignore strategy-expert entity))
+  (dice:pass-d4 1))
+
 (defun able-to-move-if (entity predicate)
   (with-accessors ((state entity:state)
                    (ghost entity:ghost)) entity
@@ -808,3 +826,9 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
   (when-let ((attack-cost (battle-utils:cost-attack-w-current-weapon entity)))
     (<= attack-cost
         (character:current-movement-points (entity:ghost entity)))))
+
+(defun is-there-useful-reachable-fountain-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (misc:dbg "is-there-useful-reachable-fountain-p ~a"
+            (ai-utils:useful-reachable-fountain entity))
+  (ai-utils:useful-reachable-fountain entity))

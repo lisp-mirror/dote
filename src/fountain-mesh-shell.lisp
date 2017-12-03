@@ -37,10 +37,12 @@
         (let ((player (find-entity-by-id (state object) (game-event:id-origin event))))
           #+debug-mode (assert player)
           (if (<= spell-recharge-count 0)
-              (world:post-entity-message world ;; note: only shown when not AI
-                                         player
-                                         (_ "The source of this power is exhausted...")
-                                         nil)
+              (if (faction-player-p state (id player))
+                  (world:post-entity-message world ;; note: only shown when not AI anyway
+                                             player
+                                             (_ "The source of this power is exhausted...")
+                                             nil)
+                  (game-event:send-fountain-exhausted-event object))
               (let ((cost (calculate-decrement-move-points-activate-switch player object)))
                 (when (can-use-movement-points-p player :minimum cost)
                   (decrement-move-points-activate-switch player object)

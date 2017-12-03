@@ -191,7 +191,7 @@
 (defun calc-recharge-spell-fountain-count (world)
   (let ((level (game-state:map-level (main-state world))))
     (truncate (max +min-fountain-spell-recharge+
-                  (- +maximum-level-difficult+ (lcg-next-upto level))))))
+                   (- +maximum-level-difficult+ (lcg-next-upto level))))))
 
 (defun create-furniture-ghost (world furniture-shell furniture-type keychain)
   (cond
@@ -1002,5 +1002,6 @@ wall's    coordinates    as    they   are    already    scaled:    see
       ;; initialize blackboard
       (let ((blackboard (make-instance 'blackboard:blackboard
                                        :main-state game-state)))
-        (game-event:register-for-end-turn blackboard)
-        (setf (game-state:blackboard game-state) blackboard)))))
+        (game-event:register-for-end-turn                 blackboard)
+        (game-event:register-for-fountain-exhausted-event blackboard)
+        (setf (game-state:blackboard game-state)          blackboard)))))

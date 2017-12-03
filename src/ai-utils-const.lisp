@@ -84,4 +84,10 @@
 
 (define-constant +attack-spell-action+             :launch-attack-spell        :test #'eq)
 
+(define-constant +find-fountain-action+            :find-fountain              :test #'eq)
+
+(define-constant +go-to-fountain-action+           :go-to-fountain             :test #'eq)
+
+(define-constant +use-fountain+                    :use-fountain               :test #'eq)
+
 (define-constant +min-chain-teleport+              3                           :test #'=)

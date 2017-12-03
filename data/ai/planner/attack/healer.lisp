@@ -89,6 +89,21 @@
                                  ;; managed by has-enough-sp-heal-p
          :effects               ((:curb-threat t))
          :cost                  10)
+  (:name :use-fountain
+         :preconditions         ((:has-fountain-facing t))
+         :context-preconditions (!enough-health-p pass-1d4)
+         :effects               ((:curb-threat t))
+         :cost                  10)
+  (:name :go-to-fountain
+         :preconditions         ((:has-fountain-near t))
+         :context-preconditions ()
+         :effects               ((:has-fountain-facing t))
+         :cost                  1)
+  (:name :find-fountain
+         :preconditions         ()
+         :context-preconditions (is-there-useful-reachable-fountain-p)
+         :effects               ((:has-fountain-near t))
+         :cost                  1)
   (:name :launch-attack-spell
          :preconditions         ()
          :context-preconditions (none-needs-help-p

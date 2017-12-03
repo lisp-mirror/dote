@@ -197,10 +197,10 @@
             (>= power-a power-b)
             (<  power-a power-b)))))
 
-(defun sort-by-manhattam-dist-clsr (entity-pivot &optional (comp-fn #'<))
+(defun sort-by-manhattam-dist-clsr (entity-pivot-pos &optional (comp-fn #'<))
   #'(lambda (a b)
-      (let ((d1 (map-utils:map-manhattam-distance entity-pivot a))
-            (d2 (map-utils:map-manhattam-distance entity-pivot b)))
+      (let ((d1 (map-utils:map-manhattam-distance entity-pivot-pos a))
+            (d2 (map-utils:map-manhattam-distance entity-pivot-pos b)))
         (funcall comp-fn d1 d2))))
 
 (defun find-nearest-visible-wall (entity)
@@ -479,6 +479,86 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
 (defun find-wall-breaking-spells (entity)
   (character:castable-spells-list-by-tag (entity:ghost entity)
                                          spell:+spell-tag-remove-wall+))
+
+(defstruct fountain-place
+  (entity)
+  (pos)
+  (path)
+  (cost))
+
+(defun map-state-element->entity (game-state map-element)
+  (find-entity-by-id game-state (entity-id map-element)))
+
+(defun %get-path-go-near (blackboard from to)
+  (if (= (manhattam-distance from to) 1) ; just next
+      (values nil 0.0)
+      (multiple-value-bind (path total-cost costs)
+          (blackboard:path-with-concerning-tiles blackboard from to)
+        (declare (ignore total-cost))
+        (values (all-but-last-elt path)
+                (reduce #'(lambda (a b) (d+ (d a) (d b)))
+                        (all-but-last-elt costs))))))
+
+(defun useful-reachable-fountain (entity &key (include-first-path-tile nil))
+  "Return values: entity nearest fountain, path to reach it and total cost"
+  (with-slots-for-reasoning (entity state ghost blackboard)
+    (let* ((difficult         (level-difficult state))
+           (box-size          (* difficult 3))
+           (player-position   (mesh:calculate-cost-position entity))
+           (player-x          (elt player-position 0))
+           (player-y          (elt player-position 1))
+           (all-fountains     (remove-if #'(lambda (a) ; remove exhausted
+                                             (let ((entity (map-state-element->entity state
+                                                                                      (car a))))
+                                               (blackboard:fountain-exhausted-p blackboard
+                                                                                entity)))
+                                         (neighborhood-by-type state
+                                                               player-y
+                                                               player-x
+                                                               +magic-furniture-type+
+                                                               :h-offset box-size
+                                                               :w-offset box-size)))
+           (all-fountain-places (map 'list ; note: not reachable will became a null element
+                                     #'(lambda (a)
+                                         (let* ((entity     (map-state-element->entity state
+                                                                                       (car a)))
+                                                (entity-pos (cdr a)))
+                                           (multiple-value-bind (path cost)
+                                               (%get-path-go-near blackboard
+                                                                  player-position
+                                                                  entity-pos)
+                                             (when (<= (+ cost +activate-switch-cost+)
+                                                       (character:current-movement-points ghost))
+                                               (make-fountain-place :entity entity
+                                                                    :pos    entity-pos
+                                                                    :path   path
+                                                                    :cost   cost)))))
+                                     all-fountains)))
+      ;; remove not reachable pos
+      (setf all-fountain-places (remove-if-null all-fountain-places))
+      ;; sort
+      (setf all-fountain-places
+            (shellsort all-fountain-places
+                       (let ((actual-sort (sort-by-manhattam-dist-clsr player-position)))
+                         #'(lambda (a b)
+                             (let ((p1 (fountain-place-pos a))
+                                   (p2 (fountain-place-pos b)))
+                               (funcall actual-sort p1 p2))))))
+
+      (if all-fountain-places
+          (let* ((nearest      (first-elt all-fountain-places))
+                 (nearest-path (fountain-place-path nearest))
+                 (path         (if include-first-path-tile
+                                   (let ((p (make-fresh-array (1+ (length nearest-path)))))
+                                     (setf (elt p 0) player-position)
+                                     (loop for i from 1 below (length p) do
+                                          (setf (elt p i) (elt nearest-path (1- i))))
+                                     p)
+                                   nearest-path)))
+            (values (fountain-place-entity nearest)
+                    path
+                    (fountain-place-cost   nearest)))
+          nil))))
 
 ;;; actions
 

@@ -434,7 +434,8 @@
    :pass-d100.0
    :pass-d10.0
    :pass-d20
-   :pass-d6))
+   :pass-d6
+   :pass-d4))
 
 (defpackage :filesystem-utils
   (:use
@@ -2590,6 +2591,11 @@
    :unregister-for-activate-switch-event
    :propagate-activate-switch-event
    :send-activate-switch-event
+   :fountain-exhausted-event
+   :register-for-fountain-exhausted-event
+   :unregister-for-fountain-exhausted-event
+   :propagate-fountain-exhausted-event
+   :send-fountain-exhausted-event
    :other-interaction-event
    :send-other-interaction-event
    :register-for-other-interaction-event
@@ -3004,6 +3010,9 @@
    :+protect-attack-spell-action+
    :+protect-action+
    :+attack-spell-action+
+   :+find-fountain-action+
+   :+go-to-fountain-action+
+   :+use-fountain+
    :gen-neigh-costs
    :gen-neigh
    :friend-who-needs-help
@@ -3036,6 +3045,7 @@
    :attack-when-near-pos-long-range-p
    :attack-when-near-pos-short-range-p
    :attack-when-near-pos-p
+   :useful-reachable-fountain
    :go-launch-wall-breaking-spell
    :go-launch-attack-spell
    :go-next-flee-position
@@ -4904,6 +4914,7 @@
    :entity-in-valid-attackable-pos-p
    :+concerning-tile-value+
    :blackboard
+   :exhausted-fountains-ids
    :concerning-tiles
    :calc-concerning-tiles-cost-scaling
    :visited-tiles
@@ -4937,7 +4948,8 @@
    :update-all-attacking-pos
    :concerning-tile-default-mapping-clsr
    :next-unexplored-position
-   :disgregard-all-plans))
+   :disgregard-all-plans
+   :fountain-exhausted-p))
 
 (defpackage :goap
   (:use :cl
