@@ -261,6 +261,7 @@
    :read-list
    :read-array
    :definline
+   :+cache-invalid-value+
    :defcached
    :defcached-list
    :unsplice
@@ -3046,6 +3047,7 @@
    :attack-when-near-pos-short-range-p
    :attack-when-near-pos-p
    :useful-reachable-fountain
+   :useful-reachable-fountain-clear-cache
    :go-launch-wall-breaking-spell
    :go-launch-attack-spell
    :go-next-flee-position

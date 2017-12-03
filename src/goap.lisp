@@ -549,8 +549,6 @@
               (current-state out) start-state)
         out))))
 
-(define-constant +cache-invalid-value+ :invalid :test #'eq)
-
 (defmacro defgoap-test (name args &body body)
   (let* ((function-clear-cache-name (format-fn-symbol t "~a-clear-cache" name))
          (function-name             (format-fn-symbol t "~:@(~a~)" name))

@@ -111,6 +111,8 @@
                                                      (first i)))))
        (defmethod ,low-level-function-name (,@arg) ,@body))))
 
+(alexandria:define-constant +cache-invalid-value+ :invalid-cache-value :test #'eq)
+
 (defmacro defcached (name (arg &key (test 'equalp) (clear-cache nil))
                      declaration
                      (&body body))

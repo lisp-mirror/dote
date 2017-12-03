@@ -139,6 +139,7 @@
   (blackboard:reachable-p-w/concening-tiles-unlimited-cost-fn-clear-cache)
   (erase-working-memory ghost)
   (ai-utils:go-find-hiding-place-clear-cache)
+  (ai-utils:useful-reachable-fountain-clear-cache)
   (goap:invalidate-tests-cache))
 
 (defun %clean-plan-and-blacklist (ghost)
@@ -316,7 +317,7 @@
                          (action (eql ai-utils:+use-fountain+)))
   (with-accessors ((state state)) object
     (let ((nearest-fountain (ai-utils:useful-reachable-fountain object)))
-      (assert nearest-fountain)
+      #+debug-mode (assert nearest-fountain)
       (%rotate-until-visible state object nearest-fountain)
       (game-event:send-activate-switch-event object nearest-fountain))))
 
@@ -332,7 +333,7 @@
     (game-state:with-world (world state)
       (multiple-value-bind (fountain path-to-reach-fountain cost-to-reach-fountain)
           (ai-utils:useful-reachable-fountain object :include-first-path-tile t)
-        (assert fountain)
+        #+debug-mode (assert fountain)
         (when (not (epsilon= cost-to-reach-fountain 0.0)) ;; we are just next to fountain
           (let ((path-struct (game-state:make-movement-path path-to-reach-fountain
                                                             cost-to-reach-fountain)))

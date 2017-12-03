@@ -499,8 +499,8 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
                 (reduce #'(lambda (a b) (d+ (d a) (d b)))
                         (all-but-last-elt costs))))))
 
-(defun useful-reachable-fountain (entity &key (include-first-path-tile nil))
-  "Return values: entity nearest fountain, path to reach it and total cost"
+(defun useful-reachable-fountain-nocache (entity &key (include-first-path-tile nil))
+  "Return values: entity nearest fountain, path to reach it and total cost."
   (with-slots-for-reasoning (entity state ghost blackboard)
     (let* ((difficult         (level-difficult state))
            (box-size          (* difficult 3))
@@ -558,7 +558,22 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
             (values (fountain-place-entity nearest)
                     path
                     (fountain-place-cost   nearest)))
-          nil))))
+          (values nil #() nil)))))
+
+(defcached useful-reachable-fountain ((entity &key (include-first-path-tile nil))
+                                                :test eq)
+  (declare (optimize (speed 0) (safety 0) (debug 0)))
+  (if (gethash entity cache)
+      (let ((res (gethash entity cache)))
+        (values (elt res 0)
+                (elt res 1)
+                (elt res 2)))
+      (let ((res (multiple-value-list
+                  (useful-reachable-fountain-nocache entity
+                                                     :include-first-path-tile
+                                                     include-first-path-tile))))
+        (setf (gethash entity cache) res)
+        (useful-reachable-fountain entity :include-first-path-tile include-first-path-tile))))
 
 ;;; actions
 
