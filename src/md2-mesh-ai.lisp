@@ -332,7 +332,7 @@
   (with-accessors ((state state)) object
     (game-state:with-world (world state)
       (multiple-value-bind (fountain path-to-reach-fountain cost-to-reach-fountain)
-          (ai-utils:useful-reachable-fountain object :include-first-path-tile t)
+          (ai-utils:useful-reachable-fountain object)
         #+debug-mode (assert fountain)
         (when (not (epsilon= cost-to-reach-fountain 0.0)) ;; we are just next to fountain
           (let ((path-struct (game-state:make-movement-path path-to-reach-fountain
@@ -353,18 +353,10 @@
   (with-maybe-blacklist (object strategy action)
     (with-accessors ((state state)) object
       (game-state:with-world (world state)
-        (action-scheduler:with-enqueue-action (world action-scheduler:tactical-plane-action)
-          (let ((new-pos (validate-player-path object
-                                               (next-move-position object +explore-strategy+))))
-            (when new-pos
-              (setf (game-state:selected-path state) new-pos)
-              (let* ((tiles          (game-state:tiles (game-state:selected-path state)))
-                     (cost           (game-state:cost  (game-state:selected-path state)))
-                     (movement-event (make-instance 'game-event:move-entity-along-path-event
-                                                    :path           tiles
-                                                    :cost           cost
-                                                    :id-destination (id object))))
-                (game-event:propagate-move-entity-along-path-event movement-event)))))))))
+        (multiple-value-bind (path cost)
+            (next-move-position object +explore-strategy+)
+          (let* ((path-struct (game-state:make-movement-path path cost)))
+            (%do-simple-move object path-struct state world)))))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy

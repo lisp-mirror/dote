@@ -3,7 +3,7 @@
 (define-planner
   (:name :move
          :effects               ((:curb-threat t))
-         :context-preconditions (!disobey-1-out-10 !near-to-death-p able-to-move-p)
+         :context-preconditions (!disobey-1-out-10 !near-to-death-p able-to-explore-p)
          :cost                  1)
   (:name :launch-teleport-spell
          :preconditions         ()

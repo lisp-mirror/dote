@@ -449,8 +449,8 @@
 ;; TODO use decision tree
 (defmethod strategy-decision ((object blackboard))
   (declare (ignore object))
-  +retreat-strategy+)
-  ;; +explore-strategy+)
+  ;;+retreat-strategy+)
+  +explore-strategy+)
   ;; +attack-strategy+)
   ;; +defend-strategy+)
 
@@ -644,12 +644,15 @@
         ;; smooth the map here
         (let* ((max-mp (max-ai-movement-points main-state))
                (skip-fn #'(lambda (el-type pos)
-                           (let ((cost (get-cost main-state (elt pos 0) (elt pos 1))))
-                             (or (inmap:skippablep el-type pos)
-                                 (find (entity-id-in-pos main-state (elt pos 0) (elt pos 1))
-                                       all-visibles
-                                       :test #'=)
-                                 (> cost max-mp))))))
+                            (let ((cost (get-cost main-state (elt pos 0) (elt pos 1))))
+                              (and (not (door@pos-p main-state (elt pos 0) (elt pos 1)))
+                                   (or (inmap:skippablep el-type pos)
+                                       (find (entity-id-in-pos main-state
+                                                               (elt pos 0)
+                                                               (elt pos 1))
+                                             all-visibles
+                                             :test #'=)
+                                       (> cost max-mp)))))))
           (inmap:smooth-dijkstra-layer (blackboard:unexplored-layer object)
                                        main-state
                                        :skippable-predicate skip-fn))))))
@@ -732,32 +735,37 @@
 (defmethod next-unexplored-position ((object blackboard) (player md2-mesh:md2-mesh))
   (with-accessors ((unexplored-layer unexplored-layer)) object
     (with-accessors ((layer layer)) unexplored-layer
-      (let* ((position (pos-entity-chunk->cost-pos (pos player)))
-             (x-player (elt position 0))
-             (y-player (elt position 1))
-             (neighbour-elements (remove-if-not
-                                  #'(lambda (a)
-                                      (displace-2d-vector (a x y)
-                                        (valid-index-p layer y x)))
-                                  (gen-4-neighbour-counterclockwise x-player
-                                                                    y-player
-                                                                    :add-center nil)))
-             (compare-fn         #'(lambda (a b)
-                                     (let ((cost-a (matrix-elt layer
-                                                               (elt a 1)
-                                                               (elt a 0)))
-                                           (cost-b (matrix-elt layer
-                                                               (elt b 1)
-                                                               (elt b 0))))
-                                       (cond
-                                         ((null cost-a)
-                                          nil)
-                                         ((null cost-b)
-                                          t)
-                                         (t
-                                          (< cost-a cost-b))))))
-             (min                (find-min-max compare-fn neighbour-elements)))
-        (list (sequence->ivec2 min))))))
+      (with-accessors ((state state)) player
+        (labels ((find-cost-concern (a)
+                   (matrix:matrix-elt layer (elt a 1) (elt a 0)))
+                 (find-cost (a) ;; doors as if they have no cost
+                   (if (door@pos-p state (elt a 0) (elt a 1))
+                       +open-terrain-cost+
+                       (get-cost state (elt a 0) (elt a 1)))))
+          (let* ((position (pos-entity-chunk->cost-pos (pos player)))
+                 (x-player (elt position 0))
+                 (y-player (elt position 1))
+                 (neighbour-elements (remove-if-not
+                                    #'(lambda (a)
+                                        (displace-2d-vector (a x y)
+                                          (valid-index-p layer y x)))
+                                    (gen-4-neighbour-counterclockwise x-player
+                                                                      y-player
+                                                                      :add-center nil)))
+                 (compare-fn         #'(lambda (a b)
+                                         (let ((cost-a (find-cost-concern a))
+                                               (cost-b (find-cost-concern b)))
+                                           (cond
+                                             ((null cost-a)
+                                              nil)
+                                             ((null cost-b)
+                                              t)
+                                             (t
+                                              (< cost-a cost-b))))))
+                 (min                (find-min-max compare-fn neighbour-elements)))
+            (values (vector position
+                            (sequence->ivec2 min))
+                    (find-cost min))))))))
 
 (defun %2d-ray-stopper-melee-fn (player x y)
   "x and y in cost-map space (integer coordinates)

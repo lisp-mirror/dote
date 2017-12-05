@@ -576,7 +576,9 @@
 
 (defun enough-health-p (strategy-expert entity)
   (declare (ignore strategy-expert))
-  (not (ai-utils:too-low-health-p entity)))
+  (let ((res (not (ai-utils:too-low-health-p entity))))
+    (misc:dbg "not too low health ~a" res)
+    res))
 
 (defun near-to-death-p (strategy-expert entity)
   (declare (ignore strategy-expert))
@@ -746,9 +748,17 @@ reach and attack the enemy with optimal path?"
   (declare (ignore strategy-expert))
   (able-to-move-if entity #'num:find-min))
 
-(defun able-to-move-p (strategy-expert entity)
-  (declare (ignore strategy-expert))
-    (able-to-move-if entity #'num:find-max))
+(defun able-to-explore-p (strategy-expert entity)
+  (with-accessors ((state entity:state)
+                   (ghost entity:ghost)) entity
+    (multiple-value-bind (path cost)
+        (blackboard:next-unexplored-position strategy-expert
+                                             entity)
+      (declare (ignore path))
+      (let* ((res (<= cost
+                      (character:current-movement-points ghost))))
+        (misc:dbg "able-to-explore cost ~a -> ~a" cost res)
+        res))))
 
 (defgoap-test is-able-to-flee-p (strategy-expert entity)
   (with-accessors ((state entity:state)

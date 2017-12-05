@@ -490,6 +490,19 @@
                                        (send-trap-triggered-event trap player)
                                        (world:remove-all-windows world)))))
 
+(defun manage-door-ai (state player path idx-path-maybe-door)
+  (when (game-state:door-in-next-path-tile-p state path idx-path-maybe-door)
+    (let* ((id-door    (game-state:door-in-next-path-tile-p state path idx-path-maybe-door))
+           (door       (game-state:find-entity-by-id state id-door)))
+      (when (not (openp door))
+        (let ((door-event (game-event:make-simple-event-w-dest 'game-event:open-door-event
+                                                               (id player)
+                                                               id-door)))
+          (game-event:propagate-open-door-event door-event)
+          (%stop-movement player
+                          :decrement-movement-points t
+                          :interrupt-plan-if-ai      t))))))
+
 (defun %on-move-entity-entered-in-tile-event-ai (player event)
   (with-accessors ((ghost ghost)
                    (dir dir)
@@ -523,20 +536,7 @@
               (%stop-movement player
                               :decrement-movement-points t
                               :interrupt-plan-if-ai      t)
-              (%try-deactivate-trap-from-ai world player trap-ostile))
-            ;; manage doors
-            (when (and (not step-on-trap-p)
-                       (game-state:door-in-next-path-tile-p state current-path))
-              (let* ((id-door (game-state:door-in-next-path-tile-p state current-path))
-                     (door    (game-state:find-entity-by-id state id-door))
-                     (door-event (game-event:make-simple-event-w-dest 'game-event:open-door-event
-                                                                      (id player)
-                                                                      id-door)))
-                (when (not (openp door))
-                  (game-event:propagate-open-door-event door-event)
-                  (%stop-movement player
-                                  :decrement-movement-points t
-                                  :interrupt-plan-if-ai      t)))))
+              (%try-deactivate-trap-from-ai world player trap-ostile)))
           (send-update-visibility-event player event)
           (send-refresh-toolbar-event))))))
 
@@ -1585,25 +1585,31 @@
   (declare (ignore dt))
   (with-accessors ((ghost ghost)
                    (pos pos)
-                   (dir dir)) object
-    (let* ((x-chunk (map-utils:coord-map->chunk (elt (elt (current-path ghost) 1) 0)))
-           (z-chunk (map-utils:coord-map->chunk (elt (elt (current-path ghost) 1) 1)))
-           (y       (d+ 1.5 ; hardcoded :(  to be removed soon
-                        (game-state:approx-terrain-height@pos (state object) x-chunk z-chunk)))
-           (end (vec x-chunk y z-chunk))
-           (dir (let ((new-dir (vec- end (pos object))))
-                  (if (vec~ new-dir +zero-vec+)
-                      (vec 0.0 1.0 0.0)
-                      (normalize new-dir)))))
-      (if (not (vec~ (pos object) end (d/ +terrain-chunk-tile-size+ 8.0)))
-          (if (gconf:config-smooth-movements)
-              (setf (pos object)
-                    (vec+ (pos object) (vec* dir +model-move-speed+)))
-              (setf (pos object) end))
-          (let ((movement-event (make-instance 'move-entity-entered-in-tile-event
-                                               :id-origin (id object)
-                                               :tile-pos  end)))
-            (propagate-move-entity-entered-in-tile-event movement-event))))))
+                   (dir dir)
+                   (state state)) object
+    (with-accessors ((current-path current-path)) ghost
+      (let* ((x-chunk (map-utils:coord-map->chunk (elt (elt current-path 1) 0)))
+             (z-chunk (map-utils:coord-map->chunk (elt (elt current-path 1) 1)))
+             (y       (d+ 1.5 ; hardcoded :(  to be removed soon
+                          (game-state:approx-terrain-height@pos (state object)
+                                                                x-chunk
+                                                                z-chunk)))
+             (end (vec x-chunk y z-chunk))
+             (dir (let ((new-dir (vec- end (pos object))))
+                    (if (vec~ new-dir +zero-vec+)
+                        (vec 0.0 1.0 0.0)
+                        (normalize new-dir)))))
+        (if (not (vec~ (pos object) end (d/ +terrain-chunk-tile-size+ 8.0)))
+            (progn
+              (manage-door-ai state object current-path 1) ;; open door if any and if closed
+              (if (gconf:config-smooth-movements)
+                  (setf (pos object)
+                        (vec+ (pos object) (vec* dir +model-move-speed+)))
+                  (setf (pos object) end)))
+            (let ((movement-event (make-instance 'move-entity-entered-in-tile-event
+                                                 :id-origin (id object)
+                                                 :tile-pos  end)))
+              (propagate-move-entity-entered-in-tile-event movement-event)))))))
 
 (defmethod wear-item ((object md2-mesh) item)
   (with-accessors ((ghost ghost)

@@ -428,7 +428,7 @@
 
 (defgeneric calc-ai-entities-action-order (object))
 
-(defgeneric door-in-next-path-tile-p (object path))
+(defgeneric door-in-next-path-tile-p (object path idx-pos-maybe-door))
 
 (defmethod fetch-render-window ((object game-state))
   (and (window-id object)
@@ -948,10 +948,10 @@
 (defmethod calc-ai-entities-action-order ((object game-state))
   (calc-ai-entities-action-order (blackboard object)))
 
-(defmethod door-in-next-path-tile-p ((object game-state) path)
-  (if (< (length path) 2) ;; the path is too short
+(defmethod door-in-next-path-tile-p ((object game-state) path idx-pos-maybe-door)
+  (if (< (length path) (1+ idx-pos-maybe-door)) ;; the path is too short
       nil
-      (let ((pos-maybe-door (elt path 1)))
+      (let ((pos-maybe-door (elt path idx-pos-maybe-door)))
         (2d-utils:displace-2d-vector (pos-maybe-door x y)
           (if (door@pos-p       object x y)
               (entity-id-in-pos object x y)

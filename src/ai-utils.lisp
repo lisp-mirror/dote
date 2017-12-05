@@ -560,7 +560,7 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
                     (fountain-place-cost   nearest)))
           (values nil #() nil)))))
 
-(defcached useful-reachable-fountain ((entity &key (include-first-path-tile nil))
+(defcached useful-reachable-fountain ((entity &key (include-first-path-tile t))
                                                 :test eq)
   (declare (optimize (speed 0) (safety 0) (debug 0)))
   (if (gethash entity cache)
@@ -745,8 +745,8 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
                    (ghost entity:ghost)) entity
     (labels ((find-cost (a)
                (game-state:get-cost state (elt a 0) (elt a 1)))
-             (find-cost-matrix (matrix a)
-               (matrix:matrix-elt matrix (elt a 1) (elt a 0)))
+             (find-cost-matrix (cost-matrix a)
+               (matrix:matrix-elt cost-matrix (elt a 1) (elt a 0)))
              (visited-values (positions)
                (mapcar #'(lambda (pos)
                               (blackboard:get-value-turn-visited-tiles strategy-expert
@@ -782,7 +782,11 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
                                                         :conc-cost ncc
                                                         :visitedp  nv)))
                   (sorted             (shellsort all #'sort-predicate))
-                  (selected           (first-elt sorted)))
+                  (reachables         (remove-if #'(lambda (a)
+                                                     (> (%neigh-cost a)
+                                                        (character:current-movement-points ghost)))
+                                                 sorted))
+                  (selected           (first-elt reachables)))
         (values (%neigh-pos       selected)
                 (%neigh-cost      selected))))))
 

@@ -44,24 +44,24 @@
   (let* ((matrix          (layer object))
          (working-copy    (clone matrix))
          (not-skippable-p #'(lambda (el pos) (not (funcall skippable-predicate (el-type el) pos)))))
-    (loop-matrix (working-copy x y)
-       (if (not (funcall skippable-predicate (el-type-in-pos state x y)
-                         (ivec2 x y)))
-           (let* ((neighbour (game-state:get-neighborhood state y x not-skippable-p))
-                  (center    (matrix-elt working-copy y x))
-                  (min       (loop for cell across neighbour
-                                when (matrix-elt working-copy
-                                              (elt (cdr cell) 1)  ; row
-                                              (elt (cdr cell) 0)) ; column
-                                minimize
-                                  (matrix-elt working-copy
-                                              (elt (cdr cell) 1)     ; row
-                                              (elt (cdr cell) 0))))) ; column
-             (when (and center
-                        (d>= center (d+ (d min) 2.0)))
-               (setf (matrix-elt working-copy y x)
-                     (d+ 1.0 (d min)))))
-           (setf (matrix-elt working-copy y x) nil)))
+    (ploop-matrix (working-copy x y)
+      (if (not (funcall skippable-predicate (el-type-in-pos state x y)
+                        (ivec2 x y)))
+          (let* ((neighbour (game-state:get-neighborhood state y x not-skippable-p))
+                 (center    (matrix-elt working-copy y x))
+                 (min       (loop for cell across neighbour
+                               when (matrix-elt working-copy
+                                                (elt (cdr cell) 1)  ; row
+                                                (elt (cdr cell) 0)) ; column
+                               minimize
+                                 (matrix-elt working-copy
+                                             (elt (cdr cell) 1)     ; row
+                                             (elt (cdr cell) 0))))) ; column
+            (when (and center
+                       (d>= center (d+ (d min) 2.0)))
+              (setf (matrix-elt working-copy y x)
+                    (d+ 1.0 (d min)))))
+          (setf (matrix-elt working-copy y x) nil)))
     (if (matrix= matrix working-copy
                  :test #'(lambda (v1 v2)
                            (with-epsilon (1e-3)

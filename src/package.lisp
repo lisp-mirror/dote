@@ -4914,6 +4914,7 @@
    :path-w/o-concerning-tiles
    :path-near-goal-w/o-concerning-tiles
    :entity-in-valid-attackable-pos-p
+   :+unexplored-tile-value+
    :+concerning-tile-value+
    :blackboard
    :exhausted-fountains-ids
