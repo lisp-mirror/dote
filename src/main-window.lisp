@@ -250,7 +250,7 @@
 (defmethod mousewheel-event ((object test-window) ts x y)
   #+debug-mode (misc:dbg "wheel ~a ~a ~a" ts x y)
   (setf (mode (world:camera (world object))) :drag)
-  (let* ((sign   (if (> y 0) 1.0 -1.0))
+  (let* ((sign   (if (> y 0) -1.0 1.0))
          (offset (d* sign (d/ +gui-zoom-entity+ 4.0))))
     (camera:drag-camera (world:camera (world object)) (vec .0 offset .0))))
 
