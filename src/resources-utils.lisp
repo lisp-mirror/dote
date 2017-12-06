@@ -36,7 +36,9 @@
                      +sys-data-dir+))
 
 (defun init ()
-  #+debug-mode (misc:dbg "creating ~a" (home-datadir))
+  #+debug-mode
+  (when (not (directory-exists-p (home-datadir)))
+    (misc:dbg "creating ~a" (home-datadir)))
   (fs:make-directory (home-datadir)))
 
 (defun find-in-home-datadir (file &key (return-always-path nil))

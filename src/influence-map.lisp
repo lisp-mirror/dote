@@ -38,6 +38,8 @@
 
 (defgeneric smooth-dijkstra-layer (object state &key skippable-predicate))
 
+(defgeneric next-dijkstra-position (object entity-player scale-factor-cost-concern))
+
 (defmethod smooth-dijkstra-layer ((object dijkstra-layer) (state game-state)
                                   &key (skippable-predicate #'skippablep))
   "Note: skipped tiles will get nil as value!"
@@ -79,9 +81,46 @@
           (setf (layer object) working-copy)
           (smooth-dijkstra-layer object state)))))
 
+(defmethod next-dijkstra-position ((object dijkstra-layer) entity-player scale-factor-cost-concern)
+  (with-accessors ((layer layer)) object
+    (with-accessors ((state state)) entity-player
+      (labels ((find-cost-layer (a)
+                 (let ((raw (matrix:matrix-elt layer (elt a 1) (elt a 0))))
+                     (and raw
+                          (d* scale-factor-cost-concern raw))))
+                 (find-cost (a) ;; doors as if they have no cost
+                   (if (game-state:door@pos-p state (elt a 0) (elt a 1))
+                       +open-terrain-cost+
+                       (game-state:get-cost state (elt a 0) (elt a 1)))))
+        (let* ((position (map-utils:pos-entity-chunk->cost-pos (pos entity-player)))
+               (x-player (elt position 0))
+               (y-player (elt position 1))
+               (neighbour-elements (gen-valid-4-neighbour-counterclockwise layer
+                                                                           x-player
+                                                                           y-player
+                                                                           :add-center nil))
+               (compare-fn         #'(lambda (a b)
+                                       (let ((cost-a (find-cost-layer a))
+                                             (cost-b (find-cost-layer b)))
+                                         (cond
+                                           ((null cost-a)
+                                            nil)
+                                           ((null cost-b)
+                                            t)
+                                           (t
+                                            (< cost-a cost-b))))))
+               (min                (find-min-max compare-fn neighbour-elements)))
+          (values (vector position
+                          (sequence->ivec2 min))
+                  (find-cost min)))))))
+
 (defun make-dijkstra-layer (w h bg-value)
   (make-instance 'dijkstra-layer
                  :layer (make-matrix w h (d bg-value))))
+
+(defun wrap-matrix-as-dijkstra-map (matrix)
+  (make-instance 'dijkstra-layer
+                 :layer matrix))
 
 (defun layer->pixmap (map &key (key #'identity))
   (flet ((gen-map-fn (m q)

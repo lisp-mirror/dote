@@ -122,7 +122,8 @@
     :initform nil
     :initarg  :concerning-tiles-facing
     :accessor concerning-tiles-facing
-    :type     matrix)
+    :type     matrix
+    :documentation "the concerning tiles in fornt o a NPC")
    (attack-enemy-melee-layer
     :initform nil
     :initarg  :attack-enemy-melee-layer
@@ -280,6 +281,13 @@
     (update-attack-bow-layer               blackboard)
     (update-attack-crossbow-layer          blackboard)))
 
+(defun make-single-turn-visited-tiles-matrix (w h)
+  (make-matrix w h nil))
+
+(defun reset-single-turn-visited-tiles-matrix (matrix)
+  (ploop-matrix (matrix x y)
+    (setf (matrix-elt matrix y x) nil)))
+
 (defun reset-per-turn-visited-tiles (blackboard)
   (with-accessors ((tiles per-turn-visited-tiles)
                    (main-state       main-state)) blackboard
@@ -288,7 +296,8 @@
       (setf tiles (map-ai-entities main-state
                                    #'(lambda (a)
                                        (cons a
-                                             (make-matrix wmap hmap nil))))))))
+                                             (make-single-turn-visited-tiles-matrix wmap
+                                                                                    hmap))))))))
 
 (defun get-matrix-turn-visited-tiles (blackboard entity)
   (cdr (assoc entity (per-turn-visited-tiles blackboard) :test #'eq)))
@@ -313,7 +322,7 @@
     (dbg "bow   ~a"      (attack-enemy-bow-positions      object))
     (dbg "crossbow   ~a" (attack-enemy-crossbow-positions object))
     (dbg "def-pos ~a"    (fetch-defender-positions        object))
-    (dbg "atk-pos ~a" (fetch-attacker-positions           object))
+    (dbg "atk-pos ~a"    (fetch-attacker-positions        object))
     ;; test
     ;; (let ((pix (inmap:dijkstra-layer->pixmap (attack-enemy-melee-layer object))))
     ;;   (pixmap:save-pixmap pix (fs:file-in-package "attack.tga")))
@@ -339,9 +348,9 @@
 
 (defgeneric update-unexplored-layer (object))
 
-(defgeneric update-unexplored-layer-player (object player &key all-visibles-from-ai))
+(defgeneric update-concerning-tiles-player (object player &key all-visibles-from-ai))
 
-(defgeneric next-unexplored-position (object player))
+(defgeneric next-unexplored-position (object player &key scale-factor-cost-concern))
 
 (defgeneric update-attack-melee-layer (object))
 
@@ -449,8 +458,8 @@
 ;; TODO use decision tree
 (defmethod strategy-decision ((object blackboard))
   (declare (ignore object))
-  ;;+retreat-strategy+)
-  +explore-strategy+)
+  +retreat-strategy+)
+  ;; +explore-strategy+)
   ;; +attack-strategy+)
   ;; +defend-strategy+)
 
@@ -620,6 +629,18 @@
            (when (find point visible-positions :test #'ivec2=)
              (setf (matrix-elt layer y x) new-value))))))
 
+(defun layer-skip-filter-fn (game-state)
+  (let ((all-visibles-entities (all-player-id-visible-from-ai game-state))
+        (max-mp (max-ai-movement-points game-state)))
+    #'(lambda (el-type pos)
+        (let ((cost (get-cost game-state (elt pos 0) (elt pos 1))))
+          (and (not (door@pos-p game-state (elt pos 0) (elt pos 1)))
+               (or (inmap:skippablep el-type pos)
+                   (find (entity-id-in-pos game-state (elt pos 0) (elt pos 1))
+                         all-visibles-entities
+                         :test #'=)
+                   (> cost max-mp)))))))
+
 (defmethod update-unexplored-layer ((object blackboard))
   (with-accessors ((visited-tiles visited-tiles)
                    (main-state main-state)
@@ -631,7 +652,7 @@
         ;; calculate concerning tiles tiles occupied by enemies
         (map-player-entities main-state
                              #'(lambda (player)
-                                 (update-unexplored-layer-player object
+                                 (update-concerning-tiles-player object
                                                                  player
                                                                  :all-visibles-from-ai
                                                                  all-visibles)))
@@ -642,20 +663,40 @@
            (when (matrix-elt visited-tiles y x)
              (setf (matrix-elt layer y x) +explored-tile-value+)))
         ;; smooth the map here
-        (let* ((max-mp (max-ai-movement-points main-state))
-               (skip-fn #'(lambda (el-type pos)
-                            (let ((cost (get-cost main-state (elt pos 0) (elt pos 1))))
-                              (and (not (door@pos-p main-state (elt pos 0) (elt pos 1)))
-                                   (or (inmap:skippablep el-type pos)
-                                       (find (entity-id-in-pos main-state
-                                                               (elt pos 0)
-                                                               (elt pos 1))
-                                             all-visibles
-                                             :test #'=)
-                                       (> cost max-mp)))))))
-          (inmap:smooth-dijkstra-layer (blackboard:unexplored-layer object)
-                                       main-state
-                                       :skippable-predicate skip-fn))))))
+        (inmap:smooth-dijkstra-layer (blackboard:unexplored-layer object)
+                                     main-state
+                                     :skippable-predicate (layer-skip-filter-fn main-state))))))
+
+
+(defmethod build-flee-layer-player ((object blackboard) (player entity))
+  "note: this depends from a valid and updated concerning layer"
+  (with-accessors ((main-state main-state)
+                   (concerning-tiles concerning-tiles)) object
+    #+debug-mode (assert (get-matrix-turn-visited-tiles object player))
+    (let* ((per-turn-tiles (get-matrix-turn-visited-tiles object player))
+           (res            (make-matrix (width per-turn-tiles)
+                                        (height per-turn-tiles))))
+      ;; add player visited tiles
+      (nsuperimpose-layer per-turn-tiles res
+                          :fn #'(lambda (a b)
+                                  (if a
+                                      +explored-tile-value+
+                                      b)))
+      ;; add-concerning tiles
+      (nsuperimpose-layer concerning-tiles
+                          res
+                          :fn #'(lambda (a b)
+                                  (cond
+                                    ((and (numberp a)
+                                          (numberp b))
+                                     (max a b))
+                                    (t
+                                     (or a b)))))
+      ;; smooth the map here
+      (inmap:smooth-dijkstra-layer (inmap:wrap-matrix-as-dijkstra-map res)
+                                   main-state
+                                   :skippable-predicate
+                                   (layer-skip-filter-fn main-state)))))
 
 (defun %2d-ray-stopper (player x y use-fov)
   "x  and y  in  cost-map  space (integer  coordinates),  values t  if
@@ -684,88 +725,56 @@
                       +concerning-tile-value+))
              +concerning-tile-value+))))
 
-(defmethod update-unexplored-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
+(defmethod update-concerning-tiles-player ((object blackboard) (player md2-mesh:md2-mesh)
                                            &key
                                              (all-visibles-from-ai
                                               (all-player-id-visible-from-ai (state player))))
-  (with-accessors ((unexplored-layer               unexplored-layer)
-                   (visited-tiles                  visited-tiles)
+  (with-accessors ((visited-tiles                  visited-tiles)
                    (concerning-tiles               concerning-tiles)
                    (concerning-tiles-facing        concerning-tiles-facing)
                    (main-state                     main-state)
                    (use-enemy-fov-when-exploring-p use-enemy-fov-when-exploring-p)) object
-    (with-accessors ((layer layer)) unexplored-layer
-      (cond
-        ((faction-player-p main-state (id player))
-         (when (find (id player) all-visibles-from-ai :test #'=)
-           (let* ((position            (pos-entity-chunk->cost-pos (pos player)))
-                  (x-player            (elt position 0))
-                  (y-player            (elt position 1))
-                  (danger-zone-size    (calc-enemy-danger-zone-size player))
-                  (dangerous-tiles-pos (gen-neighbour-position-in-box x-player
-                                                                      y-player
-                                                                      danger-zone-size
-                                                                      danger-zone-size
-                                                                      :add-center nil))
-                  (concerning-fn      (concerning-tile-default-mapping-clsr x-player
-                                                                            y-player
-                                                                            danger-zone-size))
-                  (increase-facing-p   nil))
-             (loop for point across dangerous-tiles-pos do
-                  (displace-2d-vector (point x y)
-                    (with-check-matrix-borders (layer x y)
-                      (when (not (%2d-ray-stopper player x y
-                                                  use-enemy-fov-when-exploring-p))
-                        (setf increase-facing-p t)
-                        (setf (matrix-elt concerning-tiles y x)
-                              (funcall concerning-fn
-                                       x y
-                                       (matrix-elt concerning-tiles y x)
-                                       0.0)))))) ; ignored
-             ;; add the player position
-             (setf (matrix-elt concerning-tiles y-player x-player)
-                   +concerning-tile-value+)
-             ;; increase the  tile the player  is facing based  on the
-             ;; weapon they are carrying
-             (when increase-facing-p
-               (increase-concerning-tile-facing-player object
-                                                       player
-                                                       concerning-tiles-facing)))))))))
+    (cond
+      ((faction-player-p main-state (id player))
+       (when (find (id player) all-visibles-from-ai :test #'=)
+         (let* ((position            (pos-entity-chunk->cost-pos (pos player)))
+                (x-player            (elt position 0))
+                (y-player            (elt position 1))
+                (danger-zone-size    (calc-enemy-danger-zone-size player))
+                (dangerous-tiles-pos (gen-neighbour-position-in-box x-player
+                                                                    y-player
+                                                                    danger-zone-size
+                                                                    danger-zone-size
+                                                                    :add-center nil))
+                (concerning-fn      (concerning-tile-default-mapping-clsr x-player
+                                                                          y-player
+                                                                          danger-zone-size))
+                (increase-facing-p   nil))
+           (loop for point across dangerous-tiles-pos do
+                (displace-2d-vector (point x y)
+                  (with-check-matrix-borders (concerning-tiles x y)
+                    (when (not (%2d-ray-stopper player x y
+                                                use-enemy-fov-when-exploring-p))
+                      (setf increase-facing-p t)
+                      (setf (matrix-elt concerning-tiles y x)
+                            (funcall concerning-fn
+                                     x y
+                                     (matrix-elt concerning-tiles y x)
+                                     0.0)))))) ; ignored
+           ;; add the player position
+           (setf (matrix-elt concerning-tiles y-player x-player)
+                 +concerning-tile-value+)
+           ;; increase the  tile the player  is facing based  on the
+           ;; weapon they are carrying
+           (when increase-facing-p
+             (increase-concerning-tile-facing-player object
+                                                     player
+                                                     concerning-tiles-facing))))))))
 
-(defmethod next-unexplored-position ((object blackboard) (player md2-mesh:md2-mesh))
+(defmethod next-unexplored-position ((object blackboard) (player md2-mesh:md2-mesh)
+                                     &key (scale-factor-cost-concern 1.0))
   (with-accessors ((unexplored-layer unexplored-layer)) object
-    (with-accessors ((layer layer)) unexplored-layer
-      (with-accessors ((state state)) player
-        (labels ((find-cost-concern (a)
-                   (matrix:matrix-elt layer (elt a 1) (elt a 0)))
-                 (find-cost (a) ;; doors as if they have no cost
-                   (if (door@pos-p state (elt a 0) (elt a 1))
-                       +open-terrain-cost+
-                       (get-cost state (elt a 0) (elt a 1)))))
-          (let* ((position (pos-entity-chunk->cost-pos (pos player)))
-                 (x-player (elt position 0))
-                 (y-player (elt position 1))
-                 (neighbour-elements (remove-if-not
-                                    #'(lambda (a)
-                                        (displace-2d-vector (a x y)
-                                          (valid-index-p layer y x)))
-                                    (gen-4-neighbour-counterclockwise x-player
-                                                                      y-player
-                                                                      :add-center nil)))
-                 (compare-fn         #'(lambda (a b)
-                                         (let ((cost-a (find-cost-concern a))
-                                               (cost-b (find-cost-concern b)))
-                                           (cond
-                                             ((null cost-a)
-                                              nil)
-                                             ((null cost-b)
-                                              t)
-                                             (t
-                                              (< cost-a cost-b))))))
-                 (min                (find-min-max compare-fn neighbour-elements)))
-            (values (vector position
-                            (sequence->ivec2 min))
-                    (find-cost min))))))))
+    (inmap:next-dijkstra-position unexplored-layer player scale-factor-cost-concern)))
 
 (defun %2d-ray-stopper-melee-fn (player x y)
   "x and y in cost-map space (integer coordinates)

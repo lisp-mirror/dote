@@ -764,7 +764,7 @@ reach and attack the enemy with optimal path?"
   (with-accessors ((state entity:state)
                    (ghost entity:ghost)) entity
     (multiple-value-bind (pos cost-next-flee-pos)
-        (ai-utils:go-next-flee-position strategy-expert entity)
+        (ai-utils:next-flee-position strategy-expert entity)
       (and pos
            (>= (character:current-movement-points ghost)
                cost-next-flee-pos)))))

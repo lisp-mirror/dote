@@ -3048,9 +3048,9 @@
    :attack-when-near-pos-p
    :useful-reachable-fountain
    :useful-reachable-fountain-clear-cache
+   :next-flee-position
    :go-launch-wall-breaking-spell
    :go-launch-attack-spell
-   :go-next-flee-position
    :go-launch-heal-spell
    :go-launch-heal-spell-friend
    :go-reward-heal-spell
@@ -4803,6 +4803,8 @@
 (defpackage :influence-map
   (:use :cl
         :alexandria
+        :config
+        :constants
         :ivec2
         :vec2
         :num
@@ -4817,7 +4819,9 @@
    :dijkstra-layer
    :layer
    :smooth-dijkstra-layer
+   :next-dijkstra-position
    :make-dijkstra-layer
+   :wrap-matrix-as-dijkstra-map
    :dijkstra-layer->pixmap
    :apply-influence
    :im->pixmap))

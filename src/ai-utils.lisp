@@ -733,62 +733,10 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
           (spell:cost spell))
     (%go-launch-spell spell entity entity)))
 
-(defstruct %neigh
-  (pos)
-  (cost)
-  (conc-cost)
-  (visitedp))
-
-(defun go-next-flee-position (strategy-expert entity)
+(defun next-flee-position (strategy-expert entity)
   "return the flee position next to entity and its cost, if any"
-  (with-accessors ((state entity:state)
-                   (ghost entity:ghost)) entity
-    (labels ((find-cost (a)
-               (game-state:get-cost state (elt a 0) (elt a 1)))
-             (find-cost-matrix (cost-matrix a)
-               (matrix:matrix-elt cost-matrix (elt a 1) (elt a 0)))
-             (visited-values (positions)
-               (mapcar #'(lambda (pos)
-                              (blackboard:get-value-turn-visited-tiles strategy-expert
-                                                                       entity
-                                                                       (elt pos 0)
-                                                                       (elt pos 1)))
-                       positions))
-             (sort-predicate (a b)
-               (let ((a-cost      (%neigh-conc-cost a))
-                     (b-cost      (%neigh-conc-cost b))
-                     (a-visited-p (%neigh-visitedp  a))
-                     (b-visited-p (%neigh-visitedp  b)))
-                 (if a-visited-p
-                     nil
-                     (if b-visited-p
-                         t                      ; a is visited b is not
-                         (< a-cost b-cost)))))) ; both not visited
-      (when-let* ((concerning-matrix  (blackboard:concerning-tiles->costs-matrix strategy-expert))
-                  (neigh              (gen-neigh       entity))
-                  (neigh-visited      (visited-values  neigh))
-                  (neigh-cost         (gen-neigh-costs entity #'find-cost))
-                  (neigh-conc-cost    (gen-neigh-costs entity
-                                                        #'(lambda (a)
-                                                            (find-cost-matrix concerning-matrix
-                                                                              a))))
-                  (all                (loop
-                                         for n   in neigh
-                                         for nv  in neigh-visited
-                                         for nc  in neigh-cost
-                                         for ncc in neigh-conc-cost collect
-                                           (make-%neigh :pos       n
-                                                        :cost      nc
-                                                        :conc-cost ncc
-                                                        :visitedp  nv)))
-                  (sorted             (shellsort all #'sort-predicate))
-                  (reachables         (remove-if #'(lambda (a)
-                                                     (> (%neigh-cost a)
-                                                        (character:current-movement-points ghost)))
-                                                 sorted))
-                  (selected           (first-elt reachables)))
-        (values (%neigh-pos       selected)
-                (%neigh-cost      selected))))))
+  (let ((dijkstra-map (blackboard::build-flee-layer-player strategy-expert entity)))
+    (inmap:next-dijkstra-position dijkstra-map entity 1.0)))
 
 (defun go-place-trap (entity)
   (with-accessors ((ghost entity:ghost)) entity

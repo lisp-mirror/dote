@@ -239,7 +239,14 @@
                    (influence-map-type influence-map-type)) world
     (with-accessors ((blackboard blackboard)) main-state
       (let ((layer (ecase influence-map-type
-                     (:blurred-concerning-layer
+                     (:first-per-turn-visited
+                      (with-accessors ((main-state main-state)) world
+                        (with-accessors ((blackboard blackboard)) main-state
+                          (inmap:dijkstra-layer->pixmap
+                           (blackboard::build-flee-layer-player blackboard
+                                                                (alexandria:first-elt
+                                                                 (ai-entities main-state)))))))
+                     (:smoothed-concerning-layer
                       (inmap::layer->pixmap
                        (blackboard:concerning-tiles->costs-matrix blackboard)))
                      (:concerning-layer
