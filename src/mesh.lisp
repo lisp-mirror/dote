@@ -2887,12 +2887,17 @@
   (world::frustum-aabb-intersects-p renderer object))
 
 (defmethod calculate :after ((object tree-mesh-shell) dt)
-  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (declare (optimize (debug 0) (speed 1) (safety 0)))
   (with-accessors ((impostor impostor)) object
     (and impostor (calculate impostor dt))
+    ;; we use 'rem' here to make  the 'el-time' periodic, otherwise
+    ;; we will get non-fluid animation.
+    ;; my best guess  is  that sin  function  in  the shader  give  wrong
+    ;; results when argument is large (as it wa no more periodic)
     (setf (el-time object)
           (d+ (start-time object)
-              (d* (animation-speed object) (current-time object))))))
+              (rem (d* (animation-speed object) (current-time object))
+                   1000.0)))))
 
 (defmethod render-phong ((object tree-mesh-shell) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -2922,9 +2927,9 @@
             (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
               (with-no-cull-face
                 (use-program compiled-shaders :tree)
-                (gl:active-texture :texture0)
+                (gl:active-texture            :texture0)
                 (texture:bind-texture texture-object)
-                (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+                (uniformi  compiled-shaders :texture-object +texture-unit-diffuse+)
                 (uniformfv compiled-shaders :light-pos
                            (the vec (main-light-pos-eye-space renderer)))
                 (uniformfv compiled-shaders :ia    #(1.0 1.0 1.0))
