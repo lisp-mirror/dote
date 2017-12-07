@@ -46,7 +46,7 @@
 
 (alexandria:define-constant +movement-points+              :movement-points             :test #'eq)
 
-(alexandria:define-constant +magic-points+                 :magic-points                :test #'eq)
+(alexandria:define-constant +spell-points+                 :spell-points                :test #'eq)
 
 (alexandria:define-constant +dodge-chance+                 :dodge-chance                :test #'eq)
 
@@ -168,7 +168,7 @@
 
 (gen-trivial-interaction-path get-movement-points             +effects+ +movement-point+)
 
-(gen-trivial-interaction-path get-magic-points                +effects+ +magic-point+)
+(gen-trivial-interaction-path get-spell-points                +effects+ +magic-point+)
 
 (gen-trivial-interaction-path get-dodge-chance                +effects+ +dodge-chance+)
 
@@ -402,7 +402,7 @@
    (format nil (prepare-format-description (_ "~a movement points"))
            (description-for-humans (interaction-get-movement-points object)))
    (format nil (prepare-format-description (_ "~a magic points"))
-           (description-for-humans (interaction-get-magic-points object)))
+           (description-for-humans (interaction-get-spell-points object)))
    (format nil (prepare-format-description (_ "~a dodge chance"))
            (description-for-humans (interaction-get-dodge-chance object)))
    (format nil (prepare-format-description (_ "~a melee attack chance"))
@@ -483,7 +483,7 @@
           (list :effects :weight)
           (list :effects :damage-points)
           (list :effects :movement-points)
-          (list :effects :magic-points)
+          (list :effects :spell-points)
           (list :effects :dodge-chance)
           (list :effects :melee-attack-chance)
           (list :effects :range-attack-chance)

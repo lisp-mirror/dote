@@ -966,7 +966,7 @@
 
 (defmethod decrement-spell-points ((object triangle-mesh) how-much)
    (when (can-use-spell-points-p object :minimum how-much)
-     (decf (character:current-magic-points (ghost object))
+     (decf (character:current-spell-points (ghost object))
            how-much)))
 
 (defmethod decrement-move-points-entering-tile ((object triangle-mesh))
@@ -1007,8 +1007,8 @@
        (>= (character:current-movement-points (ghost object)) minimum)))
 
 (defmethod can-use-spell-points-p ((object triangle-mesh) &key (minimum 0))
-  (and (character:current-magic-points (ghost object))
-       (>= (character:current-magic-points (ghost object)) minimum)))
+  (and (character:current-spell-points (ghost object))
+       (>= (character:current-spell-points (ghost object)) minimum)))
 
 (defmethod calculate-cost-position ((object triangle-mesh))
   (with-accessors ((pos pos)) object

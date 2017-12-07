@@ -14,7 +14,7 @@
     weight     100
     damage-points generate
     movement-points none
-    magic-points    none
+    spell-points    none
     dodge-chance   none
     melee-attack-chance none
     range-attack-chance none

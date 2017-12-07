@@ -2840,7 +2840,7 @@
    :+decay+
    :+damage-points+
    :+movement-points+
-   :+magic-points+
+   :+spell-points+
    :+dodge-chance+
    :+melee-attack-chance+
    :+range-attack-chance+
@@ -2920,7 +2920,7 @@
    :interaction-get-weight
    :interaction-get-damage-points
    :interaction-get-movement-points
-   :interaction-get-magic-points
+   :interaction-get-spell-points
    :interaction-get-dodge-chance
    :interaction-get-melee-attack-chance
    :interaction-get-range-attack-chance
@@ -3110,8 +3110,8 @@
    :current-damage-points
    :movement-points
    :current-movement-points
-   :magic-points
-   :current-magic-points
+   :spell-points
+   :current-spell-points
    :dodge-chance
    :melee-attack-chance
    :range-attack-chance
@@ -3144,7 +3144,7 @@
    :attack-spell-chance
    :actual-damage-points
    :actual-movement-points
-   :actual-magic-points
+   :actual-spell-points
    :actual-dodge-chance
    :actual-melee-attack-chance
    :actual-range-attack-chance
@@ -3183,7 +3183,7 @@
    :inventory-slot-pages-number
    :player-gender->gender-description
    :reset-movement-points
-   :reset-magic-points
+   :reset-spell-points
    :remove-decayed-items
    :remove-from-inventory
    :remove-from-modifiers

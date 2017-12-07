@@ -41,8 +41,17 @@
 (deftest generate-map-test-256-2-layer (random-terrain-suite)
   (with-kernel
     (assert-true
-        (let ((map (test-make-map 256 256 2))
+        (let ((map    (test-make-map 256 256 2))
               (layers (make-instance 'pixmap:tga)))
           (pixmap:load layers (concatenate 'string  +terrain-dir+ "terrain-256-2-layers.tga"))
-          (equalp (pixmap:data (texture-weights map))
-                  (matrix:data layers))))))
+          (if (equalp (pixmap:data (texture-weights map))
+                      (matrix:data layers))
+              t
+              (progn
+                (dump-pixmap (make-instance 'pixmap:tga
+                                            :width  256
+                                            :height 256
+                                            :data   (pixmap:data (texture-weights map)))
+                             +tmp-dir+
+                             "terrain-layer.tga")
+                nil))))))

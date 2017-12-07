@@ -2607,8 +2607,8 @@
                               #'current-damage-points ghost)
         (sync-bar-with-player bar-sp
                               text-sp
-                              #'actual-magic-points
-                              #'current-magic-points ghost)
+                              #'actual-spell-points
+                              #'current-spell-points ghost)
         (case (status ghost)
           (:faint
            (setf (button-state s-faint)      t)
@@ -3943,7 +3943,7 @@
               ;; copy some new points to current
               (setf (current-damage-points   player) (damage-points player))
               (setf (current-movement-points player) (movement-points player))
-              (setf (current-magic-points    player) (magic-points player))
+              (setf (current-spell-points    player) (spell-points player))
               ;; setup model
               (let* ((dir (strcat (fs:path-first-element (first model-preview-paths))
                                   fs:*directory-sep*))
@@ -4126,9 +4126,9 @@
                                      player 'movement-points
                                      lb-exp-points lb-movement-pt 0.5 1.0)
       (setf (prefix lb-magic-pt) (right-padding (prefix lb-magic-pt) max-length-prefix)
-            (label  lb-magic-pt) (format nil +standard-float-print-format+ (magic-points player)))
+            (label  lb-magic-pt) (format nil +standard-float-print-format+ (spell-points player)))
       (%add-callback-to-pgen-buttons b-inc-magic-pt b-dec-magic-pt
-                                     player 'magic-points
+                                     player 'spell-points
                                      lb-exp-points lb-magic-pt 0.5 1.0)
       (setf (prefix lb-dodge-ch) (right-padding (prefix lb-dodge-ch) max-length-prefix)
             (label  lb-dodge-ch) (format nil +standard-float-print-format+ (dodge-chance player)))

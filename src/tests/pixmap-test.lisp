@@ -24,9 +24,6 @@
 
 (alexandria:define-constant +pixmap-dir+ "data/pixmap/"  :test #'string=)
 
-(alexandria:define-constant +tmp-dir+ (concatenate 'string (test-dir) "tmp/")
-  :test #'string=)
-
 (defun %blit ()
   (let* ((blitted-filename "blit.tga")
          (path (concatenate 'string +pixmap-dir+ "test-blit.tga"))

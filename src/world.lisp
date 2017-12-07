@@ -1016,7 +1016,7 @@
       ;; copy some new points to current
       (setf (current-damage-points   ghost) (damage-points   ghost))
       (setf (current-movement-points ghost) (movement-points ghost))
-      (setf (current-magic-points    ghost) (magic-points    ghost))
+      (setf (current-spell-points    ghost) (spell-points    ghost))
       ;; setup model
       (let* ((dir (text-utils:strcat (fs:path-first-element (first preview-paths))
                                      fs:*directory-sep*))

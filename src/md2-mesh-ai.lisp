@@ -128,9 +128,9 @@
        (progn ,@body)
        #+debug-ai (misc:dbg "cost? saved ~a ~a, ~a ~a"
                             ,saved-mp (current-movement-points ,ghost)
-                            ,saved-sp (current-magic-points   ,ghost))
+                            ,saved-sp (current-spell-points   ,ghost))
        (when (or (> ,saved-mp (current-movement-points ,ghost))
-                 (> ,saved-sp (current-magic-points    ,ghost)))
+                 (> ,saved-sp (current-spell-points    ,ghost)))
          (set-cost-occurred ,entity)))))
 
 (defun %clean-plan (ghost)
@@ -156,7 +156,7 @@
                       (,ghost ghost)) ,entity
        (game-state:with-world (,world ,state)
          (let ((,saved-mp (current-movement-points ,ghost))
-               (,saved-sp (current-magic-points    ,ghost)))
+               (,saved-sp (current-spell-points    ,ghost)))
            (declare (ignorable ,saved-mp ,saved-sp))
            ;; (clear-blacklist-if-cost-occurred ,entity)
            ,@body

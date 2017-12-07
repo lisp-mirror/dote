@@ -16,8 +16,12 @@
 
 (in-package :all-test)
 
-(defun test-dir ()
-  (namestring (asdf:component-pathname (asdf:find-component 'dote "tests"))))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun test-dir ()
+    (namestring (asdf:component-pathname (asdf:find-component 'dote "tests")))))
+
+(alexandria:define-constant +tmp-dir+ (concatenate 'string (test-dir) "tmp/")
+  :test #'string=)
 
 (defmacro gen-load-pixmap (type)
   `(defun ,(alexandria:format-symbol t "~@:(load-test-~a~)" type) (name)

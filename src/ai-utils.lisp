@@ -179,7 +179,7 @@
 
 (defun at-least-n-teleport-chain-p (ghost spell n)
   (< (* n (spell:cost spell))
-     (character:current-magic-points ghost)))
+     (character:current-spell-points ghost)))
 
 (defun attackable-position-exists-path (strategy-expert entity reachable-fn)
   (if (blackboard:entity-in-valid-attackable-pos-p entity)
@@ -729,7 +729,7 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
 (defun go-reward-heal-spell (entity)
   (when-let* ((spells (spell:spells-list-by-tag spell:+spell-tag-heal-reward+))
               (spell  (first-elt spells)))
-    (incf (character:current-magic-points (ghost entity))
+    (incf (character:current-spell-points (ghost entity))
           (spell:cost spell))
     (%go-launch-spell spell entity entity)))
 

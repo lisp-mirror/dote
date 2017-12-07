@@ -474,7 +474,7 @@
 
 (defmacro gen-format-label-with-max (max-fn-symbol character)
   (let ((fn-current (alexandria:format-symbol :character "~:@(current-~a~)" max-fn-symbol))
-        (fn-max     (alexandria:format-symbol :character "~:@(actual-~a~)"         max-fn-symbol)))
+        (fn-max     (alexandria:format-symbol :character "~:@(actual-~a~)"  max-fn-symbol)))
     `(format nil
              (strcat "~,1f / ~d")
              (,fn-current ,character)
@@ -545,7 +545,7 @@
       (setf (prefix lb-movement-pt) (right-padding (prefix lb-movement-pt) max-length-prefix)
             (label  lb-movement-pt) (gen-format-label-with-max movement-points player))
       (setf (prefix lb-magic-pt) (right-padding (prefix lb-magic-pt) max-length-prefix)
-            (label  lb-magic-pt) (gen-format-label-with-max magic-points player))
+            (label  lb-magic-pt) (gen-format-label-with-max spell-points player))
       (setf (prefix lb-dodge-ch) (right-padding (prefix lb-dodge-ch) max-length-prefix)
             (label  lb-dodge-ch) (format nil
                                          +standard-float-print-format+

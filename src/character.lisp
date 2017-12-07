@@ -362,15 +362,15 @@
     :initform 0
     :accessor current-movement-points
     :type integer)
-   (magic-points
-    :initarg :magic-points
+   (spell-points
+    :initarg :spell-points
     :initform 0
-    :accessor magic-points
+    :accessor spell-points
     :type integer)
-   (current-magic-points
-    :initarg :current-magic-points
+   (current-spell-points
+    :initarg :current-spell-points
     :initform 0
-    :accessor current-magic-points
+    :accessor current-spell-points
     :type integer)
    (dodge-chance
     :initarg :dodge-chance
@@ -530,12 +530,12 @@
   ;; copy some new points to current
   (setf (current-damage-points   object) (damage-points object))
   (setf (current-movement-points object) (movement-points object))
-  (setf (current-magic-points    object) (magic-points object)))
+  (setf (current-spell-points    object) (spell-points object)))
 
 (defmethod print-object ((object player-character) stream)
   (print-unreadable-object (object stream :type t :identity t)
     (format stream
-            "description ~a name ~a ~a~%class: ~a~%gender: ~a~%strength: ~a ~%stamina: ~a ~%dexterity: ~a ~%agility: ~a ~%smartness: ~a ~%empaty: ~a ~%weight: ~a ~%damage-points: ~a ~%movement-points: ~a ~%magic-points: ~a ~%dodge-chance: ~a ~%melee-attack-chance: ~a ~%range-attack-chance: ~a ~%melee-attack-damage: ~a ~%range-attack-damage: ~a ~%edge-weapons-chance-bonus: ~a ~%edge-weapons-damage-bonus: ~a ~%impact-weapons-chance-bonus: ~a ~%impact-weapons-damage-bonus: ~a ~%pole-weapons-chance-bonus: ~a ~%pole-weapons-damage-bonus: ~a ~%unlock-chance: ~a ~%deactivate-trap-chance: ~a ~%reply-attack-chance: ~a ~%ambush-attack-chance: ~a ~%spell-chance: ~a ~%attack-spell-chance: ~a ~%status: ~a  ~%race: ~a ~%level: ~a ~%exp-points: ~a~%interaction ~a inventory ~a"
+            "description ~a name ~a ~a~%class: ~a~%gender: ~a~%strength: ~a ~%stamina: ~a ~%dexterity: ~a ~%agility: ~a ~%smartness: ~a ~%empaty: ~a ~%weight: ~a ~%damage-points: ~a ~%movement-points: ~a ~%spell-points: ~a ~%dodge-chance: ~a ~%melee-attack-chance: ~a ~%range-attack-chance: ~a ~%melee-attack-damage: ~a ~%range-attack-damage: ~a ~%edge-weapons-chance-bonus: ~a ~%edge-weapons-damage-bonus: ~a ~%impact-weapons-chance-bonus: ~a ~%impact-weapons-damage-bonus: ~a ~%pole-weapons-chance-bonus: ~a ~%pole-weapons-damage-bonus: ~a ~%unlock-chance: ~a ~%deactivate-trap-chance: ~a ~%reply-attack-chance: ~a ~%ambush-attack-chance: ~a ~%spell-chance: ~a ~%attack-spell-chance: ~a ~%status: ~a  ~%race: ~a ~%level: ~a ~%exp-points: ~a~%interaction ~a inventory ~a"
             (description                 object)
             (first-name                  object)
             (last-name                   object)
@@ -550,7 +550,7 @@
             (weight                      object)
             (damage-points               object)
             (movement-points             object)
-            (magic-points                object)
+            (spell-points                object)
             (dodge-chance                object)
             (melee-attack-chance         object)
             (range-attack-chance         object)
@@ -589,8 +589,8 @@
              weight
              movement-points
              current-movement-points
-             magic-points
-             current-magic-points
+             spell-points
+             current-spell-points
              dodge-chance
              melee-attack-chance
              range-attack-chance
@@ -650,7 +650,7 @@
 
 (defgeneric reset-movement-points (object))
 
-(defgeneric reset-magic-points (object))
+(defgeneric reset-spell-points (object))
 
 (defgeneric add-to-inventory (object item))
 
@@ -786,8 +786,8 @@
 (defmethod reset-movement-points ((object player-character))
   (setf (current-movement-points object) (actual-movement-points object)))
 
-(defmethod reset-magic-points ((object player-character))
-  (setf (current-magic-points object) (magic-points object)))
+(defmethod reset-spell-points ((object player-character))
+  (setf (current-spell-points object) (spell-points object)))
 
 (defmethod add-to-inventory ((object player-character) item)
   (game-event:register-for-end-turn item)
@@ -985,7 +985,7 @@
 (gen-wear-weapon-of-type :edge :impact :pole :bow :crossbow)
 
 (defun %filter-spell-cost-clsr (character)
-  #'(lambda (a) (> (spell:cost a) (current-magic-points character))))
+  #'(lambda (a) (> (spell:cost a) (current-spell-points character))))
 
 (defmethod available-spells-list ((object player-character))
   (spell:filter-spell-db (%filter-spell-cost-clsr object)))
@@ -1057,7 +1057,7 @@
       (let* ((weapon-type                        (weapon-type object))
              (actual-damage-points               (actual-damage-points               object))
              (actual-movement-points             (actual-movement-points             object))
-             (actual-magic-points                (actual-magic-points                object))
+             (actual-spell-points                (actual-spell-points                object))
              (actual-dodge-chance                (actual-dodge-chance                object))
              (actual-melee-attack-chance         (actual-melee-attack-chance         object))
              (actual-melee-attack-damage         (actual-melee-attack-damage         object))
@@ -1098,7 +1098,7 @@
                                    (d* (melee-weight)    melee-contribute)
                                    (d* (range-weight)    range-contribute)
                                    (d* (magic-weight)
-                                       actual-magic-points
+                                       actual-spell-points
                                        (dmax actual-spell-change
                                              actual-attack-spell-chance))
                                    (d* (dodge-weight)
@@ -1124,7 +1124,7 @@
 ;; characteristic
 (gen-actual-characteristics damage-points
                             movement-points
-                            magic-points
+                            spell-points
                             dodge-chance
                             melee-attack-chance
                             range-attack-chance
@@ -1158,7 +1158,7 @@
               (,rest-capital (random-fill-slots ,char capital slots)))
          (setf (damage-points ,char)   (d (truncate (* (stamina ,char) 0.5)))
                (movement-points ,char) (d (truncate (* (agility ,char) 0.5)))
-               (magic-points ,char) (d (truncate (/ (lerp 0.1
+               (spell-points ,char) (d (truncate (/ (lerp 0.1
                                                           (lerp 0.5
                                                                 (smartness ,char)
                                                                 (empaty ,char))
@@ -1200,7 +1200,7 @@
              (,(format-symbol t "~@:(make-~a~)" player-class)
                ,rest-capital race ,char slots)
              (progn
-               (setf (current-magic-points    ,char) (magic-points ,char)
+               (setf (current-spell-points    ,char) (spell-points ,char)
                      (current-movement-points ,char) (movement-points ,char)
                      (current-damage-points    ,char) (damage-points ,char))
                (values ,char ,rest-capital)))))))
@@ -1297,7 +1297,7 @@
                         +weight+
                         +damage-points+
                         +movement-points+
-                        +magic-points+
+                        +spell-points+
                         +dodge-chance+
                         +melee-attack-chance+
                         +range-attack-chance+
@@ -1369,7 +1369,7 @@
                   :weight                      (fetch-weight                        params)
                   :damage-points               (fetch-damage-points                 params)
                   :movement-points             (fetch-movement-points               params)
-                  :magic-points                (fetch-magic-points                  params)
+                  :spell-points                (fetch-spell-points                  params)
                   :dodge-chance                (fetch-dodge-chance                  params)
                   :melee-attack-chance         (fetch-melee-attack-chance           params)
                   :range-attack-chance         (fetch-range-attack-chance           params)
@@ -1426,8 +1426,8 @@
                                                                 (fetch-damage-points params))
                                   :movement-points             (randomize-a-bit
                                                                 (fetch-movement-points params))
-                                  :magic-points                (randomize-a-bit
-                                                                (fetch-magic-points params))
+                                  :spell-points                (randomize-a-bit
+                                                                (fetch-spell-points params))
                                   :dodge-chance                (randomize-a-bit
                                                                 (fetch-dodge-chance params))
                                   :melee-attack-chance         (randomize-a-bit

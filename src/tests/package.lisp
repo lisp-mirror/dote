@@ -19,6 +19,7 @@
         :clunit)
   (:export
    :test-dir
+   :+tmp-dir+
    :all-suite
    :load-test-tga
    :load-test-ppm

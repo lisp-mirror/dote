@@ -991,7 +991,7 @@
                    (state state)) object
     (game-state:with-world (world state)
       (when ghost
-        (reset-magic-points    ghost)
+        (reset-spell-points    ghost)
         (reset-movement-points ghost)
         ;;; TEST
         (when (faction-ai-p (state object) (id object))
@@ -2049,7 +2049,7 @@
       (add-to-inventory (ghost body) forged-spear)
       (add-to-inventory (ghost body) forged-trap)
       (setf (movement-points (ghost body)) 50.0)
-      (setf (magic-points    (ghost body)) 40.0)
+      (setf (spell-points    (ghost body)) 40.0)
       ;; note:   wear-item-event  will   not  be   catched  as   the
       ;; registration happens when the entity is added to world
       (wear-item body forged-sword))
