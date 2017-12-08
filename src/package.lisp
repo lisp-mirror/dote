@@ -286,6 +286,7 @@
    :gen-trivial-plist-predicate
    :gen-trivial-plist-get
    :gen-trivial-plist-gets
+   :gen-vec-comp
    :make-null-pointer
    :with-load-forms-in-var))
 
@@ -1017,6 +1018,9 @@
    :extract-traslation-vec
    :extract-traslation-mat
    :vec-negate
+   :vec-x
+   :vec-y
+   :vec-z
    :safe-normalize
    :aabb
    :aabb-p1
@@ -2345,6 +2349,10 @@
    :register-for-camera-drag-ends
    :unregister-for-camera-drag-ends
    :propagate-camera-drag-ends
+   :camera-orbit-ends
+   :register-for-camera-orbit-ends
+   :unregister-for-camera-orbit-ends
+   :propagate-camera-orbit-ends
    :healing-effect-turn
    :register-for-healing-effect-turn
    :unregister-for-healing-effect-turn
@@ -3532,6 +3540,8 @@
         :transformable)
   (:import-from :game-event :on-game-event)
   (:export
+   :+angular-speed-level-up+
+   :+angular-speed-rotate-command+
    :camera
    :projection-matrix
    :followed-entity
@@ -3548,10 +3558,13 @@
    :mode
    :minor-mode
    :pos-interpolator
+   :orbit-interpolator
    :install-drag-interpolator
    :install-path-interpolator
    :install-path-interpolator*
    :install-orbit-interpolator
+   :gen-orbit-interpolator-cw
+   :gen-orbit-interpolator-ccw
    :look-at
    :look-at*
    :calculate-frustum
@@ -4451,6 +4464,7 @@
    :pick-any-entity
    :pick-pointer-position
    :pick-height-terrain
+   :selected-pc
    :all-furniture-bags-not-empty-p
    :all-furnitures-but-pillars-not-empty-p
    :push-labyrinth-entity
@@ -5033,7 +5047,9 @@
    :slide-right
    :slide-upward
    :slide-downward
-   :slide-to-active-player))
+   :slide-to-active-player
+   :rotate-90-around-player-cw
+   :rotate-90-around-player-ccw))
 
 (defpackage :main-window
   (:use :cl

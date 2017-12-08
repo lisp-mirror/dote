@@ -52,6 +52,30 @@
 
 ;; functions utils
 
+(defun unsplice (form)
+  (and form
+       (list form)))
+
+(defmacro defalias (alias &body (def &optional docstring))
+  "Define a value as a top-level function.
+     (defalias string-gensym (compose #'gensym #'string))
+Like (setf (fdefinition ALIAS) DEF), but with a place to put
+documentation and some niceties to placate the compiler.
+Name from Emacs Lisp."
+  `(progn
+     ;; Give the function a temporary definition at compile time so
+     ;; the compiler doesn't complain about it's being undefined.
+     (eval-when (:compile-toplevel)
+       (unless (fboundp ',alias)
+         (defun ,alias (&rest args)
+           (declare (ignore args)))))
+     (eval-when (:load-toplevel :execute)
+       (compile ',alias ,def)
+       ,@(unsplice
+          (when docstring
+            `(setf (documentation ',alias 'function) ,docstring))))
+     ',alias))
+
 (defun a->function (a)
   (cond
     ((functionp a)
@@ -70,15 +94,16 @@
          (eql (type-of ,a) ',name)))))
 
 (defmacro define-compiler-macros (name &body args)
-  (let* ((function-name (alexandria:format-symbol t "~:@(~a~)" name))
-         (low-level-function-name (alexandria:format-symbol t "~:@(%~a~)" name)))
-    `(define-compiler-macro ,function-name (&whole form ,@args)
-       (let ((low-funname ',low-level-function-name))
-         (if (every #'constantp (list ,@args))
-             (progn
-               `(funcall (function ,low-funname) ,,@args))
-             (progn
-               form))))))
+  (alexandria:with-gensyms (low-level-function-name)
+    (let* ((function-name (alexandria:format-symbol t "~:@(~a~)" name)))
+      `(progn
+         (defalias ,low-level-function-name #',function-name)
+         (define-compiler-macro ,function-name (&whole form ,@args)
+           (let ((low-funname ',low-level-function-name))
+             (if (every #'constantp (list ,@args))
+                 (funcall (symbol-function low-funname) ,@args)
+                 (progn
+                   form))))))))
 
 (defmacro definline (name arg &rest body)
   (let* ((function-name (alexandria:format-symbol t "~:@(~a~)" name)))
@@ -148,30 +173,6 @@
            (defun ,function-name (,@args)
              ,@declaration
              ,@forms))))))
-
-(defun unsplice (form)
-  (and form
-       (list form)))
-
-(defmacro defalias (alias &body (def &optional docstring))
-  "Define a value as a top-level function.
-     (defalias string-gensym (compose #'gensym #'string))
-Like (setf (fdefinition ALIAS) DEF), but with a place to put
-documentation and some niceties to placate the compiler.
-Name from Emacs Lisp."
-  `(progn
-     ;; Give the function a temporary definition at compile time so
-     ;; the compiler doesn't complain about it's being undefined.
-     (eval-when (:compile-toplevel)
-       (unless (fboundp ',alias)
-         (defun ,alias (&rest args)
-           (declare (ignore args)))))
-     (eval-when (:load-toplevel :execute)
-       (compile ',alias ,def)
-       ,@(unsplice
-          (when docstring
-            `(setf (documentation ',alias 'function) ,docstring))))
-     ',alias))
 
 (defun nest-expressions (data &optional (leaf nil))
   (if (null data)
@@ -627,6 +628,17 @@ Name from Emacs Lisp."
                               ,(first return-form)))
                    (rest return-form))
        ,@body)))
+
+;; cg vectors
+
+(defmacro gen-vec-comp ((prefix-name comp-name index) &rest declarations)
+  (let ((name (format-fn-symbol t "~a-~a" prefix-name comp-name))
+        (arg  (format-fn-symbol t "v")))
+    `(progn
+       (defun ,name (,arg)
+         ,@declarations
+         (elt ,arg ,index))
+       (define-compiler-macros ,name ,arg))))
 
 ;; cffi
 

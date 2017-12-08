@@ -16,11 +16,15 @@
 
 (in-package :camera)
 
-(alexandria:define-constant +drag-camera-ends-threshold+ 0.1 :test #'=)
+(alexandria:define-constant +drag-camera-ends-threshold+   0.1             :test #'=)
 
-(alexandria:define-constant +fit-to-aabb-offset+         0.01 :test #'=)
+(alexandria:define-constant +fit-to-aabb-offset+           0.01            :test #'=)
 
-(alexandria:define-constant +fit-to-aabb-scale-pos+      2.0 :test #'=)
+(alexandria:define-constant +fit-to-aabb-scale-pos+        2.0             :test #'=)
+
+(alexandria:define-constant +angular-speed-level-up+       (deg->rad  30.0) :test #'=)
+
+(alexandria:define-constant +angular-speed-rotate-command+ (deg->rad 140.0) :test #'=)
 
 (defclass camera (transformable entity)
   ((target
@@ -50,15 +54,18 @@
     :initform #'(lambda (dt) (declare (ignorable dt)) +zero-vec+)
     :accessor orbit-interpolator
     :initarg :orbit-interpolator
-    :documentation "a function returning next position and direction for an orbiting camera.")
+    :documentation "a function returning next position for an orbiting camera
+                    around (x-target y-axis z-target), nil if no more rotation will occurs.")
    (current-phi
     :accessor current-phi
     :initarg :current-phi
-    :initform 0.0)
+    :initform 0.0
+    :documentation "angle of rotation around z axis")
    (current-theta
     :accessor current-theta
     :initarg :current-theta
-    :initform 0.0)
+    :initform 0.0
+    :documentation "angle of rotation around x axis")
    (current-rotation
     :accessor current-rotation
     :initarg :current-rotation
@@ -159,7 +166,8 @@
           (drag-target-pos object) (copy-vec target)
           (up     object) (copy-vec +y-axe+)
           (dir    object) (vec- (target object) (pos object)))
-    (game-event:register-for-camera-drag-ends object)
+    (game-event:register-for-camera-drag-ends  object)
+    (game-event:register-for-camera-orbit-ends object)
     (look-at* object)))
 
 (defmethod render ((object camera) renderer))
@@ -181,6 +189,10 @@
   (setf (mode object) :fp)
   nil)
 
+(defmethod on-game-event ((object camera) (event game-event:camera-orbit-ends))
+  (setf (mode object) :fp)
+  nil)
+
 (defgeneric %draw-path-mode (object dt))
 
 (defgeneric %draw-orbit-mode (object dt))
@@ -192,8 +204,6 @@
 (defgeneric look-at* (object))
 
 (defgeneric look-at (object eye-x eye-y eye-z target-x target-y target-z up-x up-y up-z))
-
-(defgeneric orbit (object phi theta dist))
 
 (defgeneric reorient-fp-camera (object offset))
 
@@ -207,7 +217,7 @@
 
 (defgeneric install-path-interpolator* (object knots))
 
-(defgeneric install-orbit-interpolator (object phi-angular-velocity theta-angular-velocity dist))
+(defgeneric install-orbit-interpolator (object pivot angular-velocity max-angle))
 
 (defgeneric install-drag-interpolator (object &key spring-k))
 
@@ -232,11 +242,14 @@
     (look-at* object)))
 
 (defmethod %draw-orbit-mode ((object camera) dt)
-  (multiple-value-bind (pos dir)
-      (funcall (orbit-interpolator object) dt)
-    (setf (pos object) pos
-          (dir object) dir)
-    (look-at* object)))
+  (with-accessors ((pos pos)) object
+    (let ((new-pos (funcall (orbit-interpolator object) dt)))
+      (if new-pos ;; when nil rotation is complete
+          (progn
+            (setf pos new-pos)
+            (look-at* object))
+          (let ((event (make-instance 'game-event:camera-drag-ends)))
+            (game-event:propagate-camera-orbit-ends event))))))
 
 (defmethod %draw-drag-mode ((object camera) dt)
   (with-accessors ((target target)
@@ -280,19 +293,6 @@
         (up     object) (normalize (vec  up-x up-y up-z))
         (dir    object) (normalize (vec- (target object) (pos object))))
   (look-at* object))
-
-(defmethod orbit ((object camera) phi theta dist)
-   "Orbits the camera around its target by phi (horizontal axis) and theta
-    (vertical axis) at a radius dist"
-   (with-accessors ((up up) (dir dir) (target target) (pos pos)) object
-     (setf pos +zero-vec+)
-     (let* ((x-axis  (normalize (cross-product up (vec- target pos))))
-            (y-axis  up)
-            (quat    (quat* (axis-rad->quat x-axis theta)
-                            (axis-rad->quat y-axis phi)))
-            (new-dir (normalize (quat-rotate-vec quat dir)))
-            (new-pos (vec+ target (vec- +zero-vec+ (vec* new-dir dist)))))
-       new-pos)))
 
 (defmethod reorient-fp-camera ((object camera) offset)
   (let ((offset-scaled (vec2:vec2* offset 0.01)))
@@ -411,17 +411,42 @@
 (defmethod install-drag-interpolator ((object camera) &key (spring-k 100.0))
   (setf (drag-interpolator object) (gen-drag-interpolator :spring-k spring-k)))
 
-(defun gen-orbit-interpolator (camera phi-angular-velocity theta-angular-velocity dist)
-  #'(lambda (dt) (with-accessors ((current-theta current-theta)
-                                  (current-phi   current-phi)) camera
-                   (setf current-phi (d* dt phi-angular-velocity))
-                   (setf current-theta (d* dt theta-angular-velocity))
-                   (orbit camera current-phi current-theta dist))))
+(defun gen-orbit-interpolator-cw (camera pivot angular-velocity max-angle)
+  (let ((current-angle 0.0))
+    #'(lambda (dt)
+        (if (d< current-angle max-angle)
+            (with-accessors ((target target)
+                             (pos    pos)) camera
+              (let* ((dir         (vec- pos pivot)) ; pointing from target
+                                                     ; to position of the camera
+                     (rot-vector  +y-axe+)
+                     (rot-matrix  (rotate-around rot-vector (d* angular-velocity dt)))
+                     (rotated-dir (transform-direction dir rot-matrix))
+                     (new-pos     (vec+ target rotated-dir)))
+                (incf current-angle (d* angular-velocity dt))
+                new-pos))
+            nil))))
 
-(defmethod install-orbit-interpolator ((object camera) phi-angular-velocity
-                                       theta-angular-velocity dist)
+(defun gen-orbit-interpolator-ccw (camera pivot angular-velocity max-angle)
+  (let ((current-angle max-angle))
+    #'(lambda (dt)
+        (if (d> current-angle 0.0)
+            (with-accessors ((target target)
+                             (pos    pos)) camera
+              (let* ((dir         (vec- pos pivot)) ; pointing from target
+                                                     ; to position of the camera
+                     (rot-vector  +y-axe+)
+                     (rot-matrix  (rotate-around rot-vector (d- (d* angular-velocity dt))))
+                     (rotated-dir (transform-direction dir rot-matrix))
+                     (new-pos     (vec+ target rotated-dir)))
+                (decf current-angle (d* angular-velocity dt))
+                new-pos))
+            nil))))
+
+(defmethod install-orbit-interpolator ((object camera) pivot angular-velocity max-angle)
+  "x and y are screen coordinates"
   (setf (orbit-interpolator object)
-        (gen-orbit-interpolator object phi-angular-velocity theta-angular-velocity dist)))
+        (gen-orbit-interpolator object pivot angular-velocity max-angle)))
 
 (defmethod calculate-frustum ((object camera))
   (declare (optimize (debug 0) (safety 0) (speed 3)))

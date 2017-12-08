@@ -23,6 +23,18 @@
        (d- (elt v 1))
        (d- (elt v 2))))
 
+(gen-vec-comp (vec x 0)
+              (declare (optimize (debug 0) (safety 0) (speed 3)))
+              (declare (vec v)))
+
+(gen-vec-comp (vec y 1)
+              (declare (optimize (debug 0) (safety 0) (speed 3)))
+              (declare (vec v)))
+
+(gen-vec-comp (vec z 2)
+              (declare (optimize (debug 0) (safety 0) (speed 3)))
+              (declare (vec v)))
+
 (defun extract-traslation-vec (mat)
   (vec (mref mat 0 3) (mref mat 1 3) (mref mat 2 3)))
 

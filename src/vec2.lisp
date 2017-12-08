@@ -92,7 +92,7 @@
   (vec2 (num:d- (elt a 0) (elt b 0))
         (num:d- (elt a 1) (elt b 1))))
 
-(define-compiler-macros vec2-negate a)
+(define-compiler-macros vec2- a b)
 
 (defun-inline-function vec2-negate (a)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
@@ -100,7 +100,7 @@
   (vec2 (num:d- (elt a 0))
         (num:d- (elt a 1))))
 
-(define-compiler-macros vec2- a b)
+(define-compiler-macros vec2-negate a)
 
 (defun-inline-function vec2-length (a)
   (declare (optimize (debug 0) (safety 0) (speed 3)))

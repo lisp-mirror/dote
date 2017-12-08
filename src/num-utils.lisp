@@ -70,10 +70,12 @@
 (defun spherical->cartesian (phi theta)
   (declare (optimize (speed 3) (debug 0) (safety 0)))
   (declare (desired-type phi theta))
-  ;;    ^  theta (elevation)
-  ;; z  |  <--+
-  ;;    |    /
-  ;;    +--+/  phi azimut (ccw)
+  ;;    ^
+  ;; z  |
+  ;;    | theta (elevation)
+  ;;    +-----> y
+  ;;   /  phi azimut (ccw)
+  ;;  / x
   ;;
   ;; z = r cos (theta)
   ;; x = r sin(theta) cos (phi)
@@ -88,7 +90,9 @@
   (let ((r (dsqrt (d+ (dexpt (elt v 0) 2.0)
                       (dexpt (elt v 1) 2.0)
                       (dexpt (elt v 2) 2.0)))))
-    (values r (dacos (d/ (elt v 2) r)) (datan (d/ (elt v 1) (elt v 0))))))
+    (values r
+            (dacos (d/ (elt v 2) r))
+            (datan (d/ (elt v 1) (elt v 0))))))
 
 (defun find-min-max (function the-list)
   (reduce #'(lambda (a b) (if (funcall function a b) a b)) the-list))

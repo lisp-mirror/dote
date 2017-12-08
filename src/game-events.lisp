@@ -102,6 +102,8 @@
 
 (defevent camera-drag-ends () ())
 
+(defevent camera-orbit-ends () ())
+
 (defevent healing-effect-turn (game-event-w-destination)
     ((parameters
       :initform nil

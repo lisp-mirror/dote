@@ -60,3 +60,29 @@
 (defun slide-to-active-player (world)
   (world:point-camera-to-entity world
                                 (widget:bound-player (toolbar world))))
+
+(defun rotate-90-around-player (world orientation)
+  (with-accessors ((selected-pc selected-pc)
+                   (camera camera)) world
+    (setf (camera:target camera) (entity:pos selected-pc))
+    (camera:look-at* camera)
+    (ecase orientation
+      (:cw
+       (setf (orbit-interpolator camera)
+             (camera:gen-orbit-interpolator-cw camera
+                                               (entity:pos selected-pc)
+                                               camera:+angular-speed-rotate-command+
+                                               +pi/2+)))
+      (:ccw
+       (setf (orbit-interpolator camera)
+             (camera:gen-orbit-interpolator-ccw camera
+                                                (entity:pos selected-pc)
+                                                camera:+angular-speed-rotate-command+
+                                                +pi/2+))))
+    (setf (mode (world:camera world)) :orbit)))
+
+(defun rotate-90-around-player-cw (world)
+  (rotate-90-around-player world :cw))
+
+(defun rotate-90-around-player-ccw (world)
+  (rotate-90-around-player world :ccw))

@@ -101,7 +101,7 @@
   (ivec2 (truncate (- (elt a 0)))
          (truncate (- (elt a 1)))))
 
-(define-compiler-macros vec2-negate a)
+(define-compiler-macros ivec2-negate a)
 
 (defun-inline-function ivec2-length (a)
   (declare (ivec2 a))
