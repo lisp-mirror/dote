@@ -646,6 +646,8 @@
    :+ivec2-zero+
    :make-fresh-ivec2
    :copy-ivec2
+   :ivec2-x
+   :ivec2-y
    :sequence->ivec2
    :ivec2=
    :ivec2p
@@ -3563,6 +3565,7 @@
    :install-path-interpolator
    :install-path-interpolator*
    :install-orbit-interpolator
+   :reset-camera-view
    :gen-orbit-interpolator-cw
    :gen-orbit-interpolator-ccw
    :look-at
@@ -5035,6 +5038,7 @@
         :config
         :constants
         :sb-cga
+        :sb-cga-utils
         :num-utils
         :interfaces
         :camera
@@ -5049,7 +5053,8 @@
    :slide-downward
    :slide-to-active-player
    :rotate-90-around-player-cw
-   :rotate-90-around-player-ccw))
+   :rotate-90-around-player-ccw
+   ::reset-camera))
 
 (defpackage :main-window
   (:use :cl

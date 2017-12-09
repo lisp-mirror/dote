@@ -53,6 +53,14 @@
   (defun-inline-function make-fresh-ivec2 ()
     (make-array-frame 2 0 'ivec2-type t)))
 
+(gen-vec-comp (ivec2 x 0)
+              (declare (optimize (debug 0) (safety 0) (speed 3)))
+              (declare (ivec2 v)))
+
+(gen-vec-comp (ivec2 y 1)
+              (declare (optimize (debug 0) (safety 0) (speed 3)))
+              (declare (ivec2 v)))
+
 (defun-inline-function sequence->ivec2 (seq)
   (ivec2 (elt seq 0) (elt seq 1)))
 

@@ -275,6 +275,7 @@
                                  (gconf:config-go-to-active-character)
                                  (gconf:config-rotate-camera-cw)
                                  (gconf:config-rotate-camera-ccw)
+                                 (gconf:config-reset-camera)
                                  "o" "i" "u" "d" "V" "B"
                                  "n" "N" "V" "v" "U" "D"
                                  "L" "p")
@@ -297,6 +298,9 @@
               (rotate-90-around-player-cw world))
             (when (string= text (gconf:config-rotate-camera-ccw))
               (rotate-90-around-player-ccw world))
+            (when (string= text (gconf:config-reset-camera))
+              (reset-camera world))
+            ;; test
             (when (string= text "v")
               (incf *fov* +1.0))
             (when (string= text "V")

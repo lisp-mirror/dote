@@ -86,3 +86,17 @@
 
 (defun rotate-90-around-player-ccw (world)
   (rotate-90-around-player world :ccw))
+
+(defun reset-camera (world)
+  (with-accessors ((selected-pc selected-pc)
+                   (camera camera)
+                   (main-state main-state)) world
+    (multiple-value-bind (x-mouse y-mouse)
+        (sdl2:mouse-state)
+      (let* ((pos-terrain-matrix (world:pick-pointer-position world world x-mouse y-mouse))
+             (x-world            (map-utils:coord-map->chunk (ivec2:ivec2-x pos-terrain-matrix)))
+             (z-world            (map-utils:coord-map->chunk (ivec2:ivec2-y pos-terrain-matrix)))
+             (y-world            (game-state:approx-terrain-height@pos main-state x-world z-world)))
+        (camera:reset-camera-view camera (vec x-world
+                                              y-world
+                                              z-world))))))

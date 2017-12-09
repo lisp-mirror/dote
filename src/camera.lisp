@@ -26,6 +26,11 @@
 
 (alexandria:define-constant +angular-speed-rotate-command+ (deg->rad 140.0) :test #'=)
 
+(alexandria:define-constant +reset-camera-vec+   (vec (d* +terrain-chunk-tile-size+ -8.0)
+                                                      (d* +terrain-chunk-tile-size+ 15.0)
+                                                      (d* +terrain-chunk-tile-size+ -8.0))
+  :test #'vec=)
+
 (defclass camera (transformable entity)
   ((target
     :initform nil
@@ -411,6 +416,14 @@
 (defmethod install-drag-interpolator ((object camera) &key (spring-k 100.0))
   (setf (drag-interpolator object) (gen-drag-interpolator :spring-k spring-k)))
 
+(defmethod reset-camera-view ((object camera) (point-to vector))
+  (with-accessors ((target target)
+                   (pos    pos)) object
+    (setf target point-to)
+    (setf pos    (vec+ point-to +reset-camera-vec+))
+    (look-at* object)
+    object))
+
 (defun gen-orbit-interpolator-cw (camera pivot angular-velocity max-angle)
   (let ((current-angle 0.0))
     #'(lambda (dt)
@@ -446,7 +459,7 @@
 (defmethod install-orbit-interpolator ((object camera) pivot angular-velocity max-angle)
   "x and y are screen coordinates"
   (setf (orbit-interpolator object)
-        (gen-orbit-interpolator object pivot angular-velocity max-angle)))
+        (gen-orbit-interpolator-cw object pivot angular-velocity max-angle)))
 
 (defmethod calculate-frustum ((object camera))
   (declare (optimize (debug 0) (safety 0) (speed 3)))
