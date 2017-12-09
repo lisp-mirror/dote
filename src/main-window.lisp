@@ -276,6 +276,8 @@
                                  (gconf:config-rotate-camera-cw)
                                  (gconf:config-rotate-camera-ccw)
                                  (gconf:config-reset-camera)
+                                 (gconf:config-next-character)
+                                 (gconf:config-prev-character)
                                  "o" "i" "u" "d" "V" "B"
                                  "n" "N" "V" "v" "U" "D"
                                  "L" "p")
@@ -300,6 +302,10 @@
               (rotate-90-around-player-ccw world))
             (when (string= text (gconf:config-reset-camera))
               (reset-camera world))
+            (when (string= text (gconf:config-next-character))
+              (select-next-player world))
+            (when (string= text (gconf:config-prev-character))
+              (select-previous-player world))
             ;; test
             (when (string= text "v")
               (incf *fov* +1.0))

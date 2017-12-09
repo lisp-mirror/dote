@@ -2245,6 +2245,8 @@
    :fog-density
    :fetch-window
    :with-world
+   :select-next-pc
+   :select-prev-pc
    :fetch-world
    :setup-game-hour
    :prepare-map-state
@@ -5054,7 +5056,9 @@
    :slide-to-active-player
    :rotate-90-around-player-cw
    :rotate-90-around-player-ccw
-   ::reset-camera))
+   :reset-camera
+   :select-next-player
+   :select-previous-player))
 
 (defpackage :main-window
   (:use :cl

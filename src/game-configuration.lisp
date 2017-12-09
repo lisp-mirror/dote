@@ -36,9 +36,9 @@
 
 (define-constant +go-to-active-character+ "t" :test #'string=)
 
-(define-constant +next-character+         "l" :test #'string=)
+(define-constant +next-character+         "x" :test #'string=)
 
-(define-constant +prev-character+         "k" :test #'string=)
+(define-constant +prev-character+         "z" :test #'string=)
 
 (defclass game-config ()
   ((forward

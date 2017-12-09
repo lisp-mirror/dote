@@ -319,7 +319,13 @@
    (selected-pc
     :initform nil
     :initarg  :selected-pc
-    :accessor selected-pc)
+    :reader selected-pc)
+   (index-selected-pc
+    :initform 0
+    :initarg  :index-selected-pc
+    :accessor index-selected-pc
+    :type fixnum
+    :documentation "index of an element of slot selected pc")
    (selected-path
     :initform nil
     :initarg  :selected-path
@@ -329,6 +335,12 @@
     :initarg  :blackboard
     :accessor blackboard
     :type blackboard:blackboard)))
+
+(defgeneric selected-pc (object))
+
+(defgeneric select-next-pc (object))
+
+(defgeneric select-prev-pc (object))
 
 (defgeneric fetch-render-window (object))
 
@@ -429,6 +441,39 @@
 (defgeneric calc-ai-entities-action-order (object))
 
 (defgeneric door-in-next-path-tile-p (object path idx-pos-maybe-door))
+
+(defmethod (setf selected-pc) (entity (object game-state))
+  "set index-selected-pc as well"
+  (with-accessors ((index-selected-pc index-selected-pc)
+                   (player-entities   player-entities)
+                   (ai-entities       ai-entities)) object
+    (declare (list player-entities ai-entities))
+    (let ((pos-found #- debug-mode
+                     (position entity player-entities :test #'test-id=)
+                     #+debug-mode
+                     (or (position entity player-entities :test #'test-id=)
+                         (position entity ai-entities     :test #'test-id=))))
+      #+debug-mode (assert pos-found)
+      (setf index-selected-pc pos-found)
+      (setf (slot-value object 'selected-pc) entity))))
+
+(defmethod select-next-pc ((object game-state))
+  (with-accessors ((index-selected-pc index-selected-pc)
+                   (player-entities   player-entities)
+                   (selected-pc selected-pc)) object
+    (setf index-selected-pc (rem (1+ index-selected-pc)
+                                 (length player-entities)))
+    (setf selected-pc (elt player-entities index-selected-pc))
+    object))
+
+(defmethod select-prev-pc ((object game-state))
+  (with-accessors ((index-selected-pc index-selected-pc)
+                   (player-entities   player-entities)
+                   (selected-pc selected-pc)) object
+    (setf index-selected-pc (mod (1- index-selected-pc)
+                                 (length player-entities)))
+    (setf selected-pc (elt player-entities index-selected-pc))
+    object))
 
 (defmethod fetch-render-window ((object game-state))
   (and (window-id object)

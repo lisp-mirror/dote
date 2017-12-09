@@ -100,3 +100,22 @@
         (camera:reset-camera-view camera (vec x-world
                                               y-world
                                               z-world))))))
+(defun select-a-new-player (world player)
+  (with-accessors ((selected-pc selected-pc)
+                   (camera camera)
+                   (main-state main-state)) world
+    (reset-camera world)
+    (setf (widget:bound-player (toolbar world)) player)
+    (slide-to-active-player world)))
+
+(defun select-next-player (world)
+  (with-accessors ((selected-pc selected-pc)
+                   (main-state main-state)) world
+    (game-state:select-next-pc main-state)
+    (select-a-new-player world (game-state:selected-pc main-state))))
+
+(defun select-previous-player (world)
+  (with-accessors ((selected-pc selected-pc)
+                   (main-state main-state)) world
+    (game-state:select-prev-pc main-state)
+    (select-a-new-player world (game-state:selected-pc main-state))))
