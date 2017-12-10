@@ -15,6 +15,7 @@
 			    (d/ +terrain-chunk-tile-size+ 8.0))
   :damage-inflicted      10.0
   :arrow                 particles:make-fire-dart-level-0
+  :tremor                (lambda (world) (world:apply-tremor-0 world))
   :effects               (define-interaction
 			   effects         (define-effects)
 			   healing-effects (define-healing-effects)))

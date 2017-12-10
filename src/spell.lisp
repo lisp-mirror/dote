@@ -185,6 +185,10 @@
     :initform 0.0
     :initarg :damage-inflicted
     :accessor damage-inflicted)
+   (tremor-fn
+    :initform nil
+    :initarg  :tremor-fn
+    :accessor tremor-fn)
    (arrow
     :initform nil
     :initarg :arrow
@@ -289,11 +293,16 @@
 (defun %get-param (params a &optional (default nil))
   (getf params a default))
 
+(defun %get-param-fn (params a)
+  (and (%get-param params a)
+       `(function ,(%get-param params a))))
+
 (defmacro define-attack-spell ((id) &body params)
   (alexandria:with-gensyms (spell)
     `(with-interaction-parameters
        (let ((,spell (make-instance 'attack-spell
                                     :level                ,(%get-param params :level)
+                                    :tremor-fn            ,(%get-param-fn params :tremor)
                                     :element              ,(or (%get-param params :element)
                                                                :fire)
                                     :tags                 ',(mapcar #'alexandria:make-keyword

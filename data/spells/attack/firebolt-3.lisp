@@ -16,6 +16,7 @@
   :visual-effect-target  particles:make-aerial-explosion-level-2
   :damage-inflicted      30.0
   :arrow                 particles:make-fire-dart-level-2
+  :tremor                (lambda (world) (world:apply-tremor-2 world))
   :effects               (define-interaction
 			   effects         (define-effects)
 			   healing-effects (define-healing-effects)))

@@ -31,7 +31,7 @@
                                                       (d* +terrain-chunk-tile-size+ -8.0))
   :test #'vec=)
 
-(defclass camera (transformable entity)
+(defclass camera (transformable entity fading-away-entity)
   ((target
     :initform nil
     :accessor target
@@ -187,8 +187,8 @@
      (%draw-drag-mode object dt))
     (:follow
      (%draw-follow-mode object dt))
-    (:otherwise
-     t)))
+    (otherwise
+     (look-at* object))))
 
 (defmethod on-game-event ((object camera) (event game-event:camera-drag-ends))
   (setf (mode object) :fp)
@@ -286,8 +286,18 @@
         (look-at* object)))))
 
 (defmethod look-at* ((object camera))
-  (setf (dir object) (normalize (vec- (target object) (pos object))))
-  (setf (view-matrix object) (sb-cga-utils:look@ (pos object) (target object) (up object))))
+  (declare (optimize (safety 0) (speed 3) (debug 0)))
+  (with-accessors ((up  up)
+                   (pos pos)
+                   (dir dir)
+                   (target target)
+                   (fading-away-fn fading-away-fn)) object
+    (declare (function fading-away-fn))
+    (let ((tremor-matrix      (funcall fading-away-fn object 0.033))
+          (standard-vw-matrix (sb-cga-utils:look@ pos target up)))
+      (declare (sb-cga:matrix tremor-matrix standard-vw-matrix))
+      (setf dir (normalize (vec- target pos)))
+      (setf (view-matrix object) (matrix* standard-vw-matrix tremor-matrix)))))
 
 (defmethod look-at ((object camera)
                     eye-x eye-y eye-z

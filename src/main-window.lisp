@@ -331,6 +331,8 @@
                                                                            +animation-texture-dir+)
                                                     (game-state object)
                                                     (compiled-shaders object)))
+            (when (string= text "D")
+              (world:apply-tremor-0 world))
             (when (string= text "L")
               (load-map object)
               ;; gui

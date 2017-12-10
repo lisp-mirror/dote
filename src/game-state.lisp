@@ -336,8 +336,6 @@
     :accessor blackboard
     :type blackboard:blackboard)))
 
-(defgeneric selected-pc (object))
-
 (defgeneric select-next-pc (object))
 
 (defgeneric select-prev-pc (object))

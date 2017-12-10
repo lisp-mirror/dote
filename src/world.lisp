@@ -342,6 +342,11 @@
   (with-accessors ((actions-queue actions-queue)) object
     (enqueue-action actions-queue new-action)))
 
+(defmethod apply-damage ((object world) damage
+                         &key (duration 10.0) &allow-other-keys)
+  (with-accessors ((camera camera)) object
+    (setf (fading-away-fn camera) (tremor:standard-tremor-fn duration :power damage))))
+
 (defgeneric (setf main-state) (new-state object))
 
 (defgeneric get-window-size (object))
@@ -1081,3 +1086,26 @@
 
 (defmethod widget:deactivate-planner-icon ((object world))
   (widget:deactivate-planner-icon (toolbar object)))
+
+(defun apply-tremor (world power duration)
+  (interfaces:apply-damage world power :duration duration))
+
+(defun apply-tremor-0 (world)
+  (apply-tremor world
+                tremor:+explosion-level-0-shake-power+
+                tremor:+explosion-level-0-shake-duration+))
+
+(defun apply-tremor-1 (world)
+  (apply-tremor world
+                tremor:+explosion-level-1-shake-power+
+                tremor:+explosion-level-1-shake-duration+))
+
+(defun apply-tremor-2 (world)
+  (apply-tremor world
+                tremor:+explosion-level-2-shake-power+
+                tremor:+explosion-level-2-shake-duration+))
+
+(defun apply-tremor-3 (world)
+  (apply-tremor world
+                tremor:+explosion-level-3-shake-power+
+                tremor:+explosion-level-3-shake-duration+))

@@ -116,6 +116,7 @@
                (:file "random-object-messages")
                (:file "camera")
                (:file "gpu-array-lerp")
+               (:file "tremor-functions")
                (:file "mesh")
                (:file "wall-mesh-shell")
                (:file "window-mesh-shell")

@@ -606,12 +606,12 @@
    :serialize-to-stream
    :deserialize
    :description-for-humans
+   :fading-away-entity
+   :fading-away-fn
    :inner-animation
    :start-time
    :el-time
    :animation-speed
-   :fading-away-fn
-   :standard-tremor-fn
    :animated-spritesheet
    :frequency-animation
    :frame-count
@@ -3591,6 +3591,27 @@
    :prepare
    :mix))
 
+(defpackage :tremors-functions
+  (:use :cl
+        :alexandria
+        :constants
+        :misc)
+  (:nicknames :tremor)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :+tree-shake-dt+
+   :+tree-shake-duration+
+   :+explosion-level-0-shake-power+
+   :+explosion-level-0-shake-duration+
+   :+explosion-level-1-shake-power+
+   :+explosion-level-1-shake-duration+
+   :+explosion-level-2-shake-power+
+   :+explosion-level-2-shake-duration+
+   :+explosion-level-3-shake-power+
+   :+explosion-level-3-shake-duration+
+   :standard-tremor-fn
+   :tree-tremor-fn))
+
 (defpackage :mesh
   (:use :cl
         :sb-cga
@@ -4496,7 +4517,12 @@
    :remove-all-windows
    :remove-all-removeable
    :activate-all-tooltips
-   :actions-queue-empty-p))
+   :actions-queue-empty-p
+   :apply-tremor
+   :apply-tremor-0
+   :apply-tremor-1
+   :apply-tremor-2
+   :apply-tremor-3))
 
 (defpackage :terrain-chunk
   (:use :cl
@@ -4691,6 +4717,7 @@
    :effective-range
    :effective-aabb-size
    :damage-inflicted
+   :tremor-fn
    :arrow
    :visual-effect-target
    :spell-id->string-for-human))
