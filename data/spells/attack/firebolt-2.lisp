@@ -7,7 +7,7 @@
   :gui-texture           "attack/firearrow-lvl2.tga"
   :cost                  5.0
   :visual-effect-self    none
-  :range                 20 ;; in tile units
+  :range                 25 ;; in tile units
   :effective-range       0  ;; in tile units
   :visual-effect-target  particles:make-aerial-explosion-level-1
   :effective-aabb-size  #'(lambda (spell)

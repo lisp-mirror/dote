@@ -6,7 +6,7 @@
   :gui-texture           "cure/cure-terror-3.tga"
   :cost                  10.0
   :visual-effect-self    none
-  :range                 7   ;; in tile units
+  :range                 11 ;; in tile units
   :effective-range       3  ;; in tile units
   :visual-effect-target  particles:make-cure-level-2
   :effects               (define-interaction

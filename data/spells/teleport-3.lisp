@@ -8,7 +8,7 @@
   :gui-texture           "misc/teleport-3.tga"
   :cost                  30.0
   :visual-effect-self    none
-  :range                 20  ;; in tile units
+  :range                 30  ;; in tile units
   :effective-range        0  ;; in tile units
   :visual-effect-target  particles:make-teleport-level-3
   :effects

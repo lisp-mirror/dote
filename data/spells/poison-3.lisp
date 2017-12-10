@@ -6,7 +6,7 @@
   :gui-texture           "poison/cause-poison-3.tga"
   :cost                  10.0
   :visual-effect-self    none
-  :range                 20  ;; in tile units
+  :range                 30 ;; in tile units
   :effective-range       5  ;; in tile units
   :visual-effect-target  particles:make-poison-level-2
   :effects               (define-interaction

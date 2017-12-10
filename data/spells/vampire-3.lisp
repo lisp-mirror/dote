@@ -8,7 +8,7 @@
   :gui-texture           "misc/vampire-3.tga"
   :cost                  30.0
   :visual-effect-self    none
-  :range                 20  ;; in tile units
+  :range                 30  ;; in tile units
   :effective-range        0  ;; in tile units
   :visual-effect-target  particles:make-vampire-level-2
   :effects

@@ -7,7 +7,7 @@
   :gui-texture           "cure/cure-1.tga"
   :cost                  50.0
   :visual-effect-self    none
-  :range                 5   ;; in tile units
+  :range                 8   ;; in tile units
   :effective-range       0   ;; in tile units
   :visual-effect-target  particles:make-heal-level-2
   :effects (define-interaction
