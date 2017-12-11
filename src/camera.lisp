@@ -24,7 +24,7 @@
 
 (alexandria:define-constant +angular-speed-level-up+       (deg->rad  30.0) :test #'=)
 
-(alexandria:define-constant +angular-speed-rotate-command+ (deg->rad 140.0) :test #'=)
+(alexandria:define-constant +angular-speed-rotate-command+ (deg->rad 150.0) :test #'=)
 
 (alexandria:define-constant +reset-camera-vec+   (vec (d* +terrain-chunk-tile-size+ -8.0)
                                                       (d* +terrain-chunk-tile-size+ 15.0)

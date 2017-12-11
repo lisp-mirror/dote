@@ -128,46 +128,53 @@
     :initform nil
     :initarg  :attack-enemy-melee-layer
     :accessor attack-enemy-melee-layer
-    :type     dijkstra-layer)
+    :type     dijkstra-layer
+    :documentation "just for debugging")
    (attack-enemy-pole-layer
     :initform nil
     :initarg  :attack-enemy-pole-layer
     :accessor attack-enemy-pole-layer
-    :type     dijkstra-layer)
+    :type     dijkstra-layer
+    :documentation "just for debugging")
    (attack-enemy-bow-layer
     :initform nil
     :initarg  :attack-enemy-bow-layer
     :accessor attack-enemy-bow-layer
-    :type     dijkstra-layer)
+    :type     dijkstra-layer
+        :documentation "just for debugging")
    (attack-enemy-crossbow-layer
     :initform nil
     :initarg  :attack-enemy-crossbow-layer
     :accessor attack-enemy-crossbow-layer
-    :type     dijkstra-layer)
+    :type     dijkstra-layer
+    :documentation "just for debugging")
    (attack-enemy-melee-positions
     :initform '()
     :initarg  :attack-enemy-melee-positions
     :accessor attack-enemy-melee-positions
     :documentation   "This  holds   the   positions   AI  with   melee
-    weapon (except pole weapon) should reach to attack the enemy")
+    weapon (except pole  weapon) should reach to attack  the enemy (it
+    is a list of def-target instances)")
    (attack-enemy-pole-positions
     :initform '()
     :initarg  :attack-enemy-pole-positions
     :accessor attack-enemy-pole-positions
     :documentation  "This  holds the  positions  AI  with pole  weapon
-    should reach to attack the enemy")
+    should  reach to  attack the  enemy (it  is a  list of  def-target
+    instances)")
    (attack-enemy-bow-positions
     :initform '()
     :initarg  :attack-enemy-bow-positions
     :accessor attack-enemy-bow-positions
     :documentation "This holds the positions AI with bow weapon should
-    reach to attack the enemy")
+    reach to attack the enemy (it is a list of def-target instances)")
    (attack-enemy-crossbow-positions
     :initform '()
     :initarg  :attack-enemy-crossbow-positions
     :accessor attack-enemy-crossbow-positions
     :documentation "This  holds the positions AI  with crossbow weapon
-    should reach to attack the enemy")
+    should  reach to  attack the  enemy (it  is a  list of  def-target
+    instances)")
    (use-enemy-fov-when-exploring
     :initform nil
     :initarg  :use-enemy-fov-when-exploring-p
@@ -263,16 +270,18 @@
                (setf (matrix-elt concerning-map y x) 0.0)))))))
 
 (defun update-all-attacking-pos (blackboard)
-  (update-pole-attackable-pos     blackboard)
-  (update-melee-attackable-pos    blackboard)
-  (update-bow-attackable-pos      blackboard)
-  (update-crossbow-attackable-pos blackboard))
-
-(defun %update-all-layers (blackboard)
   (setf (attack-enemy-melee-positions    blackboard) nil
         (attack-enemy-pole-positions     blackboard) nil
         (attack-enemy-bow-positions      blackboard) nil
         (attack-enemy-crossbow-positions blackboard) nil)
+  (update-pole-attackable-pos     blackboard)
+  (update-melee-attackable-pos    blackboard)
+  (update-bow-attackable-pos      blackboard)
+  (update-crossbow-attackable-pos blackboard)
+  ;;;;;;;;;;;;
+  (update-attack-melee-layer             blackboard))
+
+(defun %update-all-layers (blackboard)
   (update-unexplored-layer               blackboard)
   #+(and debug-ai debug-blackboard-layers)
   (progn ; it takes ~ 0.5s to calculate
@@ -386,6 +395,8 @@
 
 (defgeneric fountain-exhausted-p (object entity))
 
+(defgeneric remove-entity-from-all-attack-pos (object entity))
+
 (defun calc-concerning-tiles-cost-scaling (difficult-level)
   (dlerp (smoothstep-interpolate 2.0 5.0 (d difficult-level))
          10.0
@@ -458,9 +469,9 @@
 ;; TODO use decision tree
 (defmethod strategy-decision ((object blackboard))
   (declare (ignore object))
-  +retreat-strategy+)
+  ;; +retreat-strategy+)
   ;; +explore-strategy+)
-  ;; +attack-strategy+)
+  +attack-strategy+)
   ;; +defend-strategy+)
 
 (defmethod set-tile-visited ((object blackboard) entity-visiting x y)
@@ -1291,3 +1302,21 @@ values nil, i. e. the ray is not blocked"
 (defmethod fountain-exhausted-p ((object blackboard) (entity mesh:fountain-mesh-shell))
   (with-accessors ((exhausted-fountains-ids exhausted-fountains-ids)) object
     (find (id entity) exhausted-fountains-ids :test #'=)))
+
+(defun remove-entity-from-attack-pos (positions entity)
+  (remove (id entity) positions :test #'= :key #'entity-id))
+
+(defmethod remove-entity-from-all-attack-pos ((object blackboard) entity)
+  (with-accessors ((attack-enemy-melee-positions    attack-enemy-melee-positions)
+                   (attack-enemy-pole-positions     attack-enemy-pole-positions)
+                   (attack-enemy-bow-positions      attack-enemy-bow-positions)
+                   (attack-enemy-crossbow-positions attack-enemy-crossbow-positions)) object
+    (setf attack-enemy-melee-positions
+          (remove-entity-from-attack-pos attack-enemy-melee-positions entity))
+    (setf attack-enemy-pole-positions
+          (remove-entity-from-attack-pos attack-enemy-pole-positions entity))
+    (setf attack-enemy-bow-positions
+          (remove-entity-from-attack-pos attack-enemy-bow-positions entity))
+    (setf attack-enemy-crossbow-positions
+          (remove-entity-from-attack-pos attack-enemy-crossbow-positions entity))
+    object))

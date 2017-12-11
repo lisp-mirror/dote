@@ -182,6 +182,8 @@
      (character:current-spell-points ghost)))
 
 (defun attackable-position-exists-path (strategy-expert entity reachable-fn)
+  "note:  path  can be  made  by  a single  tile,  the  one where  the
+character is. In this case its cost is 0.0"
   (if (blackboard:entity-in-valid-attackable-pos-p entity)
       (values (calculate-cost-position entity) 0.0)
       (blackboard:best-path-to-reach-enemy-w-current-weapon strategy-expert entity
@@ -363,41 +365,45 @@
                                    good-places)))
     (find pos good-positions :test #'ivec2:ivec2=)))
 
-(defun all-visibles-opponents (strategy-expert entity)
+(defun all-visibles-opponents (strategy-expert entity &key (alive-only t))
   "the visible opponents of AI, if such exist."
   (with-accessors ((main-state main-state)) strategy-expert
     (absee-mesh:visible-players-in-state-from-faction main-state
-                                                      (my-faction entity))))
+                                                      (my-faction entity)
+                                                      :alive-only alive-only)))
 
-(defun visible-opponents-sorted (strategy-expert entity)
+(defun visible-opponents-sorted (strategy-expert entity &key (alive-only t))
   "the visible opponents of AI in attack range, if such exists,
 sorted from the most powerful to the least one.
 see: character:combined-power"
   (with-accessors ((main-state main-state)) strategy-expert
-    (when-let* ((all     (all-visibles-opponents strategy-expert entity))
+    (when-let* ((all     (all-visibles-opponents strategy-expert
+                                                 entity
+                                                 :alive-only alive-only))
                 (sorted  (shellsort all (combined-power-compare-clsr t))))
       sorted)))
 
-(defun most-powerful-visible-opponents (strategy-expert entity)
+(defun most-powerful-visible-opponents (strategy-expert entity &key (alive-only t))
   "the most powerful visible opponents of AI in attack range, if such exists.
 see: character:combined-power"
-  (when-let ((all (visible-opponents-sorted strategy-expert entity)))
+  (when-let ((all (visible-opponents-sorted strategy-expert entity :alive-only alive-only)))
     (first-elt all)))
 
-(defun least-powerful-visible-opponents (strategy-expert entity)
+(defun least-powerful-visible-opponents (strategy-expert entity &key (alive-only t))
   "the least powerful visible opponents of AI in attack range, if such exists.
 see: character:combined-power"
-  (when-let ((all (visible-opponents-sorted strategy-expert entity)))
+  (when-let ((all (visible-opponents-sorted strategy-expert entity :alive-only alive-only)))
     (last-elt all)))
 
-(defun attackable-opponents-id (strategy-expert entity)
+(defun attackable-opponents-id (strategy-expert entity &key (alive-only t))
   "the first visible opponents of AI in attack range, if such exists.
 TODO: refactorting, use all-visibles-opponents function above"
   (with-accessors ((main-state main-state)) strategy-expert
     (when-let ((weapon-type    (character:weapon-type (entity:ghost entity)))
                (visibles-pcs   (absee-mesh:visible-players-in-state-from-faction
                                 main-state
-                                (my-faction entity)))
+                                (my-faction entity)
+                                :alive-only alive-only))
                (pos            (mesh:calculate-cost-position entity)))
       (loop for defender in visibles-pcs do
            (when (battle-utils:range-weapon-valid-p pos defender weapon-type)
@@ -416,7 +422,7 @@ TODO: refactorting, use all-visibles-opponents function above"
                                                                   nil))))
         (second res))))
 
-(defun attack-when-near-pos-long-range-p (strategy-expert entity)
+(defun attack-when-near-pos-long-range-p (strategy-expert entity &key (alive-only t))
   "note: places-near contains only reachable tiles so
 path-near-goal-w/o-concerning-tiles always returns a non nil value"
   (with-accessors ((main-state main-state)) strategy-expert
@@ -428,7 +434,8 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
                   (weapon-type    (character:weapon-type-long-range (entity:ghost entity)))
                   (visibles-pcs   (absee-mesh:visible-players-in-state-from-faction
                                    main-state
-                                   (my-faction entity)))
+                                   (my-faction entity)
+                                   :alive-only alive-only))
                   (places-near    (places-near-weak-friend strategy-expert
                                                            entity
                                                            :weak-friend weak-friend))

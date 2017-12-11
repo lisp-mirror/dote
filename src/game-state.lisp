@@ -384,7 +384,11 @@
 
 (defgeneric map-player-entities (object function))
 
+(defgeneric loop-player-entities (object function))
+
 (defgeneric map-ai-entities (object function))
+
+(defgeneric loop-ai-entities (object function))
 
 (defgeneric all-player-id-by-faction (object faction))
 
@@ -690,18 +694,51 @@
   (with-accessors ((ai-entities ai-entities)) object
     (find id-entity ai-entities :test #'= :key #'id)))
 
+(defmacro map-entities (entities fn clause)
+  (let ((legal-clause '(:do :collect)))
+    (when (not (find clause legal-clause :test #'eq))
+      (error (format nil "clause must be one of ~s" legal-clause)))
+    (alexandria:with-gensyms (entity)
+      `(loop for ,entity in ,entities when (not (entity:entity-dead-p ,entity)) ,clause
+            (funcall ,fn ,entity)))))
+
 (defmethod map-player-entities ((object game-state) function)
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (declare (function function))
   (with-accessors ((player-entities player-entities)) object
-    (mapcar function player-entities)))
+    #+ keep-dead-player (mapcar function player-entities)
+    #- keep-dead-player (map-entities player-entities function :collect)))
+
+(defmethod loop-player-entities ((object game-state) function)
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (declare (function function))
+  (with-accessors ((player-entities player-entities)) object
+    #+ keep-dead-player (mapcar function player-entities)
+    #- keep-dead-player (map-entities player-entities function :do)))
 
 (defmethod map-ai-entities ((object game-state) function)
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (declare (function function))
   (with-accessors ((ai-entities ai-entities)) object
-    (mapcar function ai-entities)))
+    #+ keep-dead-player (mapcar function ai-entities)
+    #- keep-dead-player (map-entities ai-entities function :collect)))
+
+(defmethod loop-ai-entities ((object game-state) function)
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (declare (function function))
+  (with-accessors ((ai-entities ai-entities)) object
+    #+ keep-dead-player (mapcar function ai-entities)
+    #- keep-dead-player (map-entities ai-entities function :do)))
 
 (defun faction->map-faction-fn (faction)
    (if (eq faction +npc-type+)
        #'map-ai-entities
        #'map-player-entities))
+
+(defun faction->loop-faction-fn (faction)
+   (if (eq faction +npc-type+)
+       #'loop-ai-entities
+       #'loop-player-entities))
 
 (defgeneric faction->opposite-faction (object))
 
@@ -1002,3 +1039,6 @@
 
 (defmethod skydome-bottom-color ((object game-state))
   (pixmap:skydome-bottom-color (game-hour object)))
+
+(defmethod remove-entity-from-all-attack-pos ((object game-state) entity)
+  (remove-entity-from-all-attack-pos (blackboard object) entity))

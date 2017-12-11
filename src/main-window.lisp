@@ -355,7 +355,7 @@
               ;; testing opponents
               (interfaces:calculate  world 0.0)
               (world:add-ai-opponent world :warrior :male)
-                                        ;(world:add-ai-opponent world :warrior :male)
+              ;(world:add-ai-opponent world :wizard  :male)
               (setf (delta-time-elapsed object) (sdl2:get-ticks))
               ;; bg color
               (let ((color (skydome-bottom-color (game-state object))))

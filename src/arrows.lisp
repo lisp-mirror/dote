@@ -431,7 +431,8 @@
           (mtree:add-child mesh bullet)
           (with-enqueue-action
               (world action-scheduler:particle-effect-action)
-            (when (spell:tremor-fn spell)
+            (when (and (hittedp mesh)
+                       (spell:tremor-fn spell))
               (funcall (spell:tremor-fn spell) world))
             (setf (pos target-effect) (pos mesh))
             (world:push-entity world target-effect))

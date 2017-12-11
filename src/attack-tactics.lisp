@@ -61,8 +61,6 @@
 (defun tactic-valid-p (tactic)
   (= (length tactic) 3))
 
-
-
 (defmacro with-position-vaild-slot ((tactics candidate) &body additional-constrains)
   (with-gensyms (atk-pos atk-mp)
     `(let ((,atk-pos (atk-pos ,candidate))
@@ -451,14 +449,15 @@ path is removed
                (let* ((ghost  (ghost entity))
                       (status (character:status ghost)))
                  (when (or (not status)
-                           (and (not (member status
-                                             (list interactive-entity:+status-terror+
-                                                   ;; interactive-entity:+status-berserk+
-                                                   interactive-entity:+status-faint+)))))
+                           (and (not (character:status-terror-p ghost))
+                                (not (character:status-faint-p  ghost))))
                    (push (cons (mesh:calculate-cost-position entity)
                                (truncate (character:current-movement-points ghost)))
                          res)))))
-        (map-ai-entities main-state #'(lambda (v) (fetch v)))
+        (loop-ai-entities main-state
+             #'(lambda (ent)
+                 (when (character:pclass-of-useful-in-attack-tactic-p ent)
+                   (fetch ent))))
         res))))
 
 (defun find-defender-id-by-goal-position (blackboard position)

@@ -1006,18 +1006,25 @@
                (:female
                 "-female"))
              +model-preview-ext-re+)))
-    (mapcar #'(lambda (a) (res:strip-off-resource-path +human-player-models-resource+ a))
-            (fs:search-matching-file (resources-utils:get-resource-file
-                                      ""
-                                      +human-player-models-resource+)
+    (mapcar #'(lambda (a)
+                (res:strip-off-resource-path +ai-player-models-resource+ a))
+            (fs:search-matching-file (res:get-resource-file "" +ai-player-models-resource+)
                                      :name re))))
 
 (defmethod add-ai-opponent ((object world) type gender)
   (with-accessors ((main-state main-state)) object
-    (let ((preview-paths  (previews-path type gender) gender)
+    (let ((preview-paths  (previews-path type gender))
           (ghost          (ecase type
                             (:warrior
-                             (make-warrior :human)))))
+                             (make-warrior :human))
+                            (:archer
+                             (make-archer  :human))
+                            (:ranger
+                             (make-ranger  :human))
+                            (:wizard
+                             (make-wizard  :human))
+                            (:healer
+                             (make-healer  :human)))))
       ;; copy some new points to current
       (setf (current-damage-points   ghost) (damage-points   ghost))
       (setf (current-movement-points ghost) (movement-points ghost))

@@ -202,11 +202,11 @@ Returns two values: *invisibles* and *visibles* tiles"
 
 (defgeneric update-visibility-cone (object &key rebuild-modelmatrix))
 
-(defgeneric visible-players (object &key predicate))
+(defgeneric visible-players (object &key predicate alive-only))
 
-(defgeneric other-faction-visible-players (object))
+(defgeneric other-faction-visible-players (object &key alive-only))
 
-(defgeneric visible-players-in-state-from-faction (object faction))
+(defgeneric visible-players-in-state-from-faction (object faction &key alive-only))
 
 (defgeneric other-visible-cone-p (object target))
 
@@ -227,7 +227,8 @@ Returns two values: *invisibles* and *visibles* tiles"
       (bubbleup-modelmatrix object))
     object))
 
-(defmethod visible-players ((object able-to-see-mesh) &key (predicate #'identity))
+(defmethod visible-players ((object able-to-see-mesh)
+                            &key (predicate #'identity) (alive-only t))
   "A list containing all visible pc satisfing predicate"
   (with-accessors ((dir dir)
                    (pos pos)
@@ -240,22 +241,27 @@ Returns two values: *invisibles* and *visibles* tiles"
           (mines  (if (faction-player-p state id)
                       (game-state:player-entities state)
                       (game-state:ai-entities     state))))
-      (concatenate 'list
-                   (loop for ent in others
-                      when (and (other-visible-p object ent)
-                                (funcall predicate ent))
-                      collect ent)
-                   (loop for ent in mines
-                      when (funcall predicate ent)
-                      collect ent)))))
+      (let ((all (concatenate 'list
+                              (loop for ent in others
+                                 when (and (other-visible-p object ent)
+                                           (funcall predicate ent))
+                                 collect ent)
+                              (loop for ent in mines
+                                 when (funcall predicate ent)
+                                 collect ent))))
+        (if alive-only
+            (remove-if #'entity:entity-dead-p all)
+            all)))))
 
-(defmethod other-faction-visible-players ((object able-to-see-mesh))
+(defmethod other-faction-visible-players ((object able-to-see-mesh) &key (alive-only t))
   (visible-players object
                    :predicate #'(lambda (a)
                                   (not (eq (my-faction object)
-                                           (my-faction a))))))
+                                           (my-faction a))))
+                   :alive-only alive-only))
 
-(defmethod visible-players-in-state-from-faction ((object game-state) faction)
+(defmethod visible-players-in-state-from-faction ((object game-state) faction
+                                                  &key (alive-only t))
   "all visible opponents seen by faction (list of entities)"
   (let ((opposite-faction (faction->opposite-faction faction))
         (map-fn           (faction->map-faction-fn faction))
@@ -266,7 +272,8 @@ Returns two values: *invisibles* and *visibles* tiles"
                  (let ((visibles (visible-players ent
                                                   :predicate #'(lambda (a)
                                                                  (eq (my-faction a)
-                                                                     opposite-faction)))))
+                                                                     opposite-faction))
+                                                  :alive-only alive-only)))
                    (loop for visible in visibles do
                         (pushnew visible res :test #'test-id=)))))
     res))

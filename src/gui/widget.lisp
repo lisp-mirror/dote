@@ -2873,10 +2873,10 @@
                (:female
                 "-female"))
              +model-preview-ext-re+)))
-    (mapcar #'(lambda (a) (res:strip-off-resource-path +human-player-models-resource+ a))
-            (fs:search-matching-file (resources-utils:get-resource-file
-                                      ""
-                                      +human-player-models-resource+)
+    (mapcar #'(lambda (a)
+                (res:strip-off-resource-path +human-player-models-resource+ a))
+            (fs:search-matching-file (res:get-resource-file ""
+                                                            +human-player-models-resource+)
                                      :name re))))
 
 (defclass player-generator (window)

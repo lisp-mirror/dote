@@ -184,8 +184,10 @@
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+plan-stopper+)))
-  (with-accessors ((ghost ghost)) object
-    (%clean-plan ghost)))
+  (with-accessors ((ghost ghost)
+                   (state state)) object
+    (with-accessors ((blackboard game-state:blackboard)) state
+      (%clean-plan ghost))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy

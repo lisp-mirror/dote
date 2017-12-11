@@ -198,8 +198,9 @@
 (progn
   ;; debug
   (pushnew :debug-mode              *features*)
-  ; (pushnew :small-skydome           *features*)
+  ;; (pushnew :small-skydome           *features*)
   (pushnew :debug-blackboard-layers *features*)
   (pushnew :debug-ai                *features*)
+  ;; (pushnew :keep-dead-player        *features*)
   ;; config
   (pushnew :md2-gpu-lerp            *features*))

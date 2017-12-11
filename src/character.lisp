@@ -217,7 +217,7 @@
 
 (defmethod build-planner ((object planner-character) strategy-decision)
   (let* ((planner-file (goap:find-planner-file object strategy-decision)))
-    (goap:load-planner-file planner-file)))
+    (goap:load-planner-file planner-file object)))
 
 (defmethod build-planners ((object planner-character))
   (loop for strategy in +all-strategies+ collect
@@ -526,6 +526,8 @@
     :initform '()
     :accessor inventory)))
 
+(gen-type-p player-character)
+
 (defmethod initialize-instance :after ((object player-character) &key &allow-other-keys)
   ;; copy some new points to current
   (setf (current-damage-points   object) (damage-points object))
@@ -692,8 +694,12 @@
 
 (defgeneric combined-power (object))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun symbol-pclass-fn-name (name)
+    (format-symbol t "~:@(pclass-~a-p~)" name)))
+
 (defmacro gen-player-class-test (name)
-  (let ((name-fn (format-symbol t "~:@(pclass-~a-p~)" name)))
+  (let ((name-fn (symbol-pclass-fn-name name)))
     `(progn
        (defgeneric ,name-fn (object))
        (defmethod  ,name-fn ((object player-character))
@@ -708,6 +714,18 @@
 (gen-player-class-test wizard)
 
 (gen-player-class-test healer)
+
+(defmacro gen-player-class-in-set-test (name &rest classes)
+  (let ((name-fn (format-symbol t "~:@(pclass-of-~a-p~)" name)))
+    `(progn
+       (defgeneric ,name-fn (object))
+       (defmethod  ,name-fn ((object player-character))
+         (or ,@(loop for c in classes collect
+                    `(,(symbol-pclass-fn-name c) object)))))))
+
+(gen-player-class-in-set-test magic-user wizard healer)
+
+(gen-player-class-in-set-test useful-in-attack-tactic ranger warrior archer)
 
 (defmacro gen-player-status-test (status)
   (let ((name-fn (format-fn-symbol t "status-~a-p" (symbol-name status))))
@@ -1071,8 +1089,8 @@
              (actual-pole-weapons-damage-bonus   (actual-pole-weapons-damage-bonus   object))
              (actual-spell-change                (actual-spell-chance                object))
              (actual-attack-spell-chance         (actual-attack-spell-chance         object))
-             (status-contribute                  (if (or (eq (status object) +status-terror+)
-                                                         (eq (status object) +status-faint+))
+             (status-contribute                  (if (or (status-terror-p object)
+                                                         (status-faint-p  object))
                                                      0.0
                                                      1.0))
              (melee-contribute (d* (melee-weapon-switch object) ; on or off

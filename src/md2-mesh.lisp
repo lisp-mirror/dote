@@ -187,6 +187,9 @@
   (print-unreadable-object (object stream :type t :identity t)
     (format stream "~a" (id object))))
 
+(defmethod character:pclass-of-useful-in-attack-tactic-p ((object md2-mesh))
+  (character:pclass-of-useful-in-attack-tactic-p (ghost object)))
+
 (defmethod on-game-event ((object md2-mesh) (event game-event:game-interrupt-terminated-event))
   "Note no need to check for target id, because just an entity can
    exists in interrupt state at any time in the game"
@@ -903,8 +906,8 @@
         (if (and (= id (id-destination event))
                  ;; TEST
                  (or t (dice:pass-d1.0 (random-object-messages:msg-chance event-data)))
-                 (not (or (eq status +status-faint+)
-                          (eq status +status-berserk+))))
+                 (not (or (character:status-faint-p ghost)
+                          (character:status-berserk-p ghost))))
             (progn
               (setf current-damage-points
                     (min damage-points
@@ -991,12 +994,16 @@
                    (state state)) object
     (game-state:with-world (world state)
       (when ghost
-        (reset-spell-points    ghost)
-        (reset-movement-points ghost)
-        ;;; TEST
+        ;; TEST
         (when (faction-ai-p (state object) (id object))
+          (with-accessors ((blackboard blackboard:blackboard)) state
+            (let ((reachable-fn (blackboard:reachable-p-w/concening-tiles-fn blackboard)))
+              (misc:dbg "all-tactics ~a"
+                        (blackboard:build-all-attack-tactics blackboard reachable-fn))))
           (setf (character:movement-points (ghost object)) 150.0))
         ;;;;;;;;;;;;;;;;;;;;;;;
+        (reset-spell-points    ghost)
+        (reset-movement-points ghost)
         (traverse-recurrent-effects      object)
         (let ((decayed-items (remove-decayed-items ghost (end-turn-count event))))
           (dolist (item decayed-items)
@@ -1149,14 +1156,16 @@
               (pq:push-element postponed-messages msg)))))))
 
 (defmethod set-death-status ((object md2-mesh))
-  (with-accessors ((ghost ghost)
-                   (aabb aabb)
-                   (state state)
+  (with-accessors ((id               id)
+                   (ghost            ghost)
+                   (aabb             aabb)
+                   (state            state)
                    (compiled-shaders compiled-shaders)
-                   (current-action current-action)
-                   (cycle-animation cycle-animation)
-                   (stop-animation stop-animation)) object
-    (with-accessors ((status status)
+                   (current-action   current-action)
+                   (cycle-animation  cycle-animation)
+                   (stop-animation   stop-animation)) object
+    (with-accessors ((blackboard blackboard:blackboard)) state
+    (with-accessors ((status                status)
                      (current-damage-points current-damage-points)) ghost
       (setf (status ghost) +status-faint+)
       (setf current-action  :death)
@@ -1164,12 +1173,15 @@
       (setf stop-animation nil)
       (setf cycle-animation nil)
       (setf current-damage-points (d 0.0))
+      ;; also make the blackboard "forget" about this character if is from human side
+      (when (faction-player-p state id)
+        (blackboard:remove-entity-from-all-attack-pos blackboard object))
       (game-state:with-world (world state)
         (enqueue-blood world
                        #'particles:make-blood-death
                        (aabb-center aabb)
                        +y-axe+
-                       compiled-shaders)))))
+                       compiled-shaders))))))
 
 (defmethod set-attack-status ((object md2-mesh))
   (with-accessors ((ghost ghost)
@@ -2279,7 +2291,7 @@
 
 (defun get-md2-shell (&key
                         (shaders        nil)
-                        (material       (make-mesh-material .1 1.0 0.1 0.0 128.0))
+                        (material       (make-mesh-material .8 1.0 0.1 0.0 128.0))
                         (dir            nil)
                         (mesh-file      "body01.md2")
                         (animation-file "body-animation.lisp")

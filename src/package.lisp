@@ -2278,8 +2278,11 @@
    :fetch-from-ai-entities
    :map-player-entities
    :map-ai-entities
+   :loop-player-entities
+   :loop-ai-entities
    :all-player-id-by-faction
    :faction->map-faction-fn
+   :faction->loop-faction-fn
    :faction->opposite-faction
    :opposite-faction-map-fn
    :find-player-id-by-position
@@ -2313,7 +2316,8 @@
    :position-inside-room-p
    :calc-ai-entities-action-order
    :door-in-next-path-tile-p
-   :skydome-bottom-color))
+   :skydome-bottom-color
+   :remove-entity-from-all-attack-pos))
 
 (defpackage :game-event
   (:use
@@ -3141,11 +3145,13 @@
    :reply-attack-chance
    :ambush-attack-chance
    :spell-chance
+   :player-character-p
    :pclass-ranger-p
    :pclass-warrior-p
    :pclass-archer-p
    :pclass-wizard-p
    :pclass-healer-p
+   :pclass-of-magic-user-p
    :status-poisoned-p
    :status-terror-p
    :status-berserk-p
@@ -3231,6 +3237,7 @@
    :castable-attack-spells-list
    :calculate-influence
    :combined-power
+   :pclass-of-useful-in-attack-tactic-p
    :elaborate-current-tactical-plan
    :with-no-thinking
    :set-interrupt-plan
@@ -5002,7 +5009,8 @@
    :concerning-tile-default-mapping-clsr
    :next-unexplored-position
    :disgregard-all-plans
-   :fountain-exhausted-p))
+   :fountain-exhausted-p
+   :remove-entity-from-all-attack-pos))
 
 (defpackage :goap
   (:use :cl

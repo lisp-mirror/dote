@@ -467,7 +467,7 @@
 
 (defparameter *planner* nil)
 
-(defun lint-planner (planner)
+(defun lint-find-fountain (planner)
   (let ((action-find-fountain (find-action planner ai-utils:+find-fountain-action+))
         (mandatory-test-name  #'is-there-useful-reachable-fountain-p))
     (when action-find-fountain
@@ -476,6 +476,20 @@
         (error (format nil "error: action ~a need context precondition ~a"
                        ai-utils:+find-fountain-action+
                        #'is-there-useful-reachable-fountain-p))))))
+
+(defun lint-attack-with-magic-user (planner ghost)
+  (let ((action-attack (find-action planner ai-utils:+attack-action+))
+        (magic-user-p  (character:pclass-of-magic-user-p ghost)))
+    (when (and action-attack
+               magic-user-p)
+      (warn (format nil "error: action ~a ignored for a magic user as ~a"
+                    ai-utils:+attack-action+
+                    (character:player-class ghost))))))
+
+(defun lint-planner (planner &key (ghost nil))
+  (lint-find-fountain planner)
+  (when ghost
+    (lint-attack-with-magic-user planner ghost)))
 
 (defmacro define-planner (&body forms)
   (labels ((get-param (params a &optional (default nil))
@@ -512,7 +526,7 @@
                 (build-action planner action))
          (add-action ,planner ,idle-action)
          (add-action ,planner ,sink-action)
-         (lint-planner ,planner)
+         ;;(lint-planner ,planner)
          (setf *planner* ,planner)))))
 
 (defun find-planner-file (character strategy)
@@ -535,11 +549,11 @@
          (file-full-path (text-utils:strcat file-name ai-utils:+planner-file-extension+)))
     (res:get-resource-file file-full-path resource-dir)))
 
-(defun load-planner-file (file)
+(defun load-planner-file (file ghost)
   (fs:file-is-link-if-else (file link)
     (progn
       #+debug-mode (misc:dbg "planner ~a point to ~a" file link)
-      (load-planner-file link))
+      (load-planner-file link ghost))
     (with-load-forms-in-var (*planner* out file)
       (let ((goal-state  (make-instance 'planner-state
                                         :variables (list (cons +ultimate-goal+  t))))
@@ -547,6 +561,7 @@
                                         :variables (list (cons +ultimate-goal+  nil)))))
         (setf (goal-state    out) goal-state
               (current-state out) start-state)
+        (lint-planner out :ghost ghost)
         out))))
 
 (defmacro defgoap-test (name args &body body)
@@ -636,8 +651,9 @@ reach the enemy with optimal path?"
     res))
 
 (defgoap-test reachable-opt/path-attack-current-weapon-and-mp (strategy-expert entity)
-    "using  the current  movement points  of the  entity is  possible to
-reach and attack the enemy with optimal path?"
+    "using the  current movement points  of the entity is  possible to
+reach  and attack  the enemy  with optimal  path?  Note:  path can  be
+composed by just one tile, see 'attackable-position-exists-path'"
   (let* ((reachable-fn (reachable-p-w/concening-tiles-fn strategy-expert)))
     (multiple-value-bind (reachablep cost)
         (attackable-position-exists-path strategy-expert entity reachable-fn)
