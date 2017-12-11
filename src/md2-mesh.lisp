@@ -388,31 +388,31 @@
                     (setf (renderp seen) t))))
       (if (= (id object) (id-origin event))
           (let ((saved-renderp (renderp object)))
-            (game-state:map-player-entities state
+            (game-state:loop-player-entities state
                                             #'(lambda (v)
                                                 (update-visibility-cone v)))
-            (game-state:map-ai-entities state
+            (game-state:loop-ai-entities state
                                         #'(lambda (v)
                                             (update-visibility-cone v)))
             (if (faction-ai-p state id)
                 (progn
                   (setf (renderp object) nil)
-                  (game-state:map-player-entities state
+                  (game-state:loop-player-entities state
                                                   #'(lambda (v)
                                                       (seenp v
                                                              :maintain-render nil
                                                              :saved-render-p   saved-renderp)))
                   (seep object))
                 (progn
-                  (game-state:map-ai-entities state
+                  (game-state:loop-ai-entities state
                                               #'(lambda (v)
                                                   (seenp v
                                                          :maintain-render t
                                                          :saved-render-p   saved-renderp)))
-                  (game-state:map-ai-entities state
+                  (game-state:loop-ai-entities state
                                               #'(lambda (v)
                                                   (setf (renderp v) nil)))
-                  (game-state:map-player-entities state
+                  (game-state:loop-player-entities state
                                                   #'(lambda (v)
                                                       (seep v)))))
             t)

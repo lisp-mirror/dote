@@ -310,7 +310,7 @@
   (ai-utils:go-find-hiding-place-clear-cache))
 
 (defun rebuild-all-ai-planners (world)
-  (map-ai-entities (main-state world)
+  (loop-ai-entities (main-state world)
                    #'(lambda (a)
                        (character:setup-planners (ghost a)))))
 
@@ -329,8 +329,8 @@
     (incf (game-turn (main-state object)))
     (flet ((%process-postponed-messages (entity)
              (mesh:process-postponed-messages entity)))
-      (map-player-entities main-state #'%process-postponed-messages)
-      (map-ai-entities     main-state #'%process-postponed-messages))
+      (loop-player-entities main-state #'%process-postponed-messages)
+      (loop-ai-entities     main-state #'%process-postponed-messages))
     (calc-ai-entities-action-order main-state)
     nil))
 

@@ -62,7 +62,7 @@
   (health-under-threshold-p entity 0.1))
 
 (defun friend-who-needs-help (strategy-expert entity &key (exclude-me nil))
-  (map-ai-entities (interfaces:main-state strategy-expert)
+  (loop-ai-entities (interfaces:main-state strategy-expert)
                    #'(lambda (v)
                        (when (and (too-low-health-p v)
                                   (or (not exclude-me)
@@ -661,15 +661,15 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
               (loop for hiding-place in all-hiding-places do
                    (let ((sum 0)
                          (ct  0))
-                     (map-player-entities state
-                                          #'(lambda (player-ent)
-                                              (let ((from     (calculate-cost-position player-ent))
-                                                    (hiding-place (hiding-place-pos hiding-place)))
-                                                (incf sum
-                                                      (get-path-cost blackboard
-                                                                     from
-                                                                     hiding-place))
-                                                (incf ct 1))))
+                     (loop-player-entities state
+                          #'(lambda (player-ent)
+                              (let ((from     (calculate-cost-position player-ent))
+                                    (hiding-place (hiding-place-pos hiding-place)))
+                                (incf sum
+                                      (get-path-cost blackboard
+                                                     from
+                                                     hiding-place))
+                                (incf ct 1))))
                      (setf (hiding-place-average-cost-opponents hiding-place)
                            (d (/ sum ct)))))
               ;; sort

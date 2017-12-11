@@ -774,9 +774,9 @@
                (return-from find-faction-entity-id-by-position (id entity))))))
     (ecase faction
         (:player
-         (map-player-entities game-state #'fn))
+         (loop-player-entities game-state #'fn))
         (:ai
-         (map-ai-entities game-state #'fn)))
+         (loop-ai-entities game-state #'fn)))
     nil))
 
 (defun find-player-id-by-position (game-state probe)
@@ -987,12 +987,13 @@
                             :concerning-tile-fn concerning-tile-fn)))
 
 (defun max-movement-points (game-state iterator-fn)
-  (let ((all-mp '()))
-    (funcall iterator-fn game-state #'(lambda (v)
-                                        (push (character:actual-movement-points (ghost v)) all-mp)))
+  (let ((all-mp (funcall iterator-fn game-state
+                         #'(lambda (v)
+                             (character:actual-movement-points (ghost v))))))
     (find-max all-mp)))
 
 (defmethod max-ai-movement-points ((object game-state))
+  "Note: map-ai-entities will skip death characters"
   (max-movement-points object #'map-ai-entities))
 
 (defmethod position-inside-room-p ((object game-state) position)

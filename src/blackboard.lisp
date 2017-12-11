@@ -601,7 +601,7 @@
 
 (defun all-player-id-visible-from-faction (game-state)
   (let ((all-visibles '()))
-    (map-ai-entities game-state
+    (loop-ai-entities game-state
                      #'(lambda (v)
                          (let ((visibles (able-to-see-mesh:other-faction-visible-players v)))
                            (loop for visible in visibles do
@@ -609,8 +609,9 @@
     (map 'list #'id all-visibles)))
 
 (defun all-player-id-visible-from-ai (game-state)
+  "Note: loop-ai-entities will skip death characters"
   (let ((all-visibles '()))
-    (map-ai-entities game-state
+    (loop-ai-entities game-state
                      #'(lambda (v)
                          (let ((visibles (able-to-see-mesh:other-faction-visible-players v)))
                            (loop for visible in visibles do
@@ -618,6 +619,7 @@
     (map 'list #'id all-visibles)))
 
 (defun all-other-factions-can-see-entity (game-state entity)
+  "Note: map-fn will skip death characters"
   (let ((all-able-to-see '())
         (map-fn (opposite-faction-map-fn entity)))
     (funcall map-fn game-state
@@ -661,7 +663,7 @@
       (reset-explored-layer unexplored-layer)
       (let ((all-visibles (all-player-id-visible-from-ai main-state)))
         ;; calculate concerning tiles tiles occupied by enemies
-        (map-player-entities main-state
+        (loop-player-entities main-state
                              #'(lambda (player)
                                  (update-concerning-tiles-player object
                                                                  player
@@ -865,7 +867,7 @@ values nil, i. e. the ray is not blocked"
 (defun %update-attack-pos (blackboard update-fn)
   (with-accessors ((main-state main-state)) blackboard
     (let ((all-visibles (all-player-id-visible-from-ai main-state)))
-      (map-player-entities main-state  #'(lambda (player)
+      (loop-player-entities main-state  #'(lambda (player)
                                            (funcall update-fn
                                                     blackboard
                                                     player
@@ -882,7 +884,7 @@ values nil, i. e. the ray is not blocked"
       (let ((all-visibles (all-player-id-visible-from-ai main-state)))
         ;; add-concerning tiles
         (nsuperimpose-layer concerning-tiles layer :fn #'max)
-        (map-player-entities main-state  #'(lambda (player)
+        (loop-player-entities main-state  #'(lambda (player)
                                              (funcall update-fn
                                                       blackboard
                                                       player
@@ -1253,7 +1255,7 @@ values nil, i. e. the ray is not blocked"
                           #'update-attack-crossbow-layer-player)))
 
 (defun 2d-tile-visible-p (game-state tile-position ray-stopper-fn)
-  (map-ai-entities game-state #'(lambda (entity)
+  (loop-ai-entities game-state #'(lambda (entity)
                                   (displace-2d-vector (tile-position x y)
                                     (when (not (funcall ray-stopper-fn entity x y))
                                       (return-from 2d-tile-visible-p t)))))
@@ -1267,28 +1269,28 @@ values nil, i. e. the ray is not blocked"
                  (setf (dir entity) dir)
                  ;; (mesh:bubbleup-modelmatrix entity)
                  (able-to-see-mesh:update-visibility-cone entity)))
-        (map-ai-entities game-state
-                         #'(lambda (entity)
-                             (let ((saved-dir (dir entity)))
-                               (loop for temp-dir in +entity-all-direction+ do
-                                    (change-viewpoint entity temp-dir)
-                                    (displace-2d-vector (tile-position x y)
-                                      ;; visible if is hitted by the ray
-                                      ;; AND
-                                      ;; is already explored OR
-                                      ;; the direction is the actual direction of the entity
-                                      (when (and (not (funcall ray-stopper-fn entity x y))
-                                                 (matrix-elt layer y x)
-                                                 (or (sb-cga:vec~ temp-dir saved-dir)
-                                                     (> (matrix-elt layer y x)
-                                                        +unexplored-tile-value+)))
-                                        (change-viewpoint entity saved-dir)
-                                        (return-from 2d-tile-visible-around-ai-p t))))
-                               (change-viewpoint entity saved-dir))))
-        nil)))))
+          (loop-ai-entities game-state
+                           #'(lambda (entity)
+                               (let ((saved-dir (dir entity)))
+                                 (loop for temp-dir in +entity-all-direction+ do
+                                      (change-viewpoint entity temp-dir)
+                                      (displace-2d-vector (tile-position x y)
+                                        ;; visible if is hitted by the ray
+                                        ;; AND
+                                        ;; is already explored OR
+                                        ;; the direction is the actual direction of the entity
+                                        (when (and (not (funcall ray-stopper-fn entity x y))
+                                                   (matrix-elt layer y x)
+                                                   (or (sb-cga:vec~ temp-dir saved-dir)
+                                                       (> (matrix-elt layer y x)
+                                                          +unexplored-tile-value+)))
+                                          (change-viewpoint entity saved-dir)
+                                          (return-from 2d-tile-visible-around-ai-p t))))
+                                 (change-viewpoint entity saved-dir))))
+          nil)))))
 
 (defun disgregard-all-plans (game-state)
-  (map-ai-entities game-state #'(lambda (v)
+  (loop-ai-entities game-state #'(lambda (v)
                                   (character:disgregard-tactical-plan (ghost v)))))
 
 (defmethod calc-ai-entities-action-order ((object blackboard))

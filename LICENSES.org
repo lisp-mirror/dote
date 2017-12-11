@@ -234,8 +234,9 @@
 
 - data/models/models/human-player/ortnok/preview-warrior-male.tga
   data/models/models/ai/ortnok/preview-warrior-male.tga
+  data/models/models/ai/ortnok/preview-wizard-male.tga
   based on works © Lukas "Rastaman" Beyeler;MCR
-  GNU General Public License 2.0 (see UFO Alien invasion sources
+  GNU General Public License 2.0 (see UFO Alien invasion sources)
   [[http://ufoai.org/wiki/News][http://ufoai.org/wiki/News]])
 
 - data/models/models/objects/weapon/arrow/model.mtl
