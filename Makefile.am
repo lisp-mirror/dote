@@ -1216,6 +1216,16 @@ data/gui/default/inventory/spear-immune-terror-07.tga    \
 data/gui/default/inventory/spear-immune-terror-08.tga    \
 data/gui/default/inventory/spear-immune-terror-09.tga    \
 data/gui/default/inventory/spear-immune-terror-10.tga    \
+data/gui/default/inventory/spear-immune-poison-01.tga    \
+data/gui/default/inventory/spear-immune-poison-02.tga    \
+data/gui/default/inventory/spear-immune-poison-03.tga    \
+data/gui/default/inventory/spear-immune-poison-04.tga    \
+data/gui/default/inventory/spear-immune-poison-05.tga    \
+data/gui/default/inventory/spear-immune-poison-06.tga    \
+data/gui/default/inventory/spear-immune-poison-07.tga    \
+data/gui/default/inventory/spear-immune-poison-08.tga    \
+data/gui/default/inventory/spear-immune-poison-09.tga    \
+data/gui/default/inventory/spear-immune-poison-10.tga    \
 data/gui/default/inventory/spear-normal-01.tga           \
 data/gui/default/inventory/spear-normal-02.tga           \
 data/gui/default/inventory/spear-normal-03.tga           \

@@ -987,7 +987,8 @@
                             :concerning-tile-fn concerning-tile-fn)))
 
 (defun max-movement-points (game-state iterator-fn)
-  (let ((all-mp (funcall iterator-fn game-state
+  (let ((all-mp (funcall iterator-fn
+                         game-state
                          #'(lambda (v)
                              (character:actual-movement-points (ghost v))))))
     (find-max all-mp)))

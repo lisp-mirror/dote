@@ -617,6 +617,9 @@
                                               (res:get-resource-files
                                                +default-gui-inventory-items+)
                                               :key #'uiop:native-namestring))))
+    #+ debug-mode
+    (when (not res)
+      (misc:dbg "~a portrait not found, using placeholder" regex))
     (or res
         (res:get-resource-file +unknown-portratit-object+
                                +default-gui-inventory-items+))))
