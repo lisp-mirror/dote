@@ -22,17 +22,18 @@
   "a list of id that the ray will ignore" )
 
 (defun setup-placeholder (world shaders)
-  (setf *visibility-target-placeholder* (trees:gen-tree
-                                         (res:get-resource-file +mesh-placeholder-file+
-                                                                constants:+trees-resource+
-                                                                :if-does-not-exists :error)
-                                         :flatten t))
-  (setf (interfaces:compiled-shaders *visibility-target-placeholder*) shaders)
-  (setf (entity:pos *visibility-target-placeholder*)
-        (vec (map-utils:coord-map->chunk 0.0)
-             (- +zero-height+)
-             (map-utils:coord-map->chunk 0.0)))
-  (world:push-entity world *visibility-target-placeholder*))
+  (let ((tree-mesh (trees:gen-tree (res:get-resource-file +mesh-placeholder-file+
+                                                          constants:+trees-resource+
+                                                          :if-does-not-exists :error)
+                                   :flatten t)))
+    (setf (compiled-shaders tree-mesh) shaders)
+    (setf *visibility-target-placeholder* (mesh:fill-shell-from-mesh tree-mesh
+                                                                     'mesh:tree-mesh-shell))
+    (setf (entity:pos *visibility-target-placeholder*)
+          (vec (map-utils:coord-map->chunk 0.0)
+               (- +zero-height+)
+               (map-utils:coord-map->chunk 0.0)))
+    (world:push-entity world *visibility-target-placeholder*)))
 
 (defmacro with-placeholder@ ((x y z) &body body)
   "coordinates in terrain (float) space"
@@ -347,7 +348,7 @@ invisible if part of a labyrinth"
            (ray           (make-instance 'ray
                                          :ray-direction
                                          (normalize (vec- center-target
-                                                          (aabb-center (aabb object))))))
+                                                          (aabb-center (actual-aabb-for-visibility object))))))
            (world-ref     (game-state:fetch-world (state object)))
            (quad-tree     (world:entities world-ref)))
       (loop

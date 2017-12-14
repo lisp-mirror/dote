@@ -166,6 +166,7 @@
    :+model-preview-ext-re+
    :+model-move-speed+
    :+gui-zoom-entity+
+   :+visibility-cone-tolerance+
    :+visibility-cone-half-hangle+
    :+visibility-cone-height+
    :+visibility-ray-displ-incr+
@@ -3091,7 +3092,8 @@
    :go-launch-teleport-spell
    :go-find-hiding-place-clear-cache
    :go-find-hiding-place
-   :go-place-trap))
+   :go-place-trap
+   :invalidate-ai-utils-cache))
 
 (defpackage :character
   (:use :cl
@@ -3672,6 +3674,7 @@
    :+tag-head-key+
    :+tag-left-weapon-key+
    :+tag-right-weapon-key+
+   :standard-aabb
    :triangle-mesh
    :free-memory*
    :load-mesh
@@ -4547,7 +4550,8 @@
    :apply-tremor-0
    :apply-tremor-1
    :apply-tremor-2
-   :apply-tremor-3))
+   :apply-tremor-3
+   :clear-all-memoized-function-cache))
 
 (defpackage :terrain-chunk
   (:use :cl
@@ -5030,7 +5034,9 @@
    :fountain-exhausted-p
    :remove-entity-from-all-attack-pos
    :best-attack-spell-goal-pos
-   :attack-spell-goal-pos-around-friend))
+   :attack-spell-goal-pos-around-friend
+   :attack-spell-goal-pos-around-me
+   :invalidate-blackboard-cache))
 
 (defpackage :goap
   (:use :cl

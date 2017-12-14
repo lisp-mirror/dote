@@ -319,9 +319,10 @@
            (ray           (make-instance 'ray
                                          :ray-direction ray-dir
                                          :displacement +arrow-speed+)))
-      (if (d< (dabs (secure-dacos (dot-product (dir attacker)
-                                               ray-dir)))
-              +visibility-cone-half-hangle+)
+      (if (epsilon<= (dabs (secure-dacos (dot-product (dir attacker)
+                                                   ray-dir)))
+                     +visibility-cone-half-hangle+
+                     +visibility-cone-tolerance+)
           (progn
             (when (not (die-utils:pass-d100.0 attack-chance))
               (setf (ray-direction ray)

@@ -135,12 +135,8 @@
 
 (defun %clean-plan (ghost)
   #+debug-ai (misc:dbg "clear planner cache")
-  (blackboard:reachable-p-w/concening-tiles-fn-clear-cache)
-  (blackboard:reachable-p-w/concening-tiles-unlimited-cost-fn-clear-cache)
   (erase-working-memory ghost)
-  (ai-utils:go-find-hiding-place-clear-cache)
-  (ai-utils:useful-reachable-fountain-clear-cache)
-  (goap:invalidate-tests-cache))
+  (world:clear-all-memoized-function-cache))
 
 (defun %clean-plan-and-blacklist (ghost)
   (%clean-plan ghost)

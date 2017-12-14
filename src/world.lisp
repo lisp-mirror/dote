@@ -305,10 +305,6 @@
            (game-state:remove-entity-by-id main-state id))
       object)))
 
-(defun clear-all-memoized-function-cache ()
-  (goap:invalidate-tests-cache)
-  (ai-utils:go-find-hiding-place-clear-cache))
-
 (defun rebuild-all-ai-planners (world)
   (loop-ai-entities (main-state world)
                    #'(lambda (a)
@@ -1116,3 +1112,9 @@
   (apply-tremor world
                 tremor:+explosion-level-3-shake-power+
                 tremor:+explosion-level-3-shake-duration+))
+
+(defun clear-all-memoized-function-cache ()
+  #+debug-ai (misc:dbg "clear planner cache")
+  (blackboard:invalidate-blackboard-cache)
+  (ai-utils:invalidate-ai-utils-cache)
+  (goap:invalidate-tests-cache))

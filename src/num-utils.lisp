@@ -361,12 +361,12 @@
      ,@body))
 
 (defun epsilon<= (a b &optional (epsilon *default-epsilon*))
-  (and (d< a b)
-       (not (epsilon= a b epsilon))))
+  (or (d<= a b)
+      (epsilon= a b epsilon)))
 
 (defun epsilon>= (a b &optional (epsilon *default-epsilon*))
-  (and (d> a b)
-       (not (epsilon= a b epsilon))))
+  (or (d>= a b)
+      (epsilon= a b epsilon)))
 
 (defun epsilon= (a b &optional (epsilon *default-epsilon*))
   (and (<= (- b epsilon) a (+ b epsilon))))

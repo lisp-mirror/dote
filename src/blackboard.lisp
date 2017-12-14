@@ -1383,7 +1383,9 @@ values nil, i. e. the ray is not blocked"
                    (ai-utils:sort-by-concerning-value-clsr blackboard))))))
 
 (defun best-attack-spell-goal-pos (attacker defender)
-  "Calculate the 'ideal' attack spell positions"
+  "Calculate the 'ideal' attack spell positions
+Note: assuming the range  of the spell is not less  ore equal than the
+effective range.  I think this is a safe to assume. ;)"
   (with-accessors ((state state)) attacker
     (with-accessors ((blackboard blackboard)
                      (map-state map-state)) state
@@ -1405,32 +1407,132 @@ values nil, i. e. the ray is not blocked"
                                              #'tiles-attack-spell-around-human
                                              use-enemy-fov-when-attacking-p)))))))
 
+(defmacro with-best-attack-spell ((range best-spell attacker defender) &body body)
+  (with-gensyms (all-spells state)
+    `(with-accessors ((,state state)) ,attacker
+       (when-let* ((,range      (level-difficult ,state))
+                   (,all-spells (ai-utils:available-attack-spells ,attacker))
+                   (,best-spell (ai-utils:find-best-attack-spell ,state
+                                                                 ,all-spells
+                                                                 ,attacker
+                                                                 ,defender
+                                                                 :safe-zone-dist ,range)))
+         ,@body))))
 
-(defun attack-spell-goal-pos-around-friend (attacker defender friend)
+(defstruct %atk-spell-around-me-cache-value
+  (attacker)
+  (defender)
+  (spell)
+  (res))
+
+(defun %atk-spell-around-me-equal (a b)
+  (and (= (id (%atk-spell-around-me-cache-value-attacker a))
+          (id (%atk-spell-around-me-cache-value-attacker b)))
+       (= (id (%atk-spell-around-me-cache-value-defender a))
+          (id (%atk-spell-around-me-cache-value-defender b)))
+       (eq (spell:identifier (%atk-spell-around-me-cache-value-spell a))
+           (spell:identifier (%atk-spell-around-me-cache-value-spell b)))))
+
+(defstruct (%atk-spell-around-friend-cache-value
+             (:include %atk-spell-around-me-cache-value))
+  (friend))
+
+(defun %atk-spell-around-friend-equal (a b)
+  (and (= (id (%atk-spell-around-friend-cache-value-attacker a))
+          (id (%atk-spell-around-friend-cache-value-attacker b)))
+       (= (id (%atk-spell-around-friend-cache-value-defender a))
+          (id (%atk-spell-around-friend-cache-value-defender b)))
+       (= (id (%atk-spell-around-friend-cache-value-friend a))
+          (id (%atk-spell-around-friend-cache-value-friend b)))
+       (eq (spell:identifier (%atk-spell-around-friend-cache-value-spell a))
+           (spell:identifier (%atk-spell-around-friend-cache-value-spell b)))))
+
+(defun attack-spell-goal-pos-around-friend-nocache (attacker defender friend)
   "Calculate the 'ideal' attack spell positions"
   (with-accessors ((state state)) attacker
     (with-accessors ((blackboard blackboard)
                      (map-state map-state)) state
       (with-accessors ((use-enemy-fov-when-attacking-p use-enemy-fov-when-attacking-p)) blackboard
-        (when-let* ((range                  (level-difficult state))
-                    (spells                 (ai-utils:available-attack-spells attacker))
-                    (best-attack-spell      (ai-utils:find-best-attack-spell state
-                                                                             spells
-                                                                             attacker
-                                                                             defender
-                                                                             :safe-zone-dist
-                                                                             range))
-                    (all-enemy-visibles-ids (all-player-id-visible-from-ai state)))
-          (when (find (id defender)
-                      all-enemy-visibles-ids
-                      :test #'=)
-            (calculate-single-spell-goal-pos attacker
-                                             defender
-                                             friend
-                                             best-attack-spell
-                                             range
-                                             #'tiles-attack-spell-around-ai
-                                             use-enemy-fov-when-attacking-p)))))))
+        (with-best-attack-spell (range best-attack-spell attacker defender)
+          (when-let* ((all-enemy-visibles-ids (all-player-id-visible-from-ai state)))
+            (when (find (id defender)
+                        all-enemy-visibles-ids
+                        :test #'=)
+              (calculate-single-spell-goal-pos attacker
+                                               defender
+                                               friend
+                                               best-attack-spell
+                                               range
+                                               #'tiles-attack-spell-around-ai
+                                               use-enemy-fov-when-attacking-p))))))))
 
-(defun attack-spell-goal-pos-around-me (attacker defender)
+(defcached-list attack-spell-goal-pos-around-friend ((attacker defender friend)
+                                                 :equal-fn #'%atk-spell-around-friend-equal)
+  (labels ((make-cache-key (attacker defender friend spell &optional (res nil))
+             (make-%atk-spell-around-friend-cache-value :attacker attacker
+                                                        :defender defender
+                                                        :spell    spell
+                                                        :friend   friend
+                                                        :res      res))
+           (get-from-cache (attacker defender friend spell)
+             (attack-spell-goal-pos-around-friend-search-cache (make-cache-key attacker
+                                                                               defender
+                                                                               friend
+                                                                               spell)))
+           (put-in-cache (attacker defender friend spell res)
+             (attack-spell-goal-pos-around-friend-insert-cache (make-cache-key attacker
+                                                                               defender
+                                                                               friend
+                                                                               spell
+                                                                               res)))
+           (extract-res (cache-value)
+             (%atk-spell-around-friend-cache-value-res cache-value)))
+    ;; note we need  to calculate the spell here too,  This to get the
+    ;; correct cache key.  Of course we are assuming the same spell is
+    ;; going to be chosen by the procedure without cache.
+    (with-best-attack-spell (range best-spell attacker defender)
+      (let ((found (get-from-cache attacker defender friend best-spell)))
+        (if found
+            (extract-res found)
+            (let ((new-res (attack-spell-goal-pos-around-friend-nocache attacker defender friend)))
+              (put-in-cache attacker defender friend best-spell new-res)
+            (attack-spell-goal-pos-around-friend attacker defender friend)))))))
+
+(defun attack-spell-goal-pos-around-me-nocache (attacker defender)
   (attack-spell-goal-pos-around-friend attacker defender attacker))
+
+(defcached-list attack-spell-goal-pos-around-me ((attacker defender)
+                                                 :equal-fn #'%atk-spell-around-me-equal)
+  (labels ((make-cache-key (attacker defender spell &optional (res nil))
+             (make-%atk-spell-around-me-cache-value :attacker attacker
+                                                    :defender defender
+                                                    :spell    spell
+                                                    :res      res))
+           (get-from-cache (attacker defender spell)
+             (attack-spell-goal-pos-around-me-search-cache (make-cache-key attacker
+                                                                           defender
+                                                                           spell)))
+           (put-in-cache (attacker defender spell res)
+             (break)
+             (attack-spell-goal-pos-around-me-insert-cache (make-cache-key attacker
+                                                                           defender
+                                                                           spell
+                                                                           res)))
+           (extract-res (cache-value)
+             (%atk-spell-around-me-cache-value-res cache-value)))
+    ;; note we need  to calculate the spell here too,  This to get the
+    ;; correct cache key.  Of course we are assuming the same spell is
+    ;; going to be chosen by the procedure without cache.
+    (with-best-attack-spell (range best-spell attacker defender)
+      (let ((found (get-from-cache attacker defender best-spell)))
+        (if found
+            (extract-res found)
+            (let ((new-res (attack-spell-goal-pos-around-me-nocache attacker defender)))
+              (put-in-cache attacker defender best-spell new-res)
+            (attack-spell-goal-pos-around-me attacker defender)))))))
+
+(defun invalidate-blackboard-cache ()
+  (attack-spell-goal-pos-around-friend-clear-cache)
+  (attack-spell-goal-pos-around-me-clear-cache)
+  (reachable-p-w/concening-tiles-fn-clear-cache)
+  (reachable-p-w/concening-tiles-unlimited-cost-fn-clear-cache))

@@ -30,6 +30,29 @@
 
 (alexandria:define-constant +tag-right-weapon-key+ "tag_rweapon" :test #'string=)
 
+(defun standard-aabb (mesh)
+  (with-accessors ((state state)) mesh
+    (let* ((pos      (calculate-cost-position mesh))
+           (x-chunk  (map-utils:coord-map->chunk (ivec2:ivec2-x pos)))
+           (z-chunk  (map-utils:coord-map->chunk (ivec2:ivec2-y pos)))
+           (y        (game-state:approx-terrain-height@pos state x-chunk z-chunk))
+           (pos-3d-b (vec (map-utils:coord-map->chunk (d (ivec2:ivec2-x pos))
+                                                      :tile-offset 0.0)
+                          y
+                          (map-utils:coord-map->chunk (d (ivec2:ivec2-y pos))
+                                                      :tile-offset 0.0)))
+           (pos-3d-u (vec (map-utils:coord-map->chunk (d (ivec2:ivec2-x pos))
+                                                      :tile-offset
+                                                      +terrain-chunk-tile-size+)
+                          (d+ y (d* 2.0 +terrain-chunk-tile-size+))
+                          (map-utils:coord-map->chunk (d (ivec2:ivec2-y pos))
+                                                      :tile-offset
+                                                      +terrain-chunk-tile-size+)))
+           (aabb    (make-instance 'aabb)))
+      (expand aabb pos-3d-u)
+      (expand aabb pos-3d-b)
+      aabb)))
+
 (defclass triangle ()
   ((vertex-index
     :initform (uivec 0 0 0)
@@ -2961,14 +2984,7 @@
 (defgeneric tree-trunk-aabb (object))
 
 (defmethod tree-trunk-aabb ((object tree-mesh-shell))
-  (with-accessors ((pos pos)) object
-    (make-instance '3d-utils:aabb
-                   :aabb-p2 (vec+ pos (vec (d/ +terrain-chunk-tile-size+ 2.0)
-                                           +wall-h+
-                                           (d/ +terrain-chunk-tile-size+ 2.0)))
-                   :aabb-p1 (vec+ pos (vec (d- (d/ +terrain-chunk-tile-size+ 2.0))
-                                           0.0
-                                           (d- (d/ +terrain-chunk-tile-size+ 2.0)))))))
+  (standard-aabb object))
 
 (defmethod actual-aabb-for-bullets ((object tree-mesh-shell))
   (tree-trunk-aabb object))
