@@ -1382,30 +1382,32 @@ values nil, i. e. the ray is not blocked"
         (shellsort goal-tiles-pos
                    (ai-utils:sort-by-concerning-value-clsr blackboard))))))
 
-(defun best-attack-spell-goal-pos (attacker defender)
-  "Calculate the 'ideal' attack spell positions
-Note: assuming the range  of the spell is not less  ore equal than the
-effective range.  I think this is a safe to assume. ;)"
-  (with-accessors ((state state)) attacker
-    (with-accessors ((blackboard blackboard)
-                     (map-state map-state)) state
-      (with-accessors ((use-enemy-fov-when-attacking-p use-enemy-fov-when-attacking-p)) blackboard
-        (when-let* ((spells                 (ai-utils:available-attack-spells attacker))
-                    (best-attack-spell      (ai-utils:find-best-attack-spell  state
-                                                                              spells
-                                                                              attacker
-                                                                              defender))
-                    (all-enemy-visibles-ids (all-player-id-visible-from-ai state)))
-          (when (find (id defender)
-                      all-enemy-visibles-ids
-                      :test #'=)
-            (calculate-single-spell-goal-pos attacker
-                                             defender
-                                             defender
-                                             best-attack-spell
-                                             (spell:range best-attack-spell)
-                                             #'tiles-attack-spell-around-human
-                                             use-enemy-fov-when-attacking-p)))))))
+(defmacro with-attack-spell-goal-pos-skeleton (attacker defender
+                                               cache-fn-symbol
+                                               nocache-fn-symbol
+                                               search-cache-fn-symbol
+                                               insert-cache-fn-symbol)
+  `(labels ((make-cache-key (attacker defender spell &optional (res nil))
+              (make-%atk-spell-around-me-cache-value :attacker attacker
+                                                     :defender defender
+                                                     :spell    spell
+                                                     :res      res))
+            (get-from-cache (attacker defender spell)
+              (,search-cache-fn-symbol (make-cache-key attacker defender spell)))
+            (put-in-cache (attacker defender spell res)
+              (,insert-cache-fn-symbol (make-cache-key attacker defender spell res)))
+            (extract-res (cache-value)
+              (%atk-spell-around-me-cache-value-res cache-value)))
+     ;; note we need  to calculate the spell here too,  This to get the
+     ;; correct cache key.  Of course we are assuming the same spell is
+     ;; going to be chosen by the procedure without cache.
+     (with-best-attack-spell (range best-spell ,attacker ,defender)
+       (let ((found (get-from-cache ,attacker ,defender best-spell)))
+         (if found
+             (extract-res found)
+             (let ((new-res (,nocache-fn-symbol ,attacker ,defender)))
+               (put-in-cache attacker defender best-spell new-res)
+               (,cache-fn-symbol ,attacker ,defender)))))))
 
 (defmacro with-best-attack-spell ((range best-spell attacker defender) &body body)
   (with-gensyms (all-spells state)
@@ -1447,8 +1449,40 @@ effective range.  I think this is a safe to assume. ;)"
        (eq (spell:identifier (%atk-spell-around-friend-cache-value-spell a))
            (spell:identifier (%atk-spell-around-friend-cache-value-spell b)))))
 
+(defun best-attack-spell-goal-pos-nocache (attacker defender)
+  "Calculate the 'ideal' attack spell positions
+Note: assuming the range  of the spell is not less  ore equal than the
+effective range.  I think this is a safe to assume. ;)"
+  (with-accessors ((state state)) attacker
+    (with-accessors ((blackboard blackboard)
+                     (map-state map-state)) state
+      (with-accessors ((use-enemy-fov-when-attacking-p use-enemy-fov-when-attacking-p)) blackboard
+        (when-let* ((spells                 (ai-utils:available-attack-spells attacker))
+                    (best-attack-spell      (ai-utils:find-best-attack-spell  state
+                                                                              spells
+                                                                              attacker
+                                                                              defender))
+                    (all-enemy-visibles-ids (all-player-id-visible-from-ai state)))
+          (when (find (id defender)
+                      all-enemy-visibles-ids
+                      :test #'=)
+            (calculate-single-spell-goal-pos attacker
+                                             defender
+                                             defender
+                                             best-attack-spell
+                                             (spell:range best-attack-spell)
+                                             #'tiles-attack-spell-around-human
+                                             use-enemy-fov-when-attacking-p)))))))
+
+(defcached-list best-attack-spell-goal-pos ((attacker defender)
+                                                 :equal-fn #'%atk-spell-around-me-equal)
+  (with-attack-spell-goal-pos-skeleton attacker defender
+                                       best-attack-spell-goal-pos
+                                       best-attack-spell-goal-pos-nocache
+                                       best-attack-spell-goal-pos-search-cache
+                                       best-attack-spell-goal-pos-insert-cache))
+
 (defun attack-spell-goal-pos-around-friend-nocache (attacker defender friend)
-  "Calculate the 'ideal' attack spell positions"
   (with-accessors ((state state)) attacker
     (with-accessors ((blackboard blackboard)
                      (map-state map-state)) state
@@ -1503,33 +1537,11 @@ effective range.  I think this is a safe to assume. ;)"
 
 (defcached-list attack-spell-goal-pos-around-me ((attacker defender)
                                                  :equal-fn #'%atk-spell-around-me-equal)
-  (labels ((make-cache-key (attacker defender spell &optional (res nil))
-             (make-%atk-spell-around-me-cache-value :attacker attacker
-                                                    :defender defender
-                                                    :spell    spell
-                                                    :res      res))
-           (get-from-cache (attacker defender spell)
-             (attack-spell-goal-pos-around-me-search-cache (make-cache-key attacker
-                                                                           defender
-                                                                           spell)))
-           (put-in-cache (attacker defender spell res)
-             (break)
-             (attack-spell-goal-pos-around-me-insert-cache (make-cache-key attacker
-                                                                           defender
-                                                                           spell
-                                                                           res)))
-           (extract-res (cache-value)
-             (%atk-spell-around-me-cache-value-res cache-value)))
-    ;; note we need  to calculate the spell here too,  This to get the
-    ;; correct cache key.  Of course we are assuming the same spell is
-    ;; going to be chosen by the procedure without cache.
-    (with-best-attack-spell (range best-spell attacker defender)
-      (let ((found (get-from-cache attacker defender best-spell)))
-        (if found
-            (extract-res found)
-            (let ((new-res (attack-spell-goal-pos-around-me-nocache attacker defender)))
-              (put-in-cache attacker defender best-spell new-res)
-            (attack-spell-goal-pos-around-me attacker defender)))))))
+  (with-attack-spell-goal-pos-skeleton attacker defender
+                                       attack-spell-goal-pos-around-me
+                                       attack-spell-goal-pos-around-me-nocache
+                                       attack-spell-goal-pos-around-me-saved-search-cache
+                                       attack-spell-goal-pos-around-me-saved-insert-cache))
 
 (defun invalidate-blackboard-cache ()
   (attack-spell-goal-pos-around-friend-clear-cache)
