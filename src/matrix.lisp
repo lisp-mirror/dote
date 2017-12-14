@@ -436,27 +436,36 @@ else
 (defun gen-neighbour-position-in-box (x y w-offset h-offset &key (add-center t))
   "note: no bounds checking is done"
   (let ((results (misc:make-fresh-array 0 nil 'ivec2:ivec2 nil)))
-    (loop for x-box from (- x (floor (/ w-offset 2))) to (+ x (floor (/ w-offset 2))) by 1 do
-         (loop for y-box from (- y (floor (/ h-offset 2))) to (+ y (floor (/ h-offset 2))) by 1 do
+    (loop for x-box from (- x (truncate w-offset)) to (+ x (truncate w-offset)) by 1 do
+         (loop for y-box from (- y (truncate h-offset)) to (+ y (truncate h-offset)) by 1 do
               (when (or (/= x-box x)
                         (/= y-box y)
                         add-center)
                 (vector-push-extend (ivec2:ivec2 x-box y-box) results))))
     results))
 
+(defun xy-out-border-fn (matrix)
+  #'(lambda (a)
+      (2d-utils:displace-2d-vector (a x y)
+        (not (element@-inside-p matrix x y)))))
+
 (defun gen-valid-neighbour-position-in-box (matrix x y w-offset h-offset &key (add-center t))
   "note: bounds checking is done"
   (let ((results (gen-neighbour-position-in-box x y w-offset h-offset :add-center add-center)))
-    (remove-if-not #'(lambda (a)
-                       (2d-utils:displace-2d-vector (a x y)
-                         (element@-inside-p matrix  x y)))
-                   results)))
+    (remove-if (xy-out-border-fn matrix)
+               results)))
 
 (defun gen-ring-box-position (x y w-offset h-offset)
   "note: no bounds checking is done, inefficient also"
   (let ((results (gen-neighbour-position-in-box x y w-offset h-offset)))
-    (remove-if #'(lambda (a) (and (/= (abs (- (elt a 0) x)) (/ w-offset 2))
-                                  (/= (abs (- (elt a 1) y)) (/ h-offset 2))))
+    (remove-if #'(lambda (a) (and (/= (abs (- (elt a 0) x)) (truncate w-offset))
+                                  (/= (abs (- (elt a 1) y)) (truncate h-offset))))
+               results)))
+
+(defun gen-valid-ring-box-position (matrix x y w-offset h-offset)
+  "note: bounds checking is done, inefficient also"
+  (let ((results (gen-ring-box-position x y w-offset h-offset)))
+    (remove-if (xy-out-border-fn matrix)
                results)))
 
 (defun gen-valid-fat-ring-positions (matrix x y

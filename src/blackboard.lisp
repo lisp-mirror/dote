@@ -316,8 +316,9 @@
     (matrix-elt tiles y x)))
 
 (defun %update-all-infos (blackboard)
-  (%update-all-layers       blackboard)
-  (update-all-attacking-pos blackboard))
+  (progn
+    (%update-all-layers       blackboard)
+    (update-all-attacking-pos blackboard)))
 
 (defmethod game-event:on-game-event ((object blackboard) (event game-event:end-turn))
   (with-accessors ((concerning-tiles        concerning-tiles)
@@ -394,8 +395,6 @@
 (defgeneric update-crossbow-attackable-pos (object))
 
 (defgeneric fountain-exhausted-p (object entity))
-
-(defgeneric remove-entity-from-all-attack-pos (object entity))
 
 (defun calc-concerning-tiles-cost-scaling (difficult-level)
   (dlerp (smoothstep-interpolate 2.0 5.0 (d difficult-level))
@@ -811,6 +810,27 @@ values nil, i. e. the ray is not blocked"
           (t
            nil))))))
 
+(defun remove-from-player-pov (goal-tiles-pos player use-enemy-fov-when-attacking-p)
+  "remove tiles from the target's point of view (player is from human side)"
+  (if use-enemy-fov-when-attacking-p
+      (remove-if #'(lambda (a)
+                     (displace-2d-vector (a x y)
+                       ;; remove if  visible or blocked
+                       ;; by  ray (even  if not  in the
+                       ;; visibility cone  (for example
+                       ;; behind the attacked entity).
+                       (or (able-to-see-mesh:placeholder-visible-p player x y)
+                           (not (able-to-see-mesh:placeholder-visible-ray-p player
+                                                                            x
+                                                                            y)))))
+                 goal-tiles-pos)
+      (remove-if-not #'(lambda (a)
+                         (displace-2d-vector (a x y)
+                           (able-to-see-mesh:placeholder-visible-ray-p player
+                                                                       x
+                                                                       y)))
+                     goal-tiles-pos)))
+
 (defun %attack-layer-player-goal-pos (blackboard
                                       layer
                                       player
@@ -837,26 +857,9 @@ values nil, i. e. the ray is not blocked"
                                                                nil)))
                                            goal-tiles-pos))
            ;; remove tiles from the target's point of view
-           (if use-enemy-fov-when-attacking-p
-               (setf goal-tiles-pos
-                     (remove-if #'(lambda (a)
-                                    (displace-2d-vector (a x y)
-                                      ;; remove if  visible or blocked
-                                      ;; by  ray (even  if not  in the
-                                      ;; visibility cone  (for example
-                                      ;; behind the attacked entity).
-                                      (or (able-to-see-mesh:placeholder-visible-p player x y)
-                                          (not (able-to-see-mesh:placeholder-visible-ray-p player
-                                                                                           x
-                                                                                           y)))))
-                                goal-tiles-pos))
-               (setf goal-tiles-pos
-                     (remove-if-not #'(lambda (a)
-                                        (displace-2d-vector (a x y)
-                                          (able-to-see-mesh:placeholder-visible-ray-p player
-                                                                                      x
-                                                                                      y)))
-                                    goal-tiles-pos)))
+           (setf goal-tiles-pos (remove-from-player-pov goal-tiles-pos
+                                                        player
+                                                        use-enemy-fov-when-attacking-p))
            (loop
               for point in (map 'list #'identity goal-tiles-pos)
               when (2d-tile-visible-around-ai-p main-state ; skip tiles not visible by AI
@@ -1045,14 +1048,14 @@ values nil, i. e. the ray is not blocked"
 (defun pole-weapon-goal-generator-fn (player)
   (let ((level (level-difficult (state player))))
     #'(lambda (x y)
-        (let ((size (* 2 +weapon-pole-range+)))
+        (let ((size +weapon-pole-range+))
           (remove-if-not #'(lambda (a)
                              (<= (manhattam-distance a (ivec2 x y))
-                                 (/ size 2)))
+                                 size))
                          (cond
                            ((< level 2)
                             (gen-4-neighbour-counterclockwise x y :add-center nil))
-                           ((<= 2 level 3)
+                           ((<= 2 level +difficult-medium+)
                             (if (die-utils:pass-d2 2)
                                 (gen-4-neighbour-counterclockwise x y :add-center nil)
                                 (gen-ring-box-position x y size size)))
@@ -1299,6 +1302,13 @@ values nil, i. e. the ray is not blocked"
       (let ((all-ai-entities (num:shellsort (ai-entities main-state)
                                             (ai-utils:combined-power-compare-clsr nil))))
         (setf all-ai-entities (remove-if #'entity-dead-p all-ai-entities))
+        ;;;;;;;; TEST!!!!!!!!!!!!!!
+        ;; removing non wizards
+        (setf all-ai-entities (remove-if-not #'(lambda (e)
+                                                 (character:pclass-of-magic-user-p (ghost e)))
+
+                                   all-ai-entities))
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         (setf ai-entities-action-order all-ai-entities)))))
 
 (defmethod fountain-exhausted-p ((object blackboard) (entity mesh:fountain-mesh-shell))
@@ -1322,3 +1332,105 @@ values nil, i. e. the ray is not blocked"
     (setf attack-enemy-crossbow-positions
           (remove-entity-from-attack-pos attack-enemy-crossbow-positions entity))
     object))
+
+(defmacro with-tiles-attack-spell-around (fn state entity range)
+  (with-gensyms (x y)
+    `(displace-2d-vector ((calculate-cost-position ,entity) ,x ,y)
+       (,fn (map-state ,state) ,x ,y ,range ,range))))
+
+(defun tiles-attack-spell-around-human (state entity range)
+  (with-tiles-attack-spell-around gen-valid-ring-box-position state entity range))
+
+(defun tiles-attack-spell-around-ai (state entity range)
+  (with-tiles-attack-spell-around gen-valid-neighbour-position-in-box state entity range))
+
+(defun calculate-single-spell-goal-pos (attacker defender pivot-entity spell range
+                                        gen-pos-fn use-enemy-fov-when-attacking-p)
+  (with-accessors ((state          state)
+                   (attacker-ghost ghost)) attacker
+    (with-accessors ((map-state map-state)
+                     (blackboard blackboard)) state
+      (when-let* ((defender-pos      (calculate-cost-position defender))
+                  (attacker-pos      (calculate-cost-position attacker))
+                  (pivot-pos         (calculate-cost-position pivot-entity))
+                  (spell-range       (truncate (spell:range spell)))
+                  (goal-tiles-pos    (funcall gen-pos-fn state pivot-entity range))
+                  (reach-fn          (reachable-p-w/concening-tiles-fn blackboard)))
+        ;; remove out of range
+        (setf goal-tiles-pos (remove-if-not #'(lambda (a)
+                                                (<= (manhattam-distance a defender-pos)
+                                                    spell-range))
+                                             goal-tiles-pos))
+        ;; remove tiles not empty
+        (setf goal-tiles-pos (remove-if-not #'(lambda (a)
+                                                (displace-2d-vector (a x y)
+                                                  (map-element-empty-p (element-mapstate@ state
+                                                                                          x y))))
+                                            goal-tiles-pos))
+
+        ;; remove tiles from the target's point of view
+        (setf goal-tiles-pos (remove-from-player-pov goal-tiles-pos
+                                                     defender
+                                                     use-enemy-fov-when-attacking-p))
+        ;; remove non reachables
+        (setf goal-tiles-pos (ai-utils:remove-non-reachables-pos reach-fn
+                                                                 attacker-pos
+                                                                 attacker-ghost
+                                                                 goal-tiles-pos
+                                                                 :key #'identity))
+        ;; sort: the less concerning the better
+        (shellsort goal-tiles-pos
+                   (ai-utils:sort-by-concerning-value-clsr blackboard))))))
+
+(defun best-attack-spell-goal-pos (attacker defender)
+  "Calculate the 'ideal' attack spell positions"
+  (with-accessors ((state state)) attacker
+    (with-accessors ((blackboard blackboard)
+                     (map-state map-state)) state
+      (with-accessors ((use-enemy-fov-when-attacking-p use-enemy-fov-when-attacking-p)) blackboard
+        (when-let* ((spells                 (ai-utils:available-attack-spells attacker))
+                    (best-attack-spell      (ai-utils:find-best-attack-spell  state
+                                                                              spells
+                                                                              attacker
+                                                                              defender))
+                    (all-enemy-visibles-ids (all-player-id-visible-from-ai state)))
+          (when (find (id defender)
+                      all-enemy-visibles-ids
+                      :test #'=)
+            (calculate-single-spell-goal-pos attacker
+                                             defender
+                                             defender
+                                             best-attack-spell
+                                             (spell:range best-attack-spell)
+                                             #'tiles-attack-spell-around-human
+                                             use-enemy-fov-when-attacking-p)))))))
+
+
+(defun attack-spell-goal-pos-around-friend (attacker defender friend)
+  "Calculate the 'ideal' attack spell positions"
+  (with-accessors ((state state)) attacker
+    (with-accessors ((blackboard blackboard)
+                     (map-state map-state)) state
+      (with-accessors ((use-enemy-fov-when-attacking-p use-enemy-fov-when-attacking-p)) blackboard
+        (when-let* ((range                  (level-difficult state))
+                    (spells                 (ai-utils:available-attack-spells attacker))
+                    (best-attack-spell      (ai-utils:find-best-attack-spell state
+                                                                             spells
+                                                                             attacker
+                                                                             defender
+                                                                             :safe-zone-dist
+                                                                             range))
+                    (all-enemy-visibles-ids (all-player-id-visible-from-ai state)))
+          (when (find (id defender)
+                      all-enemy-visibles-ids
+                      :test #'=)
+            (calculate-single-spell-goal-pos attacker
+                                             defender
+                                             friend
+                                             best-attack-spell
+                                             range
+                                             #'tiles-attack-spell-around-ai
+                                             use-enemy-fov-when-attacking-p)))))))
+
+(defun attack-spell-goal-pos-around-me (attacker defender)
+  (attack-spell-goal-pos-around-friend attacker defender attacker))

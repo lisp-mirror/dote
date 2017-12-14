@@ -431,9 +431,10 @@
       val))
 
 (defmacro displace-2d-vector ((v x y) &body body)
-  `(let ((,x (elt ,v 0))
-         (,y (elt ,v 1)))
-     ,@body))
+  (once-only (v)
+    `(let ((,x (elt ,v 0))
+           (,y (elt ,v 1)))
+       ,@body)))
 
 (defun 2d-vector-map (v &key (funcx nil) (funcy nil))
   "Return a list of x,y values of the vector transformed by funcx and funcy (if not nil) respectively"

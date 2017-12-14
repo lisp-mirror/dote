@@ -255,6 +255,7 @@
 
 (defmethod textinput-event ((object test-window) ts text)
   (with-accessors ((world world)) object
+    (with-accessors ((selected-pc selected-pc)) world
     (if (string= text "S")
         (progn
           (game-state:setup-game-hour (game-state object)
@@ -354,7 +355,7 @@
               (setf *map-loaded-p* t)
               ;; testing opponents
               (interfaces:calculate  world 0.0)
-              ;(world:add-ai-opponent world :warrior :male)
+              (world:add-ai-opponent world :warrior :male)
               (world:add-ai-opponent world :wizard  :male)
               (setf (delta-time-elapsed object) (sdl2:get-ticks))
               ;; bg color
@@ -374,10 +375,7 @@
               (incf (elt (camera:target (world:camera world)) 0) -1.0)))
           (transformable:build-projection-matrix world *near* *far* *fov*
                                                  (num:desired (/ *window-w* *window-h*)))
-          (camera:look-at* (world:camera world))))
-    (when (string= "Q" text)
-      (setf *placeholder* nil)
-      (close-window object))))
+          (camera:look-at* (world:camera world)))))))
 
 #+debug-ai
 (defun %change-ai-layer (window scancode)

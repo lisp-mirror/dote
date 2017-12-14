@@ -444,6 +444,8 @@
 
 (defgeneric door-in-next-path-tile-p (object path idx-pos-maybe-door))
 
+(defgeneric remove-entity-from-all-attack-pos (object entity))
+
 (defmethod (setf selected-pc) (entity (object game-state))
   "set index-selected-pc as well"
   (with-accessors ((index-selected-pc index-selected-pc)

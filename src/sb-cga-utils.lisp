@@ -284,23 +284,44 @@
             (cone-height object)
             (half-angle  object))))
 
+(defmethod clone-into :after ((from cone) (to cone))
+  (setf (cone-apex      to) (copy-vec (cone-apex      from))
+        (half-angle     to) (half-angle               from)
+        (cone-height    to) (copy-vec (cone-height    from)))
+  to)
+
+(defmethod clone ((object cone))
+  (with-simple-clone (object 'cone)))
+
 (defgeneric point-in-cone-p (object point))
+
+(defgeneric rotate-cone-ccw (object &key angle))
 
 (defmethod point-in-cone-p ((object cone) point)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (vec point))
-  (with-accessors ((cone-apex   cone-apex)
-                   (half-angle  half-angle)
-                   (cone-height cone-height)) object
-    (let* ((apex->point  (vec- point cone-apex))
-           (cone-dir     (normalize cone-height))
-           (cosine-point (dot-product (safe-normalize apex->point) cone-dir)))
-      (if (d<= cosine-point (dcos half-angle))
-          nil
-          (if (d<= (dot-product apex->point cone-dir)
-                   (vec-length cone-height))
-              t
-              nil)))))
+  (let ((*default-epsilon* 1e-2))
+    (with-accessors ((cone-apex   cone-apex)
+                     (half-angle  half-angle)
+                     (cone-height cone-height)) object
+      (let* ((apex->point  (vec- point cone-apex))
+             (cone-dir     (normalize cone-height))
+             (cosine-point (dot-product (safe-normalize apex->point) cone-dir)))
+        (if (epsilon<=  cosine-point (dcos half-angle))
+            nil
+            (if (epsilon<= (dot-product apex->point cone-dir)
+                           (vec-length cone-height))
+                t
+                nil))))))
+
+(defmethod rotate-cone-ccw (object &key (angle +pi/2+))
+  (let* ((new     (clone object))
+         (disp    (vec-length (cone-height object)))
+         (dir     (normalize  (cone-height object)))
+         (rotated (sb-cga:transform-direction dir
+                                              (rotate-around +y-axe+ angle))))
+    (setf (cone-height new) (vec* rotated disp))
+    new))
 
 (defclass ray ()
   ((ray-direction

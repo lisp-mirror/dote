@@ -343,6 +343,8 @@
    :*default-epsilon*
    :with-epsilon
    :epsilon=
+   :epsilon<=
+   :epsilon>=
    :normalize-value-in-range
    :smoothstep
    :sinstep
@@ -1054,6 +1056,7 @@
    :half-angle
    :cone-height
    :point-in-cone-p
+   :rotate-cone-ccw
    :ray
    :ray-direction
    :displacement
@@ -1378,6 +1381,7 @@
    :gen-neighbour-position-in-box
    :gen-valid-neighbour-position-in-box
    :gen-ring-box-position
+   :gen-valid-ring-box-position
    :gen-valid-fat-ring-positions
    :with-check-borders
    :with-check-matrix-borders
@@ -3036,6 +3040,8 @@
    :too-low-health-p
    :near-to-death-health-p
    :if-difficult-level>medium
+   :find-best-heal-spell
+   :find-best-attack-spell
    :reward-possible-p
    :available-heal-spells
    :available-attack-spells
@@ -3045,11 +3051,14 @@
    :attackable-opponents-attack-spell
    :combined-power-compare-clsr
    :sort-by-manhattam-dist-clsr
+   :sort-by-path-w/concerning-tiles-cost-clsr
+   :sort-by-concerning-value-clsr
    :find-nearest-visible-wall
    :protect-place
    :protect-place-pos
    :protect-place-points
    :protect-place-attack-pos-p
+   :remove-non-reachables-pos
    :places-near-weak-friend
    :good-places-to-protect
    :visible-opponents-sorted
@@ -3057,6 +3066,15 @@
    :near-weak-friend-in-attack-pos-long-range-p
    :near-weak-friend-in-attack-pos-short-range-p
    :near-weak-friend-in-attack-pos-p
+   :faction-all-visibles-opponents
+   :faction-visible-opponents-sorted
+   :faction-most-powerful-visible-opponents
+   :faction-least-powerful-visible-opponents
+   :faction-attackable-opponents-id
+   :all-visibles-opponents
+   :visible-opponents-sorted
+   :most-powerful-visible-opponents
+   :least-powerful-visible-opponents
    :attackable-opponents-id
    :cost-to-reach-w/o-concerning-place
    :attack-when-near-pos-long-range-p
@@ -5010,7 +5028,9 @@
    :next-unexplored-position
    :disgregard-all-plans
    :fountain-exhausted-p
-   :remove-entity-from-all-attack-pos))
+   :remove-entity-from-all-attack-pos
+   :best-attack-spell-goal-pos
+   :attack-spell-goal-pos-around-friend))
 
 (defpackage :goap
   (:use :cl

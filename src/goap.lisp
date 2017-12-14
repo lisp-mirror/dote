@@ -681,6 +681,12 @@ composed by just one tile, see 'attackable-position-exists-path'"
     (or (character:weapon-type ghost)
         (character:find-item-in-inventory-if ghost #'interactive-entity:weaponp))))
 
+(defun %has-enough-sp-if (entity predicate)
+  (character:with-no-terror-status (entity)
+    (with-accessors ((ghost ghost)) entity
+      (spell:filter-spell-set (character:available-spells-list ghost)
+                              predicate))))
+
 (defun %has-enough-sp-p (entity tag)
   (character:with-no-terror-status (entity)
     (character:castable-spells-list-by-tag (entity:ghost entity) tag)))
@@ -692,6 +698,10 @@ composed by just one tile, see 'attackable-position-exists-path'"
 (defun has-enough-sp-damage-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (%has-enough-sp-p entity spell:+spell-tag-damage+))
+
+(defun has-enough-sp-attack-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (%has-enough-sp-if entity #'(lambda (a) (not (spell:attack-spell-p a)))))
 
 (defun has-enough-sp-break-wall-p (strategy-expert entity)
   (declare (ignore strategy-expert))

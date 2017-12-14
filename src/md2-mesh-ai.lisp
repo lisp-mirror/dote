@@ -415,7 +415,7 @@
         (%rotate-until-someone-visible state object :decrement-movement-points t)
         (action-scheduler:with-enqueue-action-and-send-remove-after
             (world action-scheduler:tactical-plane-action)
-          (let* ((defender-id (ai-utils:attackable-opponents-id blackboard object)))
+          (let* ((defender-id (ai-utils:faction-attackable-opponents-id blackboard object)))
             (battle-utils:attack-w-current-weapon object
                                                   (find-entity-by-id state defender-id))))))))
 

@@ -81,24 +81,27 @@
         (>= (points heal-fx)
             (character:actual-damage-points (ghost entity))))))
 
-(defun find-best-attack-spell-clever-predicate (launcher-entity target-entity)
+(defun find-best-attack-spell-clever-predicate (launcher-entity target-entity
+                                                &key (safe-zone-dist 0.0))
   (let ((dist (map-utils:map-manhattam-distance (mesh:calculate-cost-position launcher-entity)
                                                 (mesh:calculate-cost-position target-entity))))
     #'(lambda (s)
         (let ((damage-spell          (spell:damage-inflicted s))
               (effective-range-spell (spell:effective-range s))
               (damage-points-target  (character:current-damage-points (ghost target-entity))))
-          (and (< effective-range-spell dist)
+          (and (< (+ effective-range-spell safe-zone-dist)
+                  dist)
                (>= damage-spell
                    (d* +scaling-target-damage-best-attack-spell+
                        damage-points-target)))))))
 
-(defun find-best-attack-spell-harmless-to-launcher-clrs (launcher-entity target-entity)
+(defun find-best-attack-spell-harmless-to-launcher-clrs (launcher-entity target-entity
+                                                         &key (safe-zone-dist 0.0))
   (let ((dist (map-utils:map-manhattam-distance (mesh:calculate-cost-position launcher-entity)
                                                 (mesh:calculate-cost-position target-entity))))
     #'(lambda (s)
         (let ((effective-range-spell (spell:effective-range s)))
-          (< effective-range-spell dist)))))
+          (< effective-range-spell (+ dist safe-zone-dist))))))
 
 (defun find-best-spell-clever (spell-db predicate &key (use-best-if-not-found t))
   (let* ((sorted-spell-db (shellsort spell-db (spell:sort-spells-by-level-fn nil)))
@@ -112,14 +115,19 @@
   (find-best-spell-clever spell-db (find-best-heal-spell-clever-predicate entity)
                           :use-best-if-not-found t))
 
-(defun find-best-attack-spell-clever (spell-db launcher-entity target-entity)
+(defun find-best-attack-spell-clever (spell-db launcher-entity target-entity
+                                      &key (safe-zone-dist 0.0))
   (or (find-best-spell-clever spell-db
                               (find-best-attack-spell-clever-predicate launcher-entity
-                                                                       target-entity)
+                                                                       target-entity
+                                                                       :safe-zone-dist
+                                                                       safe-zone-dist)
                               :use-best-if-not-found nil)
       (find-best-spell-clever spell-db
                               (find-best-attack-spell-harmless-to-launcher-clrs launcher-entity
-                                                                                target-entity)
+                                                                                target-entity
+                                                                                :safe-zone-dist
+                                                                                safe-zone-dist)
                               :use-best-if-not-found nil)))
 
 (defmacro if-difficult-level>medium ((game-state) if-more if-less)
@@ -133,9 +141,11 @@
     (find-best-heal-spell-clever   spell-db entity)
     (find-best-spell-most-powerful spell-db)))
 
-(defun find-best-attack-spell (state spell-db launcher-entity target-entity)
+(defun find-best-attack-spell (state spell-db launcher-entity target-entity
+                               &key (safe-zone-dist 0.0))
   (if-difficult-level>medium (state)
-    (find-best-attack-spell-clever spell-db launcher-entity target-entity)
+    (find-best-attack-spell-clever spell-db launcher-entity target-entity
+                                   :safe-zone-dist safe-zone-dist)
     (find-best-spell-most-powerful spell-db)))
 
 (defun reward-possible-p (state)
@@ -148,6 +158,9 @@
 
 (defun available-attack-spells (entity)
   (character:castable-attack-spells-list (entity:ghost entity)))
+
+(defun available-damage-spells (entity)
+  (character:castable-spells-list-by-tag (entity:ghost entity) spell:+spell-tag-damage+))
 
 (defun reachable-help-needed-friend-heal-spell-p (available-spells launcher-entity)
   (with-slots-for-reasoning (launcher-entity state ghost blackboard)
@@ -167,6 +180,8 @@
             (random-elt all-visibles))))))
 
 (defun attackable-opponents-attack-spell (available-spells launcher-entity)
+  "can the laucher attack with an attack-spell from the current position?
+Return the entity attackable and the best attack-spell available"
    (with-slots-for-reasoning (launcher-entity state ghost blackboard)
     (when-let* ((target-entity (target-reachable-attack-spell launcher-entity))
                 (spell         (find-best-attack-spell state
@@ -204,6 +219,35 @@ character is. In this case its cost is 0.0"
       (let ((d1 (map-utils:map-manhattam-distance entity-pivot-pos a))
             (d2 (map-utils:map-manhattam-distance entity-pivot-pos b)))
         (funcall comp-fn d1 d2))))
+
+(defun sort-by-path-w/concerning-tiles-cost-clsr (strategy-expert
+                                                  entity-pivot-pos
+                                                  &optional (comp-fn #'<))
+  #'(lambda (a b)
+      (multiple-value-bind (result-path-a cumulative-cost-a costs-terrain-a)
+          (blackboard:path-with-concerning-tiles strategy-expert
+                                                  entity-pivot-pos
+                                                  a
+                                                  :cut-off-first-tile nil)
+        (declare (ignore result-path-a costs-terrain-a))
+        (multiple-value-bind (result-path-b cumulative-cost-b costs-terrain-b)
+            (blackboard:path-with-concerning-tiles strategy-expert
+                                                   entity-pivot-pos
+                                                   b
+                                                   :cut-off-first-tile nil)
+          (declare (ignore result-path-b costs-terrain-b))
+          (funcall comp-fn cumulative-cost-a cumulative-cost-b)))))
+
+(defun sort-by-concerning-value-clsr (strategy-expert &optional (comp-fn #'<))
+  (with-accessors ((concerning-tiles blackboard:concerning-tiles)) strategy-expert
+    #'(lambda (a b)
+        (let* ((ca (matrix:matrix-elt concerning-tiles
+                                      (ivec2:ivec2-y a)
+                                      (ivec2:ivec2-x a)))
+               (cb (matrix:matrix-elt concerning-tiles
+                                      (ivec2:ivec2-y b)
+                                      (ivec2:ivec2-x b))))
+          (funcall comp-fn ca cb)))))
 
 (defun find-nearest-visible-wall (entity)
   (flet ((invisible-wall-p-fn (a)
@@ -248,6 +292,14 @@ character is. In this case its cost is 0.0"
                (ivec2:ivec2= (protect-place-pos a)
                              pos))
            places))
+
+(defun remove-non-reachables-pos (reach-fn pos-entity ghost-entity positions &key (key #'identity))
+  (remove-if-not #'(lambda (p)
+                     (funcall reach-fn
+                              pos-entity
+                              (funcall key p)
+                              (character:current-movement-points ghost-entity)))
+                 positions))
 
 (defun places-near-weak-friend (strategy-expert entity
                                 &key (weak-friend (friend-who-needs-help strategy-expert
@@ -299,7 +351,7 @@ character is. In this case its cost is 0.0"
                           (incf (protect-place-points increase) +inc-point-attackable+)
                           (setf (protect-place-attack-pos-p increase) t))))
               ;; the same as above for current-position
-              (when (attackable-opponents-id strategy-expert entity)
+              (when (faction-attackable-opponents-id strategy-expert entity)
                 (let ((place-entity (find-pos-in-place places pos-entity)))
                   (incf (protect-place-points       place-entity) (d* +inc-point-attackable+ 2.0))
                   (setf (protect-place-attack-pos-p place-entity) t)))
@@ -365,15 +417,34 @@ character is. In this case its cost is 0.0"
                                    good-places)))
     (find pos good-positions :test #'ivec2:ivec2=)))
 
-(defun all-visibles-opponents (strategy-expert entity &key (alive-only t))
-  "the visible opponents of AI, if such exist."
+(defun faction-all-visibles-opponents (strategy-expert entity &key (alive-only t))
+  "the visible opponents of AI, if exist."
   (with-accessors ((main-state main-state)) strategy-expert
     (absee-mesh:visible-players-in-state-from-faction main-state
                                                       (my-faction entity)
                                                       :alive-only alive-only)))
 
-(defun visible-opponents-sorted (strategy-expert entity &key (alive-only t))
+(defun all-visibles-opponents (strategy-expert entity &key (alive-only t))
+  "the visible opponents of AI entity, if exist."
+  (with-accessors ((main-state main-state)) strategy-expert
+    (absee-mesh:visible-players entity
+                                :alive-only alive-only
+                                :predicate  #'(lambda (a)
+                                                (faction-player-p main-state (id a))))))
+
+(defun faction-visible-opponents-sorted (strategy-expert entity &key (alive-only t))
   "the visible opponents of AI in attack range, if such exists,
+sorted from the most powerful to the least one.
+see: character:combined-power"
+  (with-accessors ((main-state main-state)) strategy-expert
+    (when-let* ((all     (faction-all-visibles-opponents strategy-expert
+                                                 entity
+                                                 :alive-only alive-only))
+                (sorted  (shellsort all (combined-power-compare-clsr t))))
+      sorted)))
+
+(defun visible-opponents-sorted (strategy-expert entity &key (alive-only t))
+  "the visible opponents of AI entity in attack range, ifexists,
 sorted from the most powerful to the least one.
 see: character:combined-power"
   (with-accessors ((main-state main-state)) strategy-expert
@@ -383,27 +454,52 @@ see: character:combined-power"
                 (sorted  (shellsort all (combined-power-compare-clsr t))))
       sorted)))
 
-(defun most-powerful-visible-opponents (strategy-expert entity &key (alive-only t))
+(defun faction-most-powerful-visible-opponents (strategy-expert entity &key (alive-only t))
   "the most powerful visible opponents of AI in attack range, if such exists.
 see: character:combined-power"
-  (when-let ((all (visible-opponents-sorted strategy-expert entity :alive-only alive-only)))
+  (when-let ((all (faction-visible-opponents-sorted strategy-expert entity
+                                                    :alive-only alive-only)))
     (first-elt all)))
 
-(defun least-powerful-visible-opponents (strategy-expert entity &key (alive-only t))
+(defun most-powerful-visible-opponents (strategy-expert entity &key (alive-only t))
+  "the most powerful visible opponents of AI entity in attack range, if exists.
+see: character:combined-power"
+  (when-let ((all (visible-opponents-sorted strategy-expert entity
+                                                    :alive-only alive-only)))
+    (first-elt all)))
+
+(defun faction-least-powerful-visible-opponents (strategy-expert entity &key (alive-only t))
   "the least powerful visible opponents of AI in attack range, if such exists.
 see: character:combined-power"
-  (when-let ((all (visible-opponents-sorted strategy-expert entity :alive-only alive-only)))
+  (when-let ((all (faction-visible-opponents-sorted strategy-expert entity
+                                                    :alive-only alive-only)))
     (last-elt all)))
 
-(defun attackable-opponents-id (strategy-expert entity &key (alive-only t))
-  "the first visible opponents of AI in attack range, if such exists.
-TODO: refactorting, use all-visibles-opponents function above"
+(defun least-powerful-visible-opponents (strategy-expert entity &key (alive-only t))
+  "the least powerful visible opponents of AI entity in attack range, if exists.
+see: character:combined-power"
+  (when-let ((all (visible-opponents-sorted strategy-expert entity
+                                                    :alive-only alive-only)))
+    (last-elt all)))
+
+(defun faction-attackable-opponents-id (strategy-expert entity &key (alive-only t))
+  "the first visible opponents of AI in attack range, if such exists."
   (with-accessors ((main-state main-state)) strategy-expert
     (when-let ((weapon-type    (character:weapon-type (entity:ghost entity)))
-               (visibles-pcs   (absee-mesh:visible-players-in-state-from-faction
-                                main-state
-                                (my-faction entity)
-                                :alive-only alive-only))
+               (visibles-pcs   (faction-all-visibles-opponents strategy-expert entity
+                                                               :alive-only alive-only))
+               (pos            (mesh:calculate-cost-position entity)))
+      (loop for defender in visibles-pcs do
+           (when (battle-utils:range-weapon-valid-p pos defender weapon-type)
+             (return-from faction-attackable-opponents-id (id defender))))))
+  nil)
+
+(defun attackable-opponents-id (strategy-expert entity &key (alive-only t))
+  "the first visible opponents of AI in attack range, if such exists."
+  (with-accessors ((main-state main-state)) strategy-expert
+    (when-let ((weapon-type    (character:weapon-type (entity:ghost entity)))
+               (visibles-pcs   (all-visibles-opponents strategy-expert entity
+                                                               :alive-only alive-only))
                (pos            (mesh:calculate-cost-position entity)))
       (loop for defender in visibles-pcs do
            (when (battle-utils:range-weapon-valid-p pos defender weapon-type)

@@ -999,8 +999,20 @@
           (with-accessors ((blackboard blackboard:blackboard)) state
             (let ((reachable-fn (blackboard:reachable-p-w/concening-tiles-fn blackboard)))
               (misc:dbg "all-tactics ~a"
-                        (blackboard:build-all-attack-tactics blackboard reachable-fn))))
-          (setf (character:movement-points (ghost object)) 150.0))
+                        (blackboard:build-all-attack-tactics blackboard reachable-fn)))
+            (when (pclass-wizard-p ghost)
+              (misc:dbg "spell attack ring ~a"
+                        (blackboard:best-attack-spell-goal-pos object
+                                                               (first (blackboard::player-entities state))))
+              (misc:dbg "spell attack ring2  ~a"
+                        (blackboard:attack-spell-goal-pos-around-friend object
+                                                               (first (blackboard::player-entities state))
+                                                               object))
+              (misc:dbg "spell attack ring 3 ~a"
+                        (blackboard:attack-spell-goal-pos-around-friend object
+                                                               (first (blackboard::player-entities state))
+                                                               (second (blackboard::ai-entities state)))))
+            (setf (character:movement-points (ghost object)) 150.0)))
         ;;;;;;;;;;;;;;;;;;;;;;;
         (reset-spell-points    ghost)
         (reset-movement-points ghost)
@@ -1218,6 +1230,32 @@
       (set-animation object :spell :recalculate t)
       (setf stop-animation nil)
       (setf cycle-animation nil))))
+
+(defmethod actual-aabb-for-bullets ((object md2-mesh))
+  (with-accessors ((state state)) object
+      (let* ((pos      (calculate-cost-position object))
+             (x-chunk  (map-utils:coord-map->chunk (ivec2-x pos)))
+             (z-chunk  (map-utils:coord-map->chunk (ivec2-y pos)))
+             (y        (game-state:approx-terrain-height@pos state x-chunk z-chunk))
+             (pos-3d-b (vec (map-utils:coord-map->chunk (d (ivec2-x pos))
+                                                        :tile-offset 0.0)
+                            y
+                            (map-utils:coord-map->chunk (d (ivec2-y pos))
+                                                        :tile-offset 0.0)))
+             (pos-3d-u (vec (map-utils:coord-map->chunk (d (ivec2-x pos))
+                                                        :tile-offset
+                                                        +terrain-chunk-tile-size+)
+                            (d+ y (d* 2.0 +terrain-chunk-tile-size+))
+                            (map-utils:coord-map->chunk (d (ivec2-y pos))
+                                                        :tile-offset
+                                                        +terrain-chunk-tile-size+)))
+             (aabb    (make-instance 'aabb)))
+        (expand aabb pos-3d-u)
+        (expand aabb pos-3d-b)
+        aabb)))
+
+(defmethod actual-aabb-for-visibility ((object md2-mesh))
+  (actual-aabb-for-bullets object))
 
 (defgeneric push-errors (object the-error))
 

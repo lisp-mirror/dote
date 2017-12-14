@@ -2973,6 +2973,9 @@
 (defmethod actual-aabb-for-bullets ((object tree-mesh-shell))
   (tree-trunk-aabb object))
 
+(defmethod actual-aabb-for-visibility ((object tree-mesh-shell))
+  (tree-trunk-aabb object))
+
 (alexandria:define-constant +clouds-levels+ 3 :test #'=)
 
 (defclass skydome (triangle-mesh)

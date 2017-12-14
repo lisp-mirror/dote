@@ -39,9 +39,9 @@
          :preconditions         ((:protect-friend-attack t))
          :effects               ((:protecting  t))
          :context-preconditions (friend-needs-help-p
-                                 has-enough-sp-damage-p
+                                 has-enough-sp-attack-p
                                  ;; "!is-status-terror-p"  is implicitly
-                                 ;; managed by has-enough-sp-damage-p
+                                 ;; managed by has-enough-sp-attack-p
                                  there-is-attackable-opponents-attack-spell-p)
          :cost                  20)
   (:name :go-near-weak-friend-attack
@@ -80,9 +80,9 @@
   (:name :launch-attack-spell
          :preconditions         ()
          :context-preconditions (none-needs-help-p
-                                 has-enough-sp-damage-p
+                                 has-enough-sp-attack-p
                                  ;; "!is-status-terror-p"  is implicitly
-                                 ;; managed by has-enough-sp-damage-p
+                                 ;; managed by has-enough-sp-attack-p
                                  there-is-attackable-opponents-attack-spell-p)
          :effects               ((:curb-threat t))
          :cost                  20)

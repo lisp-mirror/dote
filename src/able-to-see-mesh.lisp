@@ -198,7 +198,7 @@ Returns two values: *invisibles* and *visibles* tiles"
     :initarg  :visibility-cone
     :accessor visibility-cone)))
 
-(defgeneric other-visible-p (object target &key exclude-if-labyrinth-entity))
+(defgeneric other-visible-p (object target &key exclude-if-labyrinth-entity cone))
 
 (defgeneric update-visibility-cone (object &key rebuild-modelmatrix))
 
@@ -208,7 +208,7 @@ Returns two values: *invisibles* and *visibles* tiles"
 
 (defgeneric visible-players-in-state-from-faction (object faction &key alive-only))
 
-(defgeneric other-visible-cone-p (object target))
+(defgeneric other-visible-cone-p (object target &key cone))
 
 (defgeneric other-visible-ray-p (object target &key exclude-if-labyrinth-entity))
 
@@ -219,9 +219,8 @@ Returns two values: *invisibles* and *visibles* tiles"
 (defmethod update-visibility-cone ((object able-to-see-mesh) &key (rebuild-modelmatrix t))
   (with-accessors ((visibility-cone visibility-cone)
                    (pos  pos)
-                   (dir dir)
-                   (aabb aabb)) object
-    (setf (cone-apex   visibility-cone) (aabb-center aabb))
+                   (dir dir)) object
+    (setf (cone-apex   visibility-cone) (aabb-center (actual-aabb-for-visibility object)))
     (setf (cone-height visibility-cone) (vec* dir (vec-length (cone-height visibility-cone))))
     (when rebuild-modelmatrix
       (bubbleup-modelmatrix object))
@@ -280,12 +279,15 @@ Returns two values: *invisibles* and *visibles* tiles"
 
 
 (defmethod other-visible-p ((object able-to-see-mesh) (target triangle-mesh)
-                            &key (exclude-if-labyrinth-entity t))
+                            &key
+                              (exclude-if-labyrinth-entity t)
+                              (cone (visibility-cone object)))
     "is target visible from object?
 note: non labyrinth elements are ignored"
-  (let ((in-cone-p (other-visible-cone-p object target)))
+  (let ((in-cone-p (other-visible-cone-p object target :cone cone)))
     (when in-cone-p
-      ;;(misc:dbg "visible for cone ~a" (id target))
+      ;; (misc:dbg "visible for cone ~a" (id target))
+      ;; (return-from other-visible-p t)
       (multiple-value-bind (ray-hitted entity-hitted)
           (other-visible-ray-p object
                                target
@@ -294,11 +296,11 @@ note: non labyrinth elements are ignored"
             (values ray-hitted entity-hitted)
             (values nil        entity-hitted))))))
 
-(defmethod other-visible-cone-p ((object able-to-see-mesh) (target triangle-mesh))
+(defmethod other-visible-cone-p ((object able-to-see-mesh) (target triangle-mesh)
+                                 &key (cone (visibility-cone object)))
   "is target visible from object (cone test)?"
-  (with-accessors ((visibility-cone visibility-cone)) object
-    (let ((center (aabb-center (aabb target))))
-      (point-in-cone-p visibility-cone center))))
+  (let ((center (aabb-center (actual-aabb-for-visibility target))))
+    (point-in-cone-p cone center)))
 
 (defmethod other-visible-ray-p ((object able-to-see-mesh) (target triangle-mesh)
                                 &key (exclude-if-labyrinth-entity t))
@@ -341,9 +343,7 @@ invisible if part of a labyrinth"
                    (state state)
                    (visibility-cone visibility-cone)) object
     ;; launch a ray
-    (let* ((center-target (if (tree-mesh-shell-p target)
-                              (aabb-center (tree-trunk-aabb target))
-                              (aabb-center (aabb target))))
+    (let* ((center-target (aabb-center (actual-aabb-for-visibility target)))
            (ray           (make-instance 'ray
                                          :ray-direction
                                          (normalize (vec- center-target
@@ -386,15 +386,17 @@ invisible if part of a labyrinth"
                        ;;(misc:dbg "tree trunk ~%~a ~a -> ~a" (tree-trunk-aabb d)
                        ;;        ends (insidep (tree-trunk-aabb d) ends))
                        (when (and (insidep (aabb d) ends)
-                                  (insidep (tree-trunk-aabb d) ends))
+                                  (insidep (actual-aabb-for-visibility d) ends))
                          (if (= (id d) (id target))
                              (return-from nonlabyrinth-element-hitted-by-ray (values ray d))
                              (return-from nonlabyrinth-element-hitted-by-ray nil))))
                       (t
-                       (when (insidep (aabb d) (ray-ends ray pos)) ;; O_O
+                       (when (insidep (actual-aabb-for-visibility d)
+                                      (ray-ends ray pos)) ;; O_O
                          (if (= (id d) (id target))
                              (return-from nonlabyrinth-element-hitted-by-ray (values ray d))
                              (when (not (= (id d) (id object)))
+                               ;; (misc:dbg "hitted?? ~a" d)
                                (return-from
                                 nonlabyrinth-element-hitted-by-ray (values nil d))))))))))))))
 

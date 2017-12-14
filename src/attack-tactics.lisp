@@ -245,9 +245,9 @@
   "return three values: the path (taking into account other-costs),
 the  total cost of (taking  into account terrain and other objects,
 like building  or players *but NOT  the doors*) and the cost of each move of
-the path, again only with map cost (i.e. no other-costs)
+the path, again only with map cost (i.e. no other-costs).
 
-if cut-off-first-tile is  not nil the first element  of the calculated
+If cut-off-first-tile is  not nil the first element  of the calculated
 path is removed
 "
   (with-accessors ((main-state main-state)
@@ -289,9 +289,9 @@ path is removed
   "return three values: the path (taking into account concerning tiles),
 the  total cost of (taking  into account terrain and other objects,
 like building  or players *but NOT  the doors*) and the cost of each move of
-the path, again only with map cost (i.e. no concerning tiles)
+the path, again only with map cost (i.e. no concerning tiles).
 
-if cut-off-first-tile is  not nil the first element  of the calculated
+If cut-off-first-tile is  not nil the first element  of the calculated
 path is removed
 "
   (let* ((concerning-tiles (concerning-tiles->costs-matrix blackboard))
