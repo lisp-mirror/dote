@@ -173,11 +173,13 @@
         (insert-state-chain-after object idx entity type occlusion-value (1+ ct)))))
 
 
+(defmacro or-types (probe &body types)
+  `(or
+    ,@(loop for type in types collect
+           `(eq (el-type ,probe) ,type))))
+
 (defmethod map-element-empty-p ((object map-state-element))
-  (or (eq (el-type object)
-          +empty-type+)
-      (eq (el-type object)
-          +floor-type+)))
+  (or-types object +empty-type+ +floor-type+ +walkable-type+))
 
 (defmethod map-element-occupied-by-character-p ((object map-state-element))
   "t if occupied by either player or ai (npc) character"
@@ -185,11 +187,6 @@
           +pc-type+)
       (eq (el-type object)
           +npc-type+)))
-
-(defmacro or-types (probe &body types)
-  `(or
-    ,@(loop for type in types collect
-           `(eq (el-type ,probe) ,type))))
 
 (defmethod map-element-occupied-by-invalicable-p ((object map-state-element)
                                                   &key (include-door t))

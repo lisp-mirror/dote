@@ -56,16 +56,20 @@
 
 (defun placeholder-visible-p (player x y)
   "x y z logical map space (integer)"
-  (%placeholder-visible-p-wrapper (player x y)
-    (multiple-value-bind (ray entity)
-        (other-visible-p player *visibility-target-placeholder*)
-      (setf (entity:pos *visibility-target-placeholder*)
-            (vec (map-utils:coord-map->chunk 0.0)
-                 (- +zero-height+)
-                 (map-utils:coord-map->chunk 0.0)))
-      (world:move-entity (game-state:fetch-world (state *visibility-target-placeholder*))
-                        *visibility-target-placeholder* nil :update-costs nil)
-      (values ray entity))))
+  (with-accessors ((state state)) player
+    ;; if the position is occupied switch to normal visibility
+    (if (not (map-element-empty-p (element-mapstate@ state x y)))
+        (other-visible-p player (find-entity-by-id state (entity-id-in-pos state x y)))
+        (%placeholder-visible-p-wrapper (player x y)
+          (multiple-value-bind (ray entity)
+              (other-visible-p player *visibility-target-placeholder*)
+            (setf (entity:pos *visibility-target-placeholder*)
+                  (vec (map-utils:coord-map->chunk 0.0)
+                       (- +zero-height+)
+                       (map-utils:coord-map->chunk 0.0)))
+            (world:move-entity (game-state:fetch-world (state *visibility-target-placeholder*))
+                               *visibility-target-placeholder* nil :update-costs nil)
+            (values ray entity))))))
 
 (defun tiles-placeholder-visible-in-box (matrix player x-center y-center size)
   "x-center y-center size logical map space (integer)"
@@ -184,14 +188,18 @@ Returns two values: *invisibles* and *visibles* tiles"
 
 (defun placeholder-visible-ray-p (player x y)
   "x y z logical map space (integer)"
-  (%placeholder-visible-p-wrapper (player x y)
-    (multiple-value-bind (ray entity)
-        (other-visible-ray-p player *visibility-target-placeholder*)
-      (setf (entity:pos *visibility-target-placeholder*)
-            (vec (map-utils:coord-map->chunk 0.0)
-                 (- +zero-height+)
-                 (map-utils:coord-map->chunk 0.0)))
-      (values ray entity))))
+  (with-accessors ((state state)) player
+    ;; if the position is occupied switch to normal visibility test
+    (if (not (map-element-empty-p (element-mapstate@ state x y)))
+        (other-visible-ray-p player (find-entity-by-id state (entity-id-in-pos state x y)))
+        (%placeholder-visible-p-wrapper (player x y)
+          (multiple-value-bind (ray entity)
+              (other-visible-ray-p player *visibility-target-placeholder*)
+            (setf (entity:pos *visibility-target-placeholder*)
+                  (vec (map-utils:coord-map->chunk 0.0)
+                       (- +zero-height+)
+                       (map-utils:coord-map->chunk 0.0)))
+            (values ray entity))))))
 
 (defclass able-to-see-mesh (triangle-mesh)
   ((visibility-cone

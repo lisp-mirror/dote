@@ -38,3 +38,11 @@
              (sorted (shellsort bag #'<)))
         (and (null (set-difference bag sorted :test #'=))
              (not (find nil (mapcar #'< sorted (rest sorted))))))))
+
+(deftest test-multisort (numeric-suite)
+  (let* ((bag     '(("b" . 10) ("b" . 1) ("z" . 5) ("a" . 10) ("b" . 7) ("a" . 100)))
+         (sorted (multisort bag (list (gen-multisort-test string< string> car)
+                                      (gen-multisort-test <       >       cdr)))))
+    (assert-equalp
+        '(("a" . 10) ("a" . 100) ("b" . 1)  ("b" . 7) ("b" . 10) ("z" . 5))
+        sorted)))

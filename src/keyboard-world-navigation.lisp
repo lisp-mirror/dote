@@ -119,3 +119,35 @@
                    (main-state main-state)) world
     (game-state:select-prev-pc main-state)
     (select-a-new-player world (game-state:selected-pc main-state))))
+
+(define-constant +start-name-screenshot+
+    (text-utils:strcat +program-name+ "-screenshot-1.tga")
+  :test #'string=)
+
+(defun save-screenshot (world filename)
+  (let* ((home (fs:home-dir :add-separator-ends t))
+         (path (text-utils:strcat home filename)))
+    (cl-gl-utils:with-render-to-file (path *window-w* *window-h*)
+      #+debug-mode (misc:dbg "save screenshot ~a" path)
+      (interfaces:render world world))))
+
+(defun make-screenshot (world)
+  (let* ((home              (fs:home-dir :add-separator-ends t))
+         (regexp-filename   (text-utils:strcat +program-name+ "-screenshot-([0-9]+)\\.tga"))
+         (template-filename (text-utils:strcat +program-name+ "-screenshot-~a.tga"))
+         (files-existent    (remove-if-not #'(lambda (a) (cl-ppcre:scan regexp-filename a))
+                                           (mapcar #'fs:pathname->namestring
+                                                   (fs:directory-files home)))))
+    (if (not files-existent)
+        (save-screenshot world +start-name-screenshot+)
+        (let ((all-nums (mapcar #'(lambda (n)
+                                    (multiple-value-bind (all registers)
+                                        (cl-ppcre:scan-to-strings regexp-filename n)
+                                      (declare (ignore all))
+                                      (parse-integer (first-elt registers)
+                                                     :junk-allowed nil)))
+                                files-existent)))
+          (setf all-nums (shellsort all-nums #'>))
+          (save-screenshot world (format nil
+                                         template-filename
+                                         (1+ (first-elt all-nums))))))))

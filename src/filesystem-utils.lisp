@@ -202,6 +202,12 @@
     (with-open-file (stream f :element-type '(unsigned-byte 8))
       (file-length stream))))
 
+(defun home-dir (&key (add-separator-ends nil))
+  (let ((home (nix:getenv "HOME")))
+    (if add-separator-ends
+        (text-utils:strcat home *directory-sep*)
+        home)))
+
 (defun temporary-filename (&optional (temp-directory nil))
   (let ((tmpdir (or temp-directory (nix:getenv "TMPDIR"))))
     (if tmpdir
@@ -313,3 +319,6 @@
      (if ,link-file-pointed
          ,is-link-forms
          ,is-not-link-forms)))
+
+(defun pathname->namestring (p)
+  (uiop:native-namestring p))

@@ -609,19 +609,6 @@
   (find-if #'(lambda (a) (= (blackboard:entity-id a) (id entity)))
            (getf attack-goals weapon-type)))
 
-(defun invalidate-tests-cache ()
-  (exists-attack-goal-w-current-weapon-p-clear-cache)
-  (reachable-opt/path-attack-current-weapon-and-mp-clear-cache)
-  (friend-needs-help-p-clear-cache)
-  (someone-needs-help-p-clear-cache)
-  (there-is-reachable-help-needed-friend-heal-spell-p-clear-cache)
-  (is-there-hiding-place-p-clear-cache)
-  (is-able-to-flee-p-clear-cache)
-  (is-visible-p-clear-cache)
-  (reachable-opt/path-current-weapon-and-mp-clear-cache)
-  (is-in-attack-pos-p-clear-cache)
-  (can-move-near-attack-pos-clear-cache))
-
 (defgoap-test reachable-opt/path-current-weapon-and-mp (strategy-expert entity)
   "using  the current  movement points  of the  entity is  possible to
 reach the enemy with optimal path?"
@@ -866,3 +853,22 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
   (misc:dbg "is-there-useful-reachable-fountain-p ~a"
             (ai-utils:useful-reachable-fountain entity))
   (ai-utils:useful-reachable-fountain entity))
+
+(defun exists-reachable-pos-to-launch-attack-spell (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (let ((res (ai-utils:reachable-attackable-opponents-attack-spell entity)))
+    (misc:dbg " exists-reachable-pos-to-launch-attack-spell ~a" res)
+    res))
+
+(defun invalidate-tests-cache ()
+  (exists-attack-goal-w-current-weapon-p-clear-cache)
+  (reachable-opt/path-attack-current-weapon-and-mp-clear-cache)
+  (friend-needs-help-p-clear-cache)
+  (someone-needs-help-p-clear-cache)
+  (there-is-reachable-help-needed-friend-heal-spell-p-clear-cache)
+  (is-there-hiding-place-p-clear-cache)
+  (is-able-to-flee-p-clear-cache)
+  (is-visible-p-clear-cache)
+  (reachable-opt/path-current-weapon-and-mp-clear-cache)
+  (is-in-attack-pos-p-clear-cache)
+  (can-move-near-attack-pos-clear-cache))

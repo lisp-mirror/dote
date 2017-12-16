@@ -236,6 +236,7 @@
    :make-fresh-list
    :seq->list
    :lcat
+   :vcat
    :fresh-list-insert@
    :fresh-list-subst@
    :make-array-frame
@@ -337,6 +338,8 @@
    :random-select-by-frequency
    :random-select-by-frequency*
    :shellsort
+   :multisort
+   :gen-multisort-test
    :bag-picker
    :random-pick-from-set
    :range-0to1
@@ -474,6 +477,7 @@
    :file-length-if-exists
    :delete-file-if-exists
    :file-hash
+   :home-dir
    :temporary-filename
    :with-anaphoric-temp-file
    :temp-file
@@ -486,7 +490,8 @@
    :package-path
    :file-in-package
    :link-file-path
-   :file-is-link-if-else))
+   :file-is-link-if-else
+   :pathname->namestring))
 
 (defpackage :os-utils
   (:use :cl)
@@ -3034,6 +3039,7 @@
    :+attack-spell-action+
    :+find-fountain-action+
    :+go-to-fountain-action+
+   :+go-to-attack-spell-pos-action+
    :+use-fountain+
    :gen-neigh-costs
    :gen-neigh
@@ -3050,6 +3056,7 @@
    :reachable-help-needed-friend-heal-spell-p
    :target-reachable-attack-spell
    :attackable-opponents-attack-spell
+   :reachable-attackable-opponents-attack-spell
    :combined-power-compare-clsr
    :sort-by-manhattam-dist-clsr
    :sort-by-path-w/concerning-tiles-cost-clsr
@@ -3086,6 +3093,7 @@
    :next-flee-position
    :go-launch-wall-breaking-spell
    :go-launch-attack-spell
+   :go-launch-attack-spell*
    :go-launch-heal-spell
    :go-launch-heal-spell-friend
    :go-reward-heal-spell
@@ -4998,6 +5006,7 @@
    :blackboard
    :exhausted-fountains-ids
    :concerning-tiles
+   :concerning-tiles-facing
    :calc-concerning-tiles-cost-scaling
    :visited-tiles
    :reset-per-turn-visited-tiles
@@ -5119,7 +5128,8 @@
    :rotate-90-around-player-ccw
    :reset-camera
    :select-next-player
-   :select-previous-player))
+   :select-previous-player
+   :make-screenshot))
 
 (defpackage :main-window
   (:use :cl

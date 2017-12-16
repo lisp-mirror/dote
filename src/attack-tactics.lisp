@@ -241,7 +241,8 @@
                                  defender-position
                                  &key
                                    (cut-off-first-tile t)
-                                   (other-costs        '()))
+                                   (other-costs        '())
+                                   (allow-path-length-1 nil))
   "return three values: the path (taking into account other-costs),
 the  total cost of (taking  into account terrain and other objects,
 like building  or players *but NOT  the doors*) and the cost of each move of
@@ -261,31 +262,38 @@ path is removed
                                                                    defender-position
                                                                    :other-costs-layer
                                                                    actual-other-costs)))
-          (if (and path-w/concering
-                   (> (length path-w/concering) 1))
-              (let* ((costs-terrain   (loop for i across (subseq path-w/concering 1) collect
-                                           (dmax +open-terrain-cost+
-                                                 (d+ (d (matrix-elt movement-costs
-                                                                    (elt i 1)
-                                                                    (elt i 0)))
-                                                     (matrix-elt suppress-door-mat
-                                                                 (elt i 1)
-                                                                 (elt i 0))))))
-                     (cumulative-cost (reduce #'(lambda (a b) (d+ (d a) (d b)))
-                                              costs-terrain))
-                     (result-path     (if cut-off-first-tile
-                                          (subseq path-w/concering 1)
-                                          path-w/concering)))
-                ;; (dbg "path ~a ~a ~a"
-                ;;           (subseq path-w/concering 1)
-                ;;           cumulative-cost costs-terrain)
-                (values result-path cumulative-cost costs-terrain))
+          (if path-w/concering
+              (cond
+                ((and allow-path-length-1
+                      (= (length path-w/concering) 1))
+                  (values path-w/concering 0.0))
+                ((> (length path-w/concering) 1)
+                 (let* ((costs-terrain (loop for i across (subseq path-w/concering 1) collect
+                                            (dmax +open-terrain-cost+
+                                                  (d+ (d (matrix-elt movement-costs
+                                                                     (elt i 1)
+                                                                     (elt i 0)))
+                                                      (matrix-elt suppress-door-mat
+                                                                  (elt i 1)
+                                                                  (elt i 0))))))
+                        (cumulative-cost (reduce #'(lambda (a b) (d+ (d a) (d b)))
+                                                 costs-terrain))
+                        (result-path     (if cut-off-first-tile
+                                             (subseq path-w/concering 1)
+                                             path-w/concering)))
+                   ;; (dbg "path ~a ~a ~a"
+                   ;;           (subseq path-w/concering 1)
+                   ;;           cumulative-cost costs-terrain)
+                   (values result-path cumulative-cost costs-terrain)))
+                (t
+                 (values nil nil nil)))
               (values nil nil nil)))))))
-
 
 (defun path-with-concerning-tiles (blackboard ai-position
                                    defender-position
-                                   &key (cut-off-first-tile t))
+                                   &key
+                                     (cut-off-first-tile t)
+                                     (allow-path-length-1 nil))
   "return three values: the path (taking into account concerning tiles),
 the  total cost of (taking  into account terrain and other objects,
 like building  or players *but NOT  the doors*) and the cost of each move of
@@ -297,16 +305,20 @@ path is removed
   (let* ((concerning-tiles (concerning-tiles->costs-matrix blackboard))
          (others-costs     (list concerning-tiles)))
     (calc-path-tiles-no-doors blackboard ai-position defender-position
-                              :cut-off-first-tile cut-off-first-tile
-                              :other-costs        others-costs)))
+                              :cut-off-first-tile  cut-off-first-tile
+                              :other-costs         others-costs
+                              :allow-path-length-1 allow-path-length-1)))
 
 (defun path-w/o-concerning-tiles (blackboard ai-position
                                   defender-position
-                                  &key (cut-off-first-tile t))
+                                  &key
+                                    (cut-off-first-tile t)
+                                    (allow-path-length-1 nil))
   "see calc-path-tiles-no-doors"
   (calc-path-tiles-no-doors blackboard ai-position defender-position
                             :cut-off-first-tile cut-off-first-tile
-                            :other-costs        '()))
+                            :other-costs        '()
+                            :allow-path-length-1 allow-path-length-1))
 
 (defun pos-longest-reachable-path (entity costs)
   (do ((accum 0.0)
@@ -359,7 +371,10 @@ path is removed
                                                            :mp      ai-movement-points))))
      ,@body))
 
-(defcached-list reachable-p-w/concening-tiles-fn ((blackboard)
+(defcached-list reachable-p-w/concening-tiles-fn ((blackboard
+                                                   &key
+                                                   (cut-off-first-tile t)
+                                                   (allow-path-length-1 nil))
                                                   :equal-fn #'%reach-cache-value-eq)
   #'(lambda (ai-position defender-position ai-movement-points)
       (with-reachable-cache-fns (put-in-cache get-from-cache
@@ -369,7 +384,11 @@ path is removed
           (if cached
               (reachable-cache-value-res cached)
               (multiple-value-bind (path cumulative-cost costs)
-                  (path-with-concerning-tiles blackboard ai-position defender-position)
+                  (path-with-concerning-tiles blackboard
+                                              ai-position
+                                              defender-position
+                                              :cut-off-first-tile  cut-off-first-tile
+                                              :allow-path-length-1 allow-path-length-1)
                 (declare (ignore costs))
                 (let ((res (and path (<= cumulative-cost ai-movement-points))))
                   (put-in-cache ai-position defender-position ai-movement-points res)

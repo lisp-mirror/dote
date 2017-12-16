@@ -23,6 +23,8 @@
 
 (define-constant +w-memory-action-did-costs+      :action-did-cost     :test #'eq)
 
+(define-constant +w-memory-spell+                 :spell              :test #'eq)
+
 (define-constant +channel-planner-timeout+   0.008                     :test #'=)
 
 (defparameter    *planner-channel*           nil)
@@ -555,6 +557,27 @@ attempts Note: all attackable position will be updated as well"
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
+                         (action (eql ai-utils:+go-to-attack-spell-pos-action+)))
+  (with-maybe-blacklist (object strategy action)
+    (with-slots-for-reasoning (object state ghost blackboard)
+      (game-state:with-world (world state)
+        (multiple-value-bind (target-entity spell position)
+            (time (ai-utils:reachable-attackable-opponents-attack-spell object))
+          (multiple-value-bind (path total-cost costs)
+              (blackboard:path-with-concerning-tiles blackboard
+                                                     (calculate-cost-position object)
+                                                     position
+                                                     :cut-off-first-tile nil)
+              (declare (ignore costs))
+              (let* ((path-struct (game-state:make-movement-path path total-cost)))
+                #+debug-ai (misc:dbg "path-struct attack spell go ~a"
+                                     (game-state:tiles path-struct))
+                (put-in-working-memory object +w-memory-target-id+ (id target-entity))
+                (put-in-working-memory object +w-memory-spell+     spell)
+                (%do-simple-move object path-struct state world))))))))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
                          (action (eql ai-utils:+go-near-to-attack-pos-action+)))
   (with-maybe-blacklist (object strategy action)
     (with-slots-for-reasoning (object state ghost blackboard)
@@ -603,10 +626,13 @@ attempts Note: all attackable position will be updated as well"
   (with-maybe-blacklist (object strategy action)
     (with-accessors ((state state)) object
       (game-state:with-world (world state)
-        (action-scheduler:with-enqueue-action-and-send-remove-after
-            (world action-scheduler:tactical-plane-action)
-          ;;(%rotate-until-someone-visible state object t)
-          (ai-utils:go-launch-attack-spell object))))))
+        (let* ((target-id (get-from-working-memory object +w-memory-target-id+))
+               (spell     (get-from-working-memory object +w-memory-spell+))
+               (target    (find-entity-by-id state target-id)))
+          (%rotate-until-visible state object target :decrement-movement-points nil)
+          (action-scheduler:with-enqueue-action-and-send-remove-after
+              (world action-scheduler:tactical-plane-action)
+            (ai-utils:go-launch-attack-spell* object target spell)))))))
 
 ;;;; strategy
 (defun actuate-strategy (mesh)

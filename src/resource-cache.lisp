@@ -28,7 +28,7 @@
             (format stream "Cache error: ~a" (conditions:text condition)))))
 
 (defun cache-path ()
-  (let ((home-dir (uiop:getenvp "HOME")))
+  (let ((home-dir (fs:home-dir)))
     (if home-dir
         (let ((parent-cache-path (strcat home-dir
                                          *directory-sep* +cache-parent-dir+ *directory-sep*)))

@@ -32,6 +32,14 @@
 
 (define-constant +concerning-tiles-cost->graph-scaling+    3.0 :test #'=)
 
+(defmacro with-conc-path-total-cost ((total-cost) path-calculating-exp &body body)
+  "Use with 'path-with-concerning-tiles' only"
+  (with-gensyms (path costs)
+    `(multiple-value-bind (,path ,total-cost ,costs)
+         ,path-calculating-exp
+       (declare (ignore ,path ,costs))
+       ,@body)))
+
 (defun reachablep (atk-pos def-pos mp)
   (<= (map-manhattam-distance atk-pos def-pos)
       mp))
@@ -277,12 +285,11 @@
   (update-pole-attackable-pos     blackboard)
   (update-melee-attackable-pos    blackboard)
   (update-bow-attackable-pos      blackboard)
-  (update-crossbow-attackable-pos blackboard)
-  ;;;;;;;;;;;;
-  (update-attack-melee-layer             blackboard))
+  (update-crossbow-attackable-pos blackboard))
 
 (defun %update-all-layers (blackboard)
-  (update-unexplored-layer               blackboard)
+  #- inhibit-update-unexplored-layer
+  (update-unexplored-layer                 blackboard)
   #+(and debug-ai debug-blackboard-layers)
   (progn ; it takes ~ 0.5s to calculate
     (update-attack-melee-layer             blackboard)
@@ -443,7 +450,7 @@
   (with-accessors ((concerning-tiles concerning-tiles)
                    (concerning-tiles-facing concerning-tiles-facing)
                    (main-state main-state)) object
-    (let ((res   (clone concerning-tiles)))
+    (let ((res (clone concerning-tiles)))
       (setf res
             (matrix:map-matrix res
                                #'(lambda (a)
@@ -717,8 +724,10 @@
     (let* ((visiblep (if use-fov
                          (able-to-see-mesh:placeholder-visible-p     player x y)
                          (able-to-see-mesh:placeholder-visible-ray-p player x y))))
-      (or (not (map-element-empty-p (element-mapstate@ state x y)))
-          (not visiblep)))))
+      (or
+       ;; not sure could be removed, doing anyway
+       ;; (not (map-element-empty-p (element-mapstate@ state x y)))
+       (not visiblep)))))
 
 (defun concerning-tile-default-mapping-clsr (x-center y-center size)
   #'(lambda (x y old new)
@@ -741,47 +750,57 @@
                                            &key
                                              (all-visibles-from-ai
                                               (all-player-id-visible-from-ai (state player))))
+  "note: player is human side"
   (with-accessors ((visited-tiles                  visited-tiles)
                    (concerning-tiles               concerning-tiles)
                    (concerning-tiles-facing        concerning-tiles-facing)
                    (main-state                     main-state)
                    (use-enemy-fov-when-exploring-p use-enemy-fov-when-exploring-p)) object
-    (cond
-      ((faction-player-p main-state (id player))
-       (when (find (id player) all-visibles-from-ai :test #'=)
-         (let* ((position            (pos-entity-chunk->cost-pos (pos player)))
-                (x-player            (elt position 0))
-                (y-player            (elt position 1))
-                (danger-zone-size    (calc-enemy-danger-zone-size player))
-                (dangerous-tiles-pos (gen-neighbour-position-in-box x-player
-                                                                    y-player
-                                                                    danger-zone-size
-                                                                    danger-zone-size
-                                                                    :add-center nil))
-                (concerning-fn      (concerning-tile-default-mapping-clsr x-player
-                                                                          y-player
-                                                                          danger-zone-size))
-                (increase-facing-p   nil))
-           (loop for point across dangerous-tiles-pos do
-                (displace-2d-vector (point x y)
-                  (with-check-matrix-borders (concerning-tiles x y)
-                    (when (not (%2d-ray-stopper player x y
-                                                use-enemy-fov-when-exploring-p))
-                      (setf increase-facing-p t)
-                      (setf (matrix-elt concerning-tiles y x)
-                            (funcall concerning-fn
-                                     x y
-                                     (matrix-elt concerning-tiles y x)
-                                     0.0)))))) ; ignored
-           ;; add the player position
-           (setf (matrix-elt concerning-tiles y-player x-player)
-                 +concerning-tile-value+)
-           ;; increase the  tile the player  is facing based  on the
-           ;; weapon they are carrying
-           (when increase-facing-p
-             (increase-concerning-tile-facing-player object
-                                                     player
-                                                     concerning-tiles-facing))))))))
+    (let ((increase-facing-p nil))
+      (flet ((update-single-pass (dangerous-tiles-pos concerning-fn)
+               (loop for point across dangerous-tiles-pos do
+                    (displace-2d-vector (point x y)
+                      (with-check-matrix-borders (concerning-tiles x y)
+                        (when (not (%2d-ray-stopper player x y
+                                                    use-enemy-fov-when-exploring-p))
+                          (setf increase-facing-p t)
+                          (setf (matrix-elt concerning-tiles y x)
+                                (funcall concerning-fn
+                                         x y
+                                         (matrix-elt concerning-tiles y x)
+                                         0.0)))))))) ; ignored
+        (cond
+          ((faction-player-p main-state (id player))
+           (when (find (id player) all-visibles-from-ai :test #'=)
+             (let* ((position            (pos-entity-chunk->cost-pos (pos player)))
+                    (x-player            (elt position 0))
+                    (y-player            (elt position 1))
+                    (danger-zone-size    (calc-enemy-danger-zone-size player))
+                    (dangerous-tiles-pos (gen-neighbour-position-in-box x-player
+                                                                        y-player
+                                                                        danger-zone-size
+                                                                        danger-zone-size
+                                                                        :add-center t))
+                    (concerning-fn (concerning-tile-default-mapping-clsr x-player
+                                                                         y-player
+                                                                         danger-zone-size)))
+               (let ((to-ignore-2nd-pass
+                      (lcat (mapcar #'identificable:id (ai-entities main-state))
+                            (mapcar #'identificable:id (player-entities main-state)))))
+                 (update-single-pass dangerous-tiles-pos concerning-fn)
+                 ;; 2nd pass
+                 ;; we are going to ignore in %2d-ray-stopper all characters (for ray test)
+                 (let ((absee-mesh:*ray-test-id-entities-ignored* to-ignore-2nd-pass))
+                   (update-single-pass dangerous-tiles-pos concerning-fn)))
+               ;; add the player (human) position
+               (setf (matrix-elt concerning-tiles y-player x-player)
+                     +concerning-tile-value+)
+               ;; increase the  tile the player  is facing based  on the
+               ;; weapon they are carrying
+               (when increase-facing-p
+                 (increase-concerning-tile-facing-player object
+                                                         player
+                                                         concerning-tiles-facing))))))))))
 
 (defmethod next-unexplored-position ((object blackboard) (player md2-mesh:md2-mesh)
                                      &key (scale-factor-cost-concern 1.0))
@@ -1344,30 +1363,57 @@ values nil, i. e. the ray is not blocked"
 (defun tiles-attack-spell-around-ai (state entity range)
   (with-tiles-attack-spell-around gen-valid-neighbour-position-in-box state entity range))
 
+(defun remove-tile-empty-or-w/ignored-entities (state &rest ignored-entities)
+  #'(lambda (a)
+      (displace-2d-vector (a x y)
+        (if (not (map-element-empty-p (element-mapstate@ state x y)))
+            (not (find (entity-id-in-pos state x y)
+                       (map 'list #'id ignored-entities)))
+            nil))))
+
+(defstruct spell-pos
+  (tile)
+  (concerning)
+  (cost))
+
+(defun goal-pos->spell-truct-fn (blackboard concerning-tiles attacker-pos)
+  #'(lambda (a)
+      (with-conc-path-total-cost (cost)
+          (path-with-concerning-tiles blackboard
+                                      attacker-pos
+                                      a
+                                      :cut-off-first-tile nil
+                                      :allow-path-length-1 t)
+        (make-spell-pos :tile       a
+                        :concerning
+                        (matrix:matrix-elt concerning-tiles
+                                           (ivec2:ivec2-y a)
+                                           (ivec2:ivec2-x a))
+                        :cost  cost))))
+
 (defun calculate-single-spell-goal-pos (attacker defender pivot-entity spell range
                                         gen-pos-fn use-enemy-fov-when-attacking-p)
   (with-accessors ((state          state)
                    (attacker-ghost ghost)) attacker
     (with-accessors ((map-state map-state)
                      (blackboard blackboard)) state
-      (when-let* ((defender-pos      (calculate-cost-position defender))
-                  (attacker-pos      (calculate-cost-position attacker))
-                  (pivot-pos         (calculate-cost-position pivot-entity))
-                  (spell-range       (truncate (spell:range spell)))
-                  (goal-tiles-pos    (funcall gen-pos-fn state pivot-entity range))
-                  (reach-fn          (reachable-p-w/concening-tiles-fn blackboard)))
+      (when-let* ((concerning-smoothed (concerning-tiles->costs-matrix blackboard))
+                  (defender-pos        (calculate-cost-position defender))
+                  (attacker-pos        (calculate-cost-position attacker))
+                  (pivot-pos           (calculate-cost-position pivot-entity))
+                  (spell-range         (truncate (spell:range spell)))
+                  (goal-tiles-pos      (funcall gen-pos-fn state pivot-entity range))
+                  (reach-fn      (reachable-p-w/concening-tiles-fn blackboard
+                                                                   :allow-path-length-1 t
+                                                                   :cut-off-first-tile  nil)))
+        ;; remove tiles not empty and not occupied by attacker
+        (setf goal-tiles-pos (remove-if (remove-tile-empty-or-w/ignored-entities state attacker)
+                                        goal-tiles-pos))
         ;; remove out of range
         (setf goal-tiles-pos (remove-if-not #'(lambda (a)
                                                 (<= (manhattam-distance a defender-pos)
                                                     spell-range))
-                                             goal-tiles-pos))
-        ;; remove tiles not empty
-        (setf goal-tiles-pos (remove-if-not #'(lambda (a)
-                                                (displace-2d-vector (a x y)
-                                                  (map-element-empty-p (element-mapstate@ state
-                                                                                          x y))))
                                             goal-tiles-pos))
-
         ;; remove tiles from the target's point of view
         (setf goal-tiles-pos (remove-from-player-pov goal-tiles-pos
                                                      defender
@@ -1378,9 +1424,22 @@ values nil, i. e. the ray is not blocked"
                                                                  attacker-ghost
                                                                  goal-tiles-pos
                                                                  :key #'identity))
-        ;; sort: the less concerning the better
-        (shellsort goal-tiles-pos
-                   (ai-utils:sort-by-concerning-value-clsr blackboard))))))
+        (let ((goal-structs (map 'vector
+                                 (goal-pos->spell-truct-fn blackboard
+                                                           concerning-smoothed
+                                                           attacker-pos)
+                                 goal-tiles-pos)))
+          ;; sort by concerning (the less the better) and if equals by
+          ;; cost to reach the tile (again in increasing order).
+          (setf goal-structs
+                (num:multisort goal-structs
+                               (list (num:gen-multisort-test < > spell-pos-concerning)
+                                     (num:gen-multisort-test epsilon<=
+                                                             epsilon>=
+                                                             spell-pos-cost))))
+          ;; retun the positions and the structs as well
+          (values (map 'vector #'spell-pos-tile goal-structs)
+                  goal-structs))))))
 
 (defmacro with-attack-spell-goal-pos-skeleton (attacker defender
                                                cache-fn-symbol
@@ -1540,8 +1599,8 @@ effective range.  I think this is a safe to assume. ;)"
   (with-attack-spell-goal-pos-skeleton attacker defender
                                        attack-spell-goal-pos-around-me
                                        attack-spell-goal-pos-around-me-nocache
-                                       attack-spell-goal-pos-around-me-saved-search-cache
-                                       attack-spell-goal-pos-around-me-saved-insert-cache))
+                                       attack-spell-goal-pos-around-me-search-cache
+                                       attack-spell-goal-pos-around-me-insert-cache))
 
 (defun invalidate-blackboard-cache ()
   (attack-spell-goal-pos-around-friend-clear-cache)

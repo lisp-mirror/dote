@@ -239,6 +239,9 @@
                    (influence-map-type influence-map-type)) world
     (with-accessors ((blackboard blackboard)) main-state
       (let ((layer (ecase influence-map-type
+                     (:concerning-facing
+                      (inmap::layer->pixmap
+                       (blackboard:concerning-tiles-facing blackboard)))
                      (:first-per-turn-visited
                       (with-accessors ((main-state main-state)) world
                         (with-accessors ((blackboard blackboard)) main-state

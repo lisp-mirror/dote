@@ -2,14 +2,30 @@
 
 (define-planner
   (:name :launch-attack-spell
-         :preconditions         ()
+         :preconditions         ((:near-enemy-attack-spell t))
          :context-preconditions (none-needs-help-p
-                                 has-enough-sp-attack-p
                                  ;; "!is-status-terror-p"  is implicitly
                                  ;; managed by has-enough-sp-attack-p
-                                 there-is-attackable-opponents-attack-spell-p)
+                                 has-enough-sp-attack-p)
          :effects               ((:curb-threat t))
          :cost                  2)
+  (:name :go-to-attack-spell-pos
+         :preconditions         ()
+         :effects               ((:near-enemy-attack-spell t))
+         :context-preconditions (exists-reachable-pos-to-launch-attack-spell)
+         :cost                  1)
+  (:name :go-near-to-attack-pos
+         :preconditions         ()
+         :effects               ((:curb-threat    t))
+         :context-preconditions (can-minimally-move-p
+                                 enough-health-p
+                                 none-needs-help-p
+                                 !is-status-terror-p
+                                 !is-in-attack-pos-p
+                                 exists-attack-goal-w-current-weapon-p
+                                 !reachable-opt/path-attack-current-weapon-and-mp
+                                 can-move-near-attack-pos)
+         :cost                  5)
   (:name :protect
          :preconditions         ((:protecting t))
          :effects               ((:curb-threat    t))

@@ -406,9 +406,16 @@ Name from Emacs Lisp."
       (copy-list sequence)
       (map-into (make-list (length sequence)) #'identity sequence)))
 
-(defun lcat (&rest l)
+(defmacro *cat (type-return input)
+  `(reduce #'(lambda (a b) (concatenate ',type-return a b)) ,input))
+
+(defun lcat (&rest v)
   (declare (optimize (speed 3) (safety 1) (debug 0)))
-  (apply #'concatenate (concatenate 'list (list 'list) l)))
+  (*cat list v))
+
+(defun vcat (&rest v)
+  (declare (optimize (speed 3) (safety 1) (debug 0)))
+  (*cat vector v))
 
 (defun fresh-list-insert@ (a v pos)
   (declare (optimize (speed 3) (safety 1) (debug 0)))

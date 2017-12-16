@@ -285,6 +285,29 @@
                   (setf (elt sequence j) swp))))))
   sequence)
 
+(defun multisort (bag fns)
+  (shellsort bag
+             #'(lambda (a b)
+                 (let ((partial (loop named outer for fn in fns do
+                                     (cond
+                                       ((< (funcall fn a b) 0)
+                                        (return-from outer t))
+                                       ((> (funcall fn a b) 0)
+                                        (return-from outer nil))))))
+                   partial))))
+
+(defmacro gen-multisort-test (fn-< fn-> fn-access)
+  (alexandria:with-gensyms (a b access-a access-b)
+    `(lambda (,a ,b)
+       (let ((,access-a (,fn-access ,a))
+             (,access-b (,fn-access ,b)))
+         (cond
+           ((,fn-< ,access-a ,access-b)
+            -1)
+           ((,fn-> ,access-a ,access-b)
+            1)
+           (t 0))))))
+
 (defun nearest-greatest-primes (num primes)
   (find-if #'(lambda (a) (< num a)) primes))
 

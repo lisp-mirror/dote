@@ -197,10 +197,11 @@
 
 (progn
   ;; debug
-  (pushnew :debug-mode              *features*)
-  ;; (pushnew :small-skydome           *features*)
-  (pushnew :debug-blackboard-layers *features*)
-  (pushnew :debug-ai                *features*)
-  ;; (pushnew :keep-dead-player        *features*)
+  (pushnew :debug-mode                      *features*)
+  ;; (pushnew :inhibit-update-unexplored-layer *features*)
+  ;; (pushnew :small-skydome                *features*)
+  (pushnew :debug-blackboard-layers         *features*)
+  (pushnew :debug-ai                        *features*)
+  ;; (pushnew :keep-dead-player             *features*)
   ;; config
-  (pushnew :md2-gpu-lerp            *features*))
+  (pushnew :md2-gpu-lerp                    *features*))
