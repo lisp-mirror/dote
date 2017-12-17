@@ -421,7 +421,10 @@
                                                                    (mesh:calculate-cost-position selected-pc)
                                                                    (ivec2 2 10)))))))
           (when (eq :scancode-f2 scancode)
-            (make-screenshot world))
+            (make-screenshot world)
+            #+ debug-ai
+            (pixmap:save-pixmap (world:type-influence->pixmap world)
+                                (fs:file-in-package "ai-layer.tga")))
           (when *placeholder*
             (let* ((old-pos (entity:pos *placeholder*)))
               (when (eq :scancode-f1 scancode)

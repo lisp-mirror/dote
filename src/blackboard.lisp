@@ -416,6 +416,7 @@
         (labels ((set-tile (facing-pos &optional (value +concerning-tile-value+))
                    (with-check-matrix-borders (map-state (elt facing-pos 0) (elt facing-pos 1))
                      (set-concerning-tile-custom-map-fn main-state
+                                                        player
                                                         concerning-matrix
                                                         (elt facing-pos 0) (elt facing-pos 1)
                                                         :danger-zone-size      1
@@ -504,7 +505,7 @@
                   4.0
                   8.0)))
 
-(defun set-concerning-tile-custom-map-fn (main-state concerning-tiles x y
+(defun set-concerning-tile-custom-map-fn (main-state player concerning-tiles x y
                                           &key
                                             (danger-zone-size
                                              (let* ((level (level-difficult main-state)))
@@ -517,15 +518,20 @@
   (let* ((dangerous-tiles-pos (gen-neighbour-position-in-box x
                                                              y
                                                              danger-zone-size
-                                                             danger-zone-size)))
+                                                             danger-zone-size))
+         (player-pos          (calculate-cost-position player)))
     (loop for point across dangerous-tiles-pos do
          (2d-utils:displace-2d-vector (point x y)
            (with-check-matrix-borders (concerning-tiles x y)
-             (setf (matrix-elt concerning-tiles y x)
-                   (funcall map-element-fn
-                            x y
-                            (matrix-elt concerning-tiles y x)
-                            concerning-tile-value)))))))
+             ;; add value if the position  is visible (ray only) or is
+             ;; occupied by the character itself
+             (when (or (ivec2= point player-pos)
+                       (able-to-see-mesh:placeholder-visible-ray-p player x y))
+               (setf (matrix-elt concerning-tiles y x)
+                     (funcall map-element-fn
+                              x y
+                              (matrix-elt concerning-tiles y x)
+                              concerning-tile-value))))))))
 
 ;;;; unused
 (defmethod set-concerning-tile ((object blackboard) x y
@@ -633,6 +639,33 @@
                  (when (able-to-see-mesh:other-visible-p v entity)
                    (pushnew v all-able-to-see :key #'id :test #'=))))
     all-able-to-see))
+
+(defmacro gen-all-*-visibles-by-entity (name loop-fn test-visibility-fn)
+  (with-gensyms (all-able-to-see game-state entity v)
+    (let ((fn-name (format-fn-symbol t "all-~a-visibles-by-entity" name)))
+      `(defun ,fn-name (,game-state ,entity)
+         (let ((,all-able-to-see '()))
+           (,loop-fn ,game-state
+                     #'(lambda (,v)
+                         (when (,test-visibility-fn ,v ,entity)
+                           (pushnew ,v ,all-able-to-see :key #'id :test #'=))))
+           ,all-able-to-see)))))
+
+(gen-all-*-visibles-by-entity ai loop-ai-entities able-to-see-mesh:other-visible-p)
+
+(gen-all-*-visibles-by-entity player loop-player-entities able-to-see-mesh:other-visible-p)
+
+(gen-all-*-visibles-by-entity ai-ray loop-ai-entities able-to-see-mesh:other-visible-ray-p)
+
+(gen-all-*-visibles-by-entity player-ray loop-player-entities able-to-see-mesh:other-visible-ray-p)
+
+(defun all-visibles-by-entity (game-state entity)
+  (lcat (all-ai-visibles-by-entity game-state entity)
+        (all-player-visibles-by-entity game-state entity)))
+
+(defun all-visibles-ray-by-entity (game-state entity)
+  (lcat (all-ai-visibles-by-entity game-state entity)
+        (all-player-visibles-by-entity game-state entity)))
 
 (defun nsuperimpose-layer (from destination &key (fn #'(lambda (a b)
                                                          (declare (ignore b))
@@ -757,18 +790,20 @@
                    (main-state                     main-state)
                    (use-enemy-fov-when-exploring-p use-enemy-fov-when-exploring-p)) object
     (let ((increase-facing-p nil))
-      (flet ((update-single-pass (dangerous-tiles-pos concerning-fn)
-               (loop for point across dangerous-tiles-pos do
-                    (displace-2d-vector (point x y)
-                      (with-check-matrix-borders (concerning-tiles x y)
-                        (when (not (%2d-ray-stopper player x y
-                                                    use-enemy-fov-when-exploring-p))
-                          (setf increase-facing-p t)
-                          (setf (matrix-elt concerning-tiles y x)
-                                (funcall concerning-fn
-                                         x y
-                                         (matrix-elt concerning-tiles y x)
-                                         0.0)))))))) ; ignored
+      (labels ((update-single-tile (concerning-matrix x y concerning-fn)
+                 (setf increase-facing-p t)
+                 (setf (matrix-elt concerning-matrix y x)
+                       (funcall concerning-fn
+                                x y
+                                (matrix-elt concerning-matrix y x)
+                                0.0))) ; ignored
+               (update-single-pass (dangerous-tiles-pos concerning-fn)
+                 (loop for point across dangerous-tiles-pos do
+                      (displace-2d-vector (point x y)
+                        (with-check-matrix-borders (concerning-tiles x y)
+                          (when (not (%2d-ray-stopper player x y
+                                                      use-enemy-fov-when-exploring-p))
+                            (update-single-tile concerning-tiles x y concerning-fn)))))))
         (cond
           ((faction-player-p main-state (id player))
            (when (find (id player) all-visibles-from-ai :test #'=)
@@ -784,13 +819,20 @@
                     (concerning-fn (concerning-tile-default-mapping-clsr x-player
                                                                          y-player
                                                                          danger-zone-size)))
-               (let ((to-ignore-2nd-pass
-                      (lcat (mapcar #'identificable:id (ai-entities main-state))
-                            (mapcar #'identificable:id (player-entities main-state)))))
+               (let* ((all-visibles     (if use-enemy-fov-when-exploring-p
+                                            (all-visibles-by-entity main-state player)
+                                            (all-visibles-ray-by-entity main-state player)))
+                      (all-visibles-ids (mapcar #'identificable:id all-visibles)))
                  (update-single-pass dangerous-tiles-pos concerning-fn)
                  ;; 2nd pass
+                 (map nil #'(lambda (a)
+                              (let ((pos (calculate-cost-position a)))
+                                (displace-2d-vector (pos x y)
+                                  (update-single-tile concerning-tiles x y concerning-fn))))
+                      all-visibles)
+                 ;; 2nd pass
                  ;; we are going to ignore in %2d-ray-stopper all characters (for ray test)
-                 (let ((absee-mesh:*ray-test-id-entities-ignored* to-ignore-2nd-pass))
+                 (let ((absee-mesh:*ray-test-id-entities-ignored* all-visibles-ids))
                    (update-single-pass dangerous-tiles-pos concerning-fn)))
                ;; add the player (human) position
                (setf (matrix-elt concerning-tiles y-player x-player)

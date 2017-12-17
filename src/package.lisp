@@ -4513,6 +4513,7 @@
    :render-for-reflection
    :push-entity
    :push-trap-entity
+   :type-influence->pixmap
    :get-window-size
    :main-light-pos
    :main-light-color
@@ -5035,6 +5036,12 @@
    :set-concerning-tile
    :set-concerning-tile-fn
    :all-other-factions-can-see-entity
+   :all-ai-visibles-by-entity
+   :all-player-visibles-by-entity
+   :all-ai-ray-visibles-by-entity
+   :all-player-ray-visibles-by-entity
+   :all-visibles-by-entity
+   :all-visibles-ray-by-entity
    :update-unexplored-layer
    :update-all-attacking-pos
    :concerning-tile-default-mapping-clsr

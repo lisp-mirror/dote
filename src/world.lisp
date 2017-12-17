@@ -210,11 +210,11 @@
                              :width  *window-w*
                              :height *window-h*
                              :label nil))
-    #+debug-ai
-    (influence-map-type
+   (influence-map-type
      :accessor influence-map-type
      :initarg  :influence-map-type
-     :initform :unexplored-layer)))
+     :initform :unexplored-layer
+     :documentation "just for debugging")))
 
 (defmethod initialize-instance :after ((object world) &key &allow-other-keys)
   (with-accessors ((toolbar       toolbar)
@@ -230,10 +230,8 @@
 (defmethod actions-queue-empty-p ((object world))
  (actions-queue-empty-p (actions-queue object)))
 
-#+debug-ai
 (defgeneric render-influence-map (object))
 
-#+debug-ai
 (defun type-influence->pixmap (world)
   (with-accessors ((main-state main-state)
                    (influence-map-type influence-map-type)) world
@@ -272,7 +270,6 @@
                        (blackboard:attack-enemy-crossbow-layer blackboard))))))
         layer))))
 
-#+debug-ai
 (defmethod render-influence-map ((object world))
   (with-accessors ((main-state main-state)
                    (toolbar    toolbar))   object
