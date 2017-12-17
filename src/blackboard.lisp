@@ -824,11 +824,12 @@
                                             (all-visibles-ray-by-entity main-state player)))
                       (all-visibles-ids (mapcar #'identificable:id all-visibles)))
                  (update-single-pass dangerous-tiles-pos concerning-fn)
-                 ;; 2nd pass
+                 ;; 1st pass
                  (map nil #'(lambda (a)
                               (let ((pos (calculate-cost-position a)))
-                                (displace-2d-vector (pos x y)
-                                  (update-single-tile concerning-tiles x y concerning-fn))))
+                                (when (find pos dangerous-tiles-pos :test #'ivec2=)
+                                  (displace-2d-vector (pos x y)
+                                    (update-single-tile concerning-tiles x y concerning-fn)))))
                       all-visibles)
                  ;; 2nd pass
                  ;; we are going to ignore in %2d-ray-stopper all characters (for ray test)
