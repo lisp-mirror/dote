@@ -76,19 +76,27 @@
 
 (define-constant +go-near-weak-friend-action+      :go-near-weak-friend        :test #'eq)
 
+(define-constant +go-near-to-enemy-action+         :go-near-to-enemy           :test #'eq)
+
 (define-constant +protect-attack-action+           :protect-attack             :test #'eq)
 
 (define-constant +protect-attack-spell-action+     :protect-attack-spell       :test #'eq)
 
 (define-constant +protect-action+                  :protect                    :test #'eq)
 
-(define-constant +attack-spell-action+             :launch-attack-spell        :test #'eq)
+(define-constant +launch-attack-spell-action+      :launch-attack-spell        :test #'eq)
+
+(define-constant +launch-damage-spell-action+      :launch-damage-spell        :test #'eq)
 
 (define-constant +find-fountain-action+            :find-fountain              :test #'eq)
 
 (define-constant +go-to-fountain-action+           :go-to-fountain             :test #'eq)
 
 (define-constant +go-to-attack-spell-pos-action+   :go-to-attack-spell-pos     :test #'eq)
+
+(define-constant +go-to-heal-spell-pos-action+     :go-to-heal-spell-pos       :test #'eq)
+
+(define-constant +go-to-damage-spell-pos-action+   :go-to-damage-spell-pos     :test #'eq)
 
 (define-constant +use-fountain+                    :use-fountain               :test #'eq)
 

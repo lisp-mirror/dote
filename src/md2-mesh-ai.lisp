@@ -250,25 +250,25 @@
             (let* ((path-struct (game-state:make-movement-path path cost)))
               (%do-simple-move object path-struct state world))))))))
 
-(defmethod actuate-plan ((object md2-mesh)
-                         strategy
-                         (action (eql ai-utils:+launch-heal-spell-action+)))
-  (with-maybe-blacklist (object strategy action)
-    (with-accessors ((state state)) object
-      (game-state:with-world (world state)
-        (action-scheduler:with-enqueue-action-and-send-remove-after
-            (world action-scheduler:tactical-plane-action)
-          (ai-utils:go-launch-heal-spell object))))))
+;; (defmethod actuate-plan ((object md2-mesh)
+;;                          strategy
+;;                          (action (eql ai-utils:+launch-heal-spell-action+)))
+;;   (with-maybe-blacklist (object strategy action)
+;;     (with-accessors ((state state)) object
+;;       (game-state:with-world (world state)
+;;         (action-scheduler:with-enqueue-action-and-send-remove-after
+;;             (world action-scheduler:tactical-plane-action)
+;;           (ai-utils:go-launch-heal-spell object))))))
 
-(defmethod actuate-plan ((object md2-mesh)
-                         strategy
-                         (action (eql ai-utils:+launch-heal-spell-friend-action+)))
-  (with-maybe-blacklist (object strategy action)
-    (with-accessors ((state state)) object
-      (game-state:with-world (world state)
-        (action-scheduler:with-enqueue-action-and-send-remove-after
-            (world action-scheduler:tactical-plane-action)
-          (ai-utils:go-launch-heal-spell-friend object))))))
+;; (defmethod actuate-plan ((object md2-mesh)
+;;                          strategy
+;;                          (action (eql ai-utils:+launch-heal-spell-friend-action+)))
+;;   (with-maybe-blacklist (object strategy action)
+;;     (with-accessors ((state state)) object
+;;       (game-state:with-world (world state)
+;;         (action-scheduler:with-enqueue-action-and-send-remove-after
+;;             (world action-scheduler:tactical-plane-action)
+;;           (ai-utils:go-launch-heal-spell-friend object))))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
@@ -419,6 +419,22 @@
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
+                         (action (eql ai-utils:+go-near-to-enemy-action+)))
+  (with-maybe-blacklist (object strategy action)
+    (with-slots-for-reasoning (object state ghost blackboard)
+      (game-state:with-world (world state)
+        (multiple-value-bind (path total-cost)
+            (blackboard:best-path-near-enemy-pos-w-current-weapon blackboard
+                                                                  object
+                                                                  :cut-off-first-tile nil)
+          #+debug-ai (assert path)
+          (when path
+            (let* ((path-struct (game-state:make-movement-path path total-cost)))
+              (%do-simple-move object path-struct state world))))))))
+
+;; TODO REMOVE
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
                          (action (eql ai-utils:+protect-attack-spell-action+)))
   (with-maybe-blacklist (object strategy action)
     (with-accessors ((state state)) object
@@ -426,6 +442,7 @@
         (action-scheduler:with-enqueue-action-and-send-remove-after
             (world action-scheduler:tactical-plane-action)
           (ai-utils:go-launch-attack-spell object))))))
+;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
@@ -457,11 +474,11 @@
            (,(if target-entity
                  `(absee-mesh:other-visible-p ,entity ,target-entity)
                  `(absee-mesh:other-faction-visible-players ,entity))
-            (misc:dbg "rotation end with see in ~a times" count)
+            #+ debug-ai (misc:dbg "rotation end with see in ~a times" count)
              (when (and (> count 0)
                         ,set-cost-occurred-p)
-               (misc:dbg "setting cost!")
-                 (set-cost-occurred ,entity))
+               #+ debug-ai (misc:dbg "setting cost!")
+               (set-cost-occurred ,entity))
                ,count)
            (t
             (let ((,event (make-instance 'game-event:rotate-entity-ccw-event
@@ -555,26 +572,43 @@ attempts Note: all attackable position will be updated as well"
             #+debug-ai (misc:dbg "path-struct go ~a" (game-state:tiles path-struct))
             (%do-simple-move object path-struct state world)))))))
 
+(defun common-go-for-any-spell (entity strategy action target-finder-fn)
+  (with-maybe-blacklist (entity strategy action)
+    (with-slots-for-reasoning (entity state ghost blackboard)
+      (game-state:with-world (world state)
+        (multiple-value-bind (target-entity spell position)
+            (funcall target-finder-fn entity)
+          (multiple-value-bind (path total-cost costs)
+              (blackboard:path-with-concerning-tiles blackboard
+                                                     (calculate-cost-position entity)
+                                                     position
+                                                     :cut-off-first-tile  nil
+                                                     :allow-path-length-1 nil)
+            (declare (ignore costs))
+            #+debug-ai (misc:dbg "path spell go ~a" path)
+            (put-in-working-memory entity +w-memory-target-id+ (id target-entity))
+            (put-in-working-memory entity +w-memory-spell+     spell)
+            (when path ; if no move is needed path values nil
+              (let* ((path-struct (game-state:make-movement-path path total-cost)))
+                (%do-simple-move entity path-struct state world)))))))))
+
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+go-to-attack-spell-pos-action+)))
-  (with-maybe-blacklist (object strategy action)
-    (with-slots-for-reasoning (object state ghost blackboard)
-      (game-state:with-world (world state)
-        (multiple-value-bind (target-entity spell position)
-            (time (ai-utils:reachable-attackable-opponents-attack-spell object))
-          (multiple-value-bind (path total-cost costs)
-              (blackboard:path-with-concerning-tiles blackboard
-                                                     (calculate-cost-position object)
-                                                     position
-                                                     :cut-off-first-tile nil)
-              (declare (ignore costs))
-              (let* ((path-struct (game-state:make-movement-path path total-cost)))
-                #+debug-ai (misc:dbg "path-struct attack spell go ~a"
-                                     (game-state:tiles path-struct))
-                (put-in-working-memory object +w-memory-target-id+ (id target-entity))
-                (put-in-working-memory object +w-memory-spell+     spell)
-                (%do-simple-move object path-struct state world))))))))
+    (common-go-for-any-spell object strategy action
+                           #'ai-utils:reachable-attackable-opponents-attack-spell))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+go-to-damage-spell-pos-action+)))
+    (common-go-for-any-spell object strategy action
+                           #'ai-utils:reachable-attackable-opponents-damage-spell))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+go-to-heal-spell-pos-action+)))
+  (common-go-for-any-spell object strategy action
+                           #'ai-utils:reachable-healing-friend-heal-spell))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
@@ -607,9 +641,10 @@ attempts Note: all attackable position will be updated as well"
         (if target-next ;; if non nil we are in an attack position
             (put-in-memory (id target-next) nil)
             (multiple-value-bind (path total-cost costs target-id-move)
-                (blackboard:best-path-to-reach-enemy-w-current-weapon blackboard
-                                                                      object
-                                                                      :cut-off-first-tile nil)
+                (blackboard:best-path-to-reach-attack-pos-w-current-weapon blackboard
+                                                                           object
+                                                                           :cut-off-first-tile
+                                                                           nil)
               (declare (ignore costs))
               (let* ((path-struct (game-state:make-movement-path path total-cost)))
                 (put-in-memory target-id-move path-struct))))))))
@@ -620,19 +655,33 @@ attempts Note: all attackable position will be updated as well"
   ;; TODO
   )
 
-(defmethod actuate-plan ((object md2-mesh)
-                         strategy
-                         (action (eql ai-utils:+attack-spell-action+)))
-  (with-maybe-blacklist (object strategy action)
-    (with-accessors ((state state)) object
+(defun common-launch-spell (launcher strategy action spell-launch-fn)
+  (with-maybe-blacklist (launcher strategy action)
+    (with-accessors ((state state)) launcher
       (game-state:with-world (world state)
-        (let* ((target-id (get-from-working-memory object +w-memory-target-id+))
-               (spell     (get-from-working-memory object +w-memory-spell+))
+        (let* ((target-id (get-from-working-memory launcher +w-memory-target-id+))
+               (spell     (get-from-working-memory launcher +w-memory-spell+))
                (target    (find-entity-by-id state target-id)))
-          (%rotate-until-visible state object target :decrement-movement-points nil)
+          #+debug-ai (misc:dbg "common launch spell: ~a" spell)
+          (%rotate-until-visible state launcher target :decrement-movement-points nil)
           (action-scheduler:with-enqueue-action-and-send-remove-after
               (world action-scheduler:tactical-plane-action)
-            (ai-utils:go-launch-attack-spell* object target spell)))))))
+            (funcall spell-launch-fn launcher target spell)))))))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+launch-attack-spell-action+)))
+  (common-launch-spell object strategy action #'ai-utils:go-launch-attack-spell*))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+launch-damage-spell-action+)))
+  (common-launch-spell object strategy action #'ai-utils:go-launch-spell*))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+launch-heal-spell-action+)))
+  (common-launch-spell object strategy action #'ai-utils:go-launch-spell*))
 
 ;;;; strategy
 (defun actuate-strategy (mesh)

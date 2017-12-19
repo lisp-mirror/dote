@@ -136,12 +136,19 @@
        ,if-more
        ,if-less))
 
-(defun find-best-heal-spell (state spell-db entity)
+(defun find-best-heal-spell (state spell-db target-entity)
   (if-difficult-level>medium (state)
-    (find-best-heal-spell-clever   spell-db entity)
+    (find-best-heal-spell-clever   spell-db target-entity)
     (find-best-spell-most-powerful spell-db)))
 
 (defun find-best-attack-spell (state spell-db launcher-entity target-entity
+                               &key (safe-zone-dist 0.0))
+  (if-difficult-level>medium (state)
+    (find-best-attack-spell-clever spell-db launcher-entity target-entity
+                                   :safe-zone-dist safe-zone-dist)
+    (find-best-spell-most-powerful spell-db)))
+
+(defun find-best-damage-spell (state spell-db launcher-entity target-entity
                                &key (safe-zone-dist 0.0))
   (if-difficult-level>medium (state)
     (find-best-attack-spell-clever spell-db launcher-entity target-entity
@@ -175,7 +182,7 @@
             (*lcg-seed* ,turn))
        ,@body)))
 
-(defun target-reachable-attack-spell (entity)
+(defun best-visible-target (entity)
   (with-accessors ((state state)) entity
     (with-accessors ((blackboard blackboard:blackboard)) state
       (when-let ((all-visibles (visible-opponents-sorted blackboard entity))
@@ -186,6 +193,15 @@
           (if (dice:pass-d100.0 chance)
               (least-powerful-visible-opponents blackboard entity)
               (random-elt all-visibles)))))))
+
+(defun target-reachable-attack/damage-spell (entity)
+  (best-visible-target entity))
+
+(defun target-reachable-attack-spell (entity)
+  (target-reachable-attack/damage-spell entity))
+
+(defun target-reachable-damage-spell (entity)
+  (target-reachable-attack/damage-spell entity))
 
 (defun attackable-opponents-attack-spell (available-spells launcher-entity)
   "can the laucher attack with an attack-spell from the current position?
@@ -218,9 +234,51 @@ Return the entity attackable, the best attack-spell available and the position t
                   (position         (if-difficult-level>medium (state)
                                       (first-elt sorted-positions)
                                       (random-elt sorted-positions))))
-        (misc:dbg "target ~a all sorted-position ~a "
-                  (calculate-cost-position target-entity)
-                  sorted-positions)
+        (if (battle-utils:range-spell-valid-p launcher-entity target-entity spell) ;; useless?
+            (values target-entity spell position)
+            (values nil nil nil))))))
+
+(defun reachable-healing-friend-heal-spell (launcher-entity
+                                                    &key
+                                                      (available-spells
+                                                       (available-heal-spells launcher-entity)))
+  "can the laucher *move* and launch an heal-spell?
+Return the target entity, the best attack-spell available and the position to reach."
+  (with-slots-for-reasoning (launcher-entity state ghost blackboard)
+    (with-predictable-for-turn-random-sequence (state)
+      (when-let* ((target-entity    (friend-who-needs-help blackboard launcher-entity
+                                                           :exclude-me nil))
+                  (spell            (find-best-heal-spell state
+                                                          available-spells
+                                                          target-entity))
+                  (sorted-positions (blackboard:heal-spell-goal-pos-around-friend launcher-entity
+                                                                                  target-entity
+                                                                                  target-entity))
+                  (position         (if-difficult-level>medium (state)
+                                      (first-elt sorted-positions)
+                                      (random-elt sorted-positions))))
+        (if (battle-utils:range-spell-valid-p launcher-entity target-entity spell) ;; useless?
+            (values target-entity spell position)
+            (values nil nil nil))))))
+
+(defun reachable-attackable-opponents-damage-spell (launcher-entity
+                                                    &key
+                                                      (available-spells
+                                                       (available-damage-spells launcher-entity)))
+  "can the laucher *move* and attack with an attack-spell?
+Return the entity attackable, the best attack-spell available and the position to reach."
+  (with-slots-for-reasoning (launcher-entity state ghost blackboard)
+    (with-predictable-for-turn-random-sequence (state)
+      (when-let* ((target-entity    (target-reachable-damage-spell launcher-entity))
+                  (spell            (find-best-damage-spell state
+                                                            available-spells
+                                                            launcher-entity
+                                                            target-entity))
+                  (sorted-positions (blackboard:damage-spell-goal-pos-around-me launcher-entity
+                                                                                target-entity))
+                  (position         (if-difficult-level>medium (state)
+                                      (first-elt sorted-positions)
+                                      (random-elt sorted-positions))))
         (if (battle-utils:range-spell-valid-p launcher-entity target-entity spell) ;; useless?
             (values target-entity spell position)
             (values nil nil nil))))))
@@ -234,9 +292,10 @@ Return the entity attackable, the best attack-spell available and the position t
 character is. In this case its cost is 0.0"
   (if (blackboard:entity-in-valid-attackable-pos-p entity)
       (values (calculate-cost-position entity) 0.0)
-      (blackboard:best-path-to-reach-enemy-w-current-weapon strategy-expert entity
-                                                            :reachable-fn-p
-                                                            reachable-fn)))
+      (blackboard:best-path-to-reach-attack-pos-w-current-weapon strategy-expert
+                                                                 entity
+                                                                 :reachable-fn-p
+                                                                 reachable-fn)))
 (defun combined-power-compare-clsr (&optional (desc t))
   #'(lambda (a b)
       (let* ((ghost-a (entity:ghost a))
@@ -756,6 +815,15 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
                                         target
                                         :assume-visible nil))))
 
+(defun go-launch-spell* (attacker target spell)
+  (with-accessors ((state state)
+                   (ghost ghost))  attacker
+    (with-world (world state)
+      (setf (character:spell-loaded ghost) spell)
+      (battle-utils:launch-spell world
+                                 attacker
+                                 target))))
+
 (defstruct hiding-place
   (pos)
   (cost)
@@ -823,7 +891,7 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
                                                    #'(lambda (a b)
                                                        (d> (hiding-place-average-cost-opponents a)
                                                            (hiding-place-average-cost-opponents b)))))
-                                        ;(dbg "all hiding places~%~a" all-hiding-places)
+                ;; (dbg "all hiding places~%~a" all-hiding-places)
                 (if-difficult-level>medium (state)
                   (let* ((difficult-scaling (* difficult 2))
                          (max-lenght (max 1 (lcg-next-upto (ceiling (/ (length all-hiding-places)
@@ -862,7 +930,7 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
                  (friend-to-help   (friend-who-needs-help blackboard
                                                           entity
                                                           :exclude-me exclude-me)))
-        (let* ((spell (find-best-heal-spell state available-spells entity)))
+        (let* ((spell (find-best-heal-spell state available-spells friend-to-help)))
           (when spell
             (setf (character:spell-loaded ghost) spell)
             (battle-utils:launch-spell world entity friend-to-help)))))))

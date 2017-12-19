@@ -115,6 +115,10 @@
     :initform 0.0
     :initarg  :cost
     :accessor cost)
+   (damage-inflicted
+    :initform 0.0
+    :initarg :damage-inflicted
+    :accessor damage-inflicted)
    (visual-effect-self
     :initform nil
     :initarg  :visual-effect-self
@@ -181,10 +185,6 @@
     :initarg :element
     :accessor element
     :type (or :fire :ice :electricity))
-   (damage-inflicted
-    :initform 0.0
-    :initarg :damage-inflicted
-    :accessor damage-inflicted)
    (tremor-fn
     :initform nil
     :initarg  :tremor-fn
@@ -327,7 +327,6 @@
                                                  #'%default-effective-aabb-size)
                                     :visual-effect-target ,(%get-fn-param params
                                                                           :visual-effect-target)
-
                                     :damage-inflicted     ,(%get-param
                                                             params
                                                             :damage-inflicted 0.0)
@@ -362,6 +361,9 @@
                                                                               params
                                                                               :gui-texture))
                                     :cost                 ,(%get-param params :cost)
+                                    :damage-inflicted     ,(%get-param
+                                                            params
+                                                            :damage-inflicted 0.0)
                                     :visual-effect-self   ,(%get-fn-param params
                                                                           :visual-effect-self)
                                     :range                ,(%get-param params :range 0.0)

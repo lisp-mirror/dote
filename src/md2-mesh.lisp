@@ -1000,22 +1000,6 @@
             (let ((reachable-fn (blackboard:reachable-p-w/concening-tiles-fn blackboard)))
               (misc:dbg "all-tactics ~a"
                         (blackboard:build-all-attack-tactics blackboard reachable-fn)))
-            (when (pclass-wizard-p ghost)
-              ;; (misc:dbg "spell attack ring ~a"
-              ;;           (blackboard:best-attack-spell-goal-pos object
-              ;;                                                  (first (blackboard::player-entities state))))
-              ;; (misc:dbg "spell attack ring2  ~a"
-              ;;           (blackboard:attack-spell-goal-pos-around-friend object
-              ;;                                                  (first (blackboard::player-entities state))
-              ;;                                                  object))
-              ;; (misc:dbg "spell attack ring 3 ~a"
-              ;;           (time (blackboard:attack-spell-goal-pos-around-friend object
-              ;;                                                  (first (blackboard::player-entities state))
-              ;;                                                  (second (blackboard::ai-entities state)))))
-              (misc:dbg "spell attack ring  4 me ~ass ~a"
-                        (calculate-cost-position object)
-                        (blackboard:attack-spell-goal-pos-around-me object
-                                                                    (first (blackboard::player-entities state)))))
             (setf (character:movement-points (ghost object)) 150.0)))
         ;;;;;;;;;;;;;;;;;;;;;;;
         (reset-spell-points    ghost)

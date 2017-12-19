@@ -1395,16 +1395,22 @@ values nil, i. e. the ray is not blocked"
           (remove-entity-from-attack-pos attack-enemy-crossbow-positions entity))
     object))
 
-(defmacro with-tiles-attack-spell-around (fn state entity range)
+(defmacro with-tiles-*-spell-around (fn state entity range)
   (with-gensyms (x y)
     `(displace-2d-vector ((calculate-cost-position ,entity) ,x ,y)
        (,fn (map-state ,state) ,x ,y ,range ,range))))
 
 (defun tiles-attack-spell-around-human (state entity range)
-  (with-tiles-attack-spell-around gen-valid-ring-box-position state entity range))
+  (with-tiles-*-spell-around gen-valid-ring-box-position state entity range))
 
 (defun tiles-attack-spell-around-ai (state entity range)
-  (with-tiles-attack-spell-around gen-valid-neighbour-position-in-box state entity range))
+  (with-tiles-*-spell-around gen-valid-neighbour-position-in-box state entity range))
+
+(defun tiles-heal-spell-around-ai (state entity range)
+  (with-tiles-*-spell-around gen-valid-neighbour-position-in-box state entity range))
+
+(defun tiles-damage-spell-around-ai (state entity range)
+  (with-tiles-*-spell-around gen-valid-neighbour-position-in-box state entity range))
 
 (defun remove-tile-empty-or-w/ignored-entities (state &rest ignored-entities)
   #'(lambda (a)
@@ -1419,7 +1425,7 @@ values nil, i. e. the ray is not blocked"
   (concerning)
   (cost))
 
-(defun goal-pos->spell-truct-fn (blackboard concerning-tiles attacker-pos)
+(defun goal-pos->spell-struct-fn (blackboard concerning-tiles attacker-pos)
   #'(lambda (a)
       (with-conc-path-total-cost (cost)
           (path-with-concerning-tiles blackboard
@@ -1435,7 +1441,9 @@ values nil, i. e. the ray is not blocked"
                         :cost  cost))))
 
 (defun calculate-single-spell-goal-pos (attacker defender pivot-entity spell range
-                                        gen-pos-fn use-enemy-fov-when-attacking-p)
+                                        gen-pos-fn use-enemy-fov-when-attacking-p
+                                        &key (spell-type :attack))
+  "Calculate best position to launch spell from attacker to defender around pivot"
   (with-accessors ((state          state)
                    (attacker-ghost ghost)) attacker
     (with-accessors ((map-state map-state)
@@ -1457,10 +1465,11 @@ values nil, i. e. the ray is not blocked"
                                                 (<= (manhattam-distance a defender-pos)
                                                     spell-range))
                                             goal-tiles-pos))
-        ;; remove tiles from the target's point of view
-        (setf goal-tiles-pos (remove-from-player-pov goal-tiles-pos
-                                                     defender
-                                                     use-enemy-fov-when-attacking-p))
+        (when (find spell-type (list :attack :damage) :test #'eq)
+          ;; remove tiles from the target's point of view
+          (setf goal-tiles-pos (remove-from-player-pov goal-tiles-pos
+                                                       defender
+                                                       use-enemy-fov-when-attacking-p)))
         ;; remove non reachables
         (setf goal-tiles-pos (ai-utils:remove-non-reachables-pos reach-fn
                                                                  attacker-pos
@@ -1468,7 +1477,7 @@ values nil, i. e. the ray is not blocked"
                                                                  goal-tiles-pos
                                                                  :key #'identity))
         (let ((goal-structs (map 'vector
-                                 (goal-pos->spell-truct-fn blackboard
+                                 (goal-pos->spell-struct-fn blackboard
                                                            concerning-smoothed
                                                            attacker-pos)
                                  goal-tiles-pos)))
@@ -1480,48 +1489,125 @@ values nil, i. e. the ray is not blocked"
                                      (num:gen-multisort-test epsilon<=
                                                              epsilon>=
                                                              spell-pos-cost))))
+          ;; (misc:dbg "~a" goal-structs)
           ;; retun the positions and the structs as well
           (values (map 'vector #'spell-pos-tile goal-structs)
                   goal-structs))))))
+
+(defmacro with-*-spell-goal-pos-skeleton (attacker defender
+                                          with-spell-macro
+                                          cache-fn-symbol
+                                          nocache-fn-symbol
+                                          search-cache-fn-symbol
+                                          insert-cache-fn-symbol)
+  (with-gensyms (found new-res range best-spell)
+    `(labels ((make-cache-key (attacker defender spell &optional (res nil))
+                (make-%atk-spell-around-me-cache-value :attacker attacker
+                                                       :defender defender
+                                                       :spell    spell
+                                                       :res      res))
+              (get-from-cache (attacker defender spell)
+                (,search-cache-fn-symbol (make-cache-key attacker defender spell)))
+              (put-in-cache (attacker defender spell res)
+                (,insert-cache-fn-symbol (make-cache-key attacker defender spell res)))
+              (extract-res (cache-value)
+                (%atk-spell-around-me-cache-value-res cache-value)))
+       ;; note we need  to calculate the spell here too,  This to get the
+       ;; correct cache key.  Of course we are assuming the same spell is
+       ;; going to be chosen by the procedure without cache.
+       (,with-spell-macro (,range ,best-spell ,attacker ,defender)
+         (let ((,found (get-from-cache ,attacker ,defender ,best-spell)))
+           (if ,found
+               (extract-res ,found)
+               (let ((,new-res (,nocache-fn-symbol ,attacker ,defender)))
+                 (put-in-cache ,attacker ,defender ,best-spell ,new-res)
+                 (,cache-fn-symbol ,attacker ,defender))))))))
 
 (defmacro with-attack-spell-goal-pos-skeleton (attacker defender
                                                cache-fn-symbol
                                                nocache-fn-symbol
                                                search-cache-fn-symbol
                                                insert-cache-fn-symbol)
-  `(labels ((make-cache-key (attacker defender spell &optional (res nil))
-              (make-%atk-spell-around-me-cache-value :attacker attacker
-                                                     :defender defender
-                                                     :spell    spell
-                                                     :res      res))
-            (get-from-cache (attacker defender spell)
-              (,search-cache-fn-symbol (make-cache-key attacker defender spell)))
-            (put-in-cache (attacker defender spell res)
-              (,insert-cache-fn-symbol (make-cache-key attacker defender spell res)))
-            (extract-res (cache-value)
-              (%atk-spell-around-me-cache-value-res cache-value)))
-     ;; note we need  to calculate the spell here too,  This to get the
-     ;; correct cache key.  Of course we are assuming the same spell is
-     ;; going to be chosen by the procedure without cache.
-     (with-best-attack-spell (range best-spell ,attacker ,defender)
-       (let ((found (get-from-cache ,attacker ,defender best-spell)))
-         (if found
-             (extract-res found)
-             (let ((new-res (,nocache-fn-symbol ,attacker ,defender)))
-               (put-in-cache attacker defender best-spell new-res)
-               (,cache-fn-symbol ,attacker ,defender)))))))
+  `(with-*-spell-goal-pos-skeleton
+       ,attacker
+     ,defender
+     with-best-attack-spell
+     ,cache-fn-symbol
+     ,nocache-fn-symbol
+     ,search-cache-fn-symbol
+     ,insert-cache-fn-symbol))
 
-(defmacro with-best-attack-spell ((range best-spell attacker defender) &body body)
+(defmacro with-damage-spell-goal-pos-skeleton (attacker defender
+                                               cache-fn-symbol
+                                               nocache-fn-symbol
+                                               search-cache-fn-symbol
+                                               insert-cache-fn-symbol)
+  `(with-*-spell-goal-pos-skeleton
+       ,attacker
+     ,defender
+     with-best-damage-spell
+     ,cache-fn-symbol
+     ,nocache-fn-symbol
+     ,search-cache-fn-symbol
+     ,insert-cache-fn-symbol))
+
+(defmacro with-healing-spell-goal-pos-skeleton (attacker defender
+                                               cache-fn-symbol
+                                               nocache-fn-symbol
+                                               search-cache-fn-symbol
+                                               insert-cache-fn-symbol)
+  `(with-*-spell-goal-pos-skeleton
+       ,attacker
+     ,defender
+     with-best-heal-spell
+     ,cache-fn-symbol
+     ,nocache-fn-symbol
+     ,search-cache-fn-symbol
+     ,insert-cache-fn-symbol))
+
+(defmacro with-best-*-spell ((range best-spell attacker defender
+                                    filter-spell-db-fn
+                                    find-spell-fn) &body body)
   (with-gensyms (all-spells state)
     `(with-accessors ((,state state)) ,attacker
        (when-let* ((,range      (level-difficult ,state))
-                   (,all-spells (ai-utils:available-attack-spells ,attacker))
-                   (,best-spell (ai-utils:find-best-attack-spell ,state
-                                                                 ,all-spells
-                                                                 ,attacker
-                                                                 ,defender
-                                                                 :safe-zone-dist ,range)))
+                   (,all-spells (,filter-spell-db-fn ,attacker))
+                   (,best-spell ,(if (functionp find-spell-fn)
+                                     `(funcall ,find-spell-fn
+                                               ,state
+                                               ,all-spells
+                                               ,attacker
+                                               ,defender
+                                               :safe-zone-dist ,range)
+                                     `(,find-spell-fn ,state
+                                                      ,all-spells
+                                                      ,attacker
+                                                      ,defender
+                                                      :safe-zone-dist ,range))))
          ,@body))))
+
+(defmacro with-best-attack-spell ((range best-spell attacker defender) &body body)
+  `(with-best-*-spell (,range ,best-spell ,attacker ,defender
+                              ai-utils:available-attack-spells
+                              ai-utils:find-best-attack-spell)
+     ,@body))
+
+(defun find-best-heal-spell-wrapper (state spell-db launcher target
+                                     &key (safe-zone-dist 0.0))
+  (declare (ignore launcher safe-zone-dist))
+  (ai-utils:find-best-heal-spell state spell-db target))
+
+(defmacro with-best-heal-spell ((range best-spell launcher target) &body body)
+  `(with-best-*-spell (,range ,best-spell ,launcher ,target
+                              ai-utils:available-heal-spells
+                              find-best-heal-spell-wrapper)
+     ,@body))
+
+(defmacro with-best-damage-spell ((range best-spell launcher target) &body body)
+  `(with-best-*-spell (,range ,best-spell ,launcher ,target
+                              ai-utils:available-damage-spells
+                              ai-utils:find-best-damage-spell)
+     ,@body))
 
 (defstruct %atk-spell-around-me-cache-value
   (attacker)
@@ -1554,7 +1640,7 @@ values nil, i. e. the ray is not blocked"
 (defun best-attack-spell-goal-pos-nocache (attacker defender)
   "Calculate the 'ideal' attack spell positions
 Note: assuming the range  of the spell is not less  ore equal than the
-effective range.  I think this is a safe to assume. ;)"
+effective range.  I think this is safe to assume. ;)"
   (with-accessors ((state state)) attacker
     (with-accessors ((blackboard blackboard)
                      (map-state map-state)) state
@@ -1645,8 +1731,130 @@ effective range.  I think this is a safe to assume. ;)"
                                        attack-spell-goal-pos-around-me-search-cache
                                        attack-spell-goal-pos-around-me-insert-cache))
 
+(defun heal-spell-goal-pos-around-friend-nocache (launcher target)
+  (with-accessors ((state state)) launcher
+    (with-accessors ((blackboard blackboard)
+                     (map-state map-state)) state
+      (with-accessors ((use-enemy-fov-when-attacking-p use-enemy-fov-when-attacking-p)) blackboard
+        (with-best-heal-spell (range best-heal-spell launcher target)
+          (calculate-single-spell-goal-pos launcher
+                                           target
+                                           target
+                                           best-heal-spell
+                                           range
+                                           #'tiles-heal-spell-around-ai
+                                           use-enemy-fov-when-attacking-p
+                                           :spell-type :heal))))))
+
+(defcached-list heal-spell-goal-pos-around-friend ((launcher target friend)
+                                                 :equal-fn #'%atk-spell-around-friend-equal)
+  (labels ((make-cache-key (launcher target friend spell &optional (res nil))
+             (make-%atk-spell-around-friend-cache-value :attacker launcher
+                                                        :defender target
+                                                        :spell    spell
+                                                        :friend   friend
+                                                        :res      res))
+           (get-from-cache (launcher target friend spell)
+             (heal-spell-goal-pos-around-friend-search-cache (make-cache-key launcher
+                                                                               target
+                                                                               friend
+                                                                               spell)))
+           (put-in-cache (launcher target friend spell res)
+             (heal-spell-goal-pos-around-friend-insert-cache (make-cache-key launcher
+                                                                               target
+                                                                               friend
+                                                                               spell
+                                                                               res)))
+           (extract-res (cache-value)
+             (%atk-spell-around-friend-cache-value-res cache-value)))
+    ;; note we need  to calculate the spell here too,  This to get the
+    ;; correct cache key.  Of course we are assuming the same spell is
+    ;; going to be chosen by the procedure without cache.
+    (with-best-heal-spell (range best-spell launcher target)
+      (let ((found (get-from-cache launcher target friend best-spell)))
+        (if found
+            (extract-res found)
+            (let ((new-res (heal-spell-goal-pos-around-friend-nocache launcher target)))
+              (put-in-cache launcher target friend best-spell new-res)
+              (heal-spell-goal-pos-around-friend launcher target friend)))))))
+
+(defun heal-spell-goal-pos-around-me-nocache (launcher target)
+  (heal-spell-goal-pos-around-friend launcher target launcher))
+
+(defcached-list heal-spell-goal-pos-around-me ((launcher target)
+                                                 :equal-fn #'%atk-spell-around-me-equal)
+  (with-healing-spell-goal-pos-skeleton launcher target
+                                        heal-spell-goal-pos-around-me
+                                        heal-spell-goal-pos-around-me-nocache
+                                        heal-spell-goal-pos-around-me-search-cache
+                                        heal-spell-goal-pos-around-me-insert-cache))
+
+;;;
+(defun damage-spell-goal-pos-around-friend-nocache (launcher target)
+  (with-accessors ((state state)) launcher
+    (with-accessors ((blackboard blackboard)
+                     (map-state map-state)) state
+      (with-accessors ((use-enemy-fov-when-attacking-p use-enemy-fov-when-attacking-p)) blackboard
+        (with-best-damage-spell (range best-damage-spell launcher target)
+          (calculate-single-spell-goal-pos launcher
+                                           target
+                                           target
+                                           best-damage-spell
+                                           range
+                                           #'tiles-damage-spell-around-ai
+                                           use-enemy-fov-when-attacking-p
+                                           :spell-type :damage))))))
+
+(defcached-list damage-spell-goal-pos-around-friend ((launcher target friend)
+                                                 :equal-fn #'%atk-spell-around-friend-equal)
+  (labels ((make-cache-key (launcher target friend spell &optional (res nil))
+             (make-%atk-spell-around-friend-cache-value :attacker launcher
+                                                        :defender target
+                                                        :spell    spell
+                                                        :friend   friend
+                                                        :res      res))
+           (get-from-cache (launcher target friend spell)
+             (damage-spell-goal-pos-around-friend-search-cache (make-cache-key launcher
+                                                                               target
+                                                                               friend
+                                                                               spell)))
+           (put-in-cache (launcher target friend spell res)
+             (damage-spell-goal-pos-around-friend-insert-cache (make-cache-key launcher
+                                                                               target
+                                                                               friend
+                                                                               spell
+                                                                               res)))
+           (extract-res (cache-value)
+             (%atk-spell-around-friend-cache-value-res cache-value)))
+    ;; note we need  to calculate the spell here too,  This to get the
+    ;; correct cache key.  Of course we are assuming the same spell is
+    ;; going to be chosen by the procedure without cache.
+    (with-best-damage-spell (range best-spell launcher target)
+      (let ((found (get-from-cache launcher target friend best-spell)))
+        (if found
+            (extract-res found)
+            (let ((new-res (damage-spell-goal-pos-around-friend-nocache launcher target)))
+              (put-in-cache launcher target friend best-spell new-res)
+              (damage-spell-goal-pos-around-friend launcher target friend)))))))
+
+(defun damage-spell-goal-pos-around-me-nocache (launcher target)
+  (damage-spell-goal-pos-around-friend launcher target launcher))
+
+(defcached-list damage-spell-goal-pos-around-me ((launcher target)
+                                                 :equal-fn #'%atk-spell-around-me-equal)
+  (with-damage-spell-goal-pos-skeleton launcher target
+                                        damage-spell-goal-pos-around-me
+                                        damage-spell-goal-pos-around-me-nocache
+                                        damage-spell-goal-pos-around-me-search-cache
+                                        damage-spell-goal-pos-around-me-insert-cache))
+
+
 (defun invalidate-blackboard-cache ()
   (attack-spell-goal-pos-around-friend-clear-cache)
   (attack-spell-goal-pos-around-me-clear-cache)
+  (heal-spell-goal-pos-around-friend-clear-cache)
+  (heal-spell-goal-pos-around-me-clear-cache)
+  (damage-spell-goal-pos-around-friend-clear-cache)
+  (damage-spell-goal-pos-around-me-clear-cache)
   (reachable-p-w/concening-tiles-fn-clear-cache)
   (reachable-p-w/concening-tiles-unlimited-cost-fn-clear-cache))

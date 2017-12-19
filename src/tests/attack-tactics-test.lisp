@@ -79,6 +79,14 @@
                          (num:lcg-next-upto 50)))))
     (blackboard::%build-single-attack-tactics def (rest atk) (first atk) nil)))
 
+(defun make-tactics-3-2 ()
+  (let* ((def (list (cons (ivec2 6 10) nil)
+                    (cons (ivec2 5  9) nil)
+                    (cons (ivec2 7  9) nil)))
+         (atk (list (cons (ivec2 0  0) 150)
+                    (cons (ivec2 0  1) 150))))
+    (blackboard::%build-single-attack-tactics def (rest atk) (first atk) nil)))
+
 (deftest test-attack-tactic (attack-tactics-suite)
   (let ((*reachable-p-fn* #'blackboard:reachablep))
     (assert-true
@@ -86,7 +94,10 @@
                        '((#(1 0) #(20 0) 30) (#(18 0) #(16 0) 7) (#(19 0) #(21 0) 31))))
     (assert-true
         (%comp-tactics (make-tactics-compete)
-                       '((#(10 0) #(11 0) 1) (#(10 1)))))))
+                       '((#(10 0) #(11 0) 1) (#(10 1)))))
+    (assert-true
+        (%comp-tactics (make-tactics-3-2)
+                       '((#(6 10) #(0 0) 150) (#(5 9) #(0 1) 150) (#(7 9)))))))
 
 (deftest test-attack-tactic-random (attack-tactics-suite)
   (let ((*reachable-p-fn* #'blackboard:reachablep))

@@ -3017,7 +3017,6 @@
    :+rotate-action+
    :+move-action+
    :+faint-action+
-   :+go-to-attack-pos-action+
    :+launch-heal-spell-action+
    :+launch-heal-spell-friend-action+
    :+launch-teleport-spell-action+
@@ -3033,13 +3032,17 @@
    :+go-near-to-attack-pos-action+
    :+go-near-weak-friend-atk-action+
    :+go-near-weak-friend-action+
+   :+go-near-to-enemy-action+
    :+protect-attack-action+
    :+protect-attack-spell-action+
    :+protect-action+
-   :+attack-spell-action+
+   :+launch-attack-spell-action+
+   :+launch-damage-spell-action+
    :+find-fountain-action+
    :+go-to-fountain-action+
    :+go-to-attack-spell-pos-action+
+   :+go-to-heal-spell-pos-action+
+   :+go-to-damage-spell-pos-action+
    :+use-fountain+
    :gen-neigh-costs
    :gen-neigh
@@ -3049,14 +3052,20 @@
    :if-difficult-level>medium
    :find-best-heal-spell
    :find-best-attack-spell
+   :find-best-damage-spell
    :reward-possible-p
    :available-heal-spells
    :available-attack-spells
+   :available-damage-spells
+   :best-visible-target
+   :target-reachable-attack/damage-spell
    :attackable-position-exists-path
    :reachable-help-needed-friend-heal-spell-p
    :target-reachable-attack-spell
    :attackable-opponents-attack-spell
    :reachable-attackable-opponents-attack-spell
+   :reachable-attackable-opponents-damage-spell
+   :reachable-healing-friend-heal-spell
    :combined-power-compare-clsr
    :sort-by-manhattam-dist-clsr
    :sort-by-path-w/concerning-tiles-cost-clsr
@@ -3094,6 +3103,7 @@
    :go-launch-wall-breaking-spell
    :go-launch-attack-spell
    :go-launch-attack-spell*
+   :go-launch-spell*
    :go-launch-heal-spell
    :go-launch-heal-spell-friend
    :go-reward-heal-spell
@@ -4987,8 +4997,9 @@
    :target-id
    :goal-pos
    :target-pos
-   :best-path-to-reach-enemy-w-current-weapon
+   :best-path-to-reach-attack-pos-w-current-weapon
    :best-path-near-attack-goal-w-current-weapon
+   :best-path-near-enemy-pos-w-current-weapon
    :best-path-w-current-weapon-reachable-p
    :reachable-p-w/concening-tiles-fn-clear-cache
    :reachable-p-w/concening-tiles-fn
@@ -5052,6 +5063,10 @@
    :best-attack-spell-goal-pos
    :attack-spell-goal-pos-around-friend
    :attack-spell-goal-pos-around-me
+   :heal-spell-goal-pos-around-friend
+   :heal-spell-goal-pos-around-me
+   :damage-spell-goal-pos-around-friend
+   :damage-spell-goal-pos-around-me
    :invalidate-blackboard-cache))
 
 (defpackage :goap

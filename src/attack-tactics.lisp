@@ -167,43 +167,63 @@
   like building or  players)
 - the total cost of  the path (again only with map cost (i.e. no concerning tiles);
 - the id of the target entity."
-  (when-let* ((all-tactics        (build-all-attack-tactics blackboard
-                                                            reachable-fn-p))
-              (all-weapon-tactics (getf all-tactics weapon-tactic))
-              (my-tactic   (find-if #'(lambda (a) (= (id ai-player) (entity-id a)))
-                                    all-weapon-tactics)))
-    ;;(dbg "all ~a melee ~a my ~a" all-tactics all-weapon-tactics  my-tactic)
-    (let ((start-pos          (mesh:calculate-cost-position ai-player))
-          (end-pos            (target-pos my-tactic)))
-      ;;(dbg "from ~a -> ~a" start-pos end-pos)
-      (multiple-value-bind (result-path cumulative-cost costs-terrain)
-          (path-with-concerning-tiles blackboard
-                                      start-pos
-                                      end-pos
-                                      :cut-off-first-tile cut-off-first-tile)
-        (values result-path cumulative-cost costs-terrain (target-id my-tactic))))))
+  (let* ((all-tactics        (build-all-attack-tactics blackboard
+                                                       reachable-fn-p))
+         (all-weapon-tactics (getf all-tactics weapon-tactic))
+         (my-tactic   (find-if #'(lambda (a) (= (id ai-player) (entity-id a)))
+                               all-weapon-tactics)))
+    (when (and all-tactics all-weapon-tactics my-tactic)
+      (let ((start-pos          (mesh:calculate-cost-position ai-player))
+            (end-pos            (target-pos my-tactic)))
+        ;;(dbg "from ~a -> ~a" start-pos end-pos)
+        (multiple-value-bind (result-path cumulative-cost costs-terrain)
+            (path-with-concerning-tiles blackboard
+                                        start-pos
+                                        end-pos
+                                        :cut-off-first-tile cut-off-first-tile)
+          (values result-path cumulative-cost costs-terrain (target-id my-tactic)))))))
+
+(defun index-last-reachable-tile (entity path-costs)
+  (with-accessors ((ghost ghost)) entity
+    (do ((accum 0.0)
+         (idx 0 (1+ idx)))
+        ((or (>= idx (length path-costs))
+             (>= accum
+                 (character:current-movement-points ghost)))
+         idx)
+      (incf accum (elt path-costs idx)))))
 
 (defun best-path-near-attack-goal-w-current-weapon (blackboard ai-player
                                                     &key
                                                       (cut-off-first-tile t)
                                                       (reachable-fn-p #'reachablep))
   (multiple-value-bind (path cumulative-cost costs target-id)
-      (best-path-to-reach-enemy-w-current-weapon blackboard ai-player
+      (best-path-to-reach-attack-pos-w-current-weapon blackboard ai-player
                                                  :cut-off-first-tile cut-off-first-tile
                                                  :reachable-fn-p     reachable-fn-p)
-    (let ((max (do ((accum 0.0)
-                    (idx 0 (1+ idx)))
-                   ((or (>= idx (length costs))
-                        (>= accum
-                            (character:current-movement-points (ghost ai-player))))
-                    idx)
-                 (incf accum (elt costs idx)))))
+    (let ((max (index-last-reachable-tile ai-player costs)))
       (values (subseq path 0 max)
               cumulative-cost
               costs
               target-id))))
 
-(defun best-path-to-reach-enemy-w-current-weapon (blackboard ai-player
+(defun best-path-near-enemy-pos-w-current-weapon (blackboard ai-player
+                                                  &key (cut-off-first-tile t))
+  (let ((target (ai-utils:best-visible-target ai-player)))
+    (multiple-value-bind (path cumulative-cost costs)
+        (path-with-concerning-tiles blackboard
+                                    (calculate-cost-position ai-player)
+                                    (calculate-cost-position target)
+                                    :cut-off-first-tile  cut-off-first-tile
+                                    :allow-path-length-1 nil)
+      (when path
+        (let ((max (index-last-reachable-tile ai-player costs)))
+          (values (subseq path 0 max)
+                  cumulative-cost
+                  costs
+                  (id target)))))))
+
+(defun best-path-to-reach-attack-pos-w-current-weapon (blackboard ai-player
                                                   &key
                                                     (cut-off-first-tile t)
                                                     (reachable-fn-p
@@ -231,7 +251,7 @@
 
 (defun best-path-w-current-weapon-reachable-p (blackboard ai-player)
   (multiple-value-bind (path cumulative-cost costs)
-      (best-path-to-reach-enemy-w-current-weapon blackboard ai-player)
+      (best-path-to-reach-attack-pos-w-current-weapon blackboard ai-player)
     (declare (ignore costs))
     (values (and path
                  (<= cumulative-cost (character:current-movement-points (ghost ai-player))))

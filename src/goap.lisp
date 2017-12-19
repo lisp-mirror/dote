@@ -631,10 +631,23 @@ reach the enemy with optimal path?"
     (and res
          (> (length res) 1))))
 
+(defgoap-test can-move-near-enemy-pos (strategy-expert entity)
+  (let* ((res (blackboard:best-path-near-enemy-pos-w-current-weapon strategy-expert
+                                                                    entity
+                                                                    :cut-off-first-tile nil)))
+    (and res
+         (> (length res) 1))))
 
 (defgoap-test exists-attack-goal-w-current-weapon-p (strategy-expert entity)
   (let ((res (attackable-position-exists-path strategy-expert entity
                                               #'blackboard:reachablep)))
+    (misc:dbg "exists-attack-goal-w-current-weapon-p ~a" res)
+    res))
+
+(defgoap-test exists-visible-enemy (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (let ((res (ai-utils:target-reachable-attack/damage-spell entity)))
+    (misc:dbg "exists-visible-enemy ~a" res)
     res))
 
 (defgoap-test reachable-opt/path-attack-current-weapon-and-mp (strategy-expert entity)
@@ -860,8 +873,21 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
     (misc:dbg " exists-reachable-pos-to-launch-attack-spell ~a" res)
     res))
 
+(defun exists-reachable-pos-to-launch-heal-spell (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (let ((res (ai-utils:reachable-healing-friend-heal-spell entity)))
+    (misc:dbg " exists-reachable-pos-to-launch-heal-spell ~a" res)
+    res))
+
+(defun exists-reachable-pos-to-launch-damage-spell (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (let ((res (ai-utils:reachable-attackable-opponents-damage-spell entity)))
+    (misc:dbg " exists-reachable-pos-to-launch-damage-spell ~a" res)
+    res))
+
 (defun invalidate-tests-cache ()
   (exists-attack-goal-w-current-weapon-p-clear-cache)
+  (exists-visible-enemy-clear-cache)
   (reachable-opt/path-attack-current-weapon-and-mp-clear-cache)
   (friend-needs-help-p-clear-cache)
   (someone-needs-help-p-clear-cache)
@@ -871,4 +897,5 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
   (is-visible-p-clear-cache)
   (reachable-opt/path-current-weapon-and-mp-clear-cache)
   (is-in-attack-pos-p-clear-cache)
-  (can-move-near-attack-pos-clear-cache))
+  (can-move-near-attack-pos-clear-cache)
+  (can-move-near-enemy-pos-clear-cache))
