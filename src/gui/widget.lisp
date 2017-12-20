@@ -526,6 +526,16 @@
     (when grandparent
       (hide grandparent))))
 
+(defun hide-and-remove-from-parent-cb (widget event)
+  (declare (ignore event))
+  (with-parent-widget (win) widget
+    (hide widget)
+    (remove-child win
+                  widget
+                  :key  #'identity
+                  :test #'(lambda (a b)
+                            (= (id a) (id b))))))
+
 (defun hide-and-remove-parent-cb (widget event)
   (declare (ignore event))
   (with-parent-widget (win) widget
@@ -1928,13 +1938,35 @@
   (declare (desired-type s))
   (d* s *square-button-size*))
 
-(defun make-square-button (x y overlay callback &key (small nil))
+(defmacro with-toolbar-world ((world) toolbar &body body)
+  `(with-accessors ((,world bound-world)) , toolbar
+     ,@body))
+
+(defclass toolbar-modal-button (naked-button) ())
+
+(defmethod on-mouse-released ((object toolbar-modal-button) event)
+  (with-parent-widget (toolbar) object
+    (with-toolbar-world (world) toolbar
+      (if (world:actions-queue-empty-p world)
+          (call-next-method)
+          (if (mouse-over object (x-event event) (y-event event))
+              (progn
+                (setf (current-texture object) (texture-object object))
+                t)
+              nil)))))
+
+(defun make-square-button (x y overlay callback &key (small nil) (modal nil))
   (let ((size (if small
                   *small-square-button-size*
-                  *square-button-size*)))
-    (make-instance 'naked-button
-                   :x x :y y
-                   :width size :height size
+                  *square-button-size*))
+        (type (if modal
+                  'toolbar-modal-button
+                  'naked-button)))
+    (make-instance type
+                   :x               x
+                   :y               y
+                   :width           size
+                   :height          size
                    :texture-object  (get-texture +square-button-texture-name+)
                    :texture-pressed (get-texture +square-button-pressed-texture-name+)
                    :texture-overlay (get-texture overlay)
@@ -2048,10 +2080,6 @@
   t)
 
 
-(defmacro with-toolbar-world ((world) toolbar &body body)
-  `(with-accessors ((,world bound-world)) , toolbar
-     ,@body))
-
 (defun %find-entity (state pos)
   (game-state:find-entity-by-id state
                                 (game-state:entity-id (matrix:matrix-elt (map-state state)
@@ -2163,6 +2191,25 @@
     (add-child toolbar
                (configuration-windows:make-main-window (compiled-shaders toolbar)))))
 
+(defun toolbar-quit-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (toolbar) w
+    (with-accessors ((bound-world bound-world)) toolbar
+      #+ debug-mode (assert bound-world)
+      (with-accessors ((main-state main-state)) bound-world
+        (flet ((quit-cb (a b)
+                 (declare (ignore a b))
+                 (sdl2.kit:close-window (game-state:fetch-render-window main-state)))
+               (close-cb (w e)
+                 (hide-and-remove-parent-cb w e)))
+          (let ((dialog-window (make-message-box* (_ "Are you sure you want to quit?")
+                                                  "Question"
+                                                  :question
+                                                  (list (cons (_ "Yes") #'quit-cb)
+                                                        (cons (_ "No")  #'close-cb)))))
+            (setf (compiled-shaders dialog-window) (compiled-shaders w))
+            (mtree:add-child toolbar dialog-window)))))))
+
 (defclass main-toolbar (widget)
   (#+debug-ai
    (influence-map-dump :initform (make-instance 'signalling-light
@@ -2263,7 +2310,8 @@
                                   *small-square-button-size*
                                   +attack-short-range-overlay-texture-name+
                                   #'toolbar-attack-short-range-cb
-                                  :small t)
+                                  :small t
+                                  :modal t)
     :initarg  :b-attack-short
     :accessor b-attack-short)
    (b-attack-long
@@ -2272,7 +2320,8 @@
                                   *small-square-button-size*
                                   +attack-long-range-overlay-texture-name+
                                   #'toolbar-attack-long-range-cb
-                                  :small t)
+                                  :small t
+                                  :modal t)
     :initarg  :b-attack-long
     :accessor b-attack-long)
    (b-attack-long-imprecise
@@ -2281,7 +2330,8 @@
                                   *small-square-button-size*
                                   +attack-long-range-imprecise-overlay-texture-name+
                                   #'toolbar-attack-long-range-imprecise-cb
-                                  :small t)
+                                  :small t
+                                  :modal t)
     :initarg  :b-attack-long-imprecise
     :accessor b-attack-long-imprecise)
    (b-activation
@@ -2290,7 +2340,8 @@
                                   *small-square-button-size*
                                   +activation-overlay-texture-name+
                                   #'toolbar-activation-cb
-                                  :small t)
+                                  :small t
+                                  :modal t)
     :initarg  :b-activation
     :accessor b-activation)
    (b-move
@@ -2299,7 +2350,8 @@
                                   *small-square-button-size*
                                   +move-overlay-texture-name+
                                   #'toolbar-move-cb
-                                  :small t)
+                                  :small t
+                                  :modal t)
     :initarg  :b-move
     :accessor b-move)
 
@@ -2320,42 +2372,48 @@
     :initform (make-square-button 0.0 *small-square-button-size*
                                   +save-overlay-texture-name+
                                   nil ;; TODO callback
-                                  :small t)
+                                  :small t
+                                  :modal nil)
     :initarg :b-save
     :accessor b-save)
    (b-load
     :initform (make-square-button *small-square-button-size* *small-square-button-size*
                                   +load-overlay-texture-name+
                                   nil  ;; TODO callback
-                                  :small t)
+                                  :small t
+                                  :modal nil)
     :initarg :b-load
     :accessor b-load)
    (b-options
     :initform (make-square-button 0.0 0.0
                                   +option-overlay-texture-name+
                                   #'toolbar-open-configuration-window
-                                  :small t)
+                                  :small t
+                                  :modal t)
     :initarg :b-options
     :accessor b-options)
    (b-quit
     :initform (make-square-button *small-square-button-size* 0.0
                                   +quit-overlay-texture-name+
-                                  nil  ;; TODO callback
-                                  :small t)
+                                  #'toolbar-quit-cb
+                                  :small t
+                                  :modal nil)
     :initarg :b-quit
     :accessor b-quit)
    (b-next
     :initform (make-square-button (d* 2.0 *small-square-button-size*) *small-square-button-size*
                                   +next-overlay-texture-name+
                                   nil  ;; TODO callback
-                                  :small t)
+                                  :small t
+                                  :modal nil)
     :initarg :b-next
     :accessor b-next)
    (b-previous
     :initform (make-square-button (d* 3.0 *small-square-button-size*) *small-square-button-size*
                                   +previous-overlay-texture-name+
                                   nil  ;; TODO callback
-                                  :small t)
+                                  :small t
+                                  :modal nil)
     :initarg :b-previous
     :accessor b-previous)
    (b-next-turn
@@ -2371,7 +2429,8 @@
                                   0.0
                                   +rotate-char-cw-overlay-texture-name+
                                   #'rotate-cw-cb
-                                  :small t)
+                                  :small t
+                                  :modal t)
     :initarg :b-rotate-cw
     :accessor b-rotate-cw)
    (b-rotate-ccw
@@ -2379,7 +2438,8 @@
                                   0.0
                                   +rotate-char-ccw-overlay-texture-name+
                                   #'rotate-ccw-cb
-                                  :small t)
+                                  :small t
+                                  :modal t)
     :initarg :b-rotate-ccw
     :accessor b-rotate-ccw)
    (b-spell
@@ -2388,7 +2448,8 @@
                                   0.0
                                   +magic-staff-overlay-texture-name+
                                   #'toolbar-launch-spell-cb
-                                  :small t)
+                                  :small t
+                                  :modal t)
     :initarg  :b-spell
     :accessor b-spell)
    (b-open
@@ -2397,7 +2458,8 @@
                                   0.0
                                   +open-overlay-texture-name+
                                   #'open-cb
-                                  :small t)
+                                  :small t
+                                  :modal t)
     :initarg  :b-open
     :accessor b-open)
    (b-close
@@ -2406,7 +2468,8 @@
                                   0.0
                                   +close-overlay-texture-name+
                                   #'close-cb
-                                  :small t)
+                                  :small t
+                                  :modal t)
     :initarg  :b-close
     :accessor b-close)
    (b-zoom
@@ -2415,7 +2478,8 @@
                                    0.0
                                    +zoom-overlay-texture-name+
                                    #'toolbar-zoom-in-cb
-                                   :small t)
+                                   :small t
+                                   :modal nil)
      :initarg :b-zoom
      :accessor b-zoom)
    (b-unzoom
@@ -2424,7 +2488,8 @@
                                   0.0
                                   +unzoom-overlay-texture-name+
                                   #'toolbar-zoom-out-cb
-                                  :small t)
+                                  :small t
+                                  :modal nil)
     :initarg :b-unzoom
     :accessor b-unzoom)
    (bar-mp

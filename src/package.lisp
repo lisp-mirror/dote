@@ -2257,6 +2257,7 @@
    :with-world
    :select-next-pc
    :select-prev-pc
+   :fetch-render-window
    :fetch-world
    :setup-game-hour
    :prepare-map-state
