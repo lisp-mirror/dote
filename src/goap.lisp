@@ -755,6 +755,10 @@ composed by just one tile, see 'attackable-position-exists-path'"
   (declare (ignore strategy-expert entity))
   (dice:pass-d4 1))
 
+(defun pass-1d6 (strategy-expert entity)
+  (declare (ignore strategy-expert entity))
+  (dice:pass-d6 1))
+
 (defun able-to-move-if (entity predicate)
   (with-accessors ((state entity:state)
                    (ghost entity:ghost)) entity

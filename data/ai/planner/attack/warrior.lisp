@@ -47,15 +47,6 @@
          :effects               ((:protecting  t))
          :context-preconditions (friend-needs-help-p)
          :cost                  10)
-  (:name :protect-attack-spell
-         :preconditions         ((:protect-friend-attack t))
-         :effects               ((:protecting  t))
-         :context-preconditions (friend-needs-help-p
-                                 has-enough-sp-attack-p
-                                 ;; "!is-status-terror-p"  is implicitly
-                                 ;; managed by has-enough-sp-attack-p
-                                 there-is-attackable-opponents-attack-spell-p)
-         :cost                  20)
   (:name :go-near-weak-friend-attack
          :preconditions         ()
          :context-preconditions (can-minimally-move-p
@@ -70,25 +61,19 @@
                                  !can-attack-when-near-pos-p)
          :effects               ((:protecting t))
          :cost                  5)
-  (:name :launch-heal-spell-friend
-         :preconditions         ()
-         :context-preconditions (has-enough-sp-heal-p
-                                 friend-needs-help-p
-                                 there-is-reachable-help-needed-friend-heal-spell-p)
-                                 ;; "!is-status-terror-p"  is implicitly
-                                 ;; managed by has-enough-sp-heal-p
-          :effects                ((:protect-friend t))
-          :cost                  20)
-
   (:name :launch-heal-spell
-         :preconditions         ()
+         :preconditions         ((:near-enemy-heal-spell t))
          :context-preconditions (has-enough-sp-heal-p
-                                 someone-needs-help-p
-                                 there-is-reachable-help-needed-friend-heal-spell-p)
                                  ;; "!is-status-terror-p"  is implicitly
                                  ;; managed by has-enough-sp-heal-p
+                                 someone-needs-help-p)
          :effects               ((:curb-threat t))
          :cost                  20)
+  (:name :go-to-heal-spell-pos
+         :preconditions         ()
+         :effects               ((:near-enemy-heal-spell t))
+         :context-preconditions (exists-reachable-pos-to-launch-heal-spell)
+         :cost                  1)
   (:name :use-fountain
          :preconditions         ((:has-fountain-facing t))
          :context-preconditions (!enough-health-p pass-1d4)

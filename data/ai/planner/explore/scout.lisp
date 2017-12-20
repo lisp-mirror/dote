@@ -11,14 +11,32 @@
          :effects               ((:curb-threat t))
          :cost                  80)
   (:name :launch-heal-spell
-         :preconditions         ()
+         :preconditions         ((:near-enemy-heal-spell t))
          :context-preconditions (has-enough-sp-heal-p
-                                 someone-needs-help-p
-                                 there-is-reachable-help-needed-friend-heal-spell-p)
                                  ;; "!is-status-terror-p"  is implicitly
                                  ;; managed by has-enough-sp-heal-p
+                                 someone-needs-help-p)
          :effects               ((:curb-threat t))
-         :cost                  5)
+         :cost                  15)
+  (:name :go-to-heal-spell-pos
+         :preconditions         ()
+         :effects               ((:near-enemy-heal-spell t))
+         :context-preconditions (exists-reachable-pos-to-launch-heal-spell)
+         :cost                  1)
+  (:name :launch-damage-spell
+         :preconditions         ((:near-enemy-damage-spell t))
+         :context-preconditions (pass-1d6
+                                 none-needs-help-p
+                                 ;; "!is-status-terror-p"  is implicitly
+                                 ;; managed by has-enough-sp-damage-p
+                                 has-enough-sp-damage-p)
+         :effects               ((:curb-threat t))
+         :cost                  15)
+  (:name :go-to-damage-spell-pos
+         :preconditions         ()
+         :effects               ((:near-enemy-damage-spell t))
+         :context-preconditions (exists-reachable-pos-to-launch-damage-spell)
+         :cost                  1)
   (:name :use-fountain
          :preconditions         ((:has-fountain-facing t))
          :context-preconditions (!enough-health-p pass-1d4)

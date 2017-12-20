@@ -1365,10 +1365,9 @@ values nil, i. e. the ray is not blocked"
                                             (ai-utils:combined-power-compare-clsr nil))))
         (setf all-ai-entities (remove-if #'entity-dead-p all-ai-entities))
         ;;;;;;;; TEST!!!!!!!!!!!!!!
-        ;; removing non wizards
-        (setf all-ai-entities (remove-if-not #'(lambda (e)
-                                                 (character:pclass-of-magic-user-p (ghost e)))
-
+        ;; removing wizards
+        (setf all-ai-entities (remove-if #'(lambda (e)
+                                             (character:pclass-of-magic-user-p (ghost e)))
                                    all-ai-entities))
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         (setf ai-entities-action-order all-ai-entities)))))

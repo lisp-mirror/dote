@@ -2,6 +2,7 @@
 
 (define-spell (:poison-1)
   :level                 1
+  :tags                  (:damage)
   :element               :poison
   :gui-texture           "poison/cause-poison-1.tga"
   :cost                  2.0

@@ -50,11 +50,15 @@
          :effects               ((:has-fountain-near t))
          :cost                  1)
   (:name :launch-heal-spell
-         :preconditions         ()
+         :preconditions         ((:near-enemy-heal-spell t))
          :context-preconditions (has-enough-sp-heal-p
-                                 someone-needs-help-p
-                                 there-is-reachable-help-needed-friend-heal-spell-p)
                                  ;; "!is-status-terror-p"  is implicitly
                                  ;; managed by has-enough-sp-heal-p
+                                 someone-needs-help-p)
          :effects               ((:curb-threat t))
-         :cost                  5))
+         :cost                  2)
+  (:name :go-to-heal-spell-pos
+         :preconditions         ()
+         :effects               ((:near-enemy-heal-spell t))
+         :context-preconditions (exists-reachable-pos-to-launch-heal-spell)
+         :cost                  1))

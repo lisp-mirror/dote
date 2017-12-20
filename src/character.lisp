@@ -727,6 +727,10 @@
 
 (gen-player-class-in-set-test useful-in-attack-tactic ranger warrior archer)
 
+(gen-player-class-in-set-test no-damage-spells warrior archer)
+
+(gen-player-class-in-set-test no-attack-spells warrior archer ranger)
+
 (defmacro gen-player-status-test (status)
   (let ((name-fn (format-fn-symbol t "status-~a-p" (symbol-name status))))
     `(progn
@@ -1006,9 +1010,15 @@
   #'(lambda (a) (> (spell:cost a) (current-spell-points character))))
 
 (defmethod available-spells-list ((object player-character))
-  (spell:filter-spell-db (%filter-spell-cost-clsr object)))
   ;;; TEST ;;;;
-  ;spell::*spells-db*)
+  ;; (return-from available-spells-list spell::*spells-db*)
+  (let ((affordables (spell:filter-spell-db (%filter-spell-cost-clsr object))))
+    (when (pclass-of-no-attack-spells-p object)
+      (setf affordables (remove-if #'(lambda (a) (spell:attack-spell-p a)) affordables)))
+    (when (pclass-of-no-damage-spells-p object)
+      (setf affordables (remove-if #'(lambda (a) (find spell:+spell-tag-damage+ (spell:tags a)))
+                                   affordables)))
+    affordables))
 
 (defmethod available-spells-list-by-tag ((object player-character) tag)
   (spell:filter-spell-set (available-spells-list object)

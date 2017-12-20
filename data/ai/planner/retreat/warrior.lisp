@@ -26,12 +26,6 @@
          :context-preconditions (has-enough-sp-teleport-p is-visible-p)
          :effects               ((:curb-threat t))
          :cost                  80)
-  (:name :launch-spell-wall
-         :preconditions         ()
-         :context-preconditions (has-enough-sp-break-wall-p is-visible-p
-                                 has-wall-near-p)
-         :effects               ((:has-hiding-place t))
-         :cost                  5)
   (:name :use-fountain
          :preconditions         ((:has-fountain-facing t))
          :context-preconditions (!enough-health-p pass-1d4)
@@ -48,11 +42,15 @@
          :effects               ((:has-fountain-near t))
          :cost                  1)
   (:name :launch-heal-spell
-         :preconditions         ()
+         :preconditions         ((:near-enemy-heal-spell t))
          :context-preconditions (has-enough-sp-heal-p
-                                 someone-needs-help-p
-                                 there-is-reachable-help-needed-friend-heal-spell-p)
                                  ;; "!is-status-terror-p"  is implicitly
                                  ;; managed by has-enough-sp-heal-p
+                                 someone-needs-help-p)
          :effects               ((:curb-threat t))
-         :cost                  100))
+         :cost                  80)
+  (:name :go-to-heal-spell-pos
+         :preconditions         ()
+         :effects               ((:near-enemy-heal-spell t))
+         :context-preconditions (exists-reachable-pos-to-launch-heal-spell)
+         :cost                  1))
