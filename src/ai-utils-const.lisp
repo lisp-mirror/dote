@@ -80,8 +80,6 @@
 
 (define-constant +protect-attack-action+           :protect-attack             :test #'eq)
 
-(define-constant +protect-attack-spell-action+     :protect-attack-spell       :test #'eq)
-
 (define-constant +protect-action+                  :protect                    :test #'eq)
 
 (define-constant +launch-attack-spell-action+      :launch-attack-spell        :test #'eq)

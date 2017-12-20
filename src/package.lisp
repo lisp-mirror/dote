@@ -3034,7 +3034,6 @@
    :+go-near-weak-friend-action+
    :+go-near-to-enemy-action+
    :+protect-attack-action+
-   :+protect-attack-spell-action+
    :+protect-action+
    :+launch-attack-spell-action+
    :+launch-damage-spell-action+

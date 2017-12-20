@@ -432,18 +432,6 @@
             (let* ((path-struct (game-state:make-movement-path path total-cost)))
               (%do-simple-move object path-struct state world))))))))
 
-;; TODO REMOVE
-(defmethod actuate-plan ((object md2-mesh)
-                         strategy
-                         (action (eql ai-utils:+protect-attack-spell-action+)))
-  (with-maybe-blacklist (object strategy action)
-    (with-accessors ((state state)) object
-      (game-state:with-world (world state)
-        (action-scheduler:with-enqueue-action-and-send-remove-after
-            (world action-scheduler:tactical-plane-action)
-          (ai-utils:go-launch-attack-spell object))))))
-;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+protect-action+)))
