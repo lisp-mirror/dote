@@ -2319,6 +2319,7 @@
    :turn-off-fog
    :entity-next-p
    :faction-turn
+   :faction-turn-human-p
    :make-influence-map
    :set-tile-visited
    :set-concerning-tile

@@ -1947,13 +1947,15 @@
 (defmethod on-mouse-released ((object toolbar-modal-button) event)
   (with-parent-widget (toolbar) object
     (with-toolbar-world (world) toolbar
-      (if (world:actions-queue-empty-p world)
-          (call-next-method)
-          (if (mouse-over object (x-event event) (y-event event))
-              (progn
-                (setf (current-texture object) (texture-object object))
-                t)
-              nil)))))
+      (with-accessors ((main-state main-state)) world
+        (if (and (game-state:faction-turn-human-p main-state)
+                 (world:actions-queue-empty-p world))
+            (call-next-method)
+            (if (mouse-over object (x-event event) (y-event event))
+                (progn
+                  (setf (current-texture object) (texture-object object))
+                  t)
+                nil))))))
 
 (defun make-square-button (x y overlay callback &key (small nil) (modal nil))
   (let ((size (if small
@@ -1972,16 +1974,19 @@
                    :texture-overlay (get-texture overlay)
                    :callback        callback)))
 
-(defun make-rect-button (x y scale-w scale-h overlay callback)
-  (make-instance 'naked-button
-                 :x               x
-                 :y               y
-                 :width           (rel->abs scale-w)
-                 :height          (rel->abs scale-h)
-                 :texture-object  (get-texture +square-button-texture-name+)
-                 :texture-pressed (get-texture +square-button-pressed-texture-name+)
-                 :texture-overlay (get-texture overlay)
-                 :callback        callback))
+(defun make-rect-button (x y scale-w scale-h overlay callback &key (modal nil))
+  (let ((type (if modal
+                  'toolbar-modal-button
+                  'naked-button)))
+    (make-instance type
+                   :x               x
+                   :y               y
+                   :width           (rel->abs scale-w)
+                   :height          (rel->abs scale-h)
+                   :texture-object  (get-texture +square-button-texture-name+)
+                   :texture-pressed (get-texture +square-button-pressed-texture-name+)
+                   :texture-overlay (get-texture overlay)
+                   :callback        callback)))
 
 (defun make-health-condition (x y size texture-name)
   (make-instance 'health-status-icon
@@ -2421,7 +2426,8 @@
                                   0.0
                                   1.0 0.5
                                   +next-turn-overlay-texture-name+
-                                  #'next-turn-cb)
+                                  #'next-turn-cb
+                                  :modal t)
     :initarg :b-next-turn
     :accessor b-next-turn)
    (b-rotate-cw

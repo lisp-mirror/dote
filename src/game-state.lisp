@@ -425,6 +425,8 @@
 
 (defgeneric faction-turn  (object))
 
+(defgeneric faction-turn-human-p (object))
+
 (defgeneric make-influence-map (object))
 
 (defgeneric set-tile-visited (object entity-visiting x y))
@@ -948,6 +950,9 @@
     (if (= (rem game-turn 2) 0)
         +pc-type+
         +npc-type+)))
+
+(defmethod faction-turn-human-p ((object game-state))
+  (eq (faction-turn object) +pc-type+))
 
 (defmethod make-influence-map ((object game-state))
   (with-accessors ((player-entities player-entities)
