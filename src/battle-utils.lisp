@@ -436,7 +436,10 @@
       (game-event:send-refresh-toolbar-event)
       (game-event:propagate-attack-long-range-event msg))))
 
-(defun send-attack-spell-event (attacker defender &key (assume-visible nil))
+(defun send-attack-spell-event (attacker defender
+                                &key
+                                  (assume-visible nil)
+                                  (refresh-toolbar t))
   (when (or assume-visible
             (renderp defender)) ;; does it means: "is visible for someone?"
     (let* ((ghost-atk    (entity:ghost attacker))
@@ -447,9 +450,12 @@
                                :attacker-entity attacker
                                :spell           spell)))
       (game-event:propagate-attack-spell-event msg)
-      (game-event:send-refresh-toolbar-event))))
+      (when refresh-toolbar
+        (game-event:send-refresh-toolbar-event)))))
 
-(defun send-spell-event (attacker defender &key (assume-visible nil))
+(defun send-spell-event (attacker defender &key
+                                             (assume-visible nil)
+                                             (refresh-toolbar t))
   (with-accessors ((state entity:state)) attacker
     (when (or assume-visible
               (renderp defender) ;; does it means: "is visible for someone?"
@@ -462,7 +468,8 @@
                                  :attacker-entity attacker
                                  :spell           spell)))
         (game-event:propagate-spell-event msg)
-        (game-event:send-refresh-toolbar-event)))))
+        (when refresh-toolbar
+          (game-event:send-refresh-toolbar-event))))))
 
 (defun trigger-trap-attack (trap-entity attacked-entity)
   (with-accessors ((id id) (state entity:state)) attacked-entity

@@ -199,6 +199,7 @@
   ;; debug
   (pushnew :debug-mode                      *features*)
   ;; (pushnew :inhibit-update-unexplored-layer *features*)
+  (pushnew :inhibit-modal-button            *features*)
   ;; (pushnew :small-skydome                *features*)
   (pushnew :debug-blackboard-layers         *features*)
   (pushnew :debug-ai                        *features*)

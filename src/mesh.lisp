@@ -2852,7 +2852,8 @@
     (multiple-value-bind (damage ambush)
         (battle-utils:defend-from-attack-short-range event)
       (declare (ignore ambush))
-      (misc:dbg "damage shell ~a ~a" damage (character:current-damage-points (ghost object)))
+      #+debug-mode (misc:dbg "damage shell ~a ~a" damage
+                             (character:current-damage-points (ghost object)))
       (when damage
         (apply-damage object damage))
       (game-event:register-for-end-attack-melee-event object)

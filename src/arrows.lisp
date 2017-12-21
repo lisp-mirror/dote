@@ -398,7 +398,8 @@
                (when (<= dist range)
                  (battle-utils:send-attack-spell-event attacker
                                                        entity
-                                                       :assume-visible t))))
+                                                       :assume-visible  t
+                                                       :refresh-toolbar nil))))
         (battle-utils:send-attack-spell-event attacker
                                               defender
                                               :assume-visible nil))))
@@ -490,7 +491,8 @@
                (when (<= dist range)
                  (battle-utils:send-spell-event attacker
                                                 entity
-                                                :assume-visible t))))
+                                                :assume-visible  t
+                                                :refresh-toolbar nil))))
         (battle-utils:send-spell-event attacker defender :assume-visible nil))))
 
 (defun %enqueue-tooltip (entity message)
