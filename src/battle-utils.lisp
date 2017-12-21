@@ -241,13 +241,17 @@
            visiblep
            (mesh:can-use-movement-points-p attacker :minimum cost)))))
 
-(defun launch-attack-spell-possible-p (attacker defender &key (assume-visible nil))
+(defun launch-attack-spell-possible-p (attacker defender
+                                       &key (assume-visible nil)
+                                         (go-for-labyrinth-elements nil))
   (when-let* ((ghost-atk     (entity:ghost attacker))
               (spell         (character:spell-loaded ghost-atk))
               (cost          (spell:cost spell))
               (range-valid-p (range-spell-valid-p attacker defender spell))
-              (visiblep      (or assume-visible
-                                 (able-to-see-mesh:other-visible-p attacker defender))))
+              (visiblep (or assume-visible
+                            (absee-mesh:other-visible-p attacker defender
+                                                        :exclude-if-labyrinth-entity
+                                                        (not go-for-labyrinth-elements)))))
     ;; the second and third of the  following checks are useless as we
     ;; are  using   when-let*,  but   harmless  and,   moreover,  help
     ;; readability.
@@ -767,17 +771,24 @@
   (let ((pos-def (map-utils:pos->game-state-pos def)))
     (range-weapon-valid-p atk pos-def weapon-type)))
 
-(defun attack-launch-spell (world attacker defender &key (assume-visible nil))
+(defun attack-launch-spell (world attacker defender
+                            &key (assume-visible nil)
+                              (go-for-labyrinth-elements (not (pawnp defender))))
   (when (and attacker
              defender)
     (when (or assume-visible
-              (able-to-see-mesh:other-visible-p attacker defender))
+              (able-to-see-mesh:other-visible-p attacker
+                                                defender
+                                                :exclude-if-labyrinth-entity
+                                                (not go-for-labyrinth-elements)))
       (let ((spell-loaded (character:spell-loaded (entity:ghost attacker))))
         (if spell-loaded
             (if (range-spell-valid-p attacker defender spell-loaded)
                 (when (launch-attack-spell-possible-p attacker
                                                       defender
-                                                      :assume-visible assume-visible)
+                                                      :assume-visible assume-visible
+                                                      :go-for-labyrinth-elements
+                                                      go-for-labyrinth-elements)
                   (action-scheduler:with-enqueue-action
                       (world action-scheduler:attack-launch-spell-action)
                     (when (attack-spell-animation attacker defender)

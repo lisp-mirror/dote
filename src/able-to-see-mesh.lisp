@@ -292,7 +292,7 @@ Returns two values: *invisibles* and *visibles* tiles"
                               (exclude-if-labyrinth-entity t)
                               (cone (visibility-cone object)))
     "is target visible from object?
-note: non labyrinth elements are ignored"
+note: by default non labyrinth elements are ignored"
   (let ((in-cone-p (other-visible-cone-p object target :cone cone)))
     (when in-cone-p
       ;; (misc:dbg "visible for cone ~a" (id target))

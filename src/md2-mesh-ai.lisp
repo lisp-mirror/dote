@@ -685,7 +685,8 @@ attempts Note: all attackable position will be updated as well"
                    ghost)
           (if (null *planner-channel*)
               (progn
-                (widget:activate-planner-icon world)
+                (world:toolbar-selected-action world)
+                (widget:activate-planner-icon  world)
                 (setf *planner-channel* (lparallel:make-channel))
                 (lparallel:submit-task *planner-channel*
                                        'elaborate-current-tactical-plan
