@@ -26,9 +26,21 @@
 
 (alexandria:define-constant +angular-speed-rotate-command+ (deg->rad 150.0) :test #'=)
 
-(alexandria:define-constant +reset-camera-vec+   (vec (d* +terrain-chunk-tile-size+ -8.0)
-                                                      (d* +terrain-chunk-tile-size+ 15.0)
-                                                      (d* +terrain-chunk-tile-size+ -8.0))
+(alexandria:define-constant +reset-camera-x+               (d* +terrain-chunk-tile-size+
+                                                               -8.0)
+  :test #'=)
+
+(alexandria:define-constant +reset-camera-y+              (d* +terrain-chunk-tile-size+
+                                                              15.0)
+  :test #'=)
+
+(alexandria:define-constant +reset-camera-z+              (d* +terrain-chunk-tile-size+
+                                                              -8.0)
+  :test #'=)
+
+(alexandria:define-constant +reset-camera-vec+   (vec +reset-camera-x+
+                                                      +reset-camera-y+
+                                                      +reset-camera-z+)
   :test #'vec=)
 
 (defclass camera (transformable entity fading-away-entity)
@@ -226,6 +238,8 @@
 
 (defgeneric install-drag-interpolator (object &key spring-k))
 
+(defgeneric reset-camera-view (object point-to &key displacement-from-target))
+
 (defgeneric calculate-frustum (object))
 
 (defgeneric calculate-aabb    (object))
@@ -273,17 +287,20 @@
         (game-event:propagate-camera-drag-ends (make-instance 'game-event:camera-drag-ends))))))
 
 (defmethod %draw-follow-mode ((object camera) dt)
-  (with-accessors ((target target)
-                   (pos pos)
+  (declare (optimize (safety 0) (speed 3) (debug 0)))
+  (with-accessors ((pos pos)
                    (followed-entity followed-entity)) object
-    (when followed-entity
-      (let* ((pos-saved    (copy-vec pos))
-             (pos-followed (pos      followed-entity)))
-        (setf pos (vec (d- (elt  pos-followed 0) (d* +terrain-chunk-tile-size+ 2.0))
-                       (elt pos-saved 1)
-                       (d- (elt pos-followed 2)  (d* +terrain-chunk-tile-size+ 2.0)))
-              target   pos-followed)
-        (look-at* object)))))
+    #+ debug-mode (assert followed-entity)
+    (let* ((pos-followed (pos followed-entity))
+           (displacement (vec- pos-followed pos))
+           (v2           (vec (d* (sign (vec-x displacement))
+                                  +reset-camera-x+)
+                              30.0
+                              (d* (sign (vec-z displacement))
+                                  +reset-camera-z+))))
+      (reset-camera-view object
+                         pos-followed
+                         :displacement-from-target v2))))
 
 (defmethod look-at* ((object camera))
   (declare (optimize (safety 0) (speed 3) (debug 0)))
@@ -426,11 +443,12 @@
 (defmethod install-drag-interpolator ((object camera) &key (spring-k 100.0))
   (setf (drag-interpolator object) (gen-drag-interpolator :spring-k spring-k)))
 
-(defmethod reset-camera-view ((object camera) (point-to vector))
+(defmethod reset-camera-view ((object camera) (point-to vector)
+                              &key (displacement-from-target +reset-camera-vec+))
   (with-accessors ((target target)
                    (pos    pos)) object
     (setf target point-to)
-    (setf pos    (vec+ point-to +reset-camera-vec+))
+    (setf pos    (vec+ point-to displacement-from-target))
     (look-at* object)
     object))
 

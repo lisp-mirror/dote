@@ -120,6 +120,20 @@
     (declare (ignore int))
     frac))
 
+(defgeneric sign (n))
+
+(defmethod sign ((n fixnum))
+  (declare (optimize (speed 3) (debug 0) (safety 0)))
+  (if (f< n 0)
+      -1
+      1))
+
+(defmethod sign ((n §d))
+  (declare (optimize (speed 3) (debug 0) (safety 0)))
+  (if (d< n 0.0)
+      -1.0
+      1.0))
+
 (alexandria:define-constant +fnv-prime-32+ 16777619 :test #'=)
 
 (alexandria:define-constant +fnv-offset-basis-32+ 2166136261 :test #'=)

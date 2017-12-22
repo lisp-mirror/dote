@@ -318,6 +318,7 @@
    :find-max
    :round-all
    :fract
+   :sign
    :fnv-hash-32
    :string-fnv-hash-32
    :fnv-hash-256
