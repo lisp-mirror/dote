@@ -347,9 +347,11 @@
               ;; test
               (mtree:add-child (world:gui world)
                                (widget:make-player-generator world))
-              ;; (mtree:add-child (world:gui world)
-              ;;                  (full-screen-masks:make-burn-mask))
               ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+              (mtree:add-child (world:gui world)
+                               (full-screen-masks:make-burn-mask
+                                (level-name (game-state object))
+                                (level-name-color (game-state object))))
               (setf (interfaces:compiled-shaders (world:gui world))
                     (compiled-shaders object))
               (setf *map-loaded-p* t)

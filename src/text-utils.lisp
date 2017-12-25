@@ -119,7 +119,7 @@
         (labels ((spaces-pos-per-line (line) (floor (/ (length line) 2)))
                  (wline<= (l) (<= l  chars-per-line))
                  (line-length (line)
-                   (reduce #'+ (mapcar #'length line)))
+                   (reduce #'+ (mapcar #'length line) :initial-value 0))
                  (line-fit-p (line word)
                    (wline<= (+ (line-length line) (length word))))
                  (add-until-fit (text &optional (res '()))
@@ -142,7 +142,6 @@
                    (cond
                      ((= (spaces-pos-per-line line) 0)
                       (copy-list line))
-
                      ((= spaces-left 0)
                       (copy-list line))
                      ((= spaces-left (spaces-pos-per-line line))
@@ -151,14 +150,13 @@
                       (loop for i in (get-spacepos line spaces-left) do
                            (setf (nth i line) (concatenate 'string (nth i line) (string " "))))
                       (copy-list line))
-
                      ((> spaces-left (spaces-pos-per-line line))
                       (justify-line
                        (increment-each-space line)
                        (- spaces-left (spaces-pos-per-line line)))))))
           (mapcar #'(lambda (l) (reduce #'(lambda (a b) (concatenate 'string a b)) l))
-                  (do ((res '()))
-                      ((null text) (reverse res))
+                  (do ((results '()))
+                      ((null text) (reverse results))
                     (progn
                       (let* ((line (add-until-fit text))
                              (rest-text (if (> (1+ (floor (/ (length line) 2)))
@@ -166,5 +164,22 @@
                                             nil
                                             (subseq text (1+ (floor (/ (length line) 2)))))))
                         (setf text rest-text)
+                        (push (justify-line line) results)))))))))
 
-                        (push (justify-line line) res)))))))))
+(defun flush-left-mono-text (text-words box-width &optional (lines '()))
+  (flet ((join (words)
+           (if words
+               (join-with-srings words " ")
+               "")))
+    (if (null text-words)
+        (reverse lines)
+        (multiple-value-bind (line rest-of-words)
+            (do ((words  text-words (rest words))
+                 (line   '()        (misc:lcat line (list (first words))))
+                 (line+1 '()        (if (> (length words) 1)
+                                        (misc:lcat line (subseq words 0 2))
+                                        line)))
+                ((or (null words)
+                     (> (length (join line+1)) box-width))
+                 (values (join line) words)))
+          (flush-left-mono-text rest-of-words box-width (misc:lcat (list line) lines))))))

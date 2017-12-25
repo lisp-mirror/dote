@@ -1,6 +1,7 @@
 (in-package :level-config)
 
 (define-level
+  set name "This is Just a Map for Testing" cffff00f9
   set seed "hello-world"
   set clouds random (clear cloudy covered)
   set buildings-level (random (0 1 2))

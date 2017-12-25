@@ -291,6 +291,14 @@
     :accessor level-difficult
     :initarg  :level-difficult
     :initform 4)
+   (level-name
+    :accessor level-name
+    :initarg  :level-name
+    :initform "test")
+   (level-name-color
+    :accessor level-name-color
+    :initarg  :level-name-color
+    :initform (vec4 1.0 0.0 1.0 1.0))
    (map-cache-dir
     :accessor map-cache-dir
     :initarg  :map-cache-dir

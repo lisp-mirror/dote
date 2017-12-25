@@ -40,6 +40,8 @@
 (alexandria:define-constant +error-dependency-not-satisfied+
     "Error: dependency not satisfied, ~a depends on ~a" :test #'string=)
 
+(alexandria:define-constant +color-prefix+      "c" :test #'string=)
+
 (alexandria:define-constant +offset-function+     14 :test #'=)
 
 (alexandria:define-constant +offset-file+         11 :test #'=)
@@ -135,6 +137,10 @@
 (defparameter *renderer*    nil)
 
 (defparameter *progress*    0.0)
+
+(defparameter *level-name*        "default")
+
+(defparameter *level-name-color*  nil)
 
 (defparameter *raw-seed* "")
 
@@ -339,7 +345,9 @@
      (setf *floor* mesh)))
 
 (defun clean-global-vars ()
-  (setf *particle-names*             0
+  (setf *level-name*                 nil
+        *level-name-color*           nil
+        *particle-names*             0
         *progress*                   0.0
         *main-window*                nil
         *renderer*                   nil
@@ -368,8 +376,8 @@
 
 (defmacro define-level (&body body)
   (ensure-cache-running
-    ;; clean a bit and free the memory associated with global variables
-    ;(clean-global-vars)
+    (p-name body)
+    (setf body (subseq body 4))
     (need-keyword ((first body) :set)
       (need-keyword ((second body) :seed)
         (need-type ((third body) 'string)
@@ -389,6 +397,42 @@
         (setup-seed)
         (setup-chairs)
         (limited-progress)))))
+
+(defun p-name (body)
+  (need-keyword ((first body) :set)
+    (need-keyword ((second body) :name)
+      (need-type ((third body) 'string)
+        (setf *level-name* (third body))
+        (setf *level-name-color* (color-utils:byte-vector->vec4 (color (fourth body))))))))
+
+(defun color (raw)
+  (let ((token (symbol-name raw)))
+    (if (color-prefix token)
+        (vector (color-r token)
+                (color-g token)
+                (color-b token)
+                (color-a token))
+        (err +error-wrong-keyword+ +color-prefix+ token))))
+
+(defun color-prefix (token)
+  (let ((prefix (subseq token 0 (length +color-prefix+))))
+    (string-equal prefix +color-prefix+)))
+
+(defun color-any (token offset)
+  (let ((c (subseq token offset (+ offset 2))))
+    (parse-integer c :radix 16 :junk-allowed nil)))
+
+(defun color-r (token)
+  (color-any token (length +color-prefix+)))
+
+(defun color-g (token)
+  (color-any token 3))
+
+(defun color-b (token)
+  (color-any token 5))
+
+(defun color-a (token)
+  (color-any token 7))
 
 (defun setup-seed ()
   (let ((cache-key (regular-file-strings->cache-key *raw-seed* +saved-seed-key+)))

@@ -511,13 +511,16 @@
    :strcat
    :join-with-srings
    :join-with-srings*
+   :split-words
+   :split-lines
    :strip-prefix
    :strip-withespaces
    :basename
    :wrap-with
    :right-padding
    :left-padding
-   :justify-monospaced-text))
+   :justify-monospaced-text
+   :flush-left-mono-text))
 
 (defpackage :resources-utils
   (:use :cl
@@ -2157,6 +2160,8 @@
    :*game-hour*
    :*map*
    :*building-level*
+   :*level-name*
+   :*level-name-color*
    :*trees*
    :*wall*
    :*ceiling*
@@ -2250,6 +2255,8 @@
    :ai-entities
    :blackboard
    :level-difficult
+   :level-name
+   :level-name-color
    :map-cache-dir
    :window-id
    :light-color
@@ -4298,6 +4305,8 @@
    :width
    :height
    :label
+   :label-font-size
+   :label-font-color
    :hide
    :focus
    :on-mouse-pressed
@@ -4321,6 +4330,8 @@
    :flip-state
    :common-setup-label
    :simple-label
+   :flush-left-label
+   :flush-center-label
    :static-text
    :h-bar
    :fill-level

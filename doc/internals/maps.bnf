@@ -1,38 +1,40 @@
 LEVEL                                := PACKAGE LEVEL-DEFINE
 
-LEVEL-DEFINE                         := '(define-level SEED
-			      		     CLOUDNESS
-					     BUILDINGS-LEVEL
-			      		     EXTERNAL-SCRIPT*
-			   		     TEXTURE-DEFINITION*
-		           		     TERRAIN-DEFINITION
-					     TREE-DEFINITION+
-					     FURNITURE-DEFINITION+
-					     FURNITURE-CONTAINER-DEFINITION+
-					     MAGIC-FURNITURE-DEFINITION+
-					     FURNITURE-PILLAR-DEFINITION+
-					     FURNITURE-CHAIR-DEFINITION+
-					     FURNITURE-TABLE-DEFINITION+
-					     FURNITURE-WALL-DECORATION-DEFINITION+
-					     FURNITURE-WALKABLE-DEFINITION+
-                                   ')'
+LEVEL-DEFINE                         := '(define-level
+                                                NAME
+                                                SEED
+                                                CLOUDNESS
+                                                BUILDINGS-LEVEL
+                                                EXTERNAL-SCRIPT*
+                                                TEXTURE-DEFINITION*
+                                                TERRAIN-DEFINITION
+                                                TREE-DEFINITION+
+                                                FURNITURE-DEFINITION+
+                                                FURNITURE-CONTAINER-DEFINITION+
+                                                MAGIC-FURNITURE-DEFINITION+
+                                                FURNITURE-PILLAR-DEFINITION+
+                                                FURNITURE-CHAIR-DEFINITION+
+                                                FURNITURE-TABLE-DEFINITION+
+                                                FURNITURE-WALL-DECORATION-DEFINITION+
+                                                FURNITURE-WALKABLE-DEFINITION+
+                                          ')'
 
 TERRAIN-DEFINITION                   := GENERATE MAP WITH SIZE '(tiny small medium large huge)'
-			      WITH MOUNTAIN-RATE               '(' RANDOM FLOAT FLOAT ')'
-		       	      WITH MOUNTAIN-Z-HEIGHT-FUNCTION   FREE-SYMBOL
-		       	      WITH MOUNTAIN-W-FUNCTION          FREE-SYMBOL
-		       	      WITH MOUNTAIN-H-FUNCTION          FREE-SYMBOL
-		       	      WITH MOUNTAIN-SIGMA-W-FUNCTION    FREE-SYMBOL
-		       	      WITH MOUNTAIN-SIGMA-H-FUNCTION    FREE-SYMBOL
-                       	      WITH LAKE-RATE                   '(' RANDOM FLOAT FLOAT ')'
-                       	      WITH LAKE-SIZE-FUNCTION           FREE-SYMBOL
-                       	      WITH LABYRINTH-RATE              '(' RANDOM FLOAT FLOAT ')'
-                       	      WITH LABYRINTH-SIZE-FUNCTION      FREE-SYMBOL
-                       	      WITH LABYRINTH-SIGMA-W-FUNCTION   FREE-SYMBOL
-                       	      WITH LABYRINTH-SIGMA-H-FUNCTION   FREE-SYMBOL
-                       	      WITH LABYRINTH-DOOR-FUNCTION      FREE-SYMBOL
-                       	      WITH LABYRINTH-WIN-FUNCTION       FREE-SYMBOL
-			      WITH LABYRINTH-FURNITURE-FUNCTION FREE-SYMBOL
+                              WITH MOUNTAIN-RATE               '(' RANDOM FLOAT FLOAT ')'
+                              WITH MOUNTAIN-Z-HEIGHT-FUNCTION   FREE-SYMBOL
+                              WITH MOUNTAIN-W-FUNCTION          FREE-SYMBOL
+                              WITH MOUNTAIN-H-FUNCTION          FREE-SYMBOL
+                              WITH MOUNTAIN-SIGMA-W-FUNCTION    FREE-SYMBOL
+                              WITH MOUNTAIN-SIGMA-H-FUNCTION    FREE-SYMBOL
+                              WITH LAKE-RATE                   '(' RANDOM FLOAT FLOAT ')'
+                              WITH LAKE-SIZE-FUNCTION           FREE-SYMBOL
+                              WITH LABYRINTH-RATE              '(' RANDOM FLOAT FLOAT ')'
+                              WITH LABYRINTH-SIZE-FUNCTION      FREE-SYMBOL
+                              WITH LABYRINTH-SIGMA-W-FUNCTION   FREE-SYMBOL
+                              WITH LABYRINTH-SIGMA-H-FUNCTION   FREE-SYMBOL
+                              WITH LABYRINTH-DOOR-FUNCTION      FREE-SYMBOL
+                              WITH LABYRINTH-WIN-FUNCTION       FREE-SYMBOL
+                              WITH LABYRINTH-FURNITURE-FUNCTION FREE-SYMBOL
 
 MOUNTAIN-RATE                        :=  'mountain-rate'
 MOUNTAIN-Z-HEIGHT-FUNCTION           :=  'mountain-z-height-function'
@@ -50,18 +52,20 @@ LABYRINTH-DOOR-FUNCTION              :=  'labyrinth-door-function'
 LABYRINTH-WIN-FUNCTION               :=  'labyrinth-win-function'
 LABYRINTH-FURNITURE-FUNCTION         :=  'labyrinth-furniture-function'
 
-SEED                                 := SET SEED FREE-STRING
+NAME                                 := SET 'name' FREE-STRING COLOR
+
+SEED                                 := SET 'seed' FREE-STRING
 
 CLOUDNESS                            := SET 'cloud' RANDOM '(clear cloudy covered)'
 
 BUILDINGS-LEVEL                      := SET 'buildings-level' ( '(' RANDOM LIST-OF-NUMBERS ')' |
-			      	  		       LIST-OF-NUMBERS )
+                                                       LIST-OF-NUMBERS )
 
 EXTERNAL-SCRIPT                      := LOAD FREE-STRING
 
 TREE-DEFINITION                      := GENERATE TREE-LABEL
-			                 ( TREE-FROM-SCRIPT | TREE-FROM-FILE )
-      			                WITH-NORMALMAP-PARAMETERS
+                                         ( TREE-FROM-SCRIPT | TREE-FROM-FILE )
+                                        WITH-NORMALMAP-PARAMETERS
 
 TREE-FROM-FILE                       := FROM FILE-LABEL PATH
 
@@ -82,7 +86,7 @@ FURNITURE-CHAIR-DEFINITION           := GENERATE CHAIR-FURNITURE-LABEL FROM FURN
 FURNITURE-TABLE-DEFINITION           := GENERATE TABLE-FURNITURE-LABEL FROM FURNITURE-FROM-FILE
 
 FURNITURE-WALL-DECORATION-DEFINITION := GENERATE WALL-DECORATION-FURNITURE-LABEL
-				     		 FROM FURNITURE-FROM-FILE
+                                                 FROM FURNITURE-FROM-FILE
 
 FURNITURE-WALKABLE-DEFINITION        := GENERATE WALKABLE-FURNITURE-LABEL FROM FURNITURE-FROM-FILE
 
@@ -106,9 +110,9 @@ PILLAR-FURNITURE-LABEL               := 'pillar'
 
 TEXTURE-DEFINITION                   := GENERATE HANDLE-NAME FROM
                               (TEXTURE-FROM-FILE | TEXURE-FROM-STRING |
-			      TEXTURE-FROM-FUNCTION)
+                              TEXTURE-FROM-FUNCTION)
                               WITH-TAGS
-			      WITH-NORMALMAP-PARAMETERS
+                              WITH-NORMALMAP-PARAMETERS
 
 TEXTURE-FROM-FILE                    := FILE-LABEL PATH
 
@@ -119,7 +123,7 @@ SCRIPT-LABEL                         := 'script'
 TEXTURE-FROM-STRING                  := STRING-TERMINAL BASE64-STRING
 
 TEXTURE-FROM-FUNCTION                := FUNCTION FUNCTION-NAME FREE-SYMBOL WITH-PARAMETER-CLAUSE
-			      (AND OPTIONAL-CLAUSES)*
+                              (AND OPTIONAL-CLAUSES)*
 
 OPTIONAL-CLAUSES                     := WITH-POSTPROCESS
 
@@ -141,7 +145,7 @@ LIST-OF-COLORS                       := '(' (COLOR SPACE+)+ ')'
 
 COLOR                                := COLOR-PREFIX RR GG BB AA
 
-COLOR-PREFIX                         :=  '#g'
+COLOR-PREFIX                         :=  'c' | 'C'
 
 RR                                   := [0123456789abcdef][0123456789abcdef]
 

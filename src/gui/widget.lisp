@@ -1218,6 +1218,78 @@
          (setf (scaling l) (sb-cga:vec label-font-size label-font-size 0.0))
          (setf (pos     l) (sb-cga:vec xf 0.0 0.0)))))
 
+(defun common-lush-*-label-setup (widget new-label x-shift-fn)
+  (declare (optimize (debug 3) (speed 0) (safety 3)))
+  (declare (simple-string new-label))
+  (with-accessors ((label-font-size label-font-size)
+                   (label-font label-font)
+                   (label-font-color label-font-color)
+                   (height height)
+                   (width width)
+                   (children children)) widget
+    (declare (desired-type width height label-font-size))
+    (remove-all-children widget)
+    (let* ((char-width    (ftruncate (d/ width label-font-size)))
+           (lines         (reverse (flush-left-mono-text (split-words new-label) char-width)))
+           (actual-height (d* label-font-size (d (length lines)))))
+      (declare (list lines))
+      (setf height actual-height)
+      (loop
+         for line-count from 0.0 by 1.0
+         for line in lines do
+        (loop
+           for c across (the simple-string line)
+           for xf single-float from  0.0 by label-font-size do
+           (let* ((mesh  (get-char-mesh label-font c))
+                  (shell (if mesh
+                             (fill-font-mesh-shell mesh :color label-font-color)
+                             nil)))
+             (when shell
+               (setf (scaling shell) (sb-cga:vec label-font-size label-font-size 0.0))
+               (setf (pos     shell) (sb-cga:vec (funcall x-shift-fn
+                                                          widget
+                                                          xf
+                                                          line)
+                                                 (d* line-count label-font-size)
+                                                 0.0))
+               (add-child widget shell))))))))
+
+(defclass flush-left-label (simple-label) ())
+
+(defmethod (setf label) (new-label (object flush-left-label))
+  (declare (optimize (debug 3) (speed 0) (safety 3)))
+  (with-accessors ((label-font-size label-font-size)
+                   (label-font label-font)
+                   (label-font-color label-font-color)
+                   (height height)
+                   (width width)
+                   (children children)) object
+    (declare (desired-type width height label-font-size))
+    (let ((x-shift-fn #'(lambda (widget xf line)
+                          (declare (ignore widget line))
+                          xf)))
+      (common-lush-*-label-setup object new-label x-shift-fn))))
+
+(defclass flush-center-label (simple-label) ())
+
+(defmethod (setf label) (new-label (object flush-center-label))
+  (declare (optimize (debug 3) (speed 0) (safety 3)))
+  (with-accessors ((label-font-size label-font-size)
+                   (label-font label-font)
+                   (label-font-color label-font-color)
+                   (height height)
+                   (width width)
+                   (children children)) object
+    (declare (desired-type width height label-font-size))
+    (let ((x-shift-fn #'(lambda (widget xf line)
+                          (declare (ignore widget))
+                          (d- (d+ xf
+                                  (d/ width 2.0))
+                              (d/ (d* label-font-size
+                                      (d (length line)))
+                                  2.0)))))
+      (common-lush-*-label-setup object new-label x-shift-fn))))
+
 (defclass static-text (widget)
   ((justified
     :initform t
@@ -1230,14 +1302,13 @@
       (setf (label object) label))))
 
 (defun split-text-lines (text width justify)
-  (reverse (or
-            (alexandria:flatten
-             (map 'list #'(lambda (a)
-                            (if justify
-                                (justify-monospaced-text a width)
-                                a))
-                  (cl-ppcre:split +gui-static-text-delim+ text)))
-            '(""))))
+  (reverse (or (alexandria:flatten
+                (map 'list #'(lambda (a)
+                               (if justify
+                                   (justify-monospaced-text a width)
+                                   a))
+                     (cl-ppcre:split +gui-static-text-delim+ text)))
+               '(""))))
 
 (defun remove-nbrk-space (lines)
   (mapcar #'(lambda (a)

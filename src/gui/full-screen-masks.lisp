@@ -172,6 +172,17 @@
     :initform (make-standard-grid +grid-size+)
     :initarg  :grid
     :accessor grid)
+   (text
+    :initform (make-instance 'flush-center-label
+                             :x               (d (* 1/10 *window-w*))
+                             :y               (d (- (* 3/4 *window-h*)
+                                                    (/ (/ *window-h* 2) 2)))
+                             :width           (d (* 8/10 *window-w*))
+                             :height          (d (/ *window-h* 2))
+                             :label           nil
+                             :label-font-size (d (/ *window-h* 12)))
+    :initarg  :text
+    :accessor text)
    (burning-speed
     :initform +burning-speed+
     :initarg  :burning-speed
@@ -186,27 +197,43 @@
      :reader   pick-random-p
      :writer   pick-random)))
 
-(defmethod initialize-instance :after ((object burn-mask) &key &allow-other-keys)
+(defmethod initialize-instance :after ((object burn-mask)
+                                       &key
+                                         (title "test")
+                                         (color §cffff00ff)
+                                         &allow-other-keys)
   (with-accessors ((width width) (height height)
-                   (grid grid)) object
+                   (grid grid)
+                   (text text)) object
     (qpush (grid-queue grid)
            (matrix:matrix-elt (grid-cells grid)
                               (floor (/ +grid-size+ 2))
                               (floor (/ +grid-size+ 2))))
     (add-quad-for-widget object)
     (transform-vertices object (sb-cga:scale* (width object) (height object) 1.0))
-    (prepare-for-rendering object)))
+    (prepare-for-rendering object)
+    ;;
+    (when title
+      (setf (label-font-color text) color)
+      (setf (label text) title)
+      (setf (y text) (d (- (/ *window-h* 2)
+                           (/ (height text) 2)))))
+    (mtree:add-child object text)))
 
 (defmethod calculate :before ((object burn-mask) dt)
   (with-accessors ((grid           grid)
                    (texture-object texture-object)
                    (burning-speed burning-speed)
                    (delay delay)
-                   (pick-random-p pick-random-p)) object
+                   (pick-random-p pick-random-p)
+                   (text text)
+                   (children children)) object
     (declare (optimize (debug 0) (speed 3) (safety 0)))
     (declare (fixnum delay))
     (if (<= delay 0)
         (progn
+          (when (not (vector-empty-p children))
+            (mtree:remove-child object text))
           (update grid :speed burning-speed :pick-random-p pick-random-p)
           (draw texture-object grid)
           (update-for-rendering texture-object))
@@ -222,7 +249,9 @@
                    (view-matrix view-matrix)
                    (compiled-shaders compiled-shaders)
                    (triangles triangles)
-                   (material-params material-params)) object
+                   (material-params material-params)
+                   (text text)
+                   (children children)) object
     (declare (texture:texture texture-object))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
@@ -240,16 +269,20 @@
                           nil)
           (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
           (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-          (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))))
+          (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))
+    (do-children-mesh (i object)
+      (render i renderer))))
 
 (defmethod removeable-from-world-p ((object burn-mask))
   (every #'(lambda (a) (d> (cell-intensity a) 0.90))
          (matrix:data (grid-cells (grid object)))))
 
-(defun make-burn-mask (&optional (texture-file +burn-texture+))
+(defun make-burn-mask (text color &optional (texture-file +burn-texture+))
   (let ((instance (make-instance 'burn-mask
                                  :width    (d *window-w*)
-                                 :height   (d *window-h*)))
+                                 :height   (d *window-h*)
+                                 :title    text
+                                 :color    color))
         (texture  (texture:get-texture (res:get-resource-file texture-file
                                                               +default-gui-resource+
                                                               :if-does-not-exists :error))))

@@ -954,6 +954,8 @@ wall's    coordinates    as    they   are    already    scaled:    see
       (setf (compiled-shaders world)    compiled-shaders)
       (setup-game-hour game-state       *game-hour*)
       (setf (map-cache-dir game-state)  *raw-seed*)
+      (setf (level-name         game-state)  *level-name*)
+      (setf (level-name-color   game-state)  *level-name-color*)
       (setf (costs-from-map     game-state)  (cost-matrix *map*))
       (setf (costs-from-players game-state)  (matrix:make-matrix (matrix:width  (cost-matrix *map*))
                                                                  (matrix:height (cost-matrix *map*))
