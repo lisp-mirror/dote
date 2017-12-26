@@ -73,13 +73,15 @@
   (print-unreadable-object (object stream :type t :identity t)
     (format stream "label --~a-- pr ~a" (label object) (priority object))))
 
-(defclass animated-billboard-show-action       (game-action) ())
+(defclass animated-billboard-show-action (game-action) ())
 
-(defclass particle-effect-action             (game-action) ())
+(defclass turn-billboard-show-action     (game-action) ())
 
-(defclass refresh-status-bar-action          (game-action) ())
+(defclass particle-effect-action         (game-action) ())
 
-(defclass blood-spill-action                 (game-action) ())
+(defclass refresh-status-bar-action      (game-action) ())
+
+(defclass blood-spill-action             (game-action) ())
 
 (defun %make-queue ()
   (make-instance 'qu:simple-queue))

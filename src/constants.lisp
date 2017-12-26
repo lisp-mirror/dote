@@ -236,6 +236,14 @@
 
 (define-constant +animation-texture-dir+           '("textures" "animation")      :test #'equalp)
 
+(define-constant +turn-transition-billboard-dir+   '("textures" "turn-transition")
+
+  :test #'equalp)
+
+(define-constant +turn-billboard-ai-texture-name+    "ai.tga"                     :test #'string=)
+
+(define-constant +turn-billboard-human-texture-name+ "human.tga"                  :test #'string=)
+
 (define-constant +default-character-filename+      "character.lisp"               :test #'string=)
 
 (define-constant +default-interaction-filename+    "interaction.lisp"             :test #'string=)

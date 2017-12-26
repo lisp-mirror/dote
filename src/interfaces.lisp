@@ -215,6 +215,7 @@
     `(with-accessors ((,triggered-p triggered-p)
                       (,end-of-life-callback end-of-life-callback)
                       (,repeat-trigger-p repeat-trigger-p)) ,object
+       (declare (function ,end-of-life-callback))
        (when (and (or ,repeat-trigger-p
                       (not ,triggered-p))
                   ,(if trigger-predicate

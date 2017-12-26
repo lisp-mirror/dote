@@ -639,9 +639,13 @@ Name from Emacs Lisp."
 ;; cg vectors
 
 (defmacro gen-vec-comp ((prefix-name comp-name index) &rest declarations)
-  (let ((name (format-fn-symbol t "~a-~a" prefix-name comp-name))
-        (arg  (format-fn-symbol t "v")))
+  (let ((name     (format-fn-symbol t "~a-~a" prefix-name comp-name))
+        (set-name (format-fn-symbol t "%set-~a-~a" prefix-name comp-name))
+        (arg      (format-fn-symbol t "v")))
     `(progn
+       (defun ,set-name (vec value)
+         (setf (elt vec ,index) value))
+       (defsetf ,name ,set-name)
        (defun ,name (,arg)
          ,@declarations
          (elt ,arg ,index))

@@ -2920,7 +2920,7 @@
     ;; we use 'rem' here to make  the 'el-time' periodic, otherwise
     ;; we will get non-fluid animation.
     ;; my best guess  is  that sin  function  in  the shader  give  wrong
-    ;; results when argument is large (as it wa no more periodic)
+    ;; results when argument is large (as it was no more periodic)
     (setf (el-time object)
           (d+ (start-time object)
               (rem (d* (animation-speed object) (current-time object))

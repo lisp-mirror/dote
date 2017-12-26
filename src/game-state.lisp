@@ -435,6 +435,8 @@
 
 (defgeneric faction-turn-human-p (object))
 
+(defgeneric faction-turn-ai-p    (object))
+
 (defgeneric make-influence-map (object))
 
 (defgeneric set-tile-visited (object entity-visiting x y))
@@ -962,6 +964,9 @@
 (defmethod faction-turn-human-p ((object game-state))
   (eq (faction-turn object) +pc-type+))
 
+(defmethod faction-turn-ai-p ((object game-state))
+  (not (faction-turn-human-p object)))
+
 (defmethod make-influence-map ((object game-state))
   (with-accessors ((player-entities player-entities)
                    (map-state map-state)
@@ -1056,3 +1061,10 @@
 
 (defmethod remove-entity-from-all-attack-pos ((object game-state) entity)
   (remove-entity-from-all-attack-pos (blackboard object) entity))
+
+(defun increase-game-turn (state)
+  (let ((end-event   (make-instance 'game-event:end-turn
+                                    :end-turn-count  (game-state:game-turn state)))
+        (start-event (make-instance 'game-event:start-turn)))
+    (game-event:propagate-end-turn   end-event)
+    (game-event:propagate-start-turn start-event)))

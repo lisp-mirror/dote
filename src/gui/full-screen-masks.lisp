@@ -290,3 +290,134 @@
     (pixmap:cristallize-bits texture)
     (setf (texture-object instance) texture)
     instance))
+
+(defun turn-billboard-w ()
+  (d *window-w*))
+
+(defun turn-billboard-v-fn (time)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (declare (desired-type time))
+  (let* ((actual-time (clamp time 0.0001 0.9999))
+         (v (d (dexpt (log (d/ actual-time
+                             (d- 1.0 actual-time))
+                          10)
+                     2.0))))
+    (d* 20.8 v)))
+
+(defclass turn-billboard (widget inner-animation end-life-trigger)
+  ((offset
+    :initform 0.0
+    :initarg :offset
+    :accessor offset)
+   (end-time
+    :initform 2.5
+    :initarg  :end-time
+    :accessor end-time)))
+
+(defmethod initialize-instance :after ((object turn-billboard) &key &allow-other-keys)
+  (with-accessors ((width width)
+                   (height height)
+                   (state state)) object
+    (add-quad-for-widget object)
+    (transform-vertices object (sb-cga:scale* (width object) (height object) 1.0))
+    (prepare-for-rendering object)
+    (with-world (world state)
+      (setf (end-of-life-callback object)
+            #'(lambda () (game-event:with-send-action-terminated-check-type
+                             (world action-scheduler:turn-billboard-show-action)
+                           (widget:hide-and-remove-from-parent object nil)))))))
+
+(defmethod calculate :after ((object turn-billboard) dt)
+  (with-accessors ((offset               offset)
+                   (animation-speed      animation-speed)
+                   (start-time           start-time)
+                   (end-time             end-time)
+                   (el-time              el-time)
+                   (pos                  pos)
+                   (end-of-life-callback end-of-life-callback)) object
+    (declare (optimize (debug 0) (speed 3) (safety 0)))
+    (declare (desired-type dt el-time offset animation-speed start-time))
+    (setf el-time (d+ el-time
+                      dt))
+    (let ((p (normalize-value-in-range el-time start-time end-time)))
+      (setf offset
+            (d+ offset (d* (turn-billboard-v-fn p) animation-speed dt)))
+      (setf (vec-x pos) offset)
+      (with-maybe-trigger-end-of-life (object (removeable-from-world-p object))))))
+
+(defmethod render ((object turn-billboard) renderer)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((vbo vbo)
+                   (vao vao)
+                   (texture-object texture-object)
+                   (projection-matrix projection-matrix)
+                   (model-matrix model-matrix)
+                   (view-matrix view-matrix)
+                   (compiled-shaders compiled-shaders)
+                   (triangles triangles)
+                   (material-params material-params)
+                   (text text)
+                   (children children)) object
+    (declare (texture:texture texture-object))
+    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
+    (declare (list triangles vao vbo))
+    (when (> (length triangles) 0)
+      (with-camera-view-matrix (camera-vw-matrix renderer)
+        (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+          (cl-gl-utils:with-depth-disabled
+            (cl-gl-utils:with-blending
+              (gl:blend-func :src-alpha :one-minus-src-alpha)
+              (use-program compiled-shaders :gui)
+              (gl:active-texture :texture0)
+              (texture:bind-texture texture-object)
+              (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+              (uniform-matrix compiled-shaders :modelview-matrix 4
+                              (vector (sb-cga:matrix* camera-vw-matrix
+                                                      (elt view-matrix 0)
+                                                      (elt model-matrix 0)))
+                              nil)
+              (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+              (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+              (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))))))
+
+(defmethod removeable-from-world-p ((object turn-billboard))
+  (d> (offset object)
+      (d *window-w*)))
+
+(defun make-turn-billboard-texture (texture-file)
+  (let ((texture (tex:get-texture (res:get-resource-file texture-file
+                                                         +turn-transition-billboard-dir+))))
+    (setf (texture:border-color       texture) §c00000000)
+    (setf (texture:s-wrap-mode        texture) :clamp-to-border)
+    (setf (texture:t-wrap-mode        texture) :clamp-to-border)
+    (setf (texture:interpolation-type texture) :linear)
+    (prepare-for-rendering texture)
+    texture))
+
+(defun make-turn-billboard (texture-filename compiled-shaders)
+  (make-instance 'turn-billboard
+                 :animation-speed  70.0
+                 :offset           (d- (turn-billboard-w))
+                 :width            (turn-billboard-w)
+                 :height           (d/ (d *window-h*) 3.0)
+                 :y                (d/ (d *window-h*) 2.0)
+                 :compiled-shaders compiled-shaders
+                 :texture-object   (make-turn-billboard-texture texture-filename)))
+
+(defun make-turn-billboard-ai (compiled-shaders)
+  (make-turn-billboard +turn-billboard-ai-texture-name+ compiled-shaders))
+
+(defun make-turn-billboard-human (compiled-shaders)
+  (make-turn-billboard +turn-billboard-human-texture-name+ compiled-shaders))
+
+(defun enqueue-turn-billboard-* (world type-fn)
+  (action-scheduler:with-enqueue-action (world
+                                         action-scheduler:turn-billboard-show-action)
+    (mtree:add-child (world:gui world)
+                     (funcall type-fn (compiled-shaders world)))))
+
+(defun enqueue-turn-billboard-ai (world)
+  (enqueue-turn-billboard-* world #'make-turn-billboard-ai))
+
+(defun enqueue-turn-billboard-human (world)
+  (enqueue-turn-billboard-* world #'make-turn-billboard-human))

@@ -1717,6 +1717,8 @@ data/textures/animation/flash-1.tga                      \
 data/textures/animation/heal-1.tga                       \
 data/textures/animation/shock-1.tga                      \
 data/textures/animation/wasp.tga                         \
+data/textures/turn-transition/ai.tga                     \
+data/textures/turn-transition/human.tga                  \
 data/furniture-templates/carpet.tga                      \
 data/furniture-templates/corr-e.tga                      \
 data/furniture-templates/corr-n.tga                      \

@@ -145,6 +145,9 @@
    :+default-character-misc-dir+
    :+default-character-inert-obj-dir+
    :+animation-texture-dir+
+   :+turn-transition-billboard-dir+
+   :+turn-billboard-ai-texture-name+
+   :+turn-billboard-human-texture-name+
    :+default-character-filename+
    :+default-interaction-filename+
    :+default-furniture-templates-dir+
@@ -2027,6 +2030,7 @@
         :pixmap
         :color-utils
         :mesh-material)
+  (:nicknames :tex)
   (:shadowing-import-from :pixmap :load)
   (:export
    :init-db
@@ -2328,6 +2332,7 @@
    :entity-next-p
    :faction-turn
    :faction-turn-human-p
+   :faction-turn-ai-p
    :make-influence-map
    :set-tile-visited
    :set-concerning-tile
@@ -2337,7 +2342,8 @@
    :calc-ai-entities-action-order
    :door-in-next-path-tile-p
    :skydome-bottom-color
-   :remove-entity-from-all-attack-pos))
+   :remove-entity-from-all-attack-pos
+   :increase-game-turn))
 
 (defpackage :game-event
   (:use
@@ -2367,6 +2373,11 @@
    :register-for-end-turn
    :unregister-for-end-turn
    :propagate-end-turn
+   :start-turn
+   :start-turn-count
+   :register-for-start-turn
+   :unregister-for-start-turn
+   :propagate-start-turn
    :update-visibility
    :from-event
    :register-for-update-visibility
@@ -2687,6 +2698,7 @@
    :tactical-plane-action
    :tooltip-show-action
    :animated-billboard-show-action
+   :turn-billboard-show-action
    :particle-effect-action
    :refresh-status-bar-action
    :blood-spill-action
@@ -4269,6 +4281,10 @@
    :+action-launch-spell+
    :with-parent-widget
    :with-root-widget
+   :hide-and-remove-from-parent-cb
+   :hide-and-remove-parent-cb
+   :hide-and-remove-from-parent
+   :hide-and-remove-parent
    :reference-sizes
    :top-bar-h
    :top-bar-relative-offset
@@ -4400,6 +4416,7 @@
    :vec4
    :misc
    :num
+   :3d-utils
    :static-queue
    :shaders-utils
    :cl-gl-utils
@@ -4416,7 +4433,11 @@
    :widget)
   (:shadowing-import-from :misc :shuffle :random-elt)
   (:export
-   :make-burn-mask))
+   :make-burn-mask
+   :make-turn-billboard-ai
+   :make-turn-billboard-human
+   :enqueue-turn-billboard-ai
+   :enqueue-turn-billboard-human))
 
 (defpackage :billboard
   (:use :cl

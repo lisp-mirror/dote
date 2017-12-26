@@ -88,6 +88,8 @@
     :initarg  :end-turn-count
     :accessor end-turn-count)))
 
+(defevent start-turn () ())
+
 (defevent update-visibility ()
   ((from-event
     :initform nil

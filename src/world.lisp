@@ -221,6 +221,7 @@
                    (actions-queue actions-queue)) object
     (game-event:register-for-refresh-toolbar-event object)
     (game-event:register-for-update-highlight-path object)
+    (game-event:register-for-start-turn            object)
     (game-event:register-for-end-turn              object)
     ;; registering root action-scheduler
     (game-event:register-for-end-turn               actions-queue)
@@ -305,10 +306,35 @@
            (game-state:remove-entity-by-id main-state id))
       object)))
 
+(defmethod faction-turn ((object world))
+  (faction-turn (main-state object)))
+
+(defmethod faction-turn-human-p ((object world))
+  (eq (faction-turn object) +pc-type+))
+
+(defmethod faction-turn-ai-p ((object world))
+  (not (faction-turn-human-p object)))
+
 (defun rebuild-all-ai-planners (world)
   (loop-ai-entities (main-state world)
                    #'(lambda (a)
                        (character:setup-planners (ghost a)))))
+
+(defun add-start-turn-billboard (world)
+  (if (faction-turn-human-p world)
+      (full-screen-masks:enqueue-turn-billboard-human world)
+      (full-screen-masks:enqueue-turn-billboard-ai    world)))
+
+(defmethod game-event:on-game-event ((object world) (event game-event:start-turn))
+  (with-accessors ((main-state main-state)) object
+    ;(tg:gc :full t)
+    (flet ((%process-postponed-messages (entity)
+             (mesh:process-postponed-messages entity)))
+      (loop-player-entities main-state #'%process-postponed-messages)
+      (loop-ai-entities     main-state #'%process-postponed-messages))
+    (calc-ai-entities-action-order main-state)
+    (add-start-turn-billboard object)
+    nil))
 
 (defmethod game-event:on-game-event ((object world) (event game-event:end-turn))
   (with-accessors ((main-state main-state)) object
@@ -322,12 +348,7 @@
     (remove-all-removeable          object)
     (remove-all-removeable-from-gui object)
     ;;(remove-entity-if (gui object) #'(lambda (a) (typep a 'widget:message-window)))
-    (incf (game-turn (main-state object)))
-    (flet ((%process-postponed-messages (entity)
-             (mesh:process-postponed-messages entity)))
-      (loop-player-entities main-state #'%process-postponed-messages)
-      (loop-ai-entities     main-state #'%process-postponed-messages))
-    (calc-ai-entities-action-order main-state)
+    (incf (game-turn (main-state object))) ;; new turn starts here!
     nil))
 
 (defmethod remove-entity-by-id ((object world) id)

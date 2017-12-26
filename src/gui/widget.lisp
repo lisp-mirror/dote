@@ -536,6 +536,8 @@
                   :test #'(lambda (a b)
                             (= (id a) (id b))))))
 
+(defalias hide-and-remove-from-parent #'hide-and-remove-from-parent-cb)
+
 (defun hide-and-remove-parent-cb (widget event)
   (declare (ignore event))
   (with-parent-widget (win) widget
@@ -546,6 +548,8 @@
                   :key #'identity
                   :test #'(lambda (a b)
                             (= (id a) (id b))))))
+
+(defalias hide-and-remove-parent #'hide-and-remove-parent-cb)
 
 (defun hide-and-remove-grandparent-cb (widget event)
   (declare (ignore event))
@@ -1219,8 +1223,9 @@
          (setf (pos     l) (sb-cga:vec xf 0.0 0.0)))))
 
 (defun common-lush-*-label-setup (widget new-label x-shift-fn)
-  (declare (optimize (debug 3) (speed 0) (safety 3)))
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (simple-string new-label))
+  (declare (function x-shift-fn))
   (with-accessors ((label-font-size label-font-size)
                    (label-font label-font)
                    (label-font-color label-font-color)
@@ -1257,7 +1262,6 @@
 (defclass flush-left-label (simple-label) ())
 
 (defmethod (setf label) (new-label (object flush-left-label))
-  (declare (optimize (debug 3) (speed 0) (safety 3)))
   (with-accessors ((label-font-size label-font-size)
                    (label-font label-font)
                    (label-font-color label-font-color)
@@ -1273,7 +1277,6 @@
 (defclass flush-center-label (simple-label) ())
 
 (defmethod (setf label) (new-label (object flush-center-label))
-  (declare (optimize (debug 3) (speed 0) (safety 3)))
   (with-accessors ((label-font-size label-font-size)
                    (label-font label-font)
                    (label-font-color label-font-color)
@@ -2076,10 +2079,8 @@
     (with-parent-widget (toolbar) w
       (with-accessors ((bound-player bound-player)) toolbar
         (with-accessors ((state state)) bound-player
-          (let ((event (make-instance 'game-event:end-turn
-                                      :end-turn-count  (game-state:game-turn state))))
-            (game-event:propagate-end-turn event)
-            t)))))
+          (game-state:increase-game-turn state)
+          t))))
 
 (defun rotate-cw-cb (w e)
   (declare (ignore e))

@@ -316,7 +316,8 @@ note: by default non labyrinth elements are ignored"
   "is target visible from object (ray test)?
 
 note:  if  exclude-if-labyrinth-entity  is  non  nil  target  will  be
-invisible if part of a labyrinth"
+invisible if part of a labyrinth.
+Also note that that ray is long as much as the height of the visibility cone of this mesh"
   (multiple-value-bind (ray-nonlab-hitted entity-nonlab-hitted)
       (nonlabyrinth-element-hitted-by-ray object target)
     (multiple-value-bind (ray-lab-hitted entity-lab-hitted)
