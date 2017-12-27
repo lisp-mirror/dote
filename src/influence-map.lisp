@@ -58,8 +58,7 @@
          (working-copy    (clone matrix))
          (not-skippable-p #'(lambda (el pos) (not (funcall skippable-predicate (el-type el) pos)))))
     (loop-matrix (working-copy x y)
-      (if (not (funcall skippable-predicate (el-type-in-pos state x y)
-                        (ivec2 x y)))
+      (if (not (funcall skippable-predicate (el-type-in-pos state x y) (ivec2 x y)))
           (let* ((neighbour (funcall neigh-fn state y x not-skippable-p))
                  (center    (matrix-elt working-copy y x))
                  (min       (loop for cell across neighbour
@@ -71,6 +70,9 @@
                                              (elt (cdr cell) 1)     ; row
                                              (elt (cdr cell) 0))))) ; column
             (when (and center
+                       ;; if empty the tile is  an "island", so do not
+                       ;; change the value
+                       (not (misc:vector-empty-p neighbour))
                        (d>= center (d+ (d min) 2.0)))
               (setf (matrix-elt working-copy y x)
                     (d+ 1.0 (d min)))))
