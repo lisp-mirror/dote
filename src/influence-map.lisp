@@ -46,7 +46,7 @@
   (let* ((matrix          (layer object))
          (working-copy    (clone matrix))
          (not-skippable-p #'(lambda (el pos) (not (funcall skippable-predicate (el-type el) pos)))))
-    (ploop-matrix (working-copy x y)
+    (loop-matrix (working-copy x y)
       (if (not (funcall skippable-predicate (el-type-in-pos state x y)
                         (ivec2 x y)))
           (let* ((neighbour (game-state:get-neighborhood state y x not-skippable-p))
@@ -66,7 +66,7 @@
           (setf (matrix-elt working-copy y x) nil)))
     (if (matrix= matrix working-copy
                  :test #'(lambda (v1 v2)
-                           (with-epsilon (1e-3)
+                           (with-epsilon (1e-7)
                              (every #'(lambda (a b)
                                         (cond
                                           ((and (null a) (null b))
@@ -79,7 +79,7 @@
         object
         (progn
           (setf (layer object) working-copy)
-          (smooth-dijkstra-layer object state)))))
+          (smooth-dijkstra-layer object state :skippable-predicate skippable-predicate)))))
 
 (defmethod next-dijkstra-position ((object dijkstra-layer) entity-player scale-factor-cost-concern)
   (with-accessors ((layer layer)) object

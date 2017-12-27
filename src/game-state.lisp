@@ -910,7 +910,7 @@
       (setf (matrix-elt map-state y x) tile))))
 
 (defmethod get-neighborhood ((object game-state) row column predicate
-                             &key (w-offset 2) (h-offset 2))
+                             &key (w-offset 1) (h-offset 1))
   "Return (map-element . position-of-entity)"
   (with-accessors ((map-state map-state)) object
     (let ((pos (remove-if-not
@@ -925,7 +925,7 @@
 
 (defmethod neighborhood-by-type ((object game-state) row column type
                                  &key
-                                   (w-offset 2) (h-offset 2))
+                                   (w-offset 1) (h-offset 1))
   (get-neighborhood object row column
                     #'(lambda (el pos)
                         (declare (ignore pos))
