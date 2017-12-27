@@ -40,8 +40,19 @@
 
 (defgeneric next-dijkstra-position (object entity-player scale-factor-cost-concern))
 
+(defun get-djk-neigh-fn ()
+  (flet ((state-neigh-fn (column row w-offset h-offset &key add-center)
+           (declare (ignore w-offset h-offset))
+           (gen-4-neighbour-ccw-vector column row
+                                       :add-center add-center)))
+  #'(lambda (game-state row column predicate)
+      (game-state:get-neighborhood game-state row column predicate
+                                   :neigh-fn #'state-neigh-fn))))
+
 (defmethod smooth-dijkstra-layer ((object dijkstra-layer) (state game-state)
-                                  &key (skippable-predicate #'skippablep))
+                                  &key
+                                    (skippable-predicate #'skippablep)
+                                    (neigh-fn (get-djk-neigh-fn)))
   "Note: skipped tiles will get nil as value!"
   (let* ((matrix          (layer object))
          (working-copy    (clone matrix))
@@ -49,7 +60,7 @@
     (loop-matrix (working-copy x y)
       (if (not (funcall skippable-predicate (el-type-in-pos state x y)
                         (ivec2 x y)))
-          (let* ((neighbour (game-state:get-neighborhood state y x not-skippable-p))
+          (let* ((neighbour (funcall neigh-fn state y x not-skippable-p))
                  (center    (matrix-elt working-copy y x))
                  (min       (loop for cell across neighbour
                                when (matrix-elt working-copy

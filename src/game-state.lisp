@@ -910,12 +910,14 @@
       (setf (matrix-elt map-state y x) tile))))
 
 (defmethod get-neighborhood ((object game-state) row column predicate
-                             &key (w-offset 1) (h-offset 1))
+                             &key
+                               (w-offset 1) (h-offset 1)
+                               (neigh-fn #'gen-neighbour-position-in-box))
   "Return (map-element . position-of-entity)"
   (with-accessors ((map-state map-state)) object
     (let ((pos (remove-if-not
                 #'(lambda (a) (element@-inside-p map-state (elt a 0) (elt a 1)))
-                (gen-neighbour-position-in-box column row w-offset h-offset :add-center nil)))
+                (funcall neigh-fn column row w-offset h-offset :add-center nil)))
           (results (misc:make-fresh-array 0 nil 'map-state-element nil)))
       (loop for i across pos do
            (let ((element (matrix-elt map-state (elt i 1) (elt i 0))))

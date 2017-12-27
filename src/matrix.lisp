@@ -426,6 +426,29 @@ else
 
 (misc:defalias gen-4-neighbour-ccw #'gen-4-neighbour-counterclockwise)
 
+(defun gen-4-neighbour-ccw-vector-w-center (x y)
+  (let ((res (misc:make-fresh-array 5 (ivec2:ivec2 0 0) 'ivec2:ivec2 t)))
+    (setf (elt res 0) (ivec2:ivec2 x      y)
+          (elt res 1) (ivec2:ivec2 (1+ x) y)
+          (elt res 2) (ivec2:ivec2 x      (1- y))
+          (elt res 3) (ivec2:ivec2 (1- x) y)
+          (elt res 4) (ivec2:ivec2 x      (1+ y)))
+    res))
+
+(defun gen-4-neighbour-ccw-vector-w/o-center (x y)
+  (let ((res (misc:make-fresh-array 4 (ivec2:ivec2 0 0) 'ivec2:ivec2 t)))
+    (setf (elt res 0) (ivec2:ivec2 (1+ x) y)
+          (elt res 1) (ivec2:ivec2 x      (1- y))
+          (elt res 2) (ivec2:ivec2 (1- x) y)
+          (elt res 3) (ivec2:ivec2 x      (1+ y)))
+    res))
+
+(defun gen-4-neighbour-ccw-vector (x y &key (add-center t))
+  "note: no bounds checking is done, return a vector of ivec2:ivec2"
+  (if add-center
+      (gen-4-neighbour-ccw-vector-w-center   x y)
+      (gen-4-neighbour-ccw-vector-w/o-center x y)))
+
 (defun gen-valid-4-neighbour-counterclockwise (matrix x y &key (add-center t))
   "note: bounds checking is done"
   (remove-if-not #'(lambda (a) (pixel-inside-p matrix (elt a 0) (elt a 1)))

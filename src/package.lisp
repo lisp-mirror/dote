@@ -1389,6 +1389,7 @@
    :gen-valid-neighbour-position
    :gen-4-neighbour-counterclockwise
    :gen-4-neighbour-ccw
+   :gen-4-neighbour-ccw-vector
    :gen-valid-4-neighbour-counterclockwise
    :gen-valid-4-neighbour-ccw
    :gen-neighbour-position-in-box

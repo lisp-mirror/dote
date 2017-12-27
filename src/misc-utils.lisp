@@ -459,8 +459,8 @@ Name from Emacs Lisp."
 
 (defun list->array (the-list)
   (make-array (length the-list)
-              :fill-pointer (length the-list)
-              :adjustable t
+              :fill-pointer     (length the-list)
+              :adjustable       t
               :initial-contents (copy-list the-list)))
 
 (defun copy-list-into-array (from to)
