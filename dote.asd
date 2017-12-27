@@ -193,7 +193,8 @@
                                      (:file "action-scheduler-test")
                                      (:file "attack-tactics-test")
                                      (:file "goap-test")
-                                     (:file "gl-test")))))
+                                     (:file "gl-test")
+                                     (:file "influence-map-test")))))
 
 (progn
   ;; debug

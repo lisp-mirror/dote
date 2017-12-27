@@ -281,3 +281,12 @@
         :all-test
         :alexandria
         :cl-gl-utils))
+
+(defpackage :inmap-test
+  (:use :cl
+        :clunit
+        :all-test
+        :alexandria
+        :num
+        :matrix
+        :influence-map))
