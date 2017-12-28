@@ -2808,8 +2808,16 @@
                                     :loop-p                    nil
                                     :texture-horizontal-offset texture-horizontal-offset))
 
+(defun add-hit-0-effect-billboard (mesh pos)
+  ;; TODO
+  )
+
 (defun add-hit-1-effect-billboard (mesh pos)
   (%add-effect-billboard mesh pos "hit-1.tga" 0.0625 0.001 :frequency-animation 2))
+
+(defun add-hit-2-effect-billboard (mesh pos)
+  ;; TODO
+  )
 
 (defun %enqueue-poison-1-effect-billboard (particles-mesh pos)
   (%enqueue-effect-billboard particles-mesh pos "wasp.tga" 0.02631579))

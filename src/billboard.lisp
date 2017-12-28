@@ -290,7 +290,7 @@
       (if enqueuedp
           (action-scheduler:end-of-life-remove-from-action-scheduler object
                                                                      action-scheduler:animated-billboard-show-action)
-          (action-scheduler:end-of-life-remove-from-world object)))))
+          (end-of-life-remove-from-world object)))))
 
 (defmethod calculate ((object animated-billboard) dt)
   (with-accessors ((calculatep calculatep)
@@ -394,6 +394,7 @@
         (texture:get-texture texture-name)
       (if (not errors)
           (progn
+            (setf (texture:interpolation-type texture) :linear)
             (setf (texture-object tooltip) texture)
             (texture:prepare-for-rendering (mesh:texture-object tooltip)))
           (error 'conditions:invalid-texture

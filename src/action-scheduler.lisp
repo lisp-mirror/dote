@@ -235,11 +235,6 @@
                             (world ,action-type-checked)
                           (world:remove-all-removeable world))))))
 
-(defmacro end-of-life-remove-from-world (entity)
-  `(game-state:with-world (world (entity:state ,entity))
-     (setf (interfaces:end-of-life-callback ,entity)
-           #'(lambda () (entity:remove-entity-by-id world (id ,entity))))))
-
 (defmacro with-enqueue-action-and-send-remove-after ((world action
                                                             &optional
                                                             (priority '*default-action-priority*))

@@ -226,6 +226,11 @@
          (setf (triggered ,object) t)
          ,@body))))
 
+(defmacro end-of-life-remove-from-world (entity)
+  `(game-state:with-world (world (entity:state ,entity))
+     (setf (end-of-life-callback ,entity)
+           #'(lambda () (entity:remove-entity-by-id world (identificable:id ,entity))))))
+
 (defun remove-end-of-life-callback (object)
   "First value is t if slot exists the second is the old value of the slot"
   (if (slot-exists-p object 'end-of-life-callback)
@@ -233,6 +238,148 @@
         (setf (slot-value object 'end-of-life-callback) nil)
         (values t old))
       (values nil nil)))
+
+(defclass keyframe-trigger ()
+  ((end-frame-triggers
+    :initform '()
+    :initarg  :end-frame-triggers
+    :accessor end-frame-triggers
+    :documentation
+    "Each element of the list  is a cons (:animation-type . function).
+    Each function take as parameter this entity")
+   (start-frame-triggers
+    :initform '()
+    :initarg  :start-frame-triggers
+    :accessor start-frame-triggers
+    :writer (setf repeat-trigger)
+    :documentation
+    "Each element of the list  is a cons (:animation-type . function).
+    Each function take as parameter this entity")))
+
+(defmacro with-ecase-keyframe-type (type start-form end-form)
+  `(ecase ,type
+      ((:start)
+       ,start-form)
+      ((:end)
+       ,end-form)))
+
+(defun find-triggers-list (object which)
+  (with-accessors ((end-frame-triggers   end-frame-triggers)
+                   (start-frame-triggers start-frame-triggers)) object
+    (with-ecase-keyframe-type which
+      start-frame-triggers
+      end-frame-triggers)))
+
+(defgeneric find-trigger (object animation-type which))
+
+(defgeneric find-start-trigger (object animation-type))
+
+(defgeneric find-end-trigger (object animation-type))
+
+(defgeneric add-trigger (object animation-type which fn))
+
+(defgeneric add-start-trigger (object animation-type fn))
+
+(defgeneric add-end-trigger (object animation-type fn))
+
+(defgeneric remove-trigger (object animation-type which))
+
+(defgeneric remove-start-trigger (object animation-type))
+
+(defgeneric remove-end-trigger (object animation-type))
+
+(defgeneric elaborate-trigger (object animation-type which))
+
+(defgeneric elaborate-start-trigger (object animation-type))
+
+(defgeneric elaborate-end-trigger (object animation-type))
+
+(defgeneric add-animation-one-shot-trigger (object animation-type which fn))
+
+(defgeneric add-start-one-shot-trigger (object animation-type fn))
+
+(defgeneric add-end-one-shot-trigger (object animation-type fn))
+
+(defmethod find-trigger ((object keyframe-trigger) (animation-type symbol) which)
+  (let* ((triggers (find-triggers-list object which))
+         (trigger  (assoc animation-type triggers)))
+    (and trigger
+         (cdr trigger))
+    object))
+
+(defmethod find-start-trigger ((object keyframe-trigger) (animation-type symbol))
+  (find-trigger object animation-type :start))
+
+(defmethod find-end-trigger ((object keyframe-trigger) (animation-type symbol))
+  (find-trigger object animation-type :end))
+
+(defmethod add-trigger ((object keyframe-trigger) (animation-type symbol) which fn)
+  (with-accessors ((end-frame-triggers   end-frame-triggers)
+                   (start-frame-triggers start-frame-triggers)) object
+    (with-ecase-keyframe-type which
+      (push (cons animation-type fn) start-frame-triggers)
+      (push (cons animation-type fn) end-frame-triggers))
+    object))
+
+(defmethod add-start-trigger ((object keyframe-trigger) (animation-type symbol) fn)
+  (add-trigger object animation-type :start fn))
+
+(defmethod add-end-trigger ((object keyframe-trigger) (animation-type symbol) fn)
+  (add-trigger object animation-type :end fn))
+
+(defmethod remove-trigger ((object keyframe-trigger) (animation-type symbol) which)
+  (with-accessors ((end-frame-triggers   end-frame-triggers)
+                   (start-frame-triggers start-frame-triggers)) object
+    (let* ((triggers (find-triggers-list object which))
+           (trigger  (assoc animation-type triggers)))
+      (when trigger
+        (flet ((%remove-trigger (all-triggers)
+                 (remove-if #'(lambda (a) (eq (car a) (car trigger))) all-triggers)))
+          (with-ecase-keyframe-type which
+            (setf start-frame-triggers (%remove-trigger start-frame-triggers))
+            (setf end-frame-triggers (%remove-trigger end-frame-triggers))))))
+    object))
+
+(defmethod remove-start-trigger ((object keyframe-trigger) (animation-type symbol))
+  (remove-trigger object animation-type :start))
+
+(defmethod remove-end-trigger ((object keyframe-trigger) (animation-type symbol))
+  (remove-trigger object animation-type :end))
+
+(defmethod elaborate-trigger ((object keyframe-trigger) (animation-type symbol) which)
+  (let* ((triggers (find-triggers-list object which))
+         (trigger  (assoc animation-type triggers)))
+    (when trigger
+      (funcall (cdr trigger) object))))
+
+(defmethod elaborate-start-trigger ((object keyframe-trigger) (animation-type symbol))
+  (elaborate-trigger object animation-type :start))
+
+(defmethod elaborate-end-trigger ((object keyframe-trigger) (animation-type symbol))
+  (elaborate-trigger object animation-type :end))
+
+(defmethod add-animation-one-shot-trigger ((object keyframe-trigger) (animation-type symbol)
+                                           which fn)
+  (with-accessors ((end-frame-triggers   end-frame-triggers)
+                   (start-frame-triggers start-frame-triggers)) object
+    (with-ecase-keyframe-type which
+       (add-start-trigger object
+                          animation-type
+                          #'(lambda (entity)
+                              (funcall fn entity)
+                              (remove-start-trigger entity animation-type)))
+       (add-end-trigger object
+                        animation-type
+                        #'(lambda (entity)
+                            (funcall fn entity)
+                            (remove-end-trigger entity animation-type))))
+    object))
+
+(defmethod add-start-one-shot-trigger ((object keyframe-trigger) animation-type fn)
+  (add-animation-one-shot-trigger object animation-type :start fn))
+
+(defmethod add-end-one-shot-trigger ((object keyframe-trigger) animation-type fn)
+  (add-animation-one-shot-trigger object animation-type :start fn))
 
 (defgeneric removeable-from-world-p (object))
 

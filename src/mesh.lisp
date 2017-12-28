@@ -2874,7 +2874,9 @@
     (multiple-value-bind (damage ambush)
         (battle-utils:defend-from-attack-spell event)
       (declare (ignore ambush))
-      (misc:dbg "damage shell ~a ~a" damage (character:current-damage-points (ghost object)))
+      #+debug (misc:dbg "damage shell ~a ~a"
+                        damage
+                        (character:current-damage-points (ghost object)))
       (apply-damage object damage :tooltip-active-p nil))))
 
 (defmethod apply-damage ((object triangle-mesh-shell) damage

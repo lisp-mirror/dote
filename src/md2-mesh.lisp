@@ -119,7 +119,7 @@
                  :tags-file       tags-file
                  :resource-path   resource-path))
 
-(defclass md2-mesh (able-to-see-mesh)
+(defclass md2-mesh (able-to-see-mesh keyframe-trigger)
   ((fs-resources
     :initform (make-md2-fs-res)
     :initarg  :fs-resources
@@ -297,7 +297,7 @@
          (defender (game-state:find-entity-by-id (entity:state attacker)
                                                  (game-event:id-destination event))))
     (blackboard:update-concerning-zones-around-entity defender)
-    (blackboard:add-tail-concerning-zone    attacker defender)))
+    (blackboard:add-tail-concerning-zone attacker defender)))
 
 (defmethod on-game-event ((object md2-mesh) (event attack-long-range-event))
   (check-event-targeted-to-me (object event)
@@ -1042,6 +1042,20 @@
     ((> (/ damage max-damage) 0.7)
      #'particles:make-blood-level-2)))
 
+(defun add-trigger-hit-melee (entity damage max-damage)
+  (let ((fn #'(lambda (entity)
+                (cond
+                  ((< (/ damage max-damage) 0.2)
+                   (particles:add-hit-0-effect-billboard entity
+                                                          (pos entity)))
+                   ((<= 0.2 (/ damage max-damage) 0.7)
+                    (particles:add-hit-1-effect-billboard entity
+                                                          (pos entity)))
+                   ((> (/ damage max-damage) 0.7)
+                    (particles:add-hit-2-effect-billboard entity
+                                                          (pos entity)))))))
+  (add-start-one-shot-trigger entity :pain fn)))
+
 (defun enqueue-blood (world blood-generator-fn center dir compiled-shader)
   (let ((blood (funcall blood-generator-fn center dir compiled-shader)))
     (action-scheduler:with-enqueue-action
@@ -1083,6 +1097,8 @@
                   (set-death-status object)
                   (game-state:with-world (world state)
                     (let ((blood-fn (blood-spill-level damage (actual-damage-points ghost))))
+                      ;; TODO use trigger for the blood also
+                      (add-trigger-hit-melee object damage (actual-damage-points ghost))
                       (with-enqueue-blood (world
                                            blood-fn
                                            (aabb-center aabb)
@@ -1675,145 +1691,151 @@
     (when (and ghost
                (thinkerp ghost))
       (actuate-strategy object))
-    ;; animation
-    (ecase current-action
-      (:stand
-       ;; nothing to do
-       )
-      (:death
-       ;; TODO set death plane
-       )
-      (:attack
-       (when stop-animation
-         (setf cycle-animation t)
-         (setf stop-animation nil)
-         (set-animation object :stand :recalculate nil)
-         (setf (current-action object) :stand)))
-      (:attack-spell
-       (when stop-animation
-         (setf cycle-animation t)
-         (setf stop-animation nil)
-         (set-animation object :stand :recalculate nil)
-         (setf (current-action object) :stand)))
-      (:spell
-       (when stop-animation
-         (setf cycle-animation t)
-         (setf stop-animation nil)
-         (set-animation object :stand :recalculate nil)
-         (setf (current-action object) :stand)))
-      (:rotate
-       (update-visibility-cone object))
-      (:move
-       (calculate-move object dt)
-       (update-visibility-cone object))
-      (:pain
-       (when stop-animation
-         (setf cycle-animation t)
-         (setf stop-animation nil)
-         (set-animation object :stand :recalculate nil)
-         (setf (current-action object) :stand)
-         (send-end-attack-melee-event object)
-         (send-end-attack-long-range-event object)
-         (send-end-attack-spell-event object))))
-    (unless stop-animation
-      (let ((next-time (+ current-animation-time dt))
-            (frames-numbers (the fixnum (1+ (- end-frame starting-frame))))
-            (frame-freq (/ 1.0 fps)))
-        (declare (single-float next-time frame-freq))
-        (declare (fixnum frames-numbers))
-        (if (> next-time frame-freq)
-            (setf current-frame-offset (mod (the unsigned-byte (1+ current-frame-offset))
-                                            frames-numbers)
-                  current-animation-time 0.0)
-            (setf current-animation-time next-time))
-        (let* ((next-frame-offset    (mod (the fixnum (1+ current-frame-offset)) frames-numbers))
-               (interpolation-factor (d* fps current-animation-time))
-               (starting-frame-idx   (f+ starting-frame current-frame-offset))
-               (next-frame-idx       (f+ starting-frame next-frame-offset)))
-          (declare (single-float interpolation-factor))
-          (declare (fixnum next-frame-offset starting-frame-idx next-frame-idx))
-          (when (and (not cycle-animation)
-                     (= next-frame-offset 0))
-            (setf stop-animation t))
-          #+md2-gpu-lerp
-          (progn
-            (gpu-lerp:mix array-mixer
-                          interpolation-factor
-                          (renderer-data-vertices (svref frames starting-frame-idx))
-                          (renderer-data-vertices (svref frames next-frame-idx))
-                          renderer-data-vertices)
-            (gpu-lerp:mix array-mixer
-                          interpolation-factor
-                          (renderer-data-normals (svref frames starting-frame-idx))
-                          (renderer-data-normals (svref frames next-frame-idx))
-                          renderer-data-normals))
-          #-md2-gpu-lerp
-          (progn
-            (gl-utils:lerp-gl-array (renderer-data-vertices
-                                     (svref frames starting-frame-idx))
-                                    (renderer-data-vertices
-                                     (svref frames next-frame-idx))
-                                    renderer-data-vertices
-                                    renderer-data-count-vertices
-                                  interpolation-factor)
-            (gl-utils:lerp-gl-array (renderer-data-normals
-                                     (svref frames starting-frame-idx))
-                                    (renderer-data-normals
-                                     (svref frames next-frame-idx))
-                                    renderer-data-normals
-                                    renderer-data-count-normals
-                                    interpolation-factor))
-          (when tags-table
-            (loop for i in tags-matrices do
-                 (let* ((orn1   (elt (the (simple-array (simple-array * (*)))
-                                          (find-tag-cdr (car i) tags-table))
-                                     starting-frame-idx))
-                        (orn2   (elt (the (simple-array (simple-array * (*)))
-                                          (find-tag-cdr (car i) tags-table))
-                                     next-frame-idx))
-                        (orn (vector (vec-lerp (elt orn1 0) (elt orn2 0) interpolation-factor)
-                                     (vec-lerp (elt orn1 1) (elt orn2 1) interpolation-factor)
-                                     (vec-lerp (elt orn1 2) (elt orn2 2) interpolation-factor)
-                                     (vec-lerp (elt orn1 3) (elt orn2 3) interpolation-factor))))
-                   (declare ((simple-array (simple-array single-float (3)) (4)) orn1 orn2))
-                   (nsetup-tag-matrix (cdr i) orn))))
-          (when (render-normals object)
+    (let ((frames-numbers (the fixnum (1+ (- end-frame starting-frame)))))
+      ;; triggers
+      (when (= current-frame-offset 0)
+        (elaborate-start-trigger object current-action))
+      (when (= current-frame-offset (1- frames-numbers))
+        (elaborate-end-trigger object current-action))
+      ;; animation
+      (ecase current-action
+        (:stand
+         ;; nothing to do
+         )
+        (:death
+         ;; TODO set death plane
+         )
+        (:attack
+         (when stop-animation
+           (setf cycle-animation t)
+           (setf stop-animation nil)
+           (set-animation object :stand :recalculate nil)
+           (setf (current-action object) :stand)))
+        (:attack-spell
+         (when stop-animation
+           (setf cycle-animation t)
+           (setf stop-animation nil)
+           (set-animation object :stand :recalculate nil)
+           (setf (current-action object) :stand)))
+        (:spell
+         (when stop-animation
+           (setf cycle-animation t)
+           (setf stop-animation nil)
+           (set-animation object :stand :recalculate nil)
+           (setf (current-action object) :stand)))
+        (:rotate
+         (update-visibility-cone object))
+        (:move
+         (calculate-move object dt)
+         (update-visibility-cone object))
+        (:pain
+         (when stop-animation
+           (setf cycle-animation t)
+           (setf stop-animation nil)
+           (set-animation object :stand :recalculate nil)
+           (setf (current-action object) :stand)
+           (send-end-attack-melee-event object)
+           (send-end-attack-long-range-event object)
+           (send-end-attack-spell-event object))))
+      (unless stop-animation
+        (let ((next-time (+ current-animation-time dt))
+              (frame-freq (/ 1.0 fps)))
+          (declare (single-float next-time frame-freq))
+          (declare (fixnum frames-numbers))
+          (if (> next-time frame-freq)
+              (setf current-frame-offset (mod (the unsigned-byte (1+ current-frame-offset))
+                                              frames-numbers)
+                    current-animation-time 0.0)
+              (setf current-animation-time next-time))
+          (let* ((next-frame-offset    (mod (the fixnum (1+ current-frame-offset)) frames-numbers))
+                 (interpolation-factor (d* fps current-animation-time))
+                 (starting-frame-idx   (f+ starting-frame current-frame-offset))
+                 (next-frame-idx       (f+ starting-frame next-frame-offset)))
+            (declare (single-float interpolation-factor))
+            (declare (fixnum next-frame-offset starting-frame-idx next-frame-idx))
+            (when (and (not cycle-animation)
+                       (= next-frame-offset 0))
+              (setf stop-animation t))
             #+md2-gpu-lerp
-            (gpu-lerp:mix array-mixer
-                          interpolation-factor
-                          (renderer-data-normals-obj-space (svref frames starting-frame-idx))
-                          (renderer-data-normals-obj-space (svref frames next-frame-idx))
-                          renderer-data-normals-obj-space)
+            (progn
+              (gpu-lerp:mix array-mixer
+                            interpolation-factor
+                            (renderer-data-vertices (svref frames starting-frame-idx))
+                            (renderer-data-vertices (svref frames next-frame-idx))
+                            renderer-data-vertices)
+              (gpu-lerp:mix array-mixer
+                            interpolation-factor
+                            (renderer-data-normals (svref frames starting-frame-idx))
+                            (renderer-data-normals (svref frames next-frame-idx))
+                            renderer-data-normals))
             #-md2-gpu-lerp
-            (gl-utils:lerp-gl-array (renderer-data-normals-obj-space
-                                     (svref frames starting-frame-idx))
-                                    (renderer-data-normals-obj-space
-                                     (svref frames next-frame-idx))
-                                    renderer-data-normals-obj-space
-                                    (normals-obj-space-vertex-count object)
-                                    interpolation-factor))
-          (with-slots (aabb) object
-            (reset aabb)
-            (loop for i fixnum from 0 below renderer-data-count-vertices by 3 do
-                 (let* ((pos (the (unsigned-byte 32) i))
-                        (vert (vec (gl-utils:fast-glaref renderer-data-vertices pos)
-                                   (gl-utils:fast-glaref renderer-data-vertices (+ pos 1))
-                                   (gl-utils:fast-glaref renderer-data-vertices (+ pos 2)))))
-                   (expand aabb vert)))
-            (setf (bounding-sphere object) (aabb->bounding-sphere aabb))
-            (when (render-aabb object)
-              (make-data-for-opengl-aabb-obj-space object))))))
-    (bubbleup-modelmatrix object)
-    (when (not (mtree-utils:rootp object))
-      (let ((tag-matrix (find-tag-cdr tag-key-parent (tags-matrices (mtree-utils:parent object)))))
-        (when tag-matrix
-          (with-model-matrix (model-matrix object)
-            (setf (model-matrix object)
-                  (matrix* model-matrix
-                           tag-matrix))))))
-    (bind-vbo object t)
-    (do-children-mesh (i object)
-      (calculate i dt))))
+            (progn
+              (gl-utils:lerp-gl-array (renderer-data-vertices
+                                       (svref frames starting-frame-idx))
+                                      (renderer-data-vertices
+                                       (svref frames next-frame-idx))
+                                      renderer-data-vertices
+                                      renderer-data-count-vertices
+                                      interpolation-factor)
+              (gl-utils:lerp-gl-array (renderer-data-normals
+                                       (svref frames starting-frame-idx))
+                                      (renderer-data-normals
+                                       (svref frames next-frame-idx))
+                                      renderer-data-normals
+                                      renderer-data-count-normals
+                                      interpolation-factor))
+            (when tags-table
+              (loop for i in tags-matrices do
+                   (let* ((orn1   (elt (the (simple-array (simple-array * (*)))
+                                            (find-tag-cdr (car i) tags-table))
+                                       starting-frame-idx))
+                          (orn2   (elt (the (simple-array (simple-array * (*)))
+                                            (find-tag-cdr (car i) tags-table))
+                                       next-frame-idx))
+                          (orn (vector (vec-lerp (elt orn1 0) (elt orn2 0) interpolation-factor)
+                                       (vec-lerp (elt orn1 1) (elt orn2 1) interpolation-factor)
+                                       (vec-lerp (elt orn1 2) (elt orn2 2) interpolation-factor)
+                                       (vec-lerp (elt orn1 3) (elt orn2 3) interpolation-factor))))
+                     (declare ((simple-array (simple-array single-float (3)) (4)) orn1 orn2))
+                     (nsetup-tag-matrix (cdr i) orn))))
+            (when (render-normals object)
+              #+md2-gpu-lerp
+              (gpu-lerp:mix array-mixer
+                            interpolation-factor
+                            (renderer-data-normals-obj-space (svref frames starting-frame-idx))
+                            (renderer-data-normals-obj-space (svref frames next-frame-idx))
+                            renderer-data-normals-obj-space)
+              #-md2-gpu-lerp
+              (gl-utils:lerp-gl-array (renderer-data-normals-obj-space
+                                       (svref frames starting-frame-idx))
+                                      (renderer-data-normals-obj-space
+                                       (svref frames next-frame-idx))
+                                      renderer-data-normals-obj-space
+                                      (normals-obj-space-vertex-count object)
+                                      interpolation-factor))
+            (with-slots (aabb) object
+              (reset aabb)
+              (loop for i fixnum from 0 below renderer-data-count-vertices by 3 do
+                   (let* ((pos (the (unsigned-byte 32) i))
+                          (vert (vec (gl-utils:fast-glaref renderer-data-vertices pos)
+                                     (gl-utils:fast-glaref renderer-data-vertices (+ pos 1))
+                                     (gl-utils:fast-glaref renderer-data-vertices (+ pos 2)))))
+                     (expand aabb vert)))
+              (setf (bounding-sphere object) (aabb->bounding-sphere aabb))
+              (when (render-aabb object)
+                (make-data-for-opengl-aabb-obj-space object))))))
+      (bubbleup-modelmatrix object)
+      (when (not (mtree-utils:rootp object))
+        (let ((tag-matrix (find-tag-cdr tag-key-parent
+                                        (tags-matrices (mtree-utils:parent object)))))
+          (when tag-matrix
+            (with-model-matrix (model-matrix object)
+              (setf (model-matrix object)
+                    (matrix* model-matrix
+                             tag-matrix))))))
+      (bind-vbo object t)
+      (do-children-mesh (i object)
+        (calculate i dt)))))
 
 (defmethod bind-vbo ((object md2-mesh) &optional (refresh nil))
   (with-accessors ((vbo vbo) (vao vao)

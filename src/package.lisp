@@ -643,6 +643,20 @@
    :end-of-life-callback
    :remove-end-of-life-callback
    :with-maybe-trigger-end-of-life
+   :end-of-life-remove-from-world
+   :keyframe-trigger
+   :start-frame-triggers
+   :find-start-trigger
+   :find-end-trigger
+   :add-start-trigger
+   :add-end-trigger
+   :remove-start-trigger
+   :remove-end-trigger
+   :elaborate-start-trigger
+   :elaborate-end-trigger
+   :add-animation-one-shot-trigger
+   :add-start-one-shot-trigger
+   :add-end-one-shot-trigger
    :removeable-from-world-p
    :almost-removeable-from-world-p
    :apply-damage
@@ -2715,7 +2729,6 @@
    :*default-action-priority*
    :with-enqueue-action
    :end-of-life-remove-from-action-scheduler
-   :end-of-life-remove-from-world
    :with-enqueue-action-and-send-remove-after))
 
 (defpackage :basic-interaction-parameters
@@ -4722,7 +4735,9 @@
    :make-teleport-level-1
    :make-teleport-level-2
    :make-teleport-level-3
-   :add-hit-1-effect-billboard))
+   :add-hit-0-effect-billboard
+   :add-hit-1-effect-billboard
+   :add-hit-2-effect-billboard))
 
 (defpackage :arrows
   (:use :cl
