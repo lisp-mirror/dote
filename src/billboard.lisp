@@ -263,8 +263,13 @@
     :initform (num:lcg-next-in-range 1.0 2.0)
     :initarg  :gravity
     :accessor gravity))
-  (:documentation "Note: the tooltip will add and remove itself from action-queue automatically
-                   see: make instance and keyworld enqueuedp"))
+  (:documentation "Note: the  tooltip will add and  remove itself from
+                   action-queue and  world automatically  if enqueuedp
+                   is non nil.
+
+                   Will be removed just from world if enqueuedp is nil
+
+                   see: initialize-instance and keyworld enqueuedp"))
 
 (defmethod initialize-instance :after ((object animated-billboard)
                                        &key
@@ -282,9 +287,10 @@
                  nil t)
       (remove-orphaned-vertices object)
       (prepare-for-rendering object)
-      (when enqueuedp
-        (action-scheduler:end-of-life-remove-from-action-scheduler object
-                                                                   action-scheduler:animated-billboard-show-action)))))
+      (if enqueuedp
+          (action-scheduler:end-of-life-remove-from-action-scheduler object
+                                                                     action-scheduler:animated-billboard-show-action)
+          (action-scheduler:end-of-life-remove-from-world object)))))
 
 (defmethod calculate ((object animated-billboard) dt)
   (with-accessors ((calculatep calculatep)
@@ -430,6 +436,36 @@
         (world:push-entity world billboard)
         (when additional-action-enqueued-fn
           (funcall additional-action-enqueued-fn))))))
+
+(defun add-animated-billboard (pos texture-name game-state shaders
+                               &key
+                                 (duration/2                .0001)
+                                 (w                         (d* 2.0
+                                                                +terrain-chunk-tile-size+))
+                                 (h                         (d* 2.0
+                                                                +terrain-chunk-tile-size+))
+                                 (loop-p                    nil)
+                                 (frequency-animation       5)
+                                 (texture-horizontal-offset 0.125)
+                                 (gravity                   0.0)
+                                 (activep                   t))
+  "not enqueued"
+  (game-state:with-world (world game-state)
+    (let ((billboard (make-animated-billboard pos
+                                              shaders
+                                              texture-name
+                                              :duration/2                duration/2
+                                              :w                         w
+                                              :h                         h
+                                              :loop-p                    loop-p
+                                              :frequency-animation       frequency-animation
+                                              :texture-horizontal-offset
+                                              texture-horizontal-offset
+                                              :gravity                   gravity
+                                              :activep                   activep
+                                              :enqueuedp                 nil)))
+        (world:push-entity world billboard))))
+
 
 (defclass tree-impostor-shell (triangle-mesh-shell) ())
 

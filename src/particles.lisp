@@ -2791,6 +2791,26 @@
                                         :loop-p                    t
                                         :texture-horizontal-offset texture-horizontal-offset))
 
+(defun %add-effect-billboard (particles-mesh pos image-file
+                              texture-horizontal-offset
+                              duration
+                              &key (frequency-animation 1.0))
+  (billboard:add-animated-billboard pos
+                                    (res:get-resource-file image-file +animation-texture-dir+)
+                                    (state            particles-mesh)
+                                    (compiled-shaders particles-mesh)
+                                    :frequency-animation frequency-animation
+                                    :w
+                                    (d* +terrain-chunk-tile-size+ 6.0)
+                                    :h
+                                    (d* +terrain-chunk-tile-size+ 6.0)
+                                    :duration/2                duration
+                                    :loop-p                    nil
+                                    :texture-horizontal-offset texture-horizontal-offset))
+
+(defun add-hit-1-effect-billboard (mesh pos)
+  (%add-effect-billboard mesh pos "hit-1.tga" 0.0625 0.001 :frequency-animation 2))
+
 (defun %enqueue-poison-1-effect-billboard (particles-mesh pos)
   (%enqueue-effect-billboard particles-mesh pos "wasp.tga" 0.02631579))
 

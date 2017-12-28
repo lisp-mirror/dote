@@ -325,13 +325,8 @@
               (misc:dbg "n ~a" *near*)
               (incf *near* -.1))
             (when (string= text "p")
-              (billboard:enqueue-animated-billboard (vec 0.0
-                                                         +zero-height+
-                                                         0.0)
-                                                    (res:get-resource-file "flash-1.tga"
-                                                                           +animation-texture-dir+)
-                                                    (game-state object)
-                                                    (compiled-shaders object)))
+              (particles:add-hit-1-effect-billboard selected-pc
+                                                    (vec 0.0 +zero-height+ 0.0)))
             (when (string= text "D")
               (world:apply-tremor-0 world))
             (when (string= text "L")

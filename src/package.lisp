@@ -2715,6 +2715,7 @@
    :*default-action-priority*
    :with-enqueue-action
    :end-of-life-remove-from-action-scheduler
+   :end-of-life-remove-from-world
    :with-enqueue-action-and-send-remove-after))
 
 (defpackage :basic-interaction-parameters
@@ -4492,6 +4493,7 @@
    :apply-tooltip
    :enqueue-tooltip
    :enqueue-animated-billboard
+   :add-animated-billboard
    :animated-billboard-last-frame-reached-p
    :tree-impostor-shell
    :make-impostor-pixmap
@@ -4719,7 +4721,8 @@
    :make-teleport
    :make-teleport-level-1
    :make-teleport-level-2
-   :make-teleport-level-3))
+   :make-teleport-level-3
+   :add-hit-1-effect-billboard))
 
 (defpackage :arrows
   (:use :cl

@@ -775,6 +775,11 @@
   Attribution Instructions: Please attribute this art to the PlatForge
   project, as well as the artist: Stafford McIntyre.
 
+- data/textures/animation/hit-1.tga
+  derived from © Sinestesia released under CC0
+  https://creativecommons.org/publicdomain/zero/1.0/
+  according to https://opengameart.org/content/hit-animation-frame-by-frame
+
 ** Source code
 
 - src/mesh.lisp use codes from cl-opengl
