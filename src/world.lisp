@@ -1028,10 +1028,17 @@
             (fs:search-matching-file (res:get-resource-file "" +ai-player-models-resource+)
                                      :name re))))
 
+(defun calc-capital (default level-difficult)
+  (truncate (max (* (* 3/4 default)
+                    (/ level-difficult 2))
+                 default)))
+
 (defmethod add-ai-opponent ((object world) type gender)
   (with-accessors ((main-state main-state)) object
-    (let ((preview-paths  (previews-path type gender))
-          (ghost          (ecase type
+    (let* ((*standard-capital-characteristic* (calc-capital *standard-capital-characteristic*
+                                                            (level-difficult (main-state object))))
+           (preview-paths  (previews-path type gender))
+           (ghost          (ecase type
                             (:warrior
                              (make-warrior :human))
                             (:archer

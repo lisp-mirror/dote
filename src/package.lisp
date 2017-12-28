@@ -3271,6 +3271,7 @@
    :find-entity-by-id
    :sum-modifiers
    :player-class->class-description
+   :*standard-capital-characteristic*
    :make-warrior
    :make-wizard
    :make-healer
