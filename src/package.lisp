@@ -4699,6 +4699,10 @@
    :make-blood-level-1
    :make-blood-level-2
    :make-blood-death
+   :add-blood-level-0
+   :add-blood-level-1
+   :add-blood-level-2
+   :add-blood-death
    :debris-particles-number
    :make-debris
    :make-fire-dart-level-0

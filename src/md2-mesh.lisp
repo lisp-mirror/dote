@@ -1033,45 +1033,25 @@
   (declare (ignore object))
   t)
 
-(defun blood-spill-level (damage max-damage)
-  (cond
-    ((< (/ damage max-damage) 0.2)
-     #'particles:make-blood-level-0)
-    ((<= 0.2 (/ damage max-damage) 0.7)
-     #'particles:make-blood-level-1)
-    ((> (/ damage max-damage) 0.7)
-     #'particles:make-blood-level-2)))
-
 (defun add-trigger-hit-melee (entity damage max-damage)
-  (let ((fn #'(lambda (entity)
-                (cond
-                  ((< 0.2 (/ damage max-damage) 0.5)
-                   (particles:add-hit-0-effect-billboard entity
-                                                          (pos entity)))
-                   ((< 0.5 (/ damage max-damage) 0.7)
-                    (particles:add-hit-1-effect-billboard entity
-                                                          (pos entity)))
-                   ((< 0.7 (/ damage max-damage) 0.9)
-                    (particles:add-hit-2-effect-billboard entity
-                                                          (pos entity)))
-                   ((> (/ damage max-damage) 0.9)
-                    (particles:add-hit-3-effect-billboard entity
-                                                          (pos entity)))))))
-  (add-start-one-shot-trigger entity :pain fn)))
-
-(defun enqueue-blood (world blood-generator-fn center dir compiled-shader)
-  (let ((blood (funcall blood-generator-fn center dir compiled-shader)))
-    (action-scheduler:with-enqueue-action
-        (world action-scheduler:blood-spill-action)
-      (world:push-entity world blood))))
-
-(defmacro with-enqueue-blood ((world blood-generator-fn center dir compiled-shader) &body body)
-  (alexandria:with-gensyms (blood)
-    `(let ((,blood (funcall ,blood-generator-fn ,center ,dir ,compiled-shader)))
-       (action-scheduler:with-enqueue-action
-           (world action-scheduler:blood-spill-action)
-         (world:push-entity ,world ,blood)
-         ,@body))))
+  (with-accessors ((pos  pos)
+                   (dir  dir)
+                   (aabb aabb)) entity
+    (let* ((center-entity (aabb-center aabb))
+           (fn #'(lambda (entity)
+                   (cond
+                     ((< 0.2 (/ damage max-damage) 0.5)
+                      (particles:add-hit-0-effect-billboard entity pos))
+                     ((< 0.5 (/ damage max-damage) 0.7)
+                      (particles:add-blood-level-0 entity center-entity dir)
+                      (particles:add-hit-1-effect-billboard entity pos))
+                     ((< 0.7 (/ damage max-damage) 0.9)
+                      (particles:add-blood-level-1 entity center-entity dir)
+                      (particles:add-hit-2-effect-billboard entity pos))
+                     ((> (/ damage max-damage) 0.9)
+                      (particles:add-blood-level-2 entity center-entity dir)
+                      (particles:add-hit-3-effect-billboard entity pos))))))
+      (add-start-one-shot-trigger entity :pain fn))))
 
 (defmethod apply-damage ((object md2-mesh) damage &key (tooltip-active-p t))
   (with-accessors ((ghost ghost)
@@ -1098,19 +1078,12 @@
               (setf current-damage-points (d- current-damage-points damage))
               (if (entity-dead-p object)
                   (set-death-status object)
-                  (game-state:with-world (world state)
-                    (let ((blood-fn (blood-spill-level damage (actual-damage-points ghost))))
-                      ;; TODO use trigger for the blood also
-                      (add-trigger-hit-melee object damage (actual-damage-points ghost))
-                      (with-enqueue-blood (world
-                                           blood-fn
-                                           (aabb-center aabb)
-                                           dir
-                                           compiled-shaders)
-                        (setf current-action  :pain)
-                        (set-animation object :pain :recalculate t)
-                        (setf stop-animation nil)
-                        (setf cycle-animation nil)))))
+                  (progn
+                    (add-trigger-hit-melee object damage (actual-damage-points ghost))
+                    (setf current-action  :pain)
+                    (set-animation object :pain :recalculate t)
+                    (setf stop-animation nil)
+                    (setf cycle-animation nil)))
               (billboard:enqueue-tooltip object
                                          (format nil
                                                  +standard-float-print-format+
@@ -1195,12 +1168,7 @@
       ;; also make the blackboard "forget" about this character if is from human side
       (when (faction-player-p state id)
         (blackboard:remove-entity-from-all-attack-pos blackboard object))
-      (game-state:with-world (world state)
-        (enqueue-blood world
-                       #'particles:make-blood-death
-                       (aabb-center aabb)
-                       +y-axe+
-                       compiled-shaders))))))
+      (particles:add-blood-death object (aabb-center aabb) +y-axe+)))))
 
 (defmethod set-attack-status ((object md2-mesh))
   (with-accessors ((ghost ghost)

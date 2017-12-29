@@ -1146,9 +1146,11 @@
 
 (defclass blood (minimal-particle-effect end-life-trigger) ())
 
-(defmethod initialize-instance :after ((object blood) &key &allow-other-keys)
-  (action-scheduler:end-of-life-remove-from-action-scheduler object
-                                                             action-scheduler:blood-spill-action))
+(defmethod initialize-instance :after ((object blood) &key (enqueuedp nil) &allow-other-keys)
+  (if enqueuedp
+      (action-scheduler:end-of-life-remove-from-action-scheduler object
+                                                                 action-scheduler:blood-spill-action)
+      (end-of-life-remove-from-world object)))
 
 (defmethod calculate :after ((object blood) dt)
   (with-maybe-trigger-end-of-life (object (almost-removeable-from-world-p object))))
@@ -1310,6 +1312,23 @@
                           :gravity +particle-gravity+
                           :width  .1
                           :height .1))
+
+(defmacro gen-add-blood (postfix)
+  (let ((fn-name       (misc:format-fn-symbol t "add-blood-~a" postfix))
+        (inner-fn-name (misc:format-fn-symbol t "make-blood-~a" postfix)))
+    `(defun ,fn-name (entity pos dir)
+       (with-accessors ((game-state state)
+                        (compiled-shaders compiled-shaders)) entity
+         (game-state:with-world (world game-state)
+           (world:push-entity world (,inner-fn-name pos dir compiled-shaders)))))))
+
+(gen-add-blood "level-0")
+
+(gen-add-blood "level-1")
+
+(gen-add-blood "level-2")
+
+(gen-add-blood "death")
 
 (defclass debris (minimal-particle-effect) ())
 

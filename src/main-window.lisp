@@ -325,7 +325,6 @@
               (misc:dbg "n ~a" *near*)
               (incf *near* -.1))
             (when (string= text "p")
-              (widget:activate-planner-icon  world)
               (particles:add-hit-0-effect-billboard selected-pc
                                                     (vec 1.0 +zero-height+ 1.0)))
             (when (string= text "D")
