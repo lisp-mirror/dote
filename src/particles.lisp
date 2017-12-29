@@ -2813,7 +2813,7 @@
 
 (defun add-hit-0-effect-billboard (mesh pos)
   (%add-effect-billboard mesh pos "hit-0.tga" 0.25 0.001
-                         :frequency-animation 2
+                         :frequency-animation 4
                          :w                   +terrain-chunk-tile-size+
                          :h                   +terrain-chunk-tile-size+))
 
