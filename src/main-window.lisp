@@ -325,7 +325,7 @@
               (misc:dbg "n ~a" *near*)
               (incf *near* -.1))
             (when (string= text "p")
-              (particles:add-hit-1-effect-billboard selected-pc
+              (particles:add-hit-0-effect-billboard selected-pc
                                                     (vec 0.0 +zero-height+ 0.0)))
             (when (string= text "D")
               (world:apply-tremor-0 world))

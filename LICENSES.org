@@ -780,6 +780,26 @@
   https://creativecommons.org/publicdomain/zero/1.0/
   according to https://opengameart.org/content/hit-animation-frame-by-frame
 
+- data/textures/animation/hit-0.tga
+  derived from © Clint Bellanger released under (CC BY 3.0)
+  https://creativecommons.org/licenses/by/3.0/
+  according to https://opengameart.org/content/sparks-fire-ice-blood
+
+
+- data/textures/animation/hit-2.tga
+  derived from © Sinestesia released under CC0
+  https://creativecommons.org/publicdomain/zero/1.0/
+  according to https://opengameart.org/content/hit-animation-frame-by-frame
+
+  and
+
+  © Clint Bellanger released under (CC BY 3.0)
+  https://creativecommons.org/licenses/by/3.0/
+  according to https://opengameart.org/content/quake-spell
+
+  released under  (CC BY 3.0)
+  https://creativecommons.org/licenses/by/3.0/
+
 ** Source code
 
 - src/mesh.lisp use codes from cl-opengl

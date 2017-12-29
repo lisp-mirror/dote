@@ -1716,7 +1716,9 @@ data/textures/animation/vampire-bite.tga                 \
 data/textures/animation/flash-1.tga                      \
 data/textures/animation/heal-1.tga                       \
 data/textures/animation/shock-1.tga                      \
+data/textures/animation/hit-0.tga                        \
 data/textures/animation/hit-1.tga                        \
+data/textures/animation/hit-2.tga                        \
 data/textures/animation/wasp.tga                         \
 data/textures/turn-transition/ai.tga                     \
 data/textures/turn-transition/human.tga                  \
