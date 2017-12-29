@@ -167,32 +167,44 @@
     :accessor animation-speed)))
 
 (defclass animated-spritesheet ()
-  ((frequency-animation
+  ((anim-delay
+    :initform 0
+    :initarg  :anim-delay
+    :accessor anim-delay)
+   (frequency-animation
     :initform 5
     :initarg  :frequency-animation
     :accessor frequency-animation)
    (frame-count
-    :initform 0
+    :initform -1
     :initarg  :frame-count
-    :accessor frame-count)
+    :accessor frame-count
+    :documentation "the total number of frames rendered in this animation (before a loop occurs)")
+   (frame-idx
+    :initform -1
+    :initarg  :frame-idx
+    :accessor frame-idx)
+   (frames-number
+    :initform -1
+    :initarg  :frames-number
+    :accessor frames-number
+    :documentation "the total number of frames in this animation (before a loop occurs)")
    (texture-window-width
     :initform 0.0
     :initarg  :texture-window-width
     :accessor texture-window-width)
-   (texture-horizontal-offset
-    :initform 0.1
-    :initarg  :texture-horizontal-offset
-    :accessor texture-horizontal-offset)
    (animation-loop
     :initform nil
     :initarg  :animation-loop-p
     :reader animation-loop-p
     :writer (setf animation-loop))))
 
-(definline animated-billboard-last-frame-reached-p (animation)
-  (with-accessors ((texture-horizontal-offset texture-horizontal-offset)
-                   (texture-window-width texture-window-width)) animation
-    (not (< texture-horizontal-offset (num:d- 1.0 texture-window-width)))))
+(defun animated-billboard-last-frame-reached-p (animation)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((frame-count frame-count)
+                   (frames-number frames-number)) animation
+    (declare (fixnum frame-count frames-number))
+    (= frame-count (1- frames-number))))
 
 (defclass end-life-trigger ()
   ((repeat-trigger
@@ -229,7 +241,8 @@
 (defmacro end-of-life-remove-from-world (entity)
   `(game-state:with-world (world (entity:state ,entity))
      (setf (end-of-life-callback ,entity)
-           #'(lambda () (entity:remove-entity-by-id world (identificable:id ,entity))))))
+           #'(lambda ()
+               (entity:remove-entity-by-id world (identificable:id ,entity))))))
 
 (defun remove-end-of-life-callback (object)
   "First value is t if slot exists the second is the old value of the slot"

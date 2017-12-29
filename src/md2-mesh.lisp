@@ -1045,14 +1045,17 @@
 (defun add-trigger-hit-melee (entity damage max-damage)
   (let ((fn #'(lambda (entity)
                 (cond
-                  ((< (/ damage max-damage) 0.2)
+                  ((< 0.2 (/ damage max-damage) 0.5)
                    (particles:add-hit-0-effect-billboard entity
                                                           (pos entity)))
-                   ((<= 0.2 (/ damage max-damage) 0.7)
+                   ((< 0.5 (/ damage max-damage) 0.7)
                     (particles:add-hit-1-effect-billboard entity
                                                           (pos entity)))
-                   ((> (/ damage max-damage) 0.7)
+                   ((< 0.7 (/ damage max-damage) 0.9)
                     (particles:add-hit-2-effect-billboard entity
+                                                          (pos entity)))
+                   ((> (/ damage max-damage) 0.9)
+                    (particles:add-hit-3-effect-billboard entity
                                                           (pos entity)))))))
   (add-start-one-shot-trigger entity :pain fn)))
 

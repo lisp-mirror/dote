@@ -277,8 +277,12 @@
                                          (w         1.0)
                                          (h         1.0)
                                          &allow-other-keys)
-  (with-accessors ((texture-window-width texture-window-width)) object
+  (with-accessors ((texture-window-width texture-window-width)
+                   (frames-number        frames-number)
+                   (frequency-animation  frequency-animation)) object
     (setf (use-blending-p object) t)
+    (setf frames-number (truncate (* frequency-animation
+                                     (/ 1 texture-window-width))))
     (let ((w/2 (d* w 0.5))
           (h/2 (d* h 0.5)))
       (quad object w h
@@ -293,22 +297,31 @@
           (end-of-life-remove-from-world object)))))
 
 (defmethod calculate ((object animated-billboard) dt)
-  (with-accessors ((calculatep calculatep)
-                   (frequency-animation frequency-animation)
-                   (el-time el-time)
-                   (texture-window-width texture-window-width)
-                   (texture-horizontal-offset texture-horizontal-offset)
-                   (animation-loop-p animation-loop-p)
-                   (frame-count frame-count)) object
+  (declare (optimize (debug 0) (speed 1) (safety 0)))
+  (with-accessors ((calculatep                calculatep)
+                   (anim-delay                anim-delay)
+                   (frequency-animation       frequency-animation)
+                   (el-time                   el-time)
+                   (texture-window-width      texture-window-width)
+                   (animation-loop-p          animation-loop-p)
+                   (animation-speed           animation-speed)
+                   (frames-number             frames-number)
+                   (frame-idx                 frame-idx)
+                   (frame-count               frame-count)) object
+    (declare (fixnum anim-delay frame-count frame-idx))
+    (declare (desired-type el-time animation-speed dt))
     (when calculatep
-      (incf (el-time object) (d* dt (animation-speed object)))
-      (incf frame-count)
-      (when (or animation-loop-p
-                (not (animated-billboard-last-frame-reached-p object)))
-        (when (= (rem frame-count frequency-animation) 0)
-          (incf texture-horizontal-offset texture-window-width)))
-      (bubbleup-modelmatrix object)
-      (with-maybe-trigger-end-of-life (object (removeable-from-world-p object))))))
+      (if (>=  anim-delay 0)
+          (decf anim-delay)
+          (progn
+            (incf el-time (d* dt animation-speed))
+            (incf frame-count)
+            (when (or animation-loop-p
+                      (not (animated-billboard-last-frame-reached-p object)))
+              (when (= (rem frame-count frequency-animation) 0)
+                (incf frame-idx)))
+            (bubbleup-modelmatrix object)
+            (with-maybe-trigger-end-of-life (object (removeable-from-world-p object))))))))
 
 (defmethod removeable-from-world-p ((object animated-billboard))
   (with-accessors ((duration/2       duration/2)
@@ -320,22 +333,26 @@
 
 (defmethod render ((object animated-billboard) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
-  (with-accessors ((duration/2 duration/2)
-                   (projection-matrix projection-matrix)
-                   (compiled-shaders compiled-shaders)
-                   (el-time el-time)
-                   (gravity  gravity)
-                   (texture-horizontal-offset texture-horizontal-offset)
-                   (model-matrix model-matrix)
-                   (triangles triangles)
-                   (scaling scaling)
-                   (texture-object texture-object)
-                   (vao vao)
-                   (view-matrix view-matrix)
-                   (renderp renderp)) object
+  (with-accessors ((duration/2           duration/2)
+                   (anim-delay           anim-delay)
+                   (projection-matrix    projection-matrix)
+                   (compiled-shaders     compiled-shaders)
+                   (el-time              el-time)
+                   (gravity              gravity)
+                   (texture-window-width texture-window-width)
+                   (frame-idx            frame-idx)
+                   (model-matrix         model-matrix)
+                   (triangles            triangles)
+                   (scaling              scaling)
+                   (texture-object       texture-object)
+                   (vao                  vao)
+                   (view-matrix          view-matrix)
+                   (renderp              renderp)) object
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles))
-    (when renderp
+    (declare (fixnum anim-delay))
+    (when (and renderp
+               (< anim-delay 0))
       (with-camera-view-matrix (camera-vw-matrix renderer)
         (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
           (cl-gl-utils:with-depth-disabled
@@ -344,12 +361,13 @@
               (use-program compiled-shaders :animated-billboard)
               (gl:active-texture            :texture0)
               (texture:bind-texture texture-object)
-              (uniformi  compiled-shaders :texture-object            +texture-unit-diffuse+)
-              (uniformf  compiled-shaders :duration                  duration/2)
-              (uniformf  compiled-shaders :vert-displacement-speed   +tooltip-v-speed+)
-              (uniformf  compiled-shaders :time                      el-time)
-              (uniformf  compiled-shaders :gravity                   gravity)
-              (uniformf  compiled-shaders :texture-horizontal-offset texture-horizontal-offset)
+              (uniformi  compiled-shaders :texture-object           +texture-unit-diffuse+)
+              (uniformi  compiled-shaders :frame-idx                frame-idx)
+              (uniformf  compiled-shaders :duration                 duration/2)
+              (uniformf  compiled-shaders :vert-displacement-speed  +tooltip-v-speed+)
+              (uniformf  compiled-shaders :time                     el-time)
+              (uniformf  compiled-shaders :gravity                  gravity)
+              (uniformf  compiled-shaders :texture-window-width     texture-window-width)
               (uniform-matrix compiled-shaders
                               :post-scaling 4
                               (vector (scale scaling))
@@ -365,17 +383,19 @@
               (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))))))
 
 (defun make-animated-billboard (pos shaders texture-name
-                              &key
-                                (duration/2                .0001)
-                                (w                         (d* 2.0 +terrain-chunk-tile-size+))
-                                (h                         (d* 2.0 +terrain-chunk-tile-size+))
-                                (loop-p                    nil)
-                                (frequency-animation       5)
-                                (texture-horizontal-offset 0.125)
-                                (gravity                   0.0)
-                                (activep                   t)
-                                (enqueuedp                 nil))
+                                &key
+                                  (delay                   0)
+                                  (duration/2                .0001)
+                                  (w                         (d* 2.0 +terrain-chunk-tile-size+))
+                                  (h                         (d* 2.0 +terrain-chunk-tile-size+))
+                                  (loop-p                    nil)
+                                  (frequency-animation       5)
+                                  (texture-horizontal-offset 0.125)
+                                  (gravity                   0.0)
+                                  (activep                   t)
+                                  (enqueuedp                 nil))
   (let ((tooltip (make-instance 'animated-billboard
+                                :anim-delay                delay
                                 :duration/2                duration/2
                                 :w                         w
                                 :h                         h
@@ -440,6 +460,7 @@
 
 (defun add-animated-billboard (pos texture-name game-state shaders
                                &key
+                                 (delay                     0)
                                  (duration/2                .0001)
                                  (w                         (d* 2.0
                                                                 +terrain-chunk-tile-size+))
@@ -455,6 +476,7 @@
     (let ((billboard (make-animated-billboard pos
                                               shaders
                                               texture-name
+                                              :delay                     delay
                                               :duration/2                duration/2
                                               :w                         w
                                               :h                         h

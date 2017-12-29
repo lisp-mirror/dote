@@ -2797,11 +2797,13 @@
                               &key
                                 (frequency-animation 1.0)
                                 (w (d* +terrain-chunk-tile-size+ 6.0))
-                                (h (d* +terrain-chunk-tile-size+ 6.0)))
+                                (h (d* +terrain-chunk-tile-size+ 6.0))
+                                (delay                           0))
   (billboard:add-animated-billboard pos
                                     (res:get-resource-file image-file +animation-texture-dir+)
                                     (state            particles-mesh)
                                     (compiled-shaders particles-mesh)
+                                    :delay                     delay
                                     :frequency-animation       frequency-animation
                                     :w                         w
                                     :h                         h
@@ -2811,7 +2813,7 @@
 
 (defun add-hit-0-effect-billboard (mesh pos)
   (%add-effect-billboard mesh pos "hit-0.tga" 0.25 0.001
-                         :frequency-animation 8
+                         :frequency-animation 2
                          :w                   +terrain-chunk-tile-size+
                          :h                   +terrain-chunk-tile-size+))
 
@@ -2821,6 +2823,16 @@
 (defun add-hit-2-effect-billboard (mesh pos)
  (%add-effect-billboard mesh pos "hit-2.tga" 0.0625 0.001 :frequency-animation 2))
 
+(defun add-hit-3-effect-billboard (mesh pos)
+  (loop for delay from 0 below 30 by 10 do
+       (let ((size (d+ (d* +terrain-chunk-tile-size+ 6.0)
+                       (d* 0.8 (d delay)))))
+       (%add-effect-billboard mesh pos "hit-1.tga" 0.0625 0.001
+                              :w                   (d* +terrain-chunk-tile-size+ 6.0)
+                              :h                   size
+                              :frequency-animation 2
+                              :delay               delay)))
+  (add-hit-2-effect-billboard mesh pos))
 
 (defun %enqueue-poison-1-effect-billboard (particles-mesh pos)
   (%enqueue-effect-billboard particles-mesh pos "wasp.tga" 0.02631579))

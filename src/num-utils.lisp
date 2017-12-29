@@ -35,7 +35,9 @@
             (primes-list primes start))
           (subseq (remove-if #'(lambda (a)
                                  (declare (fixnum a))
-                                 (< a 0)) primes) 1))))
+                                 (< a 0))
+                             primes)
+                  1))))
 
   (defun make-primes-array (count)
     (let ((arr (misc:make-array-frame count 0 'fixnum t)))

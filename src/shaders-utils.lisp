@@ -565,10 +565,10 @@ active program (set by sdk2.kit:use-program)."
      (:uniforms :modelview-matrix
                 :proj-matrix
                 :texture-object
-                :texture-horizontal-offset)
+                :texture-window-width
+                :frame-idx)
      (:shaders :vertex-shader   ,(get-shader-source "animated-icon.vert")
                :fragment-shader ,(get-shader-source "animated-icon.frag")))
-
     (:tree-impostor
      (:uniforms :modelview-matrix
                 :proj-matrix
@@ -596,7 +596,8 @@ active program (set by sdk2.kit:use-program)."
                 :post-scaling
                 :vert-displacement-speed
                 :duration
-                :texture-horizontal-offset
+                :texture-window-width
+                :frame-idx
                 :gravity
                 :time)
      (:shaders :vertex-shader   ,(get-shader-source "animated-billboard.vert")

@@ -628,10 +628,12 @@
    :el-time
    :animation-speed
    :animated-spritesheet
+   :anim-delay
    :frequency-animation
    :frame-count
+   :frame-idx
+   :frames-number
    :texture-window-width
-   :texture-horizontal-offset
    :animation-loop
    :animation-loop-p
    :animated-billboard-last-frame-reached-p
@@ -4737,7 +4739,8 @@
    :make-teleport-level-3
    :add-hit-0-effect-billboard
    :add-hit-1-effect-billboard
-   :add-hit-2-effect-billboard))
+   :add-hit-2-effect-billboard
+   :add-hit-3-effect-billboard))
 
 (defpackage :arrows
   (:use :cl
