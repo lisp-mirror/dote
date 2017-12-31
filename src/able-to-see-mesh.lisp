@@ -29,6 +29,7 @@
     (setf (compiled-shaders tree-mesh) shaders)
     (setf *visibility-target-placeholder* (mesh:fill-shell-from-mesh tree-mesh
                                                                      'mesh:tree-mesh-shell))
+    (setf (renderp *visibility-target-placeholder*) nil)
     (setf (entity:pos *visibility-target-placeholder*)
           (vec (map-utils:coord-map->chunk 0.0)
                (- +zero-height+)

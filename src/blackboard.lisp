@@ -947,15 +947,12 @@ values nil, i. e. the ray is not blocked"
     (with-accessors ((layer layer)) djk-map
       (reset-attack-layer djk-map)
       (let ((all-visibles (all-player-id-visible-from-ai main-state)))
-        ;; add-concerning tiles
-        (nsuperimpose-layer concerning-tiles layer :fn #'max)
         (loop-player-entities main-state  #'(lambda (player)
                                              (funcall update-fn
                                                       blackboard
                                                       player
                                                       :all-visibles-from-ai
-                                                      all-visibles)))
-        (inmap:smooth-dijkstra-layer djk-map main-state)))))
+                                                      all-visibles)))))))
 
 (defun push-target-position (bag player target-pos)
   (let* ((id-player (id player))
