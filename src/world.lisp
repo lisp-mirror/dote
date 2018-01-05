@@ -213,7 +213,7 @@
    (influence-map-type
      :accessor influence-map-type
      :initarg  :influence-map-type
-     :initform :unexplored-layer
+     :initform :actual-unexplored-layer
      :documentation "just for debugging")))
 
 (defmethod initialize-instance :after ((object world) &key &allow-other-keys)
@@ -238,25 +238,21 @@
                    (influence-map-type influence-map-type)) world
     (with-accessors ((blackboard blackboard)) main-state
       (let ((layer (ecase influence-map-type
+                     (:concerning-invalicables
+                      (inmap::layer->pixmap
+                       (blackboard::concerning-tiles-invalicables blackboard)))
                      (:concerning-facing
                       (inmap::layer->pixmap
                        (blackboard:concerning-tiles-facing blackboard)))
-                     (:first-per-turn-visited
-                      (with-accessors ((main-state main-state)) world
-                        (with-accessors ((blackboard blackboard)) main-state
-                          (inmap:dijkstra-layer->pixmap
-                           (blackboard::build-flee-layer-player blackboard
-                                                                (alexandria:first-elt
-                                                                 (ai-entities main-state)))))))
                      (:smoothed-concerning-layer
                       (inmap::layer->pixmap
                        (blackboard:concerning-tiles->costs-matrix blackboard)))
                      (:concerning-layer
                       (inmap::layer->pixmap
                        (blackboard:concerning-tiles blackboard)))
-                     (:unexplored-layer
+                     (:actual-unexplored-layer
                       (inmap:dijkstra-layer->pixmap
-                       (blackboard:unexplored-layer blackboard)))
+                       (blackboard:actual-unexplored-layer blackboard)))
                      (:attack-enemy-melee-layer
                       (inmap:dijkstra-layer->pixmap
                        (blackboard:attack-enemy-melee-layer blackboard)))
@@ -347,6 +343,7 @@
     (remove-all-windows             object)
     (remove-all-removeable          object)
     (remove-all-removeable-from-gui object)
+    (clean-all-latest-pos-occupied  object)
     ;;(remove-entity-if (gui object) #'(lambda (a) (typep a 'widget:message-window)))
     (incf (game-turn (main-state object))) ;; new turn starts here!
     nil))
@@ -1100,6 +1097,9 @@
   (remove-entity-if (entities object)
                     #'(lambda (a)
                         (removeable-from-world-p a))))
+
+(defmethod clean-all-latest-pos-occupied ((object world))
+  (clean-all-latest-pos-occupied (main-state object)))
 
 (defmethod remove-all-removeable-from-gui ((object world))
   (remove-entity-if (gui object)

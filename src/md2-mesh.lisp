@@ -1000,7 +1000,7 @@
             (let ((reachable-fn (blackboard:reachable-p-w/concening-tiles-fn blackboard)))
               (misc:dbg "all-tactics ~a"
                         (blackboard:build-all-attack-tactics blackboard reachable-fn)))
-            (setf (character:movement-points (ghost object)) 150.0)))
+            (setf (character:movement-points (ghost object)) 50.0)))
         ;;;;;;;;;;;;;;;;;;;;;;;
         (reset-spell-points    ghost)
         (reset-movement-points ghost)
@@ -1028,10 +1028,6 @@
        game-state:+pc-type+)
       (t
        game-state:+npc-type+))))
-
-(defmethod pawnp ((object md2-mesh))
-  (declare (ignore object))
-  t)
 
 (defun add-trigger-hit-melee (entity damage max-damage)
   (with-accessors ((pos  pos)
@@ -2220,7 +2216,7 @@
 (defmethod next-move-position ((object md2-mesh) (strategy (eql +explore-strategy+)))
   (with-accessors ((state state)) object
     (with-accessors ((blackboard blackboard:blackboard)) state
-      (blackboard:next-unexplored-position blackboard object))))
+        (ai-utils:next-explore-position blackboard object))))
 
 (defmethod build-player-path ((object md2-mesh) to-pos)
   "to-pos in cost coordinates (ivec2)"

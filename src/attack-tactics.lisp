@@ -271,8 +271,7 @@ the path, again only with map cost (i.e. no other-costs).
 If cut-off-first-tile is  not nil the first element  of the calculated
 path is removed
 "
-  (with-accessors ((main-state main-state)
-                   (concerning-tiles concerning-tiles)) blackboard
+  (with-accessors ((main-state main-state)) blackboard
     (with-accessors ((main-state main-state)) blackboard
       (with-accessors ((movement-costs movement-costs)) main-state
         (let* ((suppress-door-mat  (suppress-closed-door-cost-mat blackboard))

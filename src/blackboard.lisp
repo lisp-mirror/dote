@@ -16,21 +16,29 @@
 
 (in-package :blackboard)
 
-(define-constant +goal-attack-occupied-value+            100.0 :test #'=)
+(define-constant +goal-attack-occupied-value+             100.0 :test #'=)
 
-(define-constant +explored-tile-value+                   100.0 :test #'=)
+(define-constant +explored-tile-value+                    100.0 :test #'=)
 
-(define-constant +unexplored-tile-value+                   0.0 :test #'=)
+(define-constant +unexplored-tile-value+                    0.0 :test #'=)
 
-(define-constant +concerning-tile-value+                 100.0 :test #'=)
+(define-constant +concerning-tile-value+ +explored-tile-value+ :test #'=)
 
-(define-constant +attack-nongoal-tile-value+               5.0 :test #'=)
+(define-constant +attack-nongoal-tile-value+                5.0 :test #'=)
 
-(define-constant +length-line-of-sight-inf+             1000.0 :test #'=)
+(define-constant +length-line-of-sight-inf+              1000.0 :test #'=)
 
-(define-constant +goal-tile-value+                         0.0 :test #'=)
+(define-constant +goal-tile-value+                          0.0 :test #'=)
 
-(define-constant +concerning-tiles-cost->graph-scaling+    3.0 :test #'=)
+(define-constant +concerning-tiles-cost->graph-scaling+     3.0 :test #'=)
+
+(define-constant +min-concerning-invalicable-threshold+    75.0 :test #'=)
+
+(define-constant +max-concerning-invalicable-threshold+    99.0 :test #'=)
+
+(define-constant +concerning-tiles-invalicables-inc-step+  10.0 :test #'=)
+
+(define-constant +concerning-tiles-min-value+               0.0 :test #'=)
 
 (defmacro with-conc-path-total-cost ((total-cost) path-calculating-exp &body body)
   "Use with 'path-with-concerning-tiles' only"
@@ -46,7 +54,7 @@
 
 (defparameter *reachable-p-fn* #'reachablep)
 
-(definline cost-limit-concernint-tiles ()
+(definline cost-limit-concerning-tiles ()
   (declare (optimize (speed 3) (safety 0) (debug 0)))
   (d/ +invalicable-element-cost+
       10.0))
@@ -116,22 +124,32 @@
     :accessor per-turn-visited-tiles
     :type list
     :documentation "an alist (entity . matrix-of-visited-tiles), see slot visited-tiles")
-   (unexplored-layer
+   (actual-unexplored-layer
     :initform nil
-    :initarg  :unexplored-layer
-    :accessor unexplored-layer
+    :initarg  :actual-unexplored-layer
+    :accessor actual-unexplored-layer
     :type     dijkstra-layer)
    (concerning-tiles
     :initform nil
     :initarg  :concerning-tiles
     :accessor concerning-tiles
     :type     matrix)
+   (concerning-tiles-invalicables
+    :initform nil
+    :initarg  :concerning-tiles-invalicables
+    :accessor concerning-tiles-invalicables
+    :type     matrix
+    :documentation "the concerning tiles near a NPC (for unexplored-layer only)")
    (concerning-tiles-facing
     :initform nil
     :initarg  :concerning-tiles-facing
     :accessor concerning-tiles-facing
     :type     matrix
-    :documentation "the concerning tiles in fornt o a NPC")
+    :documentation "the concerning tiles in front o a NPC")
+   (concerning-tiles-invalicable-threshold
+    :initform +min-concerning-invalicable-threshold+
+    :initarg  :concerning-tiles-invalicable-threshold
+    :accessor concerning-tiles-invalicable-threshold)
    (attack-enemy-melee-layer
     :initform nil
     :initarg  :attack-enemy-melee-layer
@@ -149,7 +167,7 @@
     :initarg  :attack-enemy-bow-layer
     :accessor attack-enemy-bow-layer
     :type     dijkstra-layer
-        :documentation "just for debugging")
+    :documentation "just for debugging")
    (attack-enemy-crossbow-layer
     :initform nil
     :initarg  :attack-enemy-crossbow-layer
@@ -195,23 +213,26 @@
     :writer   (setf use-enemy-fov-when-attacking))))
 
 (defmethod initialize-instance :after ((object blackboard) &key &allow-other-keys)
-  (with-accessors ((visited-tiles                visited-tiles)
-                   (concerning-tiles             concerning-tiles)
-                   (concerning-tiles-facing      concerning-tiles-facing)
-                   (unexplored-layer             unexplored-layer)
-                   (attack-enemy-melee-layer     attack-enemy-melee-layer)
-                   (attack-enemy-pole-layer      attack-enemy-pole-layer)
-                   (attack-enemy-bow-layer       attack-enemy-bow-layer)
-                   (attack-enemy-crossbow-layer  attack-enemy-crossbow-layer)
-                   (use-enemy-fov-when-exploring use-enemy-fov-when-exploring)
-                   (use-enemy-fov-when-attacking use-enemy-fov-when-attacking)
+  (with-accessors ((visited-tiles                 visited-tiles)
+                   (concerning-tiles              concerning-tiles)
+                   (concerning-tiles-facing       concerning-tiles-facing)
+                   (concerning-tiles-invalicables concerning-tiles-invalicables)
+                   (actual-unexplored-layer       actual-unexplored-layer)
+                   (attack-enemy-melee-layer      attack-enemy-melee-layer)
+                   (attack-enemy-pole-layer       attack-enemy-pole-layer)
+                   (attack-enemy-bow-layer        attack-enemy-bow-layer)
+                   (attack-enemy-crossbow-layer   attack-enemy-crossbow-layer)
+                   (use-enemy-fov-when-exploring  use-enemy-fov-when-exploring)
+                   (use-enemy-fov-when-attacking  use-enemy-fov-when-attacking)
                    (main-state       main-state)) object
     (let ((wmap (width  (map-state main-state)))
           (hmap (height (map-state main-state))))
-      (setf visited-tiles           (make-matrix wmap hmap nil))
-      (setf concerning-tiles        (make-matrix wmap hmap 0.0))
-      (setf concerning-tiles-facing (make-matrix wmap hmap 0.0))
-      (setf unexplored-layer        (inmap:make-dijkstra-layer wmap hmap +unexplored-tile-value+))
+      (setf visited-tiles                 (make-matrix wmap hmap nil))
+      (setf concerning-tiles              (make-matrix wmap hmap +concerning-tiles-min-value+))
+      (setf concerning-tiles-facing       (make-matrix wmap hmap +concerning-tiles-min-value+))
+      (setf concerning-tiles-invalicables (make-matrix wmap hmap +concerning-tiles-min-value+))
+      (setf actual-unexplored-layer        (inmap:make-dijkstra-layer wmap hmap
+                                                                      +unexplored-tile-value+))
       (setf attack-enemy-melee-layer
             (inmap:make-dijkstra-layer wmap hmap +attack-nongoal-tile-value+))
       (setf attack-enemy-pole-layer
@@ -269,13 +290,20 @@
   (let* ((level           (level-difficult game-state))
          (decrease-rate   (d  (/ 1 level)))
          (decrease-amount (d/ +concerning-tile-value+ 3.0)))
-    (loop-matrix (concerning-map x y)
-       (when (d> (matrix-elt concerning-map y x) 0.0)
-         (let ((new-value (d- (matrix-elt concerning-map y x)
-                              (d* decrease-rate decrease-amount))))
-           (if (d> new-value 0.0)
-               (setf (matrix-elt concerning-map y x) new-value)
-               (setf (matrix-elt concerning-map y x) 0.0)))))))
+    (ploop-matrix (concerning-map x y)
+      (let ((old-value (matrix-elt concerning-map y x)))
+        (when (and old-value
+                   (d> old-value +concerning-tiles-min-value+))
+          (let ((new-value (d- old-value
+                               (d* decrease-rate decrease-amount))))
+            (if (d> new-value +concerning-tiles-min-value+)
+                (setf (matrix-elt concerning-map y x) new-value)
+                (setf (matrix-elt concerning-map y x) +concerning-tiles-min-value+))))))))
+
+(defun decrease-concerning-invalicables (game-state map)
+  (with-accessors ((blackboard blackboard:blackboard)) game-state
+    (decrease-concerning game-state map)
+    (update-concerning-invalicable blackboard)))
 
 (defun update-all-attacking-pos (blackboard)
   (setf (attack-enemy-melee-positions    blackboard) nil
@@ -289,13 +317,13 @@
 
 (defun %update-all-layers (blackboard)
   #- inhibit-update-unexplored-layer
-  (update-unexplored-layer                 blackboard)
-  #+(and debug-ai debug-blackboard-layers)
-  (progn ; it takes ~ 0.5s to calculate
-    (update-attack-melee-layer             blackboard)
-    (update-attack-pole-layer              blackboard)
-    (update-attack-bow-layer               blackboard)
-    (update-attack-crossbow-layer          blackboard)))
+  (update-actual-unexplored-layer blackboard)
+  #+ (and debug-mode debug-ai debug-blackboard-layers)
+  (progn
+    (update-attack-melee-layer    blackboard)
+    (update-attack-pole-layer     blackboard)
+    (update-attack-bow-layer      blackboard)
+    (update-attack-crossbow-layer blackboard)))
 
 (defun make-single-turn-visited-tiles-matrix (w h)
   (make-matrix w h nil))
@@ -328,10 +356,12 @@
     (update-all-attacking-pos blackboard)))
 
 (defmethod game-event:on-game-event ((object blackboard) (event game-event:end-turn))
-  (with-accessors ((concerning-tiles        concerning-tiles)
-                   (concerning-tiles-facing concerning-tiles-facing)) object
-    (decrease-concerning (main-state object) concerning-tiles)
-    (decrease-concerning (main-state object) concerning-tiles-facing)
+  (with-accessors ((concerning-tiles              concerning-tiles)
+                   (concerning-tiles-facing       concerning-tiles-facing)
+                   (concerning-tiles-invalicables concerning-tiles-invalicables)) object
+    (decrease-concerning              (main-state object) concerning-tiles)
+    (decrease-concerning              (main-state object) concerning-tiles-facing)
+    (decrease-concerning-invalicables (main-state object) concerning-tiles-invalicables)
     (%update-all-infos            object)
     (reset-per-turn-visited-tiles object)
     (dbg "pole  ~a"      (attack-enemy-pole-positions     object))
@@ -363,11 +393,15 @@
 
 (defgeneric strategy-decision (object))
 
-(defgeneric update-unexplored-layer (object))
+(defgeneric update-actual-unexplored-layer (object))
 
 (defgeneric update-concerning-tiles-player (object player &key all-visibles-from-ai))
 
+(defgeneric update-concerning-invalicable-player (object player))
+
 (defgeneric next-unexplored-position (object player &key scale-factor-cost-concern))
+
+(defgeneric next-actual-unexplored-position (object player &key scale-factor-cost-concern))
 
 (defgeneric update-attack-melee-layer (object))
 
@@ -456,8 +490,8 @@
             (matrix:map-matrix res
                                #'(lambda (a)
                                    (let* ((min-value           0.0)
-                                          (min-value-normalize 0.0)
-                                          (max-value           (cost-limit-concernint-tiles))
+                                          (min-value-normalize +concerning-tiles-min-value+)
+                                          (max-value           (cost-limit-concerning-tiles))
                                           (max-normalize      +concerning-tile-value+))
                                      (if (not (epsilon= min-value a))
                                          (d* (normalize-value-in-range a
@@ -467,7 +501,7 @@
                                          min-value)))))
       ;; commented out: the concerning tiles value would leak across not visible tiles
       ;; (setf res (matrix:pgaussian-blur-separated res #'identity 1))
-      (loop-matrix (res x y)
+      (ploop-matrix (res x y)
          (setf (matrix-elt res y x)
                (d+ (matrix-elt res y x)
                    (matrix-elt concerning-tiles-facing y x))))
@@ -490,14 +524,18 @@
 (defmethod set-tile-visited ((object blackboard) entity-visiting (x fixnum) (y fixnum))
   (with-accessors ((visited-tiles visited-tiles)
                    (main-state main-state)
-                   (unexplored-layer unexplored-layer)) object
+                   (concerning-tiles concerning-tiles)) object
+    (with-accessors ((ghost ghost)) entity-visiting
     ;; mark visited global table
     (setf (matrix-elt visited-tiles y x) t)
-    ;; mark visited for the entity single table
     (when entity-visiting
-      (when-let ((per-turn-tiles (get-matrix-turn-visited-tiles object entity-visiting)))
-        (setf (matrix-elt per-turn-tiles y x) t)))
-    (%update-all-infos object)))
+      (let ((pos (calculate-cost-position entity-visiting)))
+        ;; mark visited for the entity single table
+        (when-let ((per-turn-tiles (get-matrix-turn-visited-tiles object entity-visiting)))
+          (setf (matrix-elt per-turn-tiles y x) t))
+        ;; update character's log of movement
+        (character:append-to-last-pos-occupied ghost pos)))
+    (%update-all-infos object))))
 
 (defun calc-danger-zone-size (difficult-level)
   "The size of the concerning zone when when some concerning event occurs"
@@ -602,7 +640,7 @@
 (defun reset-layer (djk-map value)
   (with-accessors ((layer layer)) djk-map
     ;; reset layer
-    (loop-matrix (layer x y)
+    (ploop-matrix (layer x y)
        (setf (matrix-elt layer y x) value))))
 
 (defun reset-explored-layer (unexplored-layer)
@@ -611,14 +649,31 @@
 (defun reset-attack-layer (unexplored-layer)
   (reset-layer unexplored-layer +attack-nongoal-tile-value+))
 
-(defun all-player-id-visible-from-faction (game-state)
-  (let ((all-visibles '()))
-    (loop-ai-entities game-state
-                     #'(lambda (v)
-                         (let ((visibles (able-to-see-mesh:other-faction-visible-players v)))
-                           (loop for visible in visibles do
-                                (pushnew visible all-visibles :key #'id :test #'=)))))
+;; ;; TODO remove
+;; (defun all-player-id-visible-from-faction (game-state)
+;;   (let ((all-visibles '()))
+;;     (loop-ai-entities game-state
+;;                      #'(lambda (v)
+;;                          (let ((visibles (able-to-see-mesh:other-faction-visible-players v)))
+;;                            (loop for visible in visibles do
+;;                                 (pushnew visible all-visibles :key #'id :test #'=)))))
+;;     (map 'list #'id all-visibles)))
+
+(defun all-*-id-visible-from-faction (game-state faction)
+  "Note: loop-*-entities will skip death characters"
+  (let ((all-visibles '())
+        (loop-fn (faction->loop-faction-fn faction)))
+    (funcall loop-fn game-state
+             #'(lambda (v)
+                 (let ((visibles (able-to-see-mesh:other-faction-visible-players v)))
+                   (loop for visible in visibles do
+                        (pushnew visible all-visibles :key #'id :test #'=)))))
     (map 'list #'id all-visibles)))
+
+
+(defun all-ai-id-visible-from-player (game-state)
+  "Note: loop-player-entities will skip death characters"
+  (all-*-id-visible-from-faction game-state +pc-type+))
 
 (defun all-player-id-visible-from-ai (game-state)
   "Note: loop-ai-entities will skip death characters"
@@ -670,7 +725,7 @@
 (defun nsuperimpose-layer (from destination &key (fn #'(lambda (a b)
                                                          (declare (ignore b))
                                                          a)))
-  (loop-matrix (destination x y)
+  (ploop-matrix (destination x y)
      (setf (matrix-elt destination y x)
            (funcall fn (matrix-elt from y x) (matrix-elt destination y x)))))
 
@@ -681,25 +736,39 @@
            (when (find point visible-positions :test #'ivec2=)
              (setf (matrix-elt layer y x) new-value))))))
 
-(defun layer-skip-filter-fn (game-state)
-  (let ((all-visibles-entities (all-player-id-visible-from-ai game-state))
-        (max-mp (max-ai-movement-points game-state)))
+(defun layer-skip-filter-fn (game-state
+                             &key
+                               (ignore-visibility-player-test  nil)
+                               (ignore-become-invalicable-test nil))
+  (with-accessors ((blackboard blackboard)) game-state
+    (let ((all-visibles-entities (all-player-id-visible-from-ai game-state))
+          (max-mp                (max-ai-movement-points game-state)))
     #'(lambda (el-type pos)
-        (let ((cost (get-cost game-state (elt pos 0) (elt pos 1))))
-          (and (not (door@pos-p game-state (elt pos 0) (elt pos 1)))
-               (or (inmap:skippablep el-type pos)
-                   (find (entity-id-in-pos game-state (elt pos 0) (elt pos 1))
-                         all-visibles-entities
-                         :test #'=)
-                   (> cost max-mp)))))))
+        (displace-2d-vector (pos x y)
+          (let ((cost (get-cost game-state x y)))
+            (and (not (door@pos-p game-state x y))
+                 (or (inmap:skippablep el-type pos)
+                     (and (not ignore-become-invalicable-test)
+                          (concerning-became-explore-invalicable-tile-p blackboard x y))
+                     (and (not ignore-visibility-player-test)
+                          (find (entity-id-in-pos game-state x y)
+                               all-visibles-entities
+                               :test #'=))
+                     (> cost max-mp)))))))))
 
-(defmethod update-unexplored-layer ((object blackboard))
-  (with-accessors ((visited-tiles visited-tiles)
-                   (main-state main-state)
-                   (concerning-tiles concerning-tiles)
-                   (unexplored-layer unexplored-layer)) object
-    (with-accessors ((layer layer)) unexplored-layer
-      (reset-explored-layer unexplored-layer)
+(defun update-conc-invalicable-skippable-fn (game-state)
+  (layer-skip-filter-fn game-state
+                        :ignore-visibility-player-test  t
+                        :ignore-become-invalicable-test t))
+
+(defmethod update-actual-unexplored-layer ((object blackboard))
+  (with-accessors ((visited-tiles                 visited-tiles)
+                   (main-state                    main-state)
+                   (concerning-tiles              concerning-tiles)
+                   (concerning-tiles-invalicables concerning-tiles-invalicables)
+                   (actual-unexplored-layer              actual-unexplored-layer)) object
+    (with-accessors ((layer layer)) actual-unexplored-layer
+      (reset-explored-layer actual-unexplored-layer)
       (let ((all-visibles (all-player-id-visible-from-ai main-state)))
         ;; calculate concerning tiles tiles occupied by enemies
         (loop-player-entities main-state
@@ -711,44 +780,16 @@
         ;; add-concerning tiles
         (nsuperimpose-layer concerning-tiles layer)
         ;; mark already visited tiles
-        (loop-matrix (layer x y)
+        (ploop-matrix (layer x y)
            (when (matrix-elt visited-tiles y x)
              (setf (matrix-elt layer y x) +explored-tile-value+)))
+        ;; update invalicable human player pos
+        (update-concerning-invalicable object)
         ;; smooth the map here
-        (inmap:smooth-dijkstra-layer (blackboard:unexplored-layer object)
+        (inmap:smooth-dijkstra-layer actual-unexplored-layer
                                      main-state
-                                     :skippable-predicate (layer-skip-filter-fn main-state))))))
-
-
-(defmethod build-flee-layer-player ((object blackboard) (player entity))
-  "note: this depends from a valid and updated concerning layer"
-  (with-accessors ((main-state main-state)
-                   (concerning-tiles concerning-tiles)) object
-    #+debug-mode (assert (get-matrix-turn-visited-tiles object player))
-    (let* ((per-turn-tiles (get-matrix-turn-visited-tiles object player))
-           (res            (make-matrix (width per-turn-tiles)
-                                        (height per-turn-tiles))))
-      ;; add player visited tiles
-      (nsuperimpose-layer per-turn-tiles res
-                          :fn #'(lambda (a b)
-                                  (if a
-                                      +explored-tile-value+
-                                      b)))
-      ;; add-concerning tiles
-      (nsuperimpose-layer concerning-tiles
-                          res
-                          :fn #'(lambda (a b)
-                                  (cond
-                                    ((and (numberp a)
-                                          (numberp b))
-                                     (max a b))
-                                    (t
-                                     (or a b)))))
-      ;; smooth the map here
-      (inmap:smooth-dijkstra-layer (inmap:wrap-matrix-as-dijkstra-map res)
-                                   main-state
-                                   :skippable-predicate
-                                   (layer-skip-filter-fn main-state)))))
+                                     :skippable-predicate
+                                     (layer-skip-filter-fn main-state))))))
 
 (defun %2d-ray-stopper (player x y use-fov)
   "x  and y  in  cost-map  space (integer  coordinates),  values t  if
@@ -845,10 +886,88 @@
                                                          player
                                                          concerning-tiles-facing))))))))))
 
-(defmethod next-unexplored-position ((object blackboard) (player md2-mesh:md2-mesh)
+(defun concerning-tile-invalicable-mapping-clsr (x-center y-center)
+  #'(lambda (x y)
+      (let* ((dist (map-manhattam-distance (ivec2 x-center y-center)
+                                           (ivec2 x y))))
+        (d/ +concerning-tile-value+ (d (1+ dist))))))
+
+(defmethod update-concerning-invalicable ((object blackboard))
+  (with-accessors ((main-state                    main-state)
+                   (concerning-tiles              concerning-tiles)
+                   (concerning-tiles-invalicables concerning-tiles-invalicables)) object
+    (ploop-matrix (concerning-tiles-invalicables x y)
+         (when (null (matrix-elt concerning-tiles-invalicables y x))
+           (setf (matrix-elt concerning-tiles-invalicables y x) +concerning-tiles-min-value+)))
+    (loop-player-entities main-state
+         #'(lambda (player)
+             (update-concerning-invalicable-player object player)))
+    ;; smooth
+    (let ((map (wrap-matrix-as-dijkstra-map concerning-tiles-invalicables)))
+      (smooth-dijkstra-layer map
+                             main-state
+                             :skippable-predicate
+                             (update-conc-invalicable-skippable-fn main-state))
+      (setf concerning-tiles-invalicables (layer map)))
+    object))
+
+(defmethod update-concerning-invalicable-player ((object blackboard)
+                                                 (player md2-mesh:md2-mesh))
+  (with-accessors ((visited-tiles                  visited-tiles)
+                   (main-state                     main-state)
+                   (use-enemy-fov-when-exploring-p use-enemy-fov-when-exploring-p)
+                   (concerning-tiles               concerning-tiles)
+                   (concerning-tiles-invalicables  concerning-tiles-invalicables)) object
+    (let* ((pos                (calculate-cost-position player))
+           (concerning-tile-fn (concerning-tile-invalicable-mapping-clsr (ivec2-x pos)
+                                                                         (ivec2-y pos))))
+      (ploop-matrix (concerning-tiles-invalicables x y)
+        (let* ((old-invalicable (matrix-elt concerning-tiles-invalicables y x)))
+          ;;  concerning
+          (when (concerning-became-explore-invalicable-tile-p object x y)
+            (setf (matrix-elt concerning-tiles-invalicables y x)
+                  (if (null old-invalicable)
+                      (funcall concerning-tile-fn x y)
+                      (max old-invalicable
+                           (funcall concerning-tile-fn x y))))))))))
+
+(defmethod reduce-concerning-invalicable-range ((object blackboard))
+  (with-accessors ((concerning-tiles-invalicable-threshold
+                    concerning-tiles-invalicable-threshold)) object
+    (setf concerning-tiles-invalicable-threshold
+          (min +max-concerning-invalicable-threshold+
+               (incf concerning-tiles-invalicable-threshold
+                     +concerning-tiles-invalicables-inc-step+)))))
+
+(defun concerning-became-explore-invalicable-tile-p (blackboard x y)
+  (with-accessors ((concerning-tiles concerning-tiles)
+                   (concerning-tiles-invalicable-threshold
+                    concerning-tiles-invalicable-threshold)) blackboard
+    (d> (matrix-elt concerning-tiles y x)
+        concerning-tiles-invalicable-threshold)))
+
+(defun concerning-became-explore-invalicable-tile-p* (blackboard coord)
+  (concerning-became-explore-invalicable-tile-p blackboard
+                                                (ivec2-x coord)
+                                                (ivec2-y coord)))
+
+(defmethod next-actual-unexplored-position ((object blackboard) (player md2-mesh:md2-mesh)
                                      &key (scale-factor-cost-concern 1.0))
-  (with-accessors ((unexplored-layer unexplored-layer)) object
-    (inmap:next-dijkstra-position unexplored-layer player scale-factor-cost-concern)))
+  (with-accessors ((actual-unexplored-layer       actual-unexplored-layer)
+                   (concerning-tiles-invalicables concerning-tiles-invalicables)) object
+    (let ((pos (calculate-cost-position player)))
+      (if (concerning-became-explore-invalicable-tile-p* object pos)
+          (progn
+            #+debug-mode
+            (let ((next-pos (inmap:next-dijkstra-position concerning-tiles-invalicables
+                                                          player
+                                                          scale-factor-cost-concern)))
+              (misc:dbg "using inner @ ~a ~a" pos next-pos))
+            (inmap:next-dijkstra-position concerning-tiles-invalicables
+                                                        player
+                                                        scale-factor-cost-concern))
+          (inmap:next-dijkstra-position actual-unexplored-layer player
+                                        scale-factor-cost-concern)))))
 
 (defun %2d-ray-stopper-melee-fn (player x y)
   "x and y in cost-map space (integer coordinates)
@@ -857,7 +976,7 @@ note: if a character of human faction is blocking visibility this form
 values nil, i. e. the ray is not blocked"
   (with-accessors ((state state)) player
     (multiple-value-bind (visiblep entity-hitted)
-        (able-to-see-mesh:placeholder-visible-p player x y)
+        (able-to-see-mesh:placeholder-visible-ray-p player x y)
       (let* ((emptyp                 (map-element-empty-p (element-mapstate@ state x y)))
              (blocked-by-character-p (and (not visiblep)
                                           entity-hitted
@@ -942,8 +1061,7 @@ values nil, i. e. the ray is not blocked"
 (defun %update-attack-layer (blackboard djk-map update-fn)
   (with-accessors ((main-state               main-state)
                    (concerning-tiles         concerning-tiles)
-                   (attack-enemy-melee-layer attack-enemy-melee-layer)
-                   (unexplored-layer         unexplored-layer)) blackboard
+                   (attack-enemy-melee-layer attack-enemy-melee-layer)) blackboard
     (with-accessors ((layer layer)) djk-map
       (reset-attack-layer djk-map)
       (let ((all-visibles (all-player-id-visible-from-ai main-state)))
@@ -1052,8 +1170,7 @@ values nil, i. e. the ray is not blocked"
 (defmethod update-attack-melee-layer ((object blackboard))
   (with-accessors ((main-state main-state)
                    (concerning-tiles concerning-tiles)
-                   (attack-enemy-melee-layer attack-enemy-melee-layer)
-                   (unexplored-layer unexplored-layer)) object
+                   (attack-enemy-melee-layer attack-enemy-melee-layer)) object
     (%update-attack-layer object attack-enemy-melee-layer #'update-attack-melee-layer-player)))
 
 (defmethod update-melee-attackable-pos ((object blackboard))
@@ -1293,8 +1410,7 @@ values nil, i. e. the ray is not blocked"
 (defmethod update-attack-pole-layer ((object blackboard))
   (with-accessors ((main-state main-state)
                    (concerning-tiles concerning-tiles)
-                   (attack-enemy-pole-layer attack-enemy-pole-layer)
-                   (unexplored-layer unexplored-layer)) object
+                   (attack-enemy-pole-layer attack-enemy-pole-layer)) object
     (%update-attack-layer object attack-enemy-pole-layer #'update-attack-pole-layer-player)))
 
 (defmethod update-pole-attackable-pos ((object blackboard))
@@ -1303,15 +1419,13 @@ values nil, i. e. the ray is not blocked"
 (defmethod update-attack-bow-layer ((object blackboard))
   (with-accessors ((main-state main-state)
                    (concerning-tiles concerning-tiles)
-                   (attack-enemy-bow-layer attack-enemy-bow-layer)
-                   (unexplored-layer unexplored-layer)) object
+                   (attack-enemy-bow-layer attack-enemy-bow-layer)) object
     (%update-attack-layer object attack-enemy-bow-layer #'update-attack-bow-layer-player)))
 
 (defmethod update-attack-crossbow-layer ((object blackboard))
   (with-accessors ((main-state main-state)
                    (concerning-tiles concerning-tiles)
-                   (attack-enemy-crossbow-layer attack-enemy-crossbow-layer)
-                   (unexplored-layer unexplored-layer)) object
+                   (attack-enemy-crossbow-layer attack-enemy-crossbow-layer)) object
     (%update-attack-layer object
                           attack-enemy-crossbow-layer
                           #'update-attack-crossbow-layer-player)))
@@ -1325,31 +1439,14 @@ values nil, i. e. the ray is not blocked"
 
 (defun 2d-tile-visible-around-ai-p (game-state tile-position ray-stopper-fn)
   (with-accessors ((blackboard blackboard)) game-state
-    (with-accessors ((unexplored-layer unexplored-layer)) blackboard
-      (with-accessors ((layer layer)) unexplored-layer
-        (flet ((change-viewpoint (entity dir)
-                 (setf (dir entity) dir)
-                 ;; (mesh:bubbleup-modelmatrix entity)
-                 (able-to-see-mesh:update-visibility-cone entity)))
-          (loop-ai-entities game-state
-                           #'(lambda (entity)
-                               (let ((saved-dir (dir entity)))
-                                 (loop for temp-dir in +entity-all-direction+ do
-                                      (change-viewpoint entity temp-dir)
-                                      (displace-2d-vector (tile-position x y)
-                                        ;; visible if is hitted by the ray
-                                        ;; AND
-                                        ;; is already explored OR
-                                        ;; the direction is the actual direction of the entity
-                                        (when (and (not (funcall ray-stopper-fn entity x y))
-                                                   (matrix-elt layer y x)
-                                                   (or (sb-cga:vec~ temp-dir saved-dir)
-                                                       (> (matrix-elt layer y x)
-                                                          +unexplored-tile-value+)))
-                                          (change-viewpoint entity saved-dir)
-                                          (return-from 2d-tile-visible-around-ai-p t))))
-                                 (change-viewpoint entity saved-dir))))
-          nil)))))
+    (with-accessors ((layer concerning-tiles-invalicables)) blackboard
+      (loop-ai-entities game-state
+           #'(lambda (entity)
+               (displace-2d-vector (tile-position x y)
+                 ;; visible if hitted
+                 (when (not (funcall ray-stopper-fn entity x y))
+                   (return-from 2d-tile-visible-around-ai-p t)))))
+      nil)))
 
 (defun disgregard-all-plans (game-state)
   (loop-ai-entities game-state #'(lambda (v)

@@ -524,7 +524,11 @@
    (inventory
     :initarg :inventory
     :initform '()
-    :accessor inventory)))
+    :accessor inventory)
+   (last-pos-occupied
+    :initarg :last-pos-occupied
+    :initform '()
+    :accessor last-pos-occupied)))
 
 (gen-type-p player-character)
 
@@ -693,6 +697,14 @@
 (defgeneric calculate-influence-weapon (object weapon-type))
 
 (defgeneric combined-power (object))
+
+(defgeneric append-to-last-pos-occupied (object new-pos))
+
+(defgeneric clean-last-pos-occupied (object))
+
+(defgeneric last-pos-occupied-filled-p (object))
+
+(defgeneric movement-stuck-p (object new-pos))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun symbol-pclass-fn-name (name)
@@ -1132,6 +1144,31 @@
                                    (d* (dodge-weight)
                                        actual-dodge-chance))))
         (d* status-contribute raw-power)))))
+
+
+(defmethod append-to-last-pos-occupied ((object player-character) new-pos)
+  (with-accessors ((last-pos-occupied last-pos-occupied)) object
+    (setf last-pos-occupied (lcat (last-pos-occupied object)
+                                  (list new-pos)))))
+
+(defmethod clean-last-pos-occupied ((object player-character))
+  (with-accessors ((last-pos-occupied last-pos-occupied)) object
+    (setf last-pos-occupied '())))
+
+(defmethod last-pos-occupied-filled-p ((object player-character))
+  (with-accessors ((last-pos-occupied last-pos-occupied)) object
+    (not (null last-pos-occupied))))
+
+(defmethod movement-stuck-p ((object player-character) next-pos)
+  (with-accessors ((last-pos-occupied last-pos-occupied)) object
+    (let ((length-pos (length last-pos-occupied)))
+      (if (< length-pos 3)
+          nil
+          (let ((a1 (elt last-pos-occupied (- length-pos 1)))
+                (b  (elt last-pos-occupied (- length-pos 2)))
+                (a2 (elt last-pos-occupied (- length-pos 3))))
+            (and (ivec2:ivec2= a1 a2)
+                 (ivec2:ivec2= b next-pos)))))))
 
 (defmacro gen-actual-characteristic (name)
   (let ((fn       (format-fn-symbol t "actual-~a" name))

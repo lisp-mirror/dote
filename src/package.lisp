@@ -2295,6 +2295,8 @@
    :el-type-in-pos
    :entity-id-in-pos
    :entity-in-pos
+   :entity-ai-in-pos
+   :entity-player-in-pos
    :occludep-in-pos
    :element-mapstate@
    :door@pos-p
@@ -2360,6 +2362,7 @@
    :door-in-next-path-tile-p
    :skydome-bottom-color
    :remove-entity-from-all-attack-pos
+   :clean-all-latest-pos-occupied
    :increase-game-turn))
 
 (defpackage :game-event
@@ -3137,6 +3140,7 @@
    :attack-when-near-pos-p
    :useful-reachable-fountain
    :useful-reachable-fountain-clear-cache
+   :next-explore-position
    :next-flee-position
    :go-launch-wall-breaking-spell
    :go-launch-attack-spell
@@ -3274,6 +3278,7 @@
    :ring
    :spell-loaded
    :inventory
+   :last-pos-occupied
    :inventory-slot-pages-number
    :player-gender->gender-description
    :reset-movement-points
@@ -3314,6 +3319,10 @@
    :castable-attack-spells-list
    :calculate-influence
    :combined-power
+   :append-to-last-pos-occupied
+   :clean-last-pos-occupied
+   :last-pos-occupied-filled-p
+   :movement-stuck-p
    :pclass-of-useful-in-attack-tactic-p
    :elaborate-current-tactical-plan
    :with-no-thinking
@@ -5083,7 +5092,8 @@
    :calc-concerning-tiles-cost-scaling
    :visited-tiles
    :reset-per-turn-visited-tiles
-   :unexplored-layer
+   :actual-unexplored-layer
+   :unreachable-layer
    :pole-weapon-goal-generator-fn
    :long-range-weapon-goal-generator-fn
    :melee-weapon-goal-generator-fn
@@ -5114,10 +5124,13 @@
    :all-player-ray-visibles-by-entity
    :all-visibles-by-entity
    :all-visibles-ray-by-entity
-   :update-unexplored-layer
+   :update-actual-unexplored-layer
+   :update-unreachable-layer
    :update-all-attacking-pos
    :concerning-tile-default-mapping-clsr
+   :reduce-concerning-invalicable-range
    :next-unexplored-position
+   :next-actual-unexplored-position
    :disgregard-all-plans
    :fountain-exhausted-p
    :remove-entity-from-all-attack-pos

@@ -359,6 +359,10 @@
 
 (defgeneric entity-in-pos (object x y))
 
+(defgeneric entity-ai-in-pos (object x y))
+
+(defgeneric entity-player-in-pos (object x y))
+
 (defgeneric build-movement-path (object start end &key other-costs-layer))
 
 (defgeneric terrain-aabb-2d (object))
@@ -455,6 +459,8 @@
 
 (defgeneric remove-entity-from-all-attack-pos (object entity))
 
+(defgeneric clean-all-latest-pos-occupied (object))
+
 (defmethod (setf selected-pc) (entity (object game-state))
   "set index-selected-pc as well"
   (with-accessors ((index-selected-pc index-selected-pc)
@@ -537,6 +543,18 @@
 (defmethod entity-in-pos ((object game-state) (x fixnum) (y fixnum))
   (let ((id (entity-id (matrix-elt (map-state object) y x))))
     (find-entity-by-id object id)))
+
+(defun entity-of-faction-in-pos (game-state x y faction-fn)
+  (let ((id (entity-id (matrix-elt (map-state game-state) y x))))
+    (if (funcall faction-fn game-state id)
+        (entity-in-pos game-state x y)
+        nil)))
+
+(defmethod entity-ai-in-pos ((object game-state) (x fixnum) (y fixnum))
+  (entity-of-faction-in-pos object x y #'faction-ai-p))
+
+(defmethod entity-player-in-pos ((object game-state) (x fixnum) (y fixnum))
+  (entity-of-faction-in-pos object x y #'faction-player-p))
 
 (defgeneric element-mapstate@ (object x y))
 
@@ -1063,6 +1081,10 @@
 
 (defmethod remove-entity-from-all-attack-pos ((object game-state) entity)
   (remove-entity-from-all-attack-pos (blackboard object) entity))
+
+(defmethod clean-all-latest-pos-occupied ((object game-state))
+  (loop-ai-entities object #'(lambda (a)
+                               (character:clean-last-pos-occupied (ghost a)))))
 
 (defun increase-game-turn (state)
   (let ((end-event   (make-instance 'game-event:end-turn

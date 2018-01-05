@@ -23,6 +23,9 @@
     :accessor layer
     :type matrix)))
 
+(defmethod matrix-elt ((object dijkstra-layer) row col)
+  (matrix-elt (layer object) row col))
+
 (defun skippablep (type pos)
   (declare (ignore pos))
   (find type
@@ -38,8 +41,10 @@
 
 (defgeneric smooth-dijkstra-layer (object state &key skippable-predicate))
 
-(defgeneric next-dijkstra-position (object entity-player scale-factor-cost-concern))
+(defgeneric next-dijkstra-position (object entity-player scale-factor-cost-concern
+                                    &key find-cost-map-fn))
 
+;; note: keep the order of tiles deterministic!
 (defun get-djk-neigh-fn ()
   (flet ((state-neigh-fn (column row w-offset h-offset &key add-center)
            (declare (ignore w-offset h-offset))
@@ -54,78 +59,101 @@
                                     (skippable-predicate #'skippablep)
                                     (neigh-fn (get-djk-neigh-fn)))
   "Note: skipped tiles will get nil as value!"
-  (let* ((matrix          (layer object))
-         (working-copy    (clone matrix))
-         (not-skippable-p #'(lambda (el pos) (not (funcall skippable-predicate (el-type el) pos)))))
-    (loop-matrix (working-copy x y)
-      (if (not (funcall skippable-predicate (el-type-in-pos state x y) (ivec2 x y)))
-          (let* ((neighbour (funcall neigh-fn state y x not-skippable-p))
-                 (center    (matrix-elt working-copy y x))
-                 (min       (loop for cell across neighbour
-                               when (matrix-elt working-copy
-                                                (elt (cdr cell) 1)  ; row
-                                                (elt (cdr cell) 0)) ; column
-                               minimize
-                                 (matrix-elt working-copy
-                                             (elt (cdr cell) 1)     ; row
-                                             (elt (cdr cell) 0))))) ; column
-            (when (and center
-                       ;; if empty the tile is  an "island", so do not
-                       ;; change the value
-                       (not (misc:vector-empty-p neighbour))
-                       (d>= center (d+ (d min) 2.0)))
-              (setf (matrix-elt working-copy y x)
-                    (d+ 1.0 (d min)))))
-          (setf (matrix-elt working-copy y x) nil)))
-    (if (matrix= matrix working-copy
-                 :test #'(lambda (v1 v2)
-                           (with-epsilon (1e-7)
-                             (every #'(lambda (a b)
-                                        (cond
-                                          ((and (null a) (null b))
-                                           t)
-                                          ((or (null a) (null b))
-                                           nil)
-                                          (t
-                                           (epsilon= a b))))
-                                    v1 v2))))
-        object
-        (progn
-          (setf (layer object) working-copy)
-          (smooth-dijkstra-layer object state :skippable-predicate skippable-predicate)))))
+  (labels ((neig-comp (n i)
+             (elt (cdr n) i))
+           (neig-row (n)
+             (neig-comp n 1))
+           (neig-col (n)
+             (neig-comp n 0))
+           (islandp (neigh matrix)
+             (or (misc:vector-empty-p neigh)
+                 (every #'(lambda (a)
+                            (null (matrix-elt matrix (neig-row a) (neig-col a))))
+                        neigh))))
+    (let* ((modifiedp       nil)
+           (matrix          (layer object))
+           (working-copy    (clone matrix))
+           (not-skippable-p #'(lambda (el pos)
+                                (not (funcall skippable-predicate (el-type el) pos)))))
+      (loop-matrix (working-copy x y)
+         (if (not (funcall skippable-predicate (el-type-in-pos state x y) (ivec2 x y)))
+             (let* ((neighbour (funcall neigh-fn state y x not-skippable-p))
+                    (center    (matrix-elt working-copy y x))
+                    (min       (loop for cell across neighbour
+                                  when (matrix-elt working-copy
+                                                   (elt (cdr cell) 1)  ; row
+                                                   (elt (cdr cell) 0)) ; column
+                                  minimize
+                                    (matrix-elt working-copy
+                                                (elt (cdr cell) 1)     ; row
+                                                (elt (cdr cell) 0))))) ; column
+               (when (and center
+                          ;; if the tile is  an "island", do not
+                          ;; change the value
+                          (not (islandp neighbour working-copy))
+                          (d>= center (d+ (d min) 2.0)))
+                 (setf modifiedp t)
+                 (setf (matrix-elt working-copy y x)
+                       (d+ 1.0 (d min)))))
+             (when (not (null (matrix-elt working-copy y x)))
+               (setf modifiedp t)
+               (setf (matrix-elt working-copy y x) nil))))
+      (if (not modifiedp)
+          object
+          (progn
+            (setf (layer object) working-copy)
+            (smooth-dijkstra-layer object state
+                                   :skippable-predicate skippable-predicate))))))
 
-(defmethod next-dijkstra-position ((object dijkstra-layer) entity-player scale-factor-cost-concern)
-  (with-accessors ((layer layer)) object
-    (with-accessors ((state state)) entity-player
-      (labels ((find-cost-layer (a)
-                 (let ((raw (matrix:matrix-elt layer (elt a 1) (elt a 0))))
-                     (and raw
-                          (d* scale-factor-cost-concern raw))))
-                 (find-cost (a) ;; doors as if they have no cost
-                   (if (game-state:door@pos-p state (elt a 0) (elt a 1))
-                       +open-terrain-cost+
-                       (game-state:get-cost state (elt a 0) (elt a 1)))))
-        (let* ((position (map-utils:pos-entity-chunk->cost-pos (pos entity-player)))
-               (x-player (elt position 0))
-               (y-player (elt position 1))
-               (neighbour-elements (gen-valid-4-neighbour-counterclockwise layer
-                                                                           x-player
-                                                                           y-player
-                                                                           :add-center nil))
-               (compare-fn         #'(lambda (a b)
-                                       (let ((cost-a (find-cost-layer a))
-                                             (cost-b (find-cost-layer b)))
-                                         (cond
-                                           ((null cost-a)
-                                            nil)
-                                           ((null cost-b)
-                                            t)
-                                           (t
-                                            (< cost-a cost-b))))))
-               (min                (find-min-max compare-fn neighbour-elements)))
-          (values (vector position
-                          (sequence->ivec2 min))
-                  (find-cost min)))))))
+(defmethod next-dijkstra-position ((object dijkstra-layer)
+                                   entity-player
+                                   scale-factor-cost-concern
+                                   &key (find-cost-map-fn #'next-dijk-pos-cost-map-fn))
+  (next-dijkstra-position (layer object) entity-player
+                          scale-factor-cost-concern
+                          :find-cost-map-fn find-cost-map-fn))
+
+(defun next-dijk-pos-cost-map-fn (entity pos)
+  (with-accessors ((state state)) entity
+    (2d-utils:displace-2d-vector (pos x y)
+      (if (game-state:door@pos-p state x y) ; doors as if they have no cost
+          +open-terrain-cost+
+          (game-state:get-cost state x y)))))
+
+(defmethod next-dijkstra-position ((object matrix) entity-player
+                                   scale-factor-cost-concern
+                                   &key (find-cost-map-fn #'next-dijk-pos-cost-map-fn))
+  "Return values: new path, cost to reach new position (as specified by find-cost-map-fn)"
+  (with-accessors ((state state)) entity-player
+    (labels ((find-cost-layer (a)
+               (let ((raw (matrix:matrix-elt object (elt a 1) (elt a 0))))
+                 (and raw
+                      (d* scale-factor-cost-concern raw)))))
+      (let* ((position (map-utils:pos-entity-chunk->cost-pos (pos entity-player)))
+             (x-player (elt position 0))
+             (y-player (elt position 1))
+             (neighbour-elements (gen-valid-4-neighbour-counterclockwise object
+                                                                         x-player
+                                                                         y-player
+                                                                         :add-center nil))
+             (remove-predicate   #'(lambda (a)   (null (find-cost-layer a))))
+             ;; null cost  are removed from  'neighbour-elements' when
+             ;; this function is  used, below, so calling  #'< can not
+             ;; fail here
+             (compare-fn         #'(lambda (a b) (< (find-cost-layer a))
+                                                    (find-cost-layer b)))
+             (min                     (handler-bind ((error
+                                                      #'(lambda (c)
+                                                          (declare (ignore c))
+                                                          (invoke-restart 'use-value nil))))
+                                        (find-min-max compare-fn
+                                                      (remove-if remove-predicate
+                                                                 neighbour-elements)))))
+        (if min
+            (values (vector position
+                            (sequence->ivec2 min))
+                    (funcall find-cost-map-fn entity-player min))
+            (values nil nil)))))) ; no valid move found
 
 (defun make-dijkstra-layer (w h bg-value)
   (make-instance 'dijkstra-layer

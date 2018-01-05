@@ -782,11 +782,10 @@ composed by just one tile, see 'attackable-position-exists-path'"
   (with-accessors ((state entity:state)
                    (ghost entity:ghost)) entity
     (multiple-value-bind (path cost)
-        (blackboard:next-unexplored-position strategy-expert
-                                             entity)
-      (declare (ignore path))
-      (let* ((res (<= cost
-                      (character:current-movement-points ghost))))
+        (ai-utils:next-explore-position strategy-expert entity)
+      (let* ((res (and path
+                       (<= cost
+                           (character:current-movement-points ghost)))))
         (misc:dbg "able-to-explore cost ~a -> ~a" cost res)
         res))))
 

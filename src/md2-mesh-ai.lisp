@@ -250,26 +250,6 @@
             (let* ((path-struct (game-state:make-movement-path path cost)))
               (%do-simple-move object path-struct state world))))))))
 
-;; (defmethod actuate-plan ((object md2-mesh)
-;;                          strategy
-;;                          (action (eql ai-utils:+launch-heal-spell-action+)))
-;;   (with-maybe-blacklist (object strategy action)
-;;     (with-accessors ((state state)) object
-;;       (game-state:with-world (world state)
-;;         (action-scheduler:with-enqueue-action-and-send-remove-after
-;;             (world action-scheduler:tactical-plane-action)
-;;           (ai-utils:go-launch-heal-spell object))))))
-
-;; (defmethod actuate-plan ((object md2-mesh)
-;;                          strategy
-;;                          (action (eql ai-utils:+launch-heal-spell-friend-action+)))
-;;   (with-maybe-blacklist (object strategy action)
-;;     (with-accessors ((state state)) object
-;;       (game-state:with-world (world state)
-;;         (action-scheduler:with-enqueue-action-and-send-remove-after
-;;             (world action-scheduler:tactical-plane-action)
-;;           (ai-utils:go-launch-heal-spell-friend object))))))
-
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+launch-teleport-spell-action+)))
@@ -544,6 +524,7 @@ attempts Note: all attackable position will be updated as well"
                                           :path           tiles
                                           :cost           cost
                                           :id-destination (id mesh))))
+      #+ (and debug-mode debug-ai) (misc:dbg "go to ~a" tiles)
       (game-event:propagate-move-entity-along-path-event movement-event))))
 
 (defun need-to-move-to-attack-p (entity)

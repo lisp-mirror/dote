@@ -55,15 +55,18 @@
          (with-placeholder@ (,x-terrain-space ,h-terrain-space ,z-terrain-space)
            ,@body)))))
 
-(defun placeholder-visible-p (player x y)
+(defun placeholder-visible-p (player x y &key (me-visible-by-myself-p t))
   "x y z logical map space (integer)"
   (with-accessors ((state state)) player
     ;; if the position is occupied switch to normal visibility
     (if (not (map-element-empty-p (element-mapstate@ state x y)))
-        (other-visible-p player (find-entity-by-id state (entity-id-in-pos state x y)))
+        (other-visible-p player (find-entity-by-id state
+                                                   (entity-id-in-pos state x y))
+                         :me-visible-by-myself-p me-visible-by-myself-p)
         (%placeholder-visible-p-wrapper (player x y)
           (multiple-value-bind (ray entity)
-              (other-visible-p player *visibility-target-placeholder*)
+              (other-visible-p player *visibility-target-placeholder*
+                               :me-visible-by-myself-p me-visible-by-myself-p)
             (setf (entity:pos *visibility-target-placeholder*)
                   (vec (map-utils:coord-map->chunk 0.0)
                        (- +zero-height+)
@@ -72,7 +75,8 @@
                                *visibility-target-placeholder* nil :update-costs nil)
             (values ray entity))))))
 
-(defun tiles-placeholder-visible-in-box (matrix player x-center y-center size)
+(defun tiles-placeholder-visible-in-box (matrix player x-center y-center size
+                                         &key (me-visible-by-myself-p t))
   "x-center y-center size logical map space (integer)"
   (let ((tiles (matrix:gen-valid-neighbour-position-in-box matrix
                                                            x-center
@@ -82,18 +86,21 @@
     (loop
        for tile across tiles
        when
-         (placeholder-visible-p player (elt tile 0) (elt tile 1))
+         (placeholder-visible-p player (elt tile 0) (elt tile 1)
+                                :me-visible-by-myself-p me-visible-by-myself-p)
        collect tile)))
 
 (defmacro with-invisible-ids ((ids) &body body)
   `(let ((*ray-test-id-entities-ignored* ,ids))
      ,@body))
 
-(defun tile-placeholder-visible-by-faction-p (main-state pos-tile faction)
+(defun tile-placeholder-visible-by-faction-p (main-state pos-tile faction
+                                              &key (me-visible-by-myself-p t))
   (let ((map-fn (faction->map-faction-fn faction)))
     (funcall map-fn main-state
              #'(lambda (entity)
-                 (when (placeholder-visible-p entity (elt pos-tile 0) (elt pos-tile 1))
+                 (when (placeholder-visible-p entity (elt pos-tile 0) (elt pos-tile 1)
+                                              :me-visible-by-myself-p me-visible-by-myself-p)
                    (return-from tile-placeholder-visible-by-faction-p t))))
     nil))
 
@@ -187,15 +194,18 @@ Returns two values: *invisibles* and *visibles* tiles"
       (values (set-difference tiles visibles :test #'ivec2:ivec2=)
               visibles))))
 
-(defun placeholder-visible-ray-p (player x y)
+(defun placeholder-visible-ray-p (player x y &key (me-visible-by-myself-p t))
   "x y z logical map space (integer)"
   (with-accessors ((state state)) player
     ;; if the position is occupied switch to normal visibility test
     (if (not (map-element-empty-p (element-mapstate@ state x y)))
-        (other-visible-ray-p player (find-entity-by-id state (entity-id-in-pos state x y)))
+        (other-visible-ray-p player (find-entity-by-id state
+                                                       (entity-id-in-pos state x y))
+                             :me-visible-by-myself-p me-visible-by-myself-p)
         (%placeholder-visible-p-wrapper (player x y)
           (multiple-value-bind (ray entity)
-              (other-visible-ray-p player *visibility-target-placeholder*)
+              (other-visible-ray-p player *visibility-target-placeholder*
+                                   :me-visible-by-myself-p me-visible-by-myself-p)
             (setf (entity:pos *visibility-target-placeholder*)
                   (vec (map-utils:coord-map->chunk 0.0)
                        (- +zero-height+)
@@ -208,7 +218,10 @@ Returns two values: *invisibles* and *visibles* tiles"
     :initarg  :visibility-cone
     :accessor visibility-cone)))
 
-(defgeneric other-visible-p (object target &key exclude-if-labyrinth-entity cone))
+(defgeneric other-visible-p (object target
+                             &key
+                               exclude-if-labyrinth-entity cone
+                               me-visible-by-myself-p))
 
 (defgeneric update-visibility-cone (object &key rebuild-modelmatrix))
 
@@ -218,9 +231,13 @@ Returns two values: *invisibles* and *visibles* tiles"
 
 (defgeneric visible-players-in-state-from-faction (object faction &key alive-only))
 
-(defgeneric other-visible-cone-p (object target &key cone))
+(defgeneric other-visible-cone-p (object target &key
+                                                  cone
+                                                  me-visible-by-myself-p))
 
-(defgeneric other-visible-ray-p (object target &key exclude-if-labyrinth-entity))
+(defgeneric other-visible-ray-p (object target &key
+                                                 exclude-if-labyrinth-entity
+                                                 me-visible-by-myself-p))
 
 (defgeneric labyrinth-element-hitted-by-ray (object target))
 
@@ -287,66 +304,85 @@ Returns two values: *invisibles* and *visibles* tiles"
                         (pushnew visible res :test #'test-id=)))))
     res))
 
+(defmacro with-test-me-visible ((a b should-be-visible-p) &body body)
+  `(if (and ,should-be-visible-p
+            (= (id ,a) (id ,b)))
+       (values (make-instance 'ray
+                              :displacement 0.0
+                              :ray-direction (dir ,a))
+               ,a)
+       (progn ,@body)))
 
 (defmethod other-visible-p ((object able-to-see-mesh) (target triangle-mesh)
                             &key
                               (exclude-if-labyrinth-entity t)
-                              (cone (visibility-cone object)))
-    "is target visible from object?
+                              (cone (visibility-cone object))
+                              (me-visible-by-myself-p t))
+  "is target visible from object?
 note: by default non labyrinth elements are ignored"
-  (let ((in-cone-p (other-visible-cone-p object target :cone cone)))
-    (when in-cone-p
-      ;; (misc:dbg "visible for cone ~a" (id target))
-      ;; (return-from other-visible-p t)
-      (multiple-value-bind (ray-hitted entity-hitted)
-          (other-visible-ray-p object
-                               target
-                               :exclude-if-labyrinth-entity exclude-if-labyrinth-entity)
-        (if ray-hitted
-            (values ray-hitted entity-hitted)
-            (values nil        entity-hitted))))))
+  (with-test-me-visible (object target me-visible-by-myself-p)
+    (let ((in-cone-p (other-visible-cone-p object target
+                                           :cone cone
+                                           :me-visible-by-myself-p me-visible-by-myself-p)))
+      (when in-cone-p
+        ;; (misc:dbg "visible for cone ~a" (id target))
+        ;; (return-from other-visible-p t)
+        (multiple-value-bind (ray-hitted entity-hitted)
+            (other-visible-ray-p object
+                                 target
+                                 :exclude-if-labyrinth-entity exclude-if-labyrinth-entity
+                                 :me-visible-by-myself-p me-visible-by-myself-p)
+          (if ray-hitted
+              (values ray-hitted entity-hitted)
+              (values nil        entity-hitted)))))))
 
 (defmethod other-visible-cone-p ((object able-to-see-mesh) (target triangle-mesh)
-                                 &key (cone (visibility-cone object)))
+                                 &key
+                                   (cone (visibility-cone object))
+                                   (me-visible-by-myself-p t))
   "is target visible from object (cone test)?"
-  (let ((center (aabb-center (actual-aabb-for-visibility target))))
-    (point-in-cone-p cone center)))
+  (with-test-me-visible (object target me-visible-by-myself-p)
+    (let ((center (aabb-center (actual-aabb-for-visibility target))))
+      (point-in-cone-p cone center))))
 
 (defmethod other-visible-ray-p ((object able-to-see-mesh) (target triangle-mesh)
-                                &key (exclude-if-labyrinth-entity t))
+                                &key
+                                  (exclude-if-labyrinth-entity t)
+                                  (me-visible-by-myself-p t))
   "is target visible from object (ray test)?
 
 note:  if  exclude-if-labyrinth-entity  is  non  nil  target  will  be
 invisible if part of a labyrinth.
 Also note that that ray is long as much as the height of the visibility cone of this mesh"
-  (multiple-value-bind (ray-nonlab-hitted entity-nonlab-hitted)
-      (nonlabyrinth-element-hitted-by-ray object target)
-    (multiple-value-bind (ray-lab-hitted entity-lab-hitted)
-        (labyrinth-element-hitted-by-ray object target)
-      (if exclude-if-labyrinth-entity
-          (cond
-            ((null ray-nonlab-hitted)
-             (values nil entity-nonlab-hitted))
-            ((null ray-lab-hitted)
-             (values ray-nonlab-hitted entity-nonlab-hitted))
-            (t ;hitted both labyrinth and player
-             (if (d< (displacement ray-lab-hitted)
-                     (displacement ray-nonlab-hitted))
-                 (values nil               entity-nonlab-hitted)
-                 (values ray-nonlab-hitted entity-nonlab-hitted))))
-          (cond
-            ((and ray-lab-hitted
-                  ray-nonlab-hitted)
-             (if (d< (displacement ray-lab-hitted)
-                     (displacement ray-nonlab-hitted))
-                 (values nil               entity-nonlab-hitted)
-                 (values ray-nonlab-hitted entity-nonlab-hitted)))
-            (ray-nonlab-hitted
-             (values ray-nonlab-hitted entity-nonlab-hitted))
-            (ray-lab-hitted
-             (values ray-lab-hitted entity-lab-hitted))
-            (t ;; not visible
-             (values nil nil)))))))
+  (with-test-me-visible (object target me-visible-by-myself-p)
+    (multiple-value-bind (ray-nonlab-hitted entity-nonlab-hitted)
+        (nonlabyrinth-element-hitted-by-ray object target)
+      (multiple-value-bind (ray-lab-hitted entity-lab-hitted)
+          (labyrinth-element-hitted-by-ray object target)
+        (if exclude-if-labyrinth-entity
+            (cond
+              ((null ray-nonlab-hitted)
+               (values nil entity-nonlab-hitted))
+                ((null ray-lab-hitted)
+                 (values ray-nonlab-hitted entity-nonlab-hitted))
+                (t ;hitted both labyrinth and player
+                 (if (d< (displacement ray-lab-hitted)
+                         (displacement ray-nonlab-hitted))
+                     (values nil               entity-nonlab-hitted)
+                     (values ray-nonlab-hitted entity-nonlab-hitted))))
+              (cond
+                ((and ray-lab-hitted
+                      ray-nonlab-hitted)
+                 (if (d< (displacement ray-lab-hitted)
+                         (displacement ray-nonlab-hitted))
+                     (values nil               entity-nonlab-hitted)
+                     (values ray-nonlab-hitted entity-nonlab-hitted)))
+                (ray-nonlab-hitted
+                 (values ray-nonlab-hitted entity-nonlab-hitted))
+                (ray-lab-hitted
+                 (values ray-lab-hitted entity-lab-hitted))
+                (t ;; not visible
+                 (values nil nil))))))))
 
 (defmethod nonlabyrinth-element-hitted-by-ray ((object able-to-see-mesh) (target triangle-mesh))
   (with-accessors ((dir dir)

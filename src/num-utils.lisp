@@ -97,7 +97,9 @@
             (datan (d/ (elt v 1) (elt v 0))))))
 
 (defun find-min-max (function the-list)
-  (reduce #'(lambda (a b) (if (funcall function a b) a b)) the-list))
+  (restart-case
+      (reduce #'(lambda (a b) (if (funcall function a b) a b)) the-list)
+    (use-value (e) e)))
 
 (defun find-min (the-list)
   (find-min-max #'< the-list))

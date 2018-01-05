@@ -562,6 +562,12 @@
 
 (gen-accessors-matrix view-matrix)
 
+(defmethod pawnp ((object triangle-mesh))
+  (with-accessors ((state state)
+                   (id    id)) object
+    (or (faction-ai-p     state id)
+        (faction-player-p state id))))
+
 (defmethod current-time ((object triangle-mesh))
   (game-state:current-time (state object)))
 

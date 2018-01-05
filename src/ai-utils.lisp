@@ -956,8 +956,28 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
 
 (defun next-flee-position (strategy-expert entity)
   "return the flee position next to entity and its cost, if any"
-  (let ((dijkstra-map (blackboard::build-flee-layer-player strategy-expert entity)))
-    (inmap:next-dijkstra-position dijkstra-map entity 1.0)))
+  (next-explore-position strategy-expert entity))
+
+(defun next-explore-position (strategy-expert entity &optional (max-iter 3))
+  (with-accessors ((state state)
+                   (ghost ghost)) entity
+    (flet ((retry ()
+             (blackboard:reduce-concerning-invalicable-range strategy-expert)
+             (blackboard:update-actual-unexplored-layer      strategy-expert)
+             (next-explore-position strategy-expert entity (1- max-iter))))
+      (if (< max-iter 0)
+          (values nil nil)
+          (multiple-value-bind (new-path cost)
+              (blackboard:next-actual-unexplored-position strategy-expert entity)
+            (let ((next-pos-candidate (and new-path
+                                           (elt new-path 1))))
+              (if next-pos-candidate
+                  (if (character:movement-stuck-p ghost next-pos-candidate)
+                      (progn
+                        #+ (and debug-mode debug-ai) (misc:dbg "stuck @ ~a" next-pos-candidate)
+                        (retry))
+                      (values new-path cost)) ;; not stuck, good pos to move in
+                  (retry)))))))) ;; not a single legal move, decrease concerning tiles and retry
 
 (defun go-place-trap (entity)
   (with-accessors ((ghost entity:ghost)) entity
