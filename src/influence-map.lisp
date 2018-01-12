@@ -140,8 +140,8 @@
              ;; null cost  are removed from  'neighbour-elements' when
              ;; this function is  used, below, so calling  #'< can not
              ;; fail here
-             (compare-fn         #'(lambda (a b) (< (find-cost-layer a))
-                                                    (find-cost-layer b)))
+             (compare-fn         #'(lambda (a b) (< (find-cost-layer a)
+                                                    (find-cost-layer b))))
              (min                     (handler-bind ((error
                                                       #'(lambda (c)
                                                           (declare (ignore c))
