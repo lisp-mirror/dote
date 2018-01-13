@@ -965,7 +965,7 @@
 
 (defmethod next-actual-unexplored-position ((object blackboard) (player md2-mesh:md2-mesh)
                                      &key (scale-factor-cost-concern 1.0))
-  (with-accessors ((unexplored-layer               unexplored-layer)
+  (with-accessors ((unexplored-layer              unexplored-layer)
                    (concerning-tiles-invalicables concerning-tiles-invalicables)) object
     (let ((pos (calculate-cost-position player)))
       (if (concerning-became-explore-invalicable-tile-p* object pos)
