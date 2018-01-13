@@ -213,7 +213,7 @@
    (influence-map-type
      :accessor influence-map-type
      :initarg  :influence-map-type
-     :initform :actual-unexplored-layer
+     :initform :unexplored-layer
      :documentation "just for debugging")))
 
 (defmethod initialize-instance :after ((object world) &key &allow-other-keys)
@@ -250,9 +250,9 @@
                      (:concerning-layer
                       (inmap::layer->pixmap
                        (blackboard:concerning-tiles blackboard)))
-                     (:actual-unexplored-layer
+                     (:unexplored-layer
                       (inmap:dijkstra-layer->pixmap
-                       (blackboard:actual-unexplored-layer blackboard)))
+                       (blackboard:unexplored-layer blackboard)))
                      (:attack-enemy-melee-layer
                       (inmap:dijkstra-layer->pixmap
                        (blackboard:attack-enemy-melee-layer blackboard)))

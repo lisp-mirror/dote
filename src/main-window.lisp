@@ -387,7 +387,7 @@
     (when (eq :scancode-f7 scancode)
       (%change-layer :concerning-layer))
     (when (eq :scancode-f8 scancode)
-      (%change-layer :actual-unexplored-layer))
+      (%change-layer :unexplored-layer))
     (when (eq :scancode-f9 scancode)
       (%change-layer :attack-enemy-melee-layer))
     (when (eq :scancode-f10 scancode)

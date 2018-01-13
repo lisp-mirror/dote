@@ -124,10 +124,10 @@
     :accessor per-turn-visited-tiles
     :type list
     :documentation "an alist (entity . matrix-of-visited-tiles), see slot visited-tiles")
-   (actual-unexplored-layer
+   (unexplored-layer
     :initform nil
-    :initarg  :actual-unexplored-layer
-    :accessor actual-unexplored-layer
+    :initarg  :unexplored-layer
+    :accessor unexplored-layer
     :type     dijkstra-layer)
    (concerning-tiles
     :initform nil
@@ -217,7 +217,7 @@
                    (concerning-tiles              concerning-tiles)
                    (concerning-tiles-facing       concerning-tiles-facing)
                    (concerning-tiles-invalicables concerning-tiles-invalicables)
-                   (actual-unexplored-layer       actual-unexplored-layer)
+                   (unexplored-layer              unexplored-layer)
                    (attack-enemy-melee-layer      attack-enemy-melee-layer)
                    (attack-enemy-pole-layer       attack-enemy-pole-layer)
                    (attack-enemy-bow-layer        attack-enemy-bow-layer)
@@ -231,8 +231,8 @@
       (setf concerning-tiles              (make-matrix wmap hmap +concerning-tiles-min-value+))
       (setf concerning-tiles-facing       (make-matrix wmap hmap +concerning-tiles-min-value+))
       (setf concerning-tiles-invalicables (make-matrix wmap hmap +concerning-tiles-min-value+))
-      (setf actual-unexplored-layer        (inmap:make-dijkstra-layer wmap hmap
-                                                                      +unexplored-tile-value+))
+      (setf unexplored-layer              (inmap:make-dijkstra-layer wmap hmap
+                                                                     +unexplored-tile-value+))
       (setf attack-enemy-melee-layer
             (inmap:make-dijkstra-layer wmap hmap +attack-nongoal-tile-value+))
       (setf attack-enemy-pole-layer
@@ -317,7 +317,7 @@
 
 (defun %update-all-layers (blackboard)
   #- inhibit-update-unexplored-layer
-  (update-actual-unexplored-layer blackboard)
+  (update-unexplored-layer blackboard)
   #+ (and debug-mode debug-ai debug-blackboard-layers)
   (progn
     (update-attack-melee-layer    blackboard)
@@ -361,6 +361,7 @@
                    (concerning-tiles-invalicables concerning-tiles-invalicables)) object
     (decrease-concerning              (main-state object) concerning-tiles)
     (decrease-concerning              (main-state object) concerning-tiles-facing)
+    (reset-default-concerning-invalicable-range   object)
     (decrease-concerning-invalicables (main-state object) concerning-tiles-invalicables)
     (%update-all-infos            object)
     (reset-per-turn-visited-tiles object)
@@ -393,11 +394,15 @@
 
 (defgeneric strategy-decision (object))
 
-(defgeneric update-actual-unexplored-layer (object))
+(defgeneric update-unexplored-layer (object))
 
 (defgeneric update-concerning-tiles-player (object player &key all-visibles-from-ai))
 
 (defgeneric update-concerning-invalicable-player (object player))
+
+(defgeneric reduce-concerning-invalicable-range (object))
+
+(defgeneric reset-default-concerning-invalicable-range (object))
 
 (defgeneric next-unexplored-position (object player &key scale-factor-cost-concern))
 
@@ -761,14 +766,14 @@
                         :ignore-visibility-player-test  t
                         :ignore-become-invalicable-test t))
 
-(defmethod update-actual-unexplored-layer ((object blackboard))
+(defmethod update-unexplored-layer ((object blackboard))
   (with-accessors ((visited-tiles                 visited-tiles)
                    (main-state                    main-state)
                    (concerning-tiles              concerning-tiles)
                    (concerning-tiles-invalicables concerning-tiles-invalicables)
-                   (actual-unexplored-layer              actual-unexplored-layer)) object
-    (with-accessors ((layer layer)) actual-unexplored-layer
-      (reset-explored-layer actual-unexplored-layer)
+                   (unexplored-layer              unexplored-layer)) object
+    (with-accessors ((layer layer)) unexplored-layer
+      (reset-explored-layer unexplored-layer)
       (let ((all-visibles (all-player-id-visible-from-ai main-state)))
         ;; calculate concerning tiles tiles occupied by enemies
         (loop-player-entities main-state
@@ -786,7 +791,7 @@
         ;; update invalicable human player pos
         (update-concerning-invalicable object)
         ;; smooth the map here
-        (inmap:smooth-dijkstra-layer actual-unexplored-layer
+        (inmap:smooth-dijkstra-layer unexplored-layer
                                      main-state
                                      :skippable-predicate
                                      (layer-skip-filter-fn main-state))))))
@@ -939,6 +944,13 @@
                (incf concerning-tiles-invalicable-threshold
                      +concerning-tiles-invalicables-inc-step+)))))
 
+(defmethod reset-default-concerning-invalicable-range ((object blackboard))
+  "reset to default value"
+  (with-accessors ((concerning-tiles-invalicable-threshold
+                    concerning-tiles-invalicable-threshold)) object
+    (setf concerning-tiles-invalicable-threshold
+          +min-concerning-invalicable-threshold+ )))
+
 (defun concerning-became-explore-invalicable-tile-p (blackboard x y)
   (with-accessors ((concerning-tiles concerning-tiles)
                    (concerning-tiles-invalicable-threshold
@@ -953,7 +965,7 @@
 
 (defmethod next-actual-unexplored-position ((object blackboard) (player md2-mesh:md2-mesh)
                                      &key (scale-factor-cost-concern 1.0))
-  (with-accessors ((actual-unexplored-layer       actual-unexplored-layer)
+  (with-accessors ((unexplored-layer               unexplored-layer)
                    (concerning-tiles-invalicables concerning-tiles-invalicables)) object
     (let ((pos (calculate-cost-position player)))
       (if (concerning-became-explore-invalicable-tile-p* object pos)
@@ -966,7 +978,7 @@
             (inmap:next-dijkstra-position concerning-tiles-invalicables
                                                         player
                                                         scale-factor-cost-concern))
-          (inmap:next-dijkstra-position actual-unexplored-layer player
+          (inmap:next-dijkstra-position unexplored-layer player
                                         scale-factor-cost-concern)))))
 
 (defun %2d-ray-stopper-melee-fn (player x y)

@@ -5092,7 +5092,7 @@
    :calc-concerning-tiles-cost-scaling
    :visited-tiles
    :reset-per-turn-visited-tiles
-   :actual-unexplored-layer
+   :unexplored-layer
    :unreachable-layer
    :pole-weapon-goal-generator-fn
    :long-range-weapon-goal-generator-fn
@@ -5124,11 +5124,12 @@
    :all-player-ray-visibles-by-entity
    :all-visibles-by-entity
    :all-visibles-ray-by-entity
-   :update-actual-unexplored-layer
+   :update-unexplored-layer
    :update-unreachable-layer
    :update-all-attacking-pos
    :concerning-tile-default-mapping-clsr
    :reduce-concerning-invalicable-range
+   :reset-default-concerning-invalicable-range
    :next-unexplored-position
    :next-actual-unexplored-position
    :disgregard-all-plans

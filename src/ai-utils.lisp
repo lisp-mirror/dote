@@ -963,7 +963,7 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
                    (ghost ghost)) entity
     (flet ((retry ()
              (blackboard:reduce-concerning-invalicable-range strategy-expert)
-             (blackboard:update-actual-unexplored-layer      strategy-expert)
+             (blackboard:update-unexplored-layer             strategy-expert)
              (next-explore-position strategy-expert entity (1- max-iter))))
       (if (< max-iter 0)
           (values nil nil)
