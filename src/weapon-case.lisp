@@ -17,28 +17,22 @@
 (in-package :character)
 
 (defmacro weapon-case ((entity) &body body)
-  (let ((all-keywords (loop for i in body when (keywordp i) collect i))
-        (ammitted      '(:pole :bow :crossbow :melee :none)))
-    (loop for i in all-keywords do
-         (when (not (find i ammitted :test #'eq))
-           (error (format nil
-                          "weapon case keyword must be one of ~a, but ~a was found"
-                          ammitted
-                          i))))
+  (let ((ammitted '(:pole :bow :crossbow :melee :none)))
+    (misc:check-body-keywords body ammitted)
     (with-gensyms (ghost) ; weapon-type)
       `(let* ((,ghost (entity:ghost ,entity)))
          #+sbcl (declare (sb-ext:muffle-conditions sb-ext:compiler-note))
-              ;(,weapon-type (character:weapon-type ,ghost)))
-         ;(when ,weapon-type
-           (cond
-             ((character:weapon-type-pole-p ,ghost)
-              ,(getf body (elt ammitted 0)))
-             ((character:weapon-type-bow-p ,ghost)
-              ,(getf body (elt ammitted 1)))
-             ((character:weapon-type-crossbow-p ,ghost)
-              ,(getf body (elt ammitted 2)))
-             ((or (character:weapon-type-edge-p   ,ghost)
-                  (character:weapon-type-impact-p ,ghost))
-              ,(getf body (elt ammitted 3)))
-             (t ;; no weapon
-              ,(getf body (elt ammitted 4))))))))
+         ;; (,weapon-type (character:weapon-type ,ghost)))
+         ;; (when ,weapon-type
+         (cond
+           ((character:weapon-type-pole-p ,ghost)
+            ,(getf body (elt ammitted 0)))
+           ((character:weapon-type-bow-p ,ghost)
+            ,(getf body (elt ammitted 1)))
+           ((character:weapon-type-crossbow-p ,ghost)
+            ,(getf body (elt ammitted 2)))
+           ((or (character:weapon-type-edge-p   ,ghost)
+                (character:weapon-type-impact-p ,ghost))
+            ,(getf body (elt ammitted 3)))
+           (t ;; no weapon
+            ,(getf body (elt ammitted 4))))))))

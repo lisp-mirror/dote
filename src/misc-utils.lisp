@@ -50,6 +50,14 @@
 (defun format-keyword (thing)
   (alexandria:make-keyword (format nil "~:@(~a~)" thing)))
 
+(defun check-body-keywords (body ammitted)
+  (let ((all-keywords (loop for i in body when (keywordp i) collect i)))
+    (loop for i in all-keywords do
+         (when (not (find i ammitted :test #'eq))
+           (error (format nil "weapon case keyword must be one of ~a, but ~a was found"
+                          ammitted
+                          i))))))
+
 ;; functions utils
 
 (defun unsplice (form)

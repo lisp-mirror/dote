@@ -351,9 +351,8 @@
     (matrix-elt tiles y x)))
 
 (defun %update-all-infos (blackboard)
-  (progn
-    (%update-all-layers       blackboard)
-    (update-all-attacking-pos blackboard)))
+  (%update-all-layers       blackboard)
+  (update-all-attacking-pos blackboard))
 
 (defmethod game-event:on-game-event ((object blackboard) (event game-event:end-turn))
   (with-accessors ((concerning-tiles              concerning-tiles)
@@ -371,9 +370,6 @@
     (dbg "crossbow   ~a" (attack-enemy-crossbow-positions object))
     (dbg "def-pos ~a"    (fetch-defender-positions        object))
     (dbg "atk-pos ~a"    (fetch-attacker-positions        object))
-    ;; test
-    ;; (let ((pix (inmap:dijkstra-layer->pixmap (attack-enemy-melee-layer object))))
-    ;;   (pixmap:save-pixmap pix (fs:file-in-package "attack.tga")))
     nil))
 
 (defmethod game-event:on-game-event ((object blackboard)
@@ -520,13 +516,15 @@
   ;; +attack-strategy+)
   ;; +defend-strategy+)
 
-(defmethod set-tile-visited ((object blackboard) entity-visiting x y)
+(defmethod set-tile-visited ((object blackboard) entity-visiting x y &key (update-infos nil))
   (call-next-method object
                     entity-visiting
                     (map-utils:coord-chunk->matrix x)
-                    (map-utils:coord-chunk->matrix y)))
+                    (map-utils:coord-chunk->matrix y)
+                    :update-infos update-infos))
 
-(defmethod set-tile-visited ((object blackboard) entity-visiting (x fixnum) (y fixnum))
+(defmethod set-tile-visited ((object blackboard) entity-visiting (x fixnum) (y fixnum)
+                              &key (update-infos nil))
   (with-accessors ((visited-tiles visited-tiles)
                    (main-state main-state)
                    (concerning-tiles concerning-tiles)) object
@@ -540,7 +538,8 @@
           (setf (matrix-elt per-turn-tiles y x) t))
         ;; update character's log of movement
         (character:append-to-last-pos-occupied ghost pos)))
-    (%update-all-infos object))))
+    (when update-infos
+      (%update-all-infos object)))))
 
 (defun calc-danger-zone-size (difficult-level)
   "The size of the concerning zone when when some concerning event occurs"

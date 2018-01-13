@@ -281,8 +281,8 @@
   (with-accessors ((toolbar toolbar)) object
     (widget:sync-with-player toolbar
                              :reset-health-animation
-                             (game-event:reset-health-status-animation-p event))
-    #+debug-ai (render-influence-map object)))
+                             (game-event:reset-health-status-animation-p event)))
+  #+ (and debug-mode debug-ai) (render-influence-map object))
 
 (defmethod game-event:on-game-event ((object world)
                                      (event game-event:update-highlight-path))

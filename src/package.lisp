@@ -273,6 +273,7 @@
    :defalias
    :defun-inline-function
    :format-fn-symbol
+   :check-body-keywords
    :format-keyword
    :a->function
    :gen-type-p

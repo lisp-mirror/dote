@@ -443,7 +443,7 @@
 
 (defgeneric make-influence-map (object))
 
-(defgeneric set-tile-visited (object entity-visiting x y))
+(defgeneric set-tile-visited (object entity-visiting x y &key update-infos))
 
 (defgeneric set-concerning-tile (object x y &key danger-zone-size concerning-tile-value))
 
@@ -996,9 +996,9 @@
       (inmap:apply-influence im ai-entities)
       im)))
 
-(defmethod set-tile-visited ((object game-state) entity-visiting x y)
+(defmethod set-tile-visited ((object game-state) entity-visiting x y &key (update-infos nil))
   (with-accessors ((blackboard blackboard)) object
-    (set-tile-visited blackboard entity-visiting x y)))
+    (set-tile-visited blackboard entity-visiting x y :update-infos update-infos)))
 
 (defmethod set-concerning-tile ((object game-state) x y
                                 &key

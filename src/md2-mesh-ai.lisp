@@ -23,11 +23,13 @@
 
 (define-constant +w-memory-action-did-costs+      :action-did-cost     :test #'eq)
 
-(define-constant +w-memory-spell+                 :spell              :test #'eq)
+(define-constant +w-memory-spell+                 :spell               :test #'eq)
 
-(define-constant +channel-planner-timeout+   0.008                     :test #'=)
+(define-constant +channel-planner-timeout+   0.001                     :test #'=)
 
 (defparameter    *planner-channel*           nil)
+
+(defparameter    *update-infos-channel*      nil)
 
 (defgeneric put-in-working-memory (object key value))
 
@@ -169,6 +171,14 @@
                  (,world action-scheduler:tactical-plane-action)
                (with-blacklist-action-if-no-cost (,entity ,strategy-decision ,action)))))))))
 
+(defun update-blackboard-infos (entity)
+  (with-accessors ((state state)) entity
+    (with-accessors ((blackboard game-state:blackboard)) state
+      (game-state:with-world (world state)
+        #+ (and debug-mode debug-ai) (world::render-influence-map world)
+        (blackboard::%update-all-infos blackboard)
+        entity))))
+
 ;;;; planning
 
 (defmacro defact-plan (arg &rest body)
@@ -179,19 +189,26 @@
 
 (defgeneric actuate-plan (object strategy action))
 
+(defun spawn-update-infos-task (mesh)
+  (with-accessors ((state state)) mesh
+    (game-state:with-world (world state)
+      (widget:activate-planner-icon world)
+      (setf *update-infos-channel* (lparallel:make-channel))
+      (lparallel:submit-task *update-infos-channel* 'update-blackboard-infos mesh))))
+
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+plan-stopper+)))
-  (with-accessors ((ghost ghost)
-                   (state state)) object
-    (with-accessors ((blackboard game-state:blackboard)) state
-      (%clean-plan ghost))))
+  (with-accessors ((ghost ghost)) object
+    (%clean-plan ghost)
+    (spawn-update-infos-task object)))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+interrupt-action+)))
   (with-accessors ((ghost ghost)) object
-    (%clean-plan-and-blacklist ghost)))
+    (%clean-plan-and-blacklist ghost)
+    (spawn-update-infos-task object)))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
@@ -664,22 +681,29 @@ attempts Note: all attackable position will be updated as well"
                    (= (id mesh)
                       (id (first-elt ai-entities-action-order))) ;; ensure it's my turn
                    ghost)
-          (if (null *planner-channel*)
-              (progn
-                (world:toolbar-selected-action world)
-                (widget:activate-planner-icon  world)
-                (setf *planner-channel* (lparallel:make-channel))
-                (lparallel:submit-task *planner-channel*
-                                       'elaborate-current-tactical-plan
-                                       ghost blackboard mesh nil))
-              (if (lparallel:try-receive-result *planner-channel*
-                                                :timeout +channel-planner-timeout+)
-                  (progn
-                    (widget:deactivate-planner-icon world)
-                    (setf *planner-channel* nil)
-                    (let ((action (pop-action-plan ghost)))
-                      #+debug-ai (misc:dbg "popped action ~a" action)
-                      (actuate-plan mesh
-                                    (blackboard:strategy-decision blackboard)
-                                    action))))))))))
-;;                  (misc:dbg "plan not ready."))))))))
+          (flet ((spawn-planer-task ()
+                   #+ (and debug-mode debug-ai) (misc:dbg "spawn planner")
+                   (world:toolbar-selected-action world)
+                   (widget:activate-planner-icon  world)
+                   (setf *planner-channel* (lparallel:make-channel))
+                   (lparallel:submit-task *planner-channel*
+                                          'elaborate-current-tactical-plan
+                                          ghost blackboard mesh nil))
+                 (terminate-planner-task ()
+                   (widget:deactivate-planner-icon world)
+                   (setf *planner-channel* nil)
+                   (let ((action (pop-action-plan ghost)))
+                     #+(and debug-mode debug-ai) (misc:dbg "popped action ~a" action)
+                     (actuate-plan mesh
+                                   (blackboard:strategy-decision blackboard)
+                                   action)))
+                 (check-ending (channel)
+                   (lparallel:try-receive-result channel
+                                                 :timeout +channel-planner-timeout+)))
+            (if (not *planner-channel*) ;; no planning
+                (if (not *update-infos-channel*) ; no  updating
+                    (spawn-planer-task)
+                    (when (check-ending *update-infos-channel*)
+                      (setf *update-infos-channel* nil)))
+                (when (check-ending *planner-channel*)
+                  (terminate-planner-task)))))))))
