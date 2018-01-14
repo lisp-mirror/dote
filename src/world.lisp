@@ -343,7 +343,7 @@
     (remove-all-windows             object)
     (remove-all-removeable          object)
     (remove-all-removeable-from-gui object)
-    (clean-all-latest-pos-occupied  object)
+    (clean-characters-logs          object character:+planner-log-clean-end-turn+)
     ;;(remove-entity-if (gui object) #'(lambda (a) (typep a 'widget:message-window)))
     (incf (game-turn (main-state object))) ;; new turn starts here!
     nil))
@@ -427,6 +427,8 @@
 (defgeneric remove-all-removeable-from-gui (object))
 
 (defgeneric activate-all-tooltips (object))
+
+(defgeneric clean-characters-logs (object trigger))
 
 (defmethod iterate-quad-tree ((object world) function probe)
   (quad-tree:iterate-nodes-intersect (entities object)
@@ -1098,8 +1100,8 @@
                     #'(lambda (a)
                         (removeable-from-world-p a))))
 
-(defmethod clean-all-latest-pos-occupied ((object world))
-  (clean-all-latest-pos-occupied (main-state object)))
+(defmethod clean-characters-logs ((object world) trigger)
+  (clean-characters-logs (main-state object) trigger))
 
 (defmethod remove-all-removeable-from-gui ((object world))
   (remove-entity-if (gui object)

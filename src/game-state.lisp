@@ -459,8 +459,6 @@
 
 (defgeneric remove-entity-from-all-attack-pos (object entity))
 
-(defgeneric clean-all-latest-pos-occupied (object))
-
 (defmethod (setf selected-pc) (entity (object game-state))
   "set index-selected-pc as well"
   (with-accessors ((index-selected-pc index-selected-pc)
@@ -1082,9 +1080,9 @@
 (defmethod remove-entity-from-all-attack-pos ((object game-state) entity)
   (remove-entity-from-all-attack-pos (blackboard object) entity))
 
-(defmethod clean-all-latest-pos-occupied ((object game-state))
+(defmethod clean-characters-logs ((object game-state) trigger)
   (loop-ai-entities object #'(lambda (a)
-                               (character:clean-last-pos-occupied (ghost a)))))
+                               (character:clean-log (ghost a) trigger))))
 
 (defun increase-game-turn (state)
   (let ((end-event   (make-instance 'game-event:end-turn

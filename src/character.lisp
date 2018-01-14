@@ -26,6 +26,10 @@
                                         +retreat-strategy+)
   :test #'equalp)
 
+(define-constant +planner-log-clean-end-turn+         :end-turn              :test #'eq)
+
+(define-constant +planner-log-pos-occupied+           :pos-occuped           :test #'eq)
+
 (defclass np-character (identificable interactive-entity entity-w-portrait m-tree)
   ((first-name
     :initform ""
@@ -122,6 +126,10 @@
   (setf (pq:equal-function   pq) #'=)
   pq)
 
+(defstruct planner-log
+  (clean-trigger +planner-log-clean-end-turn+)
+  (data))
+
 (defclass planner-character ()
   ((current-plan
     :initform nil
@@ -157,7 +165,17 @@
     :initform nil
     :initarg  :force-idle-plan
     :reader   force-idle-plan-p
-    :writer   (setf force-idle-plan))))
+    :writer   (setf force-idle-plan))
+   (logs
+    :initarg :logs
+    :initform (make-hash-table)
+    :accessor logs
+    :documentation "hastables of structure 'planner-log'")))
+
+(defmethod initialize-instance :after ((object planner-character) &key &allow-other-keys)
+  (with-accessors ((logs logs)) object
+    (let ((movement-log (make-planner-log :clean-trigger +planner-log-clean-end-turn+)))
+      (setf (gethash +planner-log-pos-occupied+ logs) movement-log))))
 
 (defgeneric set-plan (object plan))
 
@@ -188,6 +206,18 @@
 
 (defgeneric action-terminal-p (object action))
 
+(defgeneric last-pos-occupied (object))
+
+(defgeneric append-to-last-pos-occupied (object new-pos))
+
+(defgeneric clean-last-pos-occupied (object))
+
+(defgeneric last-pos-occupied-filled-p (object))
+
+(defgeneric get-log (object key))
+
+(defgeneric clean-log (object trigger))
+
 (defmacro with-no-thinking ((character) &body body)
   (with-gensyms (saved)
     `(if ,character
@@ -196,7 +226,6 @@
            ,@body
            (setf (thinker ,character) ,saved))
          (progn ,@body))))
-
 
 (defmacro with-one-shot-force-idle ((character-instance) &body body)
   `(with-accessors ((force-idle-plan-p force-idle-plan-p)
@@ -302,6 +331,34 @@
                ai-utils:+plan-stopper+)
            (= pos
               (- (length original-current-plan) 2))))))
+
+(defmethod last-pos-occupied ((object planner-character))
+  (with-accessors ((logs logs)) object
+    (planner-log-data (gethash +planner-log-pos-occupied+ logs))))
+
+(defmethod append-to-last-pos-occupied ((object planner-character) new-pos)
+  (let ((positions (last-pos-occupied object)))
+    (setf (planner-log-data (get-log object +planner-log-pos-occupied+))
+          (lcat positions (list new-pos)))
+    object))
+
+(defmethod clean-last-pos-occupied ((object planner-character))
+  (setf (planner-log-data (get-log object +planner-log-pos-occupied+)) '()))
+
+(defmethod last-pos-occupied-filled-p ((object planner-character))
+  (not (null (last-pos-occupied object))))
+
+(defmethod clean-log ((object planner-character) trigger)
+  (with-accessors ((logs logs)) object
+    (maphash #'(lambda (k v)
+                 (declare (ignore k))
+                 (when (eq (planner-log-clean-trigger v) trigger)
+                   (setf (planner-log-data v) '())))
+             logs)
+    object))
+
+(defmethod get-log ((object planner-character) key)
+  (gethash key (logs object)))
 
 (defparameter *standard-capital-characteristic* 200)
 
@@ -524,11 +581,7 @@
    (inventory
     :initarg :inventory
     :initform '()
-    :accessor inventory)
-   (last-pos-occupied
-    :initarg :last-pos-occupied
-    :initform '()
-    :accessor last-pos-occupied)))
+    :accessor inventory)))
 
 (gen-type-p player-character)
 
@@ -697,12 +750,6 @@
 (defgeneric calculate-influence-weapon (object weapon-type))
 
 (defgeneric combined-power (object))
-
-(defgeneric append-to-last-pos-occupied (object new-pos))
-
-(defgeneric clean-last-pos-occupied (object))
-
-(defgeneric last-pos-occupied-filled-p (object))
 
 (defgeneric movement-stuck-p (object new-pos))
 
@@ -1144,20 +1191,6 @@
                                    (d* (dodge-weight)
                                        actual-dodge-chance))))
         (d* status-contribute raw-power)))))
-
-
-(defmethod append-to-last-pos-occupied ((object player-character) new-pos)
-  (with-accessors ((last-pos-occupied last-pos-occupied)) object
-    (setf last-pos-occupied (lcat (last-pos-occupied object)
-                                  (list new-pos)))))
-
-(defmethod clean-last-pos-occupied ((object player-character))
-  (with-accessors ((last-pos-occupied last-pos-occupied)) object
-    (setf last-pos-occupied '())))
-
-(defmethod last-pos-occupied-filled-p ((object player-character))
-  (with-accessors ((last-pos-occupied last-pos-occupied)) object
-    (not (null last-pos-occupied))))
 
 (defmethod movement-stuck-p ((object player-character) next-pos)
   (with-accessors ((last-pos-occupied last-pos-occupied)) object

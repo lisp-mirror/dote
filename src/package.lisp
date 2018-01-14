@@ -2363,7 +2363,7 @@
    :door-in-next-path-tile-p
    :skydome-bottom-color
    :remove-entity-from-all-attack-pos
-   :clean-all-latest-pos-occupied
+   :clean-characters-logs
    :increase-game-turn))
 
 (defpackage :game-event
@@ -3173,9 +3173,15 @@
         :game-event)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
+   :+planner-log-clean-end-turn+
    :basic-interaction-params ; reexported from interactive-entity
    :np-character
    :restart-age
+   :last-pos-occupied
+   :append-to-last-pos-occupied
+   :clean-last-pos-occupied
+   :last-pos-occupied-filled-p
+   :clean-log
    :player-character
    :portrait
    :first-name
@@ -3279,7 +3285,6 @@
    :ring
    :spell-loaded
    :inventory
-   :last-pos-occupied
    :inventory-slot-pages-number
    :player-gender->gender-description
    :reset-movement-points
@@ -3320,9 +3325,6 @@
    :castable-attack-spells-list
    :calculate-influence
    :combined-power
-   :append-to-last-pos-occupied
-   :clean-last-pos-occupied
-   :last-pos-occupied-filled-p
    :movement-stuck-p
    :pclass-of-useful-in-attack-tactic-p
    :elaborate-current-tactical-plan
