@@ -101,7 +101,7 @@
                  :target-id  defender-id
                  :entity-id  attacker-id))
 
-(defclass blackboard ()
+(defclass blackboard (ai-logger:ai-logger)
   ((main-state
     :initform nil
     :initarg  :main-state
@@ -212,6 +212,13 @@
     :reader   use-enemy-fov-when-attacking-p
     :writer   (setf use-enemy-fov-when-attacking))))
 
+(defun init-logs (blackboard)
+  (with-accessors ((logs ai-logger:logs)) blackboard
+    (let ((presence-log (ai-logger:make-ai-log :clean-trigger
+                                               ai-logger:+ai-log-clean-end-plan+)))
+      (setf (gethash ai-logger:+ai-log-entity-presence+ logs) presence-log)))
+  blackboard)
+
 (defmethod initialize-instance :after ((object blackboard) &key &allow-other-keys)
   (with-accessors ((visited-tiles                 visited-tiles)
                    (concerning-tiles              concerning-tiles)
@@ -225,6 +232,7 @@
                    (use-enemy-fov-when-exploring  use-enemy-fov-when-exploring)
                    (use-enemy-fov-when-attacking  use-enemy-fov-when-attacking)
                    (main-state       main-state)) object
+    (init-logs object)
     (let ((wmap (width  (map-state main-state)))
           (hmap (height (map-state main-state))))
       (setf visited-tiles                 (make-matrix wmap hmap nil))
@@ -437,6 +445,8 @@
 (defgeneric update-crossbow-attackable-pos (object))
 
 (defgeneric fountain-exhausted-p (object entity))
+
+(defgeneric log-entity-presence (object entity))
 
 (defun calc-concerning-tiles-cost-scaling (difficult-level)
   (dlerp (smoothstep-interpolate 2.0 5.0 (d difficult-level))
@@ -1480,6 +1490,18 @@ values nil, i. e. the ray is not blocked"
 (defmethod fountain-exhausted-p ((object blackboard) (entity mesh:fountain-mesh-shell))
   (with-accessors ((exhausted-fountains-ids exhausted-fountains-ids)) object
     (find (id entity) exhausted-fountains-ids :test #'=)))
+
+(defmethod log-entity-presence ((object blackboard) (entity entity))
+  (let ((struct   (ai-logger:make-entity-pres :id  (id                      entity)
+                                    :pos (calculate-cost-position entity)
+                                    :dir (dir                     entity)))
+        (old-data (ai-logger:ai-log-data
+                   (ai-logger:get-log object
+                                      ai-logger:+ai-log-entity-presence+))))
+    (setf (ai-logger:ai-log-data (ai-logger:get-log object
+                                                    ai-logger:+ai-log-entity-presence+))
+          (lcat old-data (list struct)))
+    object))
 
 (defun remove-entity-from-attack-pos (positions entity)
   (remove (id entity) positions :test #'= :key #'entity-id))

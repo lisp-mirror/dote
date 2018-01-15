@@ -343,7 +343,7 @@
     (remove-all-windows             object)
     (remove-all-removeable          object)
     (remove-all-removeable-from-gui object)
-    (clean-characters-logs          object character:+planner-log-clean-end-turn+)
+    (clean-characters-logs          object ai-logger:+ai-log-clean-end-turn+)
     ;;(remove-entity-if (gui object) #'(lambda (a) (typep a 'widget:message-window)))
     (incf (game-turn (main-state object))) ;; new turn starts here!
     nil))
@@ -427,8 +427,6 @@
 (defgeneric remove-all-removeable-from-gui (object))
 
 (defgeneric activate-all-tooltips (object))
-
-(defgeneric clean-characters-logs (object trigger))
 
 (defmethod iterate-quad-tree ((object world) function probe)
   (quad-tree:iterate-nodes-intersect (entities object)
@@ -1144,7 +1142,7 @@
                 tremor:+explosion-level-3-shake-duration+))
 
 (defun clear-all-memoized-function-cache ()
-  #+debug-ai (misc:dbg "clear planner cache")
+  #+(and debug-mode debug-ai) (misc:dbg "clear planner cache")
   (blackboard:invalidate-blackboard-cache)
   (ai-utils:invalidate-ai-utils-cache)
   (goap:invalidate-tests-cache))

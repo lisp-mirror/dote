@@ -16,19 +16,15 @@
 
 (in-package :character)
 
-(define-constant +max-inventory-slots-page+           3.0                    :test #'=)
+(define-constant +max-inventory-slots-page+           3.0          :test #'=)
 
-(define-constant +weight-for-half-capacity-inventory+ 20.0                   :test #'=)
+(define-constant +weight-for-half-capacity-inventory+ 20.0         :test #'=)
 
-(define-constant +all-strategies+ (list +explore-strategy+
-                                        +attack-strategy+
-                                        +defend-strategy+
-                                        +retreat-strategy+)
+(define-constant +all-strategies+                     (list +explore-strategy+
+                                                            +attack-strategy+
+                                                            +defend-strategy+
+                                                            +retreat-strategy+)
   :test #'equalp)
-
-(define-constant +planner-log-clean-end-turn+         :end-turn              :test #'eq)
-
-(define-constant +planner-log-pos-occupied+           :pos-occuped           :test #'eq)
 
 (defclass np-character (identificable interactive-entity entity-w-portrait m-tree)
   ((first-name
@@ -126,11 +122,7 @@
   (setf (pq:equal-function   pq) #'=)
   pq)
 
-(defstruct planner-log
-  (clean-trigger +planner-log-clean-end-turn+)
-  (data))
-
-(defclass planner-character ()
+(defclass planner-character (ai-logger)
   ((current-plan
     :initform nil
     :initarg  :current-plan
@@ -165,17 +157,16 @@
     :initform nil
     :initarg  :force-idle-plan
     :reader   force-idle-plan-p
-    :writer   (setf force-idle-plan))
-   (logs
-    :initarg :logs
-    :initform (make-hash-table)
-    :accessor logs
-    :documentation "hastables of structure 'planner-log'")))
+    :writer   (setf force-idle-plan))))
+
+(defun init-logs (player)
+  (with-accessors ((logs logs)) player
+    (let ((movement-log (make-ai-log :clean-trigger +ai-log-clean-end-turn+)))
+      (setf (gethash +ai-log-pos-occupied+ logs) movement-log)))
+  player)
 
 (defmethod initialize-instance :after ((object planner-character) &key &allow-other-keys)
-  (with-accessors ((logs logs)) object
-    (let ((movement-log (make-planner-log :clean-trigger +planner-log-clean-end-turn+)))
-      (setf (gethash +planner-log-pos-occupied+ logs) movement-log))))
+  (init-logs object))
 
 (defgeneric set-plan (object plan))
 
@@ -210,13 +201,7 @@
 
 (defgeneric append-to-last-pos-occupied (object new-pos))
 
-(defgeneric clean-last-pos-occupied (object))
-
 (defgeneric last-pos-occupied-filled-p (object))
-
-(defgeneric get-log (object key))
-
-(defgeneric clean-log (object trigger))
 
 (defmacro with-no-thinking ((character) &body body)
   (with-gensyms (saved)
@@ -292,7 +277,8 @@
                      (planners planners)) object
       (let ((planner (find-plan object strategy-decision)))
         (set-plan object (goap:build-plan planner strategy-expert player-entity))
-        #+debug-ai (misc:dbg "NEW current new plan (~a) ~a" (id player-entity) current-plan)
+        #+(and debug-mode debug-ai)
+        (misc:dbg "NEW current new plan (~a) ~a" (id player-entity) current-plan)
         (elaborate-current-tactical-plan object strategy-expert player-entity nil)))))
 
 (defmethod set-interrupt-plan ((object planner-character))
@@ -334,31 +320,16 @@
 
 (defmethod last-pos-occupied ((object planner-character))
   (with-accessors ((logs logs)) object
-    (planner-log-data (gethash +planner-log-pos-occupied+ logs))))
+    (ai-log-data (gethash +ai-log-pos-occupied+ logs))))
 
 (defmethod append-to-last-pos-occupied ((object planner-character) new-pos)
   (let ((positions (last-pos-occupied object)))
-    (setf (planner-log-data (get-log object +planner-log-pos-occupied+))
+    (setf (ai-log-data (get-log object +ai-log-pos-occupied+))
           (lcat positions (list new-pos)))
     object))
 
-(defmethod clean-last-pos-occupied ((object planner-character))
-  (setf (planner-log-data (get-log object +planner-log-pos-occupied+)) '()))
-
 (defmethod last-pos-occupied-filled-p ((object planner-character))
   (not (null (last-pos-occupied object))))
-
-(defmethod clean-log ((object planner-character) trigger)
-  (with-accessors ((logs logs)) object
-    (maphash #'(lambda (k v)
-                 (declare (ignore k))
-                 (when (eq (planner-log-clean-trigger v) trigger)
-                   (setf (planner-log-data v) '())))
-             logs)
-    object))
-
-(defmethod get-log ((object planner-character) key)
-  (gethash key (logs object)))
 
 (defparameter *standard-capital-characteristic* 200)
 

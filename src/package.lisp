@@ -3156,6 +3156,39 @@
    :go-place-trap
    :invalidate-ai-utils-cache))
 
+(defpackage :ai-logger
+  (:use :cl
+        :alexandria
+        :constants
+        :config
+        :num-utils
+        :misc-utils
+        :text-utils
+        :mtree-utils
+        :entity
+        :interfaces
+        :identificable
+        :interactive-entity)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :+ai-log-clean-end-turn+
+   :+ai-log-clean-end-plan+
+   :+ai-log-pos-occupied+
+   :+ai-log-entity-presence+
+   :copy-ai-log
+   :ai-log-p
+   :ai-log-clean-trigger
+   :ai-log-data
+   :make-ai-log
+   :make-entity-pres
+   :entity-pres-id
+   :entity-pres-pos
+   :entity-pres-dir
+   :ai-logger
+   :logs
+   :get-log
+   :clean-log))
+
 (defpackage :character
   (:use :cl
         :alexandria
@@ -3170,10 +3203,10 @@
         :identificable
         :basic-interaction-parameters
         :interactive-entity
-        :game-event)
+        :game-event
+        :ai-logger)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
-   :+planner-log-clean-end-turn+
    :basic-interaction-params ; reexported from interactive-entity
    :np-character
    :restart-age
@@ -3181,7 +3214,6 @@
    :append-to-last-pos-occupied
    :clean-last-pos-occupied
    :last-pos-occupied-filled-p
-   :clean-log
    :player-character
    :portrait
    :first-name
@@ -5137,6 +5169,7 @@
    :next-actual-unexplored-position
    :disgregard-all-plans
    :fountain-exhausted-p
+   :log-entity-presence
    :remove-entity-from-all-attack-pos
    :best-attack-spell-goal-pos
    :attack-spell-goal-pos-around-friend

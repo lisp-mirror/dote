@@ -100,6 +100,7 @@
                (:file "weapon-case")
                (:file "ai-utils-const")
                (:file "ai-utils")
+               (:file "ai-logger")
                (:file "character")
                (:file "random-weapon")
                (:file "random-potion")

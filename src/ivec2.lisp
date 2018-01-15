@@ -47,7 +47,7 @@
             (elt res 1) (elt old 1))
       res))
 
-  (alexandria:define-constant +ivec2-zero+ (ivec2 0.0 0.0)
+  (alexandria:define-constant +ivec2-zero+ (ivec2 0 0)
     :test #'ivec2=)
 
   (defun-inline-function make-fresh-ivec2 ()

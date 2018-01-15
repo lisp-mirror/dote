@@ -167,7 +167,7 @@
 (defparameter *texture-factory-db* '())
 
 (defun init-db ()
-  #+debug-ai
+  #+(and debug-mode debug-ai)
   (let* ((map-pixmap   (pixmap:make-pixmap +influence-map-w+ +influence-map-w+))
          (map-texture  (texture:gen-name-and-inject-in-database map-pixmap)))
     (setf (filename map-texture) +influence-map+)

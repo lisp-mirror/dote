@@ -105,12 +105,12 @@
             (blacklist-action-with-parent entity planner action-name))))))
 
 (defun blacklist-action-if-no-cost (entity strategy-decision action)
-  #+debug-ai (dbg "blacklisting ~a, ~a? ~a"
-                  entity
-                  action
-                  (not (cost-occurred-p entity)))
+  #+(and debug-mode debug-ai) (dbg "blacklisting ~a, ~a? ~a"
+                                   entity
+                                   action
+                                   (not (cost-occurred-p entity)))
   (when (not (cost-occurred-p entity))
-    #+debug-ai (misc:dbg "blacklisting ~s" action)
+    #+(and debug-mode debug-ai) (misc:dbg "blacklisting ~s" action)
     (blacklist entity strategy-decision action)))
 
     ;;(character:push-in-blacklisted-plan-goals (ghost entity) action)))
@@ -130,23 +130,33 @@
   (with-gensyms (ghost)
     `(with-accessors ((,ghost ghost)) ,entity
        (progn ,@body)
-       #+debug-ai (misc:dbg "cost? saved ~a ~a, ~a ~a"
-                            ,saved-mp (current-movement-points ,ghost)
-                            ,saved-sp (current-spell-points   ,ghost))
+       #+(and debug-mode debug-ai) (misc:dbg "cost? saved ~a ~a, ~a ~a"
+                                             ,saved-mp (current-movement-points ,ghost)
+                                             ,saved-sp (current-spell-points    ,ghost))
        (when (or (> ,saved-mp (current-movement-points ,ghost))
                  (> ,saved-sp (current-spell-points    ,ghost)))
          (set-cost-occurred ,entity)))))
 
-(defun %clean-plan (ghost)
-  #+debug-ai (misc:dbg "clear planner cache")
-  (erase-working-memory ghost)
-  (world:clear-all-memoized-function-cache))
+(defun %clean-plan (entity)
+  (with-accessors ((ghost ghost)
+                   (state state)) entity
+    (with-accessors ((blackboard blackboard:blackboard)) state
+      #+(and debug-mode debug-ai) (misc:dbg "clear planner cache")
+      (erase-working-memory ghost)
+      (ai-logger:clean-log ghost      ai-logger:+ai-log-clean-end-plan+)
+      (ai-logger:clean-log blackboard ai-logger:+ai-log-clean-end-plan+)
+      (world:clear-all-memoized-function-cache)
+      (game-state:loop-player-entities state
+                                       #'(lambda (a)
+                                           (blackboard:log-entity-presence blackboard a))))))
 
-(defun %clean-plan-and-blacklist (ghost)
-  (%clean-plan ghost)
-  ;; clear blacklisted actions for planner
-  #+debug-ai (misc:dbg "clear planner cache and blacklist")
-  (clear-blacklist ghost))
+
+(defun %clean-plan-and-blacklist (entity)
+  (with-accessors ((ghost ghost)) entity
+    (%clean-plan entity)
+    ;; clear blacklisted actions for planner
+    #+(and debug-mode debug-ai) (misc:dbg "clear planner cache and blacklist")
+    (clear-blacklist ghost)))
 
 (defmacro with-maybe-blacklist ((entity strategy-decision action
                                         &key (ignore-points-difference nil))
@@ -199,16 +209,14 @@
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+plan-stopper+)))
-  (with-accessors ((ghost ghost)) object
-    (%clean-plan ghost)
-    (spawn-update-infos-task object)))
+  (%clean-plan object)
+  (spawn-update-infos-task object))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+interrupt-action+)))
-  (with-accessors ((ghost ghost)) object
-    (%clean-plan-and-blacklist ghost)
-    (spawn-update-infos-task object)))
+  (%clean-plan-and-blacklist object)
+  (spawn-update-infos-task object))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
@@ -221,7 +229,7 @@
                          (action (eql ai-utils:+idle-action+)))
   (with-accessors ((state state) (ghost ghost)) object
     (with-accessors ((ai-entities-action-order game-state:ai-entities-action-order)) state
-      (%clean-plan-and-blacklist ghost)
+      (%clean-plan-and-blacklist object)
       ;; awake other AI player
       (and ai-entities-action-order
            (pop ai-entities-action-order)))))
@@ -244,7 +252,7 @@
                                                                                     object)))
         (when-let ((hiding-tile (ai-utils:go-find-hiding-place object
                                                                all-opponents-can-see-me)))
-          #+debug-ai (dbg "hiding tile chosen ~a" hiding-tile)
+          #+(and debug-mode debug-ai) (dbg "hiding tile chosen ~a" hiding-tile)
           (let ((entity-pos (calculate-cost-position object)))
             (multiple-value-bind (path total-cost costs)
                 (blackboard:path-with-concerning-tiles blackboard
@@ -424,7 +432,7 @@
             (blackboard:best-path-near-enemy-pos-w-current-weapon blackboard
                                                                   object
                                                                   :cut-off-first-tile nil)
-          #+debug-ai (assert path)
+          #+(and debug-mode debug-ai) (assert path)
           (when path
             (let* ((path-struct (game-state:make-movement-path path total-cost)))
               (%do-simple-move object path-struct state world))))))))
@@ -459,10 +467,11 @@
            (,(if target-entity
                  `(absee-mesh:other-visible-p ,entity ,target-entity)
                  `(absee-mesh:other-faction-visible-players ,entity))
-            #+ debug-ai (misc:dbg "rotation end with see in ~a times" count)
+            #+(and debug-mode debug-ai)
+             (misc:dbg "rotation end with see in ~a times" count)
              (when (and (> count 0)
                         ,set-cost-occurred-p)
-               #+ debug-ai (misc:dbg "setting cost!")
+               #+(and debug-mode debug-ai) (misc:dbg "setting cost!")
                (set-cost-occurred ,entity))
                ,count)
            (t
@@ -526,7 +535,7 @@ attempts Note: all attackable position will be updated as well"
     (with-slots-for-reasoning (object state ghost blackboard)
       (let* ((id-defender (get-from-working-memory object +w-memory-target-id+))
              (defender    (find-entity-by-id state id-defender)))
-        #+debug-ai (misc:dbg "atk id ~a" id-defender)
+        #+(and debug-mode debug-ai) (misc:dbg "atk id ~a" id-defender)
         (%rotate-until-visible state object defender)
         (battle-utils:attack-w-current-weapon object
                                               (find-entity-by-id state
@@ -555,7 +564,8 @@ attempts Note: all attackable position will be updated as well"
       (game-state:with-world (world state)
         (when (need-to-move-to-attack-p object)
           (let ((path-struct (get-from-working-memory object +w-memory-path-struct+)))
-            #+debug-ai (misc:dbg "path-struct go ~a" (game-state:tiles path-struct))
+            #+(and debug-mode debug-ai)
+            (misc:dbg "path-struct go ~a" (game-state:tiles path-struct))
             (%do-simple-move object path-struct state world)))))))
 
 (defun common-go-for-any-spell (entity strategy action target-finder-fn)
@@ -571,7 +581,7 @@ attempts Note: all attackable position will be updated as well"
                                                      :cut-off-first-tile  nil
                                                      :allow-path-length-1 nil)
             (declare (ignore costs))
-            #+debug-ai (misc:dbg "path spell go ~a" path)
+            #+(and debug-mode debug-ai) (misc:dbg "path spell go ~a" path)
             (put-in-working-memory entity +w-memory-target-id+ (id target-entity))
             (put-in-working-memory entity +w-memory-spell+     spell)
             (when path ; if no move is needed path values nil
@@ -648,7 +658,7 @@ attempts Note: all attackable position will be updated as well"
         (let* ((target-id (get-from-working-memory launcher +w-memory-target-id+))
                (spell     (get-from-working-memory launcher +w-memory-spell+))
                (target    (find-entity-by-id state target-id)))
-          #+debug-ai (misc:dbg "common launch spell: ~a" spell)
+          #+(and debug-mode debug-ai) (misc:dbg "common launch spell: ~a" spell)
           (%rotate-until-visible state launcher target :decrement-movement-points nil)
           (action-scheduler:with-enqueue-action-and-send-remove-after
               (world action-scheduler:tactical-plane-action)

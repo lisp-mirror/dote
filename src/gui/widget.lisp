@@ -2296,18 +2296,18 @@
             (mtree:add-child toolbar dialog-window)))))))
 
 (defclass main-toolbar (widget)
-  (#+debug-ai
-   (influence-map-dump :initform (make-instance 'signalling-light
-                                                :x             (d 0)
-                                                :y             (d (- *window-h*
-                                                                     +influence-map-h+))
-                                                :width         (d +influence-map-w+)
-                                                :height        (d +influence-map-h+)
-                                                :texture-name  +influence-map+
-                                                :shown         t
-                                                :button-status t)
-                       :initarg  :influence-map-dump
-                       :accessor influence-map-dump)
+  (#+ (and debug-mode debug-ai)
+      (influence-map-dump :initform (make-instance 'signalling-light
+                                                   :x             (d 0)
+                                                   :y             (d (- *window-h*
+                                                                        +influence-map-h+))
+                                                   :width         (d +influence-map-w+)
+                                                   :height        (d +influence-map-h+)
+                                                   :texture-name  +influence-map+
+                                                   :shown         t
+                                                   :button-status t)
+                          :initarg  :influence-map-dump
+                          :accessor influence-map-dump)
    (selected-action
     :initform nil
     :initarg  :selected-action
@@ -2665,7 +2665,8 @@
 
 (defmethod initialize-instance :after ((object main-toolbar) &key &allow-other-keys)
   ;; other
-  #+debug-ai (add-child object (influence-map-dump      object))
+  #+(and debug-mode debug-ai)
+  (add-child object (influence-map-dump      object))
   ;; first row
   (add-child object (s-faint                 object))
   (add-child object (s-poisoned              object))

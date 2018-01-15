@@ -374,7 +374,7 @@
                                                  (num:desired (/ *window-w* *window-h*)))
           (camera:look-at* (world:camera world)))))))
 
-#+debug-ai
+#+(and debug-mode debug-ai)
 (defun %change-ai-layer (window scancode)
   (flet ((%change-layer (type)
            (setf (world:influence-map-type (world window)) type)))
@@ -404,7 +404,7 @@
                                                                  :limit-to-ascii t))))
       (when (not (widget:on-key-pressed (world:gui world) gui-event))
         (let ((scancode (sdl2:scancode keysym)))
-          #+debug-ai   (%change-ai-layer object scancode)
+          #+(and debug-mode debug-ai)   (%change-ai-layer object scancode)
           #+debug-mode (when (eq :scancode-escape scancode)
                          (setf *placeholder* nil)
                          (close-window object))
@@ -419,7 +419,7 @@
                                                                    (ivec2 0 5)))))))
           (when (eq :scancode-2 scancode)
             (make-screenshot world)
-            #+ debug-ai
+            #+ (and debug-mode debug-ai)
             (pixmap:save-pixmap (world:type-influence->pixmap world)
                                 (fs:file-in-package "ai-layer.tga")))
           (when *placeholder*
