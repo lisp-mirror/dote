@@ -547,7 +547,8 @@
         (when-let ((per-turn-tiles (get-matrix-turn-visited-tiles object entity-visiting)))
           (setf (matrix-elt per-turn-tiles y x) t))
         ;; update character's log of movement
-        (character:append-to-last-pos-occupied ghost pos)))
+        (character:append-to-last-pos-occupied ghost pos))
+      (misc:dbg "log pos ~a" (character:last-pos-occupied ghost)))
     (when update-infos
       (%update-all-infos object)))))
 

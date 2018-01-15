@@ -722,7 +722,7 @@ attempts Note: all attackable position will be updated as well"
                    (= (id mesh)
                       (id (first-elt ai-entities-action-order))) ;; ensure it's my turn
                    ghost)
-          (flet ((spawn-planer-task ()
+          (flet ((spawn-planner-task ()
                    #+ (and debug-mode debug-ai) (misc:dbg "spawn planner")
                    (world:toolbar-selected-action world)
                    (widget:activate-planner-icon  world)
@@ -743,7 +743,7 @@ attempts Note: all attackable position will be updated as well"
                                                  :timeout +channel-planner-timeout+)))
             (if (not *planner-channel*) ;; no planning
                 (if (not *update-infos-channel*) ; no  updating
-                    (spawn-planer-task)
+                    (spawn-planner-task)
                     (when (check-ending *update-infos-channel*)
                       (setf *update-infos-channel* nil)))
                 (when (check-ending *planner-channel*)
