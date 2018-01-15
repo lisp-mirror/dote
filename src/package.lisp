@@ -3184,6 +3184,7 @@
    :entity-pres-id
    :entity-pres-pos
    :entity-pres-dir
+   :equal-presence-p
    :ai-logger
    :logs
    :get-log

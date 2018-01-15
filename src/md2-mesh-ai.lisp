@@ -146,10 +146,17 @@
       (ai-logger:clean-log ghost      ai-logger:+ai-log-clean-end-plan+)
       (ai-logger:clean-log blackboard ai-logger:+ai-log-clean-end-plan+)
       (world:clear-all-memoized-function-cache)
-      (game-state:loop-player-entities state
-                                       #'(lambda (a)
-                                           (blackboard:log-entity-presence blackboard a))))))
-
+      (let ((all-visible-pcs (visible-players-in-state-from-faction state
+                                                                    game-state:+npc-type+
+                                                                    :alive-only t)))
+        ;; note:   even   if   we    use   alive-only   equal   to   t
+        ;; game-state:loop-player-entities  will   skip  dead  players
+        ;; anyway
+        (game-state:loop-player-entities state
+                                         #'(lambda (a)
+                                             (when (find-if #'(lambda (ent) (= (id ent) (id a)))
+                                                            all-visible-pcs)
+                                               (blackboard:log-entity-presence blackboard a))))))))
 
 (defun %clean-plan-and-blacklist (entity)
   (with-accessors ((ghost ghost)) entity
@@ -181,6 +188,7 @@
                  (,world action-scheduler:tactical-plane-action)
                (with-blacklist-action-if-no-cost (,entity ,strategy-decision ,action)))))))))
 
+;; used as parallel thread
 (defun update-blackboard-infos (entity)
   (with-accessors ((state state)) entity
     (with-accessors ((blackboard game-state:blackboard)) state
@@ -206,17 +214,40 @@
       (setf *update-infos-channel* (lparallel:make-channel))
       (lparallel:submit-task *update-infos-channel* 'update-blackboard-infos mesh))))
 
+(defun get-presence-log-data (blackboard)
+  (ai-logger:ai-log-data (ai-logger:get-log blackboard
+                                            ai-logger:+ai-log-entity-presence+)))
+
+(defmacro with-spawn-if-presence-diff ((entity) &body body)
+  (with-gensyms (state blackboard old-log new-log no-diff-pres-p)
+    `(with-accessors ((,state state)) ,entity
+       (with-accessors ((,blackboard game-state:blackboard)) ,state
+         (let ((,old-log (get-presence-log-data ,blackboard)))
+           ,@body
+           (let* ((,new-log        (get-presence-log-data ,blackboard))
+                  (,no-diff-pres-p (and (= (length ,old-log) (length ,new-log))
+                                        (null (set-difference ,old-log ,new-log
+                                                              :test
+                                                              #'ai-logger:equal-presence-p)))))
+             #+(and debug-mode debug-ai)
+             (misc:dbg "diff ~a old ~a new ~a diff ~a" ,no-diff-pres-p
+                       ,old-log ,new-log
+                       (set-difference ,old-log ,new-log
+                                       :test #'ai-logger:equal-presence-p))
+             (when (not ,no-diff-pres-p)
+               (spawn-update-infos-task ,entity))))))))
+
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+plan-stopper+)))
-  (%clean-plan object)
-  (spawn-update-infos-task object))
+  (with-spawn-if-presence-diff (object)
+    (%clean-plan object)))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+interrupt-action+)))
-  (%clean-plan-and-blacklist object)
-  (spawn-update-infos-task object))
+  (with-spawn-if-presence-diff (object)
+    (%clean-plan-and-blacklist object)))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy

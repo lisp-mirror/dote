@@ -33,6 +33,11 @@
   (pos (ivec2:ivec2 -1 -1))
   (dir ivec2:+ivec2-zero+))
 
+(defun equal-presence-p (a b)
+  (and (=            (entity-pres-id  a) (entity-pres-id b))
+       (ivec2:ivec2= (entity-pres-pos a) (entity-pres-pos b))
+       (sb-cga:vec~  (entity-pres-dir a) (entity-pres-dir b))))
+
 (defclass ai-logger ()
   ((logs
     :initarg :logs

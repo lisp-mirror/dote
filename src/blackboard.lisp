@@ -1494,13 +1494,11 @@ values nil, i. e. the ray is not blocked"
 (defmethod log-entity-presence ((object blackboard) (entity entity))
   (let ((struct   (ai-logger:make-entity-pres :id  (id                      entity)
                                     :pos (calculate-cost-position entity)
-                                    :dir (dir                     entity)))
-        (old-data (ai-logger:ai-log-data
-                   (ai-logger:get-log object
-                                      ai-logger:+ai-log-entity-presence+))))
-    (setf (ai-logger:ai-log-data (ai-logger:get-log object
-                                                    ai-logger:+ai-log-entity-presence+))
-          (lcat old-data (list struct)))
+                                    :dir (dir                     entity))))
+    (pushnew struct
+             (ai-logger:ai-log-data (ai-logger:get-log object
+                                                       ai-logger:+ai-log-entity-presence+))
+             :test #'ai-logger:equal-presence-p)
     object))
 
 (defun remove-entity-from-attack-pos (positions entity)
