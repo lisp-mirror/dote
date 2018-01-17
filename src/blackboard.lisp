@@ -214,9 +214,12 @@
 
 (defun init-logs (blackboard)
   (with-accessors ((logs ai-logger:logs)) blackboard
-    (let ((presence-log (ai-logger:make-ai-log :clean-trigger
-                                               ai-logger:+ai-log-clean-end-plan+)))
-      (setf (gethash ai-logger:+ai-log-entity-presence+ logs) presence-log)))
+    (let ((pc-presence-log (ai-logger:make-ai-log :clean-trigger
+                                                  ai-logger:+ai-log-clean-end-plan+))
+          (ai-presence-log (ai-logger:make-ai-log :clean-trigger
+                                                  ai-logger:+ai-log-clean-end-plan+)))
+      (setf (gethash ai-logger:+ai-log-pc-entity-presence+ logs) pc-presence-log)
+      (setf (gethash ai-logger:+ai-log-ai-entity-presence+ logs) ai-presence-log)))
   blackboard)
 
 (defmethod initialize-instance :after ((object blackboard) &key &allow-other-keys)
@@ -446,7 +449,11 @@
 
 (defgeneric fountain-exhausted-p (object entity))
 
-(defgeneric log-entity-presence (object entity))
+(defgeneric log-entity-presence (object entity key-log))
+
+(defgeneric log-ai-entity-presence (object entity))
+
+(defgeneric log-pc-entity-presence (object entity))
 
 (defun calc-concerning-tiles-cost-scaling (difficult-level)
   (dlerp (smoothstep-interpolate 2.0 5.0 (d difficult-level))
@@ -1492,15 +1499,20 @@ values nil, i. e. the ray is not blocked"
   (with-accessors ((exhausted-fountains-ids exhausted-fountains-ids)) object
     (find (id entity) exhausted-fountains-ids :test #'=)))
 
-(defmethod log-entity-presence ((object blackboard) (entity entity))
+(defmethod log-entity-presence ((object blackboard) (entity entity) key-log)
   (let ((struct   (ai-logger:make-entity-pres :id  (id                      entity)
                                     :pos (calculate-cost-position entity)
                                     :dir (dir                     entity))))
     (pushnew struct
-             (ai-logger:ai-log-data (ai-logger:get-log object
-                                                       ai-logger:+ai-log-entity-presence+))
+             (ai-logger:ai-log-data (ai-logger:get-log object key-log))
              :test #'ai-logger:equal-presence-p)
     object))
+
+(defmethod log-ai-entity-presence ((object blackboard) (entity entity))
+  (log-entity-presence object entity ai-logger:+ai-log-ai-entity-presence+))
+
+(defmethod log-pc-entity-presence ((object blackboard) (entity entity))
+  (log-entity-presence object entity ai-logger:+ai-log-pc-entity-presence+))
 
 (defun remove-entity-from-attack-pos (positions entity)
   (remove (id entity) positions :test #'= :key #'entity-id))

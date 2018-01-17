@@ -7,7 +7,7 @@
          :cost                  1)
   (:name :launch-teleport-spell
          :preconditions         ()
-         :context-preconditions (pass-1d10 has-enough-sp-teleport-p)
+         :context-preconditions (pass-1d4 has-enough-sp-teleport-p)
          :effects               ((:curb-threat t))
          :cost                  80)
   (:name :launch-heal-spell

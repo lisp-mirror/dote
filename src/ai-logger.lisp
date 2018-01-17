@@ -16,13 +16,15 @@
 
 (in-package :ai-logger)
 
-(define-constant +ai-log-clean-end-turn+         :end-turn    :test #'eq)
+(define-constant +ai-log-clean-end-turn+         :end-turn       :test #'eq)
 
-(define-constant +ai-log-clean-end-plan+         :end-plan    :test #'eq)
+(define-constant +ai-log-clean-end-plan+         :end-plan       :test #'eq)
 
-(define-constant +ai-log-pos-occupied+           :pos-occuped :test #'eq)
+(define-constant +ai-log-pos-occupied+           :pos-occuped    :test #'eq)
 
-(define-constant +ai-log-entity-presence+        :entity-pres :test #'eq)
+(define-constant +ai-log-pc-entity-presence+     :entity-pc-pres :test #'eq)
+
+(define-constant +ai-log-ai-entity-presence+     :entity-ai-pres :test #'eq)
 
 (defstruct ai-log
   (clean-trigger +ai-log-clean-end-turn+)

@@ -3174,7 +3174,8 @@
    :+ai-log-clean-end-turn+
    :+ai-log-clean-end-plan+
    :+ai-log-pos-occupied+
-   :+ai-log-entity-presence+
+   :+ai-log-pc-entity-presence+
+   :+ai-log-ai-entity-presence+
    :copy-ai-log
    :ai-log-p
    :ai-log-clean-trigger
@@ -5170,7 +5171,8 @@
    :next-actual-unexplored-position
    :disgregard-all-plans
    :fountain-exhausted-p
-   :log-entity-presence
+   :log-ai-entity-presence
+   :log-pc-entity-presence
    :remove-entity-from-all-attack-pos
    :best-attack-spell-goal-pos
    :attack-spell-goal-pos-around-friend

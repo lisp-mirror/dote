@@ -156,7 +156,10 @@
                                          #'(lambda (a)
                                              (when (find-if #'(lambda (ent) (= (id ent) (id a)))
                                                             all-visible-pcs)
-                                               (blackboard:log-entity-presence blackboard a))))))))
+                                               (blackboard:log-pc-entity-presence blackboard a))))
+        (game-state:loop-ai-entities state
+                                     #'(lambda (a)
+                                         (blackboard:log-ai-entity-presence blackboard a)))))))
 
 (defun %clean-plan-and-blacklist (entity)
   (with-accessors ((ghost ghost)) entity
@@ -214,25 +217,43 @@
       (setf *update-infos-channel* (lparallel:make-channel))
       (lparallel:submit-task *update-infos-channel* 'update-blackboard-infos mesh))))
 
-(defun get-presence-log-data (blackboard)
+(defun get-presence-log-data (blackboard key)
+  (ai-logger:ai-log-data (ai-logger:get-log blackboard key)))
+
+(defun get-ai-presence-log-data (blackboard)
   (ai-logger:ai-log-data (ai-logger:get-log blackboard
-                                            ai-logger:+ai-log-entity-presence+)))
+                                            ai-logger:+ai-log-ai-entity-presence+)))
+
+(defun get-pc-presence-log-data (blackboard)
+  (ai-logger:ai-log-data (ai-logger:get-log blackboard
+                                            ai-logger:+ai-log-pc-entity-presence+)))
 
 (defmacro with-spawn-if-presence-diff ((entity) &body body)
-  (with-gensyms (state blackboard old-log new-log no-diff-pres-p)
+  (with-gensyms (state blackboard old-pc-log old-ai-log
+                       new-pc-log new-ai-log no-diff-pres-p)
     `(with-accessors ((,state state)) ,entity
        (with-accessors ((,blackboard game-state:blackboard)) ,state
-         (let ((,old-log (get-presence-log-data ,blackboard)))
+         (let ((,old-pc-log (get-pc-presence-log-data ,blackboard))
+               (,old-ai-log (get-ai-presence-log-data ,blackboard)))
            ,@body
-           (let* ((,new-log        (get-presence-log-data ,blackboard))
-                  (,no-diff-pres-p (and (= (length ,old-log) (length ,new-log))
-                                        (null (set-difference ,old-log ,new-log
+           (let* ((,new-pc-log     (get-pc-presence-log-data ,blackboard))
+                  (,new-ai-log     (get-ai-presence-log-data ,blackboard))
+                  (,no-diff-pres-p (and (= (length ,old-pc-log) (length ,new-pc-log))
+                                        (= (length ,old-ai-log) (length ,new-ai-log))
+                                        (null (set-difference ,old-pc-log ,new-pc-log
+                                                              :test
+                                                              #'ai-logger:equal-presence-p))
+                                        (null (set-difference ,old-ai-log ,new-ai-log
                                                               :test
                                                               #'ai-logger:equal-presence-p)))))
              #+(and debug-mode debug-ai)
-             (misc:dbg "diff ~a old ~a new ~a diff ~a" ,no-diff-pres-p
-                       ,old-log ,new-log
-                       (set-difference ,old-log ,new-log
+             (misc:dbg "diff ~a old-pc ~a new-pc ~a  old-ai ~a new-ai ~a diff-pc ~a diff-ai ~a"
+                       ,no-diff-pres-p
+                       ,old-pc-log ,new-pc-log
+                       ,old-ai-log ,new-ai-log
+                       (set-difference ,old-pc-log ,new-pc-log
+                                       :test #'ai-logger:equal-presence-p)
+                       (set-difference ,old-ai-log ,new-ai-log
                                        :test #'ai-logger:equal-presence-p))
              (when (not ,no-diff-pres-p)
                (spawn-update-infos-task ,entity))))))))
