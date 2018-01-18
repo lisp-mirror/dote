@@ -919,8 +919,8 @@
                    (concerning-tiles              concerning-tiles)
                    (concerning-tiles-invalicables concerning-tiles-invalicables)) object
     (ploop-matrix (concerning-tiles-invalicables x y)
-         (when (null (matrix-elt concerning-tiles-invalicables y x))
-           (setf (matrix-elt concerning-tiles-invalicables y x) +concerning-tiles-min-value+)))
+      (when (null (matrix-elt concerning-tiles-invalicables y x))
+        (setf (matrix-elt concerning-tiles-invalicables y x) +concerning-tiles-min-value+)))
     (loop-player-entities main-state
          #'(lambda (player)
              (update-concerning-invalicable-player object player)))
