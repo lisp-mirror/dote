@@ -462,7 +462,8 @@
         (when (and interrupt-plan-if-ai
                    (faction-ai-p state (id player)))
           (set-interrupt-plan ghost))
-        (propagate-move-entity-along-path-end-event end-event)))))
+        (propagate-move-entity-along-path-end-event end-event)
+        player))))
 
 (defun %try-deactivate-trap-cb (world player trap)
   #'(lambda (w e)
@@ -495,8 +496,8 @@
 
 (defun manage-door-ai (state player path idx-path-maybe-door)
   (when (game-state:door-in-next-path-tile-p state path idx-path-maybe-door)
-    (let* ((id-door    (game-state:door-in-next-path-tile-p state path idx-path-maybe-door))
-           (door       (game-state:find-entity-by-id state id-door)))
+    (when-let* ((id-door (game-state:door-in-next-path-tile-p state path idx-path-maybe-door))
+                (door    (game-state:find-entity-by-id state id-door)))
       (when (not (openp door))
         (let ((door-event (game-event:make-simple-event-w-dest 'game-event:open-door-event
                                                                (id player)
@@ -1601,12 +1602,13 @@
                         (vec 0.0 1.0 0.0)
                         (normalize new-dir)))))
         (if (not (vec~ (pos object) end (d/ +terrain-chunk-tile-size+ 8.0)))
-            (progn
-              (manage-door-ai state object current-path 1) ;; open door if any and if closed
-              (if (gconf:config-smooth-movements)
-                  (setf (pos object)
-                        (vec+ (pos object) (vec* dir +model-move-speed+)))
-                  (setf (pos object) end)))
+            ;; open door if any and if closed
+            (let ((door-opened-p (manage-door-ai state object current-path 1)))
+              (when (not door-opened-p) ;; door just opened the current plan has been interrupted
+                (if (gconf:config-smooth-movements)
+                    (setf (pos object)
+                          (vec+ (pos object) (vec* dir +model-move-speed+)))
+                    (setf (pos object) end))))
             (let ((movement-event (make-instance 'move-entity-entered-in-tile-event
                                                  :id-origin (id object)
                                                  :tile-pos  end)))
