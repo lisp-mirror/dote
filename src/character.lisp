@@ -722,7 +722,7 @@
 
 (defgeneric combined-power (object))
 
-(defgeneric movement-stuck-p (object strategy-expert current-pos new-pos))
+(defgeneric movement-stuck-p (object strategy-expert new-pos))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun symbol-pclass-fn-name (name)
@@ -1165,7 +1165,7 @@
 
 (define-constant +stuck-threshold+ 10 :test #'=)
 
-(defmethod movement-stuck-p ((object player-character) strategy-expert current-pos next-pos)
+(defmethod movement-stuck-p ((object player-character) strategy-expert next-pos)
   (with-accessors ((unexplored-layer blackboard:unexplored-layer)) strategy-expert
     (with-accessors ((last-pos-occupied last-pos-occupied)) object
       (let* ((matrix-unexplored (inmap:layer unexplored-layer))

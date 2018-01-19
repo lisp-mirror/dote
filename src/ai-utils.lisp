@@ -974,7 +974,6 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
               (if next-pos-candidate
                   (if (character:movement-stuck-p ghost
                                                   strategy-expert
-                                                  (calculate-cost-position entity)
                                                   next-pos-candidate)
                       (progn
                         #+ (and debug-mode debug-ai)
