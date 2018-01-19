@@ -722,7 +722,7 @@
 
 (defgeneric combined-power (object))
 
-(defgeneric movement-stuck-p (object new-pos))
+(defgeneric movement-stuck-p (object strategy-expert current-pos new-pos))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun symbol-pclass-fn-name (name)
@@ -1163,16 +1163,34 @@
                                        actual-dodge-chance))))
         (d* status-contribute raw-power)))))
 
-(defmethod movement-stuck-p ((object player-character) next-pos)
-  (with-accessors ((last-pos-occupied last-pos-occupied)) object
-    (let ((length-pos (length last-pos-occupied)))
-      (if (< length-pos 3)
-          nil
-          (let ((a1 (elt last-pos-occupied (- length-pos 1)))
-                (b  (elt last-pos-occupied (- length-pos 2)))
-                (a2 (elt last-pos-occupied (- length-pos 3))))
-            (and (ivec2:ivec2= a1 a2)
-                 (ivec2:ivec2= b next-pos)))))))
+(define-constant +stuck-threshold+ 10 :test #'=)
+
+(defmethod movement-stuck-p ((object player-character) strategy-expert current-pos next-pos)
+  (with-accessors ((unexplored-layer blackboard:unexplored-layer)) strategy-expert
+    (with-accessors ((last-pos-occupied last-pos-occupied)) object
+      (let* ((matrix-unexplored (inmap:layer unexplored-layer))
+             (length-pos        (length last-pos-occupied))
+             (test-null-fn      #'(lambda (a b)
+                                    (declare (ignore b))
+                                    (not (null a))))
+             (approchables      (matrix:flood-fill* matrix-unexplored
+                                                    (ivec2:ivec2-x next-pos)
+                                                    (ivec2:ivec2-y next-pos)
+                                                    :tolerance-fn test-null-fn
+                                                    :max-iteration (1+ +stuck-threshold+)
+                                                    :position-acceptable-p-fn
+                                                    #'(lambda (m a b)
+                                                        (declare (ignore m a b))
+                                                        t))))
+        (if (< (length approchables) +stuck-threshold+)
+            t
+            (if (< length-pos 3)
+                nil
+                (let ((a1 (elt last-pos-occupied (- length-pos 1)))
+                      (b  (elt last-pos-occupied (- length-pos 2)))
+                      (a2 (elt last-pos-occupied (- length-pos 3))))
+                  (and (ivec2:ivec2= a1 a2)
+                       (ivec2:ivec2= b next-pos)))))))))
 
 (defmacro gen-actual-characteristic (name)
   (let ((fn       (format-fn-symbol t "actual-~a" name))

@@ -972,7 +972,10 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
             (let ((next-pos-candidate (and new-path
                                            (elt new-path 1))))
               (if next-pos-candidate
-                  (if (character:movement-stuck-p ghost next-pos-candidate)
+                  (if (character:movement-stuck-p ghost
+                                                  strategy-expert
+                                                  (calculate-cost-position entity)
+                                                  next-pos-candidate)
                       (progn
                         #+ (and debug-mode debug-ai)
                         (misc:dbg "stuck @ ~a" next-pos-candidate)
@@ -981,7 +984,8 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
                   (progn
                     #+ (and debug-mode debug-ai)
                     (misc:dbg "no valid moves @ ~a" (calculate-cost-position entity))
-                    (retry))))))))) ;; not a single legal move, decrease concerning tiles and retry
+                    (retry))))))))) ; not a single legal move,
+                                       ; decrease concerning tiles and retry
 
 (defun go-place-trap (entity)
   (with-accessors ((ghost entity:ghost)) entity

@@ -405,7 +405,7 @@
 
 (defgeneric update-concerning-tiles-player (object player &key all-visibles-from-ai))
 
-(defgeneric update-concerning-invalicable-player (object player))
+;(defgeneric update-concerning-invalicable-player (object player))
 
 (defgeneric reduce-concerning-invalicable-range (object))
 
@@ -920,10 +920,13 @@
                    (concerning-tiles-invalicables concerning-tiles-invalicables)) object
     (ploop-matrix (concerning-tiles-invalicables x y)
       (when (null (matrix-elt concerning-tiles-invalicables y x))
-        (setf (matrix-elt concerning-tiles-invalicables y x) +concerning-tiles-min-value+)))
-    (loop-player-entities main-state
-         #'(lambda (player)
-             (update-concerning-invalicable-player object player)))
+        (setf (matrix-elt concerning-tiles-invalicables y x) +concerning-tiles-min-value+))
+      (when (concerning-became-explore-invalicable-tile-p object x y)
+        (setf (matrix-elt concerning-tiles-invalicables y x)
+              +concerning-tile-value+)))
+    ;; (loop-player-entities main-state
+    ;;      #'(lambda (player)
+    ;;          (update-concerning-invalicable-player object player)))
     ;; smooth
     (let ((map (wrap-matrix-as-dijkstra-map concerning-tiles-invalicables)))
       (smooth-dijkstra-layer map
@@ -933,25 +936,25 @@
       (setf concerning-tiles-invalicables (layer map)))
     object))
 
-(defmethod update-concerning-invalicable-player ((object blackboard)
-                                                 (player md2-mesh:md2-mesh))
-  (with-accessors ((visited-tiles                  visited-tiles)
-                   (main-state                     main-state)
-                   (use-enemy-fov-when-exploring-p use-enemy-fov-when-exploring-p)
-                   (concerning-tiles               concerning-tiles)
-                   (concerning-tiles-invalicables  concerning-tiles-invalicables)) object
-    (let* ((pos                (calculate-cost-position player))
-           (concerning-tile-fn (concerning-tile-invalicable-mapping-clsr (ivec2-x pos)
-                                                                         (ivec2-y pos))))
-      (ploop-matrix (concerning-tiles-invalicables x y)
-        (let* ((old-invalicable (matrix-elt concerning-tiles-invalicables y x)))
-          ;;  concerning
-          (when (concerning-became-explore-invalicable-tile-p object x y)
-            (setf (matrix-elt concerning-tiles-invalicables y x)
-                  (if (null old-invalicable)
-                      (funcall concerning-tile-fn x y)
-                      (max old-invalicable
-                           (funcall concerning-tile-fn x y))))))))))
+;; (defmethod update-concerning-invalicable-player ((object blackboard)
+;;                                                  (player md2-mesh:md2-mesh))
+;;   (with-accessors ((visited-tiles                  visited-tiles)
+;;                    (main-state                     main-state)
+;;                    (use-enemy-fov-when-exploring-p use-enemy-fov-when-exploring-p)
+;;                    (concerning-tiles               concerning-tiles)
+;;                    (concerning-tiles-invalicables  concerning-tiles-invalicables)) object
+;;     (let* ((pos                (calculate-cost-position player))
+;;            (concerning-tile-fn (concerning-tile-invalicable-mapping-clsr (ivec2-x pos)
+;;                                                                          (ivec2-y pos))))
+;;       (ploop-matrix (concerning-tiles-invalicables x y)
+;;         (let* ((old-invalicable (matrix-elt concerning-tiles-invalicables y x)))
+;;           ;;  concerning
+;;           (when (concerning-became-explore-invalicable-tile-p object x y)
+;;             (setf (matrix-elt concerning-tiles-invalicables y x)
+;;                   (if (null old-invalicable)
+;;                       (funcall concerning-tile-fn x y)
+;;                       (max old-invalicable
+;;                            (funcall concerning-tile-fn x y))))))))))
 
 (defmethod reduce-concerning-invalicable-range ((object blackboard))
   (with-accessors ((concerning-tiles-invalicable-threshold

@@ -998,6 +998,9 @@
         ;; TEST
         (when (faction-ai-p (state object) (id object))
           (with-accessors ((blackboard blackboard:blackboard)) state
+            (character:movement-stuck-p ghost blackboard
+                                        (calculate-cost-position object)
+                                        (ivec2 0 1))
             (let ((reachable-fn (blackboard:reachable-p-w/concening-tiles-fn blackboard)))
               (misc:dbg "all-tactics ~a"
                         (blackboard:build-all-attack-tactics blackboard reachable-fn)))
