@@ -620,8 +620,9 @@
                    (entity-id (entity-id-in-pos main-state x-cost y-cost)))
               ;; sync with toolbar...maybe better in main-window ?
               (when (valid-id-p entity-id)
-                (let ((entity (or (fetch-from-player-entities main-state entity-id)
-                                  (fetch-from-ai-entities main-state entity-id)))) ;; testing only
+                (let ((entity #+ debug-mode (or (fetch-from-player-entities main-state entity-id)
+                                                (fetch-from-ai-entities main-state entity-id))
+                              #- debug-mode (fetch-from-player-entities main-state entity-id)))
                   (when entity
                     (when bind
                       (setf (selected-pc main-state) entity)

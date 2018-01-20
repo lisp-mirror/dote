@@ -195,10 +195,11 @@
 (defun update-blackboard-infos (entity)
   (with-accessors ((state state)) entity
     (with-accessors ((blackboard game-state:blackboard)) state
+      #+ (and debug-mode debug-ai)
       (game-state:with-world (world state)
-        #+ (and debug-mode debug-ai) (world::render-influence-map world)
-        (blackboard::%update-all-infos blackboard)
-        entity))))
+        (world::render-influence-map world))
+      (blackboard::%update-all-infos blackboard)
+      entity)))
 
 ;;;; planning
 
@@ -381,7 +382,8 @@
     (game-state:with-world (world state)
       (multiple-value-bind (fountain path-to-reach-fountain cost-to-reach-fountain)
           (ai-utils:useful-reachable-fountain object)
-        #+debug-mode (assert fountain)
+        #- debug-mode (declare (ignore fountain))
+        #+ debug-mode (assert fountain)
         (when (not (epsilon= cost-to-reach-fountain 0.0)) ;; we are just next to fountain
           (let ((path-struct (game-state:make-movement-path path-to-reach-fountain
                                                             cost-to-reach-fountain)))

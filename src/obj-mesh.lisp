@@ -106,9 +106,9 @@
          (next-token-simple *file*)
          (parse-face))
         (t
-         #+debug-mode
-         (let-noerr ((discarded (next-token-simple *file*)))
-           (misc:dbg "obj mesh: discard ~a ~a" type discarded))))
+         #- debug-mode (next-token-simple *file*)
+         #+ debug-mode (misc:dbg "obj mesh: discard ~a ~a"
+                                 type (next-token-simple *file*))))
       (parse-line))))
 
 (defmacro gen-parse-vertex-normal ((name error) &body body)

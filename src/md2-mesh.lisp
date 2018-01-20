@@ -527,6 +527,7 @@
         (game-state:with-world (world state)
           ;; update state matrix and quadtree
           (world:move-entity world player leaving-tile)
+          #+ (and debug-mode debug-ai)
           (propagate-update-highlight-path (make-instance 'update-highlight-path
                                                           :tile-pos current-path))
           (update-visibility-cone player)
