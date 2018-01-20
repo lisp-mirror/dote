@@ -722,7 +722,7 @@
 
 (defgeneric combined-power (object))
 
-(defgeneric movement-stuck-p (object strategy-expert new-pos))
+(defgeneric movement-stuck-p (object strategy-expert current-pos new-pos))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun symbol-pclass-fn-name (name)
@@ -1165,23 +1165,21 @@
 
 (define-constant +stuck-threshold+ 10 :test #'=)
 
-(defmethod movement-stuck-p ((object player-character) strategy-expert next-pos)
+(defmethod movement-stuck-p ((object player-character) strategy-expert current-pos next-pos)
   (with-accessors ((unexplored-layer blackboard:unexplored-layer)) strategy-expert
     (with-accessors ((last-pos-occupied last-pos-occupied)) object
       (let* ((matrix-unexplored (inmap:layer unexplored-layer))
              (length-pos        (length last-pos-occupied))
-             (test-null-fn      #'(lambda (a b)
-                                    (declare (ignore b))
-                                    (not (null a))))
+             (pos-eql           #'(lambda (a b)
+                                    (ivec2:ivec2= a b)))
+             (test-null-fn      #'(lambda (mat x y)
+                                    (or (funcall pos-eql (ivec2:ivec2 x y) current-pos)
+                                        (not (null (matrix:matrix-elt mat y x))))))
              (approchables      (matrix:flood-fill* matrix-unexplored
-                                                    (ivec2:ivec2-x next-pos)
-                                                    (ivec2:ivec2-y next-pos)
-                                                    :tolerance-fn test-null-fn
-                                                    :max-iteration (1+ +stuck-threshold+)
-                                                    :position-acceptable-p-fn
-                                                    #'(lambda (m a b)
-                                                        (declare (ignore m a b))
-                                                        t))))
+                                                    (ivec2:ivec2-x current-pos)
+                                                    (ivec2:ivec2-y current-pos)
+                                                    :position-acceptable-p test-null-fn
+                                                    :max-iteration         (1+ +stuck-threshold+))))
         (if (< (length approchables) +stuck-threshold+)
             t
             (if (< length-pos 3)

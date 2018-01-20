@@ -288,11 +288,12 @@
   (defgeneric flood-fill (object x y &key
                                        tolerance max-iteration randomize-growth
                                        position-acceptable-p-fn))
+
   (defgeneric flood-fill* (object x y &key
-                                        tolerance-fn
+                                        position-acceptable-p
+                                        filter-visited-p
                                         max-iteration
-                                        randomize-growth
-                                        position-acceptable-p-fn))
+                                        randomize-growth))
 
   (defgeneric apply-kernel (object kernel &key round-fn))
 
@@ -1180,45 +1181,44 @@ else
          (<= (abs (- px1 px2)) tol)))))
 
 (defmethod flood-fill* ((object matrix) x y &key
-                                              (tolerance-fn (flood-fill-tolerance-p-fn 0))
+                                              (position-acceptable-p #'(lambda (mat x y)
+                                                                      (declare (ignore mat x y))
+                                                                      t))
                                               (max-iteration 1000000000)
                                               (randomize-growth nil)
-                                              (position-acceptable-p-fn #'pixel-inside-p))
+                                              (filter-visited-p #'pixel-inside-p))
   (declare (optimize (speed 3) (safety 0) (debug 0)))
   (declare (fixnum max-iteration))
-  (declare (function tolerance-fn position-acceptable-p-fn))
+  (declare (function filter-visited-p position-acceptable-p))
   (labels ((pop-position (queue randomize)
              (declare (list queue))
              (and queue
-                 (if randomize
-                     (misc:random-elt queue)
-                     (elt queue (1- (length queue)))))))
+                  (if randomize
+                      (misc:random-elt queue)
+                      (elt queue (1- (length queue)))))))
     (let ((queue '()))
       (when (pixel-inside-p object x y)
-        (let ((pixel-value (matrix-elt object y x)))
-          (push (list x y) queue)
-          (do* ((pixel (pop-position queue randomize-growth)
-                       (pop-position queue randomize-growth))
-                (iteration-ct 0)
-                (visited-pixels  '())
-                (affected-pixels '())
-                (aabb (good-aabb-start)))
-               ((not (and (/= 0 (length queue))
-                          (< iteration-ct max-iteration)))
-                (values affected-pixels aabb))
-            (when pixel
-              (setf queue (remove pixel queue :from-end t :test #'equalp))
-              (when (and (funcall tolerance-fn
-                                  (matrix-elt object (second pixel) (first pixel))
-                                  pixel-value)
-                         (not (find pixel visited-pixels :test #'equalp)))
-                (push pixel visited-pixels)
-                (when (funcall position-acceptable-p-fn object (elt pixel 0) (elt pixel 1))
-                  (push pixel affected-pixels)
-                  (setf aabb (2d-utils:expand-aabb2 aabb (list (d (the fixnum (elt pixel 0)))
-                                                               (d (the fixnum (elt pixel 1)))))))
-                (incf iteration-ct)
-                (gen-neighbour-form object queue (first pixel) (second pixel))))))))))
+        (push (list x y) queue)
+        (do* ((pixel (pop-position queue randomize-growth)
+                     (pop-position queue randomize-growth))
+              (iteration-ct 0)
+              (visited-pixels  '())
+              (affected-pixels '())
+              (aabb (good-aabb-start)))
+             ((not (and (/= 0 (length queue))
+                        (< iteration-ct max-iteration)))
+              (values affected-pixels aabb))
+          (when pixel
+            (setf queue (remove pixel queue :from-end t :test #'equalp))
+            (when (and (funcall position-acceptable-p object (first pixel) (second pixel))
+                       (not (find pixel visited-pixels :test #'equalp)))
+              (push pixel visited-pixels)
+              (when (funcall filter-visited-p object (first pixel) (first pixel))
+                (push pixel affected-pixels)
+                (setf aabb (2d-utils:expand-aabb2 aabb (list (d (the fixnum (elt pixel 0)))
+                                                             (d (the fixnum (elt pixel 1)))))))
+              (incf iteration-ct)
+              (gen-neighbour-form object queue (first pixel) (second pixel)))))))))
 
 (defun gauss (x y sigma xc yc)
   (declare (optimize (speed 3) (safety 0) (debug 0)))
