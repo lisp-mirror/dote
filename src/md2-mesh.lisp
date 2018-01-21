@@ -1584,9 +1584,41 @@
     (%alloc-arrays object)
     (bind-vbo object nil)))
 
-(defmethod calculate-move ((object md2-mesh) dt)
+(defmacro with-common-calc-move ((entity end) &body body)
+  (with-gensyms (movement-event)
+    `(if (not (vec~ (pos ,entity) ,end (d/ +terrain-chunk-tile-size+ 8.0)))
+         ,@body
+         (let ((,movement-event (make-instance 'move-entity-entered-in-tile-event
+                                               :id-origin (id ,entity)
+                                               :tile-pos  ,end)))
+        (propagate-move-entity-entered-in-tile-event ,movement-event)))))
+
+(defun %calculate-move-ai (state entity dt dir current-path end)
   (declare (ignore dt))
+  (with-common-calc-move (entity end)
+    ;; open door if any and if closed
+    (let ((door-opened-p (manage-door-ai state entity current-path 1)))
+      (when (not door-opened-p) ;; door just opened the current plan has been interrupted
+        (if (gconf:config-smooth-movements)
+            (setf (pos entity)
+                  (vec+ (pos entity) (vec* dir +model-move-speed+)))
+            (setf (pos entity) end))))))
+
+(defun %calculate-move-pc (state entity dt dir current-path end)
+  (declare (ignore dt))
+  (with-accessors ((ghost ghost)) entity
+    (with-common-calc-move (entity end)
+      (if (game-state:invalicable-in-next-path-tile-p state entity current-path 1)
+          (progn
+            (%stop-movement entity :decrement-movement-points t))
+          (if (gconf:config-smooth-movements)
+              (setf (pos entity)
+                    (vec+ (pos entity) (vec* dir +model-move-speed+)))
+              (setf (pos entity) end))))))
+
+(defmethod calculate-move ((object md2-mesh) dt)
   (with-accessors ((ghost ghost)
+                   (id  id)
                    (pos pos)
                    (dir dir)
                    (state state)) object
@@ -1602,18 +1634,9 @@
                     (if (vec~ new-dir +zero-vec+)
                         (vec 0.0 1.0 0.0)
                         (normalize new-dir)))))
-        (if (not (vec~ (pos object) end (d/ +terrain-chunk-tile-size+ 8.0)))
-            ;; open door if any and if closed
-            (let ((door-opened-p (manage-door-ai state object current-path 1)))
-              (when (not door-opened-p) ;; door just opened the current plan has been interrupted
-                (if (gconf:config-smooth-movements)
-                    (setf (pos object)
-                          (vec+ (pos object) (vec* dir +model-move-speed+)))
-                    (setf (pos object) end))))
-            (let ((movement-event (make-instance 'move-entity-entered-in-tile-event
-                                                 :id-origin (id object)
-                                                 :tile-pos  end)))
-              (propagate-move-entity-entered-in-tile-event movement-event)))))))
+        (if (faction-ai-p state id)
+            (%calculate-move-ai state object dt dir current-path end)
+            (%calculate-move-pc state object dt dir current-path end))))))
 
 (defmethod wear-item ((object md2-mesh) item)
   (with-accessors ((ghost ghost)

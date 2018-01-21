@@ -506,9 +506,12 @@
                      (let* ((selected-path (game-state:selected-path main-state)))
                        (when selected-path
                          (let ((movement-event (make-instance 'game-event:move-entity-along-path-event
-                                                              :path (game-state:tiles selected-path)
-                                                              :cost (game-state:cost  selected-path)
-                                                              :id-destination (id selected-pc))))
+                                                              :path
+                                                              (game-state:tiles selected-path)
+                                                              :cost
+                                                              (game-state:cost  selected-path)
+                                                              :id-destination
+                                                              (id selected-pc))))
                            (game-event:propagate-move-entity-along-path-event movement-event)
                            (world:reset-toolbar-selected-action world))))))
                   ((eq (world:toolbar-selected-action world)
@@ -543,16 +546,18 @@
                    (main-state main-state)) object
     (with-accessors ((selected-pc selected-pc)
                      (main-state main-state)) world
-      (let* ((player-position       (entity:pos selected-pc))
-             (cost-player-position  (ivec2 (map-utils:coord-chunk->costs (elt player-position 0))
-                                           (map-utils:coord-chunk->costs (elt player-position 2))))
-             (cost-pointer-position (world:pick-pointer-position world world x y))
-             (cost-pointer          (or (and cost-pointer-position
-                                             (game-state:get-cost main-state
-                                                                  (elt cost-pointer-position 0)
-                                                                  (elt cost-pointer-position 1)))
-                                        +invalicable-element-cost+))
-             (ghost                 (entity:ghost selected-pc)))
+      (alexandria:when-let* ((player-position       (entity:pos selected-pc))
+                             (cost-player-position  (ivec2 (map-utils:coord-chunk->costs (elt player-position 0))
+                                                           (map-utils:coord-chunk->costs (elt player-position 2))))
+                             (cost-pointer-position (world:pick-pointer-position world world x y))
+                             (cost-pointer-pos-x    (elt cost-pointer-position 0))
+                             (cost-pointer-pos-y    (elt cost-pointer-position 1))
+                             (cost-pointer          (or (and cost-pointer-position
+                                                             (game-state:get-costs-from-pc@ main-state
+                                                                                            cost-pointer-pos-x
+                                                                                            cost-pointer-pos-y))
+                                                        +invalicable-element-cost+))
+                             (ghost                 (entity:ghost selected-pc)))
         ;; test concerning tiles
         ;; (blackboard            (game-state:blackboard main-state)))
 
@@ -570,11 +575,9 @@
               (multiple-value-bind (path cost)
                   (and cost-player-position
                        cost-pointer-position
-                       (game-state:build-movement-path main-state
-                                                       cost-player-position
-                                                       cost-pointer-position))
-                                                       ;;;; test concerning-tiles
-                                                       ;:other-costs-layer (list concerning-tiles)))
+                       (game-state:build-movement-path-pc main-state
+                                                          cost-player-position
+                                                          cost-pointer-position))
                 (when (and path
                            (<= cost player-movement-points))
                   (setf (game-state:selected-path main-state)

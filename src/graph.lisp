@@ -143,8 +143,7 @@
 (defun make-tile-multilayer-graph (&rest layers)
   (let ((arr (misc:make-fresh-array (length layers) nil 'matrix:matrix t)))
     (misc:copy-list-into-array layers arr)
-    (make-instance 'tile-multilayers-graph
-                   :layers arr)))
+    (make-instance 'tile-multilayers-graph :layers arr)))
 
 (defmethod initialize-instance :after ((object tile-multilayers-graph) &key &allow-other-keys)
   (setf (ids object) (matrix:gen-matrix-frame (matrix:width  (elt (layers object) 0))

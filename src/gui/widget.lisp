@@ -2089,25 +2089,29 @@
           (game-state:increase-game-turn state)
           t))))
 
-(defun rotate-cw-cb (w e)
+(defun %rotate (w e dir)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
-    (with-accessors ((bound-player bound-player)) toolbar
-      (when bound-player
-        (let ((event (make-instance 'game-event:rotate-entity-cw-event
-                                    :id-destination (id bound-player))))
-          (game-event:propagate-rotate-entity-cw-event event)))))
-    t)
+    (with-accessors ((bound-player bound-player)
+                     (bound-world  bound-world)) toolbar
+      (with-accessors ((main-state main-state)) bound-world
+        (when bound-player
+          (let ((id-player (id bound-player)))
+            (if (eq dir :cw)
+                (let ((event (make-instance 'game-event:rotate-entity-cw-event
+                                            :id-destination id-player)))
+                  (game-event:propagate-rotate-entity-cw-event event))
+                (let ((event (make-instance 'game-event:rotate-entity-ccw-event
+                                            :id-destination id-player)))
+                  (game-event:propagate-rotate-entity-ccw-event event)))
+            (game-state:reset-costs-from-pc main-state))))))
+  t)
+
+(defun rotate-cw-cb (w e)
+  (%rotate w e :cw))
 
 (defun rotate-ccw-cb (w e)
-  (declare (ignore e))
-  (with-parent-widget (toolbar) w
-    (with-accessors ((bound-player bound-player)) toolbar
-      (when bound-player
-        (let ((event (make-instance 'game-event:rotate-entity-ccw-event
-                                    :id-destination (id bound-player))))
-          (game-event:propagate-rotate-entity-ccw-event event)))))
-  t)
+  (%rotate w e :ccw))
 
 (defun facing-door (game-state pos dir)
   "Pos in cost space, dir in world space"
@@ -2205,9 +2209,12 @@
   (declare (ignore e))
   (with-parent-widget (toolbar) w
     (with-accessors ((bound-player bound-player)
+                     (bound-world  bound-world)
                      (selected-action selected-action)) toolbar
-      (when bound-player
-        (setf selected-action +action-move+)))))
+      (with-accessors ((main-state main-state)) bound-world
+        (when bound-player
+          (game-state:reset-costs-from-pc main-state)
+          (setf selected-action +action-move+))))))
 
 (defun toolbar-attack-short-range-cb (w e)
   (declare (ignore e))

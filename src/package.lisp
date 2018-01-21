@@ -2267,8 +2267,10 @@
    :sky-bg-color
    :celestial-body-position
    :movement-costs
+   :movement-costs-pc
    :costs-from-map
    :costs-from-players
+   :costs-from-pc
    :map-state
    :old-state-element
    :all-entities
@@ -2305,6 +2307,7 @@
    :selected-pc
    :selected-path
    :build-movement-path
+   :build-movement-path-pc
    :terrain-aabb-2d
    :find-entity-by-id
    :map-level
@@ -2336,8 +2339,10 @@
    :place-player-on-map
    :set-invalicable-cost-player-layer@
    :set-invalicable-cost-map-layer@
+   :set-invalicable-cost-pc-layer@
    :set-minimum-cost-map-layer@
    :set-minimum-cost-player-layer@
+   :set-minimum-cost-pc-layer@
    :set-map-state-type
    :set-map-state-id
    :set-map-state-occlusion
@@ -2361,9 +2366,12 @@
    :position-inside-room-p
    :calc-ai-entities-action-order
    :door-in-next-path-tile-p
+   :invalicable-in-next-path-tile-p
    :skydome-bottom-color
    :remove-entity-from-all-attack-pos
    :clean-characters-logs
+   :reset-costs-from-pc
+   :get-costs-from-pc@
    :increase-game-turn))
 
 (defpackage :game-event

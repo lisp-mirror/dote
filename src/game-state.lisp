@@ -269,6 +269,14 @@
     :documentation  "note  this  is  a multilayer  graph  and  hold  a
     reference  (i.e.  sum  the  values from)  to  costs-from-maps  and
     costs-from-players, see load-level:load-level.")
+   (movement-costs-pc
+    :accessor movement-costs-pc
+    :initarg  :movement-costs-pc
+    :initform nil
+    :type graph:tile-multilayers-graph
+    :documentation  "note  this  is  a multilayer  graph  and  hold  a
+    reference  (i.e.  sum  the  values from)  to  costs-from-maps  and
+    costs-from-players, see load-level:load-level.")
    (costs-from-map
     :accessor costs-from-map
     :initarg  :costs-from-map
@@ -279,6 +287,12 @@
     :initarg  :costs-from-players
     :initform nil
     :type matrix:matrix)
+   (costs-from-pc
+    :accessor costs-from-pc
+    :initarg  :costs-from-pc
+    :initform nil
+    :type matrix:matrix
+    :documentation  "Used only for build movement path of PC")
    (map-state
     :accessor map-state
     :initarg  :map-state
@@ -365,6 +379,8 @@
 
 (defgeneric build-movement-path (object start end &key other-costs-layer))
 
+(defgeneric build-movement-path-pc (object start end &key other-costs-layer))
+
 (defgeneric terrain-aabb-2d (object))
 
 (defgeneric terrain-aabb-2d (object))
@@ -407,11 +423,15 @@
 
 (defgeneric set-invalicable-cost-player-layer@ (object x y))
 
+(defgeneric set-invalicable-cost-pc-layer@ (object x y))
+
 (defgeneric set-invalicable-cost-map-layer@ (object x y))
 
 (defgeneric set-minimum-cost-map-layer@ (object x y))
 
 (defgeneric set-minimum-cost-player-layer@ (object x y))
+
+(defgeneric set-minmum-cost-pc-layer@ (object x y))
 
 (defgeneric set-map-state-type (object x y type))
 
@@ -457,9 +477,15 @@
 
 (defgeneric door-in-next-path-tile-p (object path idx-pos-maybe-door))
 
+(defgeneric invalicable-in-next-path-tile-p (object entity path idx))
+
 (defgeneric remove-entity-from-all-attack-pos (object entity))
 
 (defgeneric clean-characters-logs (object trigger))
+
+(defgeneric reset-costs-from-pc (object))
+
+(defgeneric get-costs-from-pc@ (object x y))
 
 (defmethod (setf selected-pc) (entity (object game-state))
   "set index-selected-pc as well"
@@ -601,6 +627,7 @@
              (cross (abs (d- (d* dx1 dy2) (d* dx2 dy1)))))
         (d+ cost (d* cross 0.05)))))
 
+;; TODO refactor
 (defmethod build-movement-path ((object game-state) start end &key (other-costs-layer '()))
   (with-accessors ((movement-costs movement-costs)) object
     (graph:with-pushed-cost-layer (movement-costs other-costs-layer)
@@ -615,6 +642,22 @@
                            raw-path)))
             (values path cost)))))))
 
+;; TODO refactor
+(defmethod build-movement-path-pc ((object game-state) start end &key (other-costs-layer '()))
+  (with-accessors ((movement-costs-pc movement-costs-pc)) object
+    (graph:with-pushed-cost-layer (movement-costs-pc other-costs-layer)
+      (let ((tree (graph:astar-search movement-costs-pc
+                                      (graph:node->node-id movement-costs-pc start)
+                                      (graph:node->node-id movement-costs-pc end)
+                                      :heuristic-cost-function (heuristic-manhattam))))
+        (multiple-value-bind (raw-path cost)
+            (graph:graph->path tree (graph:node->node-id movement-costs-pc end))
+          (let ((path (map 'vector
+                           #'(lambda (id) (graph:node-id->node movement-costs-pc id))
+                           raw-path)))
+            (values path cost)))))))
+
+;; TODO move to graph.lisp
 (defmethod build-movement-path ((object graph:tile-multilayers-graph) start end
                                 &key (other-costs-layer '()))
     (graph:with-pushed-cost-layer (object other-costs-layer)
@@ -869,6 +912,7 @@
               (add-to-ai-entities     object player)
               (set-tile-visited object player (elt pos-entity 0) (elt pos-entity 1))))))))
 
+;; TODO use a macro!
 (defmethod set-invalicable-cost-player-layer@ ((object game-state) x y)
   (with-accessors ((costs-from-players costs-from-players)) object
     (setf (matrix-elt costs-from-players y x) +invalicable-element-cost+)))
@@ -877,6 +921,10 @@
   (with-accessors ((costs-from-map costs-from-map)) object
     (setf (matrix-elt costs-from-map y x) +invalicable-element-cost+)))
 
+(defmethod set-invalicable-cost-pc-layer@ ((object game-state) x y)
+  (with-accessors ((costs-from-pc costs-from-pc)) object
+    (setf (matrix-elt costs-from-pc y x) +invalicable-element-cost+)))
+
 (defmethod set-minimum-cost-map-layer@ ((object game-state) x y)
   (with-accessors ((costs-from-map costs-from-map)) object
     (setf (matrix-elt costs-from-map y x) +open-terrain-cost+)))
@@ -884,6 +932,10 @@
 (defmethod set-minimum-cost-player-layer@ ((object game-state) x y)
   (with-accessors ((costs-from-players costs-from-players)) object
     (setf (matrix-elt costs-from-players y x) +minimum-player-layer-cost+)))
+
+(defmethod set-minimum-cost-pc-layer@ ((object game-state) x y)
+  (with-accessors ((costs-from-pc costs-from-pc)) object
+    (setf (matrix-elt costs-from-pc y x) +open-terrain-cost+)))
 
 (defmethod set-map-state-type ((object game-state) x y type)
   (setf (el-type (matrix:matrix-elt (map-state object) y x)) type))
@@ -1076,6 +1128,15 @@
               (entity-id-in-pos object x y)
               nil)))))
 
+(defmethod invalicable-in-next-path-tile-p ((object game-state) entity path idx)
+  (if (< (length path) (1+ idx)) ;; the path is too short
+      nil
+      (let ((pos (elt path idx)))
+        (2d-utils:displace-2d-vector (pos x y)
+          (let ((cost (get-cost object x y)))
+            (<= (character:current-movement-points (ghost entity))
+                cost))))))
+
 (defmethod skydome-bottom-color ((object game-state))
   (pixmap:skydome-bottom-color (game-hour object)))
 
@@ -1085,6 +1146,24 @@
 (defmethod clean-characters-logs ((object game-state) trigger)
   (loop-ai-entities object #'(lambda (a)
                                (ai-logger:clean-log (ghost a) trigger))))
+
+(defmethod reset-costs-from-pc ((object game-state))
+  (with-accessors ((costs-from-pc costs-from-pc)) object
+    (ploop-matrix (costs-from-pc x y)
+      (setf (matrix-elt costs-from-pc y x) +minimum-player-layer-cost+))
+    (flet ((set-cost (e)
+             (let ((pos (calculate-cost-position e)))
+               (set-invalicable-cost-pc-layer@ object (ivec2:ivec2-x pos) (ivec2:ivec2-y pos)))))
+      (loop-player-entities object #'(lambda (a)
+                                       (set-cost a)))
+      (loop-ai-entities     object #'(lambda (a)
+                                       ;; in this context it means: "is visible?"
+                                       (when (mesh:renderp a)
+                                         (set-cost a)))))))
+
+(defmethod get-costs-from-pc@ ((object game-state) x y)
+  (with-accessors ((costs-from-pc costs-from-pc)) object
+    (matrix-elt costs-from-pc y x)))
 
 (defun increase-game-turn (state)
   (let ((end-event   (make-instance 'game-event:end-turn
