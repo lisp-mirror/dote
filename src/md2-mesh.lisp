@@ -760,6 +760,7 @@
                                   (with-accessors ((damage-points damage-points)
                                                    (current-damage-points current-damage-points))
                                       ghost
+                                    (unset-death-status object)
                                     (setf current-damage-points
                                           (d (truncate (* damage-points
                                                           battle-utils:+recover-from-faint-dmg-fraction+))))))))
@@ -1167,6 +1168,24 @@
       (when (faction-player-p state id)
         (blackboard:remove-entity-from-all-attack-pos blackboard object))
       (particles:add-blood-death object (aabb-center aabb) +y-axe+)))))
+
+(defmethod unset-death-status ((object md2-mesh))
+  (with-accessors ((id               id)
+                   (ghost            ghost)
+                   (aabb             aabb)
+                   (state            state)
+                   (compiled-shaders compiled-shaders)
+                   (current-action   current-action)
+                   (cycle-animation  cycle-animation)
+                   (stop-animation   stop-animation)) object
+    (with-accessors ((blackboard blackboard:blackboard)) state
+    (with-accessors ((status                status)
+                     (current-damage-points current-damage-points)) ghost
+      (setf (status ghost) nil)
+      (setf current-action  :stand)
+      (set-animation object :stand :recalculate t)
+      (setf stop-animation nil)
+      (setf cycle-animation t)))))
 
 (defmethod set-attack-status ((object md2-mesh))
   (with-accessors ((ghost ghost)
@@ -1878,11 +1897,11 @@
                    (ghost ghost)) object
     (let ((anim-spec (assoc animation animation-table :test #'eql)))
       (when anim-spec
-        (setf starting-frame (second anim-spec)
-              end-frame (third anim-spec)
-              fps (fourth anim-spec)
+        (setf starting-frame         (second anim-spec)
+              end-frame              (third anim-spec)
+              fps                    (fourth anim-spec)
               current-animation-time 0.0
-              current-frame-offset 0)
+              current-frame-offset   0)
         (when recalculate
           (with-no-thinking (ghost)
             (calculate object 0.0)))))))

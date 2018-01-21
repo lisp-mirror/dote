@@ -812,6 +812,8 @@
 
 (defgeneric set-death-status (object))
 
+(defgeneric unset-death-status (object))
+
 (defgeneric set-attack-status (object))
 
 (defgeneric set-attack-spell-status (object))

@@ -3922,6 +3922,7 @@
    :traverse-recurrent-effects
    :process-postponed-messages
    :set-death-status
+   :unset-death-status
    :set-attack-status
    :set-attack-spell-status
    :set-spell-status

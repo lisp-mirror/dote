@@ -218,7 +218,7 @@
     :reader   triggered-p
     :writer (setf triggered))
    (end-of-life-callback
-    :initform nil
+    :initform (constantly t)
     :initarg  :end-of-life-callback
     :accessor end-of-life-callback)))
 
