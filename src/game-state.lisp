@@ -627,37 +627,27 @@
              (cross (abs (d- (d* dx1 dy2) (d* dx2 dy1)))))
         (d+ cost (d* cross 0.05)))))
 
-;; TODO refactor
+(defun %build-movement-path (graph start end other-costs-layer)
+  (graph:with-pushed-cost-layer (graph other-costs-layer)
+    (let ((tree (graph:astar-search graph
+                                    (graph:node->node-id graph start)
+                                    (graph:node->node-id graph end)
+                                    :heuristic-cost-function (heuristic-manhattam))))
+      (multiple-value-bind (raw-path cost)
+          (graph:graph->path tree (graph:node->node-id graph end))
+        (let ((path (map 'vector
+                         #'(lambda (id) (graph:node-id->node graph id))
+                         raw-path)))
+          (values path cost))))))
+
 (defmethod build-movement-path ((object game-state) start end &key (other-costs-layer '()))
   (with-accessors ((movement-costs movement-costs)) object
-    (graph:with-pushed-cost-layer (movement-costs other-costs-layer)
-      (let ((tree (graph:astar-search movement-costs
-                                      (graph:node->node-id movement-costs start)
-                                      (graph:node->node-id movement-costs end)
-                                      :heuristic-cost-function (heuristic-manhattam))))
-        (multiple-value-bind (raw-path cost)
-            (graph:graph->path tree (graph:node->node-id movement-costs end))
-          (let ((path (map 'vector
-                           #'(lambda (id) (graph:node-id->node movement-costs id))
-                           raw-path)))
-            (values path cost)))))))
+    (%build-movement-path movement-costs start end other-costs-layer)))
 
-;; TODO refactor
 (defmethod build-movement-path-pc ((object game-state) start end &key (other-costs-layer '()))
   (with-accessors ((movement-costs-pc movement-costs-pc)) object
-    (graph:with-pushed-cost-layer (movement-costs-pc other-costs-layer)
-      (let ((tree (graph:astar-search movement-costs-pc
-                                      (graph:node->node-id movement-costs-pc start)
-                                      (graph:node->node-id movement-costs-pc end)
-                                      :heuristic-cost-function (heuristic-manhattam))))
-        (multiple-value-bind (raw-path cost)
-            (graph:graph->path tree (graph:node->node-id movement-costs-pc end))
-          (let ((path (map 'vector
-                           #'(lambda (id) (graph:node-id->node movement-costs-pc id))
-                           raw-path)))
-            (values path cost)))))))
+    (%build-movement-path movement-costs-pc start end other-costs-layer)))
 
-;; TODO move to graph.lisp
 (defmethod build-movement-path ((object graph:tile-multilayers-graph) start end
                                 &key (other-costs-layer '()))
     (graph:with-pushed-cost-layer (object other-costs-layer)
@@ -912,30 +902,27 @@
               (add-to-ai-entities     object player)
               (set-tile-visited object player (elt pos-entity 0) (elt pos-entity 1))))))))
 
-;; TODO use a macro!
+(defmacro with-set-cost-matrix@ (state mat x y value)
+  `(with-accessors ((,mat ,mat)) ,state
+     (setf (matrix-elt ,mat ,y ,x) ,value)))
+
 (defmethod set-invalicable-cost-player-layer@ ((object game-state) x y)
-  (with-accessors ((costs-from-players costs-from-players)) object
-    (setf (matrix-elt costs-from-players y x) +invalicable-element-cost+)))
+  (with-set-cost-matrix@ object costs-from-players x y +invalicable-element-cost+))
 
 (defmethod set-invalicable-cost-map-layer@ ((object game-state) x y)
-  (with-accessors ((costs-from-map costs-from-map)) object
-    (setf (matrix-elt costs-from-map y x) +invalicable-element-cost+)))
+  (with-set-cost-matrix@ object costs-from-map x y +invalicable-element-cost+))
 
 (defmethod set-invalicable-cost-pc-layer@ ((object game-state) x y)
-  (with-accessors ((costs-from-pc costs-from-pc)) object
-    (setf (matrix-elt costs-from-pc y x) +invalicable-element-cost+)))
+  (with-set-cost-matrix@ object costs-from-pc x y +invalicable-element-cost+))
 
 (defmethod set-minimum-cost-map-layer@ ((object game-state) x y)
-  (with-accessors ((costs-from-map costs-from-map)) object
-    (setf (matrix-elt costs-from-map y x) +open-terrain-cost+)))
+  (with-set-cost-matrix@ object costs-from-map x y +open-terrain-cost+))
 
 (defmethod set-minimum-cost-player-layer@ ((object game-state) x y)
-  (with-accessors ((costs-from-players costs-from-players)) object
-    (setf (matrix-elt costs-from-players y x) +minimum-player-layer-cost+)))
+  (with-set-cost-matrix@ object costs-from-players x y +minimum-player-layer-cost+))
 
 (defmethod set-minimum-cost-pc-layer@ ((object game-state) x y)
-  (with-accessors ((costs-from-pc costs-from-pc)) object
-    (setf (matrix-elt costs-from-pc y x) +open-terrain-cost+)))
+  (with-set-cost-matrix@ object costs-from-pc x y +open-terrain-cost+))
 
 (defmethod set-map-state-type ((object game-state) x y type)
   (setf (el-type (matrix:matrix-elt (map-state object) y x)) type))
