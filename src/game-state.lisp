@@ -1135,18 +1135,23 @@
                                (ai-logger:clean-log (ghost a) trigger))))
 
 (defmethod reset-costs-from-pc ((object game-state))
-  (with-accessors ((costs-from-pc costs-from-pc)) object
+  (with-accessors ((costs-from-pc   costs-from-pc)
+                   (player-entities player-entities)
+                   (ai-entities     ai-entities)) object
     (ploop-matrix (costs-from-pc x y)
       (setf (matrix-elt costs-from-pc y x) +minimum-player-layer-cost+))
     (flet ((set-cost (e)
              (let ((pos (calculate-cost-position e)))
                (set-invalicable-cost-pc-layer@ object (ivec2:ivec2-x pos) (ivec2:ivec2-y pos)))))
-      (loop-player-entities object #'(lambda (a)
-                                       (set-cost a)))
-      (loop-ai-entities     object #'(lambda (a)
-                                       ;; in this context it means: "is visible?"
-                                       (when (mesh:renderp a)
-                                         (set-cost a)))))))
+      (map nil #'(lambda (a) (set-cost a)) player-entities)
+      (map nil #'(lambda (a)
+                   ;; in this  context it means: "is  visible?"  note:
+                   ;; faint character  *are* always visibles  but just
+                   ;; because this test has been choosen!
+                   (when (mesh:renderp a)
+                     (set-cost a)))
+           ai-entities)))
+  object)
 
 (defmethod get-costs-from-pc@ ((object game-state) x y)
   (with-accessors ((costs-from-pc costs-from-pc)) object

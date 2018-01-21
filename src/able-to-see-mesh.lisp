@@ -336,6 +336,10 @@ note: by default non labyrinth elements are ignored"
               (values ray-hitted entity-hitted)
               (values nil        entity-hitted)))))))
 
+(defmacro ensure-not-dead ((entity) &body body)
+  `(and (not (entity-dead-p ,entity))
+        ,@body))
+
 (defmethod other-visible-cone-p ((object able-to-see-mesh) (target triangle-mesh)
                                  &key
                                    (cone (visibility-cone object))
@@ -343,7 +347,8 @@ note: by default non labyrinth elements are ignored"
   "is target visible from object (cone test)?"
   (with-test-me-visible (object target me-visible-by-myself-p)
     (let ((center (aabb-center (actual-aabb-for-visibility target))))
-      (point-in-cone-p cone center))))
+      (ensure-not-dead (object)
+        (point-in-cone-p cone center)))))
 
 (defmethod other-visible-ray-p ((object able-to-see-mesh) (target triangle-mesh)
                                 &key
@@ -438,8 +443,9 @@ Also note that that ray is long as much as the height of the visibility cone of 
                              (return-from nonlabyrinth-element-hitted-by-ray (values ray d))
                              (return-from nonlabyrinth-element-hitted-by-ray nil))))
                       (t
-                       (when (insidep (actual-aabb-for-visibility d)
-                                      (ray-ends ray pos)) ;; O_O
+                       (when (ensure-not-dead (d)
+                               (insidep (actual-aabb-for-visibility d)
+                                        (ray-ends ray pos))) ;; O_O
                          (if (= (id d) (id target))
                              (return-from nonlabyrinth-element-hitted-by-ray (values ray d))
                              (when (not (= (id d) (id object)))
