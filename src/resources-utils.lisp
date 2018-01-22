@@ -56,14 +56,15 @@
       (t
        nil))))
 
-(defun find-in-shared-datadir (file)
+(defun find-in-shared-datadir (file &key (return-always-path nil))
   (let ((actual-path (join-with-srings* *directory-sep*
                                         (shared-datadir)
                                         (construct-path file))))
     ;;(break)
     (if (or
          (uiop:directory-exists-p actual-path)
-         (uiop:file-exists-p actual-path))
+         (uiop:file-exists-p actual-path)
+         return-always-path)
         actual-path
         nil)))
 
@@ -105,10 +106,16 @@
                                          :return-always-path t)))
     (fs:create-file home-path)))
 
-(defun get-resource-file (path resource &key (if-does-not-exists :error))
+(defun get-shared-resource-filename (path resource)
+  (find-in-shared-datadir (construct-resource-path resource path)
+                          :return-always-path t))
+
+(defun get-resource-file (path resource &key (if-does-not-exists nil))
   (let ((home-path   (find-in-home-datadir   (construct-resource-path resource path)))
         (shared-path (find-in-shared-datadir (construct-resource-path resource path))))
     (cond
+      ((null if-does-not-exists)
+       (or home-path shared-path))
       ((eq if-does-not-exists :create)
        (when (not home-path)
          (create-home-resource path resource)))

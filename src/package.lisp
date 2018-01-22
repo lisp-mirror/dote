@@ -538,6 +538,7 @@
    :init
    :home-datadir
    :shared-datadir
+   :get-shared-resource-filename
    :get-resource-file
    :get-resource-files
    :strip-off-resource-path))

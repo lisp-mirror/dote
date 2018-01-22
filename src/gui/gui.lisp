@@ -140,9 +140,9 @@
                                &rest texture-setup)
   (let ((fn-name   (alexandria:format-symbol t "~:@(setup-bg-~a~)" function-name)))
     `(progn
-       (defparameter ,parameter (res:get-resource-file ,file
-                                                       ,resource-name
-                                                       :if-does-not-exists :error))
+       (defparameter ,parameter (or (res:get-resource-file ,file ,resource-name
+                                                           :if-does-not-exists nil)
+                                    (res:get-shared-resource-filename ,file ,resource-name)))
        (alexandria:define-constant ,texture-handle
            ,(string-trim '(#\+) (symbol-name texture-handle))
          :test #'string=)
