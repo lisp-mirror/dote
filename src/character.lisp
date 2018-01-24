@@ -846,7 +846,7 @@
   (push item (character:inventory object)))
 
 (defmethod find-entity-by-id ((object player-character) id)
-  "Search everywhere"
+  "Search everywhere, in inventory!"
   (with-accessors ((elm        elm)
                    (shoes      shoes)
                    (armor      armor)

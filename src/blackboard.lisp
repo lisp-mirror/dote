@@ -69,7 +69,11 @@
   ((goal-pos
     :initform '()
     :initarg  :goal-pos
-    :accessor goal-pos)))
+    :accessor goal-pos)
+   (age
+    :initform 1
+    :initarg  :age
+    :accessor age)))
 
 (defgeneric max-attackers (object))
 
@@ -77,10 +81,10 @@
   (length (goal-pos object)))
 
 (defmethod print-object ((object def-target) stream)
-  (format stream "~a[~a]" (entity-id object) (goal-pos object)))
+  (format stream "~a[~a] age ~a" (entity-id object) (goal-pos object) (age object)))
 
-(defun make-defender-target (id &optional (goal-pos '()))
-  (make-instance 'def-target :entity-id id :goal-pos goal-pos))
+(defun make-defender-target (id age &optional (goal-pos '()))
+  (make-instance 'def-target :entity-id id :goal-pos goal-pos :age age))
 
 (defclass attacker (entity-taker)
   ((target-id
@@ -312,15 +316,37 @@
                 (setf (matrix-elt concerning-map y x) +concerning-tiles-min-value+))))))))
 
 (defun decrease-concerning-invalicables (game-state map)
-  (with-accessors ((blackboard blackboard:blackboard)) game-state
+  (with-accessors ((blackboard blackboard)) game-state
     (decrease-concerning game-state map)
     (update-concerning-invalicable blackboard)))
 
+(defun calc-def-target-age (state)
+  (truncate (* (level-difficult state) 1.5)))
+
+(defun remove-attack-starved (blackboard positions)
+  (with-accessors ((main-state main-state)) blackboard
+    (let* ((all-visibles-ids (all-player-id-visible-from-ai main-state))
+           (age-updated      (mapcar #'(lambda (a) ;; decrease age of non visible pos
+                                         (if (not (find (entity-id a) all-visibles-ids
+                                                        :test #'=))
+                                             ;; not visible
+                                             (setf (age a) (1- (age a)))
+                                             ;; visible
+                                             (progn
+                                               (setf (age a)
+                                                     (calc-def-target-age main-state))
+                                               (setf (goal-pos a) nil)))
+                                         a)
+                                     positions))
+           (not-starved      (remove-if #'(lambda (a) (<= (age a) 0)) ;; remove starved
+                                        age-updated)))
+      ;; remove death
+      (remove-if #'(lambda (a)
+                     (let ((ent (game-state:find-entity-by-id main-state (entity-id a))))
+                       (entity:entity-dead-p ent)))
+                 not-starved))))
+
 (defun update-all-attacking-pos (blackboard)
-  (setf (attack-enemy-melee-positions    blackboard) nil
-        (attack-enemy-pole-positions     blackboard) nil
-        (attack-enemy-bow-positions      blackboard) nil
-        (attack-enemy-crossbow-positions blackboard) nil)
   (update-pole-attackable-pos     blackboard)
   (update-melee-attackable-pos    blackboard)
   (update-bow-attackable-pos      blackboard)
@@ -1067,19 +1093,18 @@ values nil, i. e. the ray is not blocked"
                                                     :all-visibles-from-ai
                                                     all-visibles))))))
 
-(defun %update-attack-layer (blackboard djk-map update-fn)
-  (with-accessors ((main-state               main-state)
-                   (concerning-tiles         concerning-tiles)
-                   (attack-enemy-melee-layer attack-enemy-melee-layer)) blackboard
-    (with-accessors ((layer layer)) djk-map
-      (reset-attack-layer djk-map)
-      (let ((all-visibles (all-player-id-visible-from-ai main-state)))
-        (loop-player-entities main-state  #'(lambda (player)
-                                             (funcall update-fn
-                                                      blackboard
-                                                      player
-                                                      :all-visibles-from-ai
-                                                      all-visibles)))))))
+(defun %update-attack-layer (def-positions map)
+  (reset-attack-layer map)
+    (let ((layer (inmap:layer map)))
+      (loop for i in def-positions do
+           (loop for p in (goal-pos i) do
+                (displace-2d-vector (p x y)
+                  (setf (matrix-elt layer y x) +goal-tile-value+))))))
+
+(defmacro with-update-attackable-layer ((blackboard pos layer))
+  `(with-accessors ((,pos ,pos)
+                    (,layer ,layer)) ,blackboard
+     (%update-attack-layer ,pos ,layer)))
 
 (defun push-target-position (bag player target-pos)
   (let* ((id-player (id player))
@@ -1089,7 +1114,9 @@ values nil, i. e. the ray is not blocked"
                (let ((target-found (find-if #'(lambda (a) (= (entity-id a) id-player)) bag)))
                  (if target-found
                      (pushnew target-pos (goal-pos target-found) :test #'ivec2=)
-                     (push (make-defender-target id-player (list target-pos)) bag)))
+                     (push (make-defender-target id-player
+                                                 (calc-def-target-age game-state)
+                                                 (list target-pos)) bag)))
                bag)
              (%find-maybe-remove-pos (target-pos bag)
                "if nil it is safe to add the position"
@@ -1177,13 +1204,15 @@ values nil, i. e. the ray is not blocked"
                      +goal-tile-value+)))))))
 
 (defmethod update-attack-melee-layer ((object blackboard))
-  (with-accessors ((main-state main-state)
-                   (concerning-tiles concerning-tiles)
-                   (attack-enemy-melee-layer attack-enemy-melee-layer)) object
-    (%update-attack-layer object attack-enemy-melee-layer #'update-attack-melee-layer-player)))
+  (with-update-attackable-layer (object attack-enemy-melee-positions
+                                        attack-enemy-melee-layer))
+  object)
 
 (defmethod update-melee-attackable-pos ((object blackboard))
-  (%update-attack-pos object #'update-melee-attackable-pos-player))
+  (with-accessors ((attack-enemy-melee-positions attack-enemy-melee-positions)) object
+    (setf attack-enemy-melee-positions
+          (remove-attack-starved object attack-enemy-melee-positions))
+    (%update-attack-pos object #'update-melee-attackable-pos-player)))
 
 (defun increase-attack-goal-fading-weight (allied player goal-pos increase-threshold-dist)
   (let* ((allied-pos      (pos-entity-chunk->cost-pos (pos allied)))
@@ -1269,12 +1298,13 @@ values nil, i. e. the ray is not blocked"
                                               &key
                                                 (all-visibles-from-ai
                                                  (all-player-id-visible-from-ai (state player))))
-    (with-accessors ((attack-enemy-pole-positions attack-enemy-pole-positions)) object
-      (let ((valid-positions (%calc-pole-attack-position-player object
-                                                                player
-                                                                all-visibles-from-ai)))
+  (with-accessors ((attack-enemy-pole-positions attack-enemy-pole-positions)) object
+    ;;     all valid-tiles
+    (let ((valid-positions (%calc-pole-attack-position-player object
+                                                              player
+                                                              all-visibles-from-ai)))
         (setf attack-enemy-pole-positions
-              (%calc-new-goal-attack-position-bag player
+              (%calc-new-goal-attack-position-bag player ; add the new def-target objects
                                                   valid-positions
                                                   attack-enemy-pole-positions)))))
 
@@ -1411,33 +1441,37 @@ values nil, i. e. the ray is not blocked"
                                               (crossbow-range-for-attack-goal))))
 
 (defmethod update-bow-attackable-pos ((object blackboard))
-  (%update-attack-pos object #'update-bow-attackable-pos-player))
+  (with-accessors ((attack-enemy-bow-positions attack-enemy-bow-positions)) object
+    (setf attack-enemy-bow-positions
+          (remove-attack-starved object attack-enemy-bow-positions))
+    (%update-attack-pos object #'update-bow-attackable-pos-player)))
 
 (defmethod update-crossbow-attackable-pos ((object blackboard))
-  (%update-attack-pos object #'update-crossbow-attackable-pos-player))
+  (with-accessors ((attack-enemy-crossbow-positions attack-enemy-crossbow-positions)) object
+    (setf attack-enemy-crossbow-positions
+          (remove-attack-starved object attack-enemy-crossbow-positions))
+    (%update-attack-pos object #'update-crossbow-attackable-pos-player)))
 
 (defmethod update-attack-pole-layer ((object blackboard))
-  (with-accessors ((main-state main-state)
-                   (concerning-tiles concerning-tiles)
-                   (attack-enemy-pole-layer attack-enemy-pole-layer)) object
-    (%update-attack-layer object attack-enemy-pole-layer #'update-attack-pole-layer-player)))
+  (with-update-attackable-layer (object attack-enemy-pole-positions
+                                        attack-enemy-pole-layer))
+  object)
 
 (defmethod update-pole-attackable-pos ((object blackboard))
-  (%update-attack-pos object #'update-pole-attackable-pos-player))
+  (with-accessors ((attack-enemy-pole-positions attack-enemy-pole-positions)) object
+    (setf attack-enemy-pole-positions
+          (remove-attack-starved object attack-enemy-pole-positions))
+    (%update-attack-pos object #'update-pole-attackable-pos-player)))
 
 (defmethod update-attack-bow-layer ((object blackboard))
-  (with-accessors ((main-state main-state)
-                   (concerning-tiles concerning-tiles)
-                   (attack-enemy-bow-layer attack-enemy-bow-layer)) object
-    (%update-attack-layer object attack-enemy-bow-layer #'update-attack-bow-layer-player)))
+  (with-update-attackable-layer (object attack-enemy-bow-positions
+                                        attack-enemy-bow-layer))
+  object)
 
 (defmethod update-attack-crossbow-layer ((object blackboard))
-  (with-accessors ((main-state main-state)
-                   (concerning-tiles concerning-tiles)
-                   (attack-enemy-crossbow-layer attack-enemy-crossbow-layer)) object
-    (%update-attack-layer object
-                          attack-enemy-crossbow-layer
-                          #'update-attack-crossbow-layer-player)))
+  (with-update-attackable-layer (object attack-enemy-crossbow-positions
+                                        attack-enemy-crossbow-layer))
+  object)
 
 (defun 2d-tile-visible-p (game-state tile-position ray-stopper-fn)
   (loop-ai-entities game-state #'(lambda (entity)
