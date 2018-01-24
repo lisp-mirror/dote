@@ -443,15 +443,11 @@
 
 (defgeneric update-attack-melee-layer (object))
 
-(defgeneric update-attack-melee-layer-player (object player &key all-visibles-from-ai))
-
 (defgeneric update-melee-attackable-pos-player (object player &key all-visibles-from-ai))
 
 (defgeneric update-melee-attackable-pos (object))
 
 (defgeneric update-attack-pole-layer (object))
-
-(defgeneric update-attack-pole-layer-player (object player &key all-visibles-from-ai))
 
 (defgeneric update-pole-attackable-pos-player (object player &key all-visibles-from-ai))
 
@@ -465,11 +461,7 @@
 
 (defgeneric update-crossbow-attackable-pos-player (object player &key all-visibles-from-ai))
 
-(defgeneric update-attack-bow-layer-player (object player &key all-visibles-from-ai))
-
 (defgeneric update-bow-attackable-pos (object))
-
-(defgeneric update-attack-crossbow-layer-player (object player &key all-visibles-from-ai))
 
 (defgeneric update-crossbow-attackable-pos (object))
 
@@ -1188,21 +1180,6 @@ values nil, i. e. the ray is not blocked"
                                                   valid-positions
                                                   attack-enemy-melee-positions)))))
 
-(defmethod update-attack-melee-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
-                                             &key
-                                               (all-visibles-from-ai
-                                                (all-player-id-visible-from-ai (state player))))
-  (with-accessors ((attack-enemy-melee-layer     attack-enemy-melee-layer)
-                   (attack-enemy-melee-positions attack-enemy-melee-positions)) object
-    (with-accessors ((layer layer)) attack-enemy-melee-layer
-      (let ((valid-positions (%calc-melee-attack-position-player object
-                                                                 player
-                                                                 all-visibles-from-ai)))
-        (loop for position in valid-positions do
-             (displace-2d-vector (position x y)
-               (setf (matrix-elt layer y x)
-                     +goal-tile-value+)))))))
-
 (defmethod update-attack-melee-layer ((object blackboard))
   (with-update-attackable-layer (object attack-enemy-melee-positions
                                         attack-enemy-melee-layer))
@@ -1308,21 +1285,6 @@ values nil, i. e. the ray is not blocked"
                                                   valid-positions
                                                   attack-enemy-pole-positions)))))
 
-(defmethod update-attack-pole-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
-                                            &key
-                                              (all-visibles-from-ai
-                                               (all-player-id-visible-from-ai (state player))))
-    (with-accessors ((attack-enemy-pole-layer attack-enemy-pole-layer)
-                     (attack-enemy-pole-positions attack-enemy-pole-positions)) object
-      (with-accessors ((layer layer)) attack-enemy-pole-layer
-        (let ((valid-positions (%calc-pole-attack-position-player object
-                                                                  player
-                                                                  all-visibles-from-ai)))
-          (loop for position in valid-positions do
-               (displace-2d-vector (position x y)
-                 (setf (matrix-elt layer y x)
-                       +goal-tile-value+)))))))
-
 (defun long-range-weapon-goal-generator-fn (player range)
   (let ((level (level-difficult (state player))))
     #'(lambda (x y)
@@ -1399,18 +1361,6 @@ values nil, i. e. the ray is not blocked"
                                                      all-visibles-from-ai
                                                      (bow-range-for-attack-goal)))))
 
-(defmethod update-attack-bow-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
-                                             &key
-                                               (all-visibles-from-ai
-                                                (all-player-id-visible-from-ai (state player))))
-  (with-accessors ((attack-enemy-bow-layer attack-enemy-bow-layer)
-                   (attack-enemy-bow-positions attack-enemy-bow-positions)) object
-      (%update-attack-long-range-layer-player object
-                                              player
-                                              attack-enemy-bow-layer
-                                              all-visibles-from-ai
-                                              (bow-range-for-attack-goal))))
-
 (defun crossbow-range-for-attack-goal ()
   (floor (d/ (d +weapon-crossbow-range+) 2.0)))
 
@@ -1427,18 +1377,6 @@ values nil, i. e. the ray is not blocked"
                                                      attack-enemy-crossbow-positions
                                                      all-visibles-from-ai
                                                      (crossbow-range-for-attack-goal)))))
-
-(defmethod update-attack-crossbow-layer-player ((object blackboard) (player md2-mesh:md2-mesh)
-                                             &key
-                                               (all-visibles-from-ai
-                                                (all-player-id-visible-from-ai (state player))))
-  (with-accessors ((attack-enemy-crossbow-layer attack-enemy-crossbow-layer)
-                   (attack-enemy-crossbow-positions attack-enemy-crossbow-positions)) object
-      (%update-attack-long-range-layer-player object
-                                              player
-                                              attack-enemy-crossbow-layer
-                                              all-visibles-from-ai
-                                              (crossbow-range-for-attack-goal))))
 
 (defmethod update-bow-attackable-pos ((object blackboard))
   (with-accessors ((attack-enemy-bow-positions attack-enemy-bow-positions)) object
