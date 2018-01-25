@@ -463,7 +463,7 @@ path is removed
 
 (defgeneric fetch-defender-positions (object))
 
-(defgeneric fetch-attacker-positions (object))
+(defgeneric fetch-attacker-positions (object &key filter-fn))
 
 (defmethod fetch-defender-positions ((object blackboard:blackboard))
   (with-accessors ((main-state                      main-state)
@@ -480,7 +480,10 @@ path is removed
        +bow-key-tactics+      (%fetch attack-enemy-bow-positions)
        +crossbow-key-tactics+ (%fetch attack-enemy-crossbow-positions)))))
 
-(defmethod fetch-attacker-positions ((object blackboard))
+(defmethod fetch-attacker-positions ((object blackboard)
+                                     &key (filter-fn #'(lambda (a)
+                                                         (declare (ignore a))
+                                                         t)))
   (with-accessors ((main-state main-state)) object
     (let ((res '()))
       (flet ((fetch (entity)
@@ -494,7 +497,8 @@ path is removed
                          res)))))
         (loop-ai-entities main-state
              #'(lambda (ent)
-                 (when (character:pclass-of-useful-in-attack-tactic-p ent)
+                 (when (and (character:pclass-of-useful-in-attack-tactic-p ent)
+                            (funcall filter-fn ent))
                    (fetch ent))))
         res))))
 
@@ -531,27 +535,37 @@ path is removed
                                         attacker-id)))
           tactics))
 
+(defun filter-attack-pos-by-weapon (fn)
+  #'(lambda (ent)
+      (funcall fn (ghost ent))))
+
 (defun build-all-attack-tactics (blackboard reachable-fn-p)
-  (let* ((*reachable-p-fn* reachable-fn-p)
-         (all-defender-pos (fetch-defender-positions blackboard))
-         (all-attacker-pos (fetch-attacker-positions blackboard)))
-    (list
-     +pole-key-tactics+     (build-single-attack-tactics blackboard
-                                                         all-attacker-pos
-                                                         (getf all-defender-pos
-                                                               +pole-key-tactics+))
-     +melee-key-tactics+    (build-single-attack-tactics blackboard
-                                                         all-attacker-pos
-                                                         (getf all-defender-pos
-                                                               +melee-key-tactics+))
-     +bow-key-tactics+      (build-single-attack-tactics blackboard
-                                                         all-attacker-pos
-                                                         (getf all-defender-pos
-                                                               +bow-key-tactics+))
-     +crossbow-key-tactics+ (build-single-attack-tactics blackboard
-                                                         all-attacker-pos
-                                                         (getf all-defender-pos
-                                                               +crossbow-key-tactics+)))))
+  (flet ((%fetch-attack (fn)
+           (fetch-attacker-positions blackboard
+                                     :filter-fn (filter-attack-pos-by-weapon fn))))
+    (let* ((*reachable-p-fn* reachable-fn-p)
+           (all-defender-pos (fetch-defender-positions blackboard)))
+      (list
+       +pole-key-tactics+     (build-single-attack-tactics blackboard
+                                                           (%fetch-attack
+                                                            #'character:weapon-type-pole-p)
+                                                           (getf all-defender-pos
+                                                                 +pole-key-tactics+))
+       +melee-key-tactics+    (build-single-attack-tactics blackboard
+                                                           (%fetch-attack
+                                                            #'character:weapon-type-minimum-range-p)
+                                                           (getf all-defender-pos
+                                                                 +melee-key-tactics+))
+       +bow-key-tactics+      (build-single-attack-tactics blackboard
+                                                           (%fetch-attack
+                                                            #'character:weapon-type-bow-p)
+                                                           (getf all-defender-pos
+                                                                 +bow-key-tactics+))
+       +crossbow-key-tactics+ (build-single-attack-tactics blackboard
+                                                           (%fetch-attack
+                                                            #'character:weapon-type-crossbow-p)
+                                                           (getf all-defender-pos
+                                                                 +crossbow-key-tactics+))))))
 
 (defun entity-in-valid-attackable-pos-p (entity &key (use-ray-test-only t))
   "is the entity in a valid attacking position with the current weapon?"

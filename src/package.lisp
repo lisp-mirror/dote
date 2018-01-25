@@ -3362,6 +3362,7 @@
    :weapon-type-pole-p
    :weapon-type-bow-p
    :weapon-type-crossbow-p
+   :weapon-type-minimum-range-p
    :available-spells-list
    :available-spells-list-by-tag
    :castable-spells-list-by-tag

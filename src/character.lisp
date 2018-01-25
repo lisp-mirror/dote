@@ -708,6 +708,8 @@
 
 (defgeneric weapon-type-long-range (object))
 
+(defgeneric weapon-type-minimum-range-p (object))
+
 (defgeneric available-spells-list (object))
 
 (defgeneric available-spells-list-by-tag (object tag))
@@ -1024,6 +1026,10 @@
                            (t
                             nil)))))
     weapon-type))
+
+(defmethod weapon-type-minimum-range-p ((object player-character))
+  (or (weapon-type-edge-p    object)
+      (weapon-type-impact-p  object)))
 
 (defmacro gen-wear-weapon-of-type (&rest types)
   (with-gensyms (character weapon-type)

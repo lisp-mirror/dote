@@ -406,7 +406,10 @@
     (dbg "bow   ~a"      (attack-enemy-bow-positions      object))
     (dbg "crossbow   ~a" (attack-enemy-crossbow-positions object))
     (dbg "def-pos ~a"    (fetch-defender-positions        object))
-    (dbg "atk-pos ~a"    (fetch-attacker-positions        object))
+    (dbg "atk-pos(melee) ~a" (fetch-attacker-positions object
+                                                       :filter-fn
+                                                       (filter-attack-pos-by-weapon
+                                                         #'character:weapon-type-minimum-range-p)))
     nil))
 
 (defmethod game-event:on-game-event ((object blackboard)
