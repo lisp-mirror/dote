@@ -547,8 +547,8 @@
 (defmethod strategy-decision ((object blackboard))
   (declare (ignore object))
   ;; +retreat-strategy+)
-  +explore-strategy+)
-  ;; +attack-strategy+)
+  ;;+explore-strategy+)
+  +attack-strategy+)
   ;; +defend-strategy+)
 
 (defmethod set-tile-visited ((object blackboard) entity-visiting x y &key (update-infos nil))

@@ -1615,21 +1615,22 @@
 (defun %calculate-move-ai (state entity dt dir current-path end)
   (declare (ignore dt))
   (with-common-calc-move (entity end)
-    ;; open door if any and if closed
-    (let ((door-opened-p (manage-door-ai state entity current-path 1)))
-      (when (not door-opened-p) ;; door just opened the current plan has been interrupted
-        (if (gconf:config-smooth-movements)
-            (setf (pos entity)
-                  (vec+ (pos entity) (vec* dir +model-move-speed+)))
-            (setf (pos entity) end))))))
+    (if (game-state:invalicable-in-next-path-tile-p state entity current-path 1)
+        (%stop-movement entity :decrement-movement-points t :interrupt-plan-if-ai t)
+        ;; open door if any and if closed
+        (let ((door-opened-p (manage-door-ai state entity current-path 1)))
+          (when (not door-opened-p) ;; door just opened the current plan has been interrupted
+            (if (gconf:config-smooth-movements)
+                (setf (pos entity)
+                      (vec+ (pos entity) (vec* dir +model-move-speed+)))
+                (setf (pos entity) end)))))))
 
 (defun %calculate-move-pc (state entity dt dir current-path end)
   (declare (ignore dt))
   (with-accessors ((ghost ghost)) entity
     (with-common-calc-move (entity end)
       (if (game-state:invalicable-in-next-path-tile-p state entity current-path 1)
-          (progn
-            (%stop-movement entity :decrement-movement-points t))
+          (%stop-movement entity :decrement-movement-points t)
           (if (gconf:config-smooth-movements)
               (setf (pos entity)
                     (vec+ (pos entity) (vec* dir +model-move-speed+)))
