@@ -704,6 +704,8 @@
    :sequence->vec2
    :make-fresh-vec2
    :copy-vec2
+   :vec2-x
+   :vec2-y
    :vec2p
    :vec2*
    :vec2/
@@ -714,7 +716,10 @@
    :vec2-negate
    :vec2-length
    :vec2-normalize
-   :vec2-dot-product))
+   :vec2-dot-product
+   :vec2-perpendicular
+   :vec2-perp-dot-product
+   :vec2-rotate))
 
 (defpackage :uivec
   (:use :cl
@@ -1523,13 +1528,13 @@
 
 (defpackage :interpolation
   (:use :cl
+        :sb-cga
         :constants
-        :num-utils
-        :matrix)
-  (:import-from :sb-cga :vec :copy-vec :alloc-vec :vec+ :vec- :vec/)
+        :num-utils)
   (:export
    :catmul-roll-interpolation
-   :catmul-roll-interpolation*))
+   :catmul-roll-interpolation*
+   :db-interpolation))
 
 (defpackage :buffered-input-file
   (:use :cl :text-utils)

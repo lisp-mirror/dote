@@ -42,6 +42,14 @@
   (alexandria:define-constant +vec2-zero+ (vec2 0.0 0.0)
     :test #'vec2=)
 
+  (gen-vec-comp (vec2 x 0)
+                (declare (optimize (debug 0) (safety 0) (speed 3)))
+                (declare (vec2 v)))
+
+  (gen-vec-comp (vec2 y 1)
+                (declare (optimize (debug 0) (safety 0) (speed 3)))
+                (declare (vec2 v)))
+
   (definline sequence->vec2 (vec)
     (vec2 (num:d (elt vec 0))
           (num:d (elt vec 1))))
@@ -125,3 +133,25 @@
   (num:d+ (num:d* (elt a 0) (elt b 0)) (num:d* (elt a 1) (elt b 1))))
 
 (define-compiler-macros vec2-dot-product a b)
+
+(defun vec2-perpendicular (a)
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (declare (vec2 a))
+  (vec2 (num:d- (vec2-y a)) (vec2-x a)))
+
+(define-compiler-macros vec2-perpendicular a)
+
+(defun vec2-perp-dot-product (a b)
+  "|v1| |v2| sin(theta)"
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (declare (vec2 a))
+  (vec2-dot-product (vec2-perpendicular a) b))
+
+(define-compiler-macros vec2-perp-dot-product a b)
+
+(defun vec2-rotate (v angle)
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (declare (vec2 v))
+  (declare (num:desired-type angle))
+  (vec2 (num:d- (num:d* (vec2-x v) (num:dcos angle)) (num:d* (vec2-y v) (num:dsin angle)))
+        (num:d+ (num:d* (vec2-x v) (num:dsin angle)) (num:d* (vec2-y v) (num:dcos angle)))))

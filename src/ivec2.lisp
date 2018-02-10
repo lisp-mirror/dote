@@ -61,8 +61,9 @@
               (declare (optimize (debug 0) (safety 0) (speed 3)))
               (declare (ivec2 v)))
 
-(defun-inline-function sequence->ivec2 (seq)
-  (ivec2 (elt seq 0) (elt seq 1)))
+(defun sequence->ivec2 (seq &key (trunc-fn #'identity))
+  (ivec2 (funcall trunc-fn (elt seq 0))
+         (funcall trunc-fn (elt seq 1))))
 
 (defun-inline-function ivec2* (vec val)
   (declare (ivec2 vec))

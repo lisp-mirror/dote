@@ -2390,7 +2390,6 @@
   (test-clouds* 22.0 "clouds.tga")
   t)
 
-
 (alexandria:define-constant +starting-heading+  (vec2 1.0 0.0)         :test #'vec2=)
 
 (alexandria:define-constant +starting-position+ (vec2 0.0 0.0)         :test #'vec2=)
@@ -2423,6 +2422,18 @@
     :initarg  :pen-down
     :reader   pen-down-p
     :writer   (setf pen-down))))
+
+(defmethod clone ((object turtle))
+  (with-simple-clone (object 'turtle)))
+
+(defmethod clone-into ((from turtle) (to turtle))
+  (setf (heading        to) (copy-vec2 (heading      from))
+        (turtle-pos     to) (copy-vec2 (turtle-pos   from))
+        (turtle-color   to) (copy-vec4 (turtle-color from))
+        (line-thickness to) (line-thickness          from)
+        (antialiasp     to) (antialiasp              from)
+        (pen-down       to) (pen-down-p              from))
+  to)
 
 (defparameter *pixmap* nil)
 
