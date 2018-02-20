@@ -408,6 +408,7 @@
          (time 0.0))
     #'(lambda (dt)
         (let ((res (funcall interpolator (incf time dt))))
+          ;; TODO use "interpolation:cm-interpol->vec"
           (vec (matrix:matrix-elt res 0 0)
                (matrix:matrix-elt res 1 0)
                (matrix:matrix-elt res 2 0))))))

@@ -78,6 +78,7 @@
                (:file "pixmap")
                (:file "with-rgb-texture")
                (:file "procedural-pixmap-library")
+               (:file "2d-tree")
                (:file "fonts8x8")
                (:file "random-labyrinth")
                (:file "random-terrain")

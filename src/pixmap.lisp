@@ -469,7 +469,7 @@
   (the fixnum (* 4 (+ (the fixnum (* w y)) x))))
 
 (defmethod bits-pixel@ ((object pixmap) x y)
-  "Color is an ubvec5"
+  "Color is an ubvec4"
   (declare (optimize (safety 0) (debug 0) (speed 3)))
   (declare (fixnum x y))
   (with-accessors ((bits pixmap:bits) (width pixmap:width)) object
@@ -483,7 +483,7 @@
               (elt bits (+ 3 offset))))))
 
 (defmethod (setf bits-pixel@) (color (object pixmap) x y)
-  "Color is an ubvec5"
+  "Color is an ubvec4"
   (declare (optimize (safety 0) (debug 0) (speed 3)))
   (declare (fixnum x y))
   (declare (ubvec4 color))

@@ -121,6 +121,11 @@
   with normalmap-parameters      (ka 1.0 kd 1.0 ks 1.0 roughness 0.0 shininess 128.0) and
   with postprocess pixmap:voronoize
 
+  generate spline-tree           from function 2d-tree:make-spline-tree
+  with parameters ()
+  with tags ("int-decal")
+  with normalmap-parameters      (ka 1.0 kd 1.0 ks 1.0 roughness 0.0 shininess 128.0)
+
   generate wood-light-color      from function pixmap:wood-2
   with parameters (256)
   with tags ("door-level-1" "door-level-2" "door-level-3")

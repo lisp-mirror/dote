@@ -1017,6 +1017,7 @@
    :random-sub-aabb
    :random-sub-rect
    :line-eqn
+   :with-line-eqn
    :calc-quadrant
    :calc-octant
    :segment
@@ -1534,6 +1535,7 @@
   (:export
    :catmul-roll-interpolation
    :catmul-roll-interpolation*
+   :cm-interpol->vec
    :db-interpolation))
 
 (defpackage :buffered-input-file
@@ -1724,6 +1726,8 @@
    :ncopy-matrix-into-pixmap
    :save-pixmap
    :blit
+   :pblit
+   :blit-blend-lerp-fn
    :clone
    :with-rgba-texture
    :with-noise-rgba-texture
@@ -1825,6 +1829,31 @@
    :gen-bg-sky-colors
    :skydome-bottom-color
    :skydome))
+
+(defpackage :2d-tree
+  (:use :cl
+        :alexandria
+        :constants
+        :interfaces
+        :ivec2
+        :vec2
+        :vec4
+        :ivec4
+        :ubvec4
+        :num-utils
+        :interpolation
+        :misc-utils
+        :color-utils
+        :3d-utils
+        :2d-utils
+        :matrix
+        :noise
+        :pixmap)
+  (:import-from :sb-cga :vec :copy-vec :alloc-vec :vec-length :vec+ :vec- :vec/)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:shadow :load)
+  (:export
+   :make-spline-tree))
 
 ;; procedural content
 

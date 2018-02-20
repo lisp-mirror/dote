@@ -76,6 +76,11 @@
                               (elt vs segment)
                               (elt vs (1+ segment)))))))
 
+(defun cm-interpol->vec (m)
+  (vec (matrix:matrix-elt m 0 0)
+       (matrix:matrix-elt m 1 0)
+       (matrix:matrix-elt m 2 0)))
+
 ;;;; De Boor
 ;;;; "A Pratical Guide to Splines" 2001,  p. 90
 

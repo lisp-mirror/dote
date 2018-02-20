@@ -425,6 +425,16 @@
       (t
        (list (/ dy dx) (- (elt a 1) (* (/ dy dx) (elt a 0))) nil nil)))))
 
+(defmacro with-line-eqn (((a b &optional (thresh 1e-5)) m q parallel-to-x-p parallel-to-y-p)
+                         &body body)
+  (with-gensyms (res)
+    `(let* ((,res             (line-eqn ,a ,b ,thresh))
+            (,m               (elt ,res 0))
+            (,q               (elt ,res 1))
+            (,parallel-to-x-p (elt ,res 2))
+            (,parallel-to-y-p (elt ,res 3)))
+       ,@body)))
+
 (defmacro funcall-if-not-null (func val)
   (if (not (null func))
       `(funcall ,func ,val)
