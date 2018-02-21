@@ -522,14 +522,12 @@
               (when target-effect
                 (end-of-life-remove-from-action-scheduler target-effect
                                                           action-scheduler:particle-effect-action)
-                (with-enqueue-action
-                    (world action-scheduler:particle-effect-action)
+                (with-enqueue-action (world action-scheduler:particle-effect-action)
                   (world:push-entity world target-effect)))
               (with-enqueue-action-and-send-remove-after
                   (world action-scheduler:send-spell-fx-action)
                 (funcall (send-spell-events-fn spell attacker defender)))
-              (with-enqueue-action-and-send-remove-after
-                  (world action-scheduler:end-spell-action)
+              (with-enqueue-action-and-send-remove-after (world action-scheduler:end-spell-action)
                 (game-event:send-end-spell-event attacker))
                 (game-event:send-end-defend-from-spell-event defender))
             (%enqueue-tooltip attacker (_ "fail")))

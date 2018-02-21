@@ -2162,6 +2162,7 @@
    :+texture-tag-aerial-expl-particle+
    :+texture-tag-decals-explosion+
    :+texture-tag-explosion-debris+
+   :+texture-tag-increase-exp+
    :+texture-tag-decals-cure+
    :+texture-tag-decals-heal+
    :+texture-tag-cure-particle+

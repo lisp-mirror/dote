@@ -195,7 +195,7 @@
 
   generate particle              from function pixmap:blurred-circle
   with parameters (64 start-blur 0.3 end-blur 0.45)
-  with tags ("explosion-debris")
+  with tags ("explosion-debris" "increase-experience-particle")
   with normalmap-parameters      (ka 1.0 kd 1.0 ks .1 roughness 0.0 shininess 256.0)
 
   ;; Map generation

@@ -152,6 +152,9 @@
 (alexandria:define-constant +texture-tag-explosion-debris+     "explosion-debris"
   :test #'string=)
 
+(alexandria:define-constant +texture-tag-increase-exp+         "increase-experience-particle"
+   :test #'string= )
+
 (alexandria:define-constant +texture-tag-soil-terrain-level-1+ "soil-level-1" :test #'string= )
 
 (alexandria:define-constant +texture-tag-soil-terrain-level-2+ "soil-level-2" :test #'string= )

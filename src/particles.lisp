@@ -3214,19 +3214,20 @@
                                                                                      0.1
                                                                                      (d/ +pi/2+
                                                                                          5.0))
-                                        :mass-fn  (gaussian-distribution-fn 0.8 .2)
-                                        :life-fn  (gaussian-distribution-fn 2.0 0.2)
-                                        :delay-fn (gaussian-distribution-fn 5.00 1.50)
-                                        :gravity    (vec 0.0 -1.5 0.0)
-                                        :scaling-fn (%limited-scaling-clsr 0.1 10.0)
+                                        :mass-fn     (gaussian-distribution-fn 0.8 .2)
+                                        :life-fn     (gaussian-distribution-fn 2.0 0.2)
+                                        :delay-fn    (gaussian-distribution-fn 5.00 1.50)
+                                        :gravity     (vec 0.0 -1.5 0.0)
+                                        :scaling-fn  (%limited-scaling-clsr 0.1 10.0)
                                         :rotation-fn (%no-rotation-clrs)
-                                        :alpha-fn   (%smooth-alpha-fading-clsr 4.0)
-                                        :color-fn   (%smooth-gradient-color-clsr gradient 3.0)
-                                        :width  .2
-                                        :height .2
-                                        :particle-height-fn nil    ;; will use particle-width-fn
+                                        :alpha-fn    (%smooth-alpha-fading-clsr 4.0)
+                                        :color-fn    (%smooth-gradient-color-clsr gradient
+                                                                                  3.0)
+                                        :width       .2
+                                        :height      .2
+                                        :particle-height-fn nil ;; will use particle-width-fn
                                         :particle-width-fn  size-fn
-                                        :respawn t)))
+                                        :respawn            t)))
     (setf (global-life spark) 10)
     spark))
 
@@ -3277,3 +3278,103 @@
     (setf (noise-scale flame) 0.05)
     (setf (global-life flame) 400)
     flame))
+
+(defclass exp-increase-particles (minimal-particle-effect cluster-w-global-life end-life-trigger)
+  ())
+
+(defmethod initialize-instance :after ((object exp-increase-particles)
+                                       &key
+                                         (texture (texture:get-texture
+                                                   texture:+cross-particle+))
+                                         &allow-other-keys)
+  (setf (use-blending-p    object) t)
+  (setf (integrator-shader object) :blood-integrator)
+  (setf (texture-object    object) texture)
+  (action-scheduler:end-of-life-remove-from-action-scheduler object
+                                                             action-scheduler:particle-effect-action))
+
+(defmethod calculate :after ((object exp-increase-particles) dt)
+  ;;(misc:dbg "global-life ~a ~a" (global-life object) (removeable-from-world-p object))
+  (with-maybe-trigger-end-of-life (object (removeable-from-world-p object))))
+
+(defmethod render ((object exp-increase-particles) renderer)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((vbo vbo)
+                   (vao vao)
+                   (el-time el-time)
+                   (texture-object texture-object)
+                   (projection-matrix projection-matrix)
+                   (model-matrix model-matrix)
+                   (view-matrix view-matrix)
+                   (compiled-shaders compiled-shaders)
+                   (triangles triangles)) object
+    (declare (texture:texture texture-object))
+    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
+    (declare (list triangles vao vbo))
+    (when (> (length triangles) 0)
+      (with-camera-view-matrix (camera-vw-matrix renderer)
+        (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+          (with-depth-mask-disabled
+            (cl-gl-utils:with-blending
+              (gl:blend-equation :func-add)
+              (gl:blend-func :src-alpha :one)
+              (use-program compiled-shaders :particles-aerial-explosion)
+              (gl:active-texture :texture0)
+              (texture:bind-texture texture-object)
+              (uniformf  compiled-shaders :time  el-time)
+              (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+              (uniform-matrix compiled-shaders :modelview-matrix 4
+                              (vector (matrix* camera-vw-matrix
+                                               (elt view-matrix 0)
+                                               (elt model-matrix 0)))
+                              nil)
+              (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
+              (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+              (gl:draw-arrays :triangles 0 (f* 3 (length triangles)))
+              (gl:blend-equation :func-add))))))))
+
+;; (defmethod removeable-from-world-p ((object exp-increase-particles))
+;;   (< (global-life object) 0))
+
+(defun make-exp-increase (pos compiled-shaders
+                          &key
+                            (radius +terrain-chunk-tile-size+)
+                            (num-particles 200))
+  (flet ((position-gen-fn ()
+           #'(lambda (a)
+               (declare (ignore a))
+               (let* ((angle         (lcg-next-in-range 0.0 +2pi+))
+                      (actual-radius (gaussian-probability 0.1 radius))
+                      (start         (vec actual-radius 0.0 0.0)))
+                 (transform-point start (rotate-around +y-axe+ angle))))))
+    (let* ((texture   (random-elt (list-of-texture-by-tag +texture-tag-increase-exp+)))
+           (gradient  (color-utils:make-gradient
+                       (color-utils:make-gradient-color 0.0 §cffffffff)
+                       (color-utils:make-gradient-color 0.5 §cffffffff)
+                       (color-utils:make-gradient-color 1.0 §cffff00ff)))
+           (particles (make-particles-cluster 'exp-increase-particles
+                                              num-particles
+                                              compiled-shaders
+                                              :remove-starting-delay nil
+                                              :texture               texture
+                                              :pos                   pos
+                                              :min-y                 -50.0
+                                              :particle-pos-fn (position-gen-fn)
+                                              :v0-fn           (gaussian-velocity-constant-fn
+                                                                +y-axe+
+                                                                5.0)
+                                              :mass-fn   #'(lambda () 1.0)
+                                              :life-fn   (gaussian-distribution-fn .2 0.1)
+                                              :delay-fn
+                                              (constant-delay-distribution-fn 0.001)
+                                              :gravity   (vec 0.0 40.0 0.0)
+                                              :color-fn
+                                              (%smooth-gradient-color-clsr gradient 0.1)
+                                              :alpha-fn  (%smooth-alpha-fading-clsr .5)
+                                              :width               .05
+                                              :height              .8
+                                              :particle-height-fn nil
+                                              :particle-width-fn  nil
+                                              :respawn t)))
+      (setf (global-life particles) 50)
+      particles)))
