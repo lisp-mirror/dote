@@ -50,6 +50,8 @@
 
 (define-constant +tooltip-revive-char+          "$"                   :test #'string=)
 
+(define-constant +tooltip-exp-char+             "'"                   :test #'string=)
+
 (define-constant +tooltip-surprise-attack-char+ "???"                 :test #'string=)
 
 (define-constant +impostor-default-size+        512                   :test #'=)
