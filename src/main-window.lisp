@@ -325,11 +325,7 @@
               (misc:dbg "n ~a" *near*)
               (incf *near* -.1))
             (when (string= text "p")
-              (action-scheduler:with-enqueue-action
-                  (world action-scheduler:particle-effect-action)
-                (world:push-entity world
-                                   (particles::make-exp-increase (vec 1.0 +zero-height+ 1.0)
-                                                                 (compiled-shaders object)))))
+              (particles:add-exp-increase *placeholder* 100))
             (when (string= text "D")
               (world:apply-tremor-0 world))
             (when (string= text "L")

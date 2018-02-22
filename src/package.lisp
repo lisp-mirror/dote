@@ -4592,6 +4592,7 @@
    :+tooltip-immune-berserk-char+
    :+tooltip-heal-char+
    :+tooltip-revive-char+
+   :+tooltip-exp-char+
    :+tooltip-surprise-attack-char+
    :tooltip
    :activate-tooltip
@@ -4836,7 +4837,8 @@
    :add-hit-0-effect-billboard
    :add-hit-1-effect-billboard
    :add-hit-2-effect-billboard
-   :add-hit-3-effect-billboard))
+   :add-hit-3-effect-billboard
+   :add-exp-increase))
 
 (defpackage :arrows
   (:use :cl

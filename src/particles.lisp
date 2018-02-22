@@ -1938,9 +1938,6 @@
   (action-scheduler:end-of-life-remove-from-action-scheduler object
                                                              action-scheduler:particle-effect-action))
 
-    ;; (setf (end-of-life-callback object)
-    ;;       #'(lambda () (world:activate-all-tooltips world)))))
-
 (defmethod calculate :after ((object aerial-explosion) dt)
   (with-maybe-trigger-end-of-life (object (removeable-from-world-p object))))
 
@@ -3333,13 +3330,16 @@
               (gl:draw-arrays :triangles 0 (f* 3 (length triangles)))
               (gl:blend-equation :func-add))))))))
 
-;; (defmethod removeable-from-world-p ((object exp-increase-particles))
-;;   (< (global-life object) 0))
+(defun apply-exp-inc-tooltip (entity value)
+  (billboard:apply-tooltip entity
+                           (format nil "~a~a" billboard:+tooltip-exp-char+ value)
+                           :color     billboard:+blessing-color+
+                           :font-type gui:+tooltip-font-handle+))
 
-(defun make-exp-increase (pos compiled-shaders
-                          &key
-                            (radius +terrain-chunk-tile-size+)
-                            (num-particles 200))
+(defun make-exp-increase-particles (pos compiled-shaders
+                                    &key
+                                      (radius +terrain-chunk-tile-size+)
+                                      (num-particles 200))
   (flet ((position-gen-fn ()
            #'(lambda (a)
                (declare (ignore a))
@@ -3378,3 +3378,12 @@
                                               :respawn t)))
       (setf (global-life particles) 50)
       particles)))
+
+(defun add-exp-increase (entity value)
+  (if (> value 10)
+      (game-state:with-world (world (state entity))
+        (let ((sparks (make-exp-increase-particles (pos entity) (compiled-shaders entity))))
+          (action-scheduler:with-enqueue-action (world action-scheduler:particle-effect-action)
+            (world:push-entity world sparks)
+            (apply-exp-inc-tooltip entity value))))
+      (apply-exp-inc-tooltip entity value)))
