@@ -138,7 +138,7 @@
 (defmacro gen-simple-bg-setup (function-name texture-handle parameter file
                                resource-name
                                &rest texture-setup)
-  (let ((fn-name   (alexandria:format-symbol t "~:@(setup-bg-~a~)" function-name)))
+  (let ((fn-name (alexandria:format-symbol t "~:@(setup-bg-~a~)" function-name)))
     `(progn
        (defparameter ,parameter (or (res:get-resource-file ,file ,resource-name
                                                            :if-does-not-exists nil)

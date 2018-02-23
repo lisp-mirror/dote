@@ -90,3 +90,8 @@
   (:documentation "Error when aabb is invalid"))
 
 (define-condition invalid-texture (conditions:text-error) ())
+
+(defmacro with-default-on-error ((default) &body body)
+  `(handler-case
+      (progn ,@body)
+    (error () ,default)))

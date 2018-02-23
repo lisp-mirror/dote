@@ -48,6 +48,18 @@
                    (main-window-button-h))))
     (adjust-window-h frame)))
 
+(defun standard-text-entry-w ()
+  (input-text-w *reference-sizes*))
+
+(defun  standard-text-entry-h ()
+  (input-text-h *reference-sizes*))
+
+(defun standard-label-entry-w ()
+  (input-text-w *reference-sizes*))
+
+(defun standard-label-entry-h ()
+  (input-text-h *reference-sizes*))
+
 (defun keyboard-text-entry-size ()
   (d/ (small-square-button-size *reference-sizes*) 2.0))
 
@@ -55,6 +67,14 @@
   (make-instance 'conf-char-field
                  :width  (keyboard-text-entry-size)
                  :height (keyboard-text-entry-size)
+                 :x      x
+                 :y      y
+                 :label  default))
+
+(defun make-standard-text-entry (x y default)
+  (make-instance 'text-field
+                 :width  (standard-text-entry-w)
+                 :height (standard-text-entry-h)
                  :x      x
                  :y      y
                  :label  default))
@@ -322,7 +342,7 @@
     (adjust-window-w frame)))
 
 (defun appearance-window-h ()
-  (let ((frame (d+ (appearance-button-h)
+  (let ((frame (d+ (d* 2.0 (appearance-button-h))
                    (spacing *reference-sizes*))))
     (adjust-window-h frame)))
 
@@ -363,6 +383,81 @@
                           :width  (appearance-window-w)
                           :height (appearance-window-h)
                           :label  (_ "Appearance Configuration"))))
+    (add-window-button-cb-hide-remove w)
+    (setf (compiled-shaders w) compiled-shaders)
+    w))
+
+(defun gui-window-w ()
+  (let ((frame (main-window-w)))
+    (adjust-window-w frame)))
+
+(defun gui-window-h ()
+  (let ((frame (d+ (gui-button-h)
+                   (standard-text-entry-h)
+                   (standard-label-entry-h)
+                   (spacing *reference-sizes*))))
+    (adjust-window-h frame)))
+
+(defun gui-button-w ()
+  (square-button-size *reference-sizes*))
+
+(defun gui-button-h ()
+  (d* 2.0 (checkbutton-h *reference-sizes*)))
+
+(defun save-config-camera-fp-scaling-movement (w e)
+  (declare (ignore e))
+  (with-parent-widget (window) w
+    (let* ((text-entry (input-camera-fp-scaling-movement window))
+           (value      (conditions:with-default-on-error (1.0)
+                         (parse-number->desired (label text-entry)))))
+      (gconf:set-camera-fp-scaling-movement value)
+      (gconf:dump))))
+
+(defclass gui-window (window)
+  ((l-scale-fp-speed
+    :initform (make-instance 'widget:simple-label
+                             :label     (_ "Speed for \"look around\" camera.")
+                             :font-size (standard-font-size *reference-sizes*)
+                             :width     (main-window-w)
+                             :x         0.0
+                             :y         0.0)
+
+    :initarg  :l-scale-fp-speed
+    :accessor l-scale-fp-speed)
+   (input-camera-fp-scaling-movement
+    :initform (make-standard-text-entry 0.0
+                                        (standard-label-entry-h)
+                                        (to-s (gconf:config-camera-fp-scaling-movement)))
+    :initarg  :input-camera-fp-scaling-movement
+    :accessor input-camera-fp-scaling-movement)
+   (b-save
+    :initform (make-instance 'button
+                             :width    (gui-button-w)
+                             :height   (gui-button-h)
+                             :x        0.0
+                             :y        (d+ (standard-label-entry-h)
+                                           (standard-text-entry-h)
+                                           (spacing *reference-sizes*))
+                             :callback #'save-config-camera-fp-scaling-movement
+                             :label    (_ "Save"))
+    :initarg :b-save
+    :accessor b-save)))
+
+(defmethod initialize-instance :after ((object gui-window) &key &allow-other-keys)
+  (with-accessors ((l-scale-fp-speed                 l-scale-fp-speed)
+                   (input-camera-fp-scaling-movement input-camera-fp-scaling-movement)
+                   (b-save                           b-save)) object
+    (add-child object l-scale-fp-speed)
+    (add-child object input-camera-fp-scaling-movement)
+    (add-child object b-save)))
+
+(defun make-gui-window (compiled-shaders)
+  (let ((w (make-instance 'gui-window
+                          :x      (main-window-w)
+                          :y      (d (- *window-h* (gui-window-h)))
+                          :width  (gui-window-w)
+                          :height (gui-window-h)
+                          :label  (_ "GUI Configuration"))))
     (add-window-button-cb-hide-remove w)
     (setf (compiled-shaders w) compiled-shaders)
     w))
@@ -447,6 +542,10 @@
   (declare (ignore event))
   (%open-conf-window widget #'make-appearance-window))
 
+(defun open-gui-window-cb (widget event)
+  (declare (ignore event))
+  (%open-conf-window widget #'make-gui-window))
+
 (defun open-debug-window-cb (widget event)
   (declare (ignore event))
     (%open-conf-window widget #'make-debug-window))
@@ -473,6 +572,17 @@
                              :label (_ "Appearance"))
     :initarg :b-appearance
     :accessor b-appearance)
+   (b-gui
+    :initform (make-instance 'button
+                             :width    (main-window-button-w)
+                             :height   (main-window-button-h)
+                             :x        0.0
+                             :y        (d+ (d* 2.0 (main-window-button-h))
+                                           (spacing *reference-sizes*))
+                             :callback #'open-gui-window-cb
+                             :label (_ "GUI"))
+    :initarg  b-gui
+    :accessor b-gui)
    #+debug-mode
    (b-debug
     :initform (make-instance 'button
@@ -487,9 +597,11 @@
     :accessor b-debug)))
 
 (defmethod initialize-instance :after ((object main-window) &key &allow-other-keys)
-  (with-accessors ((b-keyboard b-keyboard)
+  (with-accessors ((b-keyboard   b-keyboard)
+                   (b-gui        b-gui)
                    (b-appearance b-appearance)) object
     (add-child object b-keyboard)
+    (add-child object b-gui)
     (add-child object b-appearance)
     #+debug-mode (add-child object (b-debug object))))
 

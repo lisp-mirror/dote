@@ -203,7 +203,8 @@
    :xml-no-matching-tag
    :xml-no-such-attribute
    :invalid-aabb-error
-   :invalid-texture))
+   :invalid-texture
+   :with-default-on-error))
 
 (defpackage :parallel-utils
   (:use :cl)
@@ -512,6 +513,7 @@
    :uchar-length
    :utf8-encoded-p
    :clean-unprintable-chars
+   :to-s
    :strcat
    :join-with-srings
    :join-with-srings*
@@ -1664,6 +1666,7 @@
    :config-prev-character
    :config-smooth-movements
    :config-inhibit-planner
+   :config-camera-fp-scaling-movement
    :set-forward
    :set-back
    :set-left
@@ -1678,6 +1681,7 @@
    :set-prev-character
    :set-smooth-movements
    :set-inhibit-planner
+   :set-camera-fp-scaling-movement
    :*game-config*
    :dump
    :init

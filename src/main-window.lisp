@@ -325,7 +325,10 @@
               (misc:dbg "n ~a" *near*)
               (incf *near* -.1))
             (when (string= text "p")
-              (particles:add-exp-increase *placeholder* 100))
+              (world:push-entity world
+                                 (particles:make-fire-dart-level-2 (entity:pos *placeholder*)
+                                                                   +y-axe+
+                                                                   (compiled-shaders object))))
             (when (string= text "D")
               (world:apply-tremor-0 world))
             (when (string= text "L")
@@ -596,12 +599,9 @@
             (when (not (widget:on-mouse-dragged (world:gui world) gui-event))
               (cond
                 ((eq (camera:mode (world:camera world)) :fp)
-                 (multiple-value-bind (w h)
-                     (sdl2:get-window-size (sdl-window object))
-                   (sdl2:warp-mouse-in-window (sdl-window object) (/ w 2) (/ h 2))
-                   (let ((offset (vec2:vec2 (d- (d/ (desired w) 2.0) (desired x))
-                                            (d- (d/ (desired h) 2.0) (desired y)))))
-                     (camera:reorient-fp-camera (world:camera world) offset)))))))
+                 (let ((offset (vec2* (vec2-negate (vec2 (d xr) (d yr)))
+                                      (gconf:config-camera-fp-scaling-movement))))
+                   (camera:reorient-fp-camera (world:camera world) offset))))))
           ;; no dragging
           (with-accept-input (object)
             (if (not selected-pc)

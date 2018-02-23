@@ -54,6 +54,9 @@
                   (return-from utf8-encoded-p nil))))
          t)))))
 
+(defun to-s (v)
+  (format nil "~a" v))
+
 (defun clean-unprintable-chars (string)
   (cl-ppcre:scan-to-strings "[\\p{Letter}\\p{Number}\\p{Punctuation}]+" string))
 

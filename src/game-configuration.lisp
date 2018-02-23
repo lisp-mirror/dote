@@ -96,7 +96,11 @@
    (inhibit-planner
     :initform t
     :initarg  :inhibit-planner
-    :accessor inhibit-planner)))
+    :accessor inhibit-planner)
+   (camera-fp-scaling-movement
+    :initform 2.0
+    :initarg  :camera-fp-scaling-movement
+    :accessor camera-fp-scaling-movement)))
 
 (defmethod marshal:class-persistant-slots ((object game-config))
     '(forward
@@ -112,7 +116,8 @@
       next-character
       prev-character
       smooth-movements
-      inhibit-planner))
+      inhibit-planner
+      camera-fp-scaling-movement))
 
 (defun make-default-config ()
   (make-instance 'game-config))
@@ -192,3 +197,5 @@
 (gen-acc-fn smooth-movements)
 
 (gen-acc-fn inhibit-planner)
+
+(gen-acc-fn camera-fp-scaling-movement)
