@@ -1161,7 +1161,7 @@
             ((gui-printable-p (char-event event))
              (setf (label object) (strcat old-label (string (char-event event)))))
             (old-label
-             (setf (label object) (subseq old-label 0 (f- (length old-label) 1)))))
+             (setf (label object) (subseq old-label 0 (max 0 (f- (length old-label) 1))))))
           t)
       nil)))
 

@@ -342,7 +342,7 @@
     (adjust-window-w frame)))
 
 (defun appearance-window-h ()
-  (let ((frame (d+ (d* 2.0 (appearance-button-h))
+  (let ((frame (d+ (appearance-button-h)
                    (spacing *reference-sizes*))))
     (adjust-window-h frame)))
 
