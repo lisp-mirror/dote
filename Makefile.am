@@ -261,6 +261,7 @@ data/shaders/euler-integration.inc.vert.glsl             \
 data/shaders/fog.frag.inc                                \
 data/shaders/fog.vert.inc                                \
 data/shaders/generic-particle.vert                       \
+data/shaders/generic-particle-cyl.vert                   \
 data/shaders/gui-fonts.frag                              \
 data/shaders/gui.frag                                    \
 data/shaders/gui-naked-button.frag                       \

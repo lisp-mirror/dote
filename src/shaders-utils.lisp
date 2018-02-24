@@ -630,6 +630,14 @@ active program (set by sdk2.kit:use-program)."
                 :time)
       (:shaders :vertex-shader   ,(get-shader-source "generic-particle.vert")
                 :fragment-shader ,(get-shader-source "aerial-explosion.frag")))
+    (:particles-up-spark
+     (:uniforms :modelview-matrix
+                :proj-matrix
+                :texture-object
+                :time)
+      (:shaders :vertex-shader   ,(get-shader-source "generic-particle-cyl.vert")
+                :fragment-shader ,(get-shader-source "aerial-explosion.frag")))
+
     ;;;;; transform feedback
     (:array-lerp
      (:uniforms :w)

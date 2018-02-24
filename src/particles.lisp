@@ -3315,7 +3315,7 @@
             (cl-gl-utils:with-blending
               (gl:blend-equation :func-add)
               (gl:blend-func :src-alpha :one)
-              (use-program compiled-shaders :particles-aerial-explosion)
+              (use-program compiled-shaders :particles-up-spark)
               (gl:active-texture :texture0)
               (texture:bind-texture texture-object)
               (uniformf  compiled-shaders :time  el-time)
@@ -3349,7 +3349,7 @@
                  (transform-point start (rotate-around +y-axe+ angle))))))
     (let* ((texture   (random-elt (list-of-texture-by-tag +texture-tag-increase-exp+)))
            (gradient  (color-utils:make-gradient
-                       (color-utils:make-gradient-color 0.0 §cffffffff)
+                       (color-utils:make-gradient-color 0.0 §cff00ffff)
                        (color-utils:make-gradient-color 0.5 §cffffffff)
                        (color-utils:make-gradient-color 1.0 §cffff00ff)))
            (particles (make-particles-cluster 'exp-increase-particles

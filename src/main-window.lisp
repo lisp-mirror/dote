@@ -325,10 +325,7 @@
               (misc:dbg "n ~a" *near*)
               (incf *near* -.1))
             (when (string= text "p")
-              (world:push-entity world
-                                 (particles:make-fire-dart-level-2 (entity:pos *placeholder*)
-                                                                   +y-axe+
-                                                                   (compiled-shaders object))))
+              (particles:add-exp-increase *placeholder* 100))
             (when (string= text "D")
               (world:apply-tremor-0 world))
             (when (string= text "L")

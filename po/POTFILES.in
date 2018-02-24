@@ -51,7 +51,6 @@ src/keyboard-world-navigation.lisp
 src/labyrinth-mesh.lisp
 src/level-config.lisp
 src/load-level.lisp
-src/main-window-noshare.lisp
 src/main-window.lisp
 src/map-utils.lisp
 src/matrix.lisp

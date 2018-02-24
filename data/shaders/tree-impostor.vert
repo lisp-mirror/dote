@@ -11,7 +11,7 @@ uniform float time;
 
 out vec2 frag_text_coord;
 
-%include cyl-billboard.vert.inc.glsl
+%include billboard-cyl.vert.inc.glsl
 
 void main () {
 
