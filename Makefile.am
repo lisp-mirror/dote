@@ -256,7 +256,7 @@ data/shaders/building-floor-ads.vert                     \
 data/shaders/building-floor-bump.frag                    \
 data/shaders/building-floor-bump.vert                    \
 data/shaders/bump.vert                                   \
-data/shaders/cyl-billboard.vert.inc.glsl                 \
+data/shaders/billboard-cyl.vert.inc.glsl                 \
 data/shaders/euler-integration.inc.vert.glsl             \
 data/shaders/fog.frag.inc                                \
 data/shaders/fog.vert.inc                                \
@@ -1666,7 +1666,7 @@ data/gui/default/message-16-help.tga                     \
 data/gui/default/message-16-info.tga                     \
 data/gui/default/message-16-ok.tga                       \
 data/gui/default/message-16-warning.tga                  \
-data/gui/default/loading-spin-pixelart.tga               \
+data/gui/default/elaborating-plan-spinner.tga            \
 data/gui/default/burn-mask.tga                           \
 data/spells/heal-1.lisp                                  \
 data/spells/heal-2.lisp                                  \
