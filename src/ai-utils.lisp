@@ -265,7 +265,7 @@ Return the target entity, the best attack-spell available and the position to re
                                                     &key
                                                       (available-spells
                                                        (available-damage-spells launcher-entity)))
-  "can the laucher *move* and attack with an attack-spell?
+  "can the laucher *move* and attack with a damage-spell?
 Return the entity attackable, the best attack-spell available and the position to reach."
   (with-slots-for-reasoning (launcher-entity state ghost blackboard)
     (with-predictable-for-turn-random-sequence (state)

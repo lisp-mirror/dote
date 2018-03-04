@@ -224,6 +224,7 @@
    :char->code
    :swap
    :dump-hash-table
+   :with-messages-start-end
    :safe-random
    :split-into-sublist
    :group-by

@@ -41,6 +41,20 @@
 (defun dump-hashtable (table)
   (maphash (lambda (k v) (misc:dbg "~s -> ~s" k v)) table))
 
+(defmacro with-messages-start-end ((start-message end-message
+                                                  &key (print-only-if-debug-mode t)) &body body)
+  (alexandria:with-gensyms (res)
+    (let* ((debug-p     (find :debug-mode *features*))
+           (print-msg-p (or (not print-only-if-debug-mode)
+                            debug-p)))
+      `(progn
+         ,(when print-msg-p
+            `(dbg ,start-message))
+         (let ((,res (progn ,@body)))
+           ,(when print-msg-p
+              `(dbg ,end-message))
+           ,res)))))
+
 ;; macro utils
 
 (defmacro format-fn-symbol (package format &rest format-args)

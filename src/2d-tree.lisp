@@ -32,7 +32,7 @@
     :initarg  :tropism-scale
     :accessor tropism-scale)
    (branch-length
-    :initform 0.1
+    :initform 0.095
     :initarg  :branch-length
     :accessor branch-length)
    (branch-width
@@ -262,25 +262,25 @@
                  (vec new-x new-y 0.0))))))))
 
 (defun default-nodes-perturbation (pixmap)
-  (let ((size (width pixmap))
-        (offset-low   350.0)
-        (offset-hight 500.0)
-        (offset-0      40.0))
+  (let ((size         (width pixmap))
+        (offset-low   233.0)
+        (offset-hight 333.0)
+        (offset-0      26.7))
     (flet ((sparse-tree-p (a)
-             (and (> (vec-x a) (d (* size 1/2)))
-                  (> (vec-y a) (d (* size 1/2))))))
+             (and (<= (vec-x a) (d (* size 1/3)))
+                  (<= (vec-y a) (d (* size 1/3))))))
     #'(lambda (path)
         (loop for i from 0 below (length path) do
              (let ((a (elt path i)))
                (cond
                  ((= i 0)
-                  (perturbate-node-gaussian a (elt path 1) 0 path (/ size offset-0)))
+                  (perturbate-node-gaussian a (elt path (1+ i)) i path (/ size offset-0)))
                  ((= i (1- (length path)))
                   (if (sparse-tree-p a)
                       (perturbate-node-gaussian a (elt path (- (length path) 2))  i path
                                                 (d* (/ size offset-hight) (d i)))
                       (perturbate-node-gaussian a (elt path (- (length path) 2))  i path
-                                                (/ size offset-low))))
+                                                (/ size (* 4 offset-low)))))
                  (t
                   (cond
                     ((sparse-tree-p a)
@@ -296,6 +296,7 @@
         (y (vec-y v)))
     (ivec2 (round x) (round y))))
 
+;; TODO build skeleton in normalized coordinates
 (defun to-pixmap-splines (paths size bg divisions num-sand-grains perturbation-clsr)
   (let* ((pixmap          (make-pixmap-frame size size 4 (vec4->ubvec4 bg)))
          (perturbation-fn (funcall perturbation-clsr pixmap))
@@ -485,7 +486,7 @@
        (exec (rest gram) (append new-points path) depth)))
     ((functionp (first gram))
      (let ((new-gram (funcall (first gram) path depth)))
-       (exec (append new-gram (rest gram)) path (1+ depth))))
+       (exec (append new-gram (rest gram)) path depth)))
     (t
      (tpush
        (exec (first gram) (clone-path path) (1+ depth)))
@@ -493,7 +494,7 @@
 
 (defun root (path depth)
   (declare (ignore path depth))
-  (list 'fwd #'branch))
+  (list 'fwd (l% 0.50) 'fwd (l% 2.0) #'branch))
 
 (defun branch (path depth)
   (declare (ignore path depth))
@@ -512,7 +513,7 @@
         (a! 10.0) 'r-
         (p (a! 28.0) 'r+ (l% 0.85) 'fwd #'branch)))
 
-(defun make-spline-tree (&optional (divisions 5) (depth 40) (num-sand-grains 2000)
+(defun make-spline-tree (&optional (divisions 8) (depth 6) (num-sand-grains 500)
                            (size  +default-size-pixmap-library+)
                            (blit-to-black-pixmap t))
   (let ((*max-depth* depth))
@@ -521,7 +522,7 @@
       (loop for path in *tree-paths* do
            (loop for p in path do
                 (setf (turtle-pos p)
-                      (vec2+  (turtle-pos p) (vec2 0.5 0.0)))))
+                      (vec2+  (turtle-pos p) (vec2 0.55 0.0)))))
       (let* ((pixmap-tree (to-pixmap (reverse *tree-paths*)
                                      size
                                      :splines
@@ -532,9 +533,9 @@
                                                  (height pixmap-tree)
                                                  4
                                                  (ivec4 0 0 0 255))))
-              #+debug-mode (misc:dbg "start blitting tree")
-              (pixmap:blit pixmap-tree pixmap-out 0 0 0 0
-                           :function-blend (pixmap:blit-blend-lerp-fn))
-              #+debug-mode (misc:dbg "blitting terminated")
+              (with-messages-start-end ("start blitting tree"
+                                        "blitting terminated")
+                (pixmap:blit pixmap-tree pixmap-out 0 0 0 0
+                             :function-blend (pixmap:blit-blend-lerp-fn)))
               (h-mirror-matrix pixmap-out))
             (h-mirror-matrix pixmap-tree))))))
