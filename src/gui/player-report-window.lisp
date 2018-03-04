@@ -633,7 +633,7 @@
       (setf (prefix lb-level) (right-padding (prefix lb-level) max-length-prefix)
             (label lb-level) (format nil "~d" (character:level player)))
       (setf (prefix lb-exp-points) (right-padding (prefix lb-exp-points) max-length-prefix)
-            (label lb-exp-points)  (format nil "~d" (character:exp-points player))))))
+            (label lb-exp-points)  (format nil "~,2f" (character:exp-points player))))))
 
 (defun make-player-report-win (player)
   (make-instance 'player-report
