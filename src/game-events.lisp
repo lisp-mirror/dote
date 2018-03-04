@@ -307,17 +307,15 @@
   (propagate-end-attack-melee-event (make-instance 'end-attack-melee-event
                                                    :id-destination (identificable:id dest))))
 
-(defevent attack-long-range-event (game-event-w-destination)
+(defclass event-with-attacker-entity ()
   ((attacker-entity
     :initform nil
     :initarg  :attacker-entity
     :accessor attacker-entity)))
 
-(defevent end-attack-long-range-event (game-event-w-destination)
-  ((attacker-entity
-    :initform nil
-    :initarg  :attacker-entity
-    :accessor attacker-entity)))
+(defevent attack-long-range-event (game-event-w-destination event-with-attacker-entity) ())
+
+(defevent end-attack-long-range-event (game-event-w-destination event-with-attacker-entity) ())
 
 (defun send-end-attack-long-range-event (dest)
   (propagate-end-attack-long-range-event (make-instance 'end-attack-long-range-event

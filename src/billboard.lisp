@@ -261,6 +261,8 @@
                             &key
                               (color     +damage-color+)
                               (font-type gui:+default-font-handle+)
+                              (width     +default-tooltip-w+)
+                              (height    +default-tooltip-h+)
                               (gravity   1.0)
                               (additional-action-enqueued-fn nil)
                               (activep    t))
@@ -270,6 +272,8 @@
         (apply-tooltip object label
                        :color     color
                        :font-type font-type
+                       :width      width
+                       :height     height
                        :gravity   gravity
                        :activep   activep
                        :enqueuedp t)

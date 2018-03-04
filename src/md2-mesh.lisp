@@ -290,6 +290,7 @@
                               #'register-for-end-attack-melee-event
                               #'send-end-attack-melee-event
                               (worn-weapon (entity:ghost object)))
+      (reward-exp-melee-attack event damage) ; damage can have null value
       t)))
 
 (defun update-concernining-tiles-on-event (event)
@@ -312,6 +313,7 @@
                               #'register-for-end-attack-long-range-event
                               #'send-end-attack-long-range-event
                               (worn-weapon (entity:ghost object)))
+      (reward-exp-long-range-attack event damage) ; damage can have null value
       t)))
 
 (defmethod on-game-event ((object md2-mesh) (event attack-spell-event))

@@ -842,6 +842,33 @@
       (world:reset-toolbar-selected-action world)
       (game-event:send-refresh-toolbar-event))))
 
+(defgeneric reward-exp-dmg-points (object damage))
+
+(defmethod reward-exp-dmg-points ((object game-event:attack-melee-event) damage)
+  (when damage
+    (reward-exp-dmg-points (game-event:attacker-entity object) damage)))
+
+(defmethod reward-exp-dmg-points ((object game-event:attack-long-range-event) damage)
+  (when damage
+    (reward-exp-dmg-points (game-event:attacker-entity object) damage)))
+
+(defmethod reward-exp-dmg-points ((object entity:entity) damage)
+  (when damage
+    (particles:add-exp-increase object damage)
+    (reward-exp-dmg-points (entity:ghost object) damage)))
+
+(defmethod reward-exp-dmg-points ((object character:player-character) damage)
+  (when damage
+    (incf (character:exp-points object) damage)))
+
+(defun reward-exp-melee-attack (event damage)
+  (when damage
+    (reward-exp-dmg-points event damage)))
+
+(defun reward-exp-long-range-attack (event damage)
+  (when damage
+    (reward-exp-dmg-points event damage)))
+
 (defun attack-statistics (weapon-level attack-dmg shield-level armor-level
                            &optional (count 10000))
   (macrolet ((fmt-comment (a fmt-params)

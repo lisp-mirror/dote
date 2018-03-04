@@ -4232,7 +4232,9 @@
    :attack-long-range
    :attack-long-range-imprecise
    :attack-launch-spell
-   :launch-spell))
+   :launch-spell
+   :reward-exp-melee-attack
+   :reward-exp-long-range-attack))
 
 ;; UI
 

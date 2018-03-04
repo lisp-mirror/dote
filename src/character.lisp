@@ -523,7 +523,7 @@
     :accessor race)
    (exp-points
     :initarg :exp-points
-    :initform 0
+    :initform 0.0
     :accessor exp-points)
    (elm
     :initarg :elm
