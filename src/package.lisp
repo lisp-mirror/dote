@@ -4236,7 +4236,9 @@
    :launch-spell
    :reward-exp-melee-attack
    :reward-exp-long-range-attack
-   :reward-exp-launch-attack-spell))
+   :reward-exp-launch-attack-spell
+   :reward-exp-launch-spell
+   :reward-movement))
 
 ;; UI
 

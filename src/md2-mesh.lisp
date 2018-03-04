@@ -344,6 +344,7 @@
     (when (battle-utils:defend-from-spell event)
       (setf (attacked-by-entity object) (attacker-entity event))
       (game-event:register-for-end-attack-spell-event object)
+      (battle-utils:reward-exp-launch-spell (attacker-entity event) object (spell event))
       t)))
 
 (defmethod on-game-event ((object md2-mesh) (event update-visibility))
@@ -557,7 +558,8 @@
       (when (= (id-origin event) id)
         (if (faction-ai-p state id)
             (%on-move-entity-entered-in-tile-event-ai object event)
-            (let ((leaving-tile (alexandria:first-elt current-path)))
+            (let ((leaving-tile (alexandria:first-elt current-path))) ;; human side
+              (battle-utils:reward-movement object)
               (setf current-path (subseq current-path 1))
               (if (= (length current-path) 1)
                   (%stop-movement object :decrement-movement-points t)

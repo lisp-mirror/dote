@@ -869,6 +869,32 @@
   (when damage
     (reward-exp-dmg-points event damage)))
 
+(defgeneric reward-exp-launch-spell (object defender spell))
+
+(defmethod reward-exp-launch-spell ((object game-event:event-with-attacker-entity) defender spell)
+  (reward-exp-launch-spell (game-event:attacker-entity object) defender spell))
+
+(defmethod reward-exp-launch-spell ((object entity:entity) defender spell)
+  (let* ((level-attacker (character:level (entity:ghost object)))
+         (level-defender (character:level (entity:ghost defender)))
+         (spell-cost     (spell:cost spell))
+         (reward         (d* (d spell-cost)
+                             (d/ (d (max (/ level-defender level-attacker) 0.1))))))
+    (particles:add-exp-increase object reward)
+    (incf (character:exp-points (entity:ghost object)) reward)
+    object))
+
+(defun reward-movement (entity)
+  (with-accessors ((state entity:state)
+                   (ghost entity:ghost)) entity
+    (let* ((cost-player-pos  (calculate-cost-position entity))
+           (cost-destination (game-state:get-cost state
+                                                  (ivec2:ivec2-x cost-player-pos)
+                                                  (ivec2:ivec2-y cost-player-pos))))
+      (incf (character:exp-points ghost)
+            (d/ cost-destination 10.0))
+      entity)))
+
 (defun attack-statistics (weapon-level attack-dmg shield-level armor-level
                            &optional (count 10000))
   (macrolet ((fmt-comment (a fmt-params)
