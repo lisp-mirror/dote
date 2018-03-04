@@ -844,11 +844,7 @@
 
 (defgeneric reward-exp-dmg-points (object damage))
 
-(defmethod reward-exp-dmg-points ((object game-event:attack-melee-event) damage)
-  (when damage
-    (reward-exp-dmg-points (game-event:attacker-entity object) damage)))
-
-(defmethod reward-exp-dmg-points ((object game-event:attack-long-range-event) damage)
+(defmethod reward-exp-dmg-points ((object game-event:event-with-attacker-entity) damage)
   (when damage
     (reward-exp-dmg-points (game-event:attacker-entity object) damage)))
 
@@ -866,6 +862,10 @@
     (reward-exp-dmg-points event damage)))
 
 (defun reward-exp-long-range-attack (event damage)
+  (when damage
+    (reward-exp-dmg-points event damage)))
+
+(defun reward-exp-launch-attack-spell (event damage)
   (when damage
     (reward-exp-dmg-points event damage)))
 

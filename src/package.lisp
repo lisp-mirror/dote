@@ -2632,6 +2632,7 @@
    :unregister-for-immune-berserk-event
    :propagate-immune-berserk-event
    :make-immune-berserk-event
+   :event-with-attacker-entity
    :attack-melee-event
    :attacker-entity
    :register-for-attack-melee-event
@@ -4234,7 +4235,8 @@
    :attack-launch-spell
    :launch-spell
    :reward-exp-melee-attack
-   :reward-exp-long-range-attack))
+   :reward-exp-long-range-attack
+   :reward-exp-launch-attack-spell))
 
 ;; UI
 

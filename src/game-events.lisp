@@ -295,11 +295,13 @@
 
 (defevent unwear-object-event (game-event-w-destination) ())
 
-(defevent attack-melee-event (game-event-w-destination)
+(defclass event-with-attacker-entity ()
   ((attacker-entity
     :initform nil
     :initarg  :attacker-entity
     :accessor attacker-entity)))
+
+(defevent attack-melee-event (game-event-w-destination event-with-attacker-entity) ())
 
 (defevent end-attack-melee-event (game-event-w-destination) ())
 
@@ -307,11 +309,6 @@
   (propagate-end-attack-melee-event (make-instance 'end-attack-melee-event
                                                    :id-destination (identificable:id dest))))
 
-(defclass event-with-attacker-entity ()
-  ((attacker-entity
-    :initform nil
-    :initarg  :attacker-entity
-    :accessor attacker-entity)))
 
 (defevent attack-long-range-event (game-event-w-destination event-with-attacker-entity) ())
 
@@ -333,22 +330,14 @@
            ,@body)
          nil))
 
-(defevent attack-spell-event (game-event-w-destination)
-  ((attacker-entity
-    :initform nil
-    :initarg  :attacker-entity
-    :accessor attacker-entity)
-   (spell
+(defevent attack-spell-event (game-event-w-destination event-with-attacker-entity)
+  ((spell
     :initform nil
     :initarg  :spell
     :accessor spell)))
 
-(defevent end-attack-spell-event (game-event-w-destination)
-  ((attacker-entity
-    :initform nil
-    :initarg  :attacker-entity
-    :accessor attacker-entity)
-   (spell
+(defevent end-attack-spell-event (game-event-w-destination event-with-attacker-entity)
+  ((spell
     :initform nil
     :initarg  :spell
     :accessor spell)))

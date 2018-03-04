@@ -245,7 +245,7 @@
                (tooltip        (make-tooltip label
                                              (vec+ mesh-pos
                                                    (vec 0.0
-                                                        (d* 1.5 +default-tooltip-h+)
+                                                        (d* 0.5 +default-tooltip-h+)
                                                         0.0))
                                              (compiled-shaders object)
                                              :color      color
