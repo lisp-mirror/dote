@@ -3331,10 +3331,14 @@
               (gl:blend-equation :func-add))))))))
 
 (defun apply-exp-inc-tooltip (entity value)
-  (billboard:apply-tooltip entity
-                           (format nil "~a~a" billboard:+tooltip-exp-char+ value)
-                           :color     billboard:+blessing-color+
-                           :font-type gui:+tooltip-font-handle+))
+  (let* ((value-label (text-utils:to-s value))
+         (label-width (d+ billboard:+default-tooltip-w+
+                         (d* 0.3 (d (length value-label))))))
+    (billboard:apply-tooltip entity
+                             (text-utils:strcat billboard:+tooltip-exp-char+ value-label)
+                             :width     label-width
+                             :color     billboard:+blessing-color+
+                             :font-type gui:+tooltip-font-handle+)))
 
 (defun make-exp-increase-particles (pos compiled-shaders
                                     &key
@@ -3380,10 +3384,15 @@
       particles)))
 
 (defun add-exp-increase (entity value)
-  (if (> value 10)
-      (game-state:with-world (world (state entity))
-        (let ((sparks (make-exp-increase-particles (pos entity) (compiled-shaders entity))))
-          (action-scheduler:with-enqueue-action (world action-scheduler:particle-effect-action)
-            (world:push-entity world sparks)
-            (apply-exp-inc-tooltip entity value))))
-      (apply-exp-inc-tooltip entity value)))
+  (cond
+    ((<= 0 value  9)
+     ;; TODO
+     )
+    ((<= 10 value 50)
+     (apply-exp-inc-tooltip entity value))
+    (t
+     (game-state:with-world (world (state entity))
+       (let ((sparks (make-exp-increase-particles (pos entity) (compiled-shaders entity))))
+         (action-scheduler:with-enqueue-action (world action-scheduler:particle-effect-action)
+           (world:push-entity world sparks)
+           (apply-exp-inc-tooltip entity value)))))))

@@ -325,7 +325,7 @@
               (misc:dbg "n ~a" *near*)
               (incf *near* -.1))
             (when (string= text "p")
-              (particles:add-exp-increase *placeholder* 100))
+              (particles:add-exp-increase *placeholder* 55.0))
             (when (string= text "D")
               (world:apply-tremor-0 world))
             (when (string= text "L")

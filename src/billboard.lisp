@@ -24,9 +24,9 @@
 
 (define-constant +blessing-color+           §ccdf7ffff                :test #'vec4=)
 
-(define-constant +tooltip-w+                +terrain-chunk-tile-size+ :test #'=)
+(define-constant +default-tooltip-w+        +terrain-chunk-tile-size+ :test #'=)
 
-(define-constant +tooltip-h+                +terrain-chunk-tile-size+ :test #'=)
+(define-constant +default-tooltip-h+        +terrain-chunk-tile-size+ :test #'=)
 
 (define-constant +tooltip-v-speed+           0.06                     :test #'=)
 
@@ -65,6 +65,14 @@
     :initform (num:lcg-next-in-range 1.0 2.0)
     :initarg  :gravity
     :accessor gravity)
+   (width
+    :initform +default-tooltip-w+
+    :initarg  :width
+    :accessor width)
+   (height
+    :initform +default-tooltip-h+
+    :initarg  :height
+    :accessor height)
    (font-type
     :initform +tooltip-font-handle+
     :initarg  :font-type
@@ -102,11 +110,15 @@
 (defmethod (setf label) (new-label (object tooltip))
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (simple-string new-label))
-  (with-accessors ((pos pos)) object
+  (with-accessors ((pos    pos)
+                   (width  width)
+                   (height height)) object
     (declare (vec pos))
     (setup-label-tooltip object new-label)
-    (let ((w-tooltip/2 (d/ +tooltip-w+ 2.0)))
-      (setf (scaling object) (vec (d (/ +tooltip-w+ (length new-label))) +tooltip-h+ 0.0))
+    (let ((w-tooltip/2 (d/ width 2.0)))
+      (setf (scaling object) (vec (d (d/ width (d (length new-label))))
+                                  height
+                                  0.0))
       (setf (elt pos 0) (d+ (elt pos 0) w-tooltip/2)))))
 
 (defmethod calculate ((object tooltip) dt)
@@ -180,11 +192,15 @@
                        (font-type gui:+default-font-handle+)
                        (gravity   (num:lcg-next-in-range 1.0 24.0))
                        (activep   t)
+                       (width     +default-tooltip-w+)
+                       (height    +default-tooltip-h+)
                        (enqueuedp nil))
   (let ((tooltip (make-instance 'billboard:tooltip
                                 :animation-speed 1.0
                                 :font-color      color
                                 :font-type       font-type
+                                :width           width
+                                :height          height
                                 :gravity         gravity
                                 :renderp         activep
                                 :calculatep      activep
@@ -213,6 +229,8 @@
                           &key
                             (color     +damage-color+)
                             (font-type gui:+default-font-handle+)
+                            (width     +default-tooltip-w+)
+                            (height    +default-tooltip-h+)
                             (gravity   1.0)
                             (activep   t)
                             (enqueuedp nil))
@@ -227,11 +245,13 @@
                (tooltip        (make-tooltip label
                                              (vec+ mesh-pos
                                                    (vec 0.0
-                                                        (d* 1.5 +tooltip-h+)
+                                                        (d* 1.5 +default-tooltip-h+)
                                                         0.0))
                                              (compiled-shaders object)
                                              :color      color
                                              :font-type  font-type
+                                             :width      width
+                                             :height     height
                                              :gravity    gravity
                                              :activep    activep
                                              :enqueuedp  enqueuedp)))

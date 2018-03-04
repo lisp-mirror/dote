@@ -4587,6 +4587,8 @@
    :+poison-damage-color+
    :+healing-color+
    :+blessing-color+
+   :+default-tooltip-w+
+   :+default-tooltip-h+
    :+tooltip-poison-char+
    :+tooltip-terror-char+
    :+tooltip-berserk-char+
