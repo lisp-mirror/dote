@@ -184,7 +184,9 @@
    :+attack-strategy+
    :+defend-strategy+
    :+retreat-strategy+
-   :+difficult-medium+))
+   :+difficult-medium+
+   :+exp-capital-delta+
+   :+exp-change-level-thrs+))
 
 (defpackage :profiling
   (:use :cl)
@@ -2752,6 +2754,7 @@
    :num
    :identificable
    :game-event)
+  (:nicknames :act-sched)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :*equeue-merge-to-subscheduler-p*
@@ -2767,6 +2770,7 @@
    :send-spell-fx-action
    :trigger-trap-attack-action
    :tactical-plane-action
+   :gui-action
    :tooltip-show-action
    :animated-billboard-show-action
    :turn-billboard-show-action
@@ -4847,6 +4851,7 @@
    :make-teleport-level-1
    :make-teleport-level-2
    :make-teleport-level-3
+   :add-level-up
    :add-hit-0-effect-billboard
    :add-hit-1-effect-billboard
    :add-hit-2-effect-billboard

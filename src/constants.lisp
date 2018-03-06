@@ -318,3 +318,7 @@
 (define-constant +retreat-strategy+               :retreat                        :test #'eq)
 
 (define-constant +difficult-medium+                3                              :test #'=)
+
+(define-constant +exp-capital-delta+             100.0                            :test #'=)
+
+(define-constant +exp-change-level-thrs+         1000.0                           :test #'=)

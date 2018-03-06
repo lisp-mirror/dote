@@ -18,7 +18,7 @@
 
 (alexandria:define-constant +unknown-ability-bonus+             -5.0                    :test #'=)
 
-(alexandria:define-constant +starting-exp-points+               10.0                    :test #'=)
+(alexandria:define-constant +starting-exp-points+             1000.0                    :test #'=)
 
 (alexandria:define-constant +first-name+                   :first-name                  :test #'eq)
 

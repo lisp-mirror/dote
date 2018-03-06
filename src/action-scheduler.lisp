@@ -63,6 +63,8 @@
 
 (defclass tactical-plane-action              (game-action) ())
 
+(defclass gui-action                         (game-action) ())
+
 (defclass tooltip-show-action                (game-action)
   ((label
     :initform  nil

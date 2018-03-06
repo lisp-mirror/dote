@@ -3233,13 +3233,14 @@
          (gradient (color-utils:make-gradient
                     (color-utils:make-gradient-color 0.0  §cffffffff)
                     (color-utils:make-gradient-color 0.2  §cffff00ff)
-                    (color-utils:make-gradient-color 0.5  §cff00ffff)))
+                    (color-utils:make-gradient-color 0.7  §cff0000ff)
+                    (color-utils:make-gradient-color 1.0  §c00000000)))
 
          (size-fn  #'(lambda (c)
                        (declare (ignore c))
-                       (max 0.0 (gaussian-probability .4 .1))))
+                       (max 0.2 (gaussian-probability .6 .1))))
          (flame (make-particles-cluster 'cure-spark
-                                        2000
+                                        1000
                                         compiled-shaders
                                         :min-y -300
                                         :remove-starting-delay t
@@ -3260,7 +3261,7 @@
                                                          0.0
                                                          (lcg-next-in-range 11.0 1.2)))
                                         :mass-fn  (gaussian-distribution-fn 10.0 5.0)
-                                        :life-fn  (gaussian-distribution-fn 15.0 1.5)
+                                        :life-fn  (gaussian-distribution-fn 3.5 0.1)
                                         :delay-fn (gaussian-distribution-fn 10.1 2.0)
                                         :gravity    (vec 0.0 20.0 0.0)
                                         :scaling-fn (%limited-scaling-clsr 1.0 2.0)
@@ -3272,9 +3273,16 @@
                                         :width  1.1
                                         :height 1.1
                                         :respawn t)))
-    (setf (noise-scale flame) 0.05)
-    (setf (global-life flame) 400)
+    (setf (global-life flame) 0)
     flame))
+
+(defun add-level-up (entity)
+  (game-state:with-world (world (state entity))
+    (let ((particles (make-level-up (pos entity) (compiled-shaders entity))))
+      (action-scheduler:end-of-life-remove-from-action-scheduler particles
+                                                                 action-scheduler:particle-effect-action)
+      (action-scheduler:with-enqueue-action (world action-scheduler:particle-effect-action)
+        (world:push-entity world particles)))))
 
 (defclass exp-increase-particles (minimal-particle-effect cluster-w-global-life end-life-trigger)
   ())

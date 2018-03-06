@@ -842,6 +842,20 @@
       (world:reset-toolbar-selected-action world)
       (game-event:send-refresh-toolbar-event))))
 
+(defun maybe-start-gui-increase-level (entity)
+  (with-accessors ((ghost entity:ghost)
+                   (state entity:state)) entity
+    (when (>= (character:exp-points ghost) +exp-change-level-thrs+)
+      (particles:add-level-up entity)
+      (game-state:with-world (world state)
+        (act-sched:with-enqueue-action-and-send-remove-after (world act-sched:gui-action)
+          (let ((window (widget:make-player-generator world)))
+            (widget::%setup-character window :new-player ghost)
+            (setf (interfaces:compiled-shaders window)
+                  (compiled-shaders entity))
+            (mtree:add-child (world:gui world) window)))))
+    entity))
+
 (defgeneric reward-exp-dmg-points (object damage))
 
 (defmethod reward-exp-dmg-points ((object game-event:event-with-attacker-entity) damage)
@@ -851,7 +865,9 @@
 (defmethod reward-exp-dmg-points ((object entity:entity) damage)
   (when damage
     (particles:add-exp-increase object damage)
-    (reward-exp-dmg-points (entity:ghost object) damage)))
+    (reward-exp-dmg-points (entity:ghost object) damage)
+    (maybe-start-gui-increase-level object))
+  object)
 
 (defmethod reward-exp-dmg-points ((object character:player-character) damage)
   (when damage
@@ -882,6 +898,7 @@
                              (d/ (d (max (/ level-defender level-attacker) 0.1))))))
     (particles:add-exp-increase object reward)
     (incf (character:exp-points (entity:ghost object)) reward)
+    (maybe-start-gui-increase-level object)
     object))
 
 (defun reward-movement (entity)

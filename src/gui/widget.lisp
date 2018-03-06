@@ -700,6 +700,8 @@
 
 (defclass check-button (toggle-button) ())
 
+(gen-type-p check-button)
+
 (defmethod initialize-instance :after ((object check-button) &key &allow-other-keys))
 
 (defmethod flip-state ((object check-button))
@@ -2886,14 +2888,15 @@
                    (current (d (parse-number:parse-number
                                 (cl-ppcre:scan-to-strings +float-regexp+
                                                           (label widget-destination)))))
-                   (new-capital (if plus (d- capital 1.0)  (d+ capital 1.0)))
+                   (new-capital (if plus
+                                    (d- capital +exp-capital-delta+)
+                                    (d+ capital +exp-capital-delta+)))
                    (new-current (if plus
                                     (d+ current scale-plus)
                                     (d- current scale-minus))))
               (when (and (d>= new-capital 0.0)
                          (or plus
                              (d>= new-current 0.0)))
-                (misc:dbg "~a ~a" slot new-current)
                 (setf (label widget-capital)               (format nil +standard-float-print-format+
                                                                    new-capital)
                       (label widget-destination)           (format nil +standard-float-print-format+
@@ -4056,7 +4059,8 @@
 (defun player-save-cb (button event)
   (declare (ignore event))
   (with-parent-widget (win) button
-    (with-accessors ((input-name input-name) (input-last-name input-last-name)
+    (with-accessors ((input-name input-name)
+                     (input-last-name input-last-name)
                      (player player)) win
       (with-file-chooser (button fchooser-window)
         (setf (character:first-name player) (label input-name)
@@ -4084,11 +4088,13 @@
   (declare (ignore event))
   (with-parent-widget (win) button
     (with-accessors ((player player)
-                     (img-portrait img-portrait)
-                     (world world)
-                     (model-preview-paths model-preview-paths)
+                     (img-portrait                 img-portrait)
+                     (input-name                   input-name)
+                     (input-last-name              input-last-name)
+                     (world                        world)
+                     (model-preview-paths          model-preview-paths)
                      (backup-data-texture-portrait backup-data-texture-portrait)
-                     (backup-data-texture-preview backup-data-texture-preview)) win
+                     (backup-data-texture-preview  backup-data-texture-preview)) win
       (with-accessors ((main-state main-state)) world
         (if (null model-preview-paths)
             (let ((error-message (make-message-box (_ "Mesh not specified")
@@ -4114,8 +4120,10 @@
                                         (texture:clone (get-texture +portrait-unknown-texture-name+)))))
                 (pixmap:sync-data-to-bits portrait-texture)
                 (texture:prepare-for-rendering portrait-texture)
+                (setf (character:first-name player) (label input-name))
+                (setf (character:last-name  player) (label input-last-name))
                 (setf (character:model-origin-dir player) dir)
-                ;(setf (entity:ghost model) player)
+                ;;(setf (entity:ghost model) player)
                 (setf (portrait (entity:ghost model)) portrait-texture)
                 (world:place-player-on-map world model game-state:+pc-type+ ;#(61 109)))
                                            #(0 0)))
@@ -4249,33 +4257,69 @@
                    (b-inc-attack-spell-ch b-inc-attack-spell-ch)
                    (b-dec-attack-spell-ch b-dec-attack-spell-ch)
                    (lb-level lb-level)
-                   (lb-exp-points lb-exp-points)
-                   (player player)) win
+                   (lb-exp-points   lb-exp-points)
+                   (b-generate      b-generate)
+                   (b-save          b-save)
+                   (b-load          b-load)
+                   (b-accept        b-accept)
+                   (b-next-preview  b-next-preview)
+                   (checkb-warrior  checkb-warrior)
+                   (checkb-wizard   checkb-wizard)
+                   (checkb-healer   checkb-healer)
+                   (checkb-archer   checkb-archer)
+                   (checkb-ranger   checkb-ranger)
+                   (checkb-male     checkb-male)
+                   (checkb-female   checkb-female)
+                   (lb-gender       lb-gender)
+                   (lb-class        lb-class)
+                   (img-preview     img-preview)
+                   (player          player)) win
     (setup-player-character win :from-player new-player)
-    (when (not new-player)
-      (random-names:load-db +random-first-names-filename+))
-    (setf (label input-name) (if new-player
-                                 (character:first-name new-player)
-                                 (random-names:generate)))
-    (when (not new-player)
-      (random-names:load-db +random-last-names-filename+))
-    (setf (label input-last-name) (if new-player
-                                      (character:last-name new-player)
-                                      (random-names:generate)))
-    (when (not new-player)
-      (setf (character:exp-points player)
-            interactive-entity:+starting-exp-points+))
+    (if new-player
+        (progn
+          (setf (label input-name)      (character:first-name new-player))
+          (setf (label input-last-name) (character:last-name new-player))
+          (remove-child-if win #'(lambda (a) (find a (list b-generate
+                                                           b-save
+                                                           b-load
+                                                           b-accept
+                                                           b-next-preview
+                                                           checkb-warrior
+                                                           checkb-wizard
+                                                           checkb-healer
+                                                           checkb-archer
+                                                           checkb-ranger
+                                                           checkb-male
+                                                           checkb-female
+                                                           lb-gender
+                                                           lb-class
+                                                           img-preview)))))
+         (progn
+          (random-names:load-db +random-first-names-filename+)
+          (setf (label input-name) (random-names:generate))
+          (random-names:load-db +random-last-names-filename+)
+          (setf (label input-last-name) (random-names:generate))
+          (setf (character:exp-points player) interactive-entity:+starting-exp-points+)))
     (setup-portrait win :from-player new-player)
-    (setf (label lb-strength)  (format nil +standard-float-print-format+ (character:strength player)))
-    (setf (label lb-stamina)   (format nil +standard-float-print-format+ (character:stamina player)))
-    (setf (label lb-dexterity) (format nil +standard-float-print-format+ (character:dexterity player)))
-    (setf (label lb-agility)   (format nil +standard-float-print-format+ (character:agility player)))
-    (setf (label lb-smartness) (format nil +standard-float-print-format+ (character:smartness player)))
-    (setf (label lb-empaty)    (format nil +standard-float-print-format+ (character:empaty player)))
-    (setf (label lb-weight)    (format nil +standard-float-print-format+ (character:weight player)))
+    (setf (label lb-strength)
+          (format nil +standard-float-print-format+ (character:strength player)))
+    (setf (label lb-stamina)
+          (format nil +standard-float-print-format+ (character:stamina player)))
+    (setf (label lb-dexterity)
+          (format nil +standard-float-print-format+ (character:dexterity player)))
+    (setf (label lb-agility)
+          (format nil +standard-float-print-format+ (character:agility player)))
+    (setf (label lb-smartness)
+          (format nil +standard-float-print-format+ (character:smartness player)))
+    (setf (label lb-empaty)
+          (format nil +standard-float-print-format+ (character:empaty player)))
+    (setf (label lb-weight)
+          (format nil +standard-float-print-format+ (character:weight player)))
     (let ((max-length-prefix (%find-max-lenght-ability-prefix win)))
-      (setf (prefix lb-damage-pt) (right-padding (prefix lb-damage-pt) max-length-prefix)
-            (label lb-damage-pt) (format nil +standard-float-print-format+ (character:damage-points player)))
+      (setf (prefix lb-damage-pt) (right-padding (prefix lb-damage-pt)
+                                                 max-length-prefix)
+            (label lb-damage-pt)  (format nil +standard-float-print-format+
+                                          (character:damage-points player)))
       (%add-callback-to-pgen-buttons b-inc-damage-pt b-dec-damage-pt
                                      player 'damage-points
                                      lb-exp-points lb-damage-pt 0.1 1.0)
@@ -4401,7 +4445,7 @@
       (setf (prefix lb-level) (right-padding (prefix lb-level) max-length-prefix)
             (label lb-level) (format nil "~d" (level player)))
       (setf (prefix lb-exp-points) (right-padding (prefix lb-exp-points) max-length-prefix)
-            (label lb-exp-points)  (format nil "~d" (exp-points player))))))
+            (label lb-exp-points)  (format nil "~,2f" (exp-points player))))))
 
 (defun make-player-generator (world)
   (let ((window (make-instance 'player-generator
