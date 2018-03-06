@@ -267,9 +267,8 @@
                                send-end-attack-event-fn
                                weapon)
   (when ambushp
-    (billboard:apply-tooltip entity
+    (billboard:enqueue-tooltip entity
                              billboard:+tooltip-surprise-attack-char+
-                             :enqueuedp nil
                              :color     billboard:+damage-color+
                              :font-type gui:+tooltip-font-handle+))
   (apply-damage entity damage) ;; it is ok for damage to be nil.

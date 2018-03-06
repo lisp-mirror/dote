@@ -1211,7 +1211,7 @@
      ,@(loop for name in names collect
             `(gen-actual-characteristic ,name))))
 
-;; "actual" means  the actual (no  pun intended) maximum value  of the
+;; "actual" means  the actual (no  pun intended) *maximum* value  of the
 ;; characteristic
 (gen-actual-characteristics damage-points
                             movement-points
