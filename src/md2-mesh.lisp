@@ -731,10 +731,11 @@
         (if (and (= id (id-destination event))
                  (dice:pass-d1.0 (random-object-messages:msg-chance event-data)))
             (progn
-              (billboard:enqueue-tooltip mesh
-                                       billboard:+tooltip-heal-char+
-                                       :color     billboard:+healing-color+
-                                       :font-type gui:+tooltip-font-handle+)
+              (when (renderp mesh)
+                (billboard:enqueue-tooltip mesh
+                                           billboard:+tooltip-heal-char+
+                                           :color     billboard:+healing-color+
+                                           :font-type gui:+tooltip-font-handle+))
               (setf status nil) ;; note: the player can be affected only by one at a time
               (funcall action-fn mesh ghost)
               (send-refresh-toolbar-event)
@@ -1118,12 +1119,13 @@
                       (set-animation object :pain :recalculate t)
                       (setf stop-animation nil)
                       (setf cycle-animation nil)))
-                (billboard:enqueue-tooltip object
-                                           (format nil
-                                                   +standard-float-print-format+
-                                                   (d- (random-object-messages:msg-damage effect)))
-                                           :color billboard:+damage-color+
-                                           :font-type gui:+tooltip-font-handle+))))))))
+                (when (renderp object)
+                  (billboard:enqueue-tooltip object
+                                             (format nil
+                                                     +standard-float-print-format+
+                                                     (d- (random-object-messages:msg-damage effect)))
+                                             :color billboard:+damage-color+
+                                             :font-type gui:+tooltip-font-handle+)))))))))
 
 (defmethod process-postponed-messages ((object md2-mesh))
   (with-accessors ((ghost ghost)
