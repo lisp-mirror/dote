@@ -17,10 +17,10 @@
 (in-package :widget)
 
 (defun preprt-window-w ()
-  (d* (d *window-w*) 0.75))
+  (d* (d *window-w*) 0.65))
 
 (defun preprt-window-h ()
-  (d* (d *window-h*) 0.8))
+  (d* (d *window-h*) 0.7))
 
 (defun preprt-gender/class-w ()
   (d/ (d *window-w*) 7.0))
@@ -40,9 +40,7 @@
           (input-text-h *reference-sizes*))))
 
 (defun preprt-characteristics-x ()
-  (d+ (d* 2.0 (spacing *reference-sizes*))
-      +portrait-size+
-      (input-text-w *reference-sizes*)
+  (d+ (preprt-label-ability-h)
       (preprt-gender/class-w)))
 
 (defun preprt-characteristics-y (row)
@@ -317,10 +315,9 @@
     :initform (make-instance 'simple-label
                              :width  (input-text-w *reference-sizes*)
                              :height (input-text-h *reference-sizes*)
-                             :x (d+ (d* 2.0 (spacing *reference-sizes*))
-                                    +portrait-size+
-                                    (preprt-gender/class-w))
-                             :y 0.0
+                             :x 0.0
+                             :y (d+ +portrait-size+
+                                    (d* 2.0 (h1-font-size *reference-sizes*)))
                              :label-font-color §cdffffeff
                              :label " ")
     :initarg :lb-name

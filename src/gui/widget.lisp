@@ -4273,6 +4273,7 @@
                    (lb-gender       lb-gender)
                    (lb-class        lb-class)
                    (img-preview     img-preview)
+                   (close-button    close-button)
                    (player          player)) win
     (setup-player-character win :from-player new-player)
     (if new-player
@@ -4293,8 +4294,12 @@
                                                            checkb-female
                                                            lb-gender
                                                            lb-class
-                                                           img-preview)))))
-         (progn
+                                                           img-preview))))
+          (setf (callback close-button)
+                #'(lambda (widget event)
+                    (setf (character:exp-points new-player) 0.0)
+                    (hide-and-remove-grandparent-cb widget event))))
+        (progn
           (random-names:load-db +random-first-names-filename+)
           (setf (label input-name) (random-names:generate))
           (random-names:load-db +random-last-names-filename+)
