@@ -138,6 +138,12 @@
       (clone-into object saved)
       (setf (old-state-element object) saved))))
 
+(defmethod marshal:class-persistant-slots ((object map-state-element))
+  '(entity-id
+    el-type
+    occlude
+    old-state-element))
+
 (defmethod clone-into ((from map-state-element) (to map-state-element))
   (setf (entity-id to)         (entity-id from)
         (el-type   to)         (el-type   from)
@@ -224,7 +230,11 @@
   (make-instance 'movement-path :tiles tiles :cost cost))
 
 (defclass game-state ()
-  ((game-hour
+  ((game-map-file
+    :accessor game-map-file
+    :initarg  :game-map-file
+    :initform nil)
+   (game-hour
     :accessor game-hour
     :initarg :game-hour
     :initform 0)

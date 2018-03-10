@@ -39,12 +39,18 @@
     :accessor id)))
 
 (defmethod initialize-instance :after ((object identificable) &key &allow-other-keys)
-  (setf (id object) (next-id)))
+  (refresh-id object))
 
 (defmethod clone-into :after ((from identificable) (to identificable))
   (when *clone-id*
     (setf (id to) (id from)))
   to)
+
+(defgeneric refresh-id (object))
+
+(defmethod refresh-id ((object identificable))
+  (setf (id object) (next-id))
+  object)
 
 (defun test-id= (a b)
   (= (id a) (id b)))

@@ -153,6 +153,7 @@
                (:file "trap-mesh-shell")
                (:file "trees")
                (:file "load-level")
+               (:file "saved-game")
                (:file "id3")
                (:file "influence-map")
                (:file "ann")

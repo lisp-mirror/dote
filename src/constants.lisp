@@ -260,6 +260,12 @@
 
 (define-constant +retreat-planner-dir+             '("ai" "planner" "retreat")    :test #'equalp)
 
+(define-constant +save-game-dir-1+                 '("saved" "1")                 :test #'equalp)
+
+(define-constant +save-game-dir-2+                 '("saved" "2")                 :test #'equalp)
+
+(define-constant +save-game-dir-3+                 '("saved" "3")                 :test #'equalp)
+
 (define-constant +mesh-placeholder-file+           "placeholder.lsys"             :test #'string=)
 
 (define-constant +gui-static-text-delim+           "§"                            :test #'string=)

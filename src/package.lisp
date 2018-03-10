@@ -156,6 +156,9 @@
    :+defend-planner-dir+
    :+explore-planner-dir+
    :+retreat-planner-dir+
+   :+save-game-dir-1+
+   :+save-game-dir-2+
+   :+save-game-dir-3+
    :+mesh-placeholder-file+
    :+gui-static-text-delim+
    :+gui-static-text-nbsp+
@@ -1144,6 +1147,7 @@
    :not-valid-id
    :identificable
    :id
+   :refresh-id
    :test-id=))
 
 (defpackage :entity
@@ -2302,6 +2306,7 @@
    :occlude
    :occludep
    :game-state
+   :game-map-file
    :game-hour
    :game-minutes
    :game-turn
@@ -4991,6 +4996,7 @@
    :+tag-right-weapon-key+
    :find-tag
    :md2-mesh
+   :fs-resources
    :load-md2-model
    :load-md2-player
    :tag-key-parent
@@ -5056,6 +5062,27 @@
                 :transform-point)
   (:export
    :load-level))
+
+(defpackage :saved-game
+  (:use :cl
+        :alexandria
+        :config
+        :constants
+        :misc
+        :num
+        :2d-utils
+        :matrix
+        :entity
+        :identificable
+        :interfaces
+        :game-state
+        :world
+        :character
+        :mesh
+        :md2-mesh)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :save-game))
 
 ;; AI
 

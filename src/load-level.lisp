@@ -1,5 +1,5 @@
 ;; dawn of the Era: a tactical game.
-;; Copyright (C) 2015  cage
+;; Copyright (C) 2018  cage
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -951,6 +951,7 @@ wall's    coordinates    as    they   are    already    scaled:    see
       (initialize-skydome world)
       (update-progress 0.45)
       (setf (main-state world)          game-state)
+      (setf (game-map-file              game-state) actual-file)
       (setf (compiled-shaders world)    compiled-shaders)
       (setup-game-hour game-state       *game-hour*)
       (setf (map-cache-dir game-state)  *raw-seed*)

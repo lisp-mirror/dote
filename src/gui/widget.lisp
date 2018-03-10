@@ -2285,6 +2285,20 @@
     (add-child toolbar
                (configuration-windows:make-main-window (compiled-shaders toolbar)))))
 
+(defun toolbar-save-game-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (toolbar) w
+    (with-toolbar-world (world) toolbar
+      (with-accessors ((main-state main-state)) world
+        (saved-game:save-game +save-game-dir-1+ main-state)
+        (let* ((success-message (make-message-box (_ "Game saved")
+                                                  "Success"
+                                                  :info
+                                                  (cons (_ "OK")
+                                                        #'hide-and-remove-parent-cb))))
+          (setf (compiled-shaders success-message) (compiled-shaders w))
+          (add-child toolbar success-message))))))
+
 (defun toolbar-quit-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
@@ -2465,7 +2479,7 @@
    (b-save
     :initform (make-square-button 0.0 *small-square-button-size*
                                   +save-overlay-texture-name+
-                                  nil ;; TODO callback
+                                  #'toolbar-save-game-cb
                                   :small t
                                   :modal nil)
     :initarg :b-save
