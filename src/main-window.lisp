@@ -16,24 +16,6 @@
 
 (in-package :main-window)
 
-(defparameter *xpos*     2.0)
-
-(defparameter *ypos*    40.0)
-
-(defparameter *zpos*   -20.0)
-
-(defparameter *xeye*     2.0)
-
-(defparameter *yeye*     0.0)
-
-(defparameter *zeye*     8.0)
-
-(defparameter *xup*      0.0)
-
-(defparameter *yup*      1.0)
-
-(defparameter *zup*      0.0)
-
 (defparameter *far*    440.0)
 
 (defparameter *near*     5.0)
@@ -108,14 +90,12 @@
                              "temperate/lemon.lsys"       ; 12
                              "general/dead-tree-3.lsys")) ; 13
 
-(defparameter *map-loaded-p* nil)
-
 (defgeneric set-player-path (object x y))
 
 (defun load-map (window)
+  (saved-game:load-map window "test.lisp")
   (with-accessors ((world world)
                    (compiled-shaders compiled-shaders)) window
-    (load-level:load-level window world (game-state window) compiled-shaders "test.lisp")
     (setf *placeholder* (trees:gen-tree
                          (res:get-resource-file (elt *test-trees* 0)
                                                 constants:+trees-resource+
@@ -126,10 +106,7 @@
           (vec (map-utils:coord-map->chunk 1.0)
                +zero-height+
                (map-utils:coord-map->chunk 1.0)))
-    (world:push-entity world *placeholder*)
-    (camera:look-at (world:camera world)
-                    *xpos* *ypos* *zpos* *xeye* *yeye* *zeye* *xup* *yup* *zup*)
-    (setf (mode (world:camera world)) :fp)))
+    (world:push-entity world *placeholder*)))
 
 (defmethod initialize-instance :after ((object test-window) &key &allow-other-keys)
   (with-accessors ((vao vao) (compiled-shaders compiled-shaders)
@@ -157,8 +134,6 @@
     (setf world (make-instance 'world :frame-window object))
     (mtree:add-child (world:gui world) (widget:make-splash-progress-gauge))
     (setf (interfaces:compiled-shaders (world:gui world)) compiled-shaders)
-    (camera:look-at (world:camera world)
-                    *xpos* *ypos* *zpos* *xeye* *yeye* *zeye* *xup* *yup* *zup*)
     (setf (mode (world:camera world)) :fp)
     (camera:install-path-interpolator (world:camera world)
                                       (vec 0.0  15.0 0.0)
@@ -200,7 +175,7 @@
                    (delta-time-elapsed delta-time-elapsed)
                    (frames-count       frames-count)
                    (fps fps))                              object
-    (if *map-loaded-p*
+    (if saved-game:*map-loaded-p*
         (let* ((now      (sdl2:get-ticks))
                (dt       (num:f- now delta-time-elapsed))
                (float-dt (num:d dt)))
@@ -348,7 +323,7 @@
                                 (level-name-color (game-state object))))
               (setf (interfaces:compiled-shaders (world:gui world))
                     (compiled-shaders object))
-              (setf *map-loaded-p* t)
+              (setf saved-game:*map-loaded-p* t)
               ;; testing opponents
               (interfaces:calculate  world 0.0)
               (world:add-ai-opponent world :warrior :male)
@@ -633,7 +608,7 @@
   (player-messages-text:init-player-messages-db)
   (resources-utils:init)
   (game-configuration:init)
-  (setf *map-loaded-p* nil)
+  (setf saved-game:*map-loaded-p* nil)
   (start)
   (sdl2:gl-set-attr :context-profile-mask  1)
   (sdl2:gl-set-attr :context-major-version 3)

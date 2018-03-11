@@ -5082,7 +5082,9 @@
         :md2-mesh)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
-   :save-game))
+   :*map-loaded-p*
+   :save-game
+   :load-map))
 
 ;; AI
 

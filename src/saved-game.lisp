@@ -16,6 +16,26 @@
 
 (in-package :saved-game)
 
+(defparameter *map-loaded-p* nil)
+
+(defparameter *xpos*     2.0)
+
+(defparameter *ypos*    40.0)
+
+(defparameter *zpos*   -20.0)
+
+(defparameter *xeye*     2.0)
+
+(defparameter *yeye*     0.0)
+
+(defparameter *zeye*     8.0)
+
+(defparameter *xup*      0.0)
+
+(defparameter *yup*      1.0)
+
+(defparameter *zup*      0.0)
+
 (defclass saved-player ()
   ((mesh-infos
     :initform nil
@@ -87,3 +107,13 @@
                                            :original-map-file (game-map-file game-state))))
     (fs:dump-sequence-to-file (serialize to-save) saved-file)
     saved-file))
+
+(defun load-map (window map-file)
+  (with-accessors ((world world)
+                   (compiled-shaders main-window::compiled-shaders)) window
+    (setf *map-loaded-p* nil)
+    (load-level:load-level window world (game-state window) compiled-shaders map-file)
+    (camera:look-at (world:camera world)
+                    *xpos* *ypos* *zpos* *xeye* *yeye* *zeye* *xup* *yup* *zup*)
+    ;(keyboard-world-navigation:reset-camera world)
+    (setf (camera:mode (world:camera world)) :fp)))

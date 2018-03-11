@@ -623,18 +623,24 @@
   (with-accessors ((pos pos)
                    (dir dir)
                    (target target)) object
-    (setf pos (vec (elt pos 0) (elt (3d-utils:aabb-center aabb) 1) (elt pos 2)))
-    (setf target (vec* pos +fit-to-aabb-scale-pos+))
-    (camera:look-at* object)
-    (do* ((scale 0.0 (d+ scale +fit-to-aabb-offset+))
-          (offset  (vec-negate dir)
-                   (vec* (vec-negate offset) scale))
-          (updated-camera (camera:calculate-frustum object)
-                          (camera:calculate-frustum updated-camera)))
-         ((and (camera:containsp updated-camera
-                                 (3d-utils:aabb-p2 aabb))
-               (camera:containsp updated-camera
-                                 (3d-utils:aabb-p1 aabb))))
-      (setf pos (vec+ pos offset))
-      (camera:look-at* updated-camera)
-     object)))
+    (let* ((center   (3d-utils:aabb-center aabb) 0)
+           (x-center (vec-x center))
+           (y-center (vec-x center))
+           (z-center (vec-x center)))
+      (setf pos (vec x-center
+                     y-center
+                     (d+ z-center 1.0)))
+      (setf target (vec x-center y-center z-center))
+      (camera:look-at* object)
+      (do* ((scale 0.0 (d+ scale +fit-to-aabb-offset+))
+            (offset  (vec-negate dir)
+                     (vec* (vec-negate offset) scale))
+            (updated-camera (camera:calculate-frustum object)
+                            (camera:calculate-frustum updated-camera)))
+           ((and (camera:containsp updated-camera
+                                   (3d-utils:aabb-p2 aabb))
+                 (camera:containsp updated-camera
+                                   (3d-utils:aabb-p1 aabb))))
+        (setf pos (vec+ pos offset))
+        (camera:look-at* updated-camera)))
+    object))
