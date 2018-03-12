@@ -5083,7 +5083,15 @@
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :*map-loaded-p*
+   :init-new-map-from-dump
+   :init-new-map
+   :init-system-when-gl-context-active
+   :init-system
+   :init-parallel-kernel
+   :clean-parallel-kernel
+   :clean-up-system
    :save-game
+   :load-game
    :load-map))
 
 ;; AI
@@ -5383,7 +5391,11 @@
         :identificable
         :load-level)
   (:export
+   :*placeholder*
+   :clean-up-placeholder
+   :root-compiled-shaders
    :world
    :accept-input-p
-   :main
-   :fps))
+   :delta-time-elapsed
+   :fps
+   :main))

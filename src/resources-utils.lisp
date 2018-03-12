@@ -104,7 +104,8 @@
 (defun create-home-resource (path resource)
   (let ((home-path (find-in-home-datadir (construct-resource-path resource path)
                                          :return-always-path t)))
-    (fs:create-file home-path)))
+    (fs:create-file home-path)
+    home-path))
 
 (defun get-shared-resource-filename (path resource)
   (find-in-shared-datadir (construct-resource-path resource path)

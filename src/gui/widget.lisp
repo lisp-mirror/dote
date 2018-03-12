@@ -2299,6 +2299,15 @@
           (setf (compiled-shaders success-message) (compiled-shaders w))
           (add-child toolbar success-message))))))
 
+(defun toolbar-load-game-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (toolbar) w
+    (with-toolbar-world (world) toolbar
+      (with-accessors ((main-state main-state)) world
+        (tg:gc :full t)
+        (let ((render-window (fetch-render-window main-state)))
+          (saved-game:load-game render-window +save-game-dir-1+))))))
+
 (defun toolbar-quit-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
@@ -2487,7 +2496,7 @@
    (b-load
     :initform (make-square-button *small-square-button-size* *small-square-button-size*
                                   +load-overlay-texture-name+
-                                  nil  ;; TODO callback
+                                  #'toolbar-load-game-cb
                                   :small t
                                   :modal nil)
     :initarg :b-load

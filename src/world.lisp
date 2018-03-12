@@ -799,7 +799,8 @@
                                  (smoke    (texture:get-texture texture:+smoke-tray+))
                                  (weather-type :foggy-night-clear-day))
   (setf (skydome object) (make-skydome bg clouds-1 clouds-2 clouds-3 smoke)
-        (weather-type    (skydome object)) weather-type))
+        (weather-type    (skydome object)) weather-type)
+  object)
 
 (defmethod get-window-size ((object world))
   (sdl2:get-window-size (frame-window object)))

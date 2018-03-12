@@ -27,14 +27,10 @@
 (defparameter *dt*        .0017)
 
 (defclass test-window (identificable transformable gl-window)
-  ((compiled-shaders
+  ((root-compiled-shaders
     :initform nil
-    :accessor compiled-shaders
-    :initarg :compiled-shaders)
-   (shaders-dictionary
-    :initform nil
-    :accessor shaders-dictionary
-    :initarg :shaders-dictionary)
+    :accessor root-compiled-shaders
+    :initarg :root-compiled-shaders)
    (game-state
     :initform (make-instance 'game-state)
     :accessor  game-state
@@ -93,61 +89,33 @@
 (defgeneric set-player-path (object x y))
 
 (defun load-map (window)
-  (saved-game:load-map window "test.lisp")
   (with-accessors ((world world)
-                   (compiled-shaders compiled-shaders)) window
-    (setf *placeholder* (trees:gen-tree
-                         (res:get-resource-file (elt *test-trees* 0)
-                                                constants:+trees-resource+
-                                                :if-does-not-exists :error)
-                         :flatten t))
-    (setf (interfaces:compiled-shaders *placeholder*) compiled-shaders)
-    (setf (entity:pos *placeholder*)
-          (vec (map-utils:coord-map->chunk 1.0)
-               +zero-height+
-               (map-utils:coord-map->chunk 1.0)))
-    (world:push-entity world *placeholder*)))
+                   (root-compiled-shaders root-compiled-shaders)) window
+    (saved-game:load-map window "test.lisp")
+    (saved-game::init-new-map window)
+    #+debug-mode
+    (progn
+      (setf *placeholder* (trees:gen-tree
+                           (res:get-resource-file (elt *test-trees* 0)
+                                                  constants:+trees-resource+
+                                                  :if-does-not-exists :error)
+                           :flatten t))
+      (setf (interfaces:compiled-shaders *placeholder*) root-compiled-shaders)
+      (setf (entity:pos *placeholder*)
+            (vec (map-utils:coord-map->chunk 1.0)
+                 +zero-height+
+                 (map-utils:coord-map->chunk 1.0)))
+      (world:push-entity world *placeholder*))))
 
 (defmethod initialize-instance :after ((object test-window) &key &allow-other-keys)
-  (with-accessors ((vao vao) (compiled-shaders compiled-shaders)
+  (with-accessors ((vao vao) (root-compiled-shaders root-compiled-shaders)
                    (projection-matrix projection-matrix)
                    (model-matrix model-matrix)
                    (view-matrix view-matrix)
                    (world world) (mesh mesh)
                    (game-state game-state)
                    (delta-time-elapsed delta-time-elapsed)) object
-    (setf (game-state:window-id game-state) (sdl2.kit-utils:fetch-window-id object))
-    (game-event:register-for-window-accept-input-event object)
-    (gl:front-face :ccw)
-    (gl:enable :depth-test :cull-face)
-    (gl:depth-func :less)
-    (gl:polygon-mode :front-and-back :fill)
-    (gl:clear-color 0 0 0 1)
-    (gl:clear-depth 1.0)
-    (setf compiled-shaders (compile-library))
-    ;; we need a valid opengl context to load spells database
-    (spell:load-spell-db)
-    ;; we need a valid opengl context to start texture's database
-    (texture:init-db)
-    (gui:setup-gui compiled-shaders)
-    ;; set up world
-    (setf world (make-instance 'world :frame-window object))
-    (mtree:add-child (world:gui world) (widget:make-splash-progress-gauge))
-    (setf (interfaces:compiled-shaders (world:gui world)) compiled-shaders)
-    (setf (mode (world:camera world)) :fp)
-    (camera:install-path-interpolator (world:camera world)
-                                      (vec 0.0  15.0 0.0)
-                                      (vec 64.0 30.0 0.0)
-                                      (vec 64.0 20.0 64.0)
-                                      (vec 0.0  30.0 64.0)
-                                      (vec 64.0  90.0 64.0))
-    (camera:install-drag-interpolator (world:camera world) :spring-k +camera-drag-spring-k+)
-    ;; setup projection
-    (transformable:build-projection-matrix world *near* *far* *fov*
-                                           (num:desired (/ *window-w* *window-h*)))
-    ;; setup visibility placeholder
-    (able-to-see-mesh:setup-placeholder world compiled-shaders)
-    (setf delta-time-elapsed (sdl2:get-ticks))))
+    (saved-game:init-system-when-gl-context-active object)))
 
 (defmacro with-gui ((world) &body body)
   (alexandria:with-gensyms (3d-projection-matrix 3d-view-matrix)
@@ -168,7 +136,7 @@
 
 (defmethod render ((object test-window))
   (declare (optimize (speed 0) (safety 3) (debug 3)))
-  (with-accessors ((compiled-shaders   compiled-shaders)
+  (with-accessors ((root-compiled-shaders   root-compiled-shaders)
                    (world              world)
                    (projection-matrix  projection-matrix)
                    (cpu-time-elapsed   cpu-time-elapsed)
@@ -202,6 +170,11 @@
           (with-gui (world)
             (world:render-gui world))))))
 
+(defun clean-up-placeholder ()
+  (when *placeholder*
+    (interfaces:destroy *placeholder*)
+    (setf *placeholder* nil)))
+
 (defmethod close-window ((w test-window))
   (with-accessors ((vao vao)) w
     (unwind-protect
@@ -209,15 +182,9 @@
       (progn
         ;; You MUST call-next-method.  But do it last, because everything
         ;; goes away when you do (your window, gl-context, etc)!
-        (interfaces:destroy (world w))
-        (interfaces:destroy (compiled-shaders w))
-        (texture:clean-db)
-        (arrows:clean-db)
-        (spell:clean-spell-db)
-        (gui:clean-font-db)
-        (md2:clean-db)
-        (game-event:clean-all-events-vectors)
-        (lparallel:end-kernel :wait t)
+        (saved-game:clean-up-system w)
+        (saved-game:clean-parallel-kernel)
+        #+debug-mode (clean-up-placeholder)
         (tg:gc :full t)
         (call-next-method)))))
 
@@ -304,37 +271,7 @@
             (when (string= text "D")
               (world:apply-tremor-0 world))
             (when (string= text "L")
-              (load-map object)
-              ;; gui
-              (setf (world:gui world)
-                    (make-instance 'widget:widget
-                                   :x 0.0 :y 0.0
-                                   :width  *window-w*
-                                   :height *window-h*
-                                   :label  nil))
-              (mtree:add-child (world:gui world) (world:toolbar world))
-              ;; test
-              (mtree:add-child (world:gui world)
-                               (widget:make-player-generator world))
-              ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-              (mtree:add-child (world:gui world)
-                               (full-screen-masks:make-burn-mask
-                                (level-name (game-state object))
-                                (level-name-color (game-state object))))
-              (setf (interfaces:compiled-shaders (world:gui world))
-                    (compiled-shaders object))
-              (setf saved-game:*map-loaded-p* t)
-              ;; testing opponents
-              (interfaces:calculate  world 0.0)
-              (world:add-ai-opponent world :warrior :male)
-              (world:add-ai-opponent world :wizard  :male)
-              (setf (delta-time-elapsed object) (sdl2:get-ticks))
-              ;; bg color
-              (let ((color (skydome-bottom-color (game-state object))))
-                (gl:clear-color (elt color 0)
-                                (elt color 1)
-                                (elt color 2)
-                                1.0))))
+              (load-map object)))
           (when (find text '("Y" "y" "X" "x") :test #'string=)
             (when (string= text "Y")
               (incf (elt (camera:target (world:camera world)) 1) 1.0))
@@ -380,7 +317,6 @@
         (let ((scancode (sdl2:scancode keysym)))
           #+(and debug-mode debug-ai)   (%change-ai-layer object scancode)
           #+debug-mode (when (eq :scancode-escape scancode)
-                         (setf *placeholder* nil)
                          (close-window object))
           (when (eq :scancode-3 scancode)
             (with-accessors ((world world) (mesh mesh)) object
@@ -592,30 +528,8 @@
 (defmethod other-event ((object test-window) event)
   (misc:dbg "other ~a" event))
 
-(defun init-system ()
-  (tg:gc :full t)
-  (handler-bind ((error
-                  #'(lambda(e)
-                      (declare (ignore e))
-                      (invoke-restart 'cl-i18n:return-empty-translation-table))))
-    (setf cl-i18n:*translation-file-root* +catalog-dir+)
-    (cl-i18n:load-language +text-domain+ :locale (cl-i18n:find-locale)))
-  (setf *workers-number* (if (> (os-utils:cpu-number) 1)
-                             (os-utils:cpu-number)
-                             1))
-  (setf lparallel:*kernel* (lparallel:make-kernel *workers-number*))
-  (setf identificable:*entity-id-counter* +start-id-counter+)
-  (player-messages-text:init-player-messages-db)
-  (resources-utils:init)
-  (game-configuration:init)
-  (setf saved-game:*map-loaded-p* nil)
-  (start)
-  (sdl2:gl-set-attr :context-profile-mask  1)
-  (sdl2:gl-set-attr :context-major-version 3)
-  (sdl2:gl-set-attr :context-minor-version 3))
-
 (defun main ()
-  (init-system)
+  (saved-game:init-system)
   (let ((w (make-instance 'test-window :w *window-w* :h *window-h* :title +program-name+)))
     (multiple-value-bind (wi he)
         (sdl2:get-window-size (sdl-window w))

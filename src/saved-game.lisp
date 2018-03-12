@@ -36,6 +36,12 @@
 
 (defparameter *zup*      0.0)
 
+(defparameter *far*    440.0)
+
+(defparameter *near*     5.0)
+
+(defparameter *fov*     50.0)
+
 (defclass saved-player ()
   ((mesh-infos
     :initform nil
@@ -108,12 +114,184 @@
     (fs:dump-sequence-to-file (serialize to-save) saved-file)
     saved-file))
 
+(defun init-new-map (window)
+  (with-accessors ((world world)
+                   (root-compiled-shaders main-window:root-compiled-shaders)) window
+    ;; (setf (interfaces:compiled-shaders (world:gui world)) root-compiled-shaders)
+    ;; (mtree:add-child (world:gui world) (widget:make-splash-progress-gauge))
+    (setf (camera:mode (world:camera world)) :fp)
+    (camera:install-drag-interpolator (world:camera world)
+                                      :spring-k +camera-drag-spring-k+)
+    ;; setup projection
+    (transformable:build-projection-matrix world *near* *far* *fov*
+                                           (num:desired (/ *window-w* *window-h*)))
+    ;; setup visibility placeholder
+    (able-to-see-mesh:setup-placeholder world root-compiled-shaders)
+    (setf (world:gui world)
+          (make-instance 'widget:widget
+                         :x 0.0 :y 0.0
+                         :width  *window-w*
+                         :height *window-h*
+                         :label  nil))
+    (mtree:add-child (world:gui world) (world:toolbar world))
+    (mtree:add-child (world:gui world)
+                     (widget:make-player-generator world))
+    (mtree:add-child (world:gui world)
+                     (full-screen-masks:make-burn-mask
+                      (level-name (main-state world))
+                      (level-name-color (main-state world))))
+    (setf (interfaces:compiled-shaders (world:gui world)) root-compiled-shaders)
+    (setf saved-game:*map-loaded-p* t)
+    ;; test
+    ;; testing opponents
+    (interfaces:calculate  world 0.0)
+    (world:add-ai-opponent world :warrior :male)
+    (world:add-ai-opponent world :wizard  :male)
+    ;;;;;
+    (setf (main-window::delta-time-elapsed window) (sdl2:get-ticks))
+    ;; bg color
+    (let ((color (skydome-bottom-color (game-state window))))
+      (gl:clear-color (elt color 0)
+                      (elt color 1)
+                      (elt color 2)
+                      1.0))))
+
+(defun init-new-map-from-dump (window saved-dump)
+  (assert saved-dump)
+  (with-accessors ((world world)
+                   (root-compiled-shaders main-window:root-compiled-shaders)) window
+    (clean-up-system window)
+    #+debug-mode (main-window:clean-up-placeholder)
+    (clean-parallel-kernel)
+    (init-parallel-kernel)
+    (init-system-when-gl-context-active window)
+    (setf (interfaces:compiled-shaders (world:gui world)) root-compiled-shaders)
+    (setf (camera:mode (world:camera world)) :fp)
+    (camera:install-drag-interpolator (world:camera world)
+                                      :spring-k +camera-drag-spring-k+)
+    ;; setup projection
+    (transformable:build-projection-matrix world *near* *far* *fov*
+                                           (num:desired (/ *window-w* *window-h*)))
+    ;; setup visibility placeholder
+    (able-to-see-mesh:setup-placeholder world root-compiled-shaders)
+    (load-map window (original-map-file saved-dump))
+    (setf (world:gui world)
+          (make-instance 'widget:widget
+                         :x 0.0 :y 0.0
+                         :width  *window-w*
+                         :height *window-h*
+                         :label  nil))
+    (mtree:add-child (world:gui world) (world:toolbar world))
+    (mtree:add-child (world:gui world)
+                     (full-screen-masks:make-burn-mask
+                      (level-name (main-state world))
+                      (level-name-color (main-state world))))
+    (setf (interfaces:compiled-shaders (world:gui world)) root-compiled-shaders)
+    (setf saved-game:*map-loaded-p* t)
+    ;; test
+    ;; testing opponents
+    (interfaces:calculate  world 0.0)
+    (world:add-ai-opponent world :warrior :male)
+    (world:add-ai-opponent world :wizard  :male)
+    ;;;;;
+    (setf (main-window::delta-time-elapsed window) (sdl2:get-ticks))
+    ;; bg color
+    (let ((color (skydome-bottom-color (game-state window))))
+      (gl:clear-color (elt color 0)
+                      (elt color 1)
+                      (elt color 2)
+                      1.0))))
+
+(defun init-system-when-gl-context-active (window)
+  (with-accessors ((root-compiled-shaders main-window:root-compiled-shaders)
+                   (world            main-window:world)) window
+    (setf (game-state:window-id (game-state window)) (sdl2.kit-utils:fetch-window-id window))
+    (game-event:register-for-window-accept-input-event window)
+    (gl:front-face :ccw)
+    (gl:enable :depth-test :cull-face)
+    (gl:depth-func :less)
+    (gl:polygon-mode :front-and-back :fill)
+    (gl:clear-color 0 0 0 1)
+    (gl:clear-depth 1.0)
+    (setf root-compiled-shaders (shaders-utils:compile-library))
+    ;; we need a valid opengl context to load spells database
+    (spell:load-spell-db)
+    ;; we need a valid opengl context to start texture's database
+    (texture:init-db)
+    (gui:setup-gui root-compiled-shaders)
+    ;; set up world
+    (setf (main-window:world window) (make-instance 'world :frame-window window))
+    (mtree:add-child (world:gui world) (widget:make-splash-progress-gauge))
+    (setf (interfaces:compiled-shaders (world:gui world)) root-compiled-shaders)
+    (setf (camera:mode (world:camera (main-window:world window))) :fp)
+    (camera:install-path-interpolator (world:camera world)
+                                      (sb-cga:vec 0.0  15.0 0.0)
+                                      (sb-cga:vec 64.0 30.0 0.0)
+                                      (sb-cga:vec 64.0 20.0 64.0)
+                                      (sb-cga:vec 0.0  30.0 64.0)
+                                      (sb-cga:vec 64.0  90.0 64.0))
+    (camera:install-drag-interpolator (world:camera world) :spring-k +camera-drag-spring-k+)
+    ;; setup projection
+    (transformable:build-projection-matrix world *near* *far* *fov*
+                                           (num:desired (/ *window-w* *window-h*)))
+    ;; setup visibility placeholder
+    (able-to-see-mesh:setup-placeholder world root-compiled-shaders)
+    (setf (main-window:delta-time-elapsed window) (sdl2:get-ticks))))
+
+(defun init-parallel-kernel ()
+  (setf *workers-number* (if (> (os-utils:cpu-number) 1)
+                             (os-utils:cpu-number)
+                             1))
+  (setf lparallel:*kernel* (lparallel:make-kernel *workers-number*)))
+
+(defun clean-parallel-kernel ()
+  (lparallel:end-kernel :wait t))
+
+(defun init-system ()
+  (tg:gc :full t)
+  (handler-bind ((error
+                  #'(lambda(e)
+                      (declare (ignore e))
+                      (invoke-restart 'cl-i18n:return-empty-translation-table))))
+    (setf cl-i18n:*translation-file-root* +catalog-dir+)
+    (cl-i18n:load-language +text-domain+ :locale (cl-i18n:find-locale)))
+  (init-parallel-kernel)
+  (setf identificable:*entity-id-counter* +start-id-counter+)
+  (player-messages-text:init-player-messages-db)
+  (resources-utils:init)
+  (game-configuration:init)
+  (setf saved-game:*map-loaded-p* nil)
+  (sdl2.kit:start)
+  (sdl2:gl-set-attr :context-profile-mask  1)
+  (sdl2:gl-set-attr :context-major-version 3)
+  (sdl2:gl-set-attr :context-minor-version 3))
+
+(defun clean-up-system (window)
+  (interfaces:destroy (main-window:world window))
+  (interfaces:destroy (main-window:root-compiled-shaders window))
+  (texture:clean-db)
+  (arrows:clean-db)
+  (spell:clean-spell-db)
+  (gui:clean-font-db)
+  (md2:clean-db)
+  (game-event:clean-all-events-vectors)
+  (tg:gc :full t))
+
+(defun load-game (window resource-dir)
+  (let ((saved-dump (make-instance 'saved-game))
+        (saved-file (res:get-resource-file +map-saved-filename+
+                                           resource-dir
+                                           :if-does-not-exists :error)))
+    (setf saved-dump (deserialize saved-dump saved-file))
+    (tg:gc :full t)
+    (init-new-map-from-dump window saved-dump)
+    window))
+
 (defun load-map (window map-file)
   (with-accessors ((world world)
-                   (compiled-shaders main-window::compiled-shaders)) window
+                   (root-compiled-shaders main-window:root-compiled-shaders)) window
     (setf *map-loaded-p* nil)
-    (load-level:load-level window world (game-state window) compiled-shaders map-file)
+    (load-level:load-level window world (game-state window) root-compiled-shaders map-file)
     (camera:look-at (world:camera world)
                     *xpos* *ypos* *zpos* *xeye* *yeye* *zeye* *xup* *yup* *zup*)
-    ;(keyboard-world-navigation:reset-camera world)
     (setf (camera:mode (world:camera world)) :fp)))
