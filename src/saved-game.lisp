@@ -150,7 +150,7 @@
     ;;;;;
     (setf (main-window::delta-time-elapsed window) (sdl2:get-ticks))
     ;; bg color
-    (let ((color (skydome-bottom-color (game-state window))))
+    (let ((color (skydome-bottom-color (main-window:window-game-state window))))
       (gl:clear-color (elt color 0)
                       (elt color 1)
                       (elt color 2)
@@ -161,8 +161,9 @@
   (with-accessors ((world world)
                    (root-compiled-shaders main-window:root-compiled-shaders)) window
     (clean-up-system window)
-    #+debug-mode (main-window:clean-up-placeholder)
     (clean-parallel-kernel)
+    (identificable:init-counter)
+    #+debug-mode (main-window:clean-up-placeholder)
     (init-parallel-kernel)
     (init-system-when-gl-context-active window)
     (setf (interfaces:compiled-shaders (world:gui world)) root-compiled-shaders)
@@ -188,15 +189,9 @@
                       (level-name-color (main-state world))))
     (setf (interfaces:compiled-shaders (world:gui world)) root-compiled-shaders)
     (setf saved-game:*map-loaded-p* t)
-    ;; test
-    ;; testing opponents
-    (interfaces:calculate  world 0.0)
-    (world:add-ai-opponent world :warrior :male)
-    (world:add-ai-opponent world :wizard  :male)
-    ;;;;;
     (setf (main-window::delta-time-elapsed window) (sdl2:get-ticks))
     ;; bg color
-    (let ((color (skydome-bottom-color (game-state window))))
+    (let ((color (skydome-bottom-color (main-window:window-game-state window))))
       (gl:clear-color (elt color 0)
                       (elt color 1)
                       (elt color 2)
@@ -204,8 +199,11 @@
 
 (defun init-system-when-gl-context-active (window)
   (with-accessors ((root-compiled-shaders main-window:root-compiled-shaders)
-                   (world            main-window:world)) window
-    (setf (game-state:window-id (game-state window)) (sdl2.kit-utils:fetch-window-id window))
+                   (world            main-window:world)
+                   (window-game-state main-window:window-game-state)) window
+    (setf window-game-state (make-instance 'game-state:game-state))
+    (setf (game-state:window-id window-game-state)
+          (sdl2.kit-utils:fetch-window-id window))
     (game-event:register-for-window-accept-input-event window)
     (gl:front-face :ccw)
     (gl:enable :depth-test :cull-face)
@@ -220,6 +218,8 @@
     (texture:init-db)
     (gui:setup-gui root-compiled-shaders)
     ;; set up world
+    (setf (main-window:world window) nil)
+    (tg:gc :full t)
     (setf (main-window:world window) (make-instance 'world :frame-window window))
     (mtree:add-child (world:gui world) (widget:make-splash-progress-gauge))
     (setf (interfaces:compiled-shaders (world:gui world)) root-compiled-shaders)
@@ -256,7 +256,7 @@
     (setf cl-i18n:*translation-file-root* +catalog-dir+)
     (cl-i18n:load-language +text-domain+ :locale (cl-i18n:find-locale)))
   (init-parallel-kernel)
-  (setf identificable:*entity-id-counter* +start-id-counter+)
+  (identificable:init-counter)
   (player-messages-text:init-player-messages-db)
   (resources-utils:init)
   (game-configuration:init)
@@ -267,6 +267,8 @@
   (sdl2:gl-set-attr :context-minor-version 3))
 
 (defun clean-up-system (window)
+  (setf (main-window:window-game-state window) nil)
+  (absee-mesh:clean-visibility-target-placeholder)
   (interfaces:destroy (main-window:world window))
   (interfaces:destroy (main-window:root-compiled-shaders window))
   (texture:clean-db)
@@ -291,7 +293,10 @@
   (with-accessors ((world world)
                    (root-compiled-shaders main-window:root-compiled-shaders)) window
     (setf *map-loaded-p* nil)
-    (load-level:load-level window world (game-state window) root-compiled-shaders map-file)
+    (load-level:load-level window
+                           world
+                           (main-window:window-game-state window)
+                           root-compiled-shaders map-file)
     (camera:look-at (world:camera world)
                     *xpos* *ypos* *zpos* *xeye* *yeye* *zeye* *xup* *yup* *zup*)
     (setf (camera:mode (world:camera world)) :fp)))

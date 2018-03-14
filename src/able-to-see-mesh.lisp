@@ -21,6 +21,9 @@
 (defparameter *ray-test-id-entities-ignored* nil
   "a list of id that the ray will ignore" )
 
+(defun clean-visibility-target-placeholder ()
+  (setf *visibility-target-placeholder* nil))
+
 (defun setup-placeholder (world shaders)
   (let ((tree-mesh (trees:gen-tree (res:get-resource-file +mesh-placeholder-file+
                                                           constants:+trees-resource+

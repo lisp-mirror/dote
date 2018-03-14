@@ -31,10 +31,10 @@
     :initform nil
     :accessor root-compiled-shaders
     :initarg :root-compiled-shaders)
-   (game-state
+   (window-game-state
     :initform (make-instance 'game-state)
-    :accessor  game-state
-    :initarg :game-state)
+    :accessor  window-game-state
+    :initarg :window-game-state)
    (world
     :initform nil
     :accessor world
@@ -108,12 +108,12 @@
       (world:push-entity world *placeholder*))))
 
 (defmethod initialize-instance :after ((object test-window) &key &allow-other-keys)
-  (with-accessors ((vao vao) (root-compiled-shaders root-compiled-shaders)
+  (with-accessors ((root-compiled-shaders root-compiled-shaders)
                    (projection-matrix projection-matrix)
                    (model-matrix model-matrix)
                    (view-matrix view-matrix)
                    (world world) (mesh mesh)
-                   (game-state game-state)
+                   (window-game-state window-game-state)
                    (delta-time-elapsed delta-time-elapsed)) object
     (saved-game:init-system-when-gl-context-active object)))
 
@@ -176,17 +176,16 @@
     (setf *placeholder* nil)))
 
 (defmethod close-window ((w test-window))
-  (with-accessors ((vao vao)) w
-    (unwind-protect
-         (misc:dbg "Bye!")
-      (progn
-        ;; You MUST call-next-method.  But do it last, because everything
-        ;; goes away when you do (your window, gl-context, etc)!
-        (saved-game:clean-up-system w)
-        (saved-game:clean-parallel-kernel)
-        #+debug-mode (clean-up-placeholder)
-        (tg:gc :full t)
-        (call-next-method)))))
+  (unwind-protect
+       (misc:dbg "Bye!")
+    (progn
+      ;; You MUST call-next-method.  But do it last, because everything
+      ;; goes away when you do (your window, gl-context, etc)!
+      (saved-game:clean-up-system w)
+      (saved-game:clean-parallel-kernel)
+      #+debug-mode (clean-up-placeholder)
+      (tg:gc :full t)
+      (call-next-method))))
 
 (defmethod mousewheel-event ((object test-window) ts x y)
   #+debug-mode (misc:dbg "wheel ~a ~a ~a" ts x y)
@@ -200,8 +199,8 @@
     (with-accessors ((selected-pc selected-pc)) world
     (if (string= text "S")
         (progn
-          (game-state:setup-game-hour (game-state object)
-                                      (mod (1+ (game-hour (game-state object))) 24)))
+          (game-state:setup-game-hour (window-game-state object)
+                                      (mod (1+ (game-hour (window-game-state object))) 24)))
         (progn
           (when (string= text "P")
             (let ((camera (world:camera world)))
@@ -320,7 +319,7 @@
                          (close-window object))
           (when (eq :scancode-3 scancode)
             (with-accessors ((world world) (mesh mesh)) object
-              (let* ((game-state         (game-state object))
+              (let* ((game-state         (window-game-state object))
                      (blackboard         (blackboard game-state)))
                 (with-accessors ((selected-pc selected-pc)) world
                   (misc:dbg "ppp ~a"
@@ -335,8 +334,8 @@
           (when *placeholder*
             (let* ((old-pos (entity:pos *placeholder*)))
               (when (eq :scancode-1 scancode)
-                (let* ((game-state         (game-state object))
-                       (blackboard         (blackboard game-state))
+                (let* ((window-game-state         (window-game-state object))
+                       (blackboard         (blackboard window-game-state))
                        (concerning-matrix (blackboard:concerning-tiles->costs-matrix blackboard))
                        (x-cost            (map-utils:coord-chunk->costs (elt old-pos 0)))
                        (y-cost            (map-utils:coord-chunk->costs (elt old-pos 2))))
@@ -344,20 +343,20 @@
                             old-pos
                             (map-utils:coord-chunk->costs (elt old-pos 0))
                             (map-utils:coord-chunk->costs (elt old-pos 2))
-                            (get-cost       (game-state object)
+                            (get-cost       (window-game-state object)
                                             (map-utils:coord-chunk->costs (elt old-pos 0))
                                             (map-utils:coord-chunk->costs (elt old-pos 2)))
-                            (el-type-in-pos   (game-state object)
+                            (el-type-in-pos   (window-game-state object)
                                               (map-utils:coord-chunk->costs (elt old-pos 0))
                                               (map-utils:coord-chunk->costs (elt old-pos 2)))
-                            (entity-id-in-pos (game-state object)
+                            (entity-id-in-pos (window-game-state object)
                                               (map-utils:coord-chunk->costs (elt old-pos 0))
                                               (map-utils:coord-chunk->costs (elt old-pos 2)))
-                            (approx-terrain-height@pos (game-state object)
+                            (approx-terrain-height@pos (window-game-state object)
                                                        (elt old-pos 0)
                                                        (elt old-pos 2))
                             (map-utils:facing-pos old-pos (entity:dir *placeholder*))
-                            (game-state:occludep-in-pos (game-state object)
+                            (game-state:occludep-in-pos (window-game-state object)
                                                         (map-utils:coord-chunk->costs (elt old-pos
                                                                                            0))
                                                         (map-utils:coord-chunk->costs (elt old-pos

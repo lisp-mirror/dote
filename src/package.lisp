@@ -1141,6 +1141,7 @@
         :config
         :interfaces)
   (:export
+   :init-counter
    :*clone-id*
    :*entity-id-counter*
    :valid-id-p
@@ -4074,6 +4075,7 @@
   (:export
    :*visibility-target-placeholder*
    :*ray-test-id-entities-ignored*
+   :clean-visibility-target-placeholder
    :setup-placeholder
    :with-placeholder@
    :placeholder-visible-p
@@ -5394,6 +5396,7 @@
    :*placeholder*
    :clean-up-placeholder
    :root-compiled-shaders
+   :window-game-state
    :world
    :accept-input-p
    :delta-time-elapsed

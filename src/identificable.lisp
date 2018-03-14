@@ -21,6 +21,9 @@
 ;; not thread-safe i guess
 (defparameter *entity-id-counter* (the fixnum +start-id-counter+))
 
+(defun init-counter ()
+  (setf *entity-id-counter* (the fixnum +start-id-counter+)))
+
 (defun valid-id-p (id)
   (>= id +start-id-counter+))
 
