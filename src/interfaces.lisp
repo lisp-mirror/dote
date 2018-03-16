@@ -403,6 +403,8 @@
 
 (defgeneric apply-damage (object damage &key &allow-other-keys))
 
+(defgeneric remove-from-game (object))
+
 (defgeneric faction-player-p (object &optional id-entity))
 
 (defgeneric faction-ai-p (object &optional id-entity))

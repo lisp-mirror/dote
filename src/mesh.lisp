@@ -2902,14 +2902,25 @@
           (setf current-damage-points (d- current-damage-points damage))
           (setf (fading-away-fn object) (tremor:tree-tremor-fn 20.0))
           (when (entity-dead-p object)
-            (let ((cost-pos (map-utils:pos-entity-chunk->cost-pos pos)))
-              (clean-map-state-entity state cost-pos)
-              (game-state:with-world (world state)
-                (remove-entity-by-id world id))
-              (set-minimum-cost-map-layer@ state (elt cost-pos 0) (elt cost-pos 1))
-              (setf (renderp object) nil)
-              (when (parent-labyrinth object)
-                (update-for-rendering (parent-labyrinth object))))))))))
+            (remove-from-game object))))))
+  object)
+
+(defmethod remove-from-game ((object triangle-mesh))
+  "Totaly remove a  mesh from the game (i.e. no  further interation is
+possible)."
+  (with-accessors ((id    id)
+                   (state state)) object
+    (game-state:with-world (world state)
+      (let* ((cost-pos (calculate-cost-position object))
+             (x-cost   (ivec2:ivec2-x cost-pos))
+             (y-cost   (ivec2:ivec2-y cost-pos)))
+        (clean-map-state-entity state cost-pos)
+        (remove-entity-by-id world id)
+        (set-minimum-cost-map-layer@ state x-cost y-cost)
+        (setf (renderp object) nil)
+        (when (parent-labyrinth object)
+          (update-for-rendering (parent-labyrinth object))))))
+  object)
 
 (defclass tree-mesh-shell (triangle-mesh-shell) ())
 

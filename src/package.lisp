@@ -672,6 +672,7 @@
    :removeable-from-world-p
    :almost-removeable-from-world-p
    :apply-damage
+   :remove-from-game
    :faction-player-p
    :faction-ai-p
    :my-faction
@@ -2263,6 +2264,7 @@
         :config
         :constants
         :num
+        :ivec2
         :vec4
         :matrix
         :interfaces

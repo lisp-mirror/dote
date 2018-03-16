@@ -971,8 +971,8 @@
 (defmethod clean-map-state-entity ((object game-state) coord)
   "Coord is #(x y), #(z x) actually"
   (with-accessors ((map-state map-state)) object
-    (let* ((x    (elt coord 0))
-           (y    (elt coord 1))
+    (let* ((x    (ivec2-x coord))
+           (y    (ivec2-y coord))
            (tile (make-instance 'map-state-element :occlude nil)))
       (setf (matrix-elt map-state y x) tile))))
 

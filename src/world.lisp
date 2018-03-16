@@ -350,7 +350,8 @@
 
 (defmethod remove-entity-by-id ((object world) id)
   (remove-entity-by-id (main-state object) id) ;; remove from game state (logic)
-  (remove-entity-by-id (entities object)   id)) ;; remove from rendering
+  (remove-entity-by-id (entities object)   id) ;; remove from rendering
+  object)
 
 (defmethod enqueue-action ((object world) (new-action game-action))
   (with-accessors ((actions-queue actions-queue)) object
