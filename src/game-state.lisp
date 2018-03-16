@@ -609,7 +609,10 @@
       (eq (el-type-in-pos object x y) +door-e-type+)))
 
 (defmethod empty@pos-p ((object game-state) (x fixnum) (y fixnum))
-  (map-element-empty-p (element-mapstate@ object x y)))
+  (empty@pos-p (map-state object) x y))
+
+(defmethod empty@pos-p ((object matrix) (x fixnum) (y fixnum))
+  (map-element-empty-p (matrix-elt object y x)))
 
 (defmethod prepare-map-state ((object game-state) (map random-terrain))
   (with-accessors ((map-state map-state)) object

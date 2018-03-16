@@ -2292,7 +2292,7 @@
       (with-accessors ((main-state main-state)) world
         (saved-game:save-game +save-game-dir-1+ main-state)
         (let* ((success-message (make-message-box (_ "Game saved")
-                                                  "Success"
+                                                  (_ "Success")
                                                   :info
                                                   (cons (_ "OK")
                                                         #'hide-and-remove-parent-cb))))
@@ -4121,7 +4121,7 @@
       (with-accessors ((main-state main-state)) world
         (if (null model-preview-paths)
             (let ((error-message (make-message-box (_ "Mesh not specified")
-                                                   "Error"
+                                                   (_ "Error")
                                                    :error
                                                    (cons (_ "OK")
                                                          #'player-accept-error-message-cb))))

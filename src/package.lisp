@@ -5065,6 +5065,7 @@
                 :translate*
                 :transform-point)
   (:export
+   :get-level-file-abs-path
    :load-level))
 
 (defpackage :saved-game

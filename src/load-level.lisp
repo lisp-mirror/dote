@@ -938,9 +938,12 @@ wall's    coordinates    as    they   are    already    scaled:    see
              (prepare-for-rendering chunk)
              (push-entity world chunk))))))
 
+(defun get-level-file-abs-path (filename)
+  (res:get-resource-file filename +maps-resource+
+                         :if-does-not-exists :error))
+
 (defun load-level (window world game-state compiled-shaders file)
-  (let* ((actual-file (res:get-resource-file file +maps-resource+
-                                             :if-does-not-exists :error))
+  (let* ((actual-file (get-level-file-abs-path file))
          (resource-cache:*cache-reference-file* actual-file))
     (setf *main-window* window)
     (setf *renderer*    world)

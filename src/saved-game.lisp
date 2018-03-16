@@ -70,17 +70,13 @@
     :initarg  :original-map-file
     :accessor original-map-file
     :type     string)
-   (canceled-tiles
+   (delta-tiles
     :initform nil
-    :initarg  :canceled-tiles
-    :accessor canceled-tiles
+    :initarg  :delta-tiles
+    :accessor delta-tiles
     :type     matrix
-    :documentation "A  matrix of game-state:map-state-element.   if an
-                    element of this  matrix is game-state:+empty-type+
-                    and      the     corresponding      element     in
-                    game-state:map-state is  not empty,  after loading
-                    the level, that element must  be erased and put to
-                    game-state:+empty-type+")
+    :documentation     "A     snapshot     of    the     matrix     in
+    game-state:map-state-element when the game was saved.")
    (saved-players
     :initform nil
     :initarg  :saved-players
@@ -89,7 +85,7 @@
 
 (defmethod marshal:class-persistant-slots ((object saved-game))
   '(original-map-file
-    canceled-tiles
+    delta-tiles
     saved-players))
 
 (define-constant +map-saved-filename+ "map" :test #'string=)
@@ -109,7 +105,7 @@
                                     (map-player-entities game-state #'mesh->saved-player)))
          (to-save           (make-instance 'saved-game
                                            :saved-players     saved-player
-                                           :canceled-tiles    current-map-state
+                                           :delta-tiles       current-map-state
                                            :original-map-file (game-map-file game-state))))
     (fs:dump-sequence-to-file (serialize to-save) saved-file)
     saved-file))
@@ -279,15 +275,51 @@
   (game-event:clean-all-events-vectors)
   (tg:gc :full t))
 
+(defun delete-in-map-destination-p (orig dest x y)
+  (and (empty@pos-p orig x y)
+       (not (empty@pos-p dest x y))))
+
+(defun delete-in-map-destination (game-state x y)
+  (let ((entity-to-delete (entity-in-pos game-state x y)))
+    (assert entity-to-delete)
+    (remove-from-game entity-to-delete)))
+
+(defun error-message-save-game-outdated (window)
+  (with-accessors ((root-compiled-shaders main-window:root-compiled-shaders)
+                   (world                 main-window:world)) window
+    (let* ((error-text (_ "The map file of this level has been modified after the game was saved."))
+           (error-msg  (widget:make-message-box error-text
+                                                (_ "Saved game is outdated")
+                                                :error
+                                                (cons (_ "OK")
+                                                      #'widget:hide-and-remove-parent-cb))))
+      (setf (compiled-shaders error-msg) root-compiled-shaders)
+      (mtree:add-child (gui world) error-msg))))
+
 (defun load-game (window resource-dir)
   (let ((saved-dump (make-instance 'saved-game))
         (saved-file (res:get-resource-file +map-saved-filename+
                                            resource-dir
                                            :if-does-not-exists :error)))
-    (setf saved-dump (deserialize saved-dump saved-file))
     (tg:gc :full t)
-    (init-new-map-from-dump window saved-dump)
-    window))
+    (setf saved-dump (deserialize saved-dump saved-file))
+    (with-accessors ((delta-tiles       delta-tiles)
+                     (original-map-file original-map-file)) saved-dump
+      (if (not (fs:file-outdated-p saved-file
+                                   (load-level:get-level-file-abs-path original-map-file)))
+          (progn
+            (tg:gc :full t)
+            (init-new-map-from-dump window saved-dump)
+            (with-accessors ((window-game-state     main-window:window-game-state)
+                             (root-compiled-shaders main-window:root-compiled-shaders)
+                             (world                 main-window:world)) window
+              (with-accessors ((map-state map-state)) window-game-state
+                (loop-matrix (delta-tiles x y)
+                   (cond
+                     ((delete-in-map-destination-p delta-tiles map-state x y)
+                      (delete-in-map-destination window-game-state x y)))))))
+          (error-message-save-game-outdated window))))
+    window)
 
 (defun load-map (window map-file)
   (with-accessors ((world world)
