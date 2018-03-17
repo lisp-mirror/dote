@@ -4076,7 +4076,9 @@
     (with-file-chooser (button fchooser-window)
       (let ((new-player (deserialize (make-instance 'character:player-character)
                                      (fetch-file-chooser-path fchooser-window))))
-        (%setup-character win :new-player new-player))))
+        (%setup-character win
+                          :new-player                    new-player
+                          :force-rendering-modify-widget t))))
   t)
 
 (defun player-save-cb (button event)
@@ -4208,7 +4210,9 @@
                             lb-exp-points lb-exp-points)))
       (find-max (mapcar #'(lambda (a) (length (prefix a))) all-labels)))))
 
-(defun %setup-character (win &key (new-player nil))
+(defun %setup-character (win &key
+                               (new-player nil)
+                               (force-rendering-modify-widget nil))
   (with-accessors ((input-name input-name)
                    (input-last-name input-last-name)
                    (lb-strength lb-strength)
@@ -4303,21 +4307,22 @@
         (progn
           (setf (label input-name)      (character:first-name new-player))
           (setf (label input-last-name) (character:last-name new-player))
-          (remove-child-if win #'(lambda (a) (find a (list b-generate
-                                                           b-save
-                                                           b-load
-                                                           b-accept
-                                                           b-next-preview
-                                                           checkb-warrior
-                                                           checkb-wizard
-                                                           checkb-healer
-                                                           checkb-archer
-                                                           checkb-ranger
-                                                           checkb-male
-                                                           checkb-female
-                                                           lb-gender
-                                                           lb-class
-                                                           img-preview))))
+          (when (not force-rendering-modify-widget)
+            (remove-child-if win #'(lambda (a) (find a (list b-generate
+                                                             b-save
+                                                             b-load
+                                                             b-accept
+                                                             b-next-preview
+                                                             checkb-warrior
+                                                             checkb-wizard
+                                                             checkb-healer
+                                                             checkb-archer
+                                                             checkb-ranger
+                                                             checkb-male
+                                                             checkb-female
+                                                             lb-gender
+                                                             lb-class
+                                                             img-preview)))))
           (setf (callback close-button)
                 #'(lambda (widget event)
                     (setf (character:exp-points new-player) 0.0)
