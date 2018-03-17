@@ -80,6 +80,15 @@
   (declare (ignore object))
   (marshal:unmarshal (read-from-string (filesystem-utils:slurp-file file))))
 
+;; to use with ms:initialize-unmarshalled-instance
+(defgeneric post-deserialization-fix (object))
+
+(defmethod post-deserialization-fix (object)
+  object)
+
+(defmethod post-deserialization-fix ((object (eql nil)))
+  nil)
+
 (defclass renderizable ()
   ((compiled-shaders
     :initform nil

@@ -630,6 +630,7 @@
    :serialize
    :serialize-to-stream
    :deserialize
+   :post-deserialization-fix
    :description-for-humans
    :fading-away-entity
    :fading-away-fn

@@ -658,8 +658,8 @@
 (defmethod deserialize ((object player-character) file)
   (declare (ignore object))
   (let ((res (marshal:unmarshal (read-from-string (filesystem-utils:slurp-file file)))))
-    (when (portrait res)
-      (texture:gen-name-and-inject-in-database (portrait res)))
+    ;; (when (portrait res)
+    ;;   (texture:gen-name-and-inject-in-database (portrait res)))
     (init-postponed-messages-functions (postponed-messages res))
     res))
 

@@ -244,6 +244,16 @@
             normalmap-params)
           (call-next-method)))
 
+(defmethod marshal:initialize-unmarshalled-instance ((object texture))
+  (let ((unbounded-slots '(bits
+                           compiled-shaders
+                           errors
+                           handle
+                           magic-number
+                           prepared-for-rendering)))
+    (shared-initialize object unbounded-slots) ;; initialize transients slots
+    (post-deserialization-fix object)))
+
 (defmethod initializedp ((object texture))
   (prepared-for-rendering object))
 
@@ -432,6 +442,12 @@
 
 (defmethod unbind-texture (object)
   (gl:bind-texture :texture-2d 0))
+
+(defmethod post-deserialization-fix ((object texture))
+  (pixmap::sync-data-to-bits object)
+  (texture:gen-name-and-inject-in-database object)
+  (texture:prepare-for-rendering object)
+  object)
 
 (defmacro gen-normalmap-params-reader (name)
   (let ((fn-name (alexandria:format-symbol t "~:@(n-~a~)" name)))

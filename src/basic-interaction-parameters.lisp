@@ -243,7 +243,13 @@
   (defmethod make-load-form ((object decay-parameters) &optional environment)
     (make-load-form-saving-slots object
                                  :slot-names '(when-decay points leaving-message decay-fn)
-                                 :environment environment)))
+                                 :environment environment))
+
+  (defmethod marshal:class-persistant-slots ((object decay-parameters))
+    '(when-decay
+      points
+      decay-fn
+      leaving-message)))
 
 (defmacro define-decay (params)
   (let* ((parameters (misc:build-plist params))
@@ -299,7 +305,12 @@
                                           (_ "(~d turns)")
                                           (duration object)))
               +gui-static-text-nbsp+
-              (modifier object))))
+              (modifier object)))
+    (defmethod marshal:class-persistant-slots ((object effect-parameters))
+    '(trigger
+      points
+      duration
+      modifier)))
 
 (defmacro define-effect (params)
   (let* ((parameters  (misc:build-plist params))
@@ -346,7 +357,9 @@
   (defmethod make-load-form ((object parameters-with-chance) &optional environment)
       (make-load-form-saving-slots object
                                    :slot-names '(chance)
-                                   :environment environment)))
+                                   :environment environment))
+  (defmethod marshal:class-persistant-slots ((object parameters-with-chance))
+    '(chance)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass parameters-with-target ()
@@ -358,7 +371,9 @@
   (defmethod make-load-form ((object parameters-with-target) &optional environment)
       (make-load-form-saving-slots object
                                    :slot-names '(target)
-                                   :environment environment)))
+                                   :environment environment))
+  (defmethod marshal:class-persistant-slots ((object parameters-with-target))
+    '(target)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass healing-effect-parameters (parameters-with-chance parameters-with-target)
@@ -391,7 +406,12 @@
                   ""
                   (format nil (_ "~d turns ") (duration object)))
               (chance->chance-for-human (chance object))
-              (target object))))
+              (target object)))
+
+    (defmethod marshal:class-persistant-slots ((object healing-effect-parameters))
+        (append '(trigger
+                  duration)
+                (call-next-method))))
 
 (defmacro define-healing-effect (params)
   (let* ((parameters (misc:build-plist params))
@@ -453,7 +473,12 @@
                                    :environment environment))
 
     (defmethod description-for-humans ((object magic-effect-parameters))
-      (spell:spell-id->string-for-human (spell-id object))))
+      (spell:spell-id->string-for-human (spell-id object)))
+
+    (defmethod marshal:class-persistant-slots ((object magic-effect-parameters))
+      (append '(trigger
+                spell-id)
+              (call-next-method))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass poison-effect-parameters (parameters-with-chance parameters-with-target)
@@ -486,7 +511,12 @@
                   (format nil (_ "(~,1f damage per turn)") (points-per-turn object))
                   "")
               (chance->chance-for-human (chance object))
-              (target object))))
+              (target object)))
+
+    (defmethod marshal:class-persistant-slots ((object poison-effect-parameters))
+      (append '(points-per-turn
+                trigger)
+              (call-next-method))))
 
 (defmacro define-poison-effect (params)
   (let* ((parameters (misc:build-plist params))
@@ -544,7 +574,12 @@
               (or (points object)
                   0)
               (target object)
-              (chance->chance-for-human (chance object)))))
+              (chance->chance-for-human (chance object))))
+
+    (defmethod marshal:class-persistant-slots ((object heal-damage-points-effect-parameters))
+        (append '(points
+                  trigger)
+                (call-next-method))))
 
 (defmacro define-heal-dmg-effect (params)
   (let* ((parameters (misc:build-plist params))
