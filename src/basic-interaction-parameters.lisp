@@ -308,7 +308,6 @@
               (modifier object)))
     (defmethod marshal:class-persistant-slots ((object effect-parameters))
     '(trigger
-      points
       duration
       modifier)))
 

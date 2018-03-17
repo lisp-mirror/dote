@@ -606,48 +606,55 @@
             (mapcar #'description-for-humans (inventory object)))))
 
 (defmethod marshal:class-persistant-slots ((object player-character))
-  (append  '(model-origin-dir
-             current-path
-             gender
-             player-class
-             strength
-             stamina
-             dexterity
-             agility
-             smartness
-             empaty
-             weight
-             movement-points
-             current-movement-points
-             spell-points
-             current-spell-points
-             dodge-chance
-             melee-attack-chance
-             range-attack-chance
-             melee-attack-damage
-             range-attack-damage
-             edge-weapons-chance-bonus
-             edge-weapons-damage-bonus
-             impact-weapons-chance-bonus
-             impact-weapons-damage-bonus
-             pole-weapons-chance-bonus
-             pole-weapons-damage-bonus
-             modifiers-effects
-             unlock-chance
-             deactivate-trap-chance
-             reply-attack-chance
-             ambush-attack-chance
-             spell-chance
-             attack-spell-chance
-             status
-             immune-faint-status
-             immune-berserk-status
-             immune-poison-status
-             immune-terror-status
-             recurrent-effects
-             race
-             exp-points)
-           (call-next-method)))
+  (append '(model-origin-dir
+            current-path
+            gender
+            player-class
+            strength
+            stamina
+            dexterity
+            agility
+            smartness
+            empaty
+            weight
+            movement-points
+            current-movement-points
+            spell-points
+            current-spell-points
+            dodge-chance
+            melee-attack-chance
+            range-attack-chance
+            melee-attack-damage
+            range-attack-damage
+            edge-weapons-chance-bonus
+            edge-weapons-damage-bonus
+            impact-weapons-chance-bonus
+            impact-weapons-damage-bonus
+            pole-weapons-chance-bonus
+            pole-weapons-damage-bonus
+            modifiers-effects
+            unlock-chance
+            deactivate-trap-chance
+            reply-attack-chance
+            ambush-attack-chance
+            spell-chance
+            attack-spell-chance
+            status
+            immune-faint-status
+            immune-berserk-status
+            immune-poison-status
+            immune-terror-status
+            recurrent-effects
+            race
+            exp-points
+            elm
+            shoes
+            armor
+            left-hand
+            right-hand
+            ring
+            inventory)
+          (call-next-method)))
 
 (defmethod serialize ((object player-character))
   (when (portrait object)
