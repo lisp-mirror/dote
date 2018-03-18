@@ -2077,7 +2077,9 @@
                              :resource-path  resource-path)))
     (setf (interfaces:compiled-shaders body) compiled-shaders
           (interfaces:compiled-shaders head) compiled-shaders)
+    ;; for position lerp in feedback-shader
     (setf (compiled-shaders (array-mixer body)) compiled-shaders)
+    ;; for position lerp in feedback-shader
     (setf (compiled-shaders (array-mixer head)) compiled-shaders)
     (set-animation body :stand :recalculate t)
     (set-animation head :stand :recalculate t)

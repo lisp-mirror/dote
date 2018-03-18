@@ -429,7 +429,7 @@
 
 (defgeneric terrain-height@pos (object x z))
 
-(defgeneric place-player-on-map (object player faction &optional position))
+(defgeneric place-player-on-map (object player faction &key position force-position-p))
 
 (defgeneric set-invalicable-cost-player-layer@ (object x y))
 
@@ -592,11 +592,21 @@
 (defmethod entity-player-in-pos ((object game-state) (x fixnum) (y fixnum))
   (entity-of-faction-in-pos object x y #'faction-player-p))
 
+(misc:defalias entity-ai@pos-p #'entity-ai-in-pos)
+
+(misc:defalias entity-player@pos-p #'entity-player-in-pos)
+
+(defgeneric pawn-@pos-p (object x y))
+
 (defgeneric element-mapstate@ (object x y))
 
 (defgeneric door@pos-p (object x y))
 
 (defgeneric empty@pos-p (object x y))
+
+(defmethod pawn-@pos-p ((object game-state) x y)
+  (let ((entity (entity-in-pos object x y)))
+    (pawnp entity)))
 
 (defmethod element-mapstate@ ((object game-state) (x fixnum) (y fixnum))
   (declare (optimize (speed 0) (safety 3) (debug 3)))
@@ -864,19 +874,29 @@
   (assert (numberp id-entity))
   (fetch-from-player-entities object id-entity))
 
+(defmethod faction-player-p ((object symbol) &optional id-entity)
+  (declare (ignore id-entity))
+  (eq object game-state:+pc-type+))
+
 (defmethod faction-ai-p ((object game-state) &optional (id-entity nil))
   (assert (numberp id-entity))
   (fetch-from-ai-entities object id-entity))
+
+(defmethod faction-ai-p ((object symbol) &optional id-entity)
+  (declare (ignore id-entity))
+  (eq object game-state:+npc-type+))
 
 (defmethod approx-terrain-height@pos ((object game-state) x z)
   "x and z in world space"
   (let ((world-ref (fetch-world object)))
     (world::pick-height-terrain world-ref x z)))
 
-(defmethod place-player-on-map ((object game-state) player faction &optional (pos #(0 0)))
+(defmethod place-player-on-map ((object game-state) player faction
+                                &key (position #(0 0)) (force-position-p nil))
+
   (with-accessors ((map-state map-state)) object
     (let ((stop nil)
-          (player-coordinates nil))
+          (player-coordinates (copy-ivec2 position)))
       (labels ((%place-player (pos)
                  (when (not stop)
                    (let* ((next-tiles (misc:shuffle (gen-neighbour-position (elt pos 0)
@@ -896,7 +916,8 @@
                                     (y (elt i 1)))
                                 (with-check-matrix-borders (map-state x y)
                                   (%place-player i)))))))))
-        (%place-player pos)
+        (when (not force-position-p)
+          (%place-player position))
         (setf (entity:pos player)
               (sb-cga:vec (map-utils:coord-map->chunk (d (elt player-coordinates 0)))
                           (num:d+ 1.5 ; hardcoded :(  to be removed soon
@@ -913,7 +934,7 @@
             (add-to-player-entities object player)
             (let ((pos-entity (mesh:calculate-cost-position player)))
               (add-to-ai-entities     object player)
-              (set-tile-visited object player (elt pos-entity 0) (elt pos-entity 1))))))))
+              (set-tile-visited object player (ivec2-x pos-entity) (ivec2-y pos-entity))))))))
 
 (defmacro with-set-cost-matrix@ (state mat x y value)
   `(with-accessors ((,mat ,mat)) ,state

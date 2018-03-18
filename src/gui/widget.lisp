@@ -4151,7 +4151,7 @@
                 ;;(setf (entity:ghost model) player)
                 (setf (portrait (entity:ghost model)) portrait-texture)
                 (world:place-player-on-map world model game-state:+pc-type+ ;#(61 109)))
-                                           #(0 0)))
+                                           :position #(0 0)))
               ;; restore preview
               (setf (pixmap:data (get-texture +preview-unknown-texture-name+))
                     backup-data-texture-preview)

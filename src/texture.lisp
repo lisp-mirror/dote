@@ -260,6 +260,7 @@
 (defmethod destroy :after ((object texture))
   (when (and (initializedp object)
              (/= (handle object) +id-handle-invalid+))
+    (setf (prepared-for-rendering object) nil)
     (tg:cancel-finalization object)
     (free-memory (handle object))
     (setf (handle object) +id-handle-invalid+)))
@@ -447,6 +448,7 @@
   (pixmap::sync-data-to-bits object)
   (texture:gen-name-and-inject-in-database object)
   (texture:prepare-for-rendering object)
+  (misc:dbg "postfix ~a" object)
   object)
 
 (defmacro gen-normalmap-params-reader (name)

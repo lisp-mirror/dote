@@ -22,6 +22,9 @@
 
 (defmethod destroy ((object destructible)))
 
+(defmethod destroy ((object (eql nil)))
+  nil)
+
 (defgeneric current-time (object))
 
 (defgeneric main-light-pos (renderer))

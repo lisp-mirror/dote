@@ -2352,6 +2352,8 @@
    :entity-in-pos
    :entity-ai-in-pos
    :entity-player-in-pos
+   :entity-ai@pos-p
+   :entity-player@pos-p
    :occludep-in-pos
    :element-mapstate@
    :door@pos-p

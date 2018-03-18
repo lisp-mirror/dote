@@ -16,6 +16,8 @@
 
 (in-package :saved-game)
 
+(define-constant +map-saved-filename+ "map" :test #'string=)
+
 (defparameter *map-loaded-p* nil)
 
 (defparameter *xpos*     2.0)
@@ -51,8 +53,13 @@
    (player-ghost
     :initform nil
     :initarg  :player-ghost
-    :accessor player
+    :accessor player-ghost
     :type     player-character)
+   (original-map-pos
+    :initform nil
+    :initarg  :original-map-pos
+    :accessor original-map-pos
+    :type     ivec2:ivec2)
    (original-mesh-id
     :initform nil
     :initarg  :original-mesh-id
@@ -62,6 +69,7 @@
 (defmethod marshal:class-persistant-slots ((object saved-player))
   '(mesh-infos
     player-ghost
+    original-map-pos
     original-mesh-id))
 
 (defclass saved-game ()
@@ -88,13 +96,33 @@
     delta-tiles
     saved-players))
 
-(define-constant +map-saved-filename+ "map" :test #'string=)
+(defmethod el-type-in-pos ((object saved-game) (x fixnum) (y fixnum))
+  (el-type (matrix-elt (delta-tiles object) y x)))
+
+(defmethod entity-id-in-pos ((object saved-game) (x fixnum) (y fixnum))
+  (entity-id (matrix-elt (delta-tiles object) y x)))
+
+(defmethod empty@pos-p ((object saved-game) (x fixnum) (y fixnum))
+  (empty@pos-p (delta-tiles object) x y))
+
+(defmethod pawn-@pos-p ((object saved-game) x y)
+  (or (entity-ai-in-pos     object x y)
+      (entity-player-in-pos object x y)))
+
+(defmethod entity-ai@pos-p ((object saved-game) (x fixnum) (y fixnum))
+  (let ((entity-type (el-type-in-pos object x y)))
+    (eq entity-type +npc-type+)))
+
+(defmethod entity-player@pos-p ((object saved-game) (x fixnum) (y fixnum))
+  (let ((entity-type (el-type-in-pos object x y)))
+    (eq entity-type +pc-type+)))
 
 (defun mesh->saved-player (mesh)
   (make-instance 'saved-player
-                 :mesh-infos       (fs-resources mesh)
-                 :player-ghost     (ghost        mesh)
-                 :original-mesh-id (id           mesh)))
+                 :mesh-infos       (fs-resources            mesh)
+                 :player-ghost     (ghost                   mesh)
+                 :original-map-pos (calculate-cost-position mesh)
+                 :original-mesh-id (id                      mesh)))
 
 (defun save-game (resource-dir game-state)
   (let* ((saved-file        (res:get-resource-file +map-saved-filename+
@@ -275,6 +303,18 @@
   (game-event:clean-all-events-vectors)
   (tg:gc :full t))
 
+(defun load-map (window map-file)
+  (with-accessors ((world world)
+                   (root-compiled-shaders main-window:root-compiled-shaders)) window
+    (setf *map-loaded-p* nil)
+    (load-level:load-level window
+                           world
+                           (main-window:window-game-state window)
+                           root-compiled-shaders map-file)
+    (camera:look-at (world:camera world)
+                    *xpos* *ypos* *zpos* *xeye* *yeye* *zeye* *xup* *yup* *zup*)
+    (setf (camera:mode (world:camera world)) :fp)))
+
 (defun delete-in-map-destination-p (orig dest x y)
   (and (empty@pos-p orig x y)
        (not (empty@pos-p dest x y))))
@@ -296,6 +336,63 @@
       (setf (compiled-shaders error-msg) root-compiled-shaders)
       (mtree:add-child (gui world) error-msg))))
 
+(defun fix-texture-handles (dump)
+  (flet ((clean (obj)
+           (when obj
+             (let ((tex (portrait obj)))
+               (destroy tex)
+               (post-deserialization-fix tex)))
+           obj))
+    (with-accessors ((saved-players saved-players)) dump
+      (map nil #'(lambda (a) (clean (player-ghost a)))
+           saved-players)
+      (loop for player in saved-players do
+           (let ((ghost (player-ghost player)))
+             (with-accessors ((elm        elm)
+                              (shoes      shoes)
+                              (armor      armor)
+                              (left-hand  left-hand)
+                              (right-hand right-hand)
+                              (ring       ring)) ghost
+
+               (clean elm)
+               (clean shoes)
+               (clean armor)
+               (clean left-hand)
+               (clean right-hand)
+               (clean ring)
+               (loop for item in (inventory ghost) do
+                    (misc:dbg "clean ~a"  (portrait item))
+                    (clean item))))))))
+
+(defun place-player-in-map-destination (world dump x y faction shaders)
+  (let* ((resource-data (if (faction-player-p faction)
+                            +human-player-models-resource+
+                            +ai-player-models-resource+))
+         (map-pos       (ivec2:ivec2 x y))
+         (saved-player  (find-if #'(lambda (a)
+                                     (ivec2:ivec2= map-pos
+                                                   (original-map-pos a)))
+                                 (saved-players dump)))
+         (mesh-info     (mesh-infos saved-player))
+         (new-ghost     (player-ghost saved-player))
+         (mesh          (md2:load-md2-player new-ghost
+                                             (dir mesh-info)
+                                             shaders
+                                             resource-data)))
+    (character::init-logs new-ghost)
+    (world:place-player-on-map world
+                               mesh
+                               faction
+                               :position         (ivec2:ivec2 x y)
+                               :force-position-p t)
+    (when (faction-ai-p faction)
+      (setf (renderp mesh) nil)
+      (let ((position (calculate-cost-position mesh)))
+        (2d-utils:displace-2d-vector (position x y)
+          (blackboard:reset-per-turn-visited-tiles (blackboard (state mesh)))
+          (set-tile-visited (state mesh) mesh x y))))))
+
 (defun load-game (window resource-dir)
   (let ((saved-dump (make-instance 'saved-game))
         (saved-file (res:get-resource-file +map-saved-filename+
@@ -310,25 +407,29 @@
           (progn
             (tg:gc :full t)
             (init-new-map-from-dump window saved-dump)
+            ;; workaround!     the    next     is    needed    because
+            ;; init-new-map-from-dump   clean  the   texture  database
+            ;; (texture:*texture-factory-db*)
+            (fix-texture-handles saved-dump)
             (with-accessors ((window-game-state     main-window:window-game-state)
                              (root-compiled-shaders main-window:root-compiled-shaders)
                              (world                 main-window:world)) window
               (with-accessors ((map-state map-state)) window-game-state
                 (loop-matrix (delta-tiles x y)
                    (cond
-                     ((delete-in-map-destination-p delta-tiles map-state x y)
-                      (delete-in-map-destination window-game-state x y)))))))
+                     ((delete-in-map-destination-p saved-dump map-state x y)
+                      (delete-in-map-destination window-game-state x y))
+                     ((entity-ai@pos-p saved-dump x y)
+                      (place-player-in-map-destination world
+                                                       saved-dump
+                                                       x y
+                                                       +npc-type+
+                                                       root-compiled-shaders))
+                     ((entity-player@pos-p saved-dump x y)
+                      (place-player-in-map-destination world
+                                                       saved-dump
+                                                       x y
+                                                       +pc-type+
+                                                       root-compiled-shaders)))))))
           (error-message-save-game-outdated window))))
-    window)
-
-(defun load-map (window map-file)
-  (with-accessors ((world world)
-                   (root-compiled-shaders main-window:root-compiled-shaders)) window
-    (setf *map-loaded-p* nil)
-    (load-level:load-level window
-                           world
-                           (main-window:window-game-state window)
-                           root-compiled-shaders map-file)
-    (camera:look-at (world:camera world)
-                    *xpos* *ypos* *zpos* *xeye* *yeye* *zeye* *xup* *yup* *zup*)
-    (setf (camera:mode (world:camera world)) :fp)))
+  window)

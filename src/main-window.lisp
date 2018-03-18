@@ -334,12 +334,12 @@
           (when *placeholder*
             (let* ((old-pos (entity:pos *placeholder*)))
               (when (eq :scancode-1 scancode)
-                (let* ((window-game-state         (window-game-state object))
+                (let* ((window-game-state  (window-game-state object))
                        (blackboard         (blackboard window-game-state))
-                       (concerning-matrix (blackboard:concerning-tiles->costs-matrix blackboard))
+                       (concerning-matrix  (blackboard:concerning-tiles->costs-matrix blackboard))
                        (x-cost            (map-utils:coord-chunk->costs (elt old-pos 0)))
                        (y-cost            (map-utils:coord-chunk->costs (elt old-pos 2))))
-                  (misc:dbg "position ~a costs ~a, ~a cost: ~a what ~a id ~a~% approx h ~a facing ~a occlude? ~a inside-room ~a concerning cost ~a"
+                  (misc:dbg "position ~a costs ~a, ~a cost: ~a what ~a id ~a~% approx h ~a facing ~a occlude? ~a inside-room ~a concerning cost ~a ai-entitites ~a"
                             old-pos
                             (map-utils:coord-chunk->costs (elt old-pos 0))
                             (map-utils:coord-chunk->costs (elt old-pos 2))
@@ -362,7 +362,8 @@
                                                         (map-utils:coord-chunk->costs (elt old-pos
                                                                                            2)))
                             (mesh:inside-room-p *placeholder*)
-                            (matrix:matrix-elt concerning-matrix y-cost x-cost))))
+                            (matrix:matrix-elt concerning-matrix y-cost x-cost)
+                            (game-state:ai-entities window-game-state))))
               (when (and (eq :scancode-up scancode))
                 (setf (entity:pos *placeholder*)
                       (vec (elt old-pos 0)

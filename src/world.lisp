@@ -886,7 +886,8 @@
   (world:set-map-state-id        object x y id)
   (world:set-map-state-occlusion object x y occlusion-value))
 
-(defmethod place-player-on-map ((object world) player faction &optional (pos #(0 0)))
+(defmethod place-player-on-map ((object world) player faction
+                                &key (position #(0 0)) (force-position-p nil))
   ;; events
   (game-event:register-for-end-turn                           player)
   ;; movement
@@ -944,7 +945,9 @@
   ;; plan, AI etc.
   (game-event:register-for-game-interrupt-terminated-event    player)
   ;; events registration ends here
-  (game-state:place-player-on-map (main-state object)         player faction pos)
+  (game-state:place-player-on-map (main-state object)         player faction
+                                  :position         position
+                                  :force-position-p force-position-p)
   (push-interactive-entity object                             player faction :occlude))
 
 (defmethod push-labyrinth-entity ((object world) labyrinth)
@@ -1067,7 +1070,8 @@
         (setf (character:model-origin-dir ghost) dir)
         (setf (portrait (entity:ghost model)) portrait-texture)
         (setf (renderp  model) nil)
-        (world:place-player-on-map object model game-state:+npc-type+ #(0 0))
+        (world:place-player-on-map object model game-state:+npc-type+
+                                   :position #(0 0))
         ;; initialize visited tiles per turn for new AI's pawn
         (let ((position (calculate-cost-position model)))
           (2d-utils:displace-2d-vector (position x y)
