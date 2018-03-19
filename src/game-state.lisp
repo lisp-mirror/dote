@@ -604,6 +604,8 @@
 
 (defgeneric empty@pos-p (object x y))
 
+(defgeneric trap@pos-p (object x y))
+
 (defmethod pawn-@pos-p ((object game-state) x y)
   (let ((entity (entity-in-pos object x y)))
     (pawnp entity)))
@@ -623,6 +625,12 @@
 
 (defmethod empty@pos-p ((object matrix) (x fixnum) (y fixnum))
   (map-element-empty-p (matrix-elt object y x)))
+
+(defmethod trap@pos-p ((object game-state) (x fixnum) (y fixnum))
+  (trap@pos-p (map-state object) x y))
+
+(defmethod trap@pos-p ((object matrix) (x fixnum) (y fixnum))
+  (eq (matrix-elt object y x) +trap-type+))
 
 (defmethod prepare-map-state ((object game-state) (map random-terrain))
   (with-accessors ((map-state map-state)) object

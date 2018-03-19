@@ -2246,26 +2246,19 @@
                trap)))))
 
 (defmethod place-trap ((object md2-mesh-shell) trap-ghost)
-  (with-accessors ((state state)) object
-    (game-state:with-world (world state)
-      (when (trap-can-be-placed-p object)
-        (let* ((choosen   (random-elt (world:traps-bag world)))
-               (shell     (mesh:fill-shell-from-mesh-w-renderer-data choosen
-                                                                     'mesh:trap-mesh-shell))
-               (h         (game-state:approx-terrain-height@pos state
-                                                                (elt (pos object) 0)
-                                                                (elt (pos object) 2)))
-               (pos-shell (sb-cga:vec (elt (pos object) 0)
-                                      h
-                                      (elt (pos object) 2))))
-          (setf (pos              shell) pos-shell
-                (my-faction       shell) (md2-mesh:my-faction object)
-                (ghost            shell) trap-ghost
-                (compiled-shaders shell) (compiled-shaders object))
-          (game-event:register-for-deactivate-trap-event shell)
-          (world:push-trap-entity world shell)
-          (decrement-move-points-place-trap object)
-          (send-refresh-toolbar-event))))))
+  (with-accessors ((state            state)
+                   (pos              pos)
+                   (compiled-shaders compiled-shaders)) object
+    (when (trap-can-be-placed-p object)
+      (let ((faction (md2-mesh:my-faction object)))
+        (build-and-place-trap-on-map state
+                                     trap-ghost
+                                     faction
+                                     compiled-shaders
+                                     (vec-x pos)
+                                     (vec-z pos))
+        (decrement-move-points-place-trap object)
+        (send-refresh-toolbar-event)))))
 
 (defmethod next-move-position ((object md2-mesh) (strategy (eql +explore-strategy+)))
   (with-accessors ((state state)) object

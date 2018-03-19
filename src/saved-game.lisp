@@ -105,6 +105,9 @@
 (defmethod empty@pos-p ((object saved-game) (x fixnum) (y fixnum))
   (empty@pos-p (delta-tiles object) x y))
 
+(defmethod trap@pos-p ((object saved-game) (x fixnum) (y fixnum))
+  (trap@pos-p (delta-tiles object) x y))
+
 (defmethod pawn-@pos-p ((object saved-game) x y)
   (or (entity-ai-in-pos     object x y)
       (entity-player-in-pos object x y)))

@@ -2358,6 +2358,7 @@
    :element-mapstate@
    :door@pos-p
    :empty@pos-p
+   :trap@pos-p
    :selected-pc
    :selected-path
    :build-movement-path
@@ -4008,6 +4009,7 @@
    :door-mesh-shell
    :trap-mesh-shell
    :trap-mesh-shell-p
+   :build-and-place-trap-on-map
    :instanced-mesh
    :labyrinth-mesh
    :labyrinth-mesh-p

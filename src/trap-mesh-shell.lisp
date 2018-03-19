@@ -23,6 +23,20 @@
 
 (gen-type-p trap-mesh-shell)
 
+(defun build-and-place-trap-on-map (game-state trap-ghost trap-faction shaders x z)
+  (with-world (world game-state)
+    (let* ((choosen   (random-elt (world:traps-bag world)))
+           (shell     (mesh:fill-shell-from-mesh-w-renderer-data choosen
+                                                                 'mesh:trap-mesh-shell))
+           (h         (approx-terrain-height@pos game-state x z))
+           (pos-shell (sb-cga:vec x h z)))
+      (setf (pos              shell) pos-shell
+            (my-faction       shell) trap-faction
+            (ghost            shell) trap-ghost
+            (compiled-shaders shell) shaders)
+      (game-event:register-for-deactivate-trap-event shell)
+      (world:push-trap-entity world shell))))
+
 (defmethod my-faction ((object trap-mesh-shell))
   (slot-value object 'faction ))
 
