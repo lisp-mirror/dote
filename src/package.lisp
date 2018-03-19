@@ -1410,6 +1410,7 @@
    :matrix-elt*
    :swap-elements
    :map-matrix
+   :filter-matrix-data
    :nmap-matrix-xy
    :clone
    :loop-matrix
@@ -2427,6 +2428,8 @@
    :clean-characters-logs
    :reset-costs-from-pc
    :get-costs-from-pc@
+   :fetch-all-entity-in-map-by-type
+   :fetch-all-traps
    :increase-game-turn))
 
 (defpackage :game-event

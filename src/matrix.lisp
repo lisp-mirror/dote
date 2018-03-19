@@ -225,6 +225,8 @@
 
   (defgeneric map-matrix (object predicate))
 
+  (defgeneric filter-matrix-data (object predicate))
+
   (defgeneric nmap-matrix-xy (object predicate))
 
   (defgeneric submatrix (object x y w h &optional value))
@@ -726,6 +728,9 @@ else
                             (data object))
                  :width (width object)
                  :height (height object)))
+
+(defmethod filter-matrix-data (object predicate)
+  (remove-if predicate (data object)))
 
 (defmethod submatrix ((object matrix) x y w h &optional (value 0))
   (let ((res (gen-matrix-frame w h value)))

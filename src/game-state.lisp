@@ -497,6 +497,10 @@
 
 (defgeneric get-costs-from-pc@ (object x y))
 
+(defgeneric fetch-all-entity-in-map-by-type (object type))
+
+(defgeneric fetch-all-traps (object))
+
 (defmethod (setf selected-pc) (entity (object game-state))
   "set index-selected-pc as well"
   (with-accessors ((index-selected-pc index-selected-pc)
@@ -630,7 +634,8 @@
   (trap@pos-p (map-state object) x y))
 
 (defmethod trap@pos-p ((object matrix) (x fixnum) (y fixnum))
-  (eq (matrix-elt object y x) +trap-type+))
+  (eq (el-type (matrix-elt object y x))
+      +trap-type+))
 
 (defmethod prepare-map-state ((object game-state) (map random-terrain))
   (with-accessors ((map-state map-state)) object
@@ -711,16 +716,22 @@
                                        :key       #'id))))
 
 (defmethod push-trap-entity ((object game-state) entity)
-  (push-entity object entity)
-  (let* ((pos (map-utils:pos->game-state-pos entity))
-         (map-state-element (element-mapstate@ object
-                                               (elt pos 0)
-                                               (elt pos 1))))
-    (insert-state-chain-after map-state-element
-                              0
-                              entity
-                              +trap-type+
-                              nil))) ;; nil as traps does not occlude the view
+  (let* ((pos (map-utils:pos->game-state-pos entity)))
+    (if (empty@pos-p object (ivec2-x pos) (ivec2-y pos))
+        (progn
+          (push-entity object entity)
+          (setup-map-state-entity object entity +trap-type+ nil))
+        (let ((map-state-element (element-mapstate@ object
+                                                    (ivec2-x pos)
+                                                    (ivec2-y pos))))
+          ;; if not empty,  "slide" the trap under  the entity already
+          ;; placed on the tile
+          (push-entity object entity)
+          (insert-state-chain-after map-state-element
+                                    0
+                                    entity
+                                    +trap-type+
+                                    nil))))) ;; nil as traps does not occlude the view
 
 (defmethod pop-trap-entity ((object game-state) entity)
     (let* ((pos (map-utils:pos->game-state-pos entity))
@@ -1198,6 +1209,16 @@
 (defmethod get-costs-from-pc@ ((object game-state) x y)
   (with-accessors ((costs-from-pc costs-from-pc)) object
     (matrix-elt costs-from-pc y x)))
+
+(defmethod fetch-all-entity-in-map-by-type ((object game-state) (type symbol))
+  (with-accessors ((map-state map-state)) object
+    (let ((all-ids (filter-matrix-data map-state #'(lambda (a)
+                                                     (let ((el-type (el-type a)))
+                                                       (not (eq type el-type)))))))
+      (map 'list #'(lambda (a) (find-entity-by-id object (entity-id a))) all-ids))))
+
+(defmethod fetch-all-traps ((object game-state))
+  (fetch-all-entity-in-map-by-type object +trap-type+))
 
 (defun increase-game-turn (state)
   (let ((end-event   (make-instance 'game-event:end-turn

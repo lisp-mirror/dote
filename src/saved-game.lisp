@@ -64,13 +64,19 @@
     :initform nil
     :initarg  :original-mesh-id
     :accessor original-mesh-id
-    :type     fixnum)))
+    :type     fixnum)
+   (original-faction
+    :initform nil
+    :initarg  :original-faction
+    :accessor original-faction
+    :type     symbol)))
 
 (defmethod marshal:class-persistant-slots ((object saved-player))
   '(mesh-infos
     player-ghost
     original-map-pos
-    original-mesh-id))
+    original-mesh-id
+    original-faction))
 
 (defclass saved-game ()
   ((original-map-file
@@ -89,12 +95,18 @@
     :initform nil
     :initarg  :saved-players
     :accessor saved-players
+    :type     list)
+   (saved-traps
+    :initform nil
+    :initarg  :saved-traps
+    :accessor saved-traps
     :type     list)))
 
 (defmethod marshal:class-persistant-slots ((object saved-game))
   '(original-map-file
     delta-tiles
-    saved-players))
+    saved-players
+    saved-traps))
 
 (defmethod el-type-in-pos ((object saved-game) (x fixnum) (y fixnum))
   (el-type (matrix-elt (delta-tiles object) y x)))
@@ -124,8 +136,15 @@
   (make-instance 'saved-player
                  :mesh-infos       (fs-resources            mesh)
                  :player-ghost     (ghost                   mesh)
+                 :original-faction (my-faction              mesh)
                  :original-map-pos (calculate-cost-position mesh)
                  :original-mesh-id (id                      mesh)))
+
+(defun trap->saved-player (mesh)
+  (make-instance 'saved-player
+                 :original-faction (my-faction              mesh)
+                 :original-map-pos (calculate-cost-position mesh)
+                 :player-ghost     (ghost mesh)))
 
 (defun save-game (resource-dir game-state)
   (let* ((saved-file        (res:get-resource-file +map-saved-filename+
@@ -134,7 +153,9 @@
          (current-map-state (map-state game-state))
          (saved-player      (append (map-ai-entities     game-state #'mesh->saved-player)
                                     (map-player-entities game-state #'mesh->saved-player)))
+         (saved-traps       (mapcar #'trap->saved-player (fetch-all-traps game-state)))
          (to-save           (make-instance 'saved-game
+                                           :saved-traps       saved-traps
                                            :saved-players     saved-player
                                            :delta-tiles       current-map-state
                                            :original-map-file (game-map-file game-state))))
@@ -368,14 +389,17 @@
                     (misc:dbg "clean ~a"  (portrait item))
                     (clean item))))))))
 
+(defun find-by-pos (needle)
+  #'(lambda (a)
+      (ivec2:ivec2= needle
+                    (original-map-pos a))))
+
 (defun place-player-in-map-destination (world dump x y faction shaders)
   (let* ((resource-data (if (faction-player-p faction)
                             +human-player-models-resource+
                             +ai-player-models-resource+))
          (map-pos       (ivec2:ivec2 x y))
-         (saved-player  (find-if #'(lambda (a)
-                                     (ivec2:ivec2= map-pos
-                                                   (original-map-pos a)))
+         (saved-player  (find-if (find-by-pos map-pos)
                                  (saved-players dump)))
          (mesh-info     (mesh-infos saved-player))
          (new-ghost     (player-ghost saved-player))
@@ -433,6 +457,18 @@
                                                        saved-dump
                                                        x y
                                                        +pc-type+
-                                                       root-compiled-shaders)))))))
+                                                       root-compiled-shaders))
+                     ((trap@pos-p saved-dump x y)
+                      (let* ((map-pos    (ivec2:ivec2 x y))
+                             (saved-trap (find-if (find-by-pos map-pos)
+                                                  (saved-traps saved-dump)))
+                             (faction    (original-faction saved-trap))
+                             (ghost      (player-ghost     saved-trap)))
+                        (mesh:build-and-place-trap-on-map window-game-state
+                                                          ghost
+                                                          faction
+                                                          root-compiled-shaders
+                                                          (map-utils:coord-map->chunk x)
+                                                          (map-utils:coord-map->chunk y)))))))))
           (error-message-save-game-outdated window))))
   window)

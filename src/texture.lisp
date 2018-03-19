@@ -448,7 +448,6 @@
   (pixmap::sync-data-to-bits object)
   (texture:gen-name-and-inject-in-database object)
   (texture:prepare-for-rendering object)
-  (misc:dbg "postfix ~a" object)
   object)
 
 (defmacro gen-normalmap-params-reader (name)

@@ -2234,6 +2234,7 @@
            old-state))))
 
 (defmethod trap-ostile-p ((object md2-mesh-shell))
+  "Note: if faction of the trap is nil the trap *is* ostile to object"
   (with-accessors ((state state)) object
     (if (step-in-trap-p object)
         (let* ((old-state (%old-state object))
