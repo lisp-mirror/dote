@@ -44,7 +44,7 @@
 
 (defparameter *fov*     50.0)
 
-(defclass saved-player ()
+(defclass saved-entity ()
   ((mesh-infos
     :initform nil
     :initarg  :mesh-infos
@@ -60,6 +60,11 @@
     :initarg  :original-map-pos
     :accessor original-map-pos
     :type     ivec2:ivec2)
+   (original-dir
+    :initform nil
+    :initarg  :original-dir
+    :accessor original-dir
+    :type     ivec2:ivec2)
    (original-mesh-id
     :initform nil
     :initarg  :original-mesh-id
@@ -71,9 +76,10 @@
     :accessor original-faction
     :type     symbol)))
 
-(defmethod marshal:class-persistant-slots ((object saved-player))
+(defmethod marshal:class-persistant-slots ((object saved-entity))
   '(mesh-infos
     player-ghost
+    original-dir
     original-map-pos
     original-mesh-id
     original-faction))
@@ -91,10 +97,10 @@
     :type     matrix
     :documentation     "A     snapshot     of    the     matrix     in
     game-state:map-state-element when the game was saved.")
-   (saved-players
+   (saved-entities
     :initform nil
-    :initarg  :saved-players
-    :accessor saved-players
+    :initarg  :saved-entities
+    :accessor saved-entities
     :type     list)
    (saved-traps
     :initform nil
@@ -105,7 +111,7 @@
 (defmethod marshal:class-persistant-slots ((object saved-game))
   '(original-map-file
     delta-tiles
-    saved-players
+    saved-entities
     saved-traps))
 
 (defmethod el-type-in-pos ((object saved-game) (x fixnum) (y fixnum))
@@ -132,16 +138,17 @@
   (let ((entity-type (el-type-in-pos object x y)))
     (eq entity-type +pc-type+)))
 
-(defun mesh->saved-player (mesh)
-  (make-instance 'saved-player
+(defun mesh->saved-entity (mesh)
+  (make-instance 'saved-entity
                  :mesh-infos       (fs-resources            mesh)
                  :player-ghost     (ghost                   mesh)
                  :original-faction (my-faction              mesh)
+                 :original-dir     (dir                     mesh)
                  :original-map-pos (calculate-cost-position mesh)
                  :original-mesh-id (id                      mesh)))
 
-(defun trap->saved-player (mesh)
-  (make-instance 'saved-player
+(defun trap->saved-entity (mesh)
+  (make-instance 'saved-entity
                  :original-faction (my-faction              mesh)
                  :original-map-pos (calculate-cost-position mesh)
                  :player-ghost     (ghost mesh)))
@@ -151,12 +158,12 @@
                                                    resource-dir
                                                    :if-does-not-exists :create))
          (current-map-state (map-state game-state))
-         (saved-player      (append (map-ai-entities     game-state #'mesh->saved-player)
-                                    (map-player-entities game-state #'mesh->saved-player)))
-         (saved-traps       (mapcar #'trap->saved-player (fetch-all-traps game-state)))
+         (saved-players     (append (map-ai-entities     game-state #'mesh->saved-entity)
+                                    (map-player-entities game-state #'mesh->saved-entity)))
+         (saved-traps       (mapcar #'trap->saved-entity (fetch-all-traps game-state)))
          (to-save           (make-instance 'saved-game
                                            :saved-traps       saved-traps
-                                           :saved-players     saved-player
+                                           :saved-entities    saved-players
                                            :delta-tiles       current-map-state
                                            :original-map-file (game-map-file game-state))))
     (fs:dump-sequence-to-file (serialize to-save) saved-file)
@@ -236,8 +243,10 @@
                       (level-name (main-state world))
                       (level-name-color (main-state world))))
     (setf (interfaces:compiled-shaders (world:gui world)) root-compiled-shaders)
+    (setf (main-window::delta-time-elapsed window) (sdl2:get-ticks)
+          (main-window::cpu-time-elapsed   window) 1
+          (main-window::fps                window) 0.0)
     (setf saved-game:*map-loaded-p* t)
-    (setf (main-window::delta-time-elapsed window) (sdl2:get-ticks))
     ;; bg color
     (let ((color (skydome-bottom-color (main-window:window-game-state window))))
       (gl:clear-color (elt color 0)
@@ -367,10 +376,10 @@
                (destroy tex)
                (post-deserialization-fix tex)))
            obj))
-    (with-accessors ((saved-players saved-players)) dump
+    (with-accessors ((saved-entities saved-entities)) dump
       (map nil #'(lambda (a) (clean (player-ghost a)))
-           saved-players)
-      (loop for player in saved-players do
+           saved-entities)
+      (loop for player in saved-entities do
            (let ((ghost (player-ghost player)))
              (with-accessors ((elm        elm)
                               (shoes      shoes)
@@ -400,7 +409,7 @@
                             +ai-player-models-resource+))
          (map-pos       (ivec2:ivec2 x y))
          (saved-player  (find-if (find-by-pos map-pos)
-                                 (saved-players dump)))
+                                 (saved-entities dump)))
          (mesh-info     (mesh-infos saved-player))
          (new-ghost     (player-ghost saved-player))
          (mesh          (md2:load-md2-player new-ghost
@@ -413,6 +422,7 @@
                                faction
                                :position         (ivec2:ivec2 x y)
                                :force-position-p t)
+    (setf (dir mesh) (original-dir saved-player))
     (when (faction-ai-p faction)
       (setf (renderp mesh) nil)
       (let ((position (calculate-cost-position mesh)))
