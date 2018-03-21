@@ -2304,7 +2304,7 @@
   (with-parent-widget (toolbar) w
     (with-toolbar-world (world) toolbar
       (with-accessors ((main-state main-state)) world
-        (tg:gc :full t)
+        (tg:gc)
         (let ((render-window (fetch-render-window main-state)))
           (saved-game:load-game render-window +save-game-dir-1+))))))
 

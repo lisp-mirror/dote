@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dote 0.0.1\n"
 "Report-Msgid-Bugs-To: cage@katamail.com\n"
-"POT-Creation-Date: 2018-03-16 23:58+0100\n"
+"POT-Creation-Date: 2018-03-20 20:38+0100\n"
 "PO-Revision-Date: 2018-03-16 23:59+0100\n"
 "Last-Translator: cage <cage@katamail.com>\n"
 "Language-Team: Italian\n"
@@ -25,133 +25,133 @@ msgstr "fallito"
 msgid "too far"
 msgstr "lontano"
 
-#: src/basic-interaction-parameters.lisp:254
+#: src/basic-interaction-parameters.lisp:260
 msgid "Interation: No points for decay, using 1000."
 msgstr ""
 "Interazione: non sono stati definti punti per il deperimento, uso 1000."
 
-#: src/basic-interaction-parameters.lisp:256
+#: src/basic-interaction-parameters.lisp:262
 msgid "Interation: No decay condition specified, using :turns."
 msgstr ""
 "Interazione: non sosono state definte condizioni per il deperimento, uso :"
 "turns."
 
-#: src/basic-interaction-parameters.lisp:258
+#: src/basic-interaction-parameters.lisp:264
 msgid "Interation: No message."
 msgstr "Interazione: non e' stato definito il messaggio."
 
-#: src/basic-interaction-parameters.lisp:260
+#: src/basic-interaction-parameters.lisp:266
 #, lisp-format
 msgid "Invalid decay condition ~a, expected ~a"
 msgstr "Condizione per il decadimento non valida ~a, atteso ~a"
 
-#: src/basic-interaction-parameters.lisp:299
+#: src/basic-interaction-parameters.lisp:305
 #, lisp-format
 msgid "(~d turns)"
 msgstr "(~d turni)"
 
-#: src/basic-interaction-parameters.lisp:310
+#: src/basic-interaction-parameters.lisp:320
 msgid "Interation: No activation trigger specified for effect, using \":use.\""
 msgstr "Interazione: nessun innesco definito per l'effetto, uso :use."
 
-#: src/basic-interaction-parameters.lisp:312
+#: src/basic-interaction-parameters.lisp:322
 msgid "Interation: No modifier specified for effect, using 0."
 msgstr "Interazione: nessun modificatore specificato per l'effetto, uso 0."
 
-#: src/basic-interaction-parameters.lisp:314
+#: src/basic-interaction-parameters.lisp:324
 msgid "Interation: No duration specified for effect, using :unlimited."
 msgstr "Interazione: nessuna durata specificata per l'effetto, uso :unlimited."
 
-#: src/basic-interaction-parameters.lisp:318
-#: src/basic-interaction-parameters.lisp:412
-#: src/basic-interaction-parameters.lisp:507
-#: src/basic-interaction-parameters.lisp:566
-#: src/basic-interaction-parameters.lisp:587
+#: src/basic-interaction-parameters.lisp:328
+#: src/basic-interaction-parameters.lisp:431
+#: src/basic-interaction-parameters.lisp:536
+#: src/basic-interaction-parameters.lisp:600
+#: src/basic-interaction-parameters.lisp:621
 #, lisp-format
 msgid "Invalid trigger ~s, expected ~s"
 msgstr "Condizione di innesco non valido ~s, atteso ~s"
 
-#: src/basic-interaction-parameters.lisp:389
+#: src/basic-interaction-parameters.lisp:403
 #, lisp-format
 msgid "chance: ~,1f% target ~a"
 msgstr "probabilita': ~,1f% obiettivo ~a"
 
-#: src/basic-interaction-parameters.lisp:392
+#: src/basic-interaction-parameters.lisp:406
 #, lisp-format
 msgid "~d turns "
 msgstr "~d turni "
 
-#: src/basic-interaction-parameters.lisp:403
-#: src/basic-interaction-parameters.lisp:558
+#: src/basic-interaction-parameters.lisp:422
+#: src/basic-interaction-parameters.lisp:592
 msgid ""
 "Interation: No activation trigger specified for healing effect, using \":use."
 "\""
 msgstr ""
 "interazione: nessun innesco specificato per effetti sulla salute, uso :use."
 
-#: src/basic-interaction-parameters.lisp:405
-#: src/basic-interaction-parameters.lisp:502
-#: src/basic-interaction-parameters.lisp:560
+#: src/basic-interaction-parameters.lisp:424
+#: src/basic-interaction-parameters.lisp:531
+#: src/basic-interaction-parameters.lisp:594
 msgid "Interation: No chance specified for healing effect, using 0"
 msgstr ""
 "Interazione: nessuna probabilita' specificata per effetti sulla salute, uso "
 "0."
 
-#: src/basic-interaction-parameters.lisp:407
+#: src/basic-interaction-parameters.lisp:426
 msgid "Interation: No duration specified for effect, using 1000000."
 msgstr "Interazione: nessuna durata specificata fer l'effetto, uso 1000000."
 
-#: src/basic-interaction-parameters.lisp:409
-#: src/basic-interaction-parameters.lisp:504
-#: src/basic-interaction-parameters.lisp:562
-#: src/basic-interaction-parameters.lisp:584
+#: src/basic-interaction-parameters.lisp:428
+#: src/basic-interaction-parameters.lisp:533
+#: src/basic-interaction-parameters.lisp:596
+#: src/basic-interaction-parameters.lisp:618
 msgid "Interation: No target specified for effect, using self."
 msgstr "Interazione: nessun obiettivo specificato per l'effetto uso :self."
 
-#: src/basic-interaction-parameters.lisp:483
+#: src/basic-interaction-parameters.lisp:507
 #, lisp-format
 msgid "~a chance: ~,1f target: ~a"
 msgstr "~a probabilita': ~,1f% obiettivo ~a"
 
-#: src/basic-interaction-parameters.lisp:486
+#: src/basic-interaction-parameters.lisp:510
 #, lisp-format
 msgid "(~,1f damage per turn)"
 msgstr "(~,1f danno per turno)"
 
-#: src/basic-interaction-parameters.lisp:498
+#: src/basic-interaction-parameters.lisp:527
 msgid "Interation: No points specified for poison effect, using \"-1\"."
 msgstr ""
 "Interazione: punti non specificati per gli effetti di avvelenamento, uso 1."
 
-#: src/basic-interaction-parameters.lisp:500
+#: src/basic-interaction-parameters.lisp:529
 msgid ""
 "Interation: No activation trigger specified for poison effect, using \":use."
 "\""
 msgstr "Interazione: nessun innesco specificato per l'avvelenamento, uso :use."
 
-#: src/basic-interaction-parameters.lisp:511
-#: src/basic-interaction-parameters.lisp:564
+#: src/basic-interaction-parameters.lisp:540
+#: src/basic-interaction-parameters.lisp:598
 #, lisp-format
 msgid "Invalid points ~a, expected a number"
 msgstr "Punti non validi ~a, era atteso un numero"
 
-#: src/basic-interaction-parameters.lisp:543
+#: src/basic-interaction-parameters.lisp:572
 #, lisp-format
 msgid "heal ~,1f DMG, target ~a, chance: ~,1f%"
 msgstr "cura ~,1f DMG, obiettivo ~a, probabilita': ~,1f%"
 
-#: src/basic-interaction-parameters.lisp:556
+#: src/basic-interaction-parameters.lisp:590
 msgid "Interation: No points specified for healing effect, using \"1\"."
 msgstr ""
 "Interazione: punti non specificati per gli effetti sulla salute, uso 1."
 
-#: src/basic-interaction-parameters.lisp:580
+#: src/basic-interaction-parameters.lisp:614
 msgid ""
 "Interation: No activation trigger specified for magic effect, using \":use.\""
 msgstr ""
 "Interazione: nessun innesco specificato per gli effetti magici, uso :use."
 
-#: src/basic-interaction-parameters.lisp:582
+#: src/basic-interaction-parameters.lisp:616
 msgid "Interation: No spell for magic effect, using \":heal-1.\""
 msgstr "Interazione: nessun incantesimo specificato, uso \":heal-1\""
 
@@ -176,31 +176,31 @@ msgstr ""
 "~:[~;Arma da taglio~]~:[~;Arma ad impatto~]~:[~;Arma da lancio~]~:[~;Arma da lancio~]~:[~;Fontana~]~:[~;Pozione~]~:[~;Elmo~]~:[~;Armatura~]~:[~;Anello~]~:[~;Scarpe~]~:[~;Trappola~] "
 "~a ~a~a"
 
-#: src/character.lisp:822
+#: src/character.lisp:829
 msgid "warrior"
 msgstr "guerriero"
 
-#: src/character.lisp:824
+#: src/character.lisp:831
 msgid "archer"
 msgstr "arciere"
 
-#: src/character.lisp:826
+#: src/character.lisp:833
 msgid "wizard"
 msgstr "mago"
 
-#: src/character.lisp:828
+#: src/character.lisp:835
 msgid "healer"
 msgstr "guaritore"
 
-#: src/character.lisp:830
+#: src/character.lisp:837
 msgid "ranger"
 msgstr "ranger"
 
-#: src/character.lisp:836
+#: src/character.lisp:843
 msgid "male"
 msgstr "maschile"
 
-#: src/character.lisp:838
+#: src/character.lisp:845
 msgid "female"
 msgstr "femminile"
 
@@ -209,7 +209,7 @@ msgid "Container opened!"
 msgstr "Contenitore aperto!"
 
 #: src/container-mesh-shell.lisp:56 src/container-mesh-shell.lisp:68
-#: src/container-mesh-shell.lisp:79 src/trap-mesh-shell.lisp:73
+#: src/container-mesh-shell.lisp:79 src/trap-mesh-shell.lisp:87
 msgid "Ok"
 msgstr "Ok"
 
@@ -436,8 +436,8 @@ msgstr "lancia ~a"
 msgid "Trap found! deactivate (chance ~a)?"
 msgstr "Attivata una trappola! Provare a disinnescarla (possibilita' ~a)"
 
-#: src/md2-mesh.lisp:492 src/world.lisp:973 src/gui/widget.lisp:2297
-#: src/gui/widget.lisp:4126
+#: src/md2-mesh.lisp:492 src/world.lisp:976 src/gui/widget.lisp:2297
+#: src/gui/widget.lisp:4128
 msgid "OK"
 msgstr "OK"
 
@@ -502,10 +502,6 @@ msgstr "Non sono piu' immune all'avvelenamento."
 msgid " (object level ~a)."
 msgstr " (livello dell'oggetto ~a)."
 
-#: src/random-elm.lisp:267 src/random-shield.lisp:312
-msgid "shield"
-msgstr "scudo"
-
 #: src/random-fountain.lisp:160
 #, lisp-format
 msgid "~a exhausted"
@@ -522,10 +518,6 @@ msgstr " esaurito/a."
 #: src/random-potion.lisp:232
 msgid "potion"
 msgstr "pozione"
-
-#: src/random-ring.lisp:310
-msgid "ring"
-msgstr "anello"
 
 #: src/random-shoes.lisp:161
 msgid "shoes"
@@ -553,11 +545,11 @@ msgstr "elemento: ~a~adanno: ~a~a"
 msgid "No description available"
 msgstr "Nessuna descrizione disponibile"
 
-#: src/trap-mesh-shell.lisp:71
+#: src/trap-mesh-shell.lisp:85
 msgid "Trap deactivated!"
 msgstr "Trappola disinnescata!"
 
-#: src/world.lisp:980
+#: src/world.lisp:983
 msgid "Message"
 msgstr "Messaggio"
 
@@ -815,15 +807,15 @@ msgstr "Cognome"
 msgid "Next"
 msgstr "Successivo"
 
-#: src/gui/widget.lisp:4123
+#: src/gui/widget.lisp:4125
 msgid "Mesh not specified"
 msgstr "Modello non indicato"
 
-#: src/gui/widget.lisp:4124
+#: src/gui/widget.lisp:4126
 msgid "Error"
 msgstr "Errore"
 
-#: src/gui/widget.lisp:4485
+#: src/gui/widget.lisp:4490
 msgid "Generate character"
 msgstr "Genera personaggio"
 
@@ -910,3 +902,9 @@ msgstr "Teletrasporta in una posizione casuale (raggio massimo ~15 caselle)."
 #: data/spells/teleport-3.lisp:7
 msgid "Teleport in a random location with maximum radius of ~27 tiles."
 msgstr "Teletrasporta in una posizione casuale (raggio massimo ~27 caselle)."
+
+#~ msgid "shield"
+#~ msgstr "scudo"
+
+#~ msgid "ring"
+#~ msgstr "anello"

@@ -2360,6 +2360,7 @@
    :door@pos-p
    :empty@pos-p
    :trap@pos-p
+   :container@pos-p
    :selected-pc
    :selected-path
    :build-movement-path
@@ -2430,6 +2431,7 @@
    :get-costs-from-pc@
    :fetch-all-entity-in-map-by-type
    :fetch-all-traps
+   :fetch-all-container
    :increase-game-turn))
 
 (defpackage :game-event

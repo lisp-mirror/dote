@@ -501,6 +501,8 @@
 
 (defgeneric fetch-all-traps (object))
 
+(defgeneric fetch-all-container (object))
+
 (defmethod (setf selected-pc) (entity (object game-state))
   "set index-selected-pc as well"
   (with-accessors ((index-selected-pc index-selected-pc)
@@ -610,6 +612,8 @@
 
 (defgeneric trap@pos-p (object x y))
 
+(defgeneric container@pos-p (object x y))
+
 (defmethod pawn-@pos-p ((object game-state) x y)
   (let ((entity (entity-in-pos object x y)))
     (pawnp entity)))
@@ -633,9 +637,18 @@
 (defmethod trap@pos-p ((object game-state) (x fixnum) (y fixnum))
   (trap@pos-p (map-state object) x y))
 
+(defmethod container@pos-p ((object game-state) (x fixnum) (y fixnum))
+  (container@pos-p (map-state object) x y))
+
+(defun %eq-type (matrix x y type)
+  (eq (el-type (matrix-elt matrix y x))
+      type))
+
 (defmethod trap@pos-p ((object matrix) (x fixnum) (y fixnum))
-  (eq (el-type (matrix-elt object y x))
-      +trap-type+))
+  (%eq-type object x y +trap-type+))
+
+(defmethod container@pos-p ((object matrix) (x fixnum) (y fixnum))
+  (%eq-type object x y +container-type+))
 
 (defmethod prepare-map-state ((object game-state) (map random-terrain))
   (with-accessors ((map-state map-state)) object
@@ -1219,6 +1232,9 @@
 
 (defmethod fetch-all-traps ((object game-state))
   (fetch-all-entity-in-map-by-type object +trap-type+))
+
+(defmethod fetch-all-container ((object game-state))
+  (fetch-all-entity-in-map-by-type object +container-type+))
 
 (defun increase-game-turn (state)
   (let ((end-event   (make-instance 'game-event:end-turn

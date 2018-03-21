@@ -106,13 +106,19 @@
     :initform nil
     :initarg  :saved-traps
     :accessor saved-traps
+    :type     list)
+   (saved-containers
+    :initform nil
+    :initarg  :saved-containers
+    :accessor saved-containers
     :type     list)))
 
 (defmethod marshal:class-persistant-slots ((object saved-game))
   '(original-map-file
     delta-tiles
     saved-entities
-    saved-traps))
+    saved-traps
+    saved-containers))
 
 (defmethod el-type-in-pos ((object saved-game) (x fixnum) (y fixnum))
   (el-type (matrix-elt (delta-tiles object) y x)))
@@ -125,6 +131,9 @@
 
 (defmethod trap@pos-p ((object saved-game) (x fixnum) (y fixnum))
   (trap@pos-p (delta-tiles object) x y))
+
+(defmethod container@pos-p ((object saved-game) (x fixnum) (y fixnum))
+  (container@pos-p (delta-tiles object) x y))
 
 (defmethod pawn-@pos-p ((object saved-game) x y)
   (or (entity-ai-in-pos     object x y)
@@ -153,6 +162,11 @@
                  :original-map-pos (calculate-cost-position mesh)
                  :player-ghost     (ghost mesh)))
 
+(defun container->saved-entity (mesh)
+  (make-instance 'saved-entity
+                 :original-map-pos (calculate-cost-position mesh)
+                 :player-ghost     (ghost mesh)))
+
 (defun save-game (resource-dir game-state)
   (let* ((saved-file        (res:get-resource-file +map-saved-filename+
                                                    resource-dir
@@ -160,8 +174,10 @@
          (current-map-state (map-state game-state))
          (saved-players     (append (map-ai-entities     game-state #'mesh->saved-entity)
                                     (map-player-entities game-state #'mesh->saved-entity)))
-         (saved-traps       (mapcar #'trap->saved-entity (fetch-all-traps game-state)))
+         (saved-traps       (mapcar #'trap->saved-entity      (fetch-all-traps game-state)))
+         (saved-containers  (mapcar #'container->saved-entity (fetch-all-container game-state)))
          (to-save           (make-instance 'saved-game
+                                           :saved-containers  saved-containers
                                            :saved-traps       saved-traps
                                            :saved-entities    saved-players
                                            :delta-tiles       current-map-state
@@ -197,9 +213,11 @@
                       (level-name-color (main-state world))))
     (setf (interfaces:compiled-shaders (world:gui world)) root-compiled-shaders)
     (setf saved-game:*map-loaded-p* t)
+    ;; workaround! approx-terrain-height@pos  fails if we do  not call
+    ;; this before
+    (interfaces:calculate  world 0.0)
     ;; test
     ;; testing opponents
-    (interfaces:calculate  world 0.0)
     (world:add-ai-opponent world :warrior :male)
     (world:add-ai-opponent world :wizard  :male)
     ;;;;;
@@ -243,16 +261,17 @@
                       (level-name (main-state world))
                       (level-name-color (main-state world))))
     (setf (interfaces:compiled-shaders (world:gui world)) root-compiled-shaders)
-    (setf (main-window::delta-time-elapsed window) (sdl2:get-ticks)
-          (main-window::cpu-time-elapsed   window) 1
-          (main-window::fps                window) 0.0)
+    (setf (main-window::delta-time-elapsed window) (sdl2:get-ticks))
     (setf saved-game:*map-loaded-p* t)
     ;; bg color
     (let ((color (skydome-bottom-color (main-window:window-game-state window))))
       (gl:clear-color (elt color 0)
                       (elt color 1)
                       (elt color 2)
-                      1.0))))
+                      1.0))
+    ;; workaround! approx-terrain-height@pos  fails if we do  not call
+    ;; this before
+    (interfaces:calculate  world 0.0)))
 
 (defun init-system-when-gl-context-active (window)
   (with-accessors ((root-compiled-shaders main-window:root-compiled-shaders)
@@ -369,34 +388,44 @@
       (setf (compiled-shaders error-msg) root-compiled-shaders)
       (mtree:add-child (gui world) error-msg))))
 
-(defun fix-texture-handles (dump)
-  (flet ((clean (obj)
-           (when obj
-             (let ((tex (portrait obj)))
-               (destroy tex)
-               (post-deserialization-fix tex)))
-           obj))
-    (with-accessors ((saved-entities saved-entities)) dump
-      (map nil #'(lambda (a) (clean (player-ghost a)))
-           saved-entities)
-      (loop for player in saved-entities do
-           (let ((ghost (player-ghost player)))
-             (with-accessors ((elm        elm)
-                              (shoes      shoes)
-                              (armor      armor)
-                              (left-hand  left-hand)
-                              (right-hand right-hand)
-                              (ring       ring)) ghost
+(defun clean-handle (obj)
+   (when obj
+     (let ((tex (portrait obj)))
+       (destroy tex)
+       (post-deserialization-fix tex)))
+   obj)
 
-               (clean elm)
-               (clean shoes)
-               (clean armor)
-               (clean left-hand)
-               (clean right-hand)
-               (clean ring)
-               (loop for item in (inventory ghost) do
-                    (misc:dbg "clean ~a"  (portrait item))
-                    (clean item))))))))
+(defun fix-texture-handlers-players (dump)
+  (with-accessors ((saved-entities saved-entities)) dump
+    (map nil #'(lambda (a) (clean-handle (player-ghost a)))
+         saved-entities)
+    (loop for player in saved-entities do
+         (let ((ghost (player-ghost player)))
+           (with-accessors ((elm        elm)
+                            (shoes      shoes)
+                            (armor      armor)
+                            (left-hand  left-hand)
+                            (right-hand right-hand)
+                            (ring       ring)) ghost
+
+             (clean-handle elm)
+             (clean-handle shoes)
+             (clean-handle armor)
+             (clean-handle left-hand)
+             (clean-handle right-hand)
+             (clean-handle ring)
+             (loop for item in (inventory ghost) do
+                  (clean-handle item)))))))
+
+(defun fix-texture-handlers-containers (dump)
+  (with-accessors ((saved-containers saved-containers)) dump
+    (loop for container in saved-containers do
+         (mtree:top-down-visit (player-ghost container)
+                               #'(lambda (n) (clean-handle n))))))
+
+(defun fix-texture-handles (dump)
+  (fix-texture-handlers-players    dump)
+  (fix-texture-handlers-containers dump))
 
 (defun find-by-pos (needle)
   #'(lambda (a)
@@ -435,14 +464,14 @@
         (saved-file (res:get-resource-file +map-saved-filename+
                                            resource-dir
                                            :if-does-not-exists :error)))
-    (tg:gc :full t)
+    (tg:gc)
     (setf saved-dump (deserialize saved-dump saved-file))
     (with-accessors ((delta-tiles       delta-tiles)
                      (original-map-file original-map-file)) saved-dump
       (if (not (fs:file-outdated-p saved-file
                                    (load-level:get-level-file-abs-path original-map-file)))
           (progn
-            (tg:gc :full t)
+            (tg:gc)
             (init-new-map-from-dump window saved-dump)
             ;; workaround!     the    next     is    needed    because
             ;; init-new-map-from-dump   clean  the   texture  database
@@ -479,6 +508,13 @@
                                                           faction
                                                           root-compiled-shaders
                                                           (map-utils:coord-map->chunk x)
-                                                          (map-utils:coord-map->chunk y)))))))))
+                                                          (map-utils:coord-map->chunk y))))
+                     ((container@pos-p saved-dump x y)
+                      (let* ((map-pos         (ivec2:ivec2 x y))
+                             (saved-container (find-if (find-by-pos map-pos)
+                                                       (saved-containers saved-dump)))
+                             (ghost          (player-ghost saved-container))
+                             (dest-container (entity-in-pos window-game-state x y)))
+                        (setf (ghost dest-container) ghost))))))))
           (error-message-save-game-outdated window))))
   window)

@@ -308,5 +308,5 @@
          (portrait-file  (find-object-portrait-filename regex)))
     (n-setf-path-value character (list +portrait+) (uiop:native-namestring portrait-file))
     (random-names:load-db* +shields-names-resource+ names-filename)
-    (n-setf-path-value character (list +last-name+)  (random-names:generate))
-    (n-setf-path-value character (list +first-name+) (_ "shield"))))
+    (n-setf-path-value character (list +first-name+) (random-names:generate))
+    (n-setf-path-value character (list +last-name+)  "")))
