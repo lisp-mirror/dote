@@ -44,13 +44,18 @@
 
 (defparameter *fov*     50.0)
 
-(defclass saved-entity ()
-  ((mesh-infos
+(defclass saved-entity-w-faction ()
+  ((original-faction
     :initform nil
-    :initarg  :mesh-infos
-    :accessor mesh-infos
-    :type     md2-fs-res)
-   (player-ghost
+    :initarg  :original-faction
+    :accessor original-faction
+    :type     symbol)))
+
+(defmethod marshal:class-persistant-slots ((object saved-entity-w-faction))
+   '(original-faction))
+
+(defclass saved-entity ()
+  ((player-ghost
     :initform nil
     :initarg  :player-ghost
     :accessor player-ghost
@@ -64,25 +69,36 @@
     :initform nil
     :initarg  :original-dir
     :accessor original-dir
-    :type     ivec2:ivec2)
+    :type     ivec2:ivec2)))
+
+(defmethod marshal:class-persistant-slots ((object saved-entity))
+  '(player-ghost
+    original-dir
+    original-map-pos))
+
+(defclass saved-player (saved-entity saved-entity-w-faction)
+  ((mesh-infos
+    :initform nil
+    :initarg  :mesh-infos
+    :accessor mesh-infos
+    :type     md2-fs-res)
    (original-mesh-id
     :initform nil
     :initarg  :original-mesh-id
     :accessor original-mesh-id
-    :type     fixnum)
-   (original-faction
-    :initform nil
-    :initarg  :original-faction
-    :accessor original-faction
-    :type     symbol)))
+    :type     fixnum)))
 
-(defmethod marshal:class-persistant-slots ((object saved-entity))
-  '(mesh-infos
-    player-ghost
-    original-dir
-    original-map-pos
-    original-mesh-id
-    original-faction))
+(defmethod marshal:class-persistant-slots ((object saved-player))
+  (append '(mesh-infos
+            original-mesh-id
+            original-faction)
+          (call-next-method)))
+
+(defclass saved-container (saved-entity) ())
+
+(defmethod marshal:class-persistant-slots ((object saved-container))
+  (append '(keys-opening-pos)
+          (call-next-method)))
 
 (defclass saved-game ()
   ((original-map-file
@@ -148,7 +164,7 @@
     (eq entity-type +pc-type+)))
 
 (defun mesh->saved-entity (mesh)
-  (make-instance 'saved-entity
+  (make-instance 'saved-player
                  :mesh-infos       (fs-resources            mesh)
                  :player-ghost     (ghost                   mesh)
                  :original-faction (my-faction              mesh)
@@ -157,13 +173,13 @@
                  :original-mesh-id (id                      mesh)))
 
 (defun trap->saved-entity (mesh)
-  (make-instance 'saved-entity
+  (make-instance 'saved-entity-w-faction
                  :original-faction (my-faction              mesh)
                  :original-map-pos (calculate-cost-position mesh)
                  :player-ghost     (ghost mesh)))
 
 (defun container->saved-entity (mesh)
-  (make-instance 'saved-entity
+  (make-instance 'saved-container
                  :original-map-pos (calculate-cost-position mesh)
                  :player-ghost     (ghost mesh)))
 
@@ -459,19 +475,38 @@
           (blackboard:reset-per-turn-visited-tiles (blackboard (state mesh)))
           (set-tile-visited (state mesh) mesh x y))))))
 
+(defun place-trap-in-map-destination (game-state dump x y shaders)
+  (let* ((map-pos    (ivec2:ivec2 x y))
+         (saved-trap (find-if (find-by-pos map-pos)
+                              (saved-traps dump)))
+         (faction    (original-faction saved-trap))
+         (ghost      (player-ghost     saved-trap)))
+    (mesh:build-and-place-trap-on-map game-state
+                                      ghost
+                                      faction
+                                      shaders
+                                      (map-utils:coord-map->chunk x)
+                                      (map-utils:coord-map->chunk y))))
+
+(defun place-container-in-map-destination (game-state dump x y)
+  (let* ((map-pos         (ivec2:ivec2 x y))
+         (saved-container (find-if (find-by-pos map-pos)
+                                   (saved-containers dump)))
+         (ghost          (player-ghost saved-container))
+         (dest-container (entity-in-pos game-state x y)))
+    (setf (ghost dest-container) ghost)))
+
 (defun load-game (window resource-dir)
   (let ((saved-dump (make-instance 'saved-game))
         (saved-file (res:get-resource-file +map-saved-filename+
                                            resource-dir
                                            :if-does-not-exists :error)))
-    (tg:gc)
     (setf saved-dump (deserialize saved-dump saved-file))
     (with-accessors ((delta-tiles       delta-tiles)
                      (original-map-file original-map-file)) saved-dump
       (if (not (fs:file-outdated-p saved-file
                                    (load-level:get-level-file-abs-path original-map-file)))
           (progn
-            (tg:gc)
             (init-new-map-from-dump window saved-dump)
             ;; workaround!     the    next     is    needed    because
             ;; init-new-map-from-dump   clean  the   texture  database
@@ -498,23 +533,11 @@
                                                        +pc-type+
                                                        root-compiled-shaders))
                      ((trap@pos-p saved-dump x y)
-                      (let* ((map-pos    (ivec2:ivec2 x y))
-                             (saved-trap (find-if (find-by-pos map-pos)
-                                                  (saved-traps saved-dump)))
-                             (faction    (original-faction saved-trap))
-                             (ghost      (player-ghost     saved-trap)))
-                        (mesh:build-and-place-trap-on-map window-game-state
-                                                          ghost
-                                                          faction
-                                                          root-compiled-shaders
-                                                          (map-utils:coord-map->chunk x)
-                                                          (map-utils:coord-map->chunk y))))
+                      (place-trap-in-map-destination window-game-state saved-dump x y
+                                                     root-compiled-shaders))
                      ((container@pos-p saved-dump x y)
-                      (let* ((map-pos         (ivec2:ivec2 x y))
-                             (saved-container (find-if (find-by-pos map-pos)
-                                                       (saved-containers saved-dump)))
-                             (ghost          (player-ghost saved-container))
-                             (dest-container (entity-in-pos window-game-state x y)))
-                        (setf (ghost dest-container) ghost))))))))
+                      (place-container-in-map-destination window-game-state
+                                                          saved-dump
+                                                          x y)))))))
           (error-message-save-game-outdated window))))
   window)
