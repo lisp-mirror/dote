@@ -97,7 +97,7 @@
 (defclass saved-container (saved-entity) ())
 
 (defmethod marshal:class-persistant-slots ((object saved-container))
-  (append '(keys-opening-pos)
+  (append '()
           (call-next-method)))
 
 (defclass saved-game ()
