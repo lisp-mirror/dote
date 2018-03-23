@@ -501,7 +501,9 @@
 
 (defgeneric fetch-all-traps (object))
 
-(defgeneric fetch-all-container (object))
+(defgeneric fetch-all-containers (object))
+
+(defgeneric fetch-all-doors (object))
 
 (defmethod (setf selected-pc) (entity (object game-state))
   "set index-selected-pc as well"
@@ -623,10 +625,15 @@
   (matrix-elt (map-state object) y x))
 
 (defmethod door@pos-p ((object game-state) (x fixnum) (y fixnum))
-  (or (eq (el-type-in-pos object x y) +door-n-type+)
-      (eq (el-type-in-pos object x y) +door-s-type+)
-      (eq (el-type-in-pos object x y) +door-w-type+)
-      (eq (el-type-in-pos object x y) +door-e-type+)))
+  (door@pos-p (map-state object) x y))
+
+(defmethod door@pos-p ((object matrix) (x fixnum) (y fixnum))
+  (let ((el (matrix-elt object y x)))
+    (or-types el
+      +door-n-type+
+      +door-s-type+
+      +door-w-type+
+      +door-e-type+)))
 
 (defmethod empty@pos-p ((object game-state) (x fixnum) (y fixnum))
   (empty@pos-p (map-state object) x y))
@@ -1233,8 +1240,22 @@
 (defmethod fetch-all-traps ((object game-state))
   (fetch-all-entity-in-map-by-type object +trap-type+))
 
-(defmethod fetch-all-container ((object game-state))
+(defmethod fetch-all-containers ((object game-state))
   (fetch-all-entity-in-map-by-type object +container-type+))
+
+(defmethod fetch-all-doors ((object game-state))
+  (with-accessors ((map-state map-state)) object
+    (let* ((all-ids (filter-matrix-data map-state
+                                        #'(lambda (a)
+                                            (let ((type (el-type a)))
+                                              (and (not (eq type +door-n-type+))
+                                                   (not (eq type +door-s-type+))
+                                                   (not (eq type +door-w-type+))
+                                                   (not (eq type +door-e-type+)))))))
+           (res     (map 'list #'(lambda (a)
+                                   (find-entity-by-id object (entity-id a)))
+                         all-ids)))
+      res)))
 
 (defun increase-game-turn (state)
   (let ((end-event   (make-instance 'game-event:end-turn

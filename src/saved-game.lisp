@@ -100,6 +100,17 @@
   (append '()
           (call-next-method)))
 
+(defclass saved-door (saved-entity)
+  ((opened
+    :initform nil
+    :initarg  :openedp
+    :reader   openedp
+    :writer   (setf opened))))
+
+(defmethod marshal:class-persistant-slots ((object saved-door))
+  (append '(opened)
+          (call-next-method)))
+
 (defclass saved-game ()
   ((original-map-file
     :initform nil
@@ -123,6 +134,11 @@
     :initarg  :saved-traps
     :accessor saved-traps
     :type     list)
+   (saved-doors
+    :initform nil
+    :initarg  :saved-doors
+    :accessor saved-doors
+    :type     list)
    (saved-containers
     :initform nil
     :initarg  :saved-containers
@@ -134,6 +150,7 @@
     delta-tiles
     saved-entities
     saved-traps
+    saved-doors
     saved-containers))
 
 (defmethod el-type-in-pos ((object saved-game) (x fixnum) (y fixnum))
@@ -150,6 +167,9 @@
 
 (defmethod container@pos-p ((object saved-game) (x fixnum) (y fixnum))
   (container@pos-p (delta-tiles object) x y))
+
+(defmethod door@pos-p ((object saved-game) (x fixnum) (y fixnum))
+  (door@pos-p (delta-tiles object) x y))
 
 (defmethod pawn-@pos-p ((object saved-game) x y)
   (or (entity-ai-in-pos     object x y)
@@ -183,6 +203,12 @@
                  :original-map-pos (calculate-cost-position mesh)
                  :player-ghost     (ghost mesh)))
 
+(defun door->saved-door (mesh)
+  (make-instance 'saved-door
+                 :original-map-pos (calculate-cost-position mesh)
+                 :openedp          (openp mesh)
+                 :player-ghost     (ghost mesh)))
+
 (defun save-game (resource-dir game-state)
   (let* ((saved-file        (res:get-resource-file +map-saved-filename+
                                                    resource-dir
@@ -191,8 +217,10 @@
          (saved-players     (append (map-ai-entities     game-state #'mesh->saved-entity)
                                     (map-player-entities game-state #'mesh->saved-entity)))
          (saved-traps       (mapcar #'trap->saved-entity      (fetch-all-traps game-state)))
-         (saved-containers  (mapcar #'container->saved-entity (fetch-all-container game-state)))
+         (saved-containers  (mapcar #'container->saved-entity (fetch-all-containers game-state)))
+         (saved-doors       (mapcar #'door->saved-door        (fetch-all-doors     game-state)))
          (to-save           (make-instance 'saved-game
+                                           :saved-doors       saved-doors
                                            :saved-containers  saved-containers
                                            :saved-traps       saved-traps
                                            :saved-entities    saved-players
@@ -369,6 +397,7 @@
   (gui:clean-font-db)
   (md2:clean-db)
   (game-event:clean-all-events-vectors)
+  (setf (main-window:world window) nil)
   (tg:gc :full t))
 
 (defun load-map (window map-file)
@@ -538,6 +567,17 @@
                      ((container@pos-p saved-dump x y)
                       (place-container-in-map-destination window-game-state
                                                           saved-dump
-                                                          x y)))))))
+                                                          x y))
+                     ((door@pos-p saved-dump x y)
+                      (let* ((map-pos    (ivec2:ivec2 x y))
+                             (saved-door (find-if (find-by-pos map-pos)
+                                                  (saved-doors saved-dump))))
+                        (when (openedp saved-door)
+                          (let* ((mesh       (entity-in-pos window-game-state x y))
+                                 (id-door    (id mesh))
+                                 (door-event (game-event:make-simple-event-w-dest 'game-event:open-door-event
+                                                                                  nil
+                                                                                  id-door)))
+                            (game-event:propagate-open-door-event door-event))))))))))
           (error-message-save-game-outdated window))))
   window)

@@ -1439,6 +1439,7 @@
             (vaos            (slot-value object 'vao))
             #+debug-mode
             (id              (slot-value object 'id)))
+        #+debug-mode (misc:dbg "adding finalizer md2 ~a ~a" id (type-of object))
         (tg:finalize object
                      #'(lambda ()
                          #+debug-mode (misc:dbg "finalize destroy md2 mesh ~a" id)
@@ -1606,6 +1607,7 @@
     (map nil #'prepare-for-rendering (frames object))
     (setf vbo (gl:gen-buffers +vbo-count+)
           vao (gl:gen-vertex-arrays +vao-count+))
+    #+debug-mode (misc:dbg "alloc md2 ~a" object)
     (%alloc-arrays object)
     (bind-vbo object nil)))
 
@@ -2163,6 +2165,7 @@
                    (texture-object texture-object)) object
     (setf vbo (gl:gen-buffers +vbo-count+)
           vao (gl:gen-vertex-arrays +vao-count+))
+    #+debug-mode (misc:dbg "alloc shell ~a" object)
     (%alloc-arrays object)
     (bind-vbo object nil)))
 

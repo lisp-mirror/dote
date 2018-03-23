@@ -2431,7 +2431,8 @@
    :get-costs-from-pc@
    :fetch-all-entity-in-map-by-type
    :fetch-all-traps
-   :fetch-all-container
+   :fetch-all-containers
+   :fetch-all-doors
    :increase-game-turn))
 
 (defpackage :game-event
