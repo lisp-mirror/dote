@@ -44,16 +44,6 @@
 
 (defparameter *fov*     50.0)
 
-(defclass saved-entity-w-faction ()
-  ((original-faction
-    :initform nil
-    :initarg  :original-faction
-    :accessor original-faction
-    :type     symbol)))
-
-(defmethod marshal:class-persistant-slots ((object saved-entity-w-faction))
-   '(original-faction))
-
 (defclass saved-entity ()
   ((player-ghost
     :initform nil
@@ -76,7 +66,18 @@
     original-dir
     original-map-pos))
 
-(defclass saved-player (saved-entity saved-entity-w-faction)
+(defclass saved-entity-w-faction (saved-entity)
+  ((original-faction
+    :initform nil
+    :initarg  :original-faction
+    :accessor original-faction
+    :type     symbol)))
+
+(defmethod marshal:class-persistant-slots ((object saved-entity-w-faction))
+  (append '(original-faction)
+          (call-next-method)))
+
+(defclass saved-player (saved-entity-w-faction)
   ((mesh-infos
     :initform nil
     :initarg  :mesh-infos
