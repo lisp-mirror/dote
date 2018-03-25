@@ -592,7 +592,8 @@
   (:export
    :fetch-window
    :fetch-window-id
-   :with-world))
+   :with-world
+   :clean-restart-gl-context))
 
 (defpackage :interfaces
   (:use :cl

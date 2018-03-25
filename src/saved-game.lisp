@@ -283,10 +283,7 @@
     (identificable:init-counter)
     #+debug-mode (main-window:clean-up-placeholder)
     (init-parallel-kernel)
-    (with-slots (sdl2.kit:gl-context) window
-      (sdl2:gl-delete-context (slot-value window 'sdl2.kit:gl-context))
-      (setf (slot-value window 'sdl2.kit:gl-context)
-            (sdl2:gl-create-context (sdl2.kit:sdl-window window))))
+    (sdl2.kit-utils:clean-restart-gl-context window)
     (init-system-when-gl-context-active window)
     (setf (interfaces:compiled-shaders (world:gui world)) root-compiled-shaders)
     (setf (camera:mode (world:camera world)) :fp)

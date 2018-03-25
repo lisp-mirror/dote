@@ -21,3 +21,9 @@
 
 (defun fetch-window-id (w)
   (sdl-window-id w))
+
+(defun clean-restart-gl-context (window)
+  (with-slots (sdl2.kit:gl-context) window
+    (sdl2:gl-delete-context (slot-value window 'sdl2.kit:gl-context))
+    (setf (slot-value window 'sdl2.kit:gl-context)
+          (sdl2:gl-create-context (sdl2.kit:sdl-window window)))))
