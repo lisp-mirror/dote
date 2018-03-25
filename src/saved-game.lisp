@@ -129,6 +129,12 @@
     :initarg  :original-map-file
     :accessor original-map-file
     :type     string)
+   (dmg-points
+    :initform nil
+    :initarg  :dmg-points
+    :accessor dmg-points
+    :type     matrix
+    :documentation  "All  the  dmg  points per  position  of invalicables entities.")
    (delta-tiles
     :initform nil
     :initarg  :delta-tiles
@@ -136,10 +142,10 @@
     :type     matrix
     :documentation     "A     snapshot     of    the     matrix     in
     game-state:map-state-element when the game was saved.")
-   (saved-entities
+   (saved-players
     :initform nil
-    :initarg  :saved-entities
-    :accessor saved-entities
+    :initarg  :saved-players
+    :accessor saved-players
     :type     list)
    (saved-traps
     :initform nil
@@ -164,8 +170,9 @@
 
 (defmethod marshal:class-persistant-slots ((object saved-game))
   '(original-map-file
+    dmg-points
     delta-tiles
-    saved-entities
+    saved-players
     saved-traps
     saved-doors
     saved-containers
@@ -234,6 +241,18 @@
                  :original-spell-recharge-count (spell-recharge-count    mesh)
                  :player-ghost                  (ghost                   mesh)))
 
+(defun build-dmg-matrix (game-state)
+  (with-accessors ((map-state map-state)) game-state
+    (let ((res (make-matrix (width map-state) (height map-state) nil)))
+      (loop-matrix (map-state x y)
+         (let* ((element   (matrix:matrix-elt map-state y x))
+                (entity-id (entity-id element)))
+           (when (map-element-occupied-by-invalicable-p element :include-door t)
+             (let ((entity (find-entity-by-id game-state entity-id)))
+               (setf (matrix-elt res y x)
+                     (current-damage-points (ghost entity)))))))
+      res)))
+
 (defun save-game (resource-dir game-state)
   (let* ((saved-file             (res:get-resource-file +map-saved-filename+
                                                         resource-dir
@@ -249,12 +268,14 @@
                                          (fetch-all-doors      game-state)))
          (saved-magic-furnitures (mapcar #'magic-furniture->saved-magic-furniture
                                          (fetch-all-magic-furnitures  game-state)))
+         (dmg-matrix             (build-dmg-matrix game-state))
          (to-save                (make-instance 'saved-game
                                                 :saved-doors            saved-doors
                                                 :saved-containers       saved-containers
                                                 :saved-traps            saved-traps
-                                                :saved-entities         saved-players
+                                                :saved-players          saved-players
                                                 :saved-magic-furnitures saved-magic-furnitures
+                                                :dmg-points             dmg-matrix
                                                 :delta-tiles            current-map-state
                                                 :original-map-file
                                                 (game-map-file game-state))))
@@ -474,10 +495,10 @@
    obj)
 
 (defun fix-texture-handlers-players (dump)
-  (with-accessors ((saved-entities saved-entities)) dump
+  (with-accessors ((saved-players saved-players)) dump
     (map nil #'(lambda (a) (clean-handle (player-ghost a)))
-         saved-entities)
-    (loop for player in saved-entities do
+         saved-players)
+    (loop for player in saved-players do
          (let ((ghost (player-ghost player)))
            (with-accessors ((elm        elm)
                             (shoes      shoes)
@@ -516,7 +537,7 @@
                             +ai-player-models-resource+))
          (map-pos       (ivec2:ivec2 x y))
          (saved-player  (find-if (find-by-pos map-pos)
-                                 (saved-entities dump)))
+                                 (saved-players dump)))
          (mesh-info     (mesh-infos saved-player))
          (new-ghost     (player-ghost saved-player))
          (mesh          (md2:load-md2-player new-ghost
@@ -586,7 +607,8 @@
                                            :if-does-not-exists :error)))
     (setf saved-dump (deserialize saved-dump saved-file))
     (with-accessors ((delta-tiles       delta-tiles)
-                     (original-map-file original-map-file)) saved-dump
+                     (original-map-file original-map-file)
+                     (dmg-points dmg-points)) saved-dump
       (if (not (fs:file-outdated-p saved-file
                                    (load-level:get-level-file-abs-path original-map-file)))
           (progn
@@ -595,6 +617,7 @@
             ;; init-new-map-from-dump   clean  the   texture  database
             ;; (texture:*texture-factory-db*)
             (fix-texture-handles saved-dump)
+            ;; restore entitites
             (with-accessors ((window-game-state     main-window:window-game-state)
                              (root-compiled-shaders main-window:root-compiled-shaders)
                              (world                 main-window:world)) window
@@ -627,6 +650,12 @@
                      ((magic-furniture@pos-p saved-dump x y)
                       (restore-magic-furniture-status window-game-state
                                                       saved-dump
-                                                      x y)))))))
+                                                      x y))))
+                ;; restore dmg points for wall and like
+                (loop-matrix (dmg-points x y)
+                   (let ((new-dmg-points (matrix-elt dmg-points y x)))
+                     (when new-dmg-points
+                       (let ((entity (entity-in-pos window-game-state x y)))
+                         (setf (current-damage-points (ghost entity)) new-dmg-points))))))))
           (error-message-save-game-outdated window))))
   window)
