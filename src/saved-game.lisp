@@ -527,6 +527,18 @@
          (dest-container (entity-in-pos game-state x y)))
     (setf (ghost dest-container) ghost)))
 
+(defun restore-door-status (game-state dump x y)
+  (let* ((map-pos    (ivec2:ivec2 x y))
+         (saved-door (find-if (find-by-pos map-pos)
+                              (saved-doors dump))))
+    (when (openedp saved-door)
+      (let* ((mesh       (entity-in-pos game-state x y))
+             (id-door    (id mesh))
+             (door-event (game-event:make-simple-event-w-dest 'game-event:open-door-event
+                                                              nil
+                                                              id-door)))
+        (game-event:propagate-open-door-event door-event)))))
+
 (defun load-game (window resource-dir)
   (let ((saved-dump (make-instance 'saved-game))
         (saved-file (res:get-resource-file +map-saved-filename+
@@ -571,15 +583,6 @@
                                                           saved-dump
                                                           x y))
                      ((door@pos-p saved-dump x y)
-                      (let* ((map-pos    (ivec2:ivec2 x y))
-                             (saved-door (find-if (find-by-pos map-pos)
-                                                  (saved-doors saved-dump))))
-                        (when (openedp saved-door)
-                          (let* ((mesh       (entity-in-pos window-game-state x y))
-                                 (id-door    (id mesh))
-                                 (door-event (game-event:make-simple-event-w-dest 'game-event:open-door-event
-                                                                                  nil
-                                                                                  id-door)))
-                            (game-event:propagate-open-door-event door-event))))))))))
+                      (restore-door-status window-game-state saved-dump x y)))))))
           (error-message-save-game-outdated window))))
   window)
