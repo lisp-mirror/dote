@@ -32,6 +32,8 @@
 
 (alexandria:define-constant +action-launch-spell+                :launch-spell     :test #'eq)
 
+(alexandria:define-constant +saving-game-screenshot-size+        128.0             :test #'=)
+
 (defparameter *square-button-size* (d/ (d *window-w*) 10.0))
 
 (defparameter *small-square-button-size* (d/ (d *window-w*) 20.0))
@@ -2285,6 +2287,17 @@
     (add-child toolbar
                (configuration-windows:make-main-window (compiled-shaders toolbar)))))
 
+(defun write-screenshot-for-saving (world filename)
+  (let* ((pixmap (cl-gl-utils:with-render-to-pixmap (*window-w* *window-h*)
+                   (interfaces:render world world))))
+    (pixmap:ncopy-matrix-into-pixmap pixmap
+                                     (matrix:scale-matrix pixmap
+                                                          (d (/ +saving-game-screenshot-size+
+                                                                *window-w*))
+                                                          (d (/  +saving-game-screenshot-size+
+                                                                 *window-h*))))
+    (pixmap:save-pixmap pixmap filename)))
+
 (defun toolbar-save-game-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
@@ -2293,10 +2306,14 @@
         (saved-game:save-game +save-game-dir-1+ main-state)
         (let* ((success-message (make-message-box (_ "Game saved")
                                                   (_ "Success")
-                                                  :info
-                                                  (cons (_ "OK")
-                                                        #'hide-and-remove-parent-cb))))
+                                                  :info (cons (_ "OK")
+                                                              #'hide-and-remove-parent-cb))))
           (setf (compiled-shaders success-message) (compiled-shaders w))
+          ;; save a screenshot
+          (let ((image-file (res:get-resource-file +save-game-screenshot-name+
+                                                   +save-game-dir-1+
+                                                   :if-does-not-exists :create)))
+            (write-screenshot-for-saving world image-file))
           (add-child toolbar success-message))))))
 
 (defun toolbar-load-game-cb (w e)

@@ -159,6 +159,7 @@
    :+save-game-dir-1+
    :+save-game-dir-2+
    :+save-game-dir-3+
+   :+save-game-screenshot-name+
    :+mesh-placeholder-file+
    :+gui-static-text-delim+
    :+gui-static-text-nbsp+

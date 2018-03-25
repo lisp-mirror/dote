@@ -124,8 +124,10 @@
     (text-utils:strcat +program-name+ "-screenshot-1.tga")
   :test #'string=)
 
-(defun save-screenshot (world filename)
-  (let* ((home (fs:home-dir :add-separator-ends t))
+(defun save-screenshot (world filename &key (append-home t))
+  (let* ((home (if append-home
+                   (fs:home-dir :add-separator-ends t)
+                   ""))
          (path (text-utils:strcat home filename)))
     (cl-gl-utils:with-render-to-file (path *window-w* *window-h*)
       #+debug-mode (misc:dbg "save screenshot ~a" path)
