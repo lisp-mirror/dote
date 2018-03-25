@@ -604,7 +604,7 @@
 
 (misc:defalias entity-player@pos-p #'entity-player-in-pos)
 
-(defgeneric pawn-@pos-p (object x y))
+(defgeneric pawn@pos-p (object x y))
 
 (defgeneric element-mapstate@ (object x y))
 
@@ -616,7 +616,9 @@
 
 (defgeneric container@pos-p (object x y))
 
-(defmethod pawn-@pos-p ((object game-state) x y)
+(defgeneric magic-forniture@pos-p (object x y))
+
+(defmethod pawn@pos-p ((object game-state) x y)
   (let ((entity (entity-in-pos object x y)))
     (pawnp entity)))
 
@@ -635,27 +637,31 @@
       +door-w-type+
       +door-e-type+)))
 
-(defmethod empty@pos-p ((object game-state) (x fixnum) (y fixnum))
-  (empty@pos-p (map-state object) x y))
+(defmacro def-*@pos-p-gamestate (&rest names)
+  `(progn
+     ,@(loop for n in names collect
+            `(defmethod ,n ((object game-state) (x fixnum) (y fixnum))
+               (,n (map-state object) x y)))))
+
+(def-*@pos-p-gamestate empty@pos-p trap@pos-p container@pos-p magic-furniture@pos-p)
 
 (defmethod empty@pos-p ((object matrix) (x fixnum) (y fixnum))
   (map-element-empty-p (matrix-elt object y x)))
-
-(defmethod trap@pos-p ((object game-state) (x fixnum) (y fixnum))
-  (trap@pos-p (map-state object) x y))
-
-(defmethod container@pos-p ((object game-state) (x fixnum) (y fixnum))
-  (container@pos-p (map-state object) x y))
 
 (defun %eq-type (matrix x y type)
   (eq (el-type (matrix-elt matrix y x))
       type))
 
-(defmethod trap@pos-p ((object matrix) (x fixnum) (y fixnum))
-  (%eq-type object x y +trap-type+))
+(defmacro def-*@pos-p-matrix (&rest names-types)
+  `(progn
+     ,@(loop for nt in names-types collect
+            `(defmethod ,(car nt) ((object matrix) (x fixnum) (y fixnum))
+                 (%eq-type object x y ,(cdr nt))))))
 
-(defmethod container@pos-p ((object matrix) (x fixnum) (y fixnum))
-  (%eq-type object x y +container-type+))
+(def-*@pos-p-matrix
+    (trap@pos-p          .  +trap-type+)
+    (container@pos-p     .  +container-type+)
+  (magic-furniture@pos-p .  +magic-furniture-type+))
 
 (defmethod prepare-map-state ((object game-state) (map random-terrain))
   (with-accessors ((map-state map-state)) object
@@ -1242,6 +1248,9 @@
 
 (defmethod fetch-all-containers ((object game-state))
   (fetch-all-entity-in-map-by-type object +container-type+))
+
+(defmethod fetch-all-magic-furnitures ((object game-state))
+  (fetch-all-entity-in-map-by-type object +magic-furniture-type+))
 
 (defmethod fetch-all-doors ((object game-state))
   (with-accessors ((map-state map-state)) object

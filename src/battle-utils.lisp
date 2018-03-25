@@ -890,7 +890,7 @@
 (defmethod reward-exp-launch-spell ((object game-event:event-with-attacker-entity) defender spell)
   (reward-exp-launch-spell (game-event:attacker-entity object) defender spell))
 
-(defmethod reward-exp-launch-spell ((object entity:entity) defender spell)
+(defmethod reward-exp-launch-spell ((object character:player-character) defender spell)
   (let* ((level-attacker (character:level (entity:ghost object)))
          (level-defender (character:level (entity:ghost defender)))
          (spell-cost     (spell:cost spell))
@@ -900,6 +900,10 @@
     (incf (character:exp-points (entity:ghost object)) reward)
     (maybe-start-gui-increase-level object)
     object))
+
+(defmethod reward-exp-launch-spell ((object entity:entity) defender spell)
+  ;; TODO
+  )
 
 (defun reward-movement (entity)
   (with-accessors ((state entity:state)

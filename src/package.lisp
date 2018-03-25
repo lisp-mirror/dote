@@ -2362,6 +2362,8 @@
    :empty@pos-p
    :trap@pos-p
    :container@pos-p
+   :pawn@pos
+   :magic-furniture@pos-p
    :selected-pc
    :selected-path
    :build-movement-path
@@ -2434,6 +2436,7 @@
    :fetch-all-traps
    :fetch-all-containers
    :fetch-all-doors
+   :fetch-all-magic-furnitures
    :increase-game-turn))
 
 (defpackage :game-event

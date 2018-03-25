@@ -112,6 +112,17 @@
   (append '(opened)
           (call-next-method)))
 
+(defclass saved-magic-furniture (saved-entity)
+  ((original-spell-recharge-count
+    :initform -1
+    :initarg  :original-spell-recharge-count
+    :accessor original-spell-recharge-count
+    :type     fixnum)))
+
+(defmethod marshal:class-persistant-slots ((object saved-magic-furniture))
+  (append '(original-spell-recharge-count)
+          (call-next-method)))
+
 (defclass saved-game ()
   ((original-map-file
     :initform nil
@@ -144,6 +155,11 @@
     :initform nil
     :initarg  :saved-containers
     :accessor saved-containers
+    :type     list)
+   (saved-magic-furnitures
+    :initform nil
+    :initarg  :saved-magic-furnitures
+    :accessor saved-magic-furnitures
     :type     list)))
 
 (defmethod marshal:class-persistant-slots ((object saved-game))
@@ -152,7 +168,8 @@
     saved-entities
     saved-traps
     saved-doors
-    saved-containers))
+    saved-containers
+    saved-magic-furnitures))
 
 (defmethod el-type-in-pos ((object saved-game) (x fixnum) (y fixnum))
   (el-type (matrix-elt (delta-tiles object) y x)))
@@ -160,19 +177,20 @@
 (defmethod entity-id-in-pos ((object saved-game) (x fixnum) (y fixnum))
   (entity-id (matrix-elt (delta-tiles object) y x)))
 
-(defmethod empty@pos-p ((object saved-game) (x fixnum) (y fixnum))
-  (empty@pos-p (delta-tiles object) x y))
+(defmacro def-*@pos-p-saved-game (&rest names)
+  `(progn
+     ,@(loop for n in names collect
+            `(defmethod ,n ((object saved-game) (x fixnum) (y fixnum))
+               (,n (delta-tiles object) x y)))))
 
-(defmethod trap@pos-p ((object saved-game) (x fixnum) (y fixnum))
-  (trap@pos-p (delta-tiles object) x y))
+(def-*@pos-p-saved-game
+    empty@pos-p
+    trap@pos-p
+  container@pos-p
+  door@pos-p
+  magic-furniture@pos-p)
 
-(defmethod container@pos-p ((object saved-game) (x fixnum) (y fixnum))
-  (container@pos-p (delta-tiles object) x y))
-
-(defmethod door@pos-p ((object saved-game) (x fixnum) (y fixnum))
-  (door@pos-p (delta-tiles object) x y))
-
-(defmethod pawn-@pos-p ((object saved-game) x y)
+(defmethod pawn@pos-p ((object saved-game) x y)
   (or (entity-ai-in-pos     object x y)
       (entity-player-in-pos object x y)))
 
@@ -202,31 +220,44 @@
 (defun container->saved-entity (mesh)
   (make-instance 'saved-container
                  :original-map-pos (calculate-cost-position mesh)
-                 :player-ghost     (ghost mesh)))
+                 :player-ghost     (ghost                   mesh)))
 
 (defun door->saved-door (mesh)
   (make-instance 'saved-door
                  :original-map-pos (calculate-cost-position mesh)
-                 :openedp          (openp mesh)
-                 :player-ghost     (ghost mesh)))
+                 :openedp          (openp                   mesh)
+                 :player-ghost     (ghost                   mesh)))
+
+(defun magic-furniture->saved-magic-furniture (mesh)
+  (make-instance 'saved-magic-furniture
+                 :original-map-pos              (calculate-cost-position mesh)
+                 :original-spell-recharge-count (spell-recharge-count    mesh)
+                 :player-ghost                  (ghost                   mesh)))
 
 (defun save-game (resource-dir game-state)
-  (let* ((saved-file        (res:get-resource-file +map-saved-filename+
-                                                   resource-dir
-                                                   :if-does-not-exists :create))
-         (current-map-state (map-state game-state))
-         (saved-players     (append (map-ai-entities     game-state #'mesh->saved-entity)
-                                    (map-player-entities game-state #'mesh->saved-entity)))
-         (saved-traps       (mapcar #'trap->saved-entity      (fetch-all-traps game-state)))
-         (saved-containers  (mapcar #'container->saved-entity (fetch-all-containers game-state)))
-         (saved-doors       (mapcar #'door->saved-door        (fetch-all-doors     game-state)))
-         (to-save           (make-instance 'saved-game
-                                           :saved-doors       saved-doors
-                                           :saved-containers  saved-containers
-                                           :saved-traps       saved-traps
-                                           :saved-entities    saved-players
-                                           :delta-tiles       current-map-state
-                                           :original-map-file (game-map-file game-state))))
+  (let* ((saved-file             (res:get-resource-file +map-saved-filename+
+                                                        resource-dir
+                                                        :if-does-not-exists :create))
+         (current-map-state      (map-state game-state))
+         (saved-players          (append (map-ai-entities     game-state #'mesh->saved-entity)
+                                         (map-player-entities game-state #'mesh->saved-entity)))
+         (saved-traps            (mapcar #'trap->saved-entity
+                                         (fetch-all-traps      game-state)))
+         (saved-containers       (mapcar #'container->saved-entity
+                                         (fetch-all-containers game-state)))
+         (saved-doors            (mapcar #'door->saved-door
+                                         (fetch-all-doors      game-state)))
+         (saved-magic-furnitures (mapcar #'magic-furniture->saved-magic-furniture
+                                         (fetch-all-magic-furnitures  game-state)))
+         (to-save                (make-instance 'saved-game
+                                                :saved-doors            saved-doors
+                                                :saved-containers       saved-containers
+                                                :saved-traps            saved-traps
+                                                :saved-entities         saved-players
+                                                :saved-magic-furnitures saved-magic-furnitures
+                                                :delta-tiles            current-map-state
+                                                :original-map-file
+                                                (game-map-file game-state))))
     (fs:dump-sequence-to-file (serialize to-save) saved-file)
     saved-file))
 
@@ -539,6 +570,15 @@
                                                               id-door)))
         (game-event:propagate-open-door-event door-event)))))
 
+(defun restore-magic-furniture-status (game-state dump x y)
+  (let* ((map-pos         (ivec2:ivec2 x y))
+         (saved-furniture (find-if (find-by-pos map-pos)
+                                   (saved-magic-furnitures dump)))
+         (mesh            (entity-in-pos game-state x y)))
+    (setf (spell-recharge-count mesh)
+          (original-spell-recharge-count saved-furniture))
+    game-state))
+
 (defun load-game (window resource-dir)
   (let ((saved-dump (make-instance 'saved-game))
         (saved-file (res:get-resource-file +map-saved-filename+
@@ -583,6 +623,10 @@
                                                           saved-dump
                                                           x y))
                      ((door@pos-p saved-dump x y)
-                      (restore-door-status window-game-state saved-dump x y)))))))
+                      (restore-door-status window-game-state saved-dump x y))
+                     ((magic-furniture@pos-p saved-dump x y)
+                      (restore-magic-furniture-status window-game-state
+                                                      saved-dump
+                                                      x y)))))))
           (error-message-save-game-outdated window))))
   window)
