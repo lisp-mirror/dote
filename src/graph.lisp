@@ -521,7 +521,7 @@
                    (bs-tree:data found)
                    (list node-id 0))))
            (find-cost-in-node-set (node-id the-set)
-               (second (find-node-in-set node-id the-set))))
+             (second (find-node-in-set node-id the-set))))
     (let ((cumulative-cost (rb-tree:make-root-rb-node nil 'black))
           (*cumulative-cost-plus-heuristic* (rb-tree:make-root-rb-node nil 'black))
           (bst (make-instance 'list-graph))
@@ -535,40 +535,40 @@
                  (parent (second node-frontier)))
             (setf (traverse-cost bst visited (destination parent))
                   (find-cost-in-node-set visited cumulative-cost))
-          (when (and to-id (equalp visited to-id))
-            (return-from astar-search (values bst cumulative-cost)))
-          (let ((next-nodes (get-first-near-as-id object visited)))
-            (loop for next in next-nodes do
-                 (let* ((new-cost (+ (find-cost-in-node-set visited cumulative-cost)
-                                     (traverse-cost object (node-id->node object visited)
-                                                    (node-id->node object next))))
-                        (new-cost-plus-heuristic (+ new-cost
-                                                    (funcall heuristic-cost-function
-                                                             object
-                                                             (node-id->node object to-id)
-                                                             (node-id->node object next)
-                                                             (node-id->node object from-id)))))
-                   (when (or (null (find-node frontier next))
-                             (and  (null (find-node bst next))
-                                   (< new-cost (find-cost-in-node-set
-                                                next cumulative-cost))))
-                     (setf *cumulative-cost-plus-heuristic*
-                           (bs-tree:insert *cumulative-cost-plus-heuristic*
+            (when (and to-id (equalp visited to-id))
+              (return-from astar-search (values bst cumulative-cost)))
+            (let ((next-nodes (get-first-near-as-id object visited)))
+              (loop for next in next-nodes do
+                   (let* ((new-cost (+ (find-cost-in-node-set visited cumulative-cost)
+                                       (traverse-cost object (node-id->node object visited)
+                                                      (node-id->node object next))))
+                          (new-cost-plus-heuristic (+ new-cost
+                                                      (funcall heuristic-cost-function
+                                                               object
+                                                               (node-id->node object to-id)
+                                                               (node-id->node object next)
+                                                               (node-id->node object from-id)))))
+                     (when (or (null (find-node frontier next))
+                               (and  (null (find-node bst next))
+                                     (< new-cost (find-cost-in-node-set
+                                                  next cumulative-cost))))
+                       (setf *cumulative-cost-plus-heuristic*
+                             (bs-tree:insert *cumulative-cost-plus-heuristic*
                                              (list next new-cost-plus-heuristic)
                                              :key #'first
                                              :key-datum #'first
                                              :compare #'<
                                              :equal #'=))
-                     (setf cumulative-cost
-                           (bs-tree:insert cumulative-cost
+                       (setf cumulative-cost
+                             (bs-tree:insert cumulative-cost
                                              (list next new-cost)
                                              :key #'first
                                              :key-datum #'first
                                              :compare #'<
                                              :equal #'=))
-                     (pq:push-element queue next)
-                     (delete-all-arcs frontier next)
-                     (setf (traverse-cost frontier next visited) new-cost)))))))))))
+                       (pq:push-element queue next)
+                       (delete-all-arcs frontier next)
+                       (setf (traverse-cost frontier next visited) new-cost)))))))))))
 
 (defmethod dijkstra-search ((object graph) from-id)
   (astar-search object from-id nil

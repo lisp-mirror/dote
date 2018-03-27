@@ -883,60 +883,72 @@ wall's    coordinates    as    they   are    already    scaled:    see
             (terrain-chunk:chunk-occupy-space-p chunk))))
 
 (defun setup-terrain (world map)
-  (let* ((border-color   (skydome-bottom-color (main-state world)))
-         (whole          (terrain-chunk:make-terrain-chunk map
-                                                           (compiled-shaders world)
-                                                           :map-border-color        border-color
-                                                           :generate-rendering-data nil))
-         (quadtree-depth (quad-tree:quad-sizes->level
-                          (aabb2-max-x (game-state:terrain-aabb-2d (main-state world)))
-                          +quad-tree-leaf-size+))
-         (channel (lparallel:make-channel))
-         (cache-channels-count  0))
-    (loop for aabb in (labyrinths-aabb map) do
-         (let* ((offset (d/ +terrain-chunk-tile-size+ 2.0))
-                (act-aabb (2d-utils:make-aabb2
-                           (map-utils:coord-terrain->chunk (2d-utils:aabb2-min-x aabb)
-                                                           :tile-offset (d- offset))
-                           (map-utils:coord-terrain->chunk (2d-utils:aabb2-min-y aabb)
-                                                           :tile-offset  (d- offset))
-                           (map-utils:coord-terrain->chunk (2d-utils:aabb2-max-x aabb)
-                                                           :tile-offset offset)
-                           (map-utils:coord-terrain->chunk (2d-utils:aabb2-max-y aabb)
-                                                           :tile-offset offset))))
-           (terrain-chunk:nclip-with-aabb whole
-                                          act-aabb
-                                          :remove-orphaned-vertices  nil
-                                          :regenerate-rendering-data nil
-                                          :clip-if-inside              t)))
-    (pickable-mesh:populate-lookup-triangle-matrix whole)
-    (setf (quad-tree:aabb (entities world)) (entity:aabb-2d whole))
-    (quad-tree:subdivide  (entities world)  quadtree-depth)
-    ;; I guess this loop works  only because labyrinths can not extend
-    ;; beyond the borders of the whole map...
-    (loop for x from 0.0 below (aabb2-max-x (entity:aabb-2d whole)) by +quad-tree-leaf-size+ do
-         (loop
-            for z from 0.0 below (aabb2-max-y (entity:aabb-2d whole)) by +quad-tree-leaf-size+ do
-              (let ((chunk-cache-key (make-terrain-chunk-cache-key world z x)))
-                (incf cache-channels-count)
-                (if (resource-cache:cache-miss* chunk-cache-key)
-                    (lparallel:submit-task channel
-                                           'build-and-cache-terrain-chunk
-                                           x
-                                           z
-                                           whole
-                                           chunk-cache-key)
-                    (lparallel:submit-task channel
-                                           'revive-terrain-chunk
-                                           whole
-                                           chunk-cache-key)))))
-    (loop for i from cache-channels-count above 0 do
-         (let ((chunk  (lparallel:receive-result channel)))
-           (when (terrain-chunk:chunk-occupy-space-p chunk) ; if  chunk has not triangles it is
-                                                            ; because  the  clipping region  is
-                                                            ; outside of the map
-             (prepare-for-rendering chunk)
-             (push-entity world chunk))))))
+  (let* ((border-color   (skydome-bottom-color (main-state world))))
+    (let ((whole          (terrain-chunk:make-terrain-chunk map
+                                                            (compiled-shaders world)
+                                                            :map-border-color        border-color
+                                                            :generate-rendering-data nil))
+          (quadtree-depth (quad-tree:quad-sizes->level
+                           (aabb2-max-x (game-state:terrain-aabb-2d (main-state world)))
+                           +quad-tree-leaf-size+))
+          (channel (lparallel:make-channel))
+          (cache-channels-count  0))
+      (loop for aabb in (labyrinths-aabb map) do
+           (let* ((offset (d/ +terrain-chunk-tile-size+ 2.0))
+                  (act-aabb (2d-utils:make-aabb2
+                             (map-utils:coord-terrain->chunk (2d-utils:aabb2-min-x aabb)
+                                                             :tile-offset (d- offset))
+                             (map-utils:coord-terrain->chunk (2d-utils:aabb2-min-y aabb)
+                                                             :tile-offset  (d- offset))
+                             (map-utils:coord-terrain->chunk (2d-utils:aabb2-max-x aabb)
+                                                             :tile-offset offset)
+                             (map-utils:coord-terrain->chunk (2d-utils:aabb2-max-y aabb)
+                                                             :tile-offset offset))))
+             (terrain-chunk:nclip-with-aabb whole
+                                            act-aabb
+                                            :remove-orphaned-vertices  nil
+                                            :regenerate-rendering-data nil
+                                            :clip-if-inside              t)))
+      (pickable-mesh:populate-lookup-triangle-matrix whole)
+      (setf (quad-tree:aabb (entities world)) (entity:aabb-2d whole))
+      (quad-tree:subdivide  (entities world)  quadtree-depth)
+      ;; we  can  not  control  the ordering  of  the  deserialization
+      ;; because of  the parallelism.   So we can  *not* trust  we are
+      ;; going  to  get  the   same  num:lcg-next-in-range  after  the
+      ;; complete   deserialization   of   the  terrain   chunk   (the
+      ;; initialization of any  triangle-mesh call num:lcg-next-upto),
+      ;; this means that  the behaivour is no  more deterministic even
+      ;; if we are  using a pseudorandom number generator!  To get the
+      ;; thing  works right  we  copy the  value of  the  seed in  the
+      ;; following form, because is a  special variable its value will
+      ;; be restored after the expression is evauated.
+      (let* ((seed           num:*lcg-seed*)
+             (num:*lcg-seed* seed))
+        ;; I guess this loop works  only because labyrinths can not extend
+        ;; beyond the borders of the whole map...
+        (loop for x from 0.0 below (aabb2-max-x (entity:aabb-2d whole)) by +quad-tree-leaf-size+ do
+             (loop
+                for z from 0.0 below (aabb2-max-y (entity:aabb-2d whole)) by +quad-tree-leaf-size+ do
+                  (let ((chunk-cache-key (make-terrain-chunk-cache-key world z x)))
+                    (incf cache-channels-count)
+                    (if (resource-cache:cache-miss* chunk-cache-key)
+                        (lparallel:submit-task channel
+                                               'build-and-cache-terrain-chunk
+                                               x
+                                               z
+                                               whole
+                                               chunk-cache-key)
+                        (lparallel:submit-task channel
+                                               'revive-terrain-chunk
+                                               whole
+                                               chunk-cache-key)))))
+        (loop for i from cache-channels-count above 0 do
+             (let ((chunk  (lparallel:receive-result channel)))
+               (when (terrain-chunk:chunk-occupy-space-p chunk) ; if  chunk has not triangles it is
+                                        ; because  the  clipping region  is
+                                        ; outside of the map
+                 (prepare-for-rendering chunk)
+                 (push-entity world chunk))))))))
 
 (defun get-level-file-abs-path (filename)
   (res:get-resource-file filename +maps-resource+

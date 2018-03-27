@@ -462,20 +462,18 @@
                              (cost-pointer-position (world:pick-pointer-position world world x y))
                              (cost-pointer-pos-x    (elt cost-pointer-position 0))
                              (cost-pointer-pos-y    (elt cost-pointer-position 1))
-                             (cost-pointer          (or (and cost-pointer-position
-                                                             (game-state:get-costs-from-pc@ main-state
-                                                                                            cost-pointer-pos-x
-                                                                                            cost-pointer-pos-y))
-                                                        +invalicable-element-cost+))
+                             (cost-pointer          (or (game-state:get-cost main-state
+                                                                             cost-pointer-pos-x
+                                                                             cost-pointer-pos-y))
+                                                    +invalicable-element-cost+)
                              (ghost                 (entity:ghost selected-pc)))
         ;; test concerning tiles
         ;; (blackboard            (game-state:blackboard main-state)))
 
         ;; (concerning-tiles      (blackboard:concerning-tiles->costs-matrix blackboard)))
-        (when (and cost-pointer-position
-                   (not (path-same-ends-p main-state
-                                          cost-player-position
-                                          cost-pointer-position)))
+        (when (not (path-same-ends-p main-state
+                                     cost-player-position
+                                     cost-pointer-position))
           (let ((min-cost      (map-utils:map-manhattam-distance-cost cost-pointer-position
                                                                       cost-player-position))
                 (player-movement-points (character:current-movement-points ghost)))
@@ -483,11 +481,9 @@
                        (<= min-cost player-movement-points)
                        (<= cost-pointer player-movement-points))
               (multiple-value-bind (path cost)
-                  (and cost-player-position
-                       cost-pointer-position
-                       (game-state:build-movement-path-pc main-state
-                                                          cost-player-position
-                                                          cost-pointer-position))
+                  (game-state:build-movement-path-pc main-state
+                                                     cost-player-position
+                                                     cost-pointer-position)
                 (when (and path
                            (<= cost player-movement-points))
                   (setf (game-state:selected-path main-state)
@@ -515,8 +511,7 @@
             (if (not selected-pc)
                 (world:highlight-tile-screenspace world world x y)
                 (cond
-                  ((and (< (vec2:vec2-length (vec2:vec2 (d xr) (d yr))) 2)
-                        (eq (world:toolbar-selected-action world) widget:+action-move+))
+                  ((eq (world:toolbar-selected-action world) widget:+action-move+)
                    (set-player-path object x y))
                   ((eq (world:toolbar-selected-action world) widget:+action-attack-short-range+)
                    (world:highlight-tile-screenspace world world x y)))))))))

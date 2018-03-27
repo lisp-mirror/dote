@@ -440,7 +440,7 @@
         (with-open-file (stream cache-key :direction :output :if-does-not-exist :create
                                 :if-exists :supersede)
           (setf *seed-after-loading* num:*lcg-seed*)
-          (format stream "~a~%" *seed-after-loading*))
+          #+debug-mode (misc:dbg "~a~%" *seed-after-loading*))
         (with-open-file (stream cache-key :direction :input :if-does-not-exist :error)
           (let ((seed (parse-integer (read-line stream))))
             (setf num:*lcg-seed* seed))))))
