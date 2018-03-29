@@ -687,7 +687,7 @@
              (dx2   (d- s-x a-x))
              (dy2   (d- s-y a-y))
              (cross (abs (d- (d* dx1 dy2) (d* dx2 dy1)))))
-        (d+ cost (d* cross 0.05)))))
+        (d+ cost (d* cross 4.05)))))
 
 (defun %build-movement-path (graph start end other-costs-layer)
   (graph:with-pushed-cost-layer (graph other-costs-layer)

@@ -32,8 +32,6 @@
 
 (alexandria:define-constant +action-launch-spell+                :launch-spell     :test #'eq)
 
-(alexandria:define-constant +saving-game-screenshot-size+        128.0             :test #'=)
-
 (defparameter *square-button-size* (d/ (d *window-w*) 10.0))
 
 (defparameter *small-square-button-size* (d/ (d *window-w*) 20.0))
@@ -1559,29 +1557,41 @@
           (when *child-flip-y*
             (setf y-child (flip-y object child))))))))
 
+(defun common-setup-label-window (top-bar new-label)
+  (with-accessors ((label-font label-font)
+                   (label-font-size label-font-size)
+                   (label-font-color label-font-color)
+                   (children children)) top-bar
+    (with-slots (label) top-bar
+      (remove-child-if top-bar #'(lambda (a) (not (typep a 'naked-button))))
+      (setf label new-label)
+      (loop for c across label do
+           (let* ((mesh  (get-char-mesh label-font c))
+                  (shell (if mesh
+                             (fill-font-mesh-shell mesh :color label-font-color)
+                             nil)))
+             (when shell
+               (add-child top-bar shell)))))))
+
 (defmethod (setf label) (new-label (object window))
-  (declare (optimize (debug 0) (speed 3) (safety 0)))
-  (declare (simple-string new-label))
   (with-accessors ((label-font label-font)
                    (top-bar top-bar)
                    (height height)
                    (width width)) object
-    (declare (desired-type width height))
     (with-accessors ((bar-label-font-size label-font-size)
                      (bar-children children)) top-bar
-      (declare (desired-type bar-label-font-size))
       (let ((top-bar-h (top-bar-h *reference-sizes*))
             (top-bar-relative-offset (top-bar-relative-offset *reference-sizes*)))
-        (declare (desired-type top-bar-h top-bar-relative-offset))
-        (common-setup-label top-bar new-label)
+        (common-setup-label-window top-bar new-label)
         (let* ((label-width   (label-width top-bar))
                (scaling-width (d/ (d- width (d* width (relative-title-space *reference-sizes*)))
                                   label-width)))
           (when (d< scaling-width 1.0)
             (setf bar-label-font-size (d* bar-label-font-size scaling-width)))
           (loop
-             for l across (the (simple-array triangle-mesh (*)) bar-children)
-             for xf from 0.0 by bar-label-font-size do
+             for l across bar-children
+             for xf from 0.0 by bar-label-font-size
+             when (not (typep l 'naked-button))     do
                (setf (scaling l) (sb-cga:vec bar-label-font-size bar-label-font-size 0.0))
                (setf (pos l)     (sb-cga:vec (d+ (d* width top-bar-relative-offset) xf)
                                              (d- (d* top-bar-h 0.5)
@@ -2287,34 +2297,13 @@
     (add-child toolbar
                (configuration-windows:make-main-window (compiled-shaders toolbar)))))
 
-(defun write-screenshot-for-saving (world filename)
-  (let* ((pixmap (cl-gl-utils:with-render-to-pixmap (*window-w* *window-h*)
-                   (interfaces:render world world))))
-    (pixmap:ncopy-matrix-into-pixmap pixmap
-                                     (matrix:scale-matrix pixmap
-                                                          (d (/ +saving-game-screenshot-size+
-                                                                *window-w*))
-                                                          (d (/  +saving-game-screenshot-size+
-                                                                 *window-h*))))
-    (pixmap:save-pixmap pixmap filename)))
-
 (defun toolbar-save-game-cb (w e)
   (declare (ignore e))
   (with-parent-widget (toolbar) w
     (with-toolbar-world (world) toolbar
       (with-accessors ((main-state main-state)) world
-        (saved-game:save-game +save-game-dir-1+ main-state)
-        (let* ((success-message (make-message-box (_ "Game saved")
-                                                  (_ "Success")
-                                                  :info (cons (_ "OK")
-                                                              #'hide-and-remove-parent-cb))))
-          (setf (compiled-shaders success-message) (compiled-shaders w))
-          ;; save a screenshot
-          (let ((image-file (res:get-resource-file +save-game-screenshot-name+
-                                                   +save-game-dir-1+
-                                                   :if-does-not-exists :create)))
-            (write-screenshot-for-saving world image-file))
-          (add-child toolbar success-message))))))
+        (let ((window  (load-save-window:make-window (compiled-shaders w) :save)))
+          (add-child toolbar window))))))
 
 (defun toolbar-load-game-cb (w e)
   (declare (ignore e))
@@ -2322,8 +2311,8 @@
     (with-toolbar-world (world) toolbar
       (with-accessors ((main-state main-state)) world
         (tg:gc)
-        (let ((render-window (fetch-render-window main-state)))
-          (saved-game:load-game render-window +save-game-dir-1+))))))
+        (let ((window  (load-save-window:make-window (compiled-shaders w) :load)))
+          (add-child toolbar window))))))
 
 (defun toolbar-quit-cb (w e)
   (declare (ignore e))
@@ -4716,3 +4705,13 @@
                                    :label    (car b-cb)
                                    :callback (cdr b-cb))))
     widget))
+
+(defun append-error-box-to-window (win error-text)
+  (with-accessors ((compiled-shaders compiled-shaders)) win
+    (let* ((error-msg  (widget:make-message-box error-text
+                                                (_ "Error")
+                                                :error
+                                                (cons (_ "OK")
+                                                      #'widget:hide-and-remove-parent-cb))))
+      (setf (compiled-shaders error-msg) compiled-shaders)
+      (mtree:add-child win error-msg))))

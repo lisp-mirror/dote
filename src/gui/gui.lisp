@@ -192,6 +192,12 @@
                    (setf (s-wrap-mode  bg) :clamp-to-border)
                    (setf (t-wrap-mode  bg) :clamp-to-border)
                    (setf (border-color bg) §c00000000))
+                  (load-save-preview.tga
+                   +default-gui-resource+
+                   (setf (interpolation-type bg) :linear)
+                   (setf (s-wrap-mode  bg) :clamp-to-border)
+                   (setf (t-wrap-mode  bg) :clamp-to-border)
+                   (setf (border-color bg) §c00000000))
                   (berserk.tga
                    +default-gui-resource+
                    (setf (interpolation-type bg) :linear))
@@ -573,6 +579,7 @@
   (setup-bg-elaborating-plan-spinner)
   (setup-bg-portrait-unknown)
   (setup-bg-preview-unknown)
+  (setup-bg-load-save-preview)
   (setup-bg-berserk)
   (setup-bg-coma)
   (setup-bg-terror)

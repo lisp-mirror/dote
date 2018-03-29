@@ -1634,6 +1634,7 @@ data/gui/default/plus-overlay.tga                        \
 data/gui/default/poison.tga                              \
 data/gui/default/portrait-unknown.tga                    \
 data/gui/default/preview-unknown.tga                     \
+data/gui/default/load-save-preview.tga                   \
 data/gui/default/previous-overlay.tga                    \
 data/gui/default/quit-overlay.tga                        \
 data/gui/default/red-bar.tga                             \

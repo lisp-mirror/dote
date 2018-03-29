@@ -139,6 +139,7 @@
                                      (:file "spell-window")
                                      (:file "player-report-window")
                                      (:file "configuration-windows")
+                                     (:file "load-save-window")
                                      (:file "splash-screen-progress-gauge")
                                      (:file "full-screen-masks")))
                (:file "billboard")

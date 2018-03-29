@@ -4368,6 +4368,7 @@
    :+portrait-unknown-texture-name+
    :+elaborating-plan-spinner-texture-name+
    :+preview-unknown-texture-name+
+   :+load-save-preview-texture-name+
    :+silhouette-texture-name+
    :+bag-texture-name+
    :+add-to-bag-texture-name+
@@ -4485,6 +4486,7 @@
    :hide-and-remove-parent-cb
    :add-window-button-cb-hide-remove
    :naked-button
+   :callback
    :button
    :text-field
    :char-field
@@ -4534,6 +4536,7 @@
    :message-window
    :make-message-box
    :make-message-box*
+   :append-error-box-to-window
    :add-quad-for-widget
    :progress-gauge
    :progress
@@ -4555,6 +4558,26 @@
         :game-configuration)
   (:export
    :make-main-window))
+
+(defpackage :load-save-window
+  (:use :cl
+        :alexandria
+        :config
+        :constants
+        :num
+        :misc
+        :mtree-utils
+        :text-utils
+        :filesystem-utils
+        :entity
+        :interfaces
+        :gui-events
+        :gui
+        :widget
+        :game-configuration)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :make-window))
 
 (defpackage :full-screen-masks
   (:use

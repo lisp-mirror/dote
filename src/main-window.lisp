@@ -525,7 +525,11 @@
 
 (defun main ()
   (saved-game:init-system)
-  (let ((w (make-instance 'test-window :w *window-w* :h *window-h* :title +program-name+)))
+  (let ((w (make-instance 'test-window
+                          :fullscreen nil
+                          :w          *window-w*
+                          :h          *window-h*
+                          :title      +program-name+)))
     (multiple-value-bind (wi he)
         (sdl2:get-window-size (sdl-window w))
       (sdl2:warp-mouse-in-window (sdl-window w) (/ wi 2) (/ he 2)))
