@@ -154,7 +154,6 @@
                (:file "trap-mesh-shell")
                (:file "trees")
                (:file "load-level")
-               (:file "saved-game")
                (:file "id3")
                (:file "influence-map")
                (:file "ann")
@@ -162,6 +161,7 @@
                (:file "attack-tactics")
                (:file "goap")
                (:file "keyboard-world-navigation")
+               (:file "saved-game")
                (:file "main-window")
                (:module tests
                         :components ((:file "package")

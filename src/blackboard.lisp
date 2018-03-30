@@ -65,6 +65,9 @@
     :initarg :entity-id
     :accessor entity-id)))
 
+(defmethod marshal:class-persistant-slots ((object entity-taker))
+  '(entity-id))
+
 (defclass def-target (entity-taker)
   ((goal-pos
     :initform '()
@@ -74,6 +77,11 @@
     :initform 1
     :initarg  :age
     :accessor age)))
+
+(defmethod marshal:class-persistant-slots ((object def-target))
+  (append '(goal-pos
+            age)
+          (call-next-method)))
 
 (defgeneric max-attackers (object))
 
@@ -98,6 +106,11 @@
 
 (defmethod print-object ((object attacker) stream)
   (format stream "~a -> ~a@~a" (entity-id object) (target-id object) (target-pos object)))
+
+(defmethod marshal:class-persistant-slots ((object attacker))
+  (append '(target-id
+            target-pos)
+          (call-next-method)))
 
 (defun make-attacker-instance (target-pos defender-id attacker-id)
   (make-instance 'attacker

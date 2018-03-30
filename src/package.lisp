@@ -5107,37 +5107,6 @@
    :get-level-file-abs-path
    :load-level))
 
-(defpackage :saved-game
-  (:use :cl
-        :alexandria
-        :config
-        :constants
-        :misc
-        :num
-        :2d-utils
-        :matrix
-        :entity
-        :identificable
-        :interfaces
-        :game-state
-        :world
-        :character
-        :mesh
-        :md2-mesh)
-  (:shadowing-import-from :misc :random-elt :shuffle)
-  (:export
-   :*map-loaded-p*
-   :init-new-map-from-dump
-   :init-new-map
-   :init-system-when-gl-context-active
-   :init-system
-   :init-parallel-kernel
-   :clean-parallel-kernel
-   :clean-up-system
-   :save-game
-   :load-game
-   :load-map))
-
 ;; AI
 
 (defpackage :id3
@@ -5272,6 +5241,7 @@
    :blackboard
    :exhausted-fountains-ids
    :concerning-tiles
+   :concerning-tiles-invalicables
    :concerning-tiles-facing
    :calc-concerning-tiles-cost-scaling
    :visited-tiles
@@ -5413,6 +5383,38 @@
    :select-next-player
    :select-previous-player
    :make-screenshot))
+
+(defpackage :saved-game
+  (:use :cl
+        :alexandria
+        :config
+        :constants
+        :misc
+        :num
+        :2d-utils
+        :matrix
+        :entity
+        :identificable
+        :interfaces
+        :blackboard
+        :game-state
+        :world
+        :character
+        :mesh
+        :md2-mesh)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :*map-loaded-p*
+   :init-new-map-from-dump
+   :init-new-map
+   :init-system-when-gl-context-active
+   :init-system
+   :init-parallel-kernel
+   :clean-parallel-kernel
+   :clean-up-system
+   :save-game
+   :load-game
+   :load-map))
 
 (defpackage :main-window
   (:use :cl

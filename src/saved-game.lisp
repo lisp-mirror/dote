@@ -166,7 +166,68 @@
     :initform nil
     :initarg  :saved-magic-furnitures
     :accessor saved-magic-furnitures
-    :type     list)))
+    :type     list)
+   ;;;; from blackboard
+   (saved-exhausted-fountains-ids
+    :initform '()
+    :initarg  :saved-exhausted-fountains-ids
+    :accessor saved-exhausted-fountains-ids)
+   (saved-visited-tiles
+    :initform nil
+    :initarg  :saved-visited-tiles
+    :accessor saved-visited-tiles
+    :type matrix
+    :documentation "matrix element @ (x, y) is non nil if the tile has been visited,
+                   false otherwise")
+   (saved-unexplored-layer
+    :initform nil
+    :initarg  :saved-unexplored-layer
+    :accessor saved-unexplored-layer
+    :type     dijkstra-layer)
+   (saved-concerning-tiles
+    :initform nil
+    :initarg  :saved-concerning-tiles
+    :accessor saved-concerning-tiles
+    :type     matrix)
+   (saved-concerning-tiles-invalicables
+    :initform nil
+    :initarg  :saved-concerning-tiles-invalicables
+    :accessor saved-concerning-tiles-invalicables
+    :type     matrix
+    :documentation "the concerning tiles near a NPC (for unexplored-layer only)")
+   (saved-concerning-tiles-facing
+    :initform nil
+    :initarg  :saved-concerning-tiles-facing
+    :accessor saved-concerning-tiles-facing
+    :type     matrix
+    :documentation "the concerning tiles in front o a NPC")
+   (saved-attack-enemy-melee-positions
+    :initform '()
+    :initarg  :saved-attack-enemy-melee-positions
+    :accessor saved-attack-enemy-melee-positions
+    :documentation   "This  holds   the   positions   AI  with   melee
+    weapon (except pole  weapon) should reach to attack  the enemy (it
+    is a list of def-target instances)")
+   (saved-attack-enemy-pole-positions
+    :initform '()
+    :initarg  :saved-attack-enemy-pole-positions
+    :accessor saved-attack-enemy-pole-positions
+    :documentation  "This  holds the  positions  AI  with pole  weapon
+    should  reach to  attack the  enemy (it  is a  list of  def-target
+    instances)")
+   (saved-attack-enemy-bow-positions
+    :initform '()
+    :initarg  :saved-attack-enemy-bow-positions
+    :accessor saved-attack-enemy-bow-positions
+    :documentation "This holds the positions AI with bow weapon should
+    reach to attack the enemy (it is a list of def-target instances)")
+   (saved-attack-enemy-crossbow-positions
+    :initform '()
+    :initarg  :saved-attack-enemy-crossbow-positions
+    :accessor saved-attack-enemy-crossbow-positions
+    :documentation "This  holds the positions AI  with crossbow weapon
+    should  reach to  attack the  enemy (it  is a  list of  def-target
+    instances)")))
 
 (defmethod marshal:class-persistant-slots ((object saved-game))
   '(original-map-file
@@ -176,7 +237,17 @@
     saved-traps
     saved-doors
     saved-containers
-    saved-magic-furnitures))
+    saved-magic-furnitures
+    saved-exhausted-fountains-ids
+    saved-visited-tiles
+    saved-unexplored-layer
+    saved-concerning-tiles
+    saved-concerning-tiles-invalicables
+    saved-concerning-tiles-facing
+    saved-attack-enemy-melee-positions
+    saved-attack-enemy-pole-positions
+    saved-attack-enemy-bow-positions
+    saved-attack-enemy-crossbow-positions))
 
 (defmethod el-type-in-pos ((object saved-game) (x fixnum) (y fixnum))
   (el-type (matrix-elt (delta-tiles object) y x)))
@@ -254,33 +325,66 @@
       res)))
 
 (defun save-game (resource-dir game-state)
-  (let* ((saved-file             (res:get-resource-file +map-saved-filename+
-                                                        resource-dir
-                                                        :if-does-not-exists :create))
-         (current-map-state      (map-state game-state))
-         (saved-players          (append (map-ai-entities     game-state #'mesh->saved-entity)
-                                         (map-player-entities game-state #'mesh->saved-entity)))
-         (saved-traps            (mapcar #'trap->saved-entity
-                                         (fetch-all-traps      game-state)))
-         (saved-containers       (mapcar #'container->saved-entity
-                                         (fetch-all-containers game-state)))
-         (saved-doors            (mapcar #'door->saved-door
-                                         (fetch-all-doors      game-state)))
-         (saved-magic-furnitures (mapcar #'magic-furniture->saved-magic-furniture
-                                         (fetch-all-magic-furnitures  game-state)))
-         (dmg-matrix             (build-dmg-matrix game-state))
-         (to-save                (make-instance 'saved-game
-                                                :saved-doors            saved-doors
-                                                :saved-containers       saved-containers
-                                                :saved-traps            saved-traps
-                                                :saved-players          saved-players
-                                                :saved-magic-furnitures saved-magic-furnitures
-                                                :dmg-points             dmg-matrix
-                                                :delta-tiles            current-map-state
-                                                :original-map-file
-                                                (game-map-file game-state))))
-    (fs:dump-sequence-to-file (serialize to-save) saved-file)
-    saved-file))
+  (with-accessors ((blackboard blackboard)) game-state
+    (let* ((saved-file                    (res:get-resource-file +map-saved-filename+
+                                                                 resource-dir
+                                                                 :if-does-not-exists :create))
+           (current-map-state             (map-state game-state))
+           (saved-players                 (append (map-ai-entities      game-state
+                                                                        #'mesh->saved-entity)
+                                                  (map-player-entities  game-state
+                                                                        #'mesh->saved-entity)))
+           (saved-traps                   (mapcar #'trap->saved-entity
+                                                  (fetch-all-traps      game-state)))
+           (saved-containers              (mapcar #'container->saved-entity
+                                                  (fetch-all-containers game-state)))
+           (saved-doors                   (mapcar #'door->saved-door
+                                                  (fetch-all-doors      game-state)))
+           (saved-magic-furnitures        (mapcar #'magic-furniture->saved-magic-furniture
+                                                  (fetch-all-magic-furnitures  game-state)))
+           (dmg-matrix                    (build-dmg-matrix game-state))
+           (exhausted-fountains-ids               (exhausted-fountains-ids         blackboard))
+           (visited-tiles                         (visited-tiles                   blackboard))
+           (unexplored-layer                      (unexplored-layer                blackboard))
+           (concerning-tiles                      (concerning-tiles                blackboard))
+           (concerning-tiles-invalicables         (concerning-tiles-invalicables   blackboard))
+           (concerning-tiles-facing               (concerning-tiles-facing         blackboard))
+           (attack-enemy-melee-positions          (attack-enemy-melee-positions    blackboard))
+           (attack-enemy-pole-positions           (attack-enemy-pole-positions     blackboard))
+           (attack-enemy-bow-positions            (attack-enemy-bow-positions      blackboard))
+           (attack-enemy-crossbow-positions       (attack-enemy-crossbow-positions blackboard))
+           (to-save                 (make-instance 'saved-game
+                                                   :saved-doors            saved-doors
+                                                   :saved-containers       saved-containers
+                                                   :saved-traps            saved-traps
+                                                   :saved-players          saved-players
+                                                   :saved-magic-furnitures saved-magic-furnitures
+                                                   :dmg-points             dmg-matrix
+                                                   :delta-tiles            current-map-state
+                                                   :original-map-file
+                                                   (game-map-file game-state)
+                                                   :saved-exhausted-fountains-ids
+                                                   exhausted-fountains-ids
+                                                   :saved-visited-tiles
+                                                   visited-tiles
+                                                   :saved-unexplored-layer
+                                                   unexplored-layer
+                                                   :saved-concerning-tiles
+                                                   concerning-tiles
+                                                   :saved-concerning-tiles-invalicables
+                                                   concerning-tiles-invalicables
+                                                   :saved-concerning-tiles-facing
+                                                   concerning-tiles-facing
+                                                   :saved-attack-enemy-melee-positions
+                                                   attack-enemy-melee-positions
+                                                   :saved-attack-enemy-pole-positions
+                                                   attack-enemy-pole-positions
+                                                   :saved-attack-enemy-bow-positions
+                                                   attack-enemy-bow-positions
+                                                   :saved-attack-enemy-crossbow-positions
+                                                   attack-enemy-crossbow-positions)))
+      (fs:dump-sequence-to-file (serialize to-save) saved-file)
+      saved-file)))
 
 (defun init-new-map (window)
   (with-accessors ((world world)
@@ -608,7 +712,18 @@
     (setf saved-dump (deserialize saved-dump saved-file))
     (with-accessors ((delta-tiles       delta-tiles)
                      (original-map-file original-map-file)
-                     (dmg-points dmg-points)) saved-dump
+                     (dmg-points dmg-points)
+                     (saved-exhausted-fountains-ids         saved-exhausted-fountains-ids)
+                     (saved-visited-tiles                   saved-visited-tiles)
+                     (saved-unexplored-layer                saved-unexplored-layer)
+                     (saved-concerning-tiles                saved-concerning-tiles)
+                     (saved-concerning-tiles-invalicables   saved-concerning-tiles-invalicables)
+                     (saved-concerning-tiles-facing         saved-concerning-tiles-facing)
+                     (saved-attack-enemy-melee-positions    saved-attack-enemy-melee-positions)
+                     (saved-attack-enemy-pole-positions     saved-attack-enemy-pole-positions)
+                     (saved-attack-enemy-bow-positions      saved-attack-enemy-bow-positions)
+                     (saved-attack-enemy-crossbow-positions saved-attack-enemy-crossbow-positions))
+        saved-dump
       (if (not (fs:file-outdated-p saved-file
                                    (load-level:get-level-file-abs-path original-map-file)))
           (progn
@@ -621,7 +736,8 @@
             (with-accessors ((window-game-state     main-window:window-game-state)
                              (root-compiled-shaders main-window:root-compiled-shaders)
                              (world                 main-window:world)) window
-              (with-accessors ((map-state map-state)) window-game-state
+              (with-accessors ((map-state  map-state)
+                               (blackboard blackboard)) window-game-state
                 (loop-matrix (delta-tiles x y)
                    (cond
                      ((delete-in-map-destination-p saved-dump map-state x y)
@@ -656,6 +772,27 @@
                    (let ((new-dmg-points (matrix-elt dmg-points y x)))
                      (when new-dmg-points
                        (let ((entity (entity-in-pos window-game-state x y)))
-                         (setf (current-damage-points (ghost entity)) new-dmg-points))))))))
+                         (setf (current-damage-points (ghost entity)) new-dmg-points)))))
+                ;; restore blackboard
+                (setf (exhausted-fountains-ids         blackboard)
+                      saved-exhausted-fountains-ids
+                      (visited-tiles                   blackboard)
+                      saved-visited-tiles
+                      (unexplored-layer                blackboard)
+                      saved-unexplored-layer
+                      (concerning-tiles                blackboard)
+                      saved-concerning-tiles
+                      (concerning-tiles-invalicables   blackboard)
+                      saved-concerning-tiles-invalicables
+                      (concerning-tiles-facing         blackboard)
+                      saved-concerning-tiles-facing
+                      (attack-enemy-melee-positions    blackboard)
+                      saved-attack-enemy-melee-positions
+                      (attack-enemy-pole-positions     blackboard)
+                      saved-attack-enemy-pole-positions
+                      (attack-enemy-bow-positions      blackboard)
+                      saved-attack-enemy-bow-positions
+                      (attack-enemy-crossbow-positions blackboard)
+                      saved-attack-enemy-crossbow-positions))))
           (error-message-save-game-outdated window))))
   window)

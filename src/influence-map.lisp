@@ -1,5 +1,5 @@
 ;; dawn of the Era: a tactical game.
-;; Copyright (C) 2015  cage
+;; Copyright (C) 2018  cage
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -22,6 +22,9 @@
     :initarg  :layer
     :accessor layer
     :type matrix)))
+
+(defmethod marshal:class-persistant-slots ((object dijkstra-layer))
+  '(layer))
 
 (defmethod matrix-elt ((object dijkstra-layer) row col)
   (matrix-elt (layer object) row col))
