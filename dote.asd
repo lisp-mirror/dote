@@ -162,6 +162,7 @@
                (:file "goap")
                (:file "keyboard-world-navigation")
                (:file "saved-game")
+               (:file "easter-egg")
                (:file "main-window")
                (:module tests
                         :components ((:file "package")

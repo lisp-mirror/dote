@@ -16,9 +16,9 @@
 
 (in-package :filesystem-utils)
 
-(define-constant +preprocess-include+ "^%include" :test #'string=)
+(define-constant +preprocess-include+ "^%include"              :test #'string=)
 
-(define-constant +file-path-regex+ "[\\p{L},\\/,\\\\,\\.]+" :test 'string=)
+(define-constant +file-path-regex+ "[\\p{L},\\/,\\\\,\\.]+"    :test 'string=)
 
 (defparameter *directory-sep-regexp*
   #+windows "\\"
@@ -27,6 +27,17 @@
 (defparameter *directory-sep*
   #+windows "\\"
   #-windows "/")
+
+(defun copy-a-file (in out &key (overwrite nil))
+  (if (and in
+           (file-exists-p in)
+           out
+           (or (not (file-exists-p out))
+               overwrite))
+      (progn
+        (uiop:copy-file in out)
+        out)
+      nil))
 
 (defun slurp-file (filename &key (convert-to-string t))
   "A simple way to slurp a file."

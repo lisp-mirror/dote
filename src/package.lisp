@@ -1,5 +1,5 @@
 ;; dawn of the Era: a tactical game.
-;; Copyright (C) 2015  cage
+;; Copyright (C) 2018  cage
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -215,7 +215,10 @@
 (defpackage :parallel-utils
   (:use :cl)
   (:export
+   :with-workers
+   :with-kernel
    :*parallel-setf-queue*
+   :with-mutex
    :parallel-setf))
 
 (defpackage :misc-utils
@@ -468,6 +471,7 @@
    :+file-path-regex+
    :*directory-sep-regexp*
    :*directory-sep*
+   :copy-a-file
    :slurp-file
    :dump-sequence-to-file
    :create-file
@@ -1448,6 +1452,8 @@
    :confine-coord
    :interpolate
    :rotate-matrix
+   :rotate-matrix-90-degree-ccw
+   :rotate-matrix-90-degree-cw
    :rotate-matrix-w-repeat
    :scale-matrix
    :scale-matrix-nearest
@@ -1480,7 +1486,13 @@
    :blit-matrix
    :matrix=
    :submatrix=
-   :clip-to-bounding-box))
+   :clip-to-bounding-box
+   :file-matrix
+   :stream-handle
+   :file-path
+   :make-file-matrix
+   :close-file-matrix
+   :with-file-matrix))
 
 (defpackage :graph
   (:use :cl
@@ -1871,6 +1883,28 @@
   (:shadow :load)
   (:export
    :make-spline-tree))
+
+(defpackage :easter-egg
+  (:use :cl
+        :alexandria
+        :config
+        :ivec2
+        :vec2
+        :vec4
+        :ivec4
+        :ubvec4
+        :num-utils
+        :parallel-utils
+        :interpolation
+        :misc-utils
+        :color-utils
+        :2d-utils
+        :matrix
+        :pixmap)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:shadow :load)
+  (:export
+   :make-buddhabrot))
 
 ;; procedural content
 

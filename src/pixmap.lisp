@@ -1,5 +1,5 @@
 ;; dawn of the Era: a tactical game.
-;; Copyright (C) 2015  cage
+;; Copyright (C) 2018  cage
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -1384,8 +1384,8 @@
                                                       ; all zero for true color image
     (setf results (write-bytes results '(#x00 #x00))) ; x-origin
     (setf results (write-bytes results '(#x00 #x00))) ; y-origin
-    (setf results (write-bytes results (reverse (misc:int16->bytes (width object)))))
-    (setf results (write-bytes results (reverse (misc:int16->bytes (height object)))))
+    (setf results (write-bytes results (misc:int16->bytes (width object))))
+    (setf results (write-bytes results (misc:int16->bytes (height object))))
     (vector-push-extend #x20 results) ; 32 bpp plus alpha channel
     (vector-push-extend #x28 results) ; image origin top-left alpha channel, important
     (loop for i from 0 below (length (data object)) by (width object) do

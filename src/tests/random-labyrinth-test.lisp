@@ -56,8 +56,8 @@
                       :random-seed 3589552221
                       :debug t
                       :scale-fact 5
-                      :tmp-ppm-filename "tmp/lab-dbg.ppm"
-                      :tmp-ps-filename "tmp/lab-dbg.ps")
+                      :tmp-ppm-filename "tmp/lab-60-t-5-3589552221.ppm"
+                      :tmp-ps-filename "tmp/lab-60-t-5-3589552221.ps")
           (let ((test (and
                        (= (fs:file-hash tmp-ppm)
                           (fs:file-hash (concatenate 'string
@@ -80,8 +80,8 @@
                       :random-seed 3589552221
                       :debug nil
                       :scale-fact 2
-                      :tmp-ppm-filename "tmp/lab.ppm"
-                      :tmp-ps-filename "tmp/lab.ps")
+                      :tmp-ppm-filename "tmp/lab-60-nil-2-3589552221.ppm"
+                      :tmp-ps-filename "tmp/lab-60-nil-2-3589552221.ps")
           (let ((test (and
                        (= (fs:file-hash tmp-ppm)
                           (fs:file-hash (concatenate 'string

@@ -26,7 +26,6 @@
                  "cpuinfo")
   :test #'string=)
 
-
 (declaim (ftype (function () fixnum) cpu-number))
 
 (defun cpu-number ()

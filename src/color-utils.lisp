@@ -349,27 +349,27 @@
   (defun make-gradient (&rest colors)
     (make-instance 'gradient :colors colors)))
 
-(alexandria:define-constant +rainbow-gradient+ (make-gradient
-                                                (make-gradient-color 0.0  §cffff00ff)
-                                                (make-gradient-color 0.33 §cff0000ff)
-                                                (make-gradient-color 0.66 §c00ff00ff)
-                                                (make-gradient-color 1.0  §c0000ffff))
+(alexandria:define-constant +rainbow-gradient+ (make-gradient (make-gradient-color 0.0  §cffff00ff)
+                                                              (make-gradient-color 0.33 §cff0000ff)
+                                                              (make-gradient-color 0.66 §c00ff00ff)
+                                                              (make-gradient-color 1.0  §c0000ffff))
   :test #'gradient-equals)
 
-(alexandria:define-constant +grayscale-gradient+ (make-gradient
-                                                  (make-gradient-color 0.0 §c000000ff)
-                                                  (make-gradient-color 1.0 §cffffffff))
+(alexandria:define-constant +grayscale-gradient+ (make-gradient (make-gradient-color 0.0
+                                                                                     §c000000ff)
+                                                                (make-gradient-color 1.0
+                                                                                     §cffffffff))
   :test #'gradient-equals)
 
 (alexandria:define-constant +standard-sky-sunny-color+ §c6ec0ffff :test #'vec4=)
 
-(alexandria:define-constant +skydome-gradient+ (make-gradient
-                                                (make-gradient-color 0.0 §c000000ff)
-                                                (make-gradient-color (* 0.04167 3) §cffa92fff)
-                                                (make-gradient-color (* 0.04167 6) §cf86161ff)
-                                                (make-gradient-color (* 0.04167 8) +standard-sky-sunny-color+)
-                                                (make-gradient-color (* 0.04167 19) +standard-sky-sunny-color+)
-                                                (make-gradient-color (* 0.04167 20) §cf86161ff)
-                                                (make-gradient-color (* 0.04167 21) §cffa92fff)
-                                                (make-gradient-color (* 0.04167 24) §c000000ff))
+(alexandria:define-constant +skydome-gradient+
+    (make-gradient (make-gradient-color 0.0            §c000000ff)
+                   (make-gradient-color (* 0.04167 3)  §cffa92fff)
+                   (make-gradient-color (* 0.04167 6)  §cf86161ff)
+                   (make-gradient-color (* 0.04167 8)  +standard-sky-sunny-color+)
+                   (make-gradient-color (* 0.04167 19) +standard-sky-sunny-color+)
+                   (make-gradient-color (* 0.04167 20) §cf86161ff)
+                   (make-gradient-color (* 0.04167 21) §cffa92fff)
+                   (make-gradient-color (* 0.04167 24) §c000000ff))
   :test #'gradient-equals)

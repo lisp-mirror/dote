@@ -314,6 +314,7 @@ Name from Emacs Lisp."
   `(rotatef ,a ,b))
 
 ;;;; binary files utils
+;;;; big endian...
 
 (defun 2byte->word (byte1 byte2) ;; little endian
   (let ((res #x00000000))
@@ -328,22 +329,25 @@ Name from Emacs Lisp."
            word2)))
 
 (defun byte->int (bytes)
-  (let ((res #x0000000000000000))
-    (loop
-       for i in bytes and
-       ct = 0 then (+ ct 8) do
-         (setf res
-               (boole boole-ior
-                      (ash i ct)
-                      res)))
+  (let ((res #x0000000000000000)
+        (ct  0))
+    (map nil #'(lambda (a)
+                 (setf res (boole boole-ior
+                                  (ash a ct)
+                                  res))
+                 (incf ct 8))
+         bytes)
     res))
 
 (defmacro gen-intn->bytes (bits)
   (let ((function-name (alexandria:format-symbol t "~:@(int~a->bytes~)" bits)))
-  `(defun ,function-name (val &optional (count 0) (res '()))
-     (if (>= count ,(/ bits 8))
-         res
-         (,function-name (ash val -8) (1+ count) (push (boole boole-and val #x00ff) res))))))
+    `(defun ,function-name (val &optional (count 0) (res '()))
+       (if (>= count ,(/ bits 8))
+           (reverse res)
+           (,function-name (ash val -8)
+                           (1+ count)
+                           (push (boole boole-and val #x00ff)
+                                 res))))))
 
 (gen-intn->bytes 16)
 

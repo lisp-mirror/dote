@@ -18,6 +18,15 @@
 
 (defparameter *parallel-setf-queue* (lparallel.queue:make-queue :initial-contents '(t)
                                                                 :fixed-capacity 1))
+
+(defmacro with-mutex (&body body)
+  `(progn
+     (lparallel.queue:pop-queue *parallel-setf-queue*)
+     (prog1
+         (progn ,@body)
+       (lparallel.queue:push-queue t *parallel-setf-queue*))))
+
+;; todo use with-mutex
 (defmacro parallel-setf (place value)
   `(progn
      (lparallel.queue:pop-queue *parallel-setf-queue*)
@@ -26,12 +35,12 @@
        (lparallel.queue:push-queue t *parallel-setf-queue*))))
 
 
-(defmacro with-workers ((&key (number `(if (> (os-utils:cpu-number) 1)
-                                           (1- (os-utils:cpu-number))
-                                           1)))
+(defmacro with-workers ((workers-number &key (number `(if (> (os-utils:cpu-number) 1)
+                                                          (os-utils:cpu-number)
+                                                          1)))
                         &body body)
   `(unwind-protect
-        (let ((workers-number ,number))
+        (let ((,workers-number ,number))
           ,@body)
      (lparallel:end-kernel :wait t)))
 
@@ -45,6 +54,6 @@
              (funcall ,fallback-fn))))))
 
 (defmacro with-kernel (&body body)
-  `(with-workers ()
+  `(with-workers (workers-number)
      (let ((lparallel:*kernel* (lparallel:make-kernel workers-number)))
        ,@body)))

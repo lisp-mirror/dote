@@ -16,11 +16,15 @@
 
 (in-package :matrix)
 
-(alexandria:define-constant +width-keyword+ :width :test #'eq)
+(alexandria:define-constant +width-keyword+            :width             :test #'eq)
 
-(alexandria:define-constant +height-keyword+ :height :test #'eq)
+(alexandria:define-constant +height-keyword+           :height            :test #'eq)
 
-(alexandria:define-constant +data-keyword+ :data :test #'eq)
+(alexandria:define-constant +data-keyword+             :data              :test #'eq)
+
+(alexandria:define-constant +file-matrix-buff-size+    2048               :test '=)
+
+(alexandria:define-constant +file-matrix-element-type+ '(unsigned-byte 8) :test 'equalp)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass matrix ()
@@ -270,6 +274,8 @@
   (defgeneric pixel@ (object x y))
 
   (defgeneric (setf pixel@) (colorlist object x y))
+
+  (defgeneric set-sample@ (object color x y))
 
   (defgeneric (setf sample@) (colorlist object x y))
 
@@ -1040,19 +1046,23 @@ else
                     &key (clamp nil) (interpolation t) (interpolate-fn #'interpolate)
                       (behaivour-on-border-fn #'repeat-periodic-coord))
   (declare (desired-type x y))
-  (let ((actual-x (d* (desired (width object))
-                      (if clamp
-                          (alexandria:clamp x 0.0 1.0)
-                          x)))
-        (actual-y (d* (desired (height object))
-                      (if clamp
-                          (alexandria:clamp y 0.0 1.0)
-                          y))))
-    (if interpolation
-        (bilinear-interpolation object actual-x actual-y
-                                       :interpolate-fn interpolate-fn
-                                       :behaivour-on-border-fn behaivour-on-border-fn)
-        (matrix-elt object (floor actual-y) (floor actual-x)))))
+  (with-accessors ((height height)
+                   (width  width)) object
+    (let ((actual-x (d* (desired width)
+                        (if clamp
+                            (alexandria:clamp x 0.0 1.0)
+                            x)))
+          (actual-y (d* (desired height)
+                        (if clamp
+                            (alexandria:clamp y 0.0 1.0)
+                            y))))
+      (if interpolation
+          (bilinear-interpolation object actual-x actual-y
+                                  :interpolate-fn interpolate-fn
+                                  :behaivour-on-border-fn behaivour-on-border-fn)
+          (pixel@ object
+                  (clamp-for-sample@ x width)
+                  (clamp-for-sample@ y height))))))
 
 (defmethod pixel@ ((object matrix) x y)
   (declare (fixnum x y))
@@ -1064,11 +1074,21 @@ else
    (declare (fixnum x y))
    (setf (matrix-elt object y x) color))
 
+(defun clamp-for-sample@ (value size)
+  (floor (* (alexandria:clamp value 0.0 1.0) (1- size))))
+
+(defgeneric set-sample@ (object color x y))
+
+(defmethod set-sample@ ((object matrix) color x y)
+  (with-accessors ((width  width)
+                   (height height)) object
+    (let ((x-abs (clamp-for-sample@ x width))
+          (y-abs (clamp-for-sample@ y height)))
+      (setf (pixel@ object x-abs y-abs) color))))
+
 (defmethod (setf sample@) (color (object matrix) x y)
   (declare (desired-type x y))
-  (let ((x-abs (floor (* (alexandria:clamp x 0.0 1.0) (1- (width object)))))
-        (y-abs (floor (* (alexandria:clamp y 0.0 1.0) (1- (height object))))))
-    (setf (pixel@ object x-abs y-abs) color)))
+  (set-sample@ object color x y))
 
 (defmethod matrix-hline ((object matrix) x y width color)
   (do ((actx x (1+ actx)))
@@ -1567,3 +1587,171 @@ else
                      min-y
                      (- max-x min-x)
                      (- max-y min-y))))
+
+(defclass file-matrix ()
+  ((file-path
+    :initform ""
+    :initarg  :file-path
+    :accessor file-path)
+   (stream-handle
+    :initform nil
+    :initarg  :stream-handle
+    :accessor stream-handle)
+   (width
+    :initform 0
+    :initarg :width
+    :accessor width
+    :type integer)
+   (height
+    :initform 0
+    :initarg :height
+    :accessor height
+    :type integer)
+   (block-size
+    :initform 4
+    :initarg  :block-size
+    :accessor block-size
+    :type     integer)))
+
+(defmethod print-object ((object file-matrix) stream)
+  (with-accessors ((file-path     file-path)
+                   (block-size    block-size)
+                   (stream-handle stream-handle)
+                   (width         width)
+                   (height        height)) object
+    (print-unreadable-object (object stream :type t :identity nil)
+      (format stream "~aX~a bs: ~a stream: ~a" width height block-size stream-handle))))
+
+(defun calc-file-matrix-size (fm)
+  (with-accessors ((block-size    block-size)
+                   (stream-handle stream-handle)
+                   (width         width)
+                   (height        height)) fm
+    (let ((size  (* width height block-size)))
+      (multiple-value-bind (block-num remainder)
+          (floor (/ size +file-matrix-buff-size+))
+        (values block-num ;; number of +file-matrix-buff-size+
+                (* remainder +file-matrix-buff-size+)))))) ; number of bytes!
+
+(defun fm-vector-type-fn (fm)
+  (with-accessors ((block-size    block-size)) fm
+    (cond
+      ((= block-size 1)
+       #'(lambda () (vector 0)))
+      ((= block-size 2)
+        #'(lambda () (ivec2:ivec2 0 0)))
+      ((= block-size 4)
+       #'(lambda () (ubvec4:ubvec4 0 0 0 0)))
+      (t
+       (error "Only 1, 2 or 4 blocksize allowed")))))
+
+(defun fill-file-matrix-size (fm)
+  (with-accessors ((block-size    block-size)
+                   (stream-handle stream-handle)
+                   (width         width)
+                   (height        height)) fm
+      (multiple-value-bind (block-counts bytes-left)
+          (calc-file-matrix-size fm)
+        (let ((buff (misc:make-array-frame +file-matrix-buff-size+
+                                           0
+                                           +file-matrix-element-type+
+                                           t)))
+          (loop repeat block-counts do
+               (write-sequence buff stream-handle))
+          (loop repeat bytes-left do
+               (write-byte 0 stream-handle))))
+      (finish-output stream-handle)
+      (file-position stream-handle 0))
+  fm)
+
+(defun make-file-matrix (width height &key (fill nil) (block-sz 4) (file nil))
+  (let ((res (make-instance 'file-matrix
+                            :width  width
+                            :height height)))
+    (with-accessors ((file-path     file-path)
+                     (block-size    block-size)
+                     (stream-handle stream-handle)
+                     (width         width)
+                     (height        height)) res
+
+      (if file
+          (if (fs:file-exists-p file) ; file exists
+              (let ((new-stream (open file
+                                      :direction         :io
+                                      :if-exists         :overwrite
+                                      :if-does-not-exist :create
+                                      :element-type      +file-matrix-element-type+)))
+                (setf stream-handle new-stream)
+                (setf file-path     file)
+                (setf block-size    block-sz)
+                (when fill                           ; fill the file with 0's
+                  (fill-file-matrix-size res))
+                (file-position stream-handle 0)
+                res)
+              (progn                                 ; create and fill a new file
+                (fs:create-file file)
+                (make-file-matrix width
+                                  height
+                                  :fill     t
+                                  :block-sz block-sz
+                                  :file     file)))
+          (make-file-matrix width                    ; user asked for a temp file
+                            height
+                            :fill     t
+                            :block-sz block-sz
+                            :file     (fs:temporary-filename))))))
+
+(defun close-file-matrix (fm)
+  (with-accessors ((stream-handle stream-handle)) fm
+    (when stream-handle
+      (finish-output stream-handle)
+      #+debug-mode (misc:dbg "closed file-matrix ~a" fm)
+      (setf stream-handle nil)))
+  fm)
+
+(defun calc-offset (block-size width x y)
+  (* block-size (+ (* width y) x)))
+
+(defmethod pixel@ ((object file-matrix) x y)
+  (with-accessors ((block-size    block-size)
+                   (stream-handle stream-handle)
+                   (width         width)
+                   (height        height)) object
+    (let ((res    (funcall (fm-vector-type-fn object)))
+          (offset (calc-offset block-size width x y)))
+      (loop for i from 0 below block-size do
+           (file-position stream-handle (+ offset i))
+           (setf (elt res i)
+                 (read-byte stream-handle)))
+      res)))
+
+;; TODO add interpolation
+(defmethod sample@ ((object file-matrix) x y
+                    &key (clamp nil) (interpolation t) (interpolate-fn #'interpolate)
+                      (behaivour-on-border-fn #'repeat-periodic-coord))
+  (declare (desired-type x y))
+  (declare (ignore interpolation interpolate-fn behaivour-on-border-fn clamp))
+  (with-accessors ((width  width)
+                   (height height)) object
+    (let ((x-abs (floor (* (alexandria:clamp x 0.0 1.0) (1- width))))
+          (y-abs (floor (* (alexandria:clamp y 0.0 1.0) (1- height)))))
+      (pixel@ object x-abs y-abs))))
+
+(defmethod (setf pixel@) (color (object file-matrix) x y)
+  (with-accessors ((block-size    block-size)
+                   (stream-handle stream-handle)
+                   (width         width)
+                   (height        height)) object
+    (let ((offset (calc-offset block-size width x y)))
+      (file-position stream-handle offset)
+      (write-sequence color stream-handle)
+      object)))
+
+(defmethod (setf sample@) (color (object file-matrix) x y)
+  (call-next-method))
+
+(defmacro with-file-matrix ((name w h &key (file nil) (block-size 4)) &body body)
+  `(let ((,name (make-file-matrix ,w ,h :block-sz ,block-size :file ,file)))
+     (unwind-protect
+          (progn ,@body)
+       (close-file-matrix ,name))))
