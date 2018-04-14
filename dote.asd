@@ -160,6 +160,7 @@
                (:file "blackboard")
                (:file "attack-tactics")
                (:file "goap")
+               (:file "strategic-ai")
                (:file "keyboard-world-navigation")
                (:file "saved-game")
                (:file "easter-egg")

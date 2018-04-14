@@ -26,6 +26,8 @@
 
 (alexandria:define-constant +file-matrix-element-type+ '(unsigned-byte 8) :test 'equalp)
 
+(defparameter               *truncate-matrix-value-when-printing* nil)
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass matrix ()
     ((data
@@ -534,8 +536,24 @@ else
 
 (defmethod print-object ((object matrix) stream)
   (format stream "~a ~a~%" (width object) (height object))
-  (dolist (row (misc:split-into-sublist (data-as-list object) (width object)))
-    (format stream "~{~5,2:@<~a~>~}~%"  row)))
+  (if *truncate-matrix-value-when-printing*
+      (print-matrix-truncate object stream)
+      (print-matrix          object stream)))
+
+(defun print-matrix-truncate (matrix stream)
+  (dolist (row (mapcar #'(lambda (r) (mapcar #'truncate r))
+                       (split-matrix-for-print matrix)))
+    (print-matrix-row row stream)))
+
+(defun print-matrix (matrix stream)
+  (dolist (row (split-matrix-for-print matrix))
+    (print-matrix-row row stream)))
+
+(defun print-matrix-row (row stream)
+  (format stream "~{~5,2:@<~a~>~}~%" row))
+
+(defun split-matrix-for-print (matrix)
+  (misc:split-into-sublist (data-as-list matrix) (width matrix)))
 
 (defmacro matrix-incf (matrix x y delta)
   `(%matrix-incf ,matrix ,x ,y ,delta))

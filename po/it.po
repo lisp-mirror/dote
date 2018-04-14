@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dote 0.0.1\n"
 "Report-Msgid-Bugs-To: cage@katamail.com\n"
-"POT-Creation-Date: 2018-03-30 18:06+0200\n"
-"PO-Revision-Date: 2018-03-16 23:59+0100\n"
+"POT-Creation-Date: 2018-04-12 18:42+0200\n"
+"PO-Revision-Date: 2018-04-14 13:27+0200\n"
 "Last-Translator: cage <cage@katamail.com>\n"
 "Language-Team: Italian\n"
 "Language: it\n"
@@ -436,8 +436,8 @@ msgstr "lancia ~a"
 msgid "Trap found! deactivate (chance ~a)?"
 msgstr "Attivata una trappola! Provare a disinnescarla (possibilita' ~a)"
 
-#: src/md2-mesh.lisp:492 src/world.lisp:976 src/gui/widget.lisp:4134
-#: src/gui/widget.lisp:4714
+#: src/md2-mesh.lisp:492 src/world.lisp:979 src/gui/widget.lisp:4134
+#: src/gui/widget.lisp:4714 src/gui/load-save-window.lisp:128
 msgid "OK"
 msgstr "OK"
 
@@ -549,7 +549,7 @@ msgstr "Nessuna descrizione disponibile"
 msgid "Trap deactivated!"
 msgstr "Trappola disinnescata!"
 
-#: src/world.lisp:983
+#: src/world.lisp:986
 msgid "Message"
 msgstr "Messaggio"
 
@@ -775,11 +775,11 @@ msgid "Generate new"
 msgstr "Genera nuovo"
 
 #: src/gui/widget.lisp:3207 src/gui/configuration-windows.lisp:272
-#: src/gui/configuration-windows.lisp:442
+#: src/gui/configuration-windows.lisp:442 src/gui/load-save-window.lisp:208
 msgid "Save"
 msgstr "Salva"
 
-#: src/gui/widget.lisp:3218
+#: src/gui/widget.lisp:3218 src/gui/load-save-window.lisp:190
 msgid "Load"
 msgstr "Carica"
 
@@ -863,6 +863,39 @@ msgstr "Debug"
 msgid "Game Configuration"
 msgstr "Configurazione del Gioco"
 
+#: src/gui/load-save-window.lisp:65
+msgid "No game is saved here"
+msgstr "Nessuna partita e' stata salvata in questa posizione"
+
+#: src/gui/load-save-window.lisp:124
+#, lisp-format
+msgid "Game saved in ~a"
+msgstr "Partita salvata in ~a"
+
+#: src/gui/load-save-window.lisp:126
+msgid "Success"
+msgstr "Successo"
+
+#: src/gui/load-save-window.lisp:157
+msgid "Slot 1"
+msgstr "Posizione 1"
+
+#: src/gui/load-save-window.lisp:168
+msgid "Slot 2"
+msgstr "Posizione 2"
+
+#: src/gui/load-save-window.lisp:179
+msgid "Slot 3"
+msgstr "Posizione 3"
+
+#: src/gui/load-save-window.lisp:207
+msgid "Save game"
+msgstr "Salva la partita"
+
+#: src/gui/load-save-window.lisp:221
+msgid "Load game"
+msgstr "Carica la partita"
+
 #: data/spells/vampire-1.lisp:8
 msgid "Steals maximum 3 dmg (to inflict damage a melee weapon must be worn)."
 msgstr ""
@@ -894,12 +927,6 @@ msgstr "Teletrasporta in una posizione casuale (raggio massimo ~15 caselle)."
 #: data/spells/teleport-3.lisp:7
 msgid "Teleport in a random location with maximum radius of ~27 tiles."
 msgstr "Teletrasporta in una posizione casuale (raggio massimo ~27 caselle)."
-
-#~ msgid "Game saved"
-#~ msgstr "Partita salvata"
-
-#~ msgid "Success"
-#~ msgstr "Successo"
 
 #~ msgid "shield"
 #~ msgstr "scudo"

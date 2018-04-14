@@ -167,30 +167,6 @@
     :initform +min-concerning-invalicable-threshold+
     :initarg  :concerning-tiles-invalicable-threshold
     :accessor concerning-tiles-invalicable-threshold)
-   (attack-enemy-melee-layer
-    :initform nil
-    :initarg  :attack-enemy-melee-layer
-    :accessor attack-enemy-melee-layer
-    :type     dijkstra-layer
-    :documentation "just for debugging")
-   (attack-enemy-pole-layer
-    :initform nil
-    :initarg  :attack-enemy-pole-layer
-    :accessor attack-enemy-pole-layer
-    :type     dijkstra-layer
-    :documentation "just for debugging")
-   (attack-enemy-bow-layer
-    :initform nil
-    :initarg  :attack-enemy-bow-layer
-    :accessor attack-enemy-bow-layer
-    :type     dijkstra-layer
-    :documentation "just for debugging")
-   (attack-enemy-crossbow-layer
-    :initform nil
-    :initarg  :attack-enemy-crossbow-layer
-    :accessor attack-enemy-crossbow-layer
-    :type     dijkstra-layer
-    :documentation "just for debugging")
    (attack-enemy-melee-positions
     :initform '()
     :initarg  :attack-enemy-melee-positions
@@ -218,6 +194,13 @@
     :documentation "This  holds the positions AI  with crossbow weapon
     should  reach to  attack the  enemy (it  is a  list of  def-target
     instances)")
+   (main-influence-map
+    :initform nil
+    :initarg  :main-influence-map
+    :accessor main-influence-map
+    :type     matrix
+    :documentation "This  is the influence map. Influence is based on
+    character:calculate-influence")
    (use-enemy-fov-when-exploring
     :initform nil
     :initarg  :use-enemy-fov-when-exploring-p
@@ -227,7 +210,31 @@
     :initform nil
     :initarg  :use-enemy-fov-when-attacking-p
     :reader   use-enemy-fov-when-attacking-p
-    :writer   (setf use-enemy-fov-when-attacking))))
+    :writer   (setf use-enemy-fov-when-attacking))
+   (attack-enemy-melee-layer
+    :initform nil
+    :initarg  :attack-enemy-melee-layer
+    :accessor attack-enemy-melee-layer
+    :type     dijkstra-layer
+    :documentation "just for debugging")
+   (attack-enemy-pole-layer
+    :initform nil
+    :initarg  :attack-enemy-pole-layer
+    :accessor attack-enemy-pole-layer
+    :type     dijkstra-layer
+    :documentation "just for debugging")
+   (attack-enemy-bow-layer
+    :initform nil
+    :initarg  :attack-enemy-bow-layer
+    :accessor attack-enemy-bow-layer
+    :type     dijkstra-layer
+    :documentation "just for debugging")
+   (attack-enemy-crossbow-layer
+    :initform nil
+    :initarg  :attack-enemy-crossbow-layer
+    :accessor attack-enemy-crossbow-layer
+    :type     dijkstra-layer
+    :documentation "just for debugging")))
 
 (defun init-logs (blackboard)
   (with-accessors ((logs ai-logger:logs)) blackboard
@@ -251,7 +258,8 @@
                    (attack-enemy-crossbow-layer   attack-enemy-crossbow-layer)
                    (use-enemy-fov-when-exploring  use-enemy-fov-when-exploring)
                    (use-enemy-fov-when-attacking  use-enemy-fov-when-attacking)
-                   (main-state       main-state)) object
+                   (main-influence-map            main-influence-map)
+                   (main-state                    main-state)) object
     (init-logs object)
     (let ((wmap (width  (map-state main-state)))
           (hmap (height (map-state main-state))))
@@ -270,10 +278,32 @@
       (setf attack-enemy-crossbow-layer
             (inmap:make-dijkstra-layer wmap hmap +attack-nongoal-tile-value+))
       (reset-per-turn-visited-tiles object)
+      (%update-influence-map object)
       ;; setting smartness based on level
       (when (>= (level-difficult main-state) +difficult-medium+)
         (setf use-enemy-fov-when-exploring nil
               use-enemy-fov-when-attacking t)))))
+
+(defun %update-influence-map (blackboard)
+  "just for debugging"
+  (with-accessors ((main-influence-map main-influence-map)) blackboard
+    (setf main-influence-map (strategic-ai:faction-vulnerability-map blackboard +pc-type+))
+    (let ((matrix:*truncate-matrix-value-when-printing* t))
+      (misc:dbg "inf dump~%~a~%presence pc ~a npc ~a dbg ~a ~a avg dist ~a ~%vuln ~a~%vis ~a"
+                main-influence-map
+                (strategic-ai:faction-map-under-control main-influence-map +pc-type+)
+                (strategic-ai:faction-map-under-control main-influence-map +npc-type+)
+                (strategic-ai:average-dmg-points   blackboard +pc-type+)
+                (strategic-ai:average-dmg-points   blackboard +npc-type+)
+                (strategic-ai:average-cost-faction blackboard +npc-type+)
+                (strategic-ai:entities-vulnerables blackboard +pc-type+)
+                (strategic-ai:visible-opponents    blackboard +pc-type+)))
+    blackboard))
+
+(defmethod make-influence-map ((object blackboard) &key (matrix nil))
+  (with-accessors ((main-influence-map main-influence-map)
+                   (main-state         main-state))        object
+    (make-influence-map main-state :matrix matrix)))
 
 (defun update-concerning-zones-around-entity (entity)
   (with-accessors ((ghost ghost)
@@ -370,6 +400,7 @@
   (update-unexplored-layer blackboard)
   #+ (and debug-mode debug-ai debug-blackboard-layers)
   (progn
+    (%update-influence-map        blackboard)
     (update-attack-melee-layer    blackboard)
     (update-attack-pole-layer     blackboard)
     (update-attack-bow-layer      blackboard)

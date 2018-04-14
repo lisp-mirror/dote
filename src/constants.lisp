@@ -330,3 +330,7 @@
 (define-constant +exp-capital-delta+             100.0                            :test #'=)
 
 (define-constant +exp-change-level-thrs+         1000.0                           :test #'=)
+
+(define-constant +influence-ai-sign+               -1.0                           :test #'=)
+
+(define-constant +influence-human-sign+             1.0                           :test #'=)

@@ -288,6 +288,8 @@
 (defun %change-ai-layer (window scancode)
   (flet ((%change-layer (type)
            (setf (world:influence-map-type (world window)) type)))
+    (when (eq :scancode-f3 scancode)
+      (%change-layer :influence-map))
     (when (eq :scancode-f4 scancode)
       (%change-layer :concerning-invalicables))
     (when (eq :scancode-f5 scancode)

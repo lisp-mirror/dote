@@ -1103,6 +1103,23 @@
                 ,weight))
      ,@body))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun make-power-weights (&key
+                               (movement 0.3)
+                               (damage   0.9)
+                               (melee    1.0)
+                               (range    2.0)
+                               (magic    1.0)
+                               (dodge    0.2))
+    (list (cons :movement movement)
+          (cons :damage   damage)
+          (cons :melee    melee)
+          (cons :range    range)
+          (cons :magic    magic)
+          (cons :dodge    dodge)))
+
+  (defparameter *power-weights* (make-power-weights)))
+
 (defmethod combined-power ((object player-character))
   (labels ((melee-weapon-switch (character)
              (if (weapon-type-short-range character)
@@ -1118,62 +1135,64 @@
                  0.0))
            (weapon-flip (a weapon-type desired-weapon-type)
              (d* (weapon-type-switch weapon-type desired-weapon-type) ; on or off
-                 a)))
-    (%with-gen-simple-weight ((movement . 0.3)
-                              (damage   . 0.9)
-                              (melee    . 1.0)
-                              (range    . 1.0)
-                              (magic    . 1.0)
-                              (dodge    . 0.2))
+                 a))
+           (to-0-1 (v)
+             (d (/ v 100))))
+    (%with-gen-simple-weight ((movement . (cdr (assoc :movement *power-weights*)))
+                              (damage   . (cdr (assoc :damage   *power-weights*)))
+                              (melee    . (cdr (assoc :melee    *power-weights*)))
+                              (range    . (cdr (assoc :range    *power-weights*)))
+                              (magic    . (cdr (assoc :magic    *power-weights*)))
+                              (dodge    . (cdr (assoc :dodge    *power-weights*))))
       (let* ((weapon-type                        (weapon-type object))
-             (actual-damage-points               (actual-damage-points               object))
-             (actual-movement-points             (actual-movement-points             object))
-             (actual-spell-points                (actual-spell-points                object))
-             (actual-dodge-chance                (actual-dodge-chance                object))
-             (actual-melee-attack-chance         (actual-melee-attack-chance         object))
-             (actual-melee-attack-damage         (actual-melee-attack-damage         object))
-             (actual-range-attack-chance         (actual-range-attack-chance         object))
-             (actual-range-attack-damage         (actual-range-attack-damage         object))
-             (actual-edge-weapons-chance-bonus   (actual-edge-weapons-chance-bonus   object))
-             (actual-edge-weapons-damage-bonus   (actual-edge-weapons-damage-bonus   object))
-             (actual-impact-weapons-chance-bonus (actual-impact-weapons-chance-bonus object))
-             (actual-impact-weapons-damage-bonus (actual-impact-weapons-damage-bonus object))
-             (actual-pole-weapons-chance-bonus   (actual-pole-weapons-chance-bonus   object))
-             (actual-pole-weapons-damage-bonus   (actual-pole-weapons-damage-bonus   object))
-             (actual-spell-change                (actual-spell-chance                object))
-             (actual-attack-spell-chance         (actual-attack-spell-chance         object))
-             (status-contribute                  (if (or (status-terror-p object)
-                                                         (status-faint-p  object))
-                                                     0.0
-                                                     1.0))
+             (damage-points               (current-damage-points               object))
+             (movement-points             (current-movement-points             object))
+             (spell-points                (current-spell-points                object))
+             (dodge-chance                (to-0-1 (actual-dodge-chance        object)))
+             (melee-attack-chance         (to-0-1 (actual-melee-attack-chance object)))
+             (melee-attack-damage         (actual-melee-attack-damage         object))
+             (range-attack-chance         (to-0-1 (actual-range-attack-chance object)))
+             (range-attack-damage         (actual-range-attack-damage         object))
+             (edge-weapons-chance-bonus   (to-0-1 (actual-edge-weapons-chance-bonus object)))
+             (edge-weapons-damage-bonus   (actual-edge-weapons-damage-bonus   object))
+             (impact-weapons-chance-bonus (to-0-1 (actual-impact-weapons-chance-bonus object)))
+             (impact-weapons-damage-bonus (actual-impact-weapons-damage-bonus object))
+             (pole-weapons-chance-bonus   (to-0-1 (actual-pole-weapons-chance-bonus   object)))
+             (pole-weapons-damage-bonus   (actual-pole-weapons-damage-bonus   object))
+             (spell-change                (to-0-1 (actual-spell-chance                object)))
+             (attack-spell-chance         (to-0-1 (actual-attack-spell-chance         object)))
+             (status-contribute           (if (or (status-terror-p object)
+                                                  (status-faint-p  object))
+                                              0.0
+                                              1.0))
              (melee-contribute (d* (melee-weapon-switch object) ; on or off
-                                   (d+ (d* (d+ actual-melee-attack-damage
-                                               (weapon-flip actual-edge-weapons-damage-bonus
+                                   (d+ (d* (d+ melee-attack-damage
+                                               (weapon-flip edge-weapons-damage-bonus
                                                             weapon-type :edge)
-                                               (weapon-flip actual-impact-weapons-damage-bonus
+                                               (weapon-flip impact-weapons-damage-bonus
                                                             weapon-type :impact)
-                                               (weapon-flip actual-pole-weapons-damage-bonus
+                                               (weapon-flip pole-weapons-damage-bonus
                                                             weapon-type :pole))
-                                           (d+ actual-melee-attack-chance
-                                               (weapon-flip actual-edge-weapons-chance-bonus
+                                           (d+ melee-attack-chance
+                                               (weapon-flip edge-weapons-chance-bonus
                                                             weapon-type :edge)
-                                               (weapon-flip actual-impact-weapons-chance-bonus
+                                               (weapon-flip impact-weapons-chance-bonus
                                                             weapon-type :impact)
-                                               (weapon-flip actual-pole-weapons-chance-bonus
+                                               (weapon-flip pole-weapons-chance-bonus
                                                             weapon-type :pole))))))
              (range-contribute (d* (range-weapon-switch object) ; on or off
-                                   actual-range-attack-damage
-                                   actual-range-attack-chance))
-             (raw-power        (d+ (d* (damage-weight)   actual-damage-points)
-                                   (d* (movement-weight) actual-movement-points)
+                                   range-attack-damage
+                                   range-attack-chance))
+             (raw-power        (d+ (d* (damage-weight)   damage-points)
+                                   (d* (movement-weight) movement-points)
                                    (d* (melee-weight)    melee-contribute)
                                    (d* (range-weight)    range-contribute)
                                    (d* (magic-weight)
-                                       actual-spell-points
-                                       (dmax actual-spell-change
-                                             actual-attack-spell-chance))
+                                       spell-points
+                                       (dmax spell-change
+                                             attack-spell-chance))
                                    (d* (dodge-weight)
-                                       actual-dodge-chance))))
+                                       dodge-chance))))
         (d* status-contribute raw-power)))))
 
 (define-constant +stuck-threshold+ 10 :test #'=)

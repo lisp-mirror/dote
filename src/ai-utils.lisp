@@ -469,7 +469,7 @@ character is. In this case its cost is 0.0"
                  do
                    (incf (protect-place-points p) (/ +inc-point-attackable+ 4.0)))
               ;; increase points if near opponents
-              (let ((ids-ai (blackboard::all-player-id-visible-from-ai main-state)))
+              (let ((ids-ai (blackboard:all-player-id-visible-from-ai main-state)))
                 (loop for id in ids-ai do
                      (loop for p in places do
                           (incf (protect-place-points p)
@@ -515,12 +515,20 @@ character is. In this case its cost is 0.0"
                                    good-places)))
     (find pos good-positions :test #'ivec2:ivec2=)))
 
-(defun faction-all-visibles-opponents (strategy-expert entity &key (alive-only t))
+(defgeneric faction-all-visibles-opponents (strategy-expert entity &key alive-only))
+
+(defmethod faction-all-visibles-opponents (strategy-expert (entity symbol) &key (alive-only t))
   "the visible opponents of AI, if exist."
   (with-accessors ((main-state main-state)) strategy-expert
     (absee-mesh:visible-players-in-state-from-faction main-state
-                                                      (my-faction entity)
+                                                      entity
                                                       :alive-only alive-only)))
+
+(defmethod faction-all-visibles-opponents (strategy-expert (entity entity) &key (alive-only t))
+  "the visible opponents of AI, if exist."
+  (faction-all-visibles-opponents strategy-expert
+                                  (my-faction entity)
+                                  :alive-only alive-only))
 
 (defun all-visibles-opponents (strategy-expert entity &key (alive-only t))
   "the visible opponents of AI entity, if exist."

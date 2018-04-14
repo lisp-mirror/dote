@@ -179,9 +179,6 @@
            (gradient (color-utils:make-gradient
                       (color-utils:make-gradient-color 0.0 §c0000ffff)
                       (color-utils:make-gradient-color 1.0 §cff0000ff))))
-      (color-utils:add-color gradient
-                             (color-utils:make-gradient-color (funcall map-fn 0.0)
-                                                              §c000000ff))
       (loop-matrix (output x y)
         (let ((value-matrix (matrix-elt matrix y x)))
           (if value-matrix
@@ -197,41 +194,42 @@
   (layer->pixmap map :key #'layer))
 
 (defun linear-decay-fn (max)
-  (let ((m (if (d< max 0.0)
-               2.0
-               -2.0))
-        (clamp-fn (if (d< max 0.0)
-                      #'min
-                      #'max)))
-    #'(lambda (dist)
-        (d (funcall clamp-fn 0.0
-                    (d+ (d* m (d dist)) max))))))
+  #'(lambda (dist)
+      (let ((v (d/ max (d+ 1.0 dist))))
+        (if (d< (abs v) (abs (d* 0.05 max)))
+            0.0
+            v))))
 
-(defun %apply-influence (matrix influence xin yin &key (decay-fn (linear-decay-fn influence)))
+(defun %apply-influence (matrix influence xin yin
+                         &key
+                           (decay-fn (linear-decay-fn influence))
+                           (combining-fn #'(lambda (a b) (d+ a b))))
   "coordinates in cost space"
   (let ((from (vec2 (d xin) (d yin))))
     (loop-matrix (matrix x y)
        (let ((dist (vec2-length (vec2- from (vec2 (d x) (d y))))))
          (setf (matrix-elt matrix y x)
-               (d+ (matrix-elt matrix y x)
-                   (funcall decay-fn dist)))))))
+               (funcall combining-fn
+                        (matrix-elt matrix y x)
+                        (funcall decay-fn dist)))))))
 
-(defgeneric apply-influence (object influencer))
+(defgeneric apply-influence (object influencer combining-fn influence-fn))
 
-(defmethod apply-influence ((object matrix) (influencer mesh:triangle-mesh))
+(defmethod apply-influence ((object matrix) (influencer mesh:triangle-mesh)
+                            (combining-fn function)
+                            (influence-fn function))
   (with-accessors ((state state) (entity-pos pos) (entity-id id)) influencer
-    (let ((coord          (map-utils:pos-entity-chunk->cost-pos entity-pos))
-          (influence-sign (if (game-state:faction-player-p state entity-id)
-                              -1.0
-                              1.0)))
+    (let ((coord (map-utils:pos-entity-chunk->cost-pos entity-pos)))
       (%apply-influence object
-                      (d* influence-sign (character:calculate-influence (ghost influencer)))
+                      (funcall influence-fn influencer)
                       (elt coord 0)
-                      (elt coord 1)))))
+                      (elt coord 1)
+                      :combining-fn combining-fn))))
 
-(defmethod apply-influence ((object matrix) (influencer list))
+(defmethod apply-influence ((object matrix) (influencer list) (combining-fn function)
+                            (influence-fn function))
   (map nil
-       #'(lambda (v) (apply-influence object v))
+       #'(lambda (v) (apply-influence object v combining-fn influence-fn))
        influencer))
 
 (defun im->pixmap (map)

@@ -255,10 +255,10 @@
   t)
 
 (defun make-buddhabrot (&key
-                          (size            pixmap:+default-size-pixmap-library+)
+                          (size            (* 2 pixmap:+default-size-pixmap-library+))
                           (slice-num       (os-utils:cpu-number))
                           (gradient        +gradient+)
-                          (scale-raw-value 100)
+                          (scale-raw-value 20)
                           (sampling-count  3000000)
                           (max-iteration   20000))
   (let ((file-out (fs:temporary-filename)))
@@ -302,7 +302,8 @@
                    (let* ((value (elt data-in i))
                           (value-as-int (byte->int value))
                           (norm-value   (d (* scale-raw-value
-                                              (/ value-as-int max))))
+                                              (/ (sqrt value-as-int)
+                                                 (sqrt max)))))
                           (color        (vec4->ubvec4 (pick-color gradient norm-value))))
                      (setf (elt data-out i) color)))))
           #+debug-mode (misc:dbg "saving. ~a" (width output))

@@ -238,6 +238,9 @@
                    (influence-map-type influence-map-type)) world
     (with-accessors ((blackboard blackboard)) main-state
       (let ((layer (ecase influence-map-type
+                     (:influence-map
+                      (inmap::layer->pixmap
+                       (blackboard:main-influence-map blackboard)))
                      (:concerning-invalicables
                       (inmap::layer->pixmap
                        (blackboard::concerning-tiles-invalicables blackboard)))
@@ -1063,15 +1066,15 @@
                                          dir
                                          (compiled-shaders object)
                                          +ai-player-models-resource+))
+             (portrait-texture (texture:get-texture gui:+portrait-unknown-texture-name+))
              (portrait-texture (texture:gen-name-and-inject-in-database
-                                (texture:clone (texture:get-texture gui:+portrait-unknown-texture-name+)))))
+                                (texture:clone portrait-texture))))
         (pixmap:sync-data-to-bits portrait-texture)
         (texture:prepare-for-rendering portrait-texture)
         (setf (character:model-origin-dir ghost) dir)
         (setf (portrait (entity:ghost model)) portrait-texture)
         (setf (renderp  model) nil)
-        (world:place-player-on-map object model game-state:+npc-type+
-                                   :position #(0 0))
+        (world:place-player-on-map object model game-state:+npc-type+ :position #(0 0))
         ;; initialize visited tiles per turn for new AI's pawn
         (let ((position (calculate-cost-position model)))
           (2d-utils:displace-2d-vector (position x y)

@@ -471,8 +471,6 @@
 
 (defgeneric faction-turn-ai-p    (object))
 
-(defgeneric make-influence-map (object))
-
 (defgeneric set-tile-visited (object entity-visiting x y &key update-infos))
 
 (defgeneric set-concerning-tile (object x y &key danger-zone-size concerning-tile-value))
@@ -1104,15 +1102,6 @@
 
 (defmethod faction-turn-ai-p ((object game-state))
   (not (faction-turn-human-p object)))
-
-(defmethod make-influence-map ((object game-state))
-  (with-accessors ((player-entities player-entities)
-                   (map-state map-state)
-                   (ai-entities ai-entities)) object
-    (let* ((im (make-matrix (width map-state) (height map-state) 0.0)))
-      (inmap:apply-influence im player-entities)
-      (inmap:apply-influence im ai-entities)
-      im)))
 
 (defmethod set-tile-visited ((object game-state) entity-visiting x y &key (update-infos nil))
   (with-accessors ((blackboard blackboard)) object

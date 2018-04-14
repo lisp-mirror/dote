@@ -664,3 +664,24 @@ Return a simple-float"
 
 (defun median (s)
   (d (k-stats s (floor (/ (length s) 2)))))
+
+(defun unordered-pairs (set1 set2 &optional (test #'eq))
+  (if (or (null set1)
+          (null set2))
+      nil
+      (append (list (cons (first set1) (first set2)))
+              (unordered-pairs (list (first set1)) (rest set2) test)
+              (unordered-pairs (rest set1)          set2 test))))
+
+(defun ordered-pairs (set1 set2 &optional (test #'eq))
+  (let* ((unordered (unordered-pairs set1 set2 test))
+         (res '()))
+    (loop for i in unordered do
+         (pushnew i res
+                  :test #'(lambda (a b) (and (funcall test (car a) (cdr b))
+                                             (funcall test (cdr a) (car b))))))
+    res))
+
+(defun ordered-pairs-no-twins (set1 set2 &optional (test #'eq))
+  (remove-if #'(lambda (a) (funcall test (car a) (cdr a)))
+             (ordered-pairs set1 set2 test)))

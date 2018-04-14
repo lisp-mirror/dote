@@ -190,7 +190,9 @@
    :+retreat-strategy+
    :+difficult-medium+
    :+exp-capital-delta+
-   :+exp-change-level-thrs+))
+   :+exp-change-level-thrs+
+   :+influence-ai-sign+
+   :+influence-human-sign+))
 
 (defpackage :profiling
   (:use :cl)
@@ -392,6 +394,9 @@
    :cubic-pulse
    :parabola
    :enzyme-kinetics
+   :ordered-pairs
+   :unordered-pairs
+   :ordered-pairs-no-twins
    ;; typed-ops.lisp
    :desired-type
    :desired
@@ -1397,6 +1402,7 @@
         :ubvec4
         :num)
   (:export
+   :*truncate-matrix-value-when-printing*
    :matrix
    :matrix-ubvec4
    :width
@@ -2453,7 +2459,6 @@
    :faction-turn
    :faction-turn-human-p
    :faction-turn-ai-p
-   :make-influence-map
    :set-tile-visited
    :set-concerning-tile
    :set-concerning-tile-fn
@@ -3470,6 +3475,8 @@
    :castable-spells-list-by-tag
    :castable-attack-spells-list
    :calculate-influence
+   :*power-weights*
+   :make-power-weights
    :combined-power
    :movement-stuck-p
    :pclass-of-useful-in-attack-tactic-p
@@ -5273,6 +5280,7 @@
    :+unexplored-tile-value+
    :+concerning-tile-value+
    :blackboard
+   :main-influence-map
    :exhausted-fountains-ids
    :concerning-tiles
    :concerning-tiles-invalicables
@@ -5305,6 +5313,8 @@
    :calc-danger-zone-size
    :set-concerning-tile
    :set-concerning-tile-fn
+   :all-ai-id-visible-from-player
+   :all-player-id-visible-from-ai
    :all-other-factions-can-see-entity
    :all-ai-visibles-by-entity
    :all-player-visibles-by-entity
@@ -5333,6 +5343,48 @@
    :damage-spell-goal-pos-around-friend
    :damage-spell-goal-pos-around-me
    :invalidate-blackboard-cache))
+
+(defpackage :strategic-ai
+  (:use :cl
+        :alexandria
+        :config
+        :constants
+        :ivec2
+        :vec2
+        :num
+        :misc
+        :matrix
+        :2d-utils
+        :identificable
+        :entity
+        :interfaces
+        :character
+        :map-utils
+        :influence-map
+        :ai-utils
+        :blackboard
+        :game-state)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :+very-low+
+   :+low+
+   :+medium+
+   :+high+
+   :+very-high+
+   :make-influence-map
+   :make-influence-map*
+   :make-tension-map*
+   :make-vulnerability-map*
+   :faction-influence-map
+   :faction-vulnerability-map
+   :faction-tension-map
+   :faction-map-under-control
+   :average-dmg-points
+   :average-cost-faction
+   :average-dmg-wizards
+   :entities-vulnerables
+   :visible-opponents
+   :visible-friends))
 
 (defpackage :goap
   (:use :cl
