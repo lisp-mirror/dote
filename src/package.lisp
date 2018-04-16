@@ -1698,6 +1698,7 @@
    :config-smooth-movements
    :config-inhibit-planner
    :config-camera-fp-scaling-movement
+   :config-train-ai
    :set-forward
    :set-back
    :set-left
@@ -1713,6 +1714,7 @@
    :set-smooth-movements
    :set-inhibit-planner
    :set-camera-fp-scaling-movement
+   :set-train-ai
    :*game-config*
    :dump
    :init

@@ -100,7 +100,11 @@
    (camera-fp-scaling-movement
     :initform 2.0
     :initarg  :camera-fp-scaling-movement
-    :accessor camera-fp-scaling-movement)))
+    :accessor camera-fp-scaling-movement)
+   (train-ai
+    :initform nil
+    :initarg  :train-ai
+    :accessor train-ai)))
 
 (defmethod marshal:class-persistant-slots ((object game-config))
     '(forward
@@ -117,7 +121,8 @@
       prev-character
       smooth-movements
       inhibit-planner
-      camera-fp-scaling-movement))
+      camera-fp-scaling-movement
+      train-ai))
 
 (defun make-default-config ()
   (make-instance 'game-config))
@@ -132,7 +137,6 @@
   (res:get-resource-file +game-config-resource+
                          +game-config-filename+
                          :if-does-not-exists :error))
-
 
 (defun dump (&optional (object-config *game-config*))
   (let* ((config-file (get-file-path :create t)))
@@ -199,3 +203,5 @@
 (gen-acc-fn inhibit-planner)
 
 (gen-acc-fn camera-fp-scaling-movement)
+
+(gen-acc-fn train-ai)

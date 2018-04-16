@@ -6,7 +6,7 @@
   :pathname "src"
   :serial t
   :depends-on (:swank
-               :clunit
+               :clunit2
                :alexandria
                :lparallel
                :parse-number
@@ -24,7 +24,7 @@
                :cl-opengl
                :sdl2kit
                :cl-kanren
-               :s-dot)
+               :s-dot2)
   :components ((:file "package")
                (:file "config")
                (:file "constants")

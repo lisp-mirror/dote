@@ -51,7 +51,7 @@
 (defun standard-text-entry-w ()
   (input-text-w *reference-sizes*))
 
-(defun  standard-text-entry-h ()
+(defun standard-text-entry-h ()
   (input-text-h *reference-sizes*))
 
 (defun standard-label-entry-w ()
@@ -347,7 +347,7 @@
     (adjust-window-h frame)))
 
 (defun appearance-button-w ()
-  (d* 2.0 (square-button-size *reference-sizes*)))
+  (d* 3.0 (square-button-size *reference-sizes*)))
 
 (defun appearance-button-h ()
   (checkbutton-h *reference-sizes*))
@@ -388,7 +388,7 @@
     w))
 
 (defun gui-window-w ()
-  (let ((frame (main-window-w)))
+  (let ((frame (d* 1.5 (main-window-w))))
     (adjust-window-w frame)))
 
 (defun gui-window-h ()
@@ -399,7 +399,7 @@
     (adjust-window-h frame)))
 
 (defun gui-button-w ()
-  (square-button-size *reference-sizes*))
+  (d* (small-square-button-size *reference-sizes*)))
 
 (defun gui-button-h ()
   (d* 2.0 (checkbutton-h *reference-sizes*)))
@@ -418,7 +418,7 @@
     :initform (make-instance 'widget:simple-label
                              :label     (_ "Speed for \"look around\" camera.")
                              :font-size (standard-font-size *reference-sizes*)
-                             :width     (main-window-w)
+                             :width     (gui-window-w)
                              :x         0.0
                              :y         0.0)
 
@@ -512,16 +512,65 @@
     (setf (compiled-shaders w) compiled-shaders)
     w))
 
+(defun ai-window-w ()
+  (let ((frame (ai-button-w)))
+    (adjust-window-w frame)))
+
+(defun ai-window-h ()
+  (let ((frame (d+ (ai-button-h)
+                   (spacing *reference-sizes*))))
+    (adjust-window-h frame)))
+
+(defun ai-button-w ()
+  (d* 2.0 (square-button-size *reference-sizes*)))
+
+(defun ai-button-h ()
+  (checkbutton-h *reference-sizes*))
+
+(defun update-config-ai-training-cb (button event)
+  (declare (ignore event))
+  (gconf:set-train-ai (button-state button))
+  (gconf:dump))
+
+(defclass ai-window (window)
+  ((checkb-smooth-movement
+    :initform (make-instance 'labeled-check-button
+                             :button-toggle-type t
+                             :height             (ai-button-h)
+                             :width              (ai-button-w)
+                             :x                  0.0
+                             :y                  0.0
+                             :label              (_ "Train computer opponent")
+                             :callback           #'update-config-ai-training-cb
+                             :initial-state      (gconf:config-train-ai)
+                             :color              :green)
+    :initarg  :checkb-smooth-movement
+    :accessor checkb-smooth-movement)))
+
+(defmethod initialize-instance :after ((object ai-window) &key &allow-other-keys)
+  (with-accessors ((checkb-smooth-movement checkb-smooth-movement)) object
+    (add-child object checkb-smooth-movement)))
+
+(defun make-ai-window (compiled-shaders)
+  (let ((w (make-instance 'ai-window
+                          :x      (main-window-w)
+                          :y      (d (- *window-h* (ai-window-h)))
+                          :width  (ai-window-w)
+                          :height (ai-window-h)
+                          :label  (_ "AI Configuration"))))
+    (add-window-button-cb-hide-remove w)
+    (setf (compiled-shaders w) compiled-shaders)
+    w))
+
+(defun main-window-button-h ()
+  (small-square-button-size *reference-sizes*))
 
 (defun main-window-w ()
   (adjust-window-w (d/ (d *window-w*) 4.0)))
 
 (defun main-window-h ()
-  (adjust-window-h (d+ (d* 4.0 (spacing *reference-sizes*))
-                       (d/ (d *window-h*) 4.0))))
-
-(defun main-window-button-h ()
-  (small-square-button-size *reference-sizes*))
+  (adjust-window-h (d* 5.0
+                       (main-window-button-h))))
 
 (defun main-window-button-w ()
   (d- (main-window-w)
@@ -548,7 +597,11 @@
 
 (defun open-debug-window-cb (widget event)
   (declare (ignore event))
-    (%open-conf-window widget #'make-debug-window))
+  (%open-conf-window widget #'make-debug-window))
+
+(defun open-ai-window-cb (widget event)
+  (declare (ignore event))
+  (%open-conf-window widget #'make-ai-window))
 
 (defclass main-window (window)
   ((b-keyboard
@@ -583,13 +636,25 @@
                              :label (_ "GUI"))
     :initarg  b-gui
     :accessor b-gui)
+   (b-ai
+    :initform (make-instance 'button
+                             :width    (main-window-button-w)
+                             :height   (main-window-button-h)
+                             :x        0.0
+                             :y        (d+ (d* 3.0 (main-window-button-h))
+                                           (spacing *reference-sizes*))
+                             :callback #'open-ai-window-cb
+                             :label (_ "Computer opponent"))
+    :initarg  b-ai
+    :accessor b-ai)
+
    #+debug-mode
    (b-debug
     :initform (make-instance 'button
                              :width    (main-window-button-w)
                              :height   (main-window-button-h)
                              :x        0.0
-                             :y        (d+ (d* 3.0 (main-window-button-h))
+                             :y        (d+ (d* 4.0 (main-window-button-h))
                                            (spacing *reference-sizes*))
                              :callback #'open-debug-window-cb
                              :label (_ "Debug"))
@@ -599,9 +664,11 @@
 (defmethod initialize-instance :after ((object main-window) &key &allow-other-keys)
   (with-accessors ((b-keyboard   b-keyboard)
                    (b-gui        b-gui)
+                   (b-ai         b-ai)
                    (b-appearance b-appearance)) object
     (add-child object b-keyboard)
     (add-child object b-gui)
+    (add-child object b-ai)
     (add-child object b-appearance)
     #+debug-mode (add-child object (b-debug object))))
 
