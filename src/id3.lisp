@@ -890,7 +890,7 @@
          (cons (elt attributes i)
                (list tail)))))
 
-(defun build-tree (training-set attributes)
+(defun build-tree (training-set attributes &key (prune t))
   "training set is a table of facts:
 
     '((a b 0.9 false n)
@@ -898,6 +898,11 @@
       ....))
    where the last column is the decision.
    attributes is a list of label for each column of the table
-   '(attr1 attr2...decision"
-  (let* ((shuffled-training-table (shuffle-table training-set)))
-    (make-tree shuffled-training-table attributes)))
+   '(attr1 attr2...decision)"
+  (let* ((shuffled-training-table (shuffle-table training-set))
+         (unpruned-tree           (make-tree shuffled-training-table attributes)))
+    (if prune
+        (pessimistic-prune-branch unpruned-tree
+                                  shuffled-training-table
+                                  attributes)
+        unpruned-tree)))

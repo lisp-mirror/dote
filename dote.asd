@@ -200,6 +200,7 @@
                                      (:file "attack-tactics-test")
                                      (:file "goap-test")
                                      (:file "gl-test")
+                                     (:file "decision-tree-test")
                                      (:file "influence-map-test")))))
 
 (progn

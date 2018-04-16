@@ -290,3 +290,11 @@
         :num
         :matrix
         :influence-map))
+
+(defpackage :decision-tree-test
+  (:use :cl
+        :clunit
+        :all-test
+        :alexandria
+        :num
+        :id3))
