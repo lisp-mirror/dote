@@ -28,6 +28,8 @@
 
 (define-constant +size-vulnerability-concern+ 2          :test #'eq)
 
+(define-constant +min-facts-to-build-tree+    300        :test #'=)
+
 (defun faction-map-under-control-0to1 (influence-map faction)
   (let* ((area        (* (width  influence-map)
                          (height influence-map)))
@@ -168,7 +170,11 @@
                          :matrix nil))))
 
 (defmethod faction-map-under-control ((object matrix) faction)
-  (faction-map-under-control-0to1 object faction))
+  (declare (ignore faction))
+  (let ((sum (reduce #'+ (data object))))
+    (if (epsilon= +influence-ai-sign+ (sign sum))
+        +npc-type+
+        +pc-type+)))
 
 (defmethod faction-map-under-control ((object blackboard) faction)
   (faction-map-under-control (faction-influence-map object faction) faction))
@@ -208,7 +214,6 @@
         (average-dist-entities blackboard (ai-entities     main-state))
         (average-dist-entities blackboard (player-entities main-state)))))
 
-
 (defun %average-dmg-wizards (entities)
   (let ((all-wizards (remove-if-not #'(lambda (a) (character:pclass-wizard-p (ghost a)))
                                     entities)))
@@ -220,10 +225,11 @@
         0.0)))
 
 (defun average-dmg-wizards (blackboard faction)
-  (let ((all-wizards (if (eq faction +npc-type+)
-                         (ai-entities     blackboard)
-                         (player-entities blackboard))))
-    (%average-dmg-wizards all-wizards)))
+  (with-accessors ((main-state main-state)) blackboard
+    (let ((all-wizards (if (eq faction +npc-type+)
+                           (ai-entities     main-state)
+                           (player-entities main-state))))
+      (%average-dmg-wizards all-wizards))))
 
 (defun entities-vulnerables (blackboard faction)
   (with-accessors ((main-state main-state)) blackboard
@@ -236,24 +242,24 @@
                                 (epsilon= (sign (matrix-elt vulnerability-map y x))
                                           +influence-human-sign+))))
                       pos)))
-    (let ((vulnerability-map (faction-vulnerability-map blackboard faction))
-          (loop-fn           (if (eq faction +pc-type+)
-                                 #'map-player-entities
-                                 #'map-ai-entities)))
-      (remove-if-null
-       (funcall loop-fn
-                main-state
-                #'(lambda (entity)
-                    (let* ((pos  (calculate-cost-position entity))
-                           (near (gen-valid-neighbour-position-in-box vulnerability-map
-                                                                      (ivec2-x pos)
-                                                                      (ivec2-y pos)
-                                                                      +size-vulnerability-concern+
-                                                                      +size-vulnerability-concern+
-                                                                      :add-center nil)))
-                      (if (in-danger-p near vulnerability-map)
-                          entity
-                          nil)))))))))
+      (let ((vulnerability-map (faction-vulnerability-map blackboard faction))
+            (loop-fn           (if (eq faction +pc-type+)
+                                   #'map-player-entities
+                                   #'map-ai-entities)))
+        (remove-if-null
+         (funcall loop-fn
+                  main-state
+                  #'(lambda (entity)
+                      (let* ((pos  (calculate-cost-position entity))
+                             (near (gen-valid-neighbour-position-in-box vulnerability-map
+                                                                        (ivec2-x pos)
+                                                                        (ivec2-y pos)
+                                                                        +size-vulnerability-concern+
+                                                                        +size-vulnerability-concern+
+                                                                        :add-center nil)))
+                        (if (in-danger-p near vulnerability-map)
+                            entity
+                            nil)))))))))
 
 (defun visible-opponents (blackboard faction)
   (faction-all-visibles-opponents blackboard faction :alive-only t))
@@ -262,3 +268,66 @@
   (faction-all-visibles-opponents blackboard
                                   (faction->opposite-faction faction)
                                   :alive-only t))
+
+(defun register-ai-tree-data (world)
+  (flet ((init-data (file)
+           (with-open-file (s file :direction :io :if-exists :overwrite)
+             (when s
+               (let ((l (file-length s)))
+                 (when (or (null l)
+                           (= l 0))
+                   (format s "~s" (list +ai-fact-header+))))))
+           (with-open-file (stream file)
+             (read stream))))
+    (when (and (faction-turn-human-p world)
+               (gconf:config-train-ai))
+      (with-accessors ((main-state main-state)) world
+        (with-accessors ((blackboard blackboard)) main-state
+          (let* ((influence-map     (strategic-ai:faction-influence-map blackboard
+                                                                        +pc-type+))
+                 (map-under-control (strategic-ai:faction-map-under-control influence-map
+                                                                            +pc-type+))
+                 (average-dmg       (strategic-ai:average-dmg-points   blackboard +pc-type+))
+                 (average-dist      (strategic-ai:average-cost-faction blackboard +pc-type+))
+                 (vulnerables-units (length (strategic-ai:entities-vulnerables blackboard
+                                                                               +pc-type+)))
+                 (visible-opponents (length (strategic-ai:visible-opponents    blackboard
+                                                                               +npc-type+)))
+                 (visible-pc        (length (strategic-ai:visible-opponents    blackboard
+                                                                               +pc-type+)))
+                 (wizard-dmg        (strategic-ai:average-dmg-wizards          blackboard
+                                                                               +pc-type+))
+                 (new-row           (list map-under-control
+                                          average-dmg
+                                          average-dist
+                                          vulnerables-units
+                                          visible-opponents
+                                          visible-pc
+                                          wizard-dmg))
+                 (dump-file         (res:get-resource-file +decision-tree-facts-file+
+                                                           +decision-tree-data-resource+
+                                                           :if-does-not-exists :create))
+                 (data              (init-data dump-file)))
+            (with-open-file (stream dump-file :direction :output :if-exists :supersede)
+              (setf data (append data (list new-row)))
+              (format stream "~s~%" data)
+              data)))))))
+
+;; TODO test needed, probably broken
+(defun build-decision-tree ()
+  (when-let* ((fact-file (res:get-resource-file +decision-tree-facts-file+
+                                                +decision-tree-data-resource+
+                                                :if-does-not-exists nil))
+              (facts     (fs:read-single-form fact-file))
+              (tree-file (res:get-resource-file +decision-tree-file+
+                                                +decision-tree-data-resource+
+                                                :if-does-not-exists :create)))
+    (when (> (length facts)
+             +min-facts-to-build-tree+)
+      (let ((decision-tree (id3:build-tree facts +ai-fact-header+ :prune t)))
+        (with-open-file (stream tree-file
+                                :direction         :output
+                                :if-does-not-exist :create
+                                :if-exists         :supersede)
+          (format stream "~s" (serialize decision-tree))
+          decision-tree)))))

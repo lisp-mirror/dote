@@ -98,6 +98,9 @@
    :+game-config-resource+
    :+game-config-filename+
    :+game-saves-resource+
+   :+decision-tree-data-resource+
+   :+decision-tree-facts-file+
+   :+decision-tree-file+
    :+trees-resource+
    :+names-resource+
    :+weapons-names-resource+
@@ -192,7 +195,8 @@
    :+exp-capital-delta+
    :+exp-change-level-thrs+
    :+influence-ai-sign+
-   :+influence-human-sign+))
+   :+influence-human-sign+
+   :+ai-fact-header+))
 
 (defpackage :profiling
   (:use :cl)
@@ -513,7 +517,8 @@
    :file-in-package
    :link-file-path
    :file-is-link-if-else
-   :pathname->namestring))
+   :pathname->namestring
+   :read-single-form))
 
 (defpackage :os-utils
   (:use :cl)
@@ -5386,7 +5391,9 @@
    :average-dmg-wizards
    :entities-vulnerables
    :visible-opponents
-   :visible-friends))
+   :visible-friends
+   :register-ai-tree-data
+   :build-decision-tree))
 
 (defpackage :goap
   (:use :cl

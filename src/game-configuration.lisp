@@ -131,11 +131,11 @@
 
 (defun get-file-path (&key (create t))
   (when create
-    (res:get-resource-file +game-config-resource+
-                           +game-config-filename+
+    (res:get-resource-file +game-config-filename+
+                           +game-config-resource+
                            :if-does-not-exists :create))
-  (res:get-resource-file +game-config-resource+
-                         +game-config-filename+
+  (res:get-resource-file +game-config-filename+
+                         +game-config-resource+
                          :if-does-not-exists :error))
 
 (defun dump (&optional (object-config *game-config*))

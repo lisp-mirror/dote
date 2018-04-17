@@ -287,7 +287,7 @@
 (defun %update-influence-map (blackboard)
   "just for debugging"
   (with-accessors ((main-influence-map main-influence-map)) blackboard
-    (setf main-influence-map (strategic-ai:faction-vulnerability-map blackboard +pc-type+))
+    (setf main-influence-map (strategic-ai:faction-influence-map blackboard +pc-type+))
     (let ((matrix:*truncate-matrix-value-when-printing* t))
       (misc:dbg "inf dump~%~a~%presence pc ~a npc ~a dbg ~a ~a avg dist ~a ~%vuln ~a~%vis ~a"
                 main-influence-map

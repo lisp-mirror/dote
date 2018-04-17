@@ -142,6 +142,12 @@
 
 (define-constant +game-saves-resource+           "saves"                          :test #'string=)
 
+(define-constant +decision-tree-data-resource+   "ai"                             :test #'string=)
+
+(define-constant +decision-tree-facts-file+      "facts"                          :test #'string=)
+
+(define-constant +decision-tree-file+            "decision-tree"                  :test #'string=)
+
 (define-constant +trees-resource+                "trees"                          :test #'string=)
 
 (define-constant +names-resource+                "names"                          :test #'string=)
@@ -334,3 +340,13 @@
 (define-constant +influence-ai-sign+               -1.0                           :test #'=)
 
 (define-constant +influence-human-sign+             1.0                           :test #'=)
+
+(define-constant +ai-fact-header+ '(:map-under-control
+                                    :average-dmg
+                                    :average-dist
+                                    :vulnerables-units
+                                    :visible-opponents
+                                    :visible-pc
+                                    :wizard-dmg
+                                    :strategy)
+  :test #'equalp)

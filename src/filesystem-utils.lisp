@@ -333,3 +333,8 @@
 
 (defun pathname->namestring (p)
   (uiop:native-namestring p))
+
+(defun read-single-form (file)
+  (with-open-file (stream file :direction :input :if-does-not-exist nil)
+    (when stream
+      (read stream))))

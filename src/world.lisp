@@ -326,7 +326,8 @@
 
 (defmethod game-event:on-game-event ((object world) (event game-event:start-turn))
   (with-accessors ((main-state main-state)) object
-    ;(tg:gc :full t)
+    ;;(tg:gc :full t)
+    (strategic-ai:register-ai-tree-data object)
     (flet ((%process-postponed-messages (entity)
              (mesh:process-postponed-messages entity)))
       (loop-player-entities main-state #'%process-postponed-messages)
