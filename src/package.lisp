@@ -1764,6 +1764,8 @@
    :voronoize
    :nrmse
    :dhash
+   :average-color
+   :clear-to-color
    :to-grayscale
    :ncopy-matrix-into-pixmap
    :save-pixmap

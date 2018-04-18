@@ -219,6 +219,13 @@
 
 (defgeneric punremultiply-alpha (object))
 
+(defun clear-to-color (pixmap &key (color (ubvec4 0 0 0 255)))
+  (let ((data (data pixmap)))
+    (loop for i from 0 below (length data) do
+         (setf (elt data i) color))
+    (pixmap:sync-data-to-bits pixmap)
+    pixmap))
+
 (defmethod papply-kernel-ubvec4 ((object pixmap) kernel &key (round-fn #'identity))
   (declare (optimize (speed 3) (safety 0) (debug 0)))
   (declare (pixmap object))

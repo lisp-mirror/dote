@@ -49,10 +49,15 @@
 (defun update-window-appereance (window file)
   (with-accessors ((s-preview  s-preview)
                    (res-action res-action)) window
-    (let ((new-preview (pixmap:slurp-pixmap 'pixmap:tga file))
-          (texture     (texture:get-texture +load-save-preview-texture-name+)))
-      (setf (pixmap:data texture) (pixmap:data new-preview))
-      (pixmap:sync-data-to-bits texture)
+    (let ((texture (texture:get-texture +load-save-preview-texture-name+)))
+      (if file
+          (let ((new-preview (pixmap:slurp-pixmap 'pixmap:tga file)))
+            (setf (pixmap:data texture) (pixmap:data new-preview))
+            (pixmap:sync-data-to-bits texture))
+          (let ((aabb (ivec4:ivec4 0 0
+                                   (1- (pixmap:width texture))
+                                   (1- (pixmap:height texture)))))
+            (pixmap:clear-to-color texture :color (pixmap:average-color texture aabb))))
       (update-for-rendering texture))))
 
 (defun update-window-for-load (button slot)
@@ -73,8 +78,7 @@
                                        slot
                                        :if-does-not-exists nil)))
       (setf (res-action win) slot)
-      (when file
-        (update-window-appereance win file)))))
+      (update-window-appereance win file))))
 
 (defun %update-cb-for-load (w e slot)
   (declare (ignore e))
