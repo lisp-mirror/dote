@@ -43,6 +43,12 @@
 (definline widgetp (w)
   (typep w 'widget))
 
+(defmacro with-grandparent-widget ((grandparent) w &body body)
+  (alexandria:with-gensyms (parent)
+    `(with-parent-widget (,parent) ,w
+       (with-parent-widget (,grandparent) ,parent
+         ,@body))))
+
 (defmacro with-parent-widget ((par) child &body body)
   `(let ((,par (parent ,child)))
      ,@body))

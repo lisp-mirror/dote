@@ -131,6 +131,7 @@ src/gui/splash-screen-progress-gauge.lisp
 src/gui/widget.lisp
 src/gui/configuration-windows.lisp
 src/gui/load-save-window.lisp
+src/gui/train-ai-window.lisp
 # spells
 data/spells/vampire-1.lisp
 data/spells/vampire-2.lisp

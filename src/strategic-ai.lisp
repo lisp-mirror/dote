@@ -269,6 +269,13 @@
                                   (faction->opposite-faction faction)
                                   :alive-only t))
 
+(defun dump-ai-facts (data)
+  (let ((dump-file (res:get-resource-file +decision-tree-facts-file+
+                                          +decision-tree-data-resource+
+                                          :if-does-not-exists :create)))
+    (with-open-file (stream dump-file :direction :output :if-exists :supersede)
+      (format stream "~s~%" data))))
+
 (defun register-ai-tree-data (world)
   (flet ((init-data (file)
            (with-open-file (s file :direction :io :if-exists :overwrite)
@@ -308,17 +315,27 @@
                                                            +decision-tree-data-resource+
                                                            :if-does-not-exists :create))
                  (data              (init-data dump-file)))
-            (with-open-file (stream dump-file :direction :output :if-exists :supersede)
-              (setf data (append data (list new-row)))
-              (format stream "~s~%" data)
-              data)))))))
+            (setf data (append data (list new-row)))
+            (if (dump-ai-facts data)
+                data
+                nil)))))))
 
-;; TODO test needed, probably broken
-(defun build-decision-tree ()
+(defun register-strategy-from-human (world)
+  (when (and (faction-turn-human-p world)
+             (gconf:config-train-ai))
+    (mtree:add-child (world:gui world)
+                     (train-ai-window:make-train-ai-window (compiled-shaders world)))))
+
+(defun read-facts-file ()
   (when-let* ((fact-file (res:get-resource-file +decision-tree-facts-file+
                                                 +decision-tree-data-resource+
                                                 :if-does-not-exists nil))
-              (facts     (fs:read-single-form fact-file))
+              (facts     (fs:read-single-form fact-file)))
+    facts))
+
+;; TODO test needed, probably broken
+(defun build-decision-tree ()
+  (when-let* ((facts     (read-facts-file))
               (tree-file (res:get-resource-file +decision-tree-file+
                                                 +decision-tree-data-resource+
                                                 :if-does-not-exists :create)))

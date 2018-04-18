@@ -4479,6 +4479,7 @@
    :+action-attack-long-range-imprecise+
    :+action-launch-spell+
    :with-parent-widget
+   :with-grandparent-widget
    :with-root-widget
    :hide-and-remove-from-parent-cb
    :hide-and-remove-parent-cb
@@ -4532,6 +4533,7 @@
    :flip-y
    :hide-parent-cb
    :hide-and-remove-parent-cb
+   :hide-and-remove-grandparent-cb
    :add-window-button-cb-hide-remove
    :naked-button
    :callback
@@ -4539,6 +4541,7 @@
    :text-field
    :char-field
    :check-button
+   :make-check-group*
    :signalling-light
    :make-loader-icon
    :make-planning-progress-icon
@@ -4554,7 +4557,9 @@
    :adjust-window-h
    :adjust-window-w
    :window
+   :close-button
    :toggle-button
+   :group
    :labeled-toggle-button
    :labeled-check-button
    :file-chooser
@@ -4626,6 +4631,25 @@
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :make-window))
+
+(defpackage :train-ai-window
+  (:use :cl
+        :alexandria
+        :config
+        :constants
+        :num
+        :misc
+        :mtree-utils
+        :text-utils
+        :filesystem-utils
+        :interfaces
+        :gui-events
+        :gui
+        :widget
+        :game-configuration)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :make-train-ai-window))
 
 (defpackage :full-screen-masks
   (:use
@@ -5393,6 +5417,9 @@
    :visible-opponents
    :visible-friends
    :register-ai-tree-data
+   :register-strategy-from-human
+   :dump-ai-facts
+   :read-facts-file
    :build-decision-tree))
 
 (defpackage :goap

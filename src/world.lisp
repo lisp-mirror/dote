@@ -338,8 +338,8 @@
 
 (defmethod game-event:on-game-event ((object world) (event game-event:end-turn))
   (with-accessors ((main-state main-state)) object
-    ;(tg:gc :full t)
-    ;;(misc:dbg " end turn ~a ~a" (type-of object) (type-of event))
+    ;; (tg:gc :full t)
+    ;; (misc:dbg " end turn ~a" (game-turn (main-state object)))
     (clear-all-memoized-function-cache)
     (md2-mesh:blacklist-clear-id)
     (rebuild-all-ai-planners        object)
@@ -349,6 +349,7 @@
     (remove-all-removeable-from-gui object)
     (clean-characters-logs          object ai-logger:+ai-log-clean-end-turn+)
     ;;(remove-entity-if (gui object) #'(lambda (a) (typep a 'widget:message-window)))
+    (strategic-ai:register-strategy-from-human object)
     (incf (game-turn (main-state object))) ;; new turn starts here!
     nil))
 

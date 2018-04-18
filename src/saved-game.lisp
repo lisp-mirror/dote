@@ -406,8 +406,10 @@
                          :height *window-h*
                          :label  nil))
     (mtree:add-child (world:gui world) (world:toolbar world))
+    ;; test!
     (mtree:add-child (world:gui world)
                      (widget:make-player-generator world))
+    ;;
     (mtree:add-child (world:gui world)
                      (full-screen-masks:make-burn-mask
                       (level-name (main-state world))
