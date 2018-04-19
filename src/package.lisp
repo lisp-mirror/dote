@@ -5413,7 +5413,7 @@
    :faction-vulnerability-map
    :faction-tension-map
    :faction-map-under-control
-   :average-dmg-points
+   :dmg-points-ratio
    :average-cost-faction
    :average-dmg-wizards
    :entities-vulnerables

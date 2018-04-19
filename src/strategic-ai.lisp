@@ -188,14 +188,17 @@
 (defmethod faction-map-under-control ((object blackboard) faction)
   (faction-map-under-control (faction-influence-map object faction) faction))
 
-(defun average-dmg-points (blackboard faction)
-  (let* ((entities (alive-factions-components blackboard faction))
-         (all-dmg  (reduce #'+
-                           (map 'list #'(lambda (a) (current-damage-points (ghost a))) entities)
-                           :initial-value 0)))
-    (if entities
-        (/ all-dmg (length entities))
-        0)))
+(defun dmg-points-ratio (blackboard faction)
+  (flet ((reduce-dmg (entities fn)
+           (reduce #'+
+                   (map 'list #'(lambda (a) (funcall fn (ghost a))) entities)
+                   :initial-value 0)))
+    (let* ((entities (alive-factions-components blackboard faction))
+           (all-current-dmg  (reduce-dmg entities  #'current-damage-points))
+           (all-max-dmg      (reduce-dmg entities  #'actual-damage-points)))
+      (if entities
+          (/ all-current-dmg all-max-dmg)
+          0.0))))
 
 (defun average-dist-entities (blackboard entities)
   (flet ((calc-dist (a b)
@@ -303,7 +306,7 @@
                                                                         +pc-type+))
                  (map-under-control (strategic-ai:faction-map-under-control influence-map
                                                                             +pc-type+))
-                 (average-dmg       (strategic-ai:average-dmg-points   blackboard +pc-type+))
+                 (dmg-ratio         (strategic-ai:dmg-points-ratio   blackboard +pc-type+))
                  (average-dist      (strategic-ai:average-cost-faction blackboard +pc-type+))
                  (vulnerables-units (length (strategic-ai:entities-vulnerables blackboard
                                                                                +pc-type+)))
@@ -314,7 +317,7 @@
                  (wizard-dmg        (strategic-ai:average-dmg-wizards          blackboard
                                                                                +pc-type+))
                  (new-row           (list map-under-control
-                                          average-dmg
+                                          dmg-ratio
                                           average-dist
                                           vulnerables-units
                                           visible-opponents

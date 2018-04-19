@@ -293,8 +293,8 @@
                 main-influence-map
                 (strategic-ai:faction-map-under-control main-influence-map +pc-type+)
                 (strategic-ai:faction-map-under-control main-influence-map +npc-type+)
-                (strategic-ai:average-dmg-points   blackboard +pc-type+)
-                (strategic-ai:average-dmg-points   blackboard +npc-type+)
+                (strategic-ai:dmg-points-ratio    blackboard +pc-type+)
+                (strategic-ai:dmg-points-ratio     blackboard +npc-type+)
                 (strategic-ai:average-cost-faction blackboard +npc-type+)
                 (strategic-ai:entities-vulnerables blackboard +pc-type+)
                 (strategic-ai:visible-opponents    blackboard +pc-type+)))

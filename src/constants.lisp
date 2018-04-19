@@ -342,7 +342,7 @@
 (define-constant +influence-human-sign+             1.0                           :test #'=)
 
 (define-constant +ai-fact-header+ '(:map-under-control
-                                    :average-dmg
+                                    :dmg-ratio
                                     :average-dist
                                     :vulnerables-units
                                     :visible-opponents
