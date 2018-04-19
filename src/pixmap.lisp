@@ -219,11 +219,12 @@
 
 (defgeneric punremultiply-alpha (object))
 
-(defun clear-to-color (pixmap &key (color (ubvec4 0 0 0 255)))
+(defun clear-to-color (pixmap &key (color (ubvec4 0 0 0 255)) (sync-p t))
   (let ((data (data pixmap)))
     (loop for i from 0 below (length data) do
          (setf (elt data i) color))
-    (pixmap:sync-data-to-bits pixmap)
+    (when sync-p
+      (pixmap:sync-data-to-bits pixmap))
     pixmap))
 
 (defmethod papply-kernel-ubvec4 ((object pixmap) kernel &key (round-fn #'identity))
@@ -826,7 +827,10 @@
        (setf average (funcall sum-fn average (matrix-elt object y x))))
     (setf average (funcall div-fn average num-el))
     (etypecase element
-      (ubvec4 average)
+      (ubvec4 (ubvec4 (coerce (elt average 0) 'ubvec4-type)
+                      (coerce (elt average 1) 'ubvec4-type)
+                      (coerce (elt average 2) 'ubvec4-type)
+                      (coerce (elt average 3) 'ubvec4-type)))
       (ivec4 average)
       (vec average)
       (vec4  average))))

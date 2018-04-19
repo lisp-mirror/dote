@@ -57,7 +57,18 @@
           (let ((aabb (ivec4:ivec4 0 0
                                    (1- (pixmap:width texture))
                                    (1- (pixmap:height texture)))))
-            (pixmap:clear-to-color texture :color (pixmap:average-color texture aabb))))
+            (pixmap:clear-to-color texture
+                                   :color  (pixmap:average-color texture aabb)
+                                   :sync-p nil)
+            (matrix:matrix-line-norm texture
+                                     (vec2:vec2 0.0 0.0)
+                                     (vec2:vec2 1.0 1.0)
+                                     (ubvec4:ubvec4 0 0 0 255))
+            (matrix:matrix-line-norm texture
+                                     (vec2:vec2 1.0 0.0)
+                                     (vec2:vec2 0.0 1.0)
+                                     (ubvec4:ubvec4 0 0 0 255))
+            (pixmap:sync-data-to-bits texture)))
       (update-for-rendering texture))))
 
 (defun update-window-for-load (button slot)
