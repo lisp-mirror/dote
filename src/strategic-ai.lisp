@@ -16,19 +16,25 @@
 
 (in-package :strategic-ai)
 
-(define-constant +very-low+                   :very-low  :test #'eq)
+(define-constant +very-low+                   :very-low         :test #'eq)
 
-(define-constant +low+                        :low       :test #'eq)
+(define-constant +low+                        :low              :test #'eq)
 
-(define-constant +medium+                     :medium    :test #'eq)
+(define-constant +medium+                     :medium           :test #'eq)
 
-(define-constant +high+                       :high      :test #'eq)
+(define-constant +high+                       :high             :test #'eq)
 
-(define-constant +very-high+                  :very-high :test #'eq)
+(define-constant +very-high+                  :very-high        :test #'eq)
 
-(define-constant +size-vulnerability-concern+ 2          :test #'eq)
+(define-constant +my-faction+                 :my-faction       :test #'eq)
 
-(define-constant +min-facts-to-build-tree+    300        :test #'=)
+(define-constant +opponent-faction+           :opponent-faction :test #'eq)
+
+(define-constant +size-vulnerability-concern+ 2                 :test #'eq)
+
+(define-constant +min-facts-to-build-tree+    10                :test #'=)
+
+(defparameter    *decision-tree*              nil)
 
 (defun faction-map-under-control-0to1 (influence-map faction)
   (let* ((area        (* (width  influence-map)
@@ -170,11 +176,14 @@
                          :matrix nil))))
 
 (defmethod faction-map-under-control ((object matrix) faction)
-  (declare (ignore faction))
   (let ((sum (reduce #'+ (data object))))
     (if (epsilon= +influence-ai-sign+ (sign sum))
-        +npc-type+
-        +pc-type+)))
+        (if (eq faction +npc-type+) ;; ai rules
+            +my-faction+
+            +opponent-faction+)
+        (if (eq faction +npc-type+) ;; human rules
+            +opponent-faction+
+            +my-faction+))))
 
 (defmethod faction-map-under-control ((object blackboard) faction)
   (faction-map-under-control (faction-influence-map object faction) faction))
@@ -326,25 +335,36 @@
     (mtree:add-child (world:gui world)
                      (train-ai-window:make-train-ai-window (compiled-shaders world)))))
 
+(defun fact-file ()
+  (res:get-resource-file +decision-tree-facts-file+
+                         +decision-tree-data-resource+
+                         :if-does-not-exists nil))
+
 (defun read-facts-file ()
-  (when-let* ((fact-file (res:get-resource-file +decision-tree-facts-file+
-                                                +decision-tree-data-resource+
-                                                :if-does-not-exists nil))
+  (when-let* ((fact-file (fact-file))
               (facts     (fs:read-single-form fact-file)))
     facts))
 
 ;; TODO test needed, probably broken
-(defun build-decision-tree ()
-  (when-let* ((facts     (read-facts-file))
+(defun build-decision-tree (&key (set-parameter t))
+  (when-let* ((fact-file (fact-file))
+              (facts     (read-facts-file))
               (tree-file (res:get-resource-file +decision-tree-file+
                                                 +decision-tree-data-resource+
                                                 :if-does-not-exists :create)))
-    (when (> (length facts)
-             +min-facts-to-build-tree+)
-      (let ((decision-tree (id3:build-tree facts +ai-fact-header+ :prune t)))
+    (when (and (>= (length facts)
+                   +min-facts-to-build-tree+)
+               (fs:file-outdated-p tree-file fact-file))
+      (let ((decision-tree (id3:build-tree (rest facts) ; remove header
+                                           +ai-fact-header+ :prune t)))
         (with-open-file (stream tree-file
                                 :direction         :output
                                 :if-does-not-exist :create
                                 :if-exists         :supersede)
           (format stream "~s" (serialize decision-tree))
+          #+(and debug-mode debug-ai)
+          (misc:dbg "decision tree~%~a~%-> ~a" decision-tree
+                    (fs:file-outdated-p tree-file fact-file))
+          (when set-parameter
+            (setf *decision-tree* decision-tree))
           decision-tree)))))

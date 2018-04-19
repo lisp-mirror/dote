@@ -5404,6 +5404,7 @@
    :+medium+
    :+high+
    :+very-high+
+   :*decision-tree*
    :make-influence-map
    :make-influence-map*
    :make-tension-map*

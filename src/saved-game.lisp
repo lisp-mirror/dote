@@ -540,6 +540,7 @@
   (player-messages-text:init-player-messages-db)
   (resources-utils:init)
   (game-configuration:init)
+  (strategic-ai:build-decision-tree)
   (setf saved-game:*map-loaded-p* nil)
   (sdl2.kit:start)
   (sdl2:gl-set-attr :context-profile-mask  1)
@@ -795,6 +796,7 @@
                       (attack-enemy-bow-positions      blackboard)
                       saved-attack-enemy-bow-positions
                       (attack-enemy-crossbow-positions blackboard)
-                      saved-attack-enemy-crossbow-positions))))
+                      saved-attack-enemy-crossbow-positions)
+                    (strategic-ai:register-ai-tree-data world))))
           (error-message-save-game-outdated window))))
   window)
