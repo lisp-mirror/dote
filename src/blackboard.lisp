@@ -590,13 +590,11 @@
                    (matrix-elt concerning-tiles-facing y x))))
       res)))
 
-;; TODO use decision tree
 (defmethod strategy-decision ((object blackboard))
-  (declare (ignore object))
-  ;; +retreat-strategy+)
-  ;;+explore-strategy+)
-  +attack-strategy+)
-  ;; +defend-strategy+)
+  (with-accessors ((main-state main-state)) object
+    (with-world (world main-state)
+      (let* ((fact (strategic-ai:register-ai-tree-data world +npc-type+)))
+        (id3:take-decision (strategic-ai:current-decision-tree) +ai-fact-header+ fact)))))
 
 (defmethod set-tile-visited ((object blackboard) entity-visiting x y &key (update-infos nil))
   (call-next-method object

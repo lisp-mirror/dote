@@ -534,8 +534,9 @@
 (defmethod test-example ((object decision-tree) attributes example)
   (labels((%test-example (node attributes example)
             (if (leafp node)
-                (progn
-                  (update-decisions-count node (alexandria:lastcar example)))
+                (let ((class (alexandria:lastcar example)))
+                  (update-decisions-count node class)
+                  class)
                 (let* ((res (example-get-by-attribute-value example attributes (data node)))
                        (res-path (if (numberp res)
                                      (if (<= res (first (path node)))
@@ -544,6 +545,9 @@
                                      (position res (path node)))))
                   (%test-example (elt (children node) res-path) attributes example)))))
     (%test-example object attributes example)))
+
+(defun take-decision (tree attributes facts)
+  (test-example tree attributes facts))
 
 (defmethod pachinko ((object decision-tree) examples attributes &key (incremental nil))
   (when (not incremental)

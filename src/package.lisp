@@ -5199,6 +5199,7 @@
   (:export
    :decision-tree
    :path
+   :take-decision
    :build-tree))
 
 (defpackage :influence-map
@@ -5415,6 +5416,7 @@
    :+high+
    :+very-high+
    :*decision-tree*
+   :current-decision-tree
    :make-influence-map
    :make-influence-map*
    :make-tension-map*
@@ -5430,6 +5432,7 @@
    :visible-opponents
    :visible-friends
    :register-ai-tree-data
+   :save-ai-tree-data
    :register-strategy-from-human
    :dump-ai-facts
    :read-facts-file

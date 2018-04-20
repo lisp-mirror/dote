@@ -32,7 +32,7 @@
 
 (define-constant +size-vulnerability-concern+ 2                 :test #'eq)
 
-(define-constant +min-facts-to-build-tree+    10                :test #'=)
+(define-constant +min-facts-to-build-tree+    150               :test #'=)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun fallback-decision-tree ()
@@ -59,6 +59,9 @@
                                                                (make-tree +attack-strategy+)))))))))
 
   (defparameter *decision-tree* (fallback-decision-tree)))
+
+(defun current-decision-tree ()
+  *decision-tree*)
 
 (defun faction-map-under-control-0to1 (influence-map faction)
   (let* ((area        (* (width  influence-map)
@@ -312,7 +315,34 @@
     (with-open-file (stream dump-file :direction :output :if-exists :supersede)
       (format stream "~s~%" data))))
 
-(defun register-ai-tree-data (world)
+(defun register-ai-tree-data (world faction)
+  (with-accessors ((main-state main-state)) world
+    (with-accessors ((blackboard blackboard)) main-state
+      (let* ((opposite-faction  (faction->opposite-faction faction))
+             (influence-map     (strategic-ai:faction-influence-map blackboard
+                                                                    faction))
+             (map-under-control (strategic-ai:faction-map-under-control influence-map
+                                                                        faction))
+             (dmg-ratio         (strategic-ai:dmg-points-ratio   blackboard faction))
+             (average-dist      (strategic-ai:average-cost-faction blackboard faction))
+             (vulnerables-units (length (strategic-ai:entities-vulnerables blackboard
+                                                                           faction)))
+             (visible-opponents (length (strategic-ai:visible-opponents    blackboard
+                                                                           opposite-faction)))
+             (visible-pc        (length (strategic-ai:visible-opponents    blackboard
+                                                                           faction)))
+             (wizard-dmg        (strategic-ai:average-dmg-wizards          blackboard
+                                                                           faction))
+             (new-row           (list map-under-control
+                                      dmg-ratio
+                                      average-dist
+                                      vulnerables-units
+                                      visible-opponents
+                                      visible-pc
+                                      wizard-dmg)))
+        new-row))))
+
+(defun save-ai-tree-data (world)
   (flet ((init-data (file)
            (with-open-file (s file :direction :io :if-exists :overwrite)
              (when s
@@ -326,31 +356,11 @@
                (gconf:config-train-ai))
       (with-accessors ((main-state main-state)) world
         (with-accessors ((blackboard blackboard)) main-state
-          (let* ((influence-map     (strategic-ai:faction-influence-map blackboard
-                                                                        +pc-type+))
-                 (map-under-control (strategic-ai:faction-map-under-control influence-map
-                                                                            +pc-type+))
-                 (dmg-ratio         (strategic-ai:dmg-points-ratio   blackboard +pc-type+))
-                 (average-dist      (strategic-ai:average-cost-faction blackboard +pc-type+))
-                 (vulnerables-units (length (strategic-ai:entities-vulnerables blackboard
-                                                                               +pc-type+)))
-                 (visible-opponents (length (strategic-ai:visible-opponents    blackboard
-                                                                               +npc-type+)))
-                 (visible-pc        (length (strategic-ai:visible-opponents    blackboard
-                                                                               +pc-type+)))
-                 (wizard-dmg        (strategic-ai:average-dmg-wizards          blackboard
-                                                                               +pc-type+))
-                 (new-row           (list map-under-control
-                                          dmg-ratio
-                                          average-dist
-                                          vulnerables-units
-                                          visible-opponents
-                                          visible-pc
-                                          wizard-dmg))
-                 (dump-file         (res:get-resource-file +decision-tree-facts-file+
-                                                           +decision-tree-data-resource+
-                                                           :if-does-not-exists :create))
-                 (data              (init-data dump-file)))
+          (let* ((new-row   (register-ai-tree-data world +pc-type+))
+                 (dump-file (res:get-resource-file +decision-tree-facts-file+
+                                                   +decision-tree-data-resource+
+                                                   :if-does-not-exists :create))
+                 (data      (init-data dump-file)))
             (setf data (append data (list new-row)))
             (if (dump-ai-facts data)
                 data
