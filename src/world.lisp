@@ -328,6 +328,7 @@
   (with-accessors ((main-state main-state)) object
     ;;(tg:gc :full t)
     (strategic-ai:register-ai-tree-data object)
+    (strategic-ai:register-strategy-from-human object)
     (flet ((%process-postponed-messages (entity)
              (mesh:process-postponed-messages entity)))
       (loop-player-entities main-state #'%process-postponed-messages)
@@ -349,7 +350,6 @@
     (remove-all-removeable-from-gui object)
     (clean-characters-logs          object ai-logger:+ai-log-clean-end-turn+)
     ;;(remove-entity-if (gui object) #'(lambda (a) (typep a 'widget:message-window)))
-    (strategic-ai:register-strategy-from-human object)
     (incf (game-turn (main-state object))) ;; new turn starts here!
     nil))
 

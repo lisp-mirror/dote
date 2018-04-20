@@ -707,14 +707,55 @@
           (original-spell-recharge-count saved-furniture))
     game-state))
 
-(defun load-game (window resource-dir)
-  (let ((saved-dump (make-instance 'saved-game))
-        (saved-file (res:get-resource-file +map-saved-filename+
-                                           resource-dir
-                                           :if-does-not-exists :error)))
-    (setf saved-dump (deserialize saved-dump saved-file))
-    (with-accessors ((delta-tiles       delta-tiles)
-                     (original-map-file original-map-file)
+(defun restore-entities (window saved-dump)
+  (with-accessors ((delta-tiles delta-tiles)) saved-dump
+    (with-accessors ((window-game-state     main-window:window-game-state)
+                     (root-compiled-shaders main-window:root-compiled-shaders)
+                     (world                 main-window:world)) window
+      (with-accessors ((map-state  map-state)
+                       (blackboard blackboard)) window-game-state
+        (loop-matrix (delta-tiles x y)
+           (cond
+             ((delete-in-map-destination-p saved-dump map-state x y)
+              (delete-in-map-destination window-game-state x y))
+             ((entity-ai@pos-p saved-dump x y)
+              (place-player-in-map-destination world
+                                               saved-dump
+                                               x y
+                                               +npc-type+
+                                               root-compiled-shaders))
+             ((entity-player@pos-p saved-dump x y)
+              (place-player-in-map-destination world
+                                               saved-dump
+                                               x y
+                                               +pc-type+
+                                               root-compiled-shaders))
+             ((trap@pos-p saved-dump x y)
+              (place-trap-in-map-destination window-game-state saved-dump x y
+                                             root-compiled-shaders))
+             ((container@pos-p saved-dump x y)
+              (place-container-in-map-destination window-game-state
+                                                  saved-dump
+                                                  x y))
+             ((door@pos-p saved-dump x y)
+              (restore-door-status window-game-state saved-dump x y))
+             ((magic-furniture@pos-p saved-dump x y)
+              (restore-magic-furniture-status window-game-state
+                                              saved-dump
+                                              x y))))))))
+
+(defun restore-damage (window saved-dump)
+  ;; restore dmg points for wall and like
+  (with-accessors ((dmg-points dmg-points)) saved-dump
+    (with-accessors ((window-game-state main-window:window-game-state)) window
+      (loop-matrix (dmg-points x y)
+         (let ((new-dmg-points (matrix-elt dmg-points y x)))
+           (when new-dmg-points
+             (let ((entity (entity-in-pos window-game-state x y)))
+               (setf (current-damage-points (ghost entity)) new-dmg-points))))))))
+
+(defun restore-blackboard (blackboard saved-dump)
+  (with-accessors ((original-map-file original-map-file)
                      (dmg-points dmg-points)
                      (saved-exhausted-fountains-ids         saved-exhausted-fountains-ids)
                      (saved-visited-tiles                   saved-visited-tiles)
@@ -727,6 +768,24 @@
                      (saved-attack-enemy-bow-positions      saved-attack-enemy-bow-positions)
                      (saved-attack-enemy-crossbow-positions saved-attack-enemy-crossbow-positions))
         saved-dump
+    (setf (exhausted-fountains-ids         blackboard) saved-exhausted-fountains-ids
+          (visited-tiles                   blackboard) saved-visited-tiles
+          (unexplored-layer                blackboard) saved-unexplored-layer
+          (concerning-tiles                blackboard) saved-concerning-tiles
+          (concerning-tiles-invalicables   blackboard) saved-concerning-tiles-invalicables
+          (concerning-tiles-facing         blackboard) saved-concerning-tiles-facing
+          (attack-enemy-melee-positions    blackboard) saved-attack-enemy-melee-positions
+          (attack-enemy-pole-positions     blackboard) saved-attack-enemy-pole-positions
+          (attack-enemy-bow-positions      blackboard) saved-attack-enemy-bow-positions
+          (attack-enemy-crossbow-positions blackboard) saved-attack-enemy-crossbow-positions)))
+
+(defun load-game (window resource-dir)
+  (let ((saved-dump (make-instance 'saved-game))
+        (saved-file (res:get-resource-file +map-saved-filename+
+                                           resource-dir
+                                           :if-does-not-exists :error)))
+    (setf saved-dump (deserialize saved-dump saved-file))
+    (with-accessors ((original-map-file original-map-file)) saved-dump
       (if (not (fs:file-outdated-p saved-file
                                    (load-level:get-level-file-abs-path original-map-file)))
           (progn
@@ -741,62 +800,13 @@
                              (world                 main-window:world)) window
               (with-accessors ((map-state  map-state)
                                (blackboard blackboard)) window-game-state
-                (loop-matrix (delta-tiles x y)
-                   (cond
-                     ((delete-in-map-destination-p saved-dump map-state x y)
-                      (delete-in-map-destination window-game-state x y))
-                     ((entity-ai@pos-p saved-dump x y)
-                      (place-player-in-map-destination world
-                                                       saved-dump
-                                                       x y
-                                                       +npc-type+
-                                                       root-compiled-shaders))
-                     ((entity-player@pos-p saved-dump x y)
-                      (place-player-in-map-destination world
-                                                       saved-dump
-                                                       x y
-                                                       +pc-type+
-                                                       root-compiled-shaders))
-                     ((trap@pos-p saved-dump x y)
-                      (place-trap-in-map-destination window-game-state saved-dump x y
-                                                     root-compiled-shaders))
-                     ((container@pos-p saved-dump x y)
-                      (place-container-in-map-destination window-game-state
-                                                          saved-dump
-                                                          x y))
-                     ((door@pos-p saved-dump x y)
-                      (restore-door-status window-game-state saved-dump x y))
-                     ((magic-furniture@pos-p saved-dump x y)
-                      (restore-magic-furniture-status window-game-state
-                                                      saved-dump
-                                                      x y))))
+                (restore-entities window saved-dump)
                 ;; restore dmg points for wall and like
-                (loop-matrix (dmg-points x y)
-                   (let ((new-dmg-points (matrix-elt dmg-points y x)))
-                     (when new-dmg-points
-                       (let ((entity (entity-in-pos window-game-state x y)))
-                         (setf (current-damage-points (ghost entity)) new-dmg-points)))))
+                (restore-damage window saved-dump)
                 ;; restore blackboard
-                (setf (exhausted-fountains-ids         blackboard)
-                      saved-exhausted-fountains-ids
-                      (visited-tiles                   blackboard)
-                      saved-visited-tiles
-                      (unexplored-layer                blackboard)
-                      saved-unexplored-layer
-                      (concerning-tiles                blackboard)
-                      saved-concerning-tiles
-                      (concerning-tiles-invalicables   blackboard)
-                      saved-concerning-tiles-invalicables
-                      (concerning-tiles-facing         blackboard)
-                      saved-concerning-tiles-facing
-                      (attack-enemy-melee-positions    blackboard)
-                      saved-attack-enemy-melee-positions
-                      (attack-enemy-pole-positions     blackboard)
-                      saved-attack-enemy-pole-positions
-                      (attack-enemy-bow-positions      blackboard)
-                      saved-attack-enemy-bow-positions
-                      (attack-enemy-crossbow-positions blackboard)
-                      saved-attack-enemy-crossbow-positions)
-                    (strategic-ai:register-ai-tree-data world))))
+                (restore-blackboard blackboard saved-dump)
+                ;; start a new turn
+                (let ((start-event (make-instance 'game-event:start-turn)))
+                  (game-event:propagate-start-turn start-event)))))
           (error-message-save-game-outdated window))))
   window)

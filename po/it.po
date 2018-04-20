@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dote 0.0.1\n"
 "Report-Msgid-Bugs-To: cage@katamail.com\n"
-"POT-Creation-Date: 2018-04-18 20:19+0200\n"
-"PO-Revision-Date: 2018-04-18 20:21+0200\n"
+"POT-Creation-Date: 2018-04-20 14:55+0200\n"
+"PO-Revision-Date: 2018-04-20 15:14+0200\n"
 "Last-Translator: cage <cage@katamail.com>\n"
 "Language-Team: Italian\n"
 "Language: it\n"
@@ -437,7 +437,7 @@ msgid "Trap found! deactivate (chance ~a)?"
 msgstr "Attivata una trappola! Provare a disinnescarla (possibilita' ~a)"
 
 #: src/md2-mesh.lisp:492 src/world.lisp:981 src/gui/widget.lisp:4140
-#: src/gui/widget.lisp:4720 src/gui/load-save-window.lisp:128
+#: src/gui/widget.lisp:4720 src/gui/load-save-window.lisp:143
 msgid "OK"
 msgstr "OK"
 
@@ -775,11 +775,11 @@ msgid "Generate new"
 msgstr "Genera nuovo"
 
 #: src/gui/widget.lisp:3213 src/gui/configuration-windows.lisp:272
-#: src/gui/configuration-windows.lisp:442 src/gui/load-save-window.lisp:208
+#: src/gui/configuration-windows.lisp:442 src/gui/load-save-window.lisp:223
 msgid "Save"
 msgstr "Salva"
 
-#: src/gui/widget.lisp:3224 src/gui/load-save-window.lisp:190
+#: src/gui/widget.lisp:3224 src/gui/load-save-window.lisp:205
 msgid "Load"
 msgstr "Carica"
 
@@ -875,44 +875,44 @@ msgstr "Debug"
 msgid "Game Configuration"
 msgstr "Configurazione del Gioco"
 
-#: src/gui/load-save-window.lisp:65
+#: src/gui/load-save-window.lisp:81
 msgid "No game is saved here"
 msgstr "Nessuna partita e' stata salvata in questa posizione"
 
-#: src/gui/load-save-window.lisp:124
+#: src/gui/load-save-window.lisp:139
 #, lisp-format
 msgid "Game saved in ~a"
 msgstr "Partita salvata in ~a"
 
-#: src/gui/load-save-window.lisp:126
+#: src/gui/load-save-window.lisp:141
 msgid "Success"
 msgstr "Successo"
 
-#: src/gui/load-save-window.lisp:157
+#: src/gui/load-save-window.lisp:172
 msgid "Slot 1"
 msgstr "Posizione 1"
 
-#: src/gui/load-save-window.lisp:168
+#: src/gui/load-save-window.lisp:183
 msgid "Slot 2"
 msgstr "Posizione 2"
 
-#: src/gui/load-save-window.lisp:179
+#: src/gui/load-save-window.lisp:194
 msgid "Slot 3"
 msgstr "Posizione 3"
 
-#: src/gui/load-save-window.lisp:207
+#: src/gui/load-save-window.lisp:222
 msgid "Save game"
 msgstr "Salva la partita"
 
-#: src/gui/load-save-window.lisp:221
+#: src/gui/load-save-window.lisp:236
 msgid "Load game"
 msgstr "Carica la partita"
 
 #: src/gui/train-ai-window.lisp:43
-msgid "Choose the strategy you used in this turn, then close."
+msgid "Choose the strategy you are going to use in this turn, then close."
 msgstr ""
-"Scegli la strategia che hai attuato in questo turno e chiudi la finestra "
-"appena fatto."
+"Scegli la strategia che attuerai in questo turno e chiudi la finestra appena "
+"fatto."
 
 #: src/gui/train-ai-window.lisp:68
 msgid "Explore"

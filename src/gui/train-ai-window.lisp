@@ -40,7 +40,7 @@
         t)))
 
 (defun help-msg ()
-  (_ "Choose the strategy you used in this turn, then close."))
+  (_ "Choose the strategy you are going to use in this turn, then close."))
 
 (defclass train-ai-window (window)
   ((strategy-chosen

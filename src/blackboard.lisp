@@ -1488,9 +1488,9 @@ values nil, i. e. the ray is not blocked"
         (setf all-ai-entities (remove-if #'entity-dead-p all-ai-entities))
         ;;;;;;;; TEST!!!!!!!!!!!!!!
         ;; removing wizards
-        (setf all-ai-entities (remove-if #'(lambda (e)
-                                             (character:pclass-of-magic-user-p (ghost e)))
-                                   all-ai-entities))
+        ;; (setf all-ai-entities (remove-if #'(lambda (e)
+        ;;                                      (character:pclass-of-magic-user-p (ghost e)))
+        ;;                            all-ai-entities))
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         (setf ai-entities-action-order all-ai-entities)))))
 
