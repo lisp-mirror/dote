@@ -196,6 +196,14 @@
    :+exp-change-level-thrs+
    :+influence-ai-sign+
    :+influence-human-sign+
+   :+ai-fact-map-under-control+
+   :+ai-fact-dmg-ratio+
+   :+ai-fact-average-dist+
+   :+ai-fact-vulnerables-units+
+   :+ai-fact-visible-opponents+
+   :+ai-fact-visible-friends+
+   :+ai-fact-wizard-dmg+
+   :+ai-decision-class+
    :+ai-fact-header+))
 
 (defpackage :profiling
@@ -5189,6 +5197,8 @@
         :mtree-utils
         :interfaces)
   (:export
+   :decision-tree
+   :path
    :build-tree))
 
 (defpackage :influence-map

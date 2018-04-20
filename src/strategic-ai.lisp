@@ -34,7 +34,31 @@
 
 (define-constant +min-facts-to-build-tree+    10                :test #'=)
 
-(defparameter    *decision-tree*              nil)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun fallback-decision-tree ()
+    (flet ((make-tree (data &optional (path nil) (children nil))
+             (make-instance 'id3:decision-tree
+                            :data     data
+                            :path     path
+                            :children children)))
+      (make-tree +ai-fact-visible-opponents+
+                 (list 2.0 2.0)
+                 (vector (make-tree +ai-fact-visible-opponents+
+                                    (list 1.0 1.0)
+                                    (vector (make-tree +explore-strategy+)
+                                            (make-tree +attack-strategy+)))
+                         (make-tree +ai-fact-visible-friends+
+                                    (list 2.0 2.0 )
+                                    (vector (make-tree +ai-fact-vulnerables-units+
+                                                       (list 1.0 1.0)
+                                                       (vector (make-tree +attack-strategy+)
+                                                               (make-tree +retreat-strategy+)))
+                                            (make-tree +ai-fact-dmg-ratio+
+                                                       (list 0.2 0.2)
+                                                       (vector (make-tree +retreat-strategy+)
+                                                               (make-tree +attack-strategy+)))))))))
+
+  (defparameter *decision-tree* (fallback-decision-tree)))
 
 (defun faction-map-under-control-0to1 (influence-map faction)
   (let* ((area        (* (width  influence-map)
