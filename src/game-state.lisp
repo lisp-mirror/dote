@@ -1189,8 +1189,8 @@
       (let ((pos (elt path idx)))
         (2d-utils:displace-2d-vector (pos x y)
           (let ((cost (get-cost object x y)))
-            (<= (character:current-movement-points (ghost entity))
-                cost))))))
+            (< (character:current-movement-points (ghost entity))
+               cost))))))
 
 (defmethod skydome-bottom-color ((object game-state))
   (pixmap:skydome-bottom-color (game-hour object)))

@@ -288,16 +288,16 @@
   "just for debugging"
   (with-accessors ((main-influence-map main-influence-map)) blackboard
     (setf main-influence-map (strategic-ai:faction-influence-map blackboard +pc-type+))
-    (let ((matrix:*truncate-matrix-value-when-printing* t))
-      (misc:dbg "inf dump~%~a~%presence pc ~a npc ~a dbg ~a ~a avg dist ~a ~%vuln ~a~%vis ~a"
-                main-influence-map
-                (strategic-ai:faction-map-under-control main-influence-map +pc-type+)
-                (strategic-ai:faction-map-under-control main-influence-map +npc-type+)
-                (strategic-ai:dmg-points-ratio    blackboard +pc-type+)
-                (strategic-ai:dmg-points-ratio     blackboard +npc-type+)
-                (strategic-ai:average-cost-faction blackboard +npc-type+)
-                (strategic-ai:entities-vulnerables blackboard +pc-type+)
-                (strategic-ai:visible-opponents    blackboard +pc-type+)))
+    ;; (let ((matrix:*truncate-matrix-value-when-printing* t))
+    ;;   (misc:dbg "inf dump~%~a~%presence pc ~a npc ~a dbg ~a ~a avg dist ~a ~%vuln ~a~%vis ~a"
+    ;;             main-influence-map
+    ;;             (strategic-ai:faction-map-under-control main-influence-map +pc-type+)
+    ;;             (strategic-ai:faction-map-under-control main-influence-map +npc-type+)
+    ;;             (strategic-ai:dmg-points-ratio    blackboard +pc-type+)
+    ;;             (strategic-ai:dmg-points-ratio     blackboard +npc-type+)
+    ;;             (strategic-ai:average-cost-faction blackboard +npc-type+)
+    ;;             (strategic-ai:entities-vulnerables blackboard +pc-type+)
+    ;;             (strategic-ai:visible-opponents    blackboard +pc-type+)))
     blackboard))
 
 (defmethod make-influence-map ((object blackboard) &key (matrix nil))
@@ -598,9 +598,7 @@
                                           +ai-fact-header+
                                           fact)))
         #+(and debug-mode debug-ai)
-        (misc:dbg "tree ~a% fact ~a~% strategy is ~a" (strategic-ai:current-decision-tree)
-                  fact
-                  decision)
+        (misc:dbg "fact is ~a strategy is ~a" fact decision)
         decision))))
 
 (defmethod set-tile-visited ((object blackboard) entity-visiting x y &key (update-infos nil))
@@ -1492,10 +1490,10 @@ values nil, i. e. the ray is not blocked"
                                             (ai-utils:combined-power-compare-clsr nil))))
         (setf all-ai-entities (remove-if #'entity-dead-p all-ai-entities))
         ;;;;;;;; TEST!!!!!!!!!!!!!!
-        ;; removing wizards
-        ;; (setf all-ai-entities (remove-if #'(lambda (e)
-        ;;                                      (character:pclass-of-magic-user-p (ghost e)))
-        ;;                            all-ai-entities))
+        ;; removing non wizards
+        (setf all-ai-entities (remove-if-not #'(lambda (e)
+                                                 (character:pclass-of-magic-user-p (ghost e)))
+                                             all-ai-entities))
         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         (setf ai-entities-action-order all-ai-entities)))))
 
@@ -1617,7 +1615,7 @@ values nil, i. e. the ray is not blocked"
                                                                  attacker-ghost
                                                                  goal-tiles-pos
                                                                  :key #'identity))
-        (let ((goal-structs (map 'vector
+        (let ((goal-structs (map 'list
                                  (goal-pos->spell-struct-fn blackboard
                                                            concerning-smoothed
                                                            attacker-pos)
@@ -1632,7 +1630,7 @@ values nil, i. e. the ray is not blocked"
                                                              spell-pos-cost))))
           ;; (misc:dbg "~a" goal-structs)
           ;; retun the positions and the structs as well
-          (values (map 'vector #'spell-pos-tile goal-structs)
+          (values (map 'list #'spell-pos-tile goal-structs)
                   goal-structs))))))
 
 (defmacro with-*-spell-goal-pos-skeleton (attacker defender

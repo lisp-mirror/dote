@@ -36,7 +36,7 @@
                                  ;; managed by has-enough-sp-damage-p
                                  has-enough-sp-damage-p)
          :effects               ((:curb-threat t))
-         :cost                  2)
+         :cost                  3)
   (:name :go-to-damage-spell-pos
          :preconditions         ()
          :effects               ((:near-enemy-damage-spell t))

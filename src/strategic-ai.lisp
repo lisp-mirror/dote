@@ -36,27 +36,33 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun fallback-decision-tree ()
-    (flet ((make-tree (data &optional (path nil) (children nil))
-             (make-instance 'id3:decision-tree
-                            :data     data
-                            :path     path
-                            :children children)))
+    (labels ((make-tree (data &optional (path nil) (children nil))
+               (make-instance 'id3:decision-tree
+                              :data     data
+                              :path     path
+                              :children children))
+             (explore-decision ()
+               (make-tree +explore-strategy+))
+             (attack-decision ()
+               (make-tree +attack-strategy+))
+             (retreat-decision ()
+               (make-tree +retreat-strategy+)))
       (make-tree +ai-fact-visible-opponents+
-                 (list 2.0 2.0)
+                 (list 1.0 1.0)
                  (vector (make-tree +ai-fact-visible-opponents+
-                                    (list 1.0 1.0)
-                                    (vector (make-tree +explore-strategy+)
-                                            (make-tree +attack-strategy+)))
+                                    (list 0.0 0.0)
+                                    (vector (explore-decision)
+                                            (attack-decision)))
                          (make-tree +ai-fact-visible-friends+
                                     (list 2.0 2.0 )
                                     (vector (make-tree +ai-fact-vulnerables-units+
                                                        (list 1.0 1.0)
-                                                       (vector (make-tree +attack-strategy+)
-                                                               (make-tree +retreat-strategy+)))
+                                                       (vector (attack-decision)
+                                                               (retreat-decision)))
                                             (make-tree +ai-fact-dmg-ratio+
                                                        (list 0.2 0.2)
-                                                       (vector (make-tree +retreat-strategy+)
-                                                               (make-tree +attack-strategy+)))))))))
+                                                       (vector (retreat-decision)
+                                                               (attack-decision)))))))))
 
   (defparameter *decision-tree* (fallback-decision-tree)))
 
@@ -318,8 +324,7 @@
 (defun register-ai-tree-data (world faction)
   (with-accessors ((main-state main-state)) world
     (with-accessors ((blackboard blackboard)) main-state
-      (let* ((opposite-faction  (faction->opposite-faction faction))
-             (influence-map     (strategic-ai:faction-influence-map blackboard
+      (let* ((influence-map     (strategic-ai:faction-influence-map blackboard
                                                                     faction))
              (map-under-control (strategic-ai:faction-map-under-control influence-map
                                                                         faction))
@@ -328,8 +333,8 @@
              (vulnerables-units (length (strategic-ai:entities-vulnerables blackboard
                                                                            faction)))
              (visible-opponents (length (strategic-ai:visible-opponents    blackboard
-                                                                           opposite-faction)))
-             (visible-pc        (length (strategic-ai:visible-opponents    blackboard
+                                                                           faction)))
+             (visible-pc        (length (strategic-ai:visible-friends      blackboard
                                                                            faction)))
              (wizard-dmg        (strategic-ai:average-dmg-wizards          blackboard
                                                                            faction))
@@ -382,7 +387,6 @@
               (facts     (fs:read-single-form fact-file)))
     facts))
 
-;; TODO test needed, probably broken
 (defun build-decision-tree (&key (set-parameter t))
   (when-let* ((fact-file (fact-file))
               (facts     (read-facts-file))

@@ -522,7 +522,7 @@
     (adjust-window-h frame)))
 
 (defun ai-button-w ()
-  (d* 2.0 (square-button-size *reference-sizes*)))
+  (d* 3.0 (square-button-size *reference-sizes*)))
 
 (defun ai-button-h ()
   (checkbutton-h *reference-sizes*))
