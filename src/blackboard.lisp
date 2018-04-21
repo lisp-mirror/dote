@@ -593,8 +593,15 @@
 (defmethod strategy-decision ((object blackboard))
   (with-accessors ((main-state main-state)) object
     (with-world (world main-state)
-      (let* ((fact (strategic-ai:register-ai-tree-data world +npc-type+)))
-        (id3:take-decision (strategic-ai:current-decision-tree) +ai-fact-header+ fact)))))
+      (let* ((fact     (strategic-ai:register-ai-tree-data world +npc-type+))
+             (decision (id3:take-decision (strategic-ai:current-decision-tree)
+                                          +ai-fact-header+
+                                          fact)))
+        #+(and debug-mode debug-ai)
+        (misc:dbg "tree ~a% fact ~a~% strategy is ~a" (strategic-ai:current-decision-tree)
+                  fact
+                  decision)
+        decision))))
 
 (defmethod set-tile-visited ((object blackboard) entity-visiting x y &key (update-infos nil))
   (call-next-method object

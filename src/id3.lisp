@@ -536,7 +536,7 @@
             (if (leafp node)
                 (let ((class (alexandria:lastcar example)))
                   (update-decisions-count node class)
-                  class)
+                  (data node))
                 (let* ((res (example-get-by-attribute-value example attributes (data node)))
                        (res-path (if (numberp res)
                                      (if (<= res (first (path node)))
