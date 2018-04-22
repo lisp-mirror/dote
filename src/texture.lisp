@@ -361,6 +361,15 @@
     (or found
         (allocate-texture handle))))
 
+(defun replace-texture (old-texture new-texture)
+  (let ((pos (position-if #'(lambda (texture) (= (handle texture)
+                                                 (handle old-texture)))
+                          *texture-factory-db*)))
+    (if pos
+        (setf (elt *texture-factory-db* pos) new-texture)
+        (error "texture not found"))
+    new-texture))
+
 (defun list-of-texture-by-tag (tag)
   (remove-if #'(lambda (texture)
                  (or (= (length (tags texture)) 0)

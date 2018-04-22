@@ -414,6 +414,9 @@
                      (full-screen-masks:make-burn-mask
                       (level-name (main-state world))
                       (level-name-color (main-state world))))
+    (mtree:add-child (world:gui world)
+                     (full-screen-masks:make-fade-curtain root-compiled-shaders
+                                                          :direction :out))
     (setf (interfaces:compiled-shaders (world:gui world)) root-compiled-shaders)
     (setf saved-game:*map-loaded-p* t)
     ;; workaround! approx-terrain-height@pos  fails if we do  not call

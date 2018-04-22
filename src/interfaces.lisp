@@ -112,6 +112,8 @@
 (defmethod copy-flat :after ((object renderizable))
   (with-simple-copy-flat (object 'renderizable)))
 
+(defgeneric make-data-for-opengl (object))
+
 (defgeneric prepare-for-rendering (object))
 
 (defgeneric update-for-rendering (object))

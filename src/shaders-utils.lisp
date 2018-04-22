@@ -569,6 +569,15 @@ active program (set by sdk2.kit:use-program)."
                 :frame-idx)
      (:shaders :vertex-shader   ,(get-shader-source "animated-icon.vert")
                :fragment-shader ,(get-shader-source "animated-icon.frag")))
+    (:fade
+     (:uniforms :modelview-matrix
+                :proj-matrix
+                :fade-color
+                ;;:texture-object
+                :alpha
+                :time)
+     (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
+               :fragment-shader ,(get-shader-source "fade.frag")))
     (:tree-impostor
      (:uniforms :modelview-matrix
                 :proj-matrix
@@ -637,7 +646,6 @@ active program (set by sdk2.kit:use-program)."
                 :time)
       (:shaders :vertex-shader   ,(get-shader-source "generic-particle-cyl.vert")
                 :fragment-shader ,(get-shader-source "aerial-explosion.frag")))
-
     ;;;;; transform feedback
     (:array-lerp
      (:uniforms :w)

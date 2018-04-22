@@ -4692,7 +4692,8 @@
    :make-turn-billboard-ai
    :make-turn-billboard-human
    :enqueue-turn-billboard-ai
-   :enqueue-turn-billboard-human))
+   :enqueue-turn-billboard-human
+   :make-fade-curtain))
 
 (defpackage :billboard
   (:use :cl

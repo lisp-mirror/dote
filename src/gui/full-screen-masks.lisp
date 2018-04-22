@@ -1,5 +1,5 @@
 ;; dawn of the Era: a tactical game.
-;; Copyright (C) 2015  cage
+;; Copyright (C) 2018  cage
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -337,8 +337,7 @@
                    (end-of-life-callback end-of-life-callback)) object
     (declare (optimize (debug 0) (speed 3) (safety 0)))
     (declare (desired-type dt el-time offset animation-speed start-time))
-    (setf el-time (d+ el-time
-                      dt))
+    (setf el-time (d+ el-time dt))
     (let ((p (normalize-value-in-range el-time start-time end-time)))
       (setf offset
             (d+ offset (d* (turn-billboard-v-fn p) animation-speed dt)))
@@ -421,3 +420,113 @@
 
 (defun enqueue-turn-billboard-human (world)
   (enqueue-turn-billboard-* world #'make-turn-billboard-human))
+
+(defclass fade-curtain (widget inner-animation end-life-trigger)
+  ((end-time
+    :initform 2.5
+    :initarg  :end-time
+    :accessor end-time)
+   (fading-fn
+    :initform #'(lambda (time) (smoothstep-interpolate 0.0 1.0 time))
+    :initarg  :fading-fn
+    :accessor fading-fn)
+   (stopping-fn
+    :initform #'(lambda (alpha) (d> alpha 0.9999))
+    :initarg  :stopping-fn
+    :accessor stopping-fn)
+   (color
+    :initform (vec4 1.0 0.0 1.0 1.0)
+    :initarg  :color
+    :accessor color)
+   (alpha
+    :initform 0.0
+    :initarg  :alpha
+    :accessor alpha)))
+
+(defmethod initialize-instance :after ((object fade-curtain) &key &allow-other-keys)
+  (with-accessors ((width width)
+                   (height height)
+                   (state state)) object
+    (add-quad-for-widget object)
+    (transform-vertices object (sb-cga:scale* (width object) (height object) 1.0))
+    (prepare-for-rendering object)
+    (setf (end-of-life-callback object)
+          #'(lambda () (widget:hide-and-remove-from-parent object nil)))))
+
+(defmethod calculate :after ((object fade-curtain) dt)
+  (with-accessors ((animation-speed      animation-speed)
+                   (el-time              el-time)
+                   (alpha                alpha)
+                   (fading-fn            fading-fn)
+                   (end-of-life-callback end-of-life-callback)) object
+    (declare (optimize (debug 0) (speed 3) (safety 0)))
+    (declare (desired-type dt el-time animation-speed))
+    (declare (function fading-fn))
+    (setf el-time (d+ el-time (d* animation-speed dt)))
+    (setf alpha  (funcall fading-fn el-time))
+    (with-maybe-trigger-end-of-life (object (removeable-from-world-p object)))))
+
+(defmethod render ((object fade-curtain) renderer)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((vbo vbo)
+                   (vao vao)
+                   (texture-object texture-object)
+                   (projection-matrix projection-matrix)
+                   (model-matrix model-matrix)
+                   (view-matrix view-matrix)
+                   (compiled-shaders compiled-shaders)
+                   (triangles triangles)
+                   (material-params material-params)
+                   (color   color)
+                   (alpha   alpha)
+                   (el-time el-time)) object
+    (declare (texture:texture texture-object))
+    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
+    (declare (list triangles vao vbo))
+    (declare (desired-type alpha))
+    (declare (vec4 color))
+    (with-camera-view-matrix (camera-vw-matrix renderer)
+      (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+        (cl-gl-utils:with-depth-disabled
+          (cl-gl-utils:with-blending
+            (gl:blend-func :src-alpha :one-minus-src-alpha)
+            (use-program compiled-shaders :fade-from-black)
+            ;; (gl:active-texture :texture0)
+            ;; (texture:bind-texture texture-object)
+            ;; (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+            (uniformf compiled-shaders  :alpha (clamp alpha 0.0 1.0))
+            (uniformf compiled-shaders  :time  el-time)
+            (uniformfv compiled-shaders :fade-color color)
+            (uniform-matrix compiled-shaders :modelview-matrix 4
+                            (vector (sb-cga:matrix* camera-vw-matrix
+                                                    (elt view-matrix 0)
+                                                    (elt model-matrix 0)))
+                            nil)
+            (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+            (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+            (gl:draw-arrays :triangles 0 (* 3 (length triangles)))))))))
+
+(defmethod removeable-from-world-p ((object fade-curtain))
+  (with-accessors ((alpha       alpha)
+                   (stopping-fn stopping-fn)) object
+    (funcall stopping-fn alpha)))
+
+(defun make-fade-curtain (compiled-shaders
+                          &key (speed 5e-1) (color (vec4 0.0 0.0 0.0 0.0))
+                            (direction :in))
+  (make-instance 'fade-curtain
+                    :fading-fn       (if (eq direction :in)
+                                         #'(lambda (time)
+                                             (smoothstep-interpolate 0.0 1.0 time))
+                                         #'(lambda (time)
+                                             (d- 1.0 (smoothstep-interpolate 0.0 1.0 time))))
+                    :stopping-fn     (if (eq direction :in)
+                                         #'(lambda (alpha) (d> alpha 0.9999))
+                                         #'(lambda (alpha) (d< alpha 1e-5)))
+                    :color            color
+                    :animation-speed  speed
+                    :width            (d *window-w*)
+                    :height           (d *window-h*)
+                    :x                0.0
+                    :y                0.0
+                    :compiled-shaders compiled-shaders))
