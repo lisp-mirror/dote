@@ -490,7 +490,7 @@
         (cl-gl-utils:with-depth-disabled
           (cl-gl-utils:with-blending
             (gl:blend-func :src-alpha :one-minus-src-alpha)
-            (use-program compiled-shaders :fade-from-black)
+            (use-program compiled-shaders :fade)
             ;; (gl:active-texture :texture0)
             ;; (texture:bind-texture texture-object)
             ;; (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
