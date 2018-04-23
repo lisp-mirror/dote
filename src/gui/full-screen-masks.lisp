@@ -438,6 +438,10 @@
     :initform (vec4 1.0 0.0 1.0 1.0)
     :initarg  :color
     :accessor color)
+   (shader
+    :initform :fade
+    :initarg  :shader
+    :accessor shader)
    (alpha
     :initform 0.0
     :initarg  :alpha
@@ -479,7 +483,8 @@
                    (material-params material-params)
                    (color   color)
                    (alpha   alpha)
-                   (el-time el-time)) object
+                   (el-time el-time)
+                   (shader  shader)) object
     (declare (texture:texture texture-object))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
@@ -490,10 +495,10 @@
         (cl-gl-utils:with-depth-disabled
           (cl-gl-utils:with-blending
             (gl:blend-func :src-alpha :one-minus-src-alpha)
-            (use-program compiled-shaders :fade)
-            ;; (gl:active-texture :texture0)
-            ;; (texture:bind-texture texture-object)
-            ;; (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+            (use-program compiled-shaders shader)
+            (gl:active-texture :texture0)
+            (texture:bind-texture texture-object)
+            (uniformi compiled-shaders  :texture-object +texture-unit-diffuse+)
             (uniformf compiled-shaders  :alpha (clamp alpha 0.0 1.0))
             (uniformf compiled-shaders  :time  el-time)
             (uniformfv compiled-shaders :fade-color color)
@@ -512,21 +517,48 @@
     (funcall stopping-fn alpha)))
 
 (defun make-fade-curtain (compiled-shaders
-                          &key (speed 5e-1) (color (vec4 0.0 0.0 0.0 0.0))
-                            (direction :in))
+                          &key
+                            (speed 5e-1)
+                            (color (vec4 0.0 0.0 0.0 0.0))
+                            (direction :in)
+                            (texture-name +transparent-texture-name+))
   (make-instance 'fade-curtain
-                    :fading-fn       (if (eq direction :in)
-                                         #'(lambda (time)
-                                             (smoothstep-interpolate 0.0 1.0 time))
-                                         #'(lambda (time)
-                                             (d- 1.0 (smoothstep-interpolate 0.0 1.0 time))))
-                    :stopping-fn     (if (eq direction :in)
-                                         #'(lambda (alpha) (d> alpha 0.9999))
-                                         #'(lambda (alpha) (d< alpha 1e-5)))
-                    :color            color
-                    :animation-speed  speed
-                    :width            (d *window-w*)
-                    :height           (d *window-h*)
-                    :x                0.0
-                    :y                0.0
-                    :compiled-shaders compiled-shaders))
+                 :fading-fn       (if (eq direction :in)
+                                      #'(lambda (time)
+                                          (smoothstep-interpolate 0.0 1.0 time))
+                                      #'(lambda (time)
+                                          (d- 1.0 (smoothstep-interpolate 0.0 1.0 time))))
+                 :stopping-fn     (if (eq direction :in)
+                                      #'(lambda (alpha) (d> alpha 0.9999))
+                                      #'(lambda (alpha) (d< alpha 1e-5)))
+                 :texture-object   (texture:get-texture texture-name)
+                 :color            color
+                 :animation-speed  speed
+                 :width            (d *window-w*)
+                 :height           (d *window-h*)
+                 :x                0.0
+                 :y                0.0
+                 :shader           :fade
+                 :compiled-shaders compiled-shaders))
+
+(defun make-fade-out-flash (compiled-shaders
+                          &key
+                            (speed        20.0)
+                            (color        (vec4 1.0 1.0 1.0 0.0))
+                            (texture-name +white-texture-name+)
+                            (width        (d *window-w*))
+                            (height       (d *window-h*))
+                            (x            0.0)
+                            (y            0.0))
+  (make-instance 'fade-curtain
+                 :fading-fn        #'(lambda (time)  (num:impulse time 4.5e-1))
+                 :stopping-fn      #'(lambda (alpha) (d< alpha 1e-3))
+                 :texture-object   (texture:get-texture texture-name)
+                 :color            color
+                 :animation-speed  speed
+                 :width            width
+                 :height           height
+                 :x                x
+                 :y                y
+                 :shader           :fade-flash
+                 :compiled-shaders compiled-shaders))

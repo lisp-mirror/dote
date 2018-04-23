@@ -573,11 +573,20 @@ active program (set by sdk2.kit:use-program)."
      (:uniforms :modelview-matrix
                 :proj-matrix
                 :fade-color
-                ;;:texture-object
+                :texture-object
                 :alpha
                 :time)
      (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
                :fragment-shader ,(get-shader-source "fade.frag")))
+    (:fade-flash
+     (:uniforms :modelview-matrix
+                :proj-matrix
+                :fade-color
+                :texture-object
+                :alpha
+                :time)
+     (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
+               :fragment-shader ,(get-shader-source "fade-flash.frag")))
     (:tree-impostor
      (:uniforms :modelview-matrix
                 :proj-matrix

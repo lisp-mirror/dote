@@ -387,7 +387,10 @@
   data/gui/ui_big_pieces_0.png
 
   derived from http://opengameart.org/content/golden-ui-bigger-than-ever-edition
-  © 2015 Buch released under Creative Commons Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0)
+
+  © 2015  Buch released under Creative  Commons Attribution-ShareAlike
+  3.0 Unported (CC BY-SA 3.0)
+
   https://creativecommons.org/licenses/by-sa/3.0/
 
 - data/gui/default/next-turn-overlay.tga
@@ -397,8 +400,16 @@
   data/gui/default/down-overlay.tga
   data/gui/default/left-overlay.tga
   data/gui/default/right-overlay.tga
-  © 2015 cage released under Creative Commons Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0)
+
+  © 2015  cage released under Creative  Commons Attribution-ShareAlike
+  3.0 Unported (CC BY-SA 3.0)
+
   https://creativecommons.org/licenses/by-sa/3.0/
+
+- data/gui/default/white.tga
+  data/gui/default/transparent.tga
+  © 2018 cage released under CC0 1.0
+  https://creativecommons.org/publicdomain/zero/1.0/
 
 - data/gui/default/activation-overlay.tga
   data/gui/default/berserk.tga

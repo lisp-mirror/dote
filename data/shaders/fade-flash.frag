@@ -15,5 +15,7 @@ uniform vec4  fade_color;
 out vec4 color;
 
 void main () {
-  color = vec4(fade_color.rgb, alpha);
+  vec4 texel = texture2D(texture_object, frag_text_coord);
+  color = vec4(mix(texel, texel, alpha).rgb,
+               alpha * texel.a);
 }

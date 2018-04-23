@@ -4393,6 +4393,7 @@
    :+blue-h-bar+
    :+red-h-bar+
    :+green-h-bar+
+   :+white-texture-name+
    :+check-button-texture-name+
    :+check-button-checked-green+
    :+check-button-overlay+
@@ -4693,7 +4694,8 @@
    :make-turn-billboard-human
    :enqueue-turn-billboard-ai
    :enqueue-turn-billboard-human
-   :make-fade-curtain))
+   :make-fade-curtain
+   :make-fade-out-flash))
 
 (defpackage :billboard
   (:use :cl

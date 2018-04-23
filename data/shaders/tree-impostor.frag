@@ -9,7 +9,7 @@ uniform vec4 mult_color = vec4(1.0, 0.0, 0.0, 1.0);
 out vec4 color;
 
 void main () {
-  vec4  texel = texture2D(texture_object,frag_text_coord);
+  vec4 texel = texture2D(texture_object,frag_text_coord);
   if (texel.a <= 0.0) {
     discard;
   }

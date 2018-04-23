@@ -68,6 +68,8 @@
 
 (alexandria:define-constant +snow+                             "snow"               :test #'string=)
 
+(alexandria:define-constant +white+                            "white"              :test #'string=)
+
 (alexandria:define-constant +influence-map+                    "influence-maps"     :test #'string=)
 
 (alexandria:define-constant +influence-map-w+                  256                  :test #'=)

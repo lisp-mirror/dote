@@ -266,7 +266,9 @@
               (misc:dbg "n ~a" *near*)
               (incf *near* -.1))
             (when (string= text "p")
-              (particles:add-level-up *placeholder*))
+              (mtree:add-child (world:gui world)
+                               (full-screen-masks:make-fade-out-flash
+                                (root-compiled-shaders object))))
             (when (string= text "D")
               (world:apply-tremor-0 world))
             (when (string= text "L")

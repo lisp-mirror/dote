@@ -180,7 +180,9 @@
                                           (subseq f 2)
                                           nil))))))
 
-(gen-texture-bulk (elaborating-plan-spinner.tga
+(gen-texture-bulk (white.tga
+                   +default-gui-resource+)
+                  (elaborating-plan-spinner.tga
                    +default-gui-resource+
                    (setf (interpolation-type bg) :linear))
                   (portrait-unknown.tga
@@ -522,6 +524,7 @@
 (defun setup-gui (compiled-shaders)
   (load-font +default-font+ +default-font-handle+ compiled-shaders)
   (load-font +tooltip-font+ +tooltip-font-handle+ compiled-shaders)
+  (setup-bg-white)
   (setup-bg-frame)
   (setup-bg-window-top-bar)
   (setup-bg-window-close-button)
