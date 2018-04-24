@@ -487,10 +487,16 @@
   https://creativecommons.org/publicdomain/zero/1.0/
 
 - data/gui/default/message-16-error.tga
-- data/gui/default/message-16-help.tga
 - data/gui/default/message-16-info.tga
-- data/gui/default/message-16-ok.tga
 - data/gui/default/message-16-warning.tga
+
+  @ 2015 Buch released under CC0 1.0
+  https://creativecommons.org/publicdomain/zero/1.0/
+  according to https://opengameart.org/content/golden-ui
+
+- data/gui/default/message-16-help.tga
+- data/gui/default/message-16-ok.tga
+
   according to http://opengameart.org/content/rough-small-signs-symbol-pack
   2015 qubodup released under CC0 1.0
   https://creativecommons.org/publicdomain/zero/1.0/
@@ -597,6 +603,16 @@
   released under released under Creative Commons Attribution 3.0 Unported (CC BY 3.0)
   https://creativecommons.org/licenses/by/3.0/
   Downloaded from: http://game-icons.net/
+
+
+- data/gui/default/bg-start.tga
+
+  derived from © Babeskull
+
+  released  under  released  under Creative  Commons  Attribution  4.0
+  International (CC BY 4.0)
+  https://creativecommons.org/licenses/by/4.0/
+  according to https://opengameart.org/content/a-good-bounty
 
 
 - src/test/data/avatars/avatar0.tga
