@@ -587,6 +587,24 @@ active program (set by sdk2.kit:use-program)."
                 :time)
      (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
                :fragment-shader ,(get-shader-source "fade-flash.frag")))
+    (:fade-lava
+     (:uniforms :modelview-matrix
+                :proj-matrix
+                :fade-color
+                :texture-object
+                :alpha
+                :time)
+     (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
+               :fragment-shader ,(get-shader-source "fade-lava.frag")))
+    (:spark
+     (:uniforms :modelview-matrix
+                :proj-matrix
+                :fade-color
+                :texture-object
+                :alpha
+                :time)
+     (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
+               :fragment-shader ,(get-shader-source "spark.frag")))
     (:tree-impostor
      (:uniforms :modelview-matrix
                 :proj-matrix

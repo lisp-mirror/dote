@@ -213,6 +213,10 @@
 (defun lcg-next-in-range (from to)
   (+ (lcg-next-upto (- to from)) from))
 
+(defun lcg-next-in-range* (range)
+  "range is a cons cell (from . to)"
+  (lcg-next-in-range (car range) (cdr range)))
+
 (defmacro with-lcg-seed ((&optional (seed `(get-universal-time))) &body body)
   `(let ((*lcg-seed* ,seed))
      ,@body))

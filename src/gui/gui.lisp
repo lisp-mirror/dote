@@ -135,10 +135,10 @@
   (setf *fonts-db* nil)
   (setf *fonts-db* (make-hash-table :test 'eql)))
 
-(defmacro gen-simple-bg-setup (function-name texture-handle parameter file
+(defmacro gen-simple-tex-setup (function-name texture-handle parameter file
                                resource-name
                                &rest texture-setup)
-  (let ((fn-name (alexandria:format-symbol t "~:@(setup-bg-~a~)" function-name)))
+  (let ((fn-name (alexandria:format-symbol t "~:@(setup-tex-~a~)" function-name)))
     `(progn
        (defparameter ,parameter (or (res:get-resource-file ,file ,resource-name
                                                            :if-does-not-exists nil)
@@ -167,11 +167,11 @@
                                   (second f)
                                   '+default-gui-resource+))
                    (base      (basename file-name)))
-              `(gen-simple-bg-setup ,(alexandria:symbolicate base)
+              `(gen-simple-tex-setup ,(alexandria:symbolicate base)
                                     ,(alexandria:symbolicate (wrap-with (strcat base
                                                                                 "-TEXTURE-NAME")
                                                                         "+"))
-                                    ,(alexandria:symbolicate (wrap-with (strcat "BG-"
+                                    ,(alexandria:symbolicate (wrap-with (strcat "TEX-"
                                                                                 base)
                                                                         "*"))
                                     ,(string-downcase file-name)
@@ -455,156 +455,179 @@
                     (setf (t-wrap-mode  bg) :clamp-to-border)
                     (setf (border-color bg) §c00000000)))
 
-(gen-simple-bg-setup frame
+(gen-simple-tex-setup frame
                      +frame-texture-name+
-                     *bg-frame*
+                     *gui-frame*
                      "basic-frame.tga"
                      +default-gui-resource+)
 
-(gen-simple-bg-setup button-cancel
+(gen-simple-tex-setup button-cancel
                      +button-cancel-texture-name+
-                     *bg-button-cancel*
+                     *gui-button-cancel*
                      "cancel-overlay.tga"
                      +default-gui-resource+
                      (setf (s-wrap-mode  bg) :clamp-to-border)
                      (setf (t-wrap-mode  bg) :clamp-to-border)
                      (setf (border-color bg) §c00000000))
 
-(gen-simple-bg-setup button-ok
+(gen-simple-tex-setup button-ok
                      +button-ok-texture-name+
-                     *bg-button-ok*
+                     *gui-button-ok*
                      "ok-overlay.tga"
                      +default-gui-resource+
                      (setf (s-wrap-mode  bg) :clamp-to-border)
                      (setf (t-wrap-mode  bg) :clamp-to-border)
                      (setf (border-color bg) §c00000000))
 
-(gen-simple-bg-setup window-close-button
+(gen-simple-tex-setup window-close-button
                      +window-close-button-texture-name+
-                     *bg-window-close-button*
+                     *gui-window-close-button*
                      "window-button.tga"
                      +default-gui-resource+)
 
-(gen-simple-bg-setup window-close-button-pressed
+(gen-simple-tex-setup window-close-button-pressed
                      +window-close-button-pressed-texture-name+
-                     *bg-window-close-button-pressed*
+                     *gui-window-close-button-pressed*
                      "window-button-pressed.tga"
                      +default-gui-resource+)
 
-(gen-simple-bg-setup blue-h-bar
+(gen-simple-tex-setup blue-h-bar
                      +blue-h-bar+
-                     *bg-blue-h-bar*
+                     *gui-blue-h-bar*
                      "blue-bar.tga"
                      +default-gui-resource+)
 
-(gen-simple-bg-setup red-h-bar
+(gen-simple-tex-setup red-h-bar
                      +red-h-bar+
-                     *bg-red-h-bar*
+                     *gui-red-h-bar*
                      "red-bar.tga"
                      +default-gui-resource+)
 
-(gen-simple-bg-setup green-h-bar
+(gen-simple-tex-setup green-h-bar
                      +green-h-bar+
-                     *bg-green-h-bar*
+                     *gui-green-h-bar*
                      "green-bar.tga"
                      +default-gui-resource+)
 
-(gen-simple-bg-setup check-button-checked-green
+(gen-simple-tex-setup check-button-checked-green
                      +check-button-checked-green+
-                     *bg-check-button-checked-green*
+                     *gui-check-button-checked-green*
                      "check-button-checked-green.tga"
                      +default-gui-resource+)
 
-(gen-simple-bg-setup check-button-overlay
+(gen-simple-tex-setup check-button-overlay
                      +check-button-overlay+
-                     *bg-check-button-overlay*
+                     *gui-check-button-overlay*
                      "check-button-overlay.tga"
                      +default-gui-resource+)
+;; opening
+
+(gen-texture-bulk (logo.tga
+                   +default-gui-resource+
+                   (setf (interpolation-type bg) :linear)
+                   (setf (s-wrap-mode  bg) :clamp-to-border)
+                   (setf (t-wrap-mode  bg) :clamp-to-border)
+                   (setf (border-color bg) §c00000000))
+                  (logo-mask.tga
+                   +default-gui-resource+
+                   (setf (interpolation-type bg) :nearest)
+                   (setf (s-wrap-mode  bg) :repeat)
+                   (setf (t-wrap-mode  bg) :repeat))
+                  (bg-start.tga
+                   +default-gui-resource+
+                   (setf (interpolation-type bg) :linear)
+                   (setf (s-wrap-mode  bg) :clamp-to-border)
+                   (setf (t-wrap-mode  bg) :clamp-to-border)
+                   (setf (border-color bg) §c00000000)))
+
 
 (defun setup-gui (compiled-shaders)
   (load-font +default-font+ +default-font-handle+ compiled-shaders)
   (load-font +tooltip-font+ +tooltip-font-handle+ compiled-shaders)
-  (setup-bg-white)
-  (setup-bg-frame)
-  (setup-bg-window-top-bar)
-  (setup-bg-window-close-button)
-  (setup-bg-window-close-button-pressed)
-  (setup-bg-window)
-  (setup-bg-button-cancel)
-  (setup-bg-button-ok)
-  (setup-bg-button)
-  (setup-bg-button-pressed)
-  (setup-bg-message-16-error)
-  (setup-bg-message-16-help)
-  (setup-bg-message-16-info)
-  (setup-bg-message-16-ok)
-  (setup-bg-message-16-warning)
-  (setup-bg-square-button)
-  (setup-bg-square-button-pressed)
-  (setup-bg-inventory-slot)
-  (setup-bg-inventory-slot-selected)
-  (setup-bg-transparent)
-  (setup-bg-silhouette)
-  (setup-bg-bag)
-  (setup-bg-add-to-bag)
-  (setup-bg-blue-h-bar)
-  (setup-bg-red-h-bar)
-  (setup-bg-green-h-bar)
-  (setup-bg-drop-overlay)
-  (setup-bg-check-button-overlay)
-  (setup-bg-check-button-checked-green)
-  (setup-bg-check-button)
-  (setup-bg-text-field)
-  (setup-bg-text-field-focused)
-  (setup-bg-text-field-overlay)
-  (setup-bg-save-overlay)
-  (setup-bg-up-arrow-overlay)
-  (setup-bg-down-arrow-overlay)
-  (setup-bg-wear-overlay)
-  (setup-bg-spell-book-overlay)
-  (setup-bg-use-overlay)
-  (setup-bg-use-item-overlay)
-  (setup-bg-plus-overlay)
-  (setup-bg-minus-overlay)
-  (setup-bg-up-overlay)
-  (setup-bg-down-overlay)
-  (setup-bg-left-overlay)
-  (setup-bg-right-overlay)
-  (setup-bg-load-overlay)
-  (setup-bg-quit-overlay)
-  (setup-bg-next-overlay)
-  (setup-bg-previous-overlay)
-  (setup-bg-rotate-char-cw-overlay)
-  (setup-bg-rotate-char-ccw-overlay)
-  (setup-bg-next-turn-overlay)
-  (setup-bg-move-overlay)
-  (setup-bg-option-overlay)
-  (setup-bg-elaborating-plan-spinner)
-  (setup-bg-portrait-unknown)
-  (setup-bg-preview-unknown)
-  (setup-bg-load-save-preview)
-  (setup-bg-berserk)
-  (setup-bg-coma)
-  (setup-bg-terror)
-  (setup-bg-poison)
-  (setup-bg-immune-berserk)
-  (setup-bg-immune-coma)
-  (setup-bg-immune-terror)
-  (setup-bg-immune-poison)
-  (setup-bg-activation-overlay)
-  (setup-bg-attack-short-range-overlay)
-  (setup-bg-attack-long-range-overlay)
-  (setup-bg-attack-long-range-imprecise-overlay)
-  (setup-bg-magic-staff-overlay)
-  (setup-bg-open-overlay)
-  (setup-bg-close-overlay)
-  (setup-bg-zoom-overlay)
-  (setup-bg-unzoom-overlay)
-  (setup-bg-chest-closed)
-  (setup-bg-chest-closed-locked)
-  (setup-bg-chest-opened)
-  (setup-bg-config-camera-elevation)
-  (setup-bg-config-change-selected-character)
-  (setup-bg-config-look-at)
-  (setup-bg-config-move)
-  (setup-bg-config-rotation))
+  (setup-tex-white)
+  (setup-tex-frame)
+  (setup-tex-window-top-bar)
+  (setup-tex-window-close-button)
+  (setup-tex-window-close-button-pressed)
+  (setup-tex-window)
+  (setup-tex-button-cancel)
+  (setup-tex-button-ok)
+  (setup-tex-button)
+  (setup-tex-button-pressed)
+  (setup-tex-message-16-error)
+  (setup-tex-message-16-help)
+  (setup-tex-message-16-info)
+  (setup-tex-message-16-ok)
+  (setup-tex-message-16-warning)
+  (setup-tex-square-button)
+  (setup-tex-square-button-pressed)
+  (setup-tex-inventory-slot)
+  (setup-tex-inventory-slot-selected)
+  (setup-tex-transparent)
+  (setup-tex-silhouette)
+  (setup-tex-bag)
+  (setup-tex-add-to-bag)
+  (setup-tex-blue-h-bar)
+  (setup-tex-red-h-bar)
+  (setup-tex-green-h-bar)
+  (setup-tex-drop-overlay)
+  (setup-tex-check-button-overlay)
+  (setup-tex-check-button-checked-green)
+  (setup-tex-check-button)
+  (setup-tex-text-field)
+  (setup-tex-text-field-focused)
+  (setup-tex-text-field-overlay)
+  (setup-tex-save-overlay)
+  (setup-tex-up-arrow-overlay)
+  (setup-tex-down-arrow-overlay)
+  (setup-tex-wear-overlay)
+  (setup-tex-spell-book-overlay)
+  (setup-tex-use-overlay)
+  (setup-tex-use-item-overlay)
+  (setup-tex-plus-overlay)
+  (setup-tex-minus-overlay)
+  (setup-tex-up-overlay)
+  (setup-tex-down-overlay)
+  (setup-tex-left-overlay)
+  (setup-tex-right-overlay)
+  (setup-tex-load-overlay)
+  (setup-tex-quit-overlay)
+  (setup-tex-next-overlay)
+  (setup-tex-previous-overlay)
+  (setup-tex-rotate-char-cw-overlay)
+  (setup-tex-rotate-char-ccw-overlay)
+  (setup-tex-next-turn-overlay)
+  (setup-tex-move-overlay)
+  (setup-tex-option-overlay)
+  (setup-tex-elaborating-plan-spinner)
+  (setup-tex-portrait-unknown)
+  (setup-tex-preview-unknown)
+  (setup-tex-load-save-preview)
+  (setup-tex-berserk)
+  (setup-tex-coma)
+  (setup-tex-terror)
+  (setup-tex-poison)
+  (setup-tex-immune-berserk)
+  (setup-tex-immune-coma)
+  (setup-tex-immune-terror)
+  (setup-tex-immune-poison)
+  (setup-tex-activation-overlay)
+  (setup-tex-attack-short-range-overlay)
+  (setup-tex-attack-long-range-overlay)
+  (setup-tex-attack-long-range-imprecise-overlay)
+  (setup-tex-magic-staff-overlay)
+  (setup-tex-open-overlay)
+  (setup-tex-close-overlay)
+  (setup-tex-zoom-overlay)
+  (setup-tex-unzoom-overlay)
+  (setup-tex-chest-closed)
+  (setup-tex-chest-closed-locked)
+  (setup-tex-chest-opened)
+  (setup-tex-config-camera-elevation)
+  (setup-tex-config-change-selected-character)
+  (setup-tex-config-look-at)
+  (setup-tex-config-move)
+  (setup-tex-config-rotation)
+  (setup-tex-logo)
+  (setup-tex-logo-mask)
+  (setup-tex-bg-start))

@@ -494,6 +494,7 @@
       (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
         (cl-gl-utils:with-depth-disabled
           (cl-gl-utils:with-blending
+            (gl:blend-equation :func-add)
             (gl:blend-func :src-alpha :one-minus-src-alpha)
             (use-program compiled-shaders shader)
             (gl:active-texture :texture0)
@@ -509,7 +510,9 @@
                             nil)
             (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
             (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-            (gl:draw-arrays :triangles 0 (* 3 (length triangles)))))))))
+            (gl:draw-arrays :triangles 0 (* 3 (length triangles)))))))
+    (do-children-mesh (c object)
+      (render c renderer))))
 
 (defmethod removeable-from-world-p ((object fade-curtain))
   (with-accessors ((alpha       alpha)
@@ -562,3 +565,148 @@
                  :y                y
                  :shader           :fade-flash
                  :compiled-shaders compiled-shaders))
+
+(defun make-lava-fx (compiled-shaders
+                     &key
+                       (speed        5.0e-1)
+                       (color        (vec4 1.0 0.34 0.0 1.0))
+                       (texture-name +logo-mask-texture-name+)
+                       (width        (d *window-w*))
+                       (height       (d *window-h*))
+                       (x            0.0)
+                       (y            0.0))
+  (make-instance 'fade-curtain
+                 :fading-fn        #'(lambda (time)  time)
+                 :stopping-fn
+                 #-debug-mode #'(lambda (alpha) (declare (ignore alpha)) nil)
+                 #+debug-mode (let ((time 100.0))
+                                #'(lambda (alpha)
+                                    (declare (ignore alpha))
+                                    (decf time 0.1)
+                                    (< time 0.0)))
+                 :texture-object   (texture:get-texture texture-name)
+                 :color            color
+                 :animation-speed  speed
+                 :width            width
+                 :height           height
+                 :x                x
+                 :y                y
+                 :shader           :fade-lava
+                 :compiled-shaders compiled-shaders))
+
+(defclass spark-fx (fade-curtain)
+  ((actual-el-time
+    :initform 0.0
+    :initarg  :actual-el-time
+    :accessor actual-el-time)
+   (delay-ct
+    :initform 100
+    :initarg  :delay-ct
+    :accessor delay-ct)
+   (delay
+     :initform 100
+     :initarg  :delay
+     :accessor delay)
+   (delay-range
+     :initform (cons 300 400)
+     :initarg  :delay-range
+     :accessor delay-range)
+   (animate
+     :initform nil
+     :initarg  :animate
+     :reader   animatep
+     :writer   (setf animate))))
+
+(defmethod calculate :after ((object spark-fx) dt)
+  (with-accessors ((el-time                 el-time)
+                   (fading-fn               fading-fn)
+                   (alpha                   alpha)
+                   (animation-speed         animation-speed)
+                   (actual-el-time          actual-el-time)
+                   (delay                   delay)
+                   (animate                 animate)
+                   (delay-ct                delay-ct)
+                   (delay-range             delay-range)) object
+    (declare (optimize (debug 0) (speed 3) (safety 0)))
+    (declare (desired-type dt el-time actual-el-time animation-speed))
+    (declare (fixnum delay delay-ct))
+    (declare (function fading-fn))
+    (setf actual-el-time (d+ actual-el-time (d* animation-speed dt)))
+    (when (and (animatep object)
+               (>= el-time 1.0))
+      (setf animate nil)
+      ;; note that alpha  is (ab)used as a flag to  stop the rendering
+      ;; of this effect: check the shader!
+      (setf alpha 0.0)
+      (setf delay (lcg-next-in-range* delay-range))
+      (setf delay-ct delay)
+      (setf el-time 0.0))
+    (if (not (animatep object))
+        (if (< delay-ct 0)
+            (progn
+              (setf animate t)
+              (setf alpha  0.6)
+              (setf actual-el-time 0.0))
+            (progn
+              (setf alpha 0.0)
+              (setf el-time 0.0)
+              (decf delay-ct)))
+        (progn
+          (setf alpha 0.6)
+          (setf el-time actual-el-time)))
+    (with-maybe-trigger-end-of-life (object (removeable-from-world-p object)))))
+
+(defun make-spark-fx (compiled-shaders
+                      &key
+                        (fading-fn   #'(lambda (time)  time))
+                        (stopping-fn #'(lambda (alpha) (declare (ignore alpha)) nil))
+                        (speed        5.0e-1)
+                        (color        (vec4 .7 .7 .5 1.0))
+                        (delay-range  (cons 300 400))
+                        (texture-name +logo-mask-texture-name+)
+                        (width        (d *window-w*))
+                        (height       (d *window-h*))
+                        (x            0.0)
+                        (y            0.0))
+  (make-instance 'spark-fx
+                 :fading-fn        fading-fn
+                 :stopping-fn      stopping-fn
+                 :texture-object   (texture:get-texture texture-name)
+                 :color            color
+                 :delay-range      delay-range
+                 :animation-speed  speed
+                 :width            width
+                 :height           height
+                 :x                x
+                 :y                y
+                 :shader           :spark
+                 :compiled-shaders compiled-shaders))
+
+(defun make-logo-spark (compiled-shaders)
+  (make-spark-fx compiled-shaders
+                 :fading-fn   #'(lambda (time)  time)
+                 :stopping-fn #'(lambda (alpha) (declare (ignore alpha)) nil)
+                 :speed        25.0e-1
+                 :color        (vec4 0.7 0.7 0.5 1.0)
+                 :delay-range  (cons 300 400)
+                 :texture-name +logo-texture-name+
+                 :width        (d *logo-w*)
+                 :height       (d *logo-h*)
+                 :x            0.0
+                 :y            0.0))
+
+(defun make-logo-lava (compiled-shaders)
+  (make-lava-fx compiled-shaders
+                :speed        10.0e-1
+                :color        (vec4 1.0 0.34 0.0 1.0)
+                :texture-name +logo-mask-texture-name+
+                :width        (d *logo-w*)
+                :height       (d *logo-h*)
+                :x            (d (- (/ *window-w* 2)
+                                    (/ *logo-w* 2)))
+                :y            (d (- *window-h*
+                                    *logo-h*))))
+(defun make-logo (compiled-shaders)
+  (let ((lava (make-logo-lava  compiled-shaders))
+        (logo (make-logo-spark compiled-shaders)))
+    (mtree:add-child lava logo)))

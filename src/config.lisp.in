@@ -36,6 +36,10 @@
 
 (defparameter *window-h* 768)
 
+(defparameter *logo-w*   (* *window-w* 0.5))
+
+(defparameter *logo-h*   (* *window-h* 0.35))
+
 (defparameter *workers-number* 0)
 
 (defun _ (a)

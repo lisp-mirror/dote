@@ -31,6 +31,8 @@
    :+game-fps+
    :*window-w*
    :*window-h*
+   :*logo-w*
+   :*logo-h*
    :*workers-number*
    :_
    :n_))
@@ -358,6 +360,7 @@
    :lcg-next01
    :lcg-next-upto
    :lcg-next-in-range
+   :lcg-next-in-range*
    :rejection-sampling
    :bivariate-sampling
    :random-gaussian-distribution
@@ -4444,6 +4447,9 @@
    :+attack-long-range-overlay-texture-name+
    :+attack-long-range-imprecise-overlay-texture-name+
    :+magic-staff-overlay-texture-name+
+   :+logo-texture-name+
+   :+logo-mask-texture-name+
+   :+bg-start-texture-name+
    :+default-font+
    :+default-font-handle+
    :join-lines-for-static-text
@@ -4695,7 +4701,10 @@
    :enqueue-turn-billboard-ai
    :enqueue-turn-billboard-human
    :make-fade-curtain
-   :make-fade-out-flash))
+   :make-fade-out-flash
+   :make-lava-fx
+   :make-logo-lava
+   :make-logo))
 
 (defpackage :billboard
   (:use :cl

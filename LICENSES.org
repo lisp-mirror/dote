@@ -408,6 +408,8 @@
 
 - data/gui/default/white.tga
   data/gui/default/transparent.tga
+  data/gui/default/logo-mask.tga
+  data/gui/default/logo.tga
   © 2018 cage released under CC0 1.0
   https://creativecommons.org/publicdomain/zero/1.0/
 

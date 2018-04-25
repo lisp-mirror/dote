@@ -267,6 +267,9 @@
               (incf *near* -.1))
             (when (string= text "p")
               (mtree:add-child (world:gui world)
+                               (full-screen-masks:make-logo
+                                (root-compiled-shaders object)))
+              (mtree:add-child (world:gui world)
                                (full-screen-masks:make-fade-out-flash
                                 (root-compiled-shaders object))))
             (when (string= text "D")

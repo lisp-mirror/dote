@@ -4,8 +4,6 @@ in vec2 frag_text_coord;
 
 uniform sampler2D texture_object;
 
-uniform float duration;
-
 uniform float time;
 
 uniform float alpha;
