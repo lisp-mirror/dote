@@ -523,23 +523,34 @@
 ;; opening
 
 (gen-texture-bulk (logo.tga
-                   +default-gui-resource+
+                   +default-gui-opening+
                    (setf (interpolation-type bg) :linear)
                    (setf (s-wrap-mode  bg) :clamp-to-border)
                    (setf (t-wrap-mode  bg) :clamp-to-border)
                    (setf (border-color bg) §c00000000))
                   (logo-mask.tga
-                   +default-gui-resource+
+                   +default-gui-opening+
                    (setf (interpolation-type bg) :nearest)
                    (setf (s-wrap-mode  bg) :repeat)
                    (setf (t-wrap-mode  bg) :repeat))
                   (bg-start.tga
-                   +default-gui-resource+
+                   +default-gui-opening+
+                   (setf (interpolation-type bg) :linear)
+                   (setf (s-wrap-mode  bg) :clamp-to-border)
+                   (setf (t-wrap-mode  bg) :clamp-to-border)
+                   (setf (border-color bg) §c00000000))
+                  (text-1.tga
+                    +default-gui-opening+
+                   (setf (interpolation-type bg) :linear)
+                   (setf (s-wrap-mode  bg) :clamp-to-border)
+                   (setf (t-wrap-mode  bg) :clamp-to-border)
+                   (setf (border-color bg) §c00000000))
+                  (text-2.tga
+                   +default-gui-opening+
                    (setf (interpolation-type bg) :linear)
                    (setf (s-wrap-mode  bg) :clamp-to-border)
                    (setf (t-wrap-mode  bg) :clamp-to-border)
                    (setf (border-color bg) §c00000000)))
-
 
 (defun setup-gui (compiled-shaders)
   (load-font +default-font+ +default-font-handle+ compiled-shaders)
@@ -630,4 +641,6 @@
   (setup-tex-config-rotation)
   (setup-tex-logo)
   (setup-tex-logo-mask)
-  (setup-tex-bg-start))
+  (setup-tex-bg-start)
+  (setup-tex-text-1)
+  (setup-tex-text-2))

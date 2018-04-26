@@ -992,9 +992,12 @@
 
 (defclass button (naked-button) ())
 
-(defmethod initialize-instance :after ((object button) &key &allow-other-keys)
-  (setf (label-font-size  object) (button-label-max-size *reference-sizes*))
-  (setf (label-font-color object) (button-label-color    *reference-sizes*))
+(defmethod initialize-instance :after ((object button)
+                                       &key
+                                         (use-label-global-style t) &allow-other-keys)
+  (when use-label-global-style
+    (setf (label-font-size  object) (button-label-max-size *reference-sizes*))
+    (setf (label-font-color object) (button-label-color    *reference-sizes*)))
   (with-slots (label) object
     (when label
       (setf (label object) label))))

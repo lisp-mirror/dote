@@ -127,6 +127,7 @@
    :+attack-spell-dir+
    :+spell-dir+
    :+default-gui-inventory-items+
+   :+default-gui-opening+
    :+default-gui-resource+
    :+default-character-weapon-dir+
    :+default-character-bow-dir+
@@ -4450,6 +4451,8 @@
    :+logo-texture-name+
    :+logo-mask-texture-name+
    :+bg-start-texture-name+
+   :+text-1-texture-name+
+   :+text-2-texture-name+
    :+default-font+
    :+default-font-handle+
    :join-lines-for-static-text
@@ -4704,7 +4707,8 @@
    :make-fade-out-flash
    :make-lava-fx
    :make-logo-lava
-   :make-logo))
+   :make-logo
+   :make-opening))
 
 (defpackage :billboard
   (:use :cl
@@ -4800,6 +4804,7 @@
    :chair-e
    :chair-w
    :world
+   :compiled-shaders
    :entities
    :main-state
    :actions-queue
