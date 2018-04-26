@@ -226,11 +226,14 @@
       (setf (callback b-2) (update-cb-for-save-clsr +save-game-dir-2+))
       (setf (callback b-3) (update-cb-for-save-clsr +save-game-dir-3+)))))
 
-(defun make-window (compiled-shaders action)
+(defun make-window (compiled-shaders action
+                    &key
+                      (x 50.0)
+                      (y (d (- *window-h* (load-save-window-h)))))
   (let ((w (make-instance 'load-save-window
                           :action action
-                          :x      50.0
-                          :y      (d (- *window-h* (load-save-window-h)))
+                          :x      x
+                          :y      y
                           :width  (load-save-window-w)
                           :height (load-save-window-h)
                           :label  (_ "Load game"))))
