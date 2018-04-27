@@ -954,7 +954,7 @@ wall's    coordinates    as    they   are    already    scaled:    see
   (res:get-resource-file filename +maps-resource+
                          :if-does-not-exists :error))
 
-(defun load-level (window world game-state compiled-shaders file)
+(defun load-level (window world game-state file)
   (let* ((actual-file (get-level-file-abs-path file))
          (resource-cache:*cache-reference-file* actual-file))
     (setf *main-window* window)
@@ -965,9 +965,7 @@ wall's    coordinates    as    they   are    already    scaled:    see
     (resource-cache:ensure-cache-running
       (initialize-skydome world)
       (update-progress 0.45)
-      (setf (main-state world)         game-state)
       (setf (game-map-file             game-state) file)
-      (setf (compiled-shaders world)   compiled-shaders)
       (setup-game-hour game-state      *game-hour*)
       (setf (map-cache-dir game-state) *raw-seed*)
       (setf (level-name         game-state) *level-name*)

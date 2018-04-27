@@ -666,6 +666,7 @@
    :start-time
    :el-time
    :animation-speed
+   :inner-animation-p
    :animated-spritesheet
    :anim-delay
    :frequency-animation
@@ -4804,6 +4805,7 @@
    :chair-e
    :chair-w
    :world
+   :opening-mode
    :compiled-shaders
    :entities
    :main-state

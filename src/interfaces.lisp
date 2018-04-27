@@ -180,6 +180,8 @@
     :initarg :animation-speed
     :accessor animation-speed)))
 
+(gen-type-p inner-animation)
+
 (defclass animated-spritesheet ()
   ((anim-delay
     :initform 0

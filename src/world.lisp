@@ -107,7 +107,11 @@
            (chair-w object) nil))
 
 (defclass world (transformable renderizable)
-  ((camera
+  ((opening-mode
+    :accessor opening-mode
+    :initarg :opening-mode
+    :initform t)
+   (camera
     :accessor camera
     :initarg :camera
     :initform (make-instance 'camera :pos (vec 0.0 0.0 1.0)))
@@ -503,7 +507,6 @@
 (defmethod (setf main-state) (new-state (object world))
   (with-slots (main-state skydome camera) object
     (setf main-state new-state)
-    (setf (entity:state skydome) new-state)
     (setf (entity:state camera) new-state)))
 
 (defmacro gen-accessors-matrix (name)
@@ -525,27 +528,37 @@
   (build-projection-matrix (camera object) near far fov ratio))
 
 (defmethod calculate ((object world) dt)
-  (incf (current-time (main-state object)) dt)
-  (setf (widget:label (widget:text-fps (elt (mtree-utils:children (gui object)) 0)))
-        (format nil "~,2f" (main-window:fps (frame-window object))))
-  (calculate (gui object) dt)
-  (calculate (camera object)  dt)
-  (calculate (skydome object) dt)
-  (calculate-frustum (camera object))
-  (calculate-aabb    (camera object))
-  (calculate-cone    (camera object))
-  (walk-quad-tree (object)
-    (calculate entity dt)))
+  (with-accessors ((main-state   main-state)
+                   (gui          gui)
+                   (camera       camera)
+                   (skydome      skydome)
+                   (opening-mode opening-mode)) object
+    (incf (current-time (main-state object)) dt)
+    (calculate (gui object) dt)
+    (calculate (camera object) dt)
+    (when (not opening-mode)
+      (setf (widget:label (widget:text-fps (elt (mtree-utils:children (gui object)) 0)))
+            (format nil "~,2f" (main-window:fps (frame-window object))))
+      (calculate (skydome object) dt)
+      (calculate-frustum (camera object))
+      (calculate-aabb    (camera object))
+      (calculate-cone    (camera object))
+      (walk-quad-tree (object)
+        (calculate entity dt)))))
 
 (defmethod render ((object world) (renderer world))
-  (render (camera  object) object)
-  (render (skydome object) object)
-  (walk-quad-tree (object)
-    (when (and (not (use-blending-p entity)))
-      (render entity renderer)))
-  (walk-quad-tree (object)
-    (when (use-blending-p entity)
-      (render entity renderer))))
+  (with-accessors ((camera       camera)
+                   (skydome      skydome)
+                   (opening-mode opening-mode)) object
+    (render camera object)
+    (when (not opening-mode)
+      (render skydome object)
+      (walk-quad-tree (object)
+        (when (and (not (use-blending-p entity)))
+          (render entity renderer)))
+      (walk-quad-tree (object)
+        (when (use-blending-p entity)
+          (render entity renderer))))))
 
 (defmethod render-for-reflection ((object world) (renderer world))
   (render-for-reflection (camera  object) object)
@@ -692,11 +705,6 @@
   (bubbleup-modelmatrix entity)
   (quad-tree:push-down (entities object) entity))
 
-(defmethod (setf compiled-shaders) (new-value (object world))
-  (with-slots (compiled-shaders) object
-    (setf compiled-shaders  new-value)
-    (setf (compiled-shaders (skydome object)) new-value)))
-
 (defmethod get-camera-pos ((object world))
   (pos (camera object)))
 
@@ -804,9 +812,14 @@
                                  (clouds-3 (texture:get-texture texture:+cloud-3+))
                                  (smoke    (texture:get-texture texture:+smoke-tray+))
                                  (weather-type :foggy-night-clear-day))
-  (setf (skydome object) (make-skydome bg clouds-1 clouds-2 clouds-3 smoke)
-        (weather-type    (skydome object)) weather-type)
-  object)
+  (with-accessors ((skydome          skydome)
+                   (compiled-shaders compiled-shaders)
+                   (main-state       main-state)) object
+    (setf skydome                    (make-skydome bg clouds-1 clouds-2 clouds-3 smoke)
+          (weather-type     skydome) weather-type
+          (compiled-shaders skydome) compiled-shaders
+          (entity:state     skydome) main-state)
+    object))
 
 (defmethod get-window-size ((object world))
   (sdl2:get-window-size (frame-window object)))

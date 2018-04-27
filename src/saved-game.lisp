@@ -391,6 +391,7 @@
                    (root-compiled-shaders main-window:root-compiled-shaders)) window
     ;; (setf (interfaces:compiled-shaders (world:gui world)) root-compiled-shaders)
     ;; (mtree:add-child (world:gui world) (widget:make-splash-progress-gauge))
+    (setf (world:opening-mode world) nil)
     (setf (camera:mode (world:camera world)) :fp)
     (camera:install-drag-interpolator (world:camera world)
                                       :spring-k +camera-drag-spring-k+)
@@ -448,6 +449,7 @@
     (sdl2.kit-utils:clean-restart-gl-context window)
     (init-system-when-gl-context-active window)
     (setf (interfaces:compiled-shaders (world:gui world)) root-compiled-shaders)
+    (setf (world:opening-mode world) nil)
     (setf (camera:mode (world:camera world)) :fp)
     (camera:install-drag-interpolator (world:camera world)
                                       :spring-k +camera-drag-spring-k+)
@@ -504,7 +506,11 @@
     ;; set up world
     (setf (main-window:world window) nil)
     (tg:gc :full t)
-    (setf (main-window:world window) (make-instance 'world :frame-window window))
+    (setf world                       (make-instance 'world
+                                                     :frame-window window
+                                                     :opening-mode t))
+    (setf (main-state world)          window-game-state)
+    (setf (compiled-shaders  world)   root-compiled-shaders)
     (mtree:add-child (world:gui world) (widget:make-splash-progress-gauge))
     (setf (interfaces:compiled-shaders (world:gui world)) root-compiled-shaders)
     (setf (camera:mode (world:camera (main-window:world window))) :fp)
@@ -572,7 +578,7 @@
     (load-level:load-level window
                            world
                            (main-window:window-game-state window)
-                           root-compiled-shaders map-file)
+                           map-file)
     (camera:look-at (world:camera world)
                     *xpos* *ypos* *zpos* *xeye* *yeye* *zeye* *xup* *yup* *zup*)
     (setf (camera:mode (world:camera world)) :fp)))

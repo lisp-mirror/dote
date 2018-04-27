@@ -115,7 +115,9 @@
                    (world world) (mesh mesh)
                    (window-game-state window-game-state)
                    (delta-time-elapsed delta-time-elapsed)) object
-    (saved-game:init-system-when-gl-context-active object)))
+    (saved-game:init-system-when-gl-context-active object)
+    (mtree:add-child (world:gui world)
+                     (full-screen-masks:make-opening world))))
 
 (defmacro with-gui ((world) &body body)
   (alexandria:with-gensyms (3d-projection-matrix 3d-view-matrix)
@@ -143,7 +145,8 @@
                    (delta-time-elapsed delta-time-elapsed)
                    (frames-count       frames-count)
                    (fps fps))                              object
-    (if saved-game:*map-loaded-p*
+    (if (or (world:opening-mode world)
+            saved-game:*map-loaded-p*)
         (let* ((now      (sdl2:get-ticks))
                (dt       (num:f- now delta-time-elapsed))
                (float-dt (num:d dt)))
@@ -267,16 +270,12 @@
               (incf *near* -.1))
             (when (string= text "p")
               (mtree:add-child (world:gui world)
-                               (full-screen-masks:make-opening world)))
-              ;; (mtree:add-child (world:gui world)
-              ;;                  (full-screen-masks:make-logo
-              ;;                   (root-compiled-shaders object)))
-              ;; (mtree:add-child (world:gui world)
-              ;;                  (full-screen-masks:make-fade-out-flash
-              ;;                   (root-compiled-shaders object))))
+                                (full-screen-masks:make-fade-out-flash
+                                 (root-compiled-shaders object))))
             (when (string= text "D")
               (world:apply-tremor-0 world))
             (when (string= text "L")
+              (setf (world:opening-mode world) nil)
               (load-map object)))
           (when (find text '("Y" "y" "X" "x") :test #'string=)
             (when (string= text "Y")
@@ -316,6 +315,13 @@
     (when (eq :scancode-f12 scancode)
       (%change-layer :attack-enemy-crossbow-layer))))
 
+(defun skip-opening (world)
+  (mtree:top-down-visit (world:gui world)
+                        #'(lambda (n)
+                            (when (typep n 'interfaces:inner-animation)
+                                (setf (interfaces:animation-speed n)
+                                      (d* 500.0 (interfaces:animation-speed n)))))))
+
 (defmethod keydown-event ((object test-window) ts repeat-p keysym)
   (with-accessors ((world world)) object
     (let ((gui-event (make-instance 'gui-events:key-pressed
@@ -324,8 +330,10 @@
       (when (not (widget:on-key-pressed (world:gui world) gui-event))
         (let ((scancode (sdl2:scancode keysym)))
           #+(and debug-mode debug-ai)   (%change-ai-layer object scancode)
-          #+debug-mode (when (eq :scancode-escape scancode)
-                         (close-window object))
+          (when (eq :scancode-escape scancode)
+            (when (world:opening-mode world)
+              (skip-opening world))
+            #+debug-mode (close-window object))
           (when (eq :scancode-3 scancode)
             (with-accessors ((world world) (mesh mesh)) object
               (let* ((game-state         (window-game-state object))

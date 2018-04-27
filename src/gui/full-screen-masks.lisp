@@ -380,8 +380,8 @@
               (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))))))
 
 (defmethod removeable-from-world-p ((object turn-billboard))
-  (d> (offset object)
-      (d *window-w*)))
+  (d>= (offset object)
+       (d *window-w*)))
 
 (defun make-turn-billboard-texture (texture-file)
   (let ((texture (tex:get-texture (res:get-resource-file texture-file
@@ -932,7 +932,8 @@
          (compiled-shaders (world:compiled-shaders world))
          (opening          (make-instance 'scrolling-opening
                                           :world            world
-                                          :animation-speed  30.0
+                                          :animation-speed  #+fast-opening 3000.0
+                                                            #-fast-opening 30.0
                                           :compiled-shaders compiled-shaders
                                           :x                0.0
                                           :y                (d (- *window-h*))

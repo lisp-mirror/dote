@@ -207,11 +207,19 @@
 (progn
   ;; debug
   (pushnew :debug-mode                      *features*)
-  ;; (pushnew :inhibit-update-unexplored-layer *features*)
+  ;; *push* for release
+  ;;(pushnew :inhibit-update-unexplored-layer *features*)
+  ;; do not push for release
   (pushnew :inhibit-modal-button            *features*)
+  ;; do not push for release
   ;; (pushnew :small-skydome                *features*)
+  ;; do not push for release
+  (pushnew :fast-opening                    *features*)
+  ;; do not push for release
   (pushnew :debug-blackboard-layers         *features*)
+  ;; do not push for release
   (pushnew :debug-ai                        *features*)
-  ;; (pushnew :keep-dead-player             *features*)
+  ;; do not push for release
+  ; (pushnew :keep-dead-player             *features*)
   ;; config
   (pushnew :md2-gpu-lerp                    *features*))
