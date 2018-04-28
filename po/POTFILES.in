@@ -122,6 +122,7 @@ src/world.lisp
 src/xmls-utils.lisp
 # GUI
 src/gui/full-screen-masks.lisp
+src/gui/opening-sequence.lisp
 src/gui/gui-events.lisp
 src/gui/gui.lisp
 src/gui/inventory-window.lisp

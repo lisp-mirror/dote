@@ -4699,13 +4699,50 @@
    :widget)
   (:shadowing-import-from :misc :shuffle :random-elt)
   (:export
+   :fade-curtain
+   :end-time
+   :fading-fn
+   :stopping-fn
+   :color
+   :shader
+   :alpha
    :make-burn-mask
    :make-turn-billboard-ai
    :make-turn-billboard-human
    :enqueue-turn-billboard-ai
    :enqueue-turn-billboard-human
    :make-fade-curtain
-   :make-fade-out-flash
+   :make-fade-out-flash))
+
+(defpackage :opening-sequence
+  (:use
+   :cl
+   :alexandria
+   :config
+   :constants
+   :ubvec4
+   :vec4
+   :misc
+   :num
+   :3d-utils
+   :static-queue
+   :shaders-utils
+   :cl-gl-utils
+   :interfaces
+   :mesh-material
+   :identificable
+   :transformable
+   :entity
+   :camera
+   :game-state
+   :mesh
+   :gui-events
+   :gui
+   :widget
+   :full-screen-masks)
+  (:nicknames :op-seq)
+  (:shadowing-import-from :misc :shuffle :random-elt)
+  (:export
    :make-lava-fx
    :make-logo-lava
    :make-logo

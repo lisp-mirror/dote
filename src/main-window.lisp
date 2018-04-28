@@ -117,7 +117,7 @@
                    (delta-time-elapsed delta-time-elapsed)) object
     (saved-game:init-system-when-gl-context-active object)
     (mtree:add-child (world:gui world)
-                     (full-screen-masks:make-opening world))))
+                     (op-seq:make-opening world))))
 
 (defmacro with-gui ((world) &body body)
   (alexandria:with-gensyms (3d-projection-matrix 3d-view-matrix)
