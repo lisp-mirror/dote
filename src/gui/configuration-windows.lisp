@@ -38,14 +38,11 @@
           nil))))
 
 (defun keyboard-window-w ()
-  (let ((frame (d+ (d* (keyboard-text-entry-size) 5.0)
-                   (d* (icon-size) 5.0))))
+  (let ((frame (d/ (d *window-w*) 2.0)))
     (adjust-window-w frame)))
 
 (defun keyboard-window-h ()
-  (let ((frame (d+ (d* (keyboard-text-entry-size) 2.0)
-                   (icon-size)
-                   (main-window-button-h))))
+  (let ((frame (d/ (d *window-w*) 7.0)))
     (adjust-window-h frame)))
 
 (defun standard-text-entry-w ()
@@ -61,7 +58,8 @@
   (input-text-h *reference-sizes*))
 
 (defun keyboard-text-entry-size ()
-  (d/ (small-square-button-size *reference-sizes*) 2.0))
+  (d/ (icon-size)
+      2.0))
 
 (defun make-keyboard-text-entry (x y default)
   (make-instance 'conf-char-field
@@ -71,16 +69,19 @@
                  :y      y
                  :label  default))
 
-(defun make-standard-text-entry (x y default)
+(defun make-standard-text-entry (x y default
+                                 &key
+                                   (width  (standard-text-entry-w))
+                                   (height (standard-text-entry-h)))
   (make-instance 'text-field
-                 :width  (standard-text-entry-w)
-                 :height (standard-text-entry-h)
+                 :width  width
+                 :height height
                  :x      x
                  :y      y
                  :label  default))
 
 (defun icon-size ()
-  (small-square-button-size *reference-sizes*))
+  (d/ (keyboard-window-w) 8.5))
 
 (defun make-icon-config (x y texture-name)
   (make-instance 'signalling-light
@@ -93,28 +94,31 @@
 
 (defun char-field-stacked-x (index)
   (let((actual-index (d index)))
-    (d+ (keyboard-text-entry-size)
-        (d/ (keyboard-text-entry-size) 2.0)
-        (d* actual-index (keyboard-text-entry-size))
-        (d* actual-index (small-square-button-size *reference-sizes*)))))
+    (d+ (d* 1.5
+            (keyboard-text-entry-size))
+        (d* (d* 0.5 actual-index)
+            (keyboard-text-entry-size))
+        (d* actual-index
+            (d+ (keyboard-text-entry-size)
+                (icon-size))))))
 
 (defun char-field-stacked-y ()
-  (d+ (small-square-button-size *reference-sizes*)
+  (d+ (icon-size)
       (keyboard-text-entry-size)))
 
 (defun char-field-inbetween-x (index)
   (let((actual-index (d index)))
     (d+ (d* actual-index (keyboard-text-entry-size))
-        (d* actual-index (small-square-button-size *reference-sizes*)))))
+        (d* actual-index (icon-size)))))
 
 (defun char-field-inbetween-y ()
-  (d+ (d/ (small-square-button-size *reference-sizes*)
-          2.0)
-      (d/ (keyboard-text-entry-size)
-          2.0)))
+  (d* 1.25 (keyboard-text-entry-size)))
 
 (defun keyboard-button-w ()
   (d/ (main-window-button-w) 2.0))
+
+(defun keyboard-button-h ()
+  (d/ (main-window-button-w) 5.0))
 
 (defun save-keybindings-configuration-cb (w e)
   (declare (ignore e))
@@ -161,29 +165,29 @@
     :initarg  :s-move
     :accessor s-move)
    (s-rotation
-    :initform (make-icon-config  (d+ (d* 2.0 (keyboard-text-entry-size))
-                                     (small-square-button-size *reference-sizes*))
+    :initform (make-icon-config  (d+ (d* 2.5 (keyboard-text-entry-size))
+                                     (icon-size))
                                  (keyboard-text-entry-size)
                                  +config-rotation-texture-name+)
     :initarg  :s-rotation
     :accessor s-rotation)
    (s-elevation
-    :initform (make-icon-config (d+ (d* 3.0 (keyboard-text-entry-size))
-                                    (d* 2.0 (small-square-button-size *reference-sizes*)))
+    :initform (make-icon-config (d+ (d* 4.0 (keyboard-text-entry-size))
+                                    (d* 2.0 (icon-size)))
                                 (keyboard-text-entry-size)
                                 +config-camera-elevation-texture-name+)
     :initarg  :s-elevation
     :accessor s-elevation)
    (s-camera-reset
-    :initform (make-icon-config (d+ (d* 4.0 (keyboard-text-entry-size))
-                                    (d* 3.0 (small-square-button-size *reference-sizes*)))
+    :initform (make-icon-config (d+ (d* 5.5 (keyboard-text-entry-size))
+                                    (d* 3.0 (icon-size)))
                                 (keyboard-text-entry-size)
                                 +config-look-at-texture-name+)
     :initarg  :s-camera-reset
     :accessor s-camera-reset)
    (s-change-character
-    :initform (make-icon-config (d+ (d* 5.0 (keyboard-text-entry-size))
-                                    (d* 4.0 (small-square-button-size *reference-sizes*)))
+    :initform (make-icon-config (d+ (d* 7.0 (keyboard-text-entry-size))
+                                    (d* 4.0 (icon-size)))
                                 (keyboard-text-entry-size)
                                 +config-change-selected-character-texture-name+)
     :initarg  :s-change-character
@@ -263,11 +267,10 @@
    (b-save
     :initform (make-instance 'button
                              :width    (keyboard-button-w)
-                             :height   (main-window-button-h)
+                             :height   (keyboard-button-h)
                              :x        0.0
-                             :y        (d+ (d* 2.0 (keyboard-text-entry-size))
-                                           (small-square-button-size *reference-sizes*)
-                                           (spacing *reference-sizes*))
+                             :y        (d- (keyboard-window-h)
+                                           (keyboard-button-h))
                              :callback #'save-keybindings-configuration-cb
                              :label    (_ "Save"))
     :initarg :b-save
@@ -275,12 +278,11 @@
    (b-reset
     :initform (make-instance 'button
                              :width    (keyboard-button-w)
-                             :height   (main-window-button-h)
+                             :height   (keyboard-button-h)
                              :x        (d+ (keyboard-button-w)
                                            (spacing *reference-sizes*))
-                             :y        (d+ (d* 2.0 (keyboard-text-entry-size))
-                                           (small-square-button-size *reference-sizes*)
-                                           (spacing *reference-sizes*))
+                             :y        (d- (keyboard-window-h)
+                                           (keyboard-button-h))
                              :callback #'reset-keybindings-configuration-cb
                              :label (_ "Reset"))
     :initarg :b-reset
@@ -338,19 +340,18 @@
     w))
 
 (defun appearance-window-w ()
-  (let ((frame (appearance-button-w)))
+  (let ((frame (d/ (d *window-w*) 4.0)))
     (adjust-window-w frame)))
 
 (defun appearance-window-h ()
-  (let ((frame (d+ (appearance-button-h)
-                   (spacing *reference-sizes*))))
+  (let ((frame (d/ (d *window-w*) 90.0)))
     (adjust-window-h frame)))
 
 (defun appearance-button-w ()
-  (d* 3.0 (square-button-size *reference-sizes*)))
+  (appearance-window-w))
 
 (defun appearance-button-h ()
-  (checkbutton-h *reference-sizes*))
+  (d* 0.9 (appearance-window-h)))
 
 (defun update-config-smooth-movements-cb (button event)
   (declare (ignore event))
@@ -392,17 +393,20 @@
     (adjust-window-w frame)))
 
 (defun gui-window-h ()
-  (let ((frame (d+ (gui-button-h)
-                   (standard-text-entry-h)
-                   (standard-label-entry-h)
-                   (spacing *reference-sizes*))))
-    (adjust-window-h frame)))
+  (let ((frame (d* 0.5 (main-window-h))))
+    (adjust-window-w frame)))
 
 (defun gui-button-w ()
-  (d* (small-square-button-size *reference-sizes*)))
+  (d* (gui-window-w) 0.25))
 
 (defun gui-button-h ()
-  (d* 2.0 (checkbutton-h *reference-sizes*)))
+  (d* 0.4 (gui-button-w)))
+
+(defun gui-scaling-scaling-camera-label-h ()
+  (d* 0.3 (gui-button-h)))
+
+(defun gui-scaling-camera-text-entry-h ()
+  (d* 0.4 (gui-button-h)))
 
 (defun save-config-camera-fp-scaling-movement (w e)
   (declare (ignore e))
@@ -418,6 +422,7 @@
     :initform (make-instance 'widget:simple-label
                              :label     (_ "Speed for \"look around\" camera.")
                              :font-size (standard-font-size *reference-sizes*)
+                             :height    (gui-scaling-scaling-camera-label-h)
                              :width     (gui-window-w)
                              :x         0.0
                              :y         0.0)
@@ -426,8 +431,10 @@
     :accessor l-scale-fp-speed)
    (input-camera-fp-scaling-movement
     :initform (make-standard-text-entry 0.0
-                                        (standard-label-entry-h)
-                                        (to-s (gconf:config-camera-fp-scaling-movement)))
+                                        (add-epsilon-rel (gui-scaling-scaling-camera-label-h)
+                                                         (spacing-rel *reference-sizes*))
+                                        (to-s (gconf:config-camera-fp-scaling-movement))
+                                        :height (gui-scaling-camera-text-entry-h))
     :initarg  :input-camera-fp-scaling-movement
     :accessor input-camera-fp-scaling-movement)
    (b-save
@@ -435,9 +442,8 @@
                              :width    (gui-button-w)
                              :height   (gui-button-h)
                              :x        0.0
-                             :y        (d+ (standard-label-entry-h)
-                                           (standard-text-entry-h)
-                                           (spacing *reference-sizes*))
+                             :y        (d- (gui-window-h)
+                                           (gui-button-h))
                              :callback #'save-config-camera-fp-scaling-movement
                              :label    (_ "Save"))
     :initarg :b-save
@@ -463,19 +469,18 @@
     w))
 
 (defun debug-window-w ()
-  (let ((frame (debug-button-w)))
+  (let ((frame (d* 0.2 (d *window-w*))))
     (adjust-window-w frame)))
 
 (defun debug-window-h ()
-  (let ((frame (d+ (debug-button-h)
-                   (spacing *reference-sizes*))))
+  (let ((frame (d* 0.02 (d *window-h*))))
     (adjust-window-h frame)))
 
 (defun debug-button-w ()
-  (d* 2.0 (square-button-size *reference-sizes*)))
+  (debug-window-w))
 
 (defun debug-button-h ()
-  (checkbutton-h *reference-sizes*))
+  (d* 0.9 (debug-window-h)))
 
 (defun update-config-planner-cb (button event)
   (declare (ignore event))
@@ -513,19 +518,18 @@
     w))
 
 (defun ai-window-w ()
-  (let ((frame (ai-button-w)))
+  (let ((frame (d* 0.2 (d *window-w*))))
     (adjust-window-w frame)))
 
 (defun ai-window-h ()
-  (let ((frame (d+ (ai-button-h)
-                   (spacing *reference-sizes*))))
+  (let ((frame (d* 0.02 (d *window-h*))))
     (adjust-window-h frame)))
 
 (defun ai-button-w ()
-  (d* 3.0 (square-button-size *reference-sizes*)))
+  (ai-window-w))
 
 (defun ai-button-h ()
-  (checkbutton-h *reference-sizes*))
+  (d* 0.9 (ai-window-h)))
 
 (defun update-config-ai-training-cb (button event)
   (declare (ignore event))

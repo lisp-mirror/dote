@@ -31,10 +31,10 @@
 (alexandria:define-constant +tooltip-font-handle+         1 :test #'=)
 
 (defun join-lines-for-static-text (lines)
-  (join-with-srings lines +gui-static-text-delim+))
+  (join-with-strings lines +gui-static-text-delim+))
 
 (defun join-lines-for-static-text* (&rest lines)
-  (join-with-srings lines +gui-static-text-delim+))
+  (join-with-strings lines +gui-static-text-delim+))
 
 (defun get-font (handle)
   (gethash handle *fonts-db*))

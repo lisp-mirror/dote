@@ -405,6 +405,9 @@
   `(let ((*default-epsilon* ,epsilon))
      ,@body))
 
+(defun add-epsilon-rel (v &optional (epsilon *default-epsilon*))
+  (d+ v (d* epsilon v)))
+
 (defun epsilon<= (a b &optional (epsilon *default-epsilon*))
   (or (d<= a b)
       (epsilon= a b epsilon)))

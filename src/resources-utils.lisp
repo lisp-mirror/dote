@@ -1,18 +1,17 @@
 ;; dawn of the Era: a tactical game.
-;; Copyright (C) 2015  cage
+;; Copyright (C) 2018  cage
 
-;; This program is free software: you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation, either version 3 of the License, or
-;; (at your option) any later version.
+;; This  program is  free  software: you  can  redistribute it  and/or
+;; modify it  under the  terms of  the GNU  General Public  License as
+;; published by the Free Software  Foundation, either version 3 of the
+;; License, or (at your option) any later version.
 
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
-
-;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;; This program is distributed in the hope that it will be useful, but
+;; WITHOUT  ANY  WARRANTY;  without   even  the  implied  warranty  of
+;; MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE.   See the GNU
+;; General Public License for more  details.  You should have received
+;; a copy of  the GNU General Public License along  with this program.
+;; If not, see <http://www.gnu.org/licenses/>.
 
 (in-package :resources-utils)
 
@@ -22,18 +21,18 @@
 
 (defun construct-path (p)
   (let ((splitted (split +virtual-fs-dir-separator-regexp+ p)))
-    (strcat *directory-sep* (join-with-srings splitted *directory-sep*)
+    (strcat *directory-sep* (join-with-strings splitted *directory-sep*)
             (if (cl-ppcre:scan (strcat +virtual-fs-dir-separator-regexp+ "$") p)
                 *directory-sep*))))
 
 (defun home-datadir ()
-  (join-with-srings* *directory-sep*
-                     (uiop:getenvp "HOME")
-                     +home-data-dir+))
+  (join-with-strings* *directory-sep*
+                      (uiop:getenvp "HOME")
+                      +home-data-dir+))
 
 (defun shared-datadir ()
-  (join-with-srings* *directory-sep*
-                     +sys-data-dir+))
+  (join-with-strings* *directory-sep*
+                      +sys-data-dir+))
 
 (defun init ()
   #+debug-mode
@@ -42,7 +41,7 @@
   (fs:make-directory (home-datadir)))
 
 (defun find-in-home-datadir (file &key (return-always-path nil))
-  (let ((actual-path (join-with-srings* *directory-sep*
+  (let ((actual-path (join-with-strings* *directory-sep*
                                          (home-datadir)
                                          (construct-path file))))
     (cond
@@ -57,9 +56,9 @@
        nil))))
 
 (defun find-in-shared-datadir (file &key (return-always-path nil))
-  (let ((actual-path (join-with-srings* *directory-sep*
-                                        (shared-datadir)
-                                        (construct-path file))))
+  (let ((actual-path (join-with-strings* *directory-sep*
+                                         (shared-datadir)
+                                         (construct-path file))))
     ;;(break)
     (if (or
          (uiop:directory-exists-p actual-path)
@@ -76,14 +75,14 @@
 (defun construct-resource-path (resource p)
   (typecase resource
     (cons
-     (join-with-srings* +virtual-fs-dir-separator+
-                        (join-with-srings (mapcar #'%normalize-resource-name resource)
-                                          +virtual-fs-dir-separator+)
-                        p))
+     (join-with-strings* +virtual-fs-dir-separator+
+                         (join-with-strings (mapcar #'%normalize-resource-name resource)
+                                            +virtual-fs-dir-separator+)
+                         p))
      (otherwise
-      (join-with-srings* +virtual-fs-dir-separator+
-                        (%normalize-resource-name resource)
-                        p))))
+      (join-with-strings* +virtual-fs-dir-separator+
+                          (%normalize-resource-name resource)
+                          p))))
 
 (define-condition resource-not-found-error (file-error)
   ((resource
@@ -134,6 +133,15 @@
           shared-path)
          (t
           (error 'resource-not-writable-error :pathname path :resource resource)))))))
+
+(defun get-resource-files-merge (resource predicate)
+  "home wins"
+  (let* ((home-path  (find-in-home-datadir   (construct-resource-path resource ".")))
+         (shared-path (find-in-shared-datadir (construct-resource-path resource ".")))
+         (res         (directory-files        home-path)))
+    (loop for i in (directory-files shared-path) do
+         (pushnew i res :test predicate))
+    res))
 
 (defun get-resource-files (resource &key (if-does-not-exists :error))
   (let ((home-path   (find-in-home-datadir   (construct-resource-path resource ".")))

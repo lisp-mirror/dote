@@ -403,6 +403,12 @@ Name from Emacs Lisp."
 
 ;; sequence utils
 
+(defun safe-subseq (sequence start &optional (end nil))
+  "return the whole sequence if end is beyond ythe legth of the sequence"
+  (subseq sequence
+          start
+          (and end (min end (length sequence)))))
+
 (defun vector-empty-p (v)
   (declare (optimize (speed 3) (safety 0) (debug 0)))
   (declare (vector v))

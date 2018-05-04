@@ -17,41 +17,44 @@
 (in-package :widget)
 
 (defun preprt-window-w ()
-  (d* (d *window-w*) 0.65))
+  (adjust-window-w (d* (d *window-w*) 0.65)))
 
 (defun preprt-window-h ()
-  (d* (d *window-h*) 0.7))
+  (adjust-window-h (d* (d *window-h*) 0.8)))
 
 (defun preprt-gender/class-w ()
   (d/ (d *window-w*) 7.0))
 
 (defun preprt-label-ability-w ()
-  (d* 5.0 (input-text-w *reference-sizes*)))
+  (preprt-window-w))
 
 (defun preprt-label-ability-h ()
-  (d* 1.5 (input-text-h *reference-sizes*)))
+  (d* 0.035 (preprt-window-h)))
 
 (defun preprt-label-ability-x ()
   0.0)
 
 (defun preprt-label-ability-y (row)
-  (d+ (d* 1.8 +portrait-size+)
+  (d+ (d* 2.0 +portrait-size+)
       (d* (d row)
-          (input-text-h *reference-sizes*))))
+          (preprt-label-ability-h))))
 
 (defun preprt-characteristics-x ()
-  (d+ (preprt-label-ability-h)
+  (d* 2.0
       (preprt-gender/class-w)))
+
+(defun preprt-characteristics-h ()
+  (d* 0.8 (preprt-label-ability-h)))
+
+(defun preprt-characteristics-w ()
+  (d* 0.33 (preprt-window-w)))
 
 (defun preprt-characteristics-y (row)
   (d* (d row)
-      (d+ (spacing *reference-sizes*)
-          (input-text-h *reference-sizes*))))
+      (preprt-characteristics-h)))
 
 (defun preprt-portrait-y ()
-  (d+
-   (d* 2.0 (h1-font-size *reference-sizes*))
-   (spacing *reference-sizes*)))
+  (d* 0.1 (preprt-window-h)))
 
 (defun preprt-portrait-x ()
   0.0)
@@ -65,8 +68,9 @@
     :initform (make-instance 'simple-label-prefixed
                              :prefix     (_ "Class: ")
                              :label      ""
-                             :font-size (h1-font-size *reference-sizes*)
-                             :width     (preprt-gender/class-w)
+                             :width  (preprt-label-ability-w)
+                             :height (preprt-label-ability-h)
+                             :font-size (preprt-label-ability-h)
                              :x         0.0
                              :y         0.0)
     :initarg  :lb-class
@@ -75,8 +79,8 @@
     :initform (make-instance 'simple-label-prefixed
                              :prefix     (_ "Gender: ")
                              :label      ""
-                             :font-size (h1-font-size *reference-sizes*)
-                             :width     (preprt-gender/class-w)
+                             :width  (preprt-label-ability-w)
+                             :height (preprt-label-ability-h)
                              :x         0.0
                              :y         (h1-font-size *reference-sizes*))
     :initarg  :lb-gender
@@ -324,28 +328,30 @@
     :accessor lb-name)
    (lb-strength
     :initform (make-instance 'simple-label-prefixed
-                             :width  (input-text-w *reference-sizes*)
-                             :height (input-text-h *reference-sizes*)
+                             :width  (preprt-characteristics-w)
+                             :height (preprt-characteristics-h)
                              :x (preprt-characteristics-x)
                              :y (preprt-characteristics-y 0.0)
                              :prefix (_ "STR: ")
+                             :font-size (preprt-characteristics-h)
                              :label "")
     :initarg  :lb-strength
     :accessor lb-strength)
    (lb-stamina
     :initform (make-instance 'simple-label-prefixed
-                             :width  (input-text-w *reference-sizes*)
-                             :height (input-text-h *reference-sizes*)
-                             :x (preprt-characteristics-x)
-                             :y (preprt-characteristics-y 1.0)
+                             :width  (preprt-characteristics-w)
+                             :height (preprt-characteristics-h)
+                             :x      (preprt-characteristics-x)
+                             :y         (preprt-characteristics-h)
+                             :font-size (preprt-characteristics-h)
                              :prefix (_ "ST:  ")
                              :label "")
     :initarg  :lb-stamina
     :accessor lb-stamina)
    (lb-dexterity
     :initform (make-instance 'simple-label-prefixed
-                             :width  (input-text-w *reference-sizes*)
-                             :height (input-text-h *reference-sizes*)
+                             :width  (preprt-characteristics-w)
+                             :height (preprt-characteristics-h)
                              :x (preprt-characteristics-x)
                              :y (preprt-characteristics-y 2.0)
                              :prefix (_ "DX:  ")
@@ -354,8 +360,8 @@
     :accessor lb-dexterity)
    (lb-agility
     :initform (make-instance 'simple-label-prefixed
-                             :width  (input-text-w *reference-sizes*)
-                             :height (input-text-h *reference-sizes*)
+                             :width  (preprt-characteristics-w)
+                             :height (preprt-characteristics-h)
                              :x (preprt-characteristics-x)
                              :y (preprt-characteristics-y 3.0)
                              :prefix (_ "AG:  ")
@@ -364,8 +370,8 @@
     :accessor lb-agility)
    (lb-smartness
     :initform (make-instance 'simple-label-prefixed
-                             :width  (input-text-w *reference-sizes*)
-                             :height (input-text-h *reference-sizes*)
+                             :width  (preprt-characteristics-w)
+                             :height (preprt-characteristics-h)
                              :x (preprt-characteristics-x)
                              :y (preprt-characteristics-y 4.0)
                              :prefix (_ "SM:  ")
@@ -374,8 +380,8 @@
     :accessor lb-smartness)
    (lb-empaty
     :initform (make-instance 'simple-label-prefixed
-                             :width  (input-text-w *reference-sizes*)
-                             :height (input-text-h *reference-sizes*)
+                             :width  (preprt-characteristics-w)
+                             :height (preprt-characteristics-h)
                              :x (preprt-characteristics-x)
                              :y (preprt-characteristics-y 5.0)
                              :prefix (_ "EM:  ")
@@ -384,8 +390,8 @@
     :accessor lb-empaty)
    (lb-weight
     :initform (make-instance 'simple-label-prefixed
-                             :width  (input-text-w *reference-sizes*)
-                             :height (input-text-h *reference-sizes*)
+                             :width  (preprt-characteristics-w)
+                             :height (preprt-characteristics-h)
                              :x (preprt-characteristics-x)
                              :y (preprt-characteristics-y 6.0)
                              :prefix (_ "WG:  ")
@@ -634,8 +640,8 @@
 
 (defun make-player-report-win (player)
   (make-instance 'player-report
-                 :x 0.0
-                 :y 100.0
+                 :x      0.0
+                 :y      0.0
                  :player player
                  :width  (preprt-window-w)
                  :height (preprt-window-h)

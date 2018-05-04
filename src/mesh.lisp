@@ -766,6 +766,8 @@
 
 (defgeneric transform-vertices (object transformation))
 
+(defgeneric recursively-transform-vertices (object transformation))
+
 (defgeneric get-material-from-texture (object))
 
 (defgeneric setup-projective-texture (object))
@@ -950,6 +952,12 @@
        (setf (elt (vertices object) i)
              (transform-point (elt (vertices object) i) transformation)))
   (reset-aabb object)
+  object)
+
+(defmethod recursively-transform-vertices ((object triangle-mesh) transformation)
+  (transform-vertices object transformation)
+  (do-children-mesh (c object)
+    (recursively-transform-vertices c transformation))
   object)
 
 (defmethod get-material-from-texture ((object triangle-mesh))
@@ -2753,22 +2761,26 @@
 
 (defmethod destroy ((object triangle-mesh-shell))
   "does nothing"
-  )
+    (declare (ignore object)))
 
 (defmethod prepare-for-rendering ((object triangle-mesh-shell))
   object)
 
 (defmethod make-data-for-opengl ((object triangle-mesh-shell))
   "does nothing to prevent gc reclaiming the data (vao vbo etc.)"
-  )
+  (declare (ignore object)))
 
 (defmethod make-data-for-opengl-tangents-obj-space ((object triangle-mesh-shell))
   "does nothing to prevent gc reclaiming the data (vao vbo etc.)"
-  )
+  (declare (ignore object)))
 
 (defmethod make-data-for-opengl-aabb-obj-space ((object triangle-mesh-shell))
   "does nothing to prevent gc reclaiming the data (vao vbo etc.)"
-  )
+  (declare (ignore object)))
+
+(defmethod transform-vertices ((object triangle-mesh-shell) transformation)
+  "does nothing"
+  (declare (ignore object transformation)))
 
 (defgeneric fill-mesh-data (object source))
 

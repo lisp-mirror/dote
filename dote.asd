@@ -141,6 +141,7 @@
                                      (:file "configuration-windows")
                                      (:file "train-ai-window")
                                      (:file "load-save-window")
+                                     (:file "new-game-window")
                                      (:file "splash-screen-progress-gauge")
                                      (:file "full-screen-masks")
                                      (:file "opening-sequence")))
@@ -207,20 +208,22 @@
 
 (progn
   ;; debug
-  (pushnew :debug-mode                      *features*)
+  (pushnew :debug-mode                        *features*)
   ;; *push* for release
-  ;;(pushnew :inhibit-update-unexplored-layer *features*)
+  ;;(pushnew :inhibit-update-unexplored-layer   *features*)
   ;; do not push for release
-  (pushnew :inhibit-modal-button            *features*)
+  (pushnew :inhibit-modal-button              *features*)
   ;; do not push for release
-  ;; (pushnew :small-skydome                *features*)
+  ;; (pushnew :small-skydome                    *features*)
   ;; do not push for release
-  (pushnew :fast-opening                    *features*)
+  ;;(pushnew :fast-opening                      *features*)
   ;; do not push for release
-  (pushnew :debug-blackboard-layers         *features*)
+  (pushnew :debug-blackboard-layers           *features*)
   ;; do not push for release
-  (pushnew :debug-ai                        *features*)
+  (pushnew :debug-ai                          *features*)
   ;; do not push for release
-  ; (pushnew :keep-dead-player             *features*)
+  ;;(pushnew :keep-dead-player                  *features*)
+  ;; do not push for release
+  ;;(pushnew :debug-gui                         *features*)
   ;; config
-  (pushnew :md2-gpu-lerp                    *features*))
+  (pushnew :md2-gpu-lerp                      *features*))

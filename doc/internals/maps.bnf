@@ -2,6 +2,7 @@ LEVEL                                := PACKAGE LEVEL-DEFINE
 
 LEVEL-DEFINE                         := '(define-level
                                                 NAME
+                                                NOTES
                                                 SEED
                                                 CLOUDNESS
                                                 BUILDINGS-LEVEL
@@ -53,6 +54,8 @@ LABYRINTH-WIN-FUNCTION               :=  'labyrinth-win-function'
 LABYRINTH-FURNITURE-FUNCTION         :=  'labyrinth-furniture-function'
 
 NAME                                 := SET 'name' FREE-STRING COLOR
+
+NOTES                                := SET 'notes' FREE-STRING
 
 SEED                                 := SET 'seed' FREE-STRING
 

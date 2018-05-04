@@ -270,8 +270,8 @@
               (incf *near* -.1))
             (when (string= text "p")
               (mtree:add-child (world:gui world)
-                                (full-screen-masks:make-fade-out-flash
-                                 (root-compiled-shaders object))))
+                               (widget:make-player-generator world)))
+
             (when (string= text "D")
               (world:apply-tremor-0 world))
             (when (string= text "L")

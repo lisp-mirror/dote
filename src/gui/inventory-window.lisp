@@ -223,10 +223,11 @@
   (declare (ignore e))
   (with-parent-widget (win) w
     (with-accessors ((owner owner)) win
+    (let ((root (find-root-widget win)))
       (let ((new-window (make-player-report-win (ghost owner))))
         (setf (compiled-shaders new-window) (compiled-shaders win))
         (setf (callback (close-button new-window)) #'hide-and-remove-grandparent-cb)
-        (add-child win new-window)))))
+        (add-child root new-window))))))
 
 (defun open-spell-list-cb (w e)
   (declare (ignore e))
@@ -407,11 +408,11 @@
     :accessor b-prev-page)
    (lb-page-count
     :initform (make-instance 'simple-label-prefixed
-                             :width  (d* 1.9 (small-square-button-size *reference-sizes*))
-                             :height (input-text-h *reference-sizes*)
+                             :width  (square-button-size *reference-sizes*)
+                             :height (d* 2.0 (input-text-h *reference-sizes*))
                              :x      (small-square-button-size *reference-sizes*)
                              :y      (d- (d/ (small-square-button-size *reference-sizes*) 2.0)
-                                         (d/ (input-text-h *reference-sizes*)))
+                                         (input-text-h *reference-sizes*))
                              :prefix (_ "Page ")
                              :label "")
     :initarg  :lb-page-count
@@ -646,8 +647,7 @@
     :initform (make-inventory-slot-button (d- (d* 0.66 (inventory-window-width))
                                               (d/ (small-square-button-size *reference-sizes*)
                                                   2.0))
-                                          (d/ (small-square-button-size *reference-sizes*)
-                                              2.0)
+                                          (d* 0.12 (inventory-window-height))
                                           :callback #'inventory-update-description-cb)
     :initarg  :elm-slot
     :accessor elm-slot)
@@ -655,8 +655,7 @@
     :initform (make-inventory-slot-button (d- (d* 0.66 (inventory-window-width))
                                               (d/ (small-square-button-size *reference-sizes*)
                                                   2.0))
-                                          (d- (inventory-window-height)
-                                              (small-square-button-size *reference-sizes*))
+                                          (d* 0.8 (inventory-window-height))
                                           :callback #'inventory-update-description-cb)
     :initarg  :shoes-slot
     :accessor shoes-slot)
@@ -867,6 +866,9 @@
           (left-frame-offset *reference-sizes*)
           (d* 5.0 (small-square-button-size *reference-sizes*)))))
 
+(defun inventory-window-height ()
+    (d+ (d* 12.0 (small-square-button-size *reference-sizes*))))
+
 (defun inventory-silhouette-w ()
   (d* 0.25 (inventory-window-width)))
 
@@ -874,15 +876,13 @@
   (d- (inventory-window-height)
       (d* 3.0 (small-square-button-size *reference-sizes*))))
 
-(defun inventory-window-height ()
-    (d+ (d* 12.0 (small-square-button-size *reference-sizes*))))
-
 (defun make-inventory-window (player &optional (chest nil))
-  (make-instance 'inventory-window
-                 :owner  player
-                 :chest  chest
-                 :x      0.0
-                 :y      (d (- *window-h* (inventory-window-height)))
-                 :width  (inventory-window-width)
-                 :height (inventory-window-height)
-                 :label  (_ "Inventory")))
+  (let ((res (make-instance 'inventory-window
+                            :owner  player
+                            :chest  chest
+                            :x      0.0
+                            :y      (d (- *window-h* (inventory-window-height)))
+                            :width  (inventory-window-width)
+                            :height (inventory-window-height)
+                            :label  (_ "Inventory"))))
+    res))

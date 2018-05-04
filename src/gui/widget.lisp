@@ -38,7 +38,7 @@
 
 (alexandria:define-constant +file-visible-slot+ 5 :test #'=)
 
-(defparameter *child-flip-y* t)
+(defparameter *child-remap-y* t)
 
 (definline widgetp (w)
   (typep w 'widget))
@@ -152,6 +152,10 @@
     :initform 0.25
     :initarg  :top-bar-space-for-title
     :accessor top-bar-space-for-title)
+   (top-bar-tile-height-scaling
+    :initform 0.60
+    :initarg  :top-bar-tile-height-scaling
+    :accessor top-bar-tile-height-scaling)
    (frame-relative-offset
     :initform 0.1
     :initarg  :frame-relative-offset
@@ -181,11 +185,11 @@
     :initarg  :left-frame-offset
     :accessor left-frame-offset)
    (top-frame-offset
-    :initform 0.062
+    :initform 0.070
     :initarg  :top-frame-offset
     :accessor top-frame-offset)
    (bottom-frame-offset
-    :initform 0.090
+    :initform 0.070
     :initarg  :bottom-frame-offset
     :accessor bottom-frame-offset)
    (h1-font-size
@@ -225,7 +229,7 @@
     :initarg  :button-label-color
     :accessor button-label-color)
    (checkbutton-h
-    :initform 14.0
+    :initform 16.0
     :initarg  :checkbutton-h
     :accessor checkbutton-h)
    (input-text-w
@@ -240,6 +244,10 @@
     :initform 2.0
     :initarg  :spacing
     :accessor spacing)
+   (spacing-rel
+    :initform 0.3
+    :initarg  :spacing-rel
+    :accessor spacing-rel)
    (square-button-size
     :initform (d/ (d *window-w*) 10.0)
     :initarg  :square-button-size
@@ -363,7 +371,7 @@
 
 (defgeneric (setf y) (new-value object))
 
-(defgeneric setup-label (object new-label))
+(defgeneric setup-label (object new-label &key reset-label-slot))
 
 (defgeneric hide (object))
 
@@ -461,7 +469,7 @@
          (return-from on-key-pressed t)))
   nil)
 
-(defun common-setup-label (widget new-label)
+(defun common-setup-label (widget new-label &key (reset-label-slot t))
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (simple-string new-label))
   (with-accessors ((label-font label-font)
@@ -472,7 +480,8 @@
     (with-slots (label) widget
       (declare (simple-string label))
       (remove-all-children widget)
-      (setf label new-label)
+      (when reset-label-slot
+        (setf label new-label))
       (loop for c across label do
            (let* ((mesh  (get-char-mesh label-font c))
                   (shell (if mesh
@@ -623,6 +632,10 @@
             (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
             (gl:draw-arrays :triangles 0 (* 3 (length triangles)))))))))
 
+(defmethod setup-label ((object naked-button) new-label &key (reset-label-slot t))
+  "does nothing"
+  (declare (ignore object  new-label reset-label-slot)))
+
 (defmethod on-mouse-pressed ((object naked-button) event)
   (if (mouse-over object (x-event event) (y-event event))
       (setf (current-texture object) (texture-pressed object))
@@ -754,17 +767,22 @@
     (setf (button-state button) initial-state)
     (let ((text-font-size (min label-font-size
                                (d* (label-font-size object)
-                                   (d/ (d- width height) (label-width object))))))
+                                   (d/ (d- width height) ;; checkbox is square
+                                       (label-width object))))))
       (setf text (make-instance 'simple-label
                                 :x               0.0
-                                :y               (d- (d/ height 2.0)
-                                                     (d/ text-font-size 2.0))
+                                :y               0.0
                                 :width           (d- width height)
+                                :height          height
                                 :label           label
                                 :justified       nil
                                 :label-font-size text-font-size)))
     (add-child object text)
     (add-child object button)))
+
+(defmethod setup-label ((object labeled-check-button) new-label &key (reset-label-slot t))
+  (with-accessors ((text text)) object
+    (setup-label text new-label :reset-label-slot reset-label-slot)))
 
 (defmethod render :after ((object labeled-check-button) renderer)
   (do-children-mesh (c object)
@@ -1002,7 +1020,7 @@
     (when label
       (setf (label object) label))))
 
-(defmethod (setf label) (new-label (object button))
+(defmethod setup-label ((object button) new-label &key (reset-label-slot t))
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (simple-string new-label))
   (with-accessors ((label-font-size label-font-size)
@@ -1010,7 +1028,7 @@
                    (width width)
                    (children children)) object
     (declare (desired-type width height label-font-size))
-    (common-setup-label object new-label)
+    (common-setup-label object new-label :reset-label-slot reset-label-slot)
     (let* ((label-width   (label-width object))
            (scaling-width (d/ (d- width (d* 2.0
                                             (button-text-offset-x *reference-sizes*)
@@ -1028,6 +1046,9 @@
                                          (d+ (d/ height 2.0)
                                              (d- (d* label-font-size 0.5)))
                                          0.0))))))
+
+(defmethod (setf label) (new-label (object button))
+  (setup-label object new-label :reset-label-slot t))
 
 (defmethod render ((object button) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -1113,7 +1134,7 @@
       (do-children-mesh (c object)
         (render c renderer)))))
 
-(defmethod (setf label) (new-label (object text-field))
+(defmethod setup-label ((object text-field) new-label &key (reset-label-slot t))
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (simple-string new-label))
   (with-accessors ((label-font-size label-font-size)
@@ -1121,7 +1142,7 @@
                    (width width)
                    (children children)) object
     (declare (desired-type width height label-font-size))
-    (common-setup-label object new-label)
+    (common-setup-label object new-label :reset-label-slot reset-label-slot)
     (let* ((label-width     (label-width object))
            (scaling-width   (d/ (d- width (d* 2.0
                                               (button-text-offset-x *reference-sizes*)
@@ -1142,6 +1163,10 @@
                                          (d+ (d/ height 2.0)
                                              (d- (d* label-font-size 0.5)))
                                          0.0))))))
+
+
+(defmethod (setf label) (new-label (object text-field))
+  (setup-label object new-label :reset-label-slot t))
 
 (defmethod (setf focus) (new-state (object text-field))
   (with-slots (focus) object
@@ -1207,18 +1232,23 @@
     (when label
       (setf (label object) label))))
 
-(defmethod (setf label) (new-label (object simple-label))
+(defmethod setup-label ((object simple-label) new-label &key (reset-label-slot t))
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (simple-string new-label))
   (with-accessors ((label-font-size label-font-size)
                    (children children)) object
-    (common-setup-label object new-label)
+    (common-setup-label object new-label :reset-label-slot reset-label-slot)
     (setf (label-font-size object) (calculate-text-scaling object))
     (loop
        for l across (the (simple-array triangle-mesh (*)) children)
        for xf single-float from 0.0 by label-font-size do
-         (setf (scaling l) (sb-cga:vec label-font-size label-font-size 0.0))
+         (setf (scaling l) (sb-cga:vec label-font-size
+                                       label-font-size
+                                       0.0))
          (setf (pos     l) (sb-cga:vec xf 0.0 0.0)))))
+
+(defmethod (setf label) (new-label (object simple-label))
+  (setup-label object new-label :reset-label-slot t))
 
 (defclass simple-label-prefixed (simple-label)
   ((prefix
@@ -1227,20 +1257,14 @@
     :accessor prefix)))
 
 (defmethod (setf label) (new-label (object simple-label-prefixed))
-  (declare (optimize (debug 0) (speed 3) (safety 0)))
-  (declare (simple-string new-label))
-  (with-accessors ((label-font-size label-font-size)
-                   (children children)
-                   (prefix prefix)) object
-    (common-setup-label object (format nil "~a~a" prefix new-label))
-    (setf (label-font-size object) (calculate-text-scaling object))
-    (loop
-       for l across (the (simple-array triangle-mesh (*)) children)
-       for xf single-float from 0.0 by label-font-size do
-         (setf (scaling l) (sb-cga:vec label-font-size label-font-size 0.0))
-         (setf (pos     l) (sb-cga:vec xf 0.0 0.0)))))
+  (with-accessors ((prefix prefix)) object
+    (declare (optimize (debug 0) (speed 3) (safety 0)))
+    (declare (simple-string new-label prefix))
+    (setup-label object
+                 (format nil "~a~a" prefix new-label)
+                 :reset-label-slot t)))
 
-(defun common-lush-*-label-setup (widget new-label x-shift-fn)
+(defun common-lush-*-label-setup (widget new-label x-shift-fn &key (reset-label-slot t))
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (simple-string new-label))
   (declare (function x-shift-fn))
@@ -1252,6 +1276,9 @@
                    (children children)) widget
     (declare (desired-type width height label-font-size))
     (remove-all-children widget)
+    (when reset-label-slot
+      (with-slots (label) widget
+        (setf label new-label)))
     (let* ((char-width    (ftruncate (d/ width label-font-size)))
            (lines         (reverse (flush-left-mono-text (split-words new-label) char-width)))
            (actual-height (d* label-font-size (d (length lines)))))
@@ -1279,7 +1306,7 @@
 
 (defclass flush-left-label (simple-label) ())
 
-(defmethod (setf label) (new-label (object flush-left-label))
+(defmethod setup-label ((object flush-left-label) new-label &key (reset-label-slot t))
   (with-accessors ((label-font-size label-font-size)
                    (label-font label-font)
                    (label-font-color label-font-color)
@@ -1290,11 +1317,15 @@
     (let ((x-shift-fn #'(lambda (widget xf line)
                           (declare (ignore widget line))
                           xf)))
-      (common-lush-*-label-setup object new-label x-shift-fn))))
+      (common-lush-*-label-setup object new-label x-shift-fn
+                                 :reset-label-slot reset-label-slot))))
+
+(defmethod (setf label) (new-label (object flush-left-label))
+  (setup-label object new-label :reset-label-slot t))
 
 (defclass flush-center-label (simple-label) ())
 
-(defmethod (setf label) (new-label (object flush-center-label))
+(defmethod setup-label ((object flush-center-label) new-label &key (reset-label-slot t))
   (with-accessors ((label-font-size label-font-size)
                    (label-font label-font)
                    (label-font-color label-font-color)
@@ -1309,9 +1340,14 @@
                               (d/ (d* label-font-size
                                       (d (length line)))
                                   2.0)))))
-      (common-lush-*-label-setup object new-label x-shift-fn))))
+      (common-lush-*-label-setup object new-label x-shift-fn
+                                 :reset-label-slot reset-label-slot))))
 
-(defclass static-text (widget)
+(defmethod (setf label) (new-label (object flush-center-label))
+  (setup-label object new-label :reset-label-slot t))
+
+(defclass static-text (#+debug-gui naked-button
+                       #-debug-gui widget)
   ((justified
     :initform t
     :initarg  :justified
@@ -1336,9 +1372,7 @@
               (cl-ppcre:regex-replace-all +gui-static-text-nbsp+ a " "))
           lines))
 
-(defmethod (setf label) (new-label (object static-text))
-  (declare (optimize (debug 3) (speed 0) (safety 3)))
-  (declare (simple-string new-label))
+(defmethod setup-label ((object static-text) new-label &key (reset-label-slot t))
   (with-accessors ((label-font-size label-font-size)
                    (label-font label-font)
                    (label-font-color label-font-color)
@@ -1348,6 +1382,9 @@
                    (justified justified)) object
     (declare (desired-type width height label-font-size))
     (remove-all-children object)
+    (when reset-label-slot
+      (with-slots (label) object
+        (setf label new-label)))
     (let* ((char-width (ftruncate (d/ width label-font-size)))
            (lines      (remove-nbrk-space (split-text-lines new-label char-width justified)))
            (wanted-height      (d* label-font-size (d (length lines))))
@@ -1358,6 +1395,7 @@
            (actual-height      (d- (d height)
                                    (d* actual-height-font (d (length lines))))))
       (declare (list lines))
+      (misc:dbg "fs ~a ~a" label-font-size actual-height-font)
       (do ((line-count (d 0.0) (d+ line-count 1.0))
            (line       lines   (rest line)))
           ((not line))
@@ -1375,11 +1413,54 @@
                (setf (pos     shell) (sb-cga:vec xf
                                                  (d+ (d* line-count actual-height-font)
                                                      actual-height)
-                                                 0.0))
-               (add-child object shell))))))))
+                                                 0.0)))
+             (add-child object shell)))))))
+
+(defmethod (setf label) (new-label (object static-text))
+  (setup-label object new-label :reset-label-slot t))
 
 (defmethod label-width ((object static-text))
   (width object))
+
+#+debug-gui
+(defmethod render ((object static-text) renderer)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((vbo vbo)
+                   (vao vao)
+                   (current-texture current-texture)
+                   (texture-overlay texture-overlay)
+                   (projection-matrix projection-matrix)
+                   (model-matrix model-matrix)
+                   (view-matrix view-matrix)
+                   (compiled-shaders compiled-shaders)
+                   (triangles triangles)
+                   (material-params material-params)
+                   (shown shown)) object
+    (declare (texture current-texture texture-overlay))
+    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
+    (declare (list triangles vao vbo))
+    (when shown
+      (when (> (length triangles) 0)
+        (with-camera-view-matrix (camera-vw-matrix renderer)
+          (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+            (use-program compiled-shaders :gui-naked-button)
+            (gl:active-texture :texture0)
+            (texture:bind-texture current-texture)
+            (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+            (gl:active-texture :texture1)
+            (texture:bind-texture texture-overlay)
+            (uniformi compiled-shaders :texture-overlay +texture-unit-overlay+)
+            (uniformfv compiled-shaders :ia #(1.0 1.0 1.0))
+            (uniform-matrix compiled-shaders :modelview-matrix 4
+                                     (vector (sb-cga:matrix* camera-vw-matrix
+                                                             (elt view-matrix 0)
+                                                             (elt model-matrix 0)))
+                                     nil)
+            (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+            (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+            (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))
+      (do-children-mesh (c object)
+        (render c renderer)))))
 
 (defclass h-bar (widget)
   ((fill-level
@@ -1425,18 +1506,21 @@
   (do-children-mesh (c object)
     (render c renderer)))
 
-(defmethod setup-label ((object h-bar) new-label)
-  (declare (optimize (debug 0) (speed 3) (safety 0)))
+(defmethod setup-label ((object h-bar) new-label &key (reset-label-slot t))
   (declare (simple-string new-label))
   (with-accessors ((label-font label-font)
                    (label-font-size label-font-size)
                    (label-font-color label-font-color)
                    (children children)
+                   (height height)
+                   (width width)
                    (label-shells label-shells)) object
-    (declare (desired-type label-font-size))
+    (declare (desired-type width height label-font-size))
+    (declare ((array font-mesh-shell (*)) label-shells))
     (with-slots (label) object
       (declare (simple-string label))
-      (setf label new-label)
+      (when reset-label-slot
+        (setf label new-label))
       (loop for c across label do
            (let* ((mesh  (get-char-mesh label-font c))
                   (shell (if mesh
@@ -1444,7 +1528,12 @@
                              nil)))
              (when shell
                (vector-push-extend shell label-shells)
-               (add-child object shell)))))))
+               (add-child object shell)))))
+    (loop
+       for l across label-shells
+       for xf single-float from 0.0 by label-font-size do
+         (setf (scaling l) (sb-cga:vec label-font-size height 0.0))
+         (setf (pos l)     (sb-cga:vec xf 0.0 0.0)))))
 
 (defmethod (setf label) (new-label (object h-bar))
   (declare (optimize (debug 0) (speed 1) (safety 0)))
@@ -1456,12 +1545,7 @@
                    (label-shells label-shells)) object
     (declare (desired-type width height label-font-size))
     (declare ((array font-mesh-shell (*)) label-shells))
-    (setup-label object new-label)
-    (loop
-       for l across label-shells
-       for xf single-float from 0.0 by label-font-size do
-         (setf (scaling l) (sb-cga:vec label-font-size height 0.0))
-         (setf (pos l)     (sb-cga:vec xf 0.0 0.0)))))
+    (setup-label object new-label :reset-label-slot t)))
 
 (defgeneric (setf fill-level) (value object))
 
@@ -1473,10 +1557,10 @@
 
 (defun adjust-window-h (frame)
   "use this function to have the inner frame height matching the size of the whole frame"
-  (d+ frame
-      (top-bar-h               *reference-sizes*)
-      (d* (top-frame-offset    *reference-sizes*) frame)
-      (d* (bottom-frame-offset *reference-sizes*) frame)))
+   (d+ frame
+        (top-bar-h               *reference-sizes*)
+        (d* (top-frame-offset    *reference-sizes*) frame)
+        (d* (bottom-frame-offset *reference-sizes*) frame)))
 
 (defun adjust-window-w (frame)
   "use this function to have the inner frame width matching the size of the whole frame"
@@ -1551,6 +1635,96 @@
           (add-child object frame)
           (add-child object top-bar))))))
 
+(defun remap-x-child-in-window (window child)
+  (declare (optimize (debug 3) (speed 0) (safety 3)))
+  (with-accessors ((parent-w width)
+                   (frame    frame)) window
+    (with-accessors ((orig-w-frame width)) frame
+      (with-accessors ((child-x x)
+                       (child-w width)) child
+        (let* ((offset    (d* 2.0 (left-frame-offset *reference-sizes*) orig-w-frame))
+               (frame-w   (d- orig-w-frame offset))
+               (scale-child (d/ frame-w parent-w))
+               (scale       (alexandria:clamp (normalize-value-in-range child-x
+                                                                       0.0
+                                                                       parent-w)
+                                              0.0 1.0))
+
+               (child-new-w (d* scale-child child-w))
+               (child-new-x (d+ (d* scale frame-w)
+                                (d/ offset 2.0))))
+          (values scale-child child-new-w child-new-x))))))
+
+(defun remap-y-child-in-window (window child)
+  (declare (optimize (debug 3) (speed 0) (safety 3)))
+  (with-accessors ((parent-h height)
+                   (frame    frame)) window
+    (with-accessors ((orig-h-frame height)) frame
+      (with-accessors ((child-y y)
+                       (child-h height)) child
+        (let* ((top-offset    (d* (top-frame-offset *reference-sizes*)    orig-h-frame))
+               (bottom-offset (d* (bottom-frame-offset *reference-sizes*) orig-h-frame))
+               (frame-h       (d- orig-h-frame
+                                  top-offset
+                                  bottom-offset))
+               (scale   (- 1.0
+                           (alexandria:clamp (normalize-value-in-range child-y
+                                                                       0.0
+                                                                       parent-h)
+                                             0.0 1.0)))
+               (scale-child (d/ frame-h parent-h))
+               (child-new-h (d* scale-child child-h))
+               (child-new-y (d- (d+  (d* scale frame-h)
+                                     bottom-offset)
+                                child-new-h)))
+          (values scale-child child-new-h child-new-y))))))
+
+(defmethod fit-into-window ((object window) (window window))
+  (declare (ignore object window)))
+
+(defmethod fit-into-window ((object widget) (window window))
+  (with-accessors ((child-y y)
+                   (child-x x)
+                   (child-h height)
+                   (child-w width)) object
+    (multiple-value-bind (scale-y child-new-h child-new-y)
+        (remap-y-child-in-window window object)
+      (multiple-value-bind (scale-x child-new-w child-new-x)
+          (remap-x-child-in-window window object)
+        (recursively-transform-vertices object (sb-cga:scale* scale-x scale-y 1.0))
+        (prepare-for-rendering object)
+        (setf child-x child-new-x
+              child-y child-new-y
+              child-h child-new-h
+              child-w child-new-w)
+        (values object window)))))
+
+(defmethod fit-into-window :after ((object labeled-check-button) (window window))
+  (with-accessors ((child-y y)
+                   (child-x x)
+                   (child-h height)
+                   (child-w width)) object
+    (let* ((scale-y (remap-y-child-in-window window object))
+           (scale-x (remap-x-child-in-window window object)))
+      (with-accessors ((text text)
+                       (width width)
+                       (height height)
+                       (button button)) object
+        (with-accessors ((label-width  width)
+                         (label-height height)) text
+          (with-accessors ((x-button x)
+                           (button-width  width)
+                           (button-height height)) button
+            (let* ((new-button-width  (d* button-width  scale-x))
+                   (new-button-height (d* button-height scale-y))
+                   (new-label-width   (d- width (max new-button-width new-button-height))))
+              (setf x-button      new-label-width
+                    button-width  new-button-width
+                    button-height new-button-height
+                    label-width   new-label-width
+                    label-height  height)))))))
+  (values object window))
+
 (defmethod add-child :after ((object window) child
                              &optional (child-pos (length (children object))))
   (with-accessors ((width width)) object
@@ -1559,21 +1733,21 @@
       (when (not (and last-window-added-to
                       (eq  object last-window-added-to)))
         (setf last-window-added-to object)
-        (when (> child-pos 2) ;; skip the titlebar , the frame and the close-button
-          (setf x-child (d+ x-child
-                            (d* (left-frame-offset *reference-sizes*)
-                                (width object))))
-          (when *child-flip-y*
-            (setf y-child (flip-y object child))))))))
+        (when (> child-pos 2) ;; skip the titlebar, the frame and the close-button
+          (remap-x-child-in-window object child)
+          (remap-y-child-in-window object child)
+          (fit-into-window child object)
+          (setup-label child (label child) :reset-label-slot nil))))))
 
-(defun common-setup-label-window (top-bar new-label)
+(defun common-setup-label-window (top-bar new-label &key (reset-label-slot t))
   (with-accessors ((label-font label-font)
                    (label-font-size label-font-size)
                    (label-font-color label-font-color)
                    (children children)) top-bar
     (with-slots (label) top-bar
       (remove-child-if top-bar #'(lambda (a) (not (typep a 'naked-button))))
-      (setf label new-label)
+      (when reset-label-slot
+        (setf label new-label))
       (loop for c across label do
            (let* ((mesh  (get-char-mesh label-font c))
                   (shell (if mesh
@@ -1582,16 +1756,18 @@
              (when shell
                (add-child top-bar shell)))))))
 
-(defmethod (setf label) (new-label (object window))
+(defmethod setup-label ((object window) new-label &key (reset-label-slot t))
   (with-accessors ((label-font label-font)
                    (top-bar top-bar)
                    (height height)
                    (width width)) object
     (with-accessors ((bar-label-font-size label-font-size)
                      (bar-children children)) top-bar
-      (let ((top-bar-h (top-bar-h *reference-sizes*))
-            (top-bar-relative-offset (top-bar-relative-offset *reference-sizes*)))
-        (common-setup-label-window top-bar new-label)
+      (let* ((top-bar-h (top-bar-h *reference-sizes*))
+             (top-bar-relative-offset (top-bar-relative-offset *reference-sizes*))
+             (font-height-scaling     (top-bar-tile-height-scaling *reference-sizes*))
+             (font-height              (d* font-height-scaling top-bar-h)))
+        (common-setup-label-window top-bar new-label :reset-label-slot reset-label-slot)
         (let* ((label-width   (label-width top-bar))
                (scaling-width (d/ (d- width (d* width (relative-title-space *reference-sizes*)))
                                   label-width)))
@@ -1601,11 +1777,16 @@
              for l across bar-children
              for xf from 0.0 by bar-label-font-size
              when (not (typep l 'naked-button))     do
-               (setf (scaling l) (sb-cga:vec bar-label-font-size bar-label-font-size 0.0))
+               (setf (scaling l) (sb-cga:vec bar-label-font-size
+                                             font-height
+                                             0.0))
                (setf (pos l)     (sb-cga:vec (d+ (d* width top-bar-relative-offset) xf)
                                              (d- (d* top-bar-h 0.5)
-                                                 (d* bar-label-font-size 0.5))
+                                                 (d* 0.5 font-height))
                                              0.0))))))))
+
+(defmethod (setf label) (new-label (object window))
+  (setup-label object new-label :reset-label-slot t))
 
 (defmethod render ((object window) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
@@ -1646,21 +1827,6 @@
 ;;   (with-accessors ((frame frame)) object
 ;;     (d- (height frame)
 ;;         (d* (top-frame-offset *reference-sizes*) (height (frame object))))))
-
-(defmethod flip-y ((object window) (child widget))
-  (declare (optimize (debug 3) (speed 0) (safety 3)))
-  (with-accessors ((parent-h height) (frame frame)) object
-    (with-accessors ((child-y y) (child-h height)) child
-      (let* ((frame-h (d- (height frame)
-                          (d* (top-frame-offset *reference-sizes*) (height (frame object)))))
-             (scale   (d/ (d- frame-h child-y)
-                          frame-h))
-             (child-new-y  (d- (d* scale frame-h)
-                               child-h)))
-        (if (< child-y frame-h)
-            child-new-y
-            (d+ (d- (d- parent-h child-y) child-h)
-                (d* (bottom-frame-offset *reference-sizes*) (height (frame object)))))))))
 
 (defmethod on-mouse-pressed ((object window) event)
   (with-accessors ((dragging-mode dragging-mode)) object
@@ -2491,17 +2657,22 @@
     :initform (make-instance 'widget:static-text
                              :height    *square-button-size*
                              :width     (d* *small-square-button-size* 5.0)
-                             :x         (d+ (d* *square-button-size* 7.0)
-                                            *small-square-button-size*)
+                             :x         (d+ (d+ *square-button-size*
+                                                *small-square-button-size*)
+                                            (d* *small-square-button-size* 12.0))
                              :y         0.0
                              :font-size (d* 0.1 *square-button-size*)
-                             :label     ""
+                             :label
+                             #+debug-gui
+                             "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+                             #-debug-gui ""
                              :justified t)
     :initarg  :text-communication
     :accessor text-communication)
    ;; second row
    (b-save
-    :initform (make-square-button 0.0 *small-square-button-size*
+    :initform (make-square-button 0.0
+                                  *small-square-button-size*
                                   +save-overlay-texture-name+
                                   #'toolbar-save-game-cb
                                   :small t
@@ -2659,40 +2830,38 @@
     :accessor bar-sp)
    (text-mp
     :initform (make-instance 'widget:static-text
-                             :height (d/ *square-button-size* 6.0)
+                             :height (d/ *square-button-size* 8.0)
                              :width  *small-square-button-size*
                              :x (d+ (d+ *square-button-size* *small-square-button-size*)
                                     (d* *small-square-button-size* 11.0))
-                             :y (d- (d* 3.0 (d/ *square-button-size* 8.0))
-                                    5.0)
+                             :y (d* 3.0 (d/ *square-button-size* 8.0))
+
                              :font-size 10.0
-                             :label "23"
+                             :label "-"
                              :justified nil)
     :initarg  :text-mp
     :accessor text-mp)
    (text-dmg
     :initform (make-instance 'widget:static-text
-                             :height (d/ *square-button-size* 6.0)
+                             :height (d/ *square-button-size* 8.0)
                              :width  *small-square-button-size*
                              :x (d+ (d+ *square-button-size* *small-square-button-size*)
                                     (d* *small-square-button-size* 11.0))
-                             :y (d- (d* 2.0 (d/ *square-button-size* 8.0))
-                                    5.0)
+                             :y (d* 2.0 (d/ *square-button-size* 8.0))
                              :font-size 10.0
-                             :label "22"
+                             :label "-"
                              :justified nil)
     :initarg  :text-dmg
     :accessor text-dmg)
    (text-sp
     :initform (make-instance 'widget:static-text
-                             :height (d/ *square-button-size* 6.0)
+                             :height (d/ *square-button-size* 8.0)
                              :width  *small-square-button-size*
                              :x (d+ (d+ *square-button-size* *small-square-button-size*)
                                     (d* *small-square-button-size* 11.0))
-                             :y (d- (d/ *square-button-size* 8.0)
-                                    5.0)
+                             :y  (d/ *square-button-size* 8.0)
                              :font-size 10.0
-                             :label "21"
+                             :label "-"
                              :justified nil)
     :initarg  :text-sp
     :accessor text-sp)
@@ -2943,23 +3112,26 @@
                       (character:exp-points player) new-capital))))))
 
 (defun pgen-window-w ()
-  (d* (d *window-w*) 0.75))
+  (adjust-window-w (d* (d *window-w*) 0.75)))
 
 (defun pgen-window-h ()
-  (d* (d *window-h*) 0.75))
+  (adjust-window-h (d* (d *window-h*) 0.65)))
 
 (defun pgen-chk-button-w ()
   (d/ (d *window-w*) 9.0))
+
+(defun pgen-button-h ()
+  (d/ (d *window-w*) 35.0))
 
 (defun pgen-chk-button-y (row)
   (d+ (h2-font-size *reference-sizes*)
       (d* (d row) (checkbutton-h *reference-sizes*))))
 
 (defun pgen-label-ability-w ()
-  (d* 4.0 (input-text-w *reference-sizes*)))
+  (d* 0.8 (pgen-window-w)))
 
 (defun pgen-label-ability-h ()
-  (input-text-h *reference-sizes*))
+  (d* 0.035 (pgen-window-h)))
 
 (defun pgen-label-ability-x ()
   (d+ (spacing *reference-sizes*)
@@ -2968,7 +3140,7 @@
 (defun pgen-label-ability-y (row)
   (d+ (d* 1.8 +portrait-size+)
       (d* (d row)
-          (input-text-h *reference-sizes*))))
+          (pgen-label-ability-h))))
 
 (defun pgen-inc-button-x ()
   (d+ (d+ (d* 2.0 (spacing *reference-sizes*))
@@ -2999,6 +3171,9 @@
   (d* (d row)
       (d+ (spacing *reference-sizes*)
           (input-text-h *reference-sizes*))))
+
+(defun pgen-text-entry-h ()
+  (pgen-label-ability-h))
 
 (defun rotate-preview-cb (button event)
   (declare (ignore event))
@@ -3078,6 +3253,10 @@
             (fs:search-matching-file (res:get-resource-file ""
                                                             +human-player-models-resource+)
                                      :name re))))
+
+(defun pad-ability-label (l max)
+  (setf (prefix l)
+        (right-padding (prefix l) max)))
 
 (defclass player-generator (window)
   ((world
@@ -3197,43 +3376,43 @@
     :accessor checkb-female)
    (b-generate
     :initform (make-instance 'button
-                             :height (checkbutton-h *reference-sizes*)
-                             :width  (pgen-chk-button-w)
-                             :x 0.0
-                             :y (pgen-chk-button-y 9.0)
+                             :height   (pgen-button-h)
+                             :width    (pgen-chk-button-w)
+                             :x        0.0
+                             :y        (pgen-chk-button-y 9.0)
                              :callback #'generate-cb
-                             :label (_ "Generate new"))
+                             :label    (_ "Generate new"))
     :initarg  :b-generate
     :accessor b-generate)
    (b-save
     :initform (make-instance 'button
-                             :height   (checkbutton-h *reference-sizes*)
+                             :height   (pgen-button-h)
                              :width    (pgen-chk-button-w)
                              :x        0.0
-                             :y        (d+ (spacing *reference-sizes*)
-                                           (pgen-chk-button-y 10.0))
+                             :y        (d+ (pgen-button-h)
+                                           (pgen-chk-button-y 9.0))
                              :callback #'player-save-cb
                              :label    (_ "Save"))
     :initarg  :b-save
     :accessor b-save)
    (b-load
     :initform (make-instance 'button
-                             :height   (checkbutton-h *reference-sizes*)
+                             :height   (pgen-button-h)
                              :width    (pgen-chk-button-w)
                              :x        0.0
-                             :y        (d+ (d* 2.0 (spacing *reference-sizes*))
-                                           (pgen-chk-button-y 11.0))
+                             :y        (d+ (d* 2.0 (pgen-button-h))
+                                           (pgen-chk-button-y 9.0))
                              :callback #'player-load-cb
                              :label    (_ "Load"))
     :initarg  :b-load
     :accessor b-load)
    (b-accept
     :initform (make-instance 'button
-                             :height   (checkbutton-h *reference-sizes*)
+                             :height   (pgen-button-h)
                              :width    (pgen-chk-button-w)
                              :x        0.0
-                             :y        (d+ (d* 3.0 (spacing *reference-sizes*))
-                                           (pgen-chk-button-y 12.0))
+                             :y        (d+ (d* 3.0 (pgen-button-h))
+                                           (pgen-chk-button-y 9.0))
                              :callback #'player-accept-cb
                              :label    (_ "Accept"))
     :initarg  :b-accept
@@ -3701,7 +3880,7 @@
    (lb-exp-points
      :initform (make-instance 'simple-label-prefixed
                               :width  (pgen-label-ability-w)
-                              :height (input-text-h *reference-sizes*)
+                              :height (pgen-label-ability-h)
                               :x (pgen-label-ability-x)
                               :y (pgen-label-ability-y 21.0)
                               :prefix (_ "Experience points: ")
@@ -3711,23 +3890,22 @@
    (input-name
     :initform (make-instance 'text-field
                              :width  (input-text-w *reference-sizes*)
-                             :height (input-text-h *reference-sizes*)
-                             :x (d+ (d* 2.0 (spacing *reference-sizes*))
-                                    +portrait-size+
-                                    (pgen-chk-button-w))
-                             :y 0.0
-                             :label (_ "Name"))
+                             :height (pgen-text-entry-h)
+                             :x      (d+ (d* 2.0 (spacing *reference-sizes*))
+                                         +portrait-size+
+                                         (pgen-chk-button-w))
+                             :y      0.0
+                             :label  (_ "Name"))
     :initarg :input-name
     :accessor input-name)
    (input-last-name
     :initform (make-instance 'text-field
                              :width  (input-text-w *reference-sizes*)
-                             :height (input-text-h *reference-sizes*)
-                             :x (d+ (d* 2.0 (spacing *reference-sizes*))
-                                    +portrait-size+
-                                    (pgen-chk-button-w))
-                             :y (d+ (spacing *reference-sizes*)
-                                    (input-text-h *reference-sizes*))
+                             :height (pgen-text-entry-h)
+                             :x      (d+ (d* 2.0 (spacing *reference-sizes*))
+                                         +portrait-size+
+                                         (pgen-chk-button-w))
+                             :y     (pgen-text-entry-h)
                              :label (_ "Last name"))
     :initarg :input-last-name
     :accessor input-last-name)
@@ -4497,36 +4675,38 @@
 
 (defun make-player-generator (world)
   (let ((window (make-instance 'player-generator
-                               :world  world
-                               :x      0.0
-                               :y      200.0
-                               :width  (pgen-window-w)
-                               :height (pgen-window-h)
-                               :label  (_ "Generate character"))))
+                               :world            world
+                               :x                0.0
+                               :y                (d- (d *window-h*)
+                                                     (pgen-window-h))
+                               :width            (pgen-window-w)
+                               :height           (pgen-window-h)
+                               :label            (_ "Generate character"))))
     (add-window-button-cb-hide-remove window)
+    (setf (compiled-shaders window) (compiled-shaders world))
     window))
 
 (defun message-window-w ()
-  (d* 8.0 (small-square-button-size *reference-sizes*)))
+  (adjust-window-w (d* 8.0 (small-square-button-size *reference-sizes*))))
 
 (defun message-window-h ()
-  (d* 4.0 (small-square-button-size *reference-sizes*)))
+  (adjust-window-h (d* 2.0 (small-square-button-size *reference-sizes*))))
 
 (defun message-window-pictogram-w ()
-  (d* 2.0 (small-square-button-size *reference-sizes*)))
+  (d* 0.33 (message-window-h)))
 
 (defun message-window-pictogram-h ()
-  (d* 2.0 (small-square-button-size *reference-sizes*)))
+  (d* 0.33 (message-window-h)))
 
 (defun message-window-button-h  ()
-  (tiny-square-button-size *reference-sizes*))
+  (d* 0.30 (message-window-h)))
 
 (defun message-window-button-w  ()
-  (d* 2.0 (tiny-square-button-size *reference-sizes*)))
+  (d* 0.125 (message-window-h)))
 
 (defun message-window-text-x ()
-  (d+ (message-window-pictogram-w)
-      (spacing *reference-sizes*)))
+  (num:add-epsilon-rel (message-window-pictogram-w)
+                       0.1))
 
 (defclass message-window (window)
   ((img-pictogram
@@ -4541,10 +4721,10 @@
     :accessor img-pictogram)
    (text-message
     :initform (make-instance 'widget:static-text
-                             :height    (d* 2.0
-                                            (small-square-button-size *reference-sizes*))
-                             :width     (d* 5.0
-                                            (small-square-button-size *reference-sizes*))
+                             :height    (d* 0.7
+                                            (message-window-h))
+                             :width     (d- (message-window-w)
+                                            (message-window-pictogram-w))
                              :x         (message-window-text-x)
                              :y         0.0
                              :font-size (h4-font-size *reference-sizes*)
@@ -4552,12 +4732,6 @@
                              :justified t)
     :initarg  :text-message
     :accessor text-message)))
-
-(defgeneric accomodate-message (object new-label))
-
-(defgeneric accomodate-message-text (object new-label))
-
-(defgeneric accomodate-message-img (object))
 
 (defun set-texture-pictogram (pictogram texture-name)
   (when texture-name
@@ -4577,7 +4751,7 @@
       (add-child object img-pictogram)
       (add-child object text-message)
       (when message
-        (accomodate-message object message))
+        (setf (label text-message) message))
       (case type
         (:error
          (set-texture-pictogram img-pictogram +message-16-error-texture-name+))
@@ -4589,96 +4763,6 @@
          (set-texture-pictogram img-pictogram +message-16-help-texture-name+))
         (otherwise
          (set-texture-pictogram img-pictogram type))))))
-
-(defmethod accomodate-message ((object message-window) new-label)
-  (accomodate-message-text object new-label)
-  (accomodate-message-img  object))
-
-(defmethod accomodate-message-text ((object message-window) new-label)
-  (with-accessors ((text-message text-message)
-                   (frame frame)
-                   (top-bar top-bar)
-                   (window-height height)) object
-    (with-accessors ((label-font-size label-font-size)
-                     (label-font label-font)
-                     (label-font-color label-font-color)
-                     (textarea-height height)
-                     (width width)
-                     (children children)
-                     (justified justified)) text-message
-      (remove-all-children text-message)
-      (let* ((char-width    (ftruncate (d/ width label-font-size)))
-             (lines         (remove-nbrk-space (split-text-lines new-label
-                                                                 char-width
-                                                                 justified)))
-             (wanted-height (d* label-font-size (d (length lines)))))
-        (declare (list lines))
-        (do ((line-count (d 0.0) (d+ line-count 1.0))
-             (line       lines   (rest line)))
-            ((not line))
-          (declare (list line))
-          (declare (desired-type line-count))
-          (loop
-             for c across (the simple-string (elt line 0))
-             for xf single-float from  0.0 by label-font-size do
-               (let* ((mesh  (get-char-mesh label-font c))
-                      (shell (if mesh
-                                 (fill-font-mesh-shell mesh :color label-font-color)
-                                 nil)))
-                 (when shell
-                   (setf (scaling shell) (sb-cga:vec label-font-size label-font-size 0.0))
-                   (setf (pos     shell) (sb-cga:vec xf
-                                                     (d* line-count label-font-size)
-
-                                                     0.0))
-                   (add-child text-message shell)))))
-        (let ((new-frame-h (d+ wanted-height
-                               (spacing *reference-sizes*)
-                               (d* 2.0 (message-window-button-h)))))
-          (transform-vertices frame (sb-cga:scale* 1.0
-                                                   (d/ new-frame-h
-                                                       (height frame))
-                                                   1.0))
-          (prepare-for-rendering frame)
-          (setf (y top-bar)      new-frame-h)
-          (setf (height frame)   new-frame-h)
-          (setf window-height    (d+ new-frame-h (height top-bar)))
-          (setf (y text-message) (d- window-height
-                                     (height top-bar)
-                                     (d* (top-frame-offset *reference-sizes*)
-                                         (height frame))
-                                     wanted-height)))))))
-
-(defmethod accomodate-message-img ((object message-window))
-  (with-accessors ((img-pictogram img-pictogram)
-                   (frame frame)
-                   (top-bar top-bar)
-                   (text-message text-message)
-                   (window-height height)) object
-    (let* ((wanted-height-scale (d/ (min (d- (height frame)
-                                             (message-window-button-h)
-                                             (d* (top-frame-offset *reference-sizes*)
-                                                 (height frame))
-                                             (d* (bottom-frame-offset *reference-sizes*)
-                                                 (height frame))
-                                             (spacing *reference-sizes*))
-                                         (d- (message-window-text-x)
-                                             (spacing *reference-sizes*)))
-                                    (height img-pictogram)))
-           (wanted-height       (d* wanted-height-scale (height img-pictogram))))
-      (transform-vertices img-pictogram (sb-cga:scale* wanted-height-scale
-                                                       wanted-height-scale
-                                                       1.0))
-      (prepare-for-rendering img-pictogram)
-      (setf (height   img-pictogram) wanted-height
-            (width    img-pictogram) wanted-height
-            (y        img-pictogram) (d- window-height
-                                       (height top-bar)
-                                       (d* (top-frame-offset *reference-sizes*)
-                                           (height frame))
-                                       wanted-height)
-            (x        img-pictogram)  (d* (left-frame-offset *reference-sizes*)
-                                          (width object))))))
 
 (defun make-message-box (text title type &rest buttons-callbacks)
   "Car of each element of buttons-callbacks is the label, cdr the callback function"

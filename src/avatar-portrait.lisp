@@ -123,7 +123,8 @@
                                  t
                                  nil)
                             nil))
-                    (map 'list #'(lambda (a) (text-utils:join-with-srings a +categories-separator+))
+                    (map 'list #'(lambda (a) (text-utils:join-with-strings a
+                                                                           +categories-separator+))
                          bouquet)))))
 
 (defun count-transparent-pixel (pixmap)

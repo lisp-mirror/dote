@@ -72,10 +72,10 @@
   (let ((re "\\s"))
     (cl-ppcre:regex-replace re string "")))
 
-(defun join-with-srings (strings junction)
+(defun join-with-strings (strings junction)
   (reduce #'(lambda (a b) (text-utils:strcat a junction b)) strings))
 
-(defun join-with-srings* (junction &rest strings)
+(defun join-with-strings* (junction &rest strings)
   (reduce #'(lambda (a b) (text-utils:strcat a junction b)) strings))
 
 (defun split-words (text)
@@ -172,7 +172,7 @@
 (defun flush-left-mono-text (text-words box-width &optional (lines '()))
   (flet ((join (words)
            (if words
-               (join-with-srings words " ")
+               (join-with-strings words " ")
                "")))
     (if (null text-words)
         (reverse lines)

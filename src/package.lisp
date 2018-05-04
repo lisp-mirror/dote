@@ -274,6 +274,7 @@
    :make-fresh-array
    :sequence->list
    :vector-empty-p
+   :safe-subseq
    :random-num-filled-vector
    :random-elt
    :safe-random-elt
@@ -380,6 +381,7 @@
    :clamp-0->max-less-one
    :*default-epsilon*
    :with-epsilon
+   :add-epsilon-rel
    :epsilon=
    :epsilon<=
    :epsilon>=
@@ -548,8 +550,8 @@
    :clean-unprintable-chars
    :to-s
    :strcat
-   :join-with-srings
-   :join-with-srings*
+   :join-with-strings
+   :join-with-strings*
    :split-words
    :split-lines
    :strip-prefix
@@ -575,6 +577,7 @@
    :shared-datadir
    :get-shared-resource-filename
    :get-resource-file
+   :get-resource-files-merge
    :get-resource-files
    :strip-off-resource-path))
 
@@ -2291,6 +2294,7 @@
    :+available-level-floor+
    :+available-level-door+
    :+available-level-ceil+
+   :*wants-complete-parsing*
    :*main-window*
    :*renderer*
    :*raw-seed*
@@ -2299,6 +2303,7 @@
    :*building-level*
    :*level-name*
    :*level-name-color*
+   :*level-notes*
    :*trees*
    :*wall*
    :*ceiling*
@@ -3977,6 +3982,7 @@
    :use-blending-p
    :bounding-sphere
    :transform-vertices
+   :recursively-transform-vertices
    :get-material-from-texture
    :parent-mesh
    :children
@@ -4532,6 +4538,7 @@
    :input-text-w
    :input-text-h
    :spacing
+   :spacing-rel
    :square-button-size
    :small-square-button-size
    :tiny-square-button-size
@@ -4643,6 +4650,27 @@
         :mtree-utils
         :text-utils
         :filesystem-utils
+        :entity
+        :interfaces
+        :gui-events
+        :gui
+        :widget
+        :game-configuration)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :make-window))
+
+(defpackage :new-game-window
+  (:use :cl
+        :alexandria
+        :config
+        :constants
+        :num
+        :misc
+        :mtree-utils
+        :text-utils
+        :filesystem-utils
+        :texture
         :entity
         :interfaces
         :gui-events

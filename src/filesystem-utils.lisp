@@ -254,7 +254,8 @@
         (cached-directory-files path))))
 
 (defun directory-files (path)
-  (uiop:directory-files path))
+  (and path
+       (uiop:directory-files path)))
 
 (defun make-directory (path)
   (if (not (cl-ppcre:scan (concatenate 'string *directory-sep* "$") path))

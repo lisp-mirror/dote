@@ -132,15 +132,19 @@
            (push (alexandria:make-keyword (elt l 0)) output)
            (setf l (rest l)))))))
 
+(defparameter *wants-complete-parsing* t)
+
 (defparameter *main-window* nil)
 
 (defparameter *renderer*    nil)
 
 (defparameter *progress*    0.0)
 
-(defparameter *level-name*        "default")
+(defparameter *level-name*        nil)
 
 (defparameter *level-name-color*  nil)
+
+(defparameter *level-notes*       nil)
 
 (defparameter *raw-seed* "")
 
@@ -347,6 +351,7 @@
 (defun clean-global-vars ()
   (setf *level-name*                 nil
         *level-name-color*           nil
+        *level-notes*                nil
         *particle-names*             0
         *progress*                   0.0
         *main-window*                nil
@@ -378,25 +383,28 @@
   (ensure-cache-running
     (p-name body)
     (setf body (subseq body 4))
-    (need-keyword ((first body) :set)
-      (need-keyword ((second body) :seed)
-        (need-type ((third body) 'string)
-          (setf num:*lcg-seed* (num:string-fnv-hash-32 (third body)))
-          (setf *game-hour* (num:lcg-next-upto 24)
-                *raw-seed*  (third body))
-          #+debug-mode (misc:dbg "hour ~a" *game-hour*)
-          (branch-generate (subseq body 3)))
-        (setup-floor)
-        (limited-progress)
-        (setup-walls)
-        (limited-progress)
-        (setup-window)
-        (limited-progress)
-        (setup-doors)
-        (limited-progress)
-        (setup-seed)
-        (setup-chairs)
-        (limited-progress)))))
+    (p-notes body)
+    (setf body (subseq body 3))
+    (when *wants-complete-parsing*
+      (need-keyword ((first body) :set)
+        (need-keyword ((second body) :seed)
+          (need-type ((third body) 'string)
+            (setf num:*lcg-seed* (num:string-fnv-hash-32 (third body)))
+            (setf *game-hour* (num:lcg-next-upto 24)
+                  *raw-seed*  (third body))
+            #+debug-mode (misc:dbg "hour ~a" *game-hour*)
+            (branch-generate (subseq body 3)))
+          (setup-floor)
+          (limited-progress)
+          (setup-walls)
+          (limited-progress)
+          (setup-window)
+          (limited-progress)
+          (setup-doors)
+          (limited-progress)
+          (setup-seed)
+          (setup-chairs)
+          (limited-progress))))))
 
 (defun p-name (body)
   (need-keyword ((first body) :set)
@@ -404,6 +412,12 @@
       (need-type ((third body) 'string)
         (setf *level-name* (third body))
         (setf *level-name-color* (color-utils:byte-vector->vec4 (color (fourth body))))))))
+
+(defun p-notes (body)
+  (need-keyword ((first body) :set)
+    (need-keyword ((second body) :notes)
+      (need-type ((third body) 'string)
+        (setf *level-notes* (third body))))))
 
 (defun color (raw)
   (let ((token (symbol-name raw)))

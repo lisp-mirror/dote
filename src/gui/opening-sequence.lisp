@@ -231,7 +231,7 @@
          (w (op-button-w)))
     (make-instance 'button
                    :use-label-global-style nil
-                   :label-font-size        14.00
+                   :label-font-size        (h4-font-size *reference-sizes*)
                    :x                      x
                    :y                      y
                    :width                  w
@@ -250,6 +250,13 @@
       (declare (ignore e))
       (tg:gc)
       (let ((window  (load-save-window:make-window (compiled-shaders w) :load)))
+        (mtree:add-child gui window))))
+
+(defun make-new-game-cb (gui)
+  #'(lambda (w e)
+      (declare (ignore e))
+      (tg:gc)
+      (let ((window  (new-game-window:make-window (compiled-shaders w))))
         (mtree:add-child gui window))))
 
 (defclass scrolling-opening (signalling-light inner-animation end-life-trigger)
@@ -272,7 +279,7 @@
                                    (d (+ (* 2 (op-button-h))
                                          (* *window-h* 1/8)))
                                    (_ "New Game")
-                                   nil)
+                                   nil) ; callback is setted in 'on-end-fn'
 
     :initarg  :b-new-game
     :accessor b-new-game)
@@ -281,7 +288,7 @@
                                    (d (+ (op-button-h)
                                          (* *window-h* 1/8)))
                                    (_ "Load Game")
-                                   nil) ;; callback is setted in 'on-end-fn'
+                                   nil) ; callback is setted in 'on-end-fn'
 
     :initarg  :b-load-game
     :accessor b-load-game)
@@ -289,7 +296,7 @@
     :initform (make-opening-button (d (- (/ *window-w* 2.0) (/ (op-button-w) 2)))
                                    (d (* *window-h* 1/8))
                                    (_ "Quit Game")
-                                   nil) ;; callback is setted in 'on-end-fn'
+                                   nil) ; callback is setted in 'on-end-fn'
 
     :initarg  :b-quit-game
     :accessor b-quit-game)))
@@ -307,6 +314,7 @@
           (setf (compiled-shaders b-quit-game) compiled-shaders)
           (setf (callback         b-quit-game) (make-quit-cb world))
           (setf (callback         b-load-game) (make-load-cb gui))
+          (setf (callback         b-new-game)  (make-new-game-cb gui))
           ;; order of adding is important: the first is added the first is drawn
           (mtree:add-child gui (make-logo compiled-shaders))
           (mtree:add-child gui b-quit-game)

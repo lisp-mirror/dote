@@ -19,7 +19,7 @@
 (define-constant +saving-game-screenshot-size+        128.0             :test #'=)
 
 (defun load-save-button-w ()
-  (square-button-size *reference-sizes*))
+  (d* 1.5 (square-button-size *reference-sizes*)))
 
 (defun load-save-button-h ()
   (d/ (load-save-button-w) 2.0))
@@ -31,11 +31,12 @@
     (adjust-window-w frame)))
 
 (defun load-save-window-h ()
-  (let ((frame (d+ (d* (load-save-button-h) 5.0))))
+  (let ((frame (max (d* (load-save-button-h) 5.0)
+                    (preview-size))))
     (adjust-window-h frame)))
 
 (defun preview-size ()
-  (d* (square-button-size *reference-sizes*) 2.0))
+  (d* (square-button-size *reference-sizes*) 3.0))
 
 (defun make-preview-config (x y texture-name)
   (make-instance 'signalling-light
@@ -137,7 +138,7 @@
           (saved-game:save-game res-action state)
           (let* ((success-message (make-message-box (format nil
                                                             (_ "Game saved in ~a")
-                                                            (join-with-srings res-action "/"))
+                                                            (join-with-strings res-action "/"))
                                                     (_ "Success")
                                                     :info
                                                     (cons (_ "OK")
@@ -164,45 +165,53 @@
     :accessor s-preview)
    (b-1
     :initform (make-instance 'button
-                             :width    (load-save-button-w)
-                             :height   (load-save-button-h)
-                             :x        0.0
-                             :y        0.0
-                             :callback (update-cb-for-load-clsr +save-game-dir-1+)
-                             :label    (_ "Slot 1"))
+                             :use-label-global-style t
+                             :label-font-size        (h3-font-size *reference-sizes*)
+                             :width                  (load-save-button-w)
+                             :height                 (load-save-button-h)
+                             :x                      0.0
+                             :y                      0.0
+                             :callback               (update-cb-for-load-clsr +save-game-dir-1+)
+                             :label                  (_ "Slot 1"))
     :initarg :b-1
     :accessor b-1)
     (b-2
-    :initform (make-instance 'button
-                             :width    (load-save-button-w)
-                             :height   (load-save-button-h)
-                             :x        0.0
-                             :y        (d+ (load-save-button-h)
-                                           (spacing *reference-sizes*))
-                             :callback (update-cb-for-load-clsr +save-game-dir-2+)
-                             :label    (_ "Slot 2"))
+     :initform (make-instance 'button
+                              :use-label-global-style t
+                              :label-font-size        (h3-font-size *reference-sizes*)
+                              :width                  (load-save-button-w)
+                              :height                 (load-save-button-h)
+                              :x                      0.0
+                              :y                      (d+ (load-save-button-h)
+                                                          (spacing *reference-sizes*))
+                              :callback               (update-cb-for-load-clsr +save-game-dir-2+)
+                              :label                  (_ "Slot 2"))
     :initarg :b-2
     :accessor b-2)
    (b-3
     :initform (make-instance 'button
-                             :width    (load-save-button-w)
-                             :height   (load-save-button-h)
-                             :x        0.0
-                             :y        (d+ (d* 2.0 (load-save-button-h))
-                                           (spacing *reference-sizes*))
-                             :callback (update-cb-for-load-clsr +save-game-dir-3+)
-                             :label    (_ "Slot 3"))
+                             :use-label-global-style t
+                             :label-font-size        (h3-font-size *reference-sizes*)
+                             :width                  (load-save-button-w)
+                             :height                 (load-save-button-h)
+                             :x                      0.0
+                             :y                      (d+ (d* 2.0 (load-save-button-h))
+                                                        (spacing *reference-sizes*))
+                             :callback               (update-cb-for-load-clsr +save-game-dir-3+)
+                             :label                  (_ "Slot 3"))
     :initarg :b-3
     :accessor b-3)
    (b-action
     :initform (make-instance 'button
-                             :width    (load-save-button-w)
-                             :height   (load-save-button-h)
-                             :x        0.0
-                             :y        (d+ (d* 4.0 (load-save-button-h))
-                                           (spacing *reference-sizes*))
-                             :callback #'load-game-cb
-                             :label    (_ "Load"))
+                             :use-label-global-style t
+                             :label-font-size        (h3-font-size *reference-sizes*)
+                             :width                  (load-save-button-w)
+                             :height                 (load-save-button-h)
+                             :x                      0.0
+                             :y                      (d- (load-save-window-h)
+                                                         (load-save-button-h))
+                             :callback               #'load-game-cb
+                             :label                  (_ "Load"))
     :initarg :b-action
     :accessor b-action)))
 
