@@ -176,7 +176,35 @@
    (current-action
     :initform :stand
     :initarg :current-action
-    :accessor current-action)))
+    :accessor current-action)
+   (orb
+    :initform nil
+    :initarg  :orb
+    :accessor  orb)))
+
+(defun setup-orb (mesh)
+  (with-accessors ((aabb             aabb)
+                   (orb              orb)
+                   (compiled-shaders compiled-shaders)) mesh
+    (with-accessors ((aabb-p2 aabb-p2)) aabb
+      (setf orb (status-orb:get-orb aabb-p2
+                                    compiled-shaders
+                                    status-orb:+texture-active+ t t))
+      (mtree:add-child mesh orb))))
+
+(defun setup-orb-texture (mesh texture-name)
+  (with-accessors ((orb orb)) mesh
+    (when orb
+      (setf (texture-object orb) (texture:get-texture texture-name)))))
+
+(defun orb-active (mesh)
+  (setup-orb-texture mesh status-orb:+texture-active+))
+
+(defun orb-inactive (mesh)
+  (setup-orb-texture mesh status-orb:+texture-inactive+))
+
+(defun orb-remove (mesh)
+  (setf (orb mesh) nil))
 
 (defmethod initialize-instance :after ((object md2-mesh) &key &allow-other-keys)
   (with-accessors ((array-mixer array-mixer)) object
@@ -449,6 +477,14 @@
             t)
           nil))))
 
+(defun maybe-set-inactive-orb (player)
+  "note: ai player has no orbs but the function 'orb-inactive is going
+to take care of that"
+  (with-accessors ((ghost ghost)) player
+    (when (< (current-movement-points ghost)
+             +open-terrain-cost+)
+      (orb-inactive player))))
+
 (defun %stop-movement (player &key
                                 (decrement-movement-points t)
                                 (interrupt-plan-if-ai      t))
@@ -461,7 +497,8 @@
                                       :id-origin id
                                       :tile-pos  (alexandria:last-elt current-path))))
         (when decrement-movement-points
-          (decrement-move-points-entering-tile player))
+          (decrement-move-points-entering-tile player)
+          (maybe-set-inactive-orb player))
         (when (and interrupt-plan-if-ai
                    (faction-ai-p state (id player)))
           (set-interrupt-plan ghost))
@@ -602,6 +639,7 @@
     (if (= (id object) (id-destination event))
         (when (> (current-movement-points ghost) 0)
           (decrement-move-points-rotate object)
+          (maybe-set-inactive-orb object)
           (setf (current-action object) :rotate)
           (setf dir (sb-cga:transform-direction dir (rotate-around +y-axe+ (d- +pi/2+))))
           (update-visibility-cone object)
@@ -619,7 +657,8 @@
         (when (or (not (decrement-movement-points-p event))
                   (> (current-movement-points ghost) 0))
           (when (decrement-movement-points-p event)
-            (decrement-move-points-rotate object))
+            (decrement-move-points-rotate object)
+            (maybe-set-inactive-orb object))
           (setf (current-action object) :rotate)
           (setf dir (sb-cga:transform-direction dir (rotate-around +y-axe+ +pi/2+)))
           (update-visibility-cone object)
@@ -1172,6 +1211,7 @@
       (setf current-damage-points (d 0.0))
       ;; also make the blackboard "forget" about this character if is from human side
       (when (faction-player-p state id)
+        (orb-remove object)
         (blackboard:remove-entity-from-all-attack-pos blackboard object))
       (particles:add-blood-death object (aabb-center aabb) +y-axe+)))))
 
@@ -1187,6 +1227,8 @@
     (with-accessors ((blackboard blackboard:blackboard)) state
     (with-accessors ((status                status)
                      (current-damage-points current-damage-points)) ghost
+      (when (faction-player-p state id)
+        (setup-orb object))
       (setf (status ghost) nil)
       (setf current-action  :stand)
       (set-animation object :stand :recalculate t)

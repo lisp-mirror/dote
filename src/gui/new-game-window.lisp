@@ -120,7 +120,7 @@
                              :x               (new-game-win-button-list-w)
                              :y               0.0
                              :label-font-size (h3-font-size *reference-sizes*)
-                             :label           "notes"
+                             :label           (_ "Notes")
                              :justified       t)
     :initarg  :text-notes
     :accessor text-notes)))

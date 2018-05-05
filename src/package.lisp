@@ -4837,6 +4837,37 @@
    :make-impostor-texture
    :make-impostor-mesh))
 
+(defpackage :status-orb
+  (:use :cl
+        :alexandria
+        :sb-cga
+        :config
+        :constants
+        :num
+        :misc
+        :mtree-utils
+        :shaders-utils
+        :interfaces
+        :sb-cga-utils
+        :vec2
+        :vec4
+        :identificable
+        :transformable
+        :entity
+        :camera
+        :game-state
+        :mesh)
+  (:shadowing-import-from :sb-cga :rotate)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:export
+   :+texture-active+
+   :+texture-inactive+
+   :init-db
+   :clean-db
+   :status-orb
+   :get-orb
+   :orbp))
+
 (defpackage :world
   (:use :cl
         :config
@@ -5204,6 +5235,11 @@
    :+tag-left-weapon-key+
    :+tag-right-weapon-key+
    :find-tag
+   :setup-orb
+   :setup-orb-texture
+   :orb-active
+   :orb-inactive
+   :orb-remove
    :md2-mesh
    :fs-resources
    :load-md2-model

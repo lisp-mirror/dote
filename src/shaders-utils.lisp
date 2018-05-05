@@ -638,6 +638,16 @@ active program (set by sdk2.kit:use-program)."
                 :time)
      (:shaders :vertex-shader   ,(get-shader-source "animated-billboard.vert")
                :fragment-shader ,(get-shader-source "animated-billboard.frag")))
+    (:status-orb
+     (:uniforms :modelview-matrix
+                :proj-matrix
+                :texture-object
+                :post-scaling
+                :texture-window-width
+                :frame-idx)
+     (:shaders :vertex-shader   ,(get-shader-source "status-orb.vert")
+               :fragment-shader ,(get-shader-source "status-orb.frag")))
+
     (:particles-blood
      (:uniforms :modelview-matrix
                 :proj-matrix

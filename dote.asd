@@ -146,6 +146,7 @@
                                      (:file "full-screen-masks")
                                      (:file "opening-sequence")))
                (:file "billboard")
+               (:file "status-orb")
                (:file "world")
                (:file "terrain-chunk")
                (:file "particles")

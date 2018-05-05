@@ -829,6 +829,15 @@
   released under  (CC BY 3.0)
   https://creativecommons.org/licenses/by/3.0/
 
+
+- data/textures/animation/orb-active.tga
+  data/textures/animation/orb-inactive.tga
+
+  derived from © AntumDeluge and Mumu ,released under CC0
+  https://creativecommons.org/publicdomain/zero/1.0/
+  according to https://opengameart.org/content/rotating-orbs
+
+
 ** Source code
 
 - src/mesh.lisp use codes from cl-opengl

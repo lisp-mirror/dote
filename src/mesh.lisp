@@ -2768,19 +2768,19 @@
 
 (defmethod make-data-for-opengl ((object triangle-mesh-shell))
   "does nothing to prevent gc reclaiming the data (vao vbo etc.)"
-  (declare (ignore object)))
+  object)
 
 (defmethod make-data-for-opengl-tangents-obj-space ((object triangle-mesh-shell))
   "does nothing to prevent gc reclaiming the data (vao vbo etc.)"
-  (declare (ignore object)))
+  object)
 
 (defmethod make-data-for-opengl-aabb-obj-space ((object triangle-mesh-shell))
   "does nothing to prevent gc reclaiming the data (vao vbo etc.)"
-  (declare (ignore object)))
+  object)
 
 (defmethod transform-vertices ((object triangle-mesh-shell) transformation)
   "does nothing"
-  (declare (ignore object transformation)))
+  object)
 
 (defgeneric fill-mesh-data (object source))
 

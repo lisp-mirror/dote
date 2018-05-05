@@ -492,10 +492,11 @@
     (gl:clear-color 0 0 0 1)
     (gl:clear-depth 1.0)
     (setf root-compiled-shaders (shaders-utils:compile-library))
-    ;; we need a valid opengl context to load spells database
-    (spell:load-spell-db)
     ;; we need a valid opengl context to start texture's database
     (texture:init-db)
+    ;; we need a valid opengl context to load spells database
+    (spell:load-spell-db)
+    (status-orb:init-db)
     (gui:setup-gui root-compiled-shaders)
     ;; set up world
     (setf (main-window:world window) nil)
@@ -557,6 +558,7 @@
   (interfaces:destroy (main-window:world window))
   (interfaces:destroy (main-window:root-compiled-shaders window))
   (texture:clean-db)
+  (status-orb:clean-db)
   (arrows:clean-db)
   (spell:clean-spell-db)
   (gui:clean-font-db)

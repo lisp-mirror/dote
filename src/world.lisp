@@ -328,6 +328,11 @@
       (full-screen-masks:enqueue-turn-billboard-human world)
       (full-screen-masks:enqueue-turn-billboard-ai    world)))
 
+(defun setup-orbs-active (world)
+  (with-accessors ((main-state main-state)) world
+    ;; skip dead players
+    (loop-player-entities main-state #'(lambda (m) (md2:orb-active m)))))
+
 (defmethod game-event:on-game-event ((object world) (event game-event:start-turn))
   (with-accessors ((main-state main-state)) object
     ;;(tg:gc :full t)
@@ -339,6 +344,8 @@
       (loop-ai-entities     main-state #'%process-postponed-messages))
     (calc-ai-entities-action-order main-state)
     (add-start-turn-billboard object)
+    (when (game-state:faction-turn-human-p main-state)
+      (setup-orbs-active object))
     nil))
 
 (defmethod game-event:on-game-event ((object world) (event game-event:end-turn))

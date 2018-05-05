@@ -4342,6 +4342,7 @@
                 (setf (character:model-origin-dir player) dir)
                 ;;(setf (entity:ghost model) player)
                 (setf (portrait (entity:ghost model)) portrait-texture)
+                (md2:setup-orb model)
                 (world:place-player-on-map world model game-state:+pc-type+ ;#(61 109)))
                                            :position #(0 0)))
               ;; restore preview
