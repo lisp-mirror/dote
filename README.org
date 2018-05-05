@@ -79,9 +79,9 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
    - s-dot2;
    - cl-kanren.
 
-   Moreover  you  will  need  a OpenGl  implementation  with  hardware
-   acceleration.  Tested  only  with  Mesa library  with  Intel(R)  HD
-   Graphics 2500 GPU.
+   Moreover  you  will need  a  OpenGL  (>= 3.3)  implementation  with
+   hardware acceleration.  Tested only with Mesa library with Intel(R)
+   HD Graphics 2500 GPU.
 
 * Issues
 
@@ -106,9 +106,9 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
   cage at katamail dot com.
 
 * Contributing
-  Any help is appreciated.  Artist, translators and coders are
+  Any  help  is  appreciated.   Artists, translators  and  coders  are
   needed. If you intend to contribute please send a message to cage at
-  katamail dot com or, alternatively, pointo your broser to then
+  katamail  dot  com or,  alternatively,  point  your browser  to  the
   [[https://notabug.org/cage/dote/issues][issue tracker]]
 
 
