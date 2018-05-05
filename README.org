@@ -53,13 +53,13 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
 ** Dependency
 
    Of course a Common lisp  compiler is mandatory, the compilation has
-   been  tested only  with  SBCL version  1.4.1  on Debian  GNU/Linux
+   been  tested only  with  SBCL version  1.4.7  on Debian  GNU/Linux
    (testing).
 
    dote depends on the following lisp libraries:
    - uiop (bundled with ASDF3);
    - swank;
-   - clunit;
+   - clunit2;
    - alexandria;
    - lparallel;
    - parse-number;
@@ -76,14 +76,10 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
    - sb-cga;
    - cl-opengl;
    - sdl2kit;
-   - s-dot;
+   - s-dot2;
    - cl-kanren.
 
-   Please note that s-dot from  quicklisp will *not* works, you should
-   download              the               version              hosted below
-   - [[https://notabug.org/cage/s-dot2][https://notabug.org/cage/s-dot2]]
-
-   Moreover  you  will  need  a Opengl  implementation  with  hardware
+   Moreover  you  will  need  a OpenGl  implementation  with  hardware
    acceleration.  Tested  only  with  Mesa library  with  Intel(R)  HD
    Graphics 2500 GPU.
 
@@ -110,14 +106,16 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
   cage at katamail dot com.
 
 * Contributing
-  Any  help  is  appreciated.   Artist,  translators  and  coders  are
-  needed. If you intend to contribute please send a message to
-  cage at katamail dot com.
+  Any help is appreciated.  Artist, translators and coders are
+  needed. If you intend to contribute please send a message to cage at
+  katamail dot com or, alternatively, pointo your broser to then
+  [[https://notabug.org/cage/dote/issues][issue tracker]]
+
 
 * NO WARRANTY
 
   Dawn of the era: a tactical game.
-  Copyright (C) 2015, 2016, 2017  cage
+  Copyright (C) 2015, 2016, 2017, 2018  cage
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
