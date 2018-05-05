@@ -216,7 +216,7 @@
   ;; do not push for release
   ;; (pushnew :small-skydome                    *features*)
   ;; do not push for release
-  ;;(pushnew :fast-opening                      *features*)
+  (pushnew :fast-opening                      *features*)
   ;; do not push for release
   (pushnew :debug-blackboard-layers           *features*)
   ;; do not push for release

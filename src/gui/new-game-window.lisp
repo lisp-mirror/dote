@@ -78,6 +78,10 @@
     :initform 5
     :initarg  :buttons-slice-size
     :accessor buttons-slice-size)
+   (map-file
+    :initform nil
+    :initarg  :map-file
+    :accessor map-file)
    (b-scroll-up
     :initform (make-new-game-window-square-button +up-overlay-texture-name+
                                                   0.0
@@ -105,7 +109,7 @@
                              :texture-object      (get-texture +square-button-texture-name+)
                              :texture-pressed     (get-texture +square-button-pressed-texture-name+)
                              :texture-overlay     (get-texture +button-ok-texture-name+)
-                             :callback            nil) ;TODO)
+                             :callback            #'load-game-cb)
     :initarg  :b-ok
     :accessor b-ok)
    (text-notes
@@ -152,9 +156,34 @@
                                                      #'eq-filename))
                #'string<)))
 
+(defun make-list-button-callback (new-game-window)
+  #'(lambda (w e)
+      (declare (ignore e))
+      (with-accessors ((buttons-start      buttons-start)
+                       (buttons-slice-size buttons-slice-size)
+                       (map-file           map-file)
+                       (text-notes         text-notes)) new-game-window
+        (let ((file (res:get-resource-file (label w)
+                                           +maps-resource+))
+              (level-config:*wants-complete-parsing* nil))
+          (load file :verbose nil :print nil)
+          (if (and level-config:*level-name*
+                   level-config:*level-notes*)
+              (progn
+                (setf map-file (label w))
+                (setf (label text-notes)
+                      (text-utils:join-with-strings* (text-utils:strcat
+                                                      +gui-static-text-delim+
+                                                      +gui-static-text-delim+)
+                                                     level-config:*level-name*
+                                                     level-config:*level-notes*))
+                (level-config:clean-global-vars))
+              (setf (label text-notes) (_ "File corrupted")))))))
+
 (defmethod regenerate-map-buttons ((object new-game-window))
   (with-accessors ((buttons-start      buttons-start)
                    (buttons-slice-size buttons-slice-size)
+                   (map-file           map-file)
                    (text-notes         text-notes)) object
     (remove-map-buttons object)
     (let ((all-maps (all-maps-filenames)))
@@ -170,27 +199,9 @@
                                         :width                  (new-game-win-button-list-w)
                                         :x                      0.0
                                         :y                      y
-                                        :callback               nil ; TODO
                                         :compiled-shaders       (compiled-shaders object)
                                         :label                  label)))
-             (setf (callback button)
-                   #'(lambda (w e)
-                       (declare (ignore e))
-                       (let ((file (res:get-resource-file (label w)
-                                                          +maps-resource+))
-                             (level-config:*wants-complete-parsing* nil))
-                         (load file :verbose nil :print nil)
-                         (if (and level-config:*level-name*
-                                  level-config:*level-notes*)
-                             (progn
-                               (setf (label text-notes)
-                                     (text-utils:join-with-strings* (text-utils:strcat
-                                                                     +gui-static-text-delim+
-                                                                     +gui-static-text-delim+)
-                                                                    level-config:*level-name*
-                                                                    level-config:*level-notes*))
-                               (level-config:clean-global-vars))
-                             (setf (label text-notes) (_ "File corrupted"))))))
+             (setf (callback button) (make-list-button-callback object))
              (add-child object button))))))
 
 (defun scroll (win shift-fn)
@@ -207,9 +218,7 @@
       (let ((all-maps (all-maps-filenames)))
         (when (< (+ buttons-start buttons-slice-size)
                  (length all-maps))
-          (scroll win #'(lambda (a) (1+ a))))
-        (misc:dbg "~a ~a ~a"  buttons-start buttons-slice-size
-                  (length all-maps))))))
+          (scroll win #'(lambda (a) (1+ a))))))))
 
 (defun scroll-up-cb (button event)
   (declare (ignore event))
@@ -219,7 +228,19 @@
       (when (> buttons-start 0)
         (scroll win #'(lambda (a) (- a 1)))))))
 
-(defun make-window (compiled-shaders &optional (ok-callback #'hide-parent-cb))
+(defun load-game-cb (w e)
+  (declare (ignore e))
+  (with-parent-widget (win) w
+    (with-accessors ((state    state)
+                     (map-file map-file)) win
+      (when  map-file
+        (let ((render-window (game-state:fetch-render-window state)))
+
+          (saved-game::prepare-for-map-loading render-window)
+          (saved-game:load-map render-window map-file)
+          (saved-game:init-new-map render-window))))))
+
+(defun make-window (compiled-shaders)
   (let ((win (make-instance 'new-game-window
                             :x                (d- (d/ (d *window-w*) 2.0)
                                                   (d/ (new-game-window-w) 2.0))
@@ -229,5 +250,4 @@
                             :height           (new-game-window-h)
                             :label            (_ "Choose a map"))))
     (setf (compiled-shaders win) compiled-shaders)
-    (setf (callback (b-ok win)) ok-callback)
     win))

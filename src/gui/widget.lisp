@@ -1395,7 +1395,6 @@
            (actual-height      (d- (d height)
                                    (d* actual-height-font (d (length lines))))))
       (declare (list lines))
-      (misc:dbg "fs ~a ~a" label-font-size actual-height-font)
       (do ((line-count (d 0.0) (d+ line-count 1.0))
            (line       lines   (rest line)))
           ((not line))

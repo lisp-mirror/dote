@@ -389,17 +389,6 @@
 (defun init-new-map (window)
   (with-accessors ((world world)
                    (root-compiled-shaders main-window:root-compiled-shaders)) window
-    ;; (setf (interfaces:compiled-shaders (world:gui world)) root-compiled-shaders)
-    ;; (mtree:add-child (world:gui world) (widget:make-splash-progress-gauge))
-    (setf (world:opening-mode world) nil)
-    (setf (camera:mode (world:camera world)) :fp)
-    (camera:install-drag-interpolator (world:camera world)
-                                      :spring-k +camera-drag-spring-k+)
-    ;; setup projection
-    (transformable:build-projection-matrix world *near* *far* *fov*
-                                           (num:desired (/ *window-w* *window-h*)))
-    ;; setup visibility placeholder
-    (able-to-see-mesh:setup-placeholder world root-compiled-shaders)
     (setf (world:gui world)
           (make-instance 'widget:widget
                          :x 0.0 :y 0.0
@@ -437,8 +426,7 @@
                       (elt color 2)
                       1.0))))
 
-(defun init-new-map-from-dump (window saved-dump)
-  (assert saved-dump)
+(defun prepare-for-map-loading (window)
   (with-accessors ((world world)
                    (root-compiled-shaders main-window:root-compiled-shaders)) window
     (clean-up-system window)
@@ -457,7 +445,13 @@
     (transformable:build-projection-matrix world *near* *far* *fov*
                                            (num:desired (/ *window-w* *window-h*)))
     ;; setup visibility placeholder
-    (able-to-see-mesh:setup-placeholder world root-compiled-shaders)
+    (able-to-see-mesh:setup-placeholder world root-compiled-shaders)))
+
+(defun init-new-map-from-dump (window saved-dump)
+  (assert saved-dump)
+  (with-accessors ((world world)
+                   (root-compiled-shaders main-window:root-compiled-shaders)) window
+    (prepare-for-map-loading window)
     (load-map window (original-map-file saved-dump))
     (setf (world:gui world)
           (make-instance 'widget:widget
