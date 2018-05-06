@@ -10,7 +10,7 @@
   :visual-effect-self    none
   :range                 1  ;; in tile units
   :effective-range       0  ;; in tile units
-  :visual-effect-target  particles:make-teleport-level-2
+  :visual-effect-target  particles:make-summon-player-fx
   :effects
   (lambda (attacker defender)
     (declare (ignore attacker))

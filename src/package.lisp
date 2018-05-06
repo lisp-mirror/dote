@@ -5060,6 +5060,7 @@
    :add-blood-death
    :debris-particles-number
    :make-debris
+   :make-summon-player-fx
    :make-fire-dart-level-0
    :make-fire-dart-level-1
    :make-fire-dart-level-2

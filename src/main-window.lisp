@@ -273,7 +273,6 @@
             (when (string= text "p")
               ;; (mtree:add-child (world:gui world)
               ;;                  (widget:make-player-generator world))
-
               (let ((orb (status-orb:get-orb (vec 6.0 20.0 10.0)
                                              (root-compiled-shaders object)
                                              status-orb:+texture-active+)))

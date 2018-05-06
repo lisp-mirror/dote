@@ -1392,6 +1392,75 @@
                           :width  .1
                           :height .1))
 
+(defclass summon-particles (debris cluster-w-global-life end-life-trigger) ())
+
+(defmethod calculate :after ((object summon-particles) dt)
+  (with-maybe-trigger-end-of-life (object (removeable-from-world-p object))))
+
+(defmethod render ((object summon-particles) renderer)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((vbo vbo)
+                   (vao vao)
+                   (el-time el-time)
+                   (texture-object texture-object)
+                   (projection-matrix projection-matrix)
+                   (model-matrix model-matrix)
+                   (view-matrix view-matrix)
+                   (compiled-shaders compiled-shaders)
+                   (triangles triangles)) object
+    (declare (texture:texture texture-object))
+    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
+    (declare (list triangles vao vbo))
+    (when (> (length triangles) 0)
+      (with-camera-view-matrix (camera-vw-matrix renderer)
+        (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+          (with-depth-mask-disabled
+            (cl-gl-utils:with-blending
+              (gl:blend-equation :func-add)
+              (gl:blend-func :src-alpha :one)
+              (use-program compiled-shaders :particles-aerial-explosion)
+              (gl:active-texture :texture0)
+              (texture:bind-texture texture-object)
+              (uniformf  compiled-shaders :time  el-time)
+              (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+              (uniform-matrix compiled-shaders :modelview-matrix 4
+                              (vector (matrix* camera-vw-matrix
+                                               (elt view-matrix 0)
+                                               (elt model-matrix 0)))
+                              nil)
+              (uniform-matrix compiled-shaders :proj-matrix  4 camera-proj-matrix nil)
+              (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+              (gl:draw-arrays :triangles 0 (f* 3 (length triangles)))
+              (gl:blend-equation :func-add))))))
+    (do-children-mesh (c object)
+      (render c renderer))))
+
+(defun make-summon-player-fx (pos compiled-shaders)
+  (let ((fx (make-particles-cluster 'summon-particles
+                          5
+                          compiled-shaders
+                          :texture
+                          (random-elt (list-of-texture-by-tag +texture-tag-teleport-particle+))
+                          :pos        pos
+                          :min-y      (d- +zero-height+ (elt pos 1))
+                          :v0-fn      (gaussian-velocity-distribution-fn +y-axe+
+                                                                         0.0
+                                                                         .000001
+                                                                         +pi+)
+                          :mass-fn    (gaussian-distribution-fn 1.0 0.01)
+                          :life-fn    (gaussian-distribution-fn 3.0 .1)
+                          :delay-fn   (gaussian-distribution-fn 0.0 .0001)
+                          :scaling-fn (%uniform-scaling-clsr 10.6)
+                          :color-fn   (%gradient-color-clsr color-utils:+rainbow-gradient+
+                                                            .5)
+                          :alpha-fn   (%smooth-alpha-fading-clsr 4.0)
+                          :gravity    +zero-vec+
+                          :width      1.1
+                          :height     1.1
+                          :respawn    t)))
+    (setf (global-life fx) 100)
+    fx))
+
 (defclass smoke-puff (cluster-w-gravity) ())
 
 (defmethod initialize-instance :after ((object smoke-puff)
