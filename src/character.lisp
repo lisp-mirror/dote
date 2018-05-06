@@ -16,9 +16,11 @@
 
 (in-package :character)
 
-(define-constant +max-inventory-slots-page+           3.0          :test #'=)
+(define-constant +max-inventory-slots-page+           3.0                  :test #'=)
 
-(define-constant +weight-for-half-capacity-inventory+ 20.0         :test #'=)
+(define-constant +weight-for-half-capacity-inventory+ 20.0                 :test #'=)
+
+(define-constant +spell-tag-invisible-to-players+     :invisible-to-player :test #'eq)
 
 (define-constant +all-strategies+                     (list +explore-strategy+
                                                             +attack-strategy+
@@ -1052,6 +1054,10 @@
 (defun %filter-spell-cost-clsr (character)
   #'(lambda (a) (> (spell:cost a) (current-spell-points character))))
 
+(defun remove-from-spell-list-by-tag (spell-list tag)
+  (spell:filter-spell-set spell-list
+                          #'(lambda (a) (find tag (spell:tags a)))))
+
 (defmethod available-spells-list ((object player-character))
   ;;; TEST ;;;;
   ;; (return-from available-spells-list spell::*spells-db*)
@@ -1061,6 +1067,9 @@
     (when (pclass-of-no-damage-spells-p object)
       (setf affordables (remove-if #'(lambda (a) (find spell:+spell-tag-damage+ (spell:tags a)))
                                    affordables)))
+    ;; remove if invisible for player (e.g. if this spell is meant for fountains only)
+    (setf affordables (remove-from-spell-list-by-tag affordables
+                                                     +spell-tag-invisible-to-players+))
     affordables))
 
 (defmethod available-spells-list-by-tag ((object player-character) tag)

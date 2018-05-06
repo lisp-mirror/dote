@@ -44,6 +44,8 @@
 
 (alexandria:define-constant +spell-tag-teleport+        :teleport       :test #'eq)
 
+(alexandria:define-constant +spell-tag-summon+          :summon-player  :test #'eq)
+
 (defparameter *spells-db* '())
 
 (defun clean-spell-db ()
@@ -82,6 +84,28 @@
 (defun spells-list-by-tag (tag)
   (spell:filter-spell-set (spell:db)
                           #'(lambda (a) (not (find tag (spell:tags a))))))
+
+(defmacro spell-db-tag-expr (spell expr)
+  (if expr
+      (let ((first-expr (first expr)))
+        (cond
+          ((consp first-expr)
+           `(spell-db-tag-expr ,spell ,(first expr)))
+          ((eq :or first-expr)
+           `(or (spell-db-tag-expr ,spell ,(list (second expr)))
+                (spell-db-tag-expr ,spell ,(list (third expr)))))
+          ((eq :and first-expr)
+           `(and (spell-db-tag-expr ,spell ,(list (second expr)))
+                 (spell-db-tag-expr ,spell ,(list (third expr)))))
+          (t
+           `(find ,first-expr (spell:tags ,spell)))))
+      nil))
+
+(defmacro spell-db-tag-fn (spell expr)
+  `(lambda (,spell) (spell-db-tag-expr ,spell ,expr)))
+
+(defun spells-list-remove-if-not (fn)
+  (remove-if-not fn (spell:db)))
 
 (defun db ()
   *spells-db*)

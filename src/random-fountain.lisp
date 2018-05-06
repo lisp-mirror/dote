@@ -185,9 +185,18 @@
                                               :if-does-not-exists :error)
                        map-level)))
 
-(defun add-spell (character)
-  (when-let* ((spells (spell:spells-list-by-tag spell:+spell-tag-heal+)))
-    (setf (character:spell-loaded character) (random-elt spells))))
+(defun add-spell (character map-level)
+  (when-let* ((spells    (spell:spells-list-remove-if-not
+                          (spell:spell-db-tag-fn a
+                                                 (spell:+spell-tag-heal+)))))
+    (let ((summon-spells (spell:spells-list-remove-if-not
+                          (spell:spell-db-tag-fn a
+                                                 (spell:+spell-tag-summon+)))))
+      (if (and (> map-level
+                  +difficult-medium+) ;if level is difficult the change of a summon spell increase
+               (die-utils:pass-d1.0 0.1))
+          (setf (character:spell-loaded character) (random-elt summon-spells))
+          (setf (character:spell-loaded character) (random-elt spells))))))
 
 (defun %generate-fountain (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
@@ -217,5 +226,5 @@
         (let ((fountain-character (params->np-character char-template)))
           (setf (basic-interaction-params fountain-character) template)
           (randomize-damage-points fountain-character fountain-level)
-          (add-spell fountain-character)
+          (add-spell fountain-character map-level)
           fountain-character)))))

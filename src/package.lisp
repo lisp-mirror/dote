@@ -5158,6 +5158,7 @@
    :+spell-tag-heal-reward+
    :+spell-tag-remove-wall+
    :+spell-tag-teleport+
+   :+spell-tag-summon+
    :db
    :clean-spell-db
    :load-spell-db
@@ -5166,6 +5167,9 @@
    :filter-spell-set
    :filter-spell-db
    :sort-spells-by-level-fn
+   :spell-db-tag-expr
+   :spell-db-tag-fn
+   :spells-list-remove-if-not
    :spells-list-by-tag
    :spell
    :spellp

@@ -3262,6 +3262,10 @@
     :initform nil
     :initarg  :world
     :accessor world)
+   (max-player-count
+    :initform 10
+    :initarg  :max-player-count
+    :accessor max-player-count)
    (player
     :initform  nil
     :initarg  :player
@@ -4304,7 +4308,8 @@
 (defun player-accept-cb (button event)
   (declare (ignore event))
   (with-parent-widget (win) button
-    (with-accessors ((player player)
+    (with-accessors ((player                       player)
+                     (max-player-count             max-player-count)
                      (img-portrait                 img-portrait)
                      (input-name                   input-name)
                      (input-last-name              input-last-name)
@@ -4312,48 +4317,57 @@
                      (model-preview-paths          model-preview-paths)
                      (backup-data-texture-portrait backup-data-texture-portrait)
                      (backup-data-texture-preview  backup-data-texture-preview)) win
-      (with-accessors ((main-state main-state)) world
-        (if (null model-preview-paths)
-            (let ((error-message (make-message-box (_ "Mesh not specified")
-                                                   (_ "Error")
-                                                   :error
-                                                   (cons (_ "OK")
-                                                         #'player-accept-error-message-cb))))
-              (setf (compiled-shaders error-message) (compiled-shaders win))
-              (add-child win error-message))
-            (progn
-              ;; copy some new points to current
-              (setf (current-damage-points   player) (damage-points player))
-              (setf (current-movement-points player) (movement-points player))
-              (setf (current-spell-points    player) (spell-points player))
-              ;; setup model
-              (let* ((dir (strcat (fs:path-first-element (first model-preview-paths))
-                                  fs:*directory-sep*))
-                     (model (md2:load-md2-player player
-                                                 dir
-                                                 (compiled-shaders world)
-                                                 +human-player-models-resource+))
-                     (portrait-texture (texture:gen-name-and-inject-in-database
-                                        (texture:clone (get-texture +portrait-unknown-texture-name+)))))
-                (pixmap:sync-data-to-bits portrait-texture)
-                (texture:prepare-for-rendering portrait-texture)
-                (setf (character:first-name player) (label input-name))
-                (setf (character:last-name  player) (label input-last-name))
-                (setf (character:model-origin-dir player) dir)
-                ;;(setf (entity:ghost model) player)
-                (setf (portrait (entity:ghost model)) portrait-texture)
-                (md2:setup-orb model)
-                (world:place-player-on-map world model game-state:+pc-type+ ;#(61 109)))
-                                           :position #(0 0)))
-              ;; restore preview
-              (setf (pixmap:data (get-texture +preview-unknown-texture-name+))
-                    backup-data-texture-preview)
-              (pixmap:sync-data-to-bits (get-texture +preview-unknown-texture-name+))
-              (setf (pixmap:data (get-texture +portrait-unknown-texture-name+))
-                    backup-data-texture-portrait)
-              (pixmap:sync-data-to-bits (get-texture +portrait-unknown-texture-name+))
-              (update-for-rendering (get-texture +portrait-unknown-texture-name+))
-              (update-for-rendering (get-texture +preview-unknown-texture-name+)))))))
+      (if (<= max-player-count 0)
+          (let ((error-message (make-message-box (_ "Limit of available player reached!")
+                                                 (_ "Error")
+                                                 :error
+                                                 (cons (_ "OK")
+                                                       #'player-accept-error-message-cb))))
+            (setf (compiled-shaders error-message) (compiled-shaders win))
+            (add-child win error-message))
+          (with-accessors ((main-state main-state)) world
+            (if (null model-preview-paths)
+                (let ((error-message (make-message-box (_ "Mesh not specified")
+                                                       (_ "Error")
+                                                       :error
+                                                       (cons (_ "OK")
+                                                             #'player-accept-error-message-cb))))
+                  (setf (compiled-shaders error-message) (compiled-shaders win))
+                  (add-child win error-message))
+                (progn
+                  ;; copy some new points to current
+                  (setf (current-damage-points   player) (damage-points player))
+                  (setf (current-movement-points player) (movement-points player))
+                  (setf (current-spell-points    player) (spell-points player))
+                  ;; setup model
+                  (let* ((dir (strcat (fs:path-first-element (first model-preview-paths))
+                                      fs:*directory-sep*))
+                         (model (md2:load-md2-player player
+                                                     dir
+                                                     (compiled-shaders world)
+                                                     +human-player-models-resource+))
+                         (portrait-texture (texture:gen-name-and-inject-in-database
+                                            (texture:clone (get-texture +portrait-unknown-texture-name+)))))
+                    (pixmap:sync-data-to-bits portrait-texture)
+                    (texture:prepare-for-rendering portrait-texture)
+                    (setf (character:first-name player) (label input-name))
+                    (setf (character:last-name  player) (label input-last-name))
+                    (setf (character:model-origin-dir player) dir)
+                    ;;(setf (entity:ghost model) player)
+                    (setf (portrait (entity:ghost model)) portrait-texture)
+                    (md2:setup-orb model)
+                    (decf max-player-count)
+                    (world:place-player-on-map world model game-state:+pc-type+ ;#(61 109)))
+                                               :position #(0 0)))
+                  ;; restore preview
+                  (setf (pixmap:data (get-texture +preview-unknown-texture-name+))
+                        backup-data-texture-preview)
+                  (pixmap:sync-data-to-bits (get-texture +preview-unknown-texture-name+))
+                  (setf (pixmap:data (get-texture +portrait-unknown-texture-name+))
+                        backup-data-texture-portrait)
+                  (pixmap:sync-data-to-bits (get-texture +portrait-unknown-texture-name+))
+                  (update-for-rendering (get-texture +portrait-unknown-texture-name+))
+                  (update-for-rendering (get-texture +preview-unknown-texture-name+))))))))
   t)
 
 (defun %find-max-lenght-ability-prefix (win)
@@ -4673,8 +4687,9 @@
       (setf (prefix lb-exp-points) (right-padding (prefix lb-exp-points) max-length-prefix)
             (label lb-exp-points)  (format nil "~,2f" (exp-points player))))))
 
-(defun make-player-generator (world)
+(defun make-player-generator (world &optional (max-player-count 10))
   (let ((window (make-instance 'player-generator
+                               :max-player-count max-player-count
                                :world            world
                                :x                0.0
                                :y                (d- (d *window-h*)
