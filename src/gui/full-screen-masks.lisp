@@ -1,18 +1,19 @@
 ;; dawn of the Era: a tactical game.
 ;; Copyright (C) 2018  cage
 
-;; This program is free software: you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation, either version 3 of the License, or
-;; (at your option) any later version.
+;; This  program is  free  software: you  can  redistribute it  and/or
+;; modify it  under the  terms of  the GNU  General Public  License as
+;; published by the Free Software  Foundation, either version 3 of the
+;; License, or (at your option) any later version.
 
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
+;; This program is distributed in the hope that it will be useful, but
+;; WITHOUT  ANY  WARRANTY;  without   even  the  implied  warranty  of
+;; MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE.   See the GNU
+;; General Public License for more details.
 
-;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;; You should have  received a copy of the GNU  General Public License
+;; along      with      this      program.       If      not,      see
+;; <http://www.gnu.org/licenses/>.
 
 (in-package :full-screen-masks)
 
@@ -383,9 +384,10 @@
   (d>= (offset object)
        (d *window-w*)))
 
-(defun make-turn-billboard-texture (texture-file)
+(defun make-turn-billboard-texture (texture-file
+                                    &key (resource-path +turn-transition-billboard-dir+))
   (let ((texture (tex:get-texture (res:get-resource-file texture-file
-                                                         +turn-transition-billboard-dir+))))
+                                                         resource-path))))
     (setf (texture:border-color       texture) §c00000000)
     (setf (texture:s-wrap-mode        texture) :clamp-to-border)
     (setf (texture:t-wrap-mode        texture) :clamp-to-border)
@@ -393,7 +395,8 @@
     (prepare-for-rendering texture)
     texture))
 
-(defun make-turn-billboard (texture-filename compiled-shaders)
+(defun make-turn-billboard (texture-filename compiled-shaders
+                            &key (resource-path +turn-transition-billboard-dir+))
   (make-instance 'turn-billboard
                  :animation-speed  70.0
                  :offset           (d- (turn-billboard-w))
@@ -401,7 +404,9 @@
                  :height           (d/ (d *window-h*) 3.0)
                  :y                (d/ (d *window-h*) 2.0)
                  :compiled-shaders compiled-shaders
-                 :texture-object   (make-turn-billboard-texture texture-filename)))
+                 :texture-object
+                 (make-turn-billboard-texture texture-filename
+                                              :resource-path resource-path)))
 
 (defun make-turn-billboard-ai (compiled-shaders)
   (make-turn-billboard +turn-billboard-ai-texture-name+ compiled-shaders))

@@ -1717,6 +1717,9 @@ data/textures/spells/misc/vampire-2.tga                  \
 data/textures/spells/misc/teleport-1.tga                 \
 data/textures/spells/misc/teleport-2.tga                 \
 data/textures/spells/misc/teleport-3.tga                 \
+data/textures/spells/misc/alarm-clock.tga                \
+data/textures/spells/misc/hammer.tga                     \
+data/textures/spells/misc/repair-weapon-1.tga            \
 data/textures/animation/bat.tga                          \
 data/textures/animation/vampire-bite.tga                 \
 data/textures/animation/flash-1.tga                      \
@@ -1726,6 +1729,8 @@ data/textures/animation/hit-0.tga                        \
 data/textures/animation/hit-1.tga                        \
 data/textures/animation/hit-2.tga                        \
 data/textures/animation/wasp.tga                         \
+data/textures/animation/orb-active.tga                   \
+data/textures/animation/orb-inactive.tga                 \
 data/textures/turn-transition/ai.tga                     \
 data/textures/turn-transition/human.tga                  \
 data/furniture-templates/carpet.tga                      \

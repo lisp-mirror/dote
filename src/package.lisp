@@ -2196,6 +2196,7 @@
    :+sand+
    :+grass+
    :+snow+
+   :+repair-texture-1-fx+
    :+influence-map+
    :+influence-map-w+
    :+influence-map-h+
@@ -2264,6 +2265,7 @@
    :t-wrap-mode
    :border-color
    :get-texture
+   :with-prepared-texture
    :list-of-texture-by-tag
    :gen-name-and-inject-in-database
    :gen-name
@@ -5061,6 +5063,7 @@
    :debris-particles-number
    :make-debris
    :make-summon-player-fx
+   :make-repair-1-fx
    :make-fire-dart-level-0
    :make-fire-dart-level-1
    :make-fire-dart-level-2

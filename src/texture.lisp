@@ -70,6 +70,8 @@
 
 (alexandria:define-constant +white+                            "white"              :test #'string=)
 
+(alexandria:define-constant +repair-texture-1-fx+              "hammer.tga"         :test #'string=)
+
 (alexandria:define-constant +influence-map+                    "influence-maps"     :test #'string=)
 
 (alexandria:define-constant +influence-map-w+                  256                  :test #'=)
@@ -362,6 +364,19 @@
                   *texture-factory-db*)))
     (or found
         (allocate-texture handle))))
+
+(defmacro with-prepared-texture ((texture handle) &body body)
+  "prepare only if not already initialized"
+  (alexandria:with-gensyms (error)
+    `(multiple-value-bind (,texture ,error)
+         (get-texture ,handle)
+       (when ,error
+         (error ,error))
+       (when (not (initializedp ,texture))
+         (prepare-for-rendering ,texture))
+       (progn
+          ,@body)
+       ,texture)))
 
 (defun replace-texture (old-texture new-texture)
   (let ((pos (position-if #'(lambda (texture) (= (handle texture)

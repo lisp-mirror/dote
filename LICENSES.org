@@ -774,6 +774,23 @@
 
   according to: http://opengameart.org/content/painterly-spell-icons-part-1
 
+
+- data/textures/spells/misc/alarm-clock.tga
+  derived from © richtaur
+  released under (CC BY 3.0) https://creativecommons.org/licenses/by/3.0/
+  according to: https://opengameart.org/content/bombada
+
+- data/textures/spells/misc/hammer.tga
+  derived from © axebanegames
+  released under (CC BY 4.0) http://creativecommons.org/licenses/by/4.0/.
+  according to: https://axebanegames.itch.io/free-fantasy-stock-art
+
+- data/textures/spells/misc/repair-weapon-1.tga
+  derived from © skroll and Delapouite
+  released under:
+  https://creativecommons.org/licenses/by/3.0/
+  Downloaded from: http://game-icons.net/
+
 - data/textures/animation/flash-1.tga
   derived from © VSG released under  https://creativecommons.org/licenses/by-sa/3.0/
   according to https://opengameart.org/content/fx-charge

@@ -6,7 +6,7 @@
   :tags                  (:invisible-to-player :heal :summon-player)
   :description           "Should be used by fountains only."
   :gui-texture           "misc/teleport-2.tga"
-  :cost                  20.0
+  :cost                  50.0
   :visual-effect-self    none
   :range                 1  ;; in tile units
   :effective-range       0  ;; in tile units

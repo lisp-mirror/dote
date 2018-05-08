@@ -94,9 +94,22 @@
           (last-name  object)
           +gui-static-text-delim+))
 
+(defgeneric age-object-for-humans (object))
+
+(defun get-decay-points (a-character)
+  (let* ((decay-params (interaction-get-decay a-character)))
+    (and decay-params (interaction:points decay-params))))
+
+(defmethod age-object-for-humans ((object np-character))
+  (format nil (_ "~aage ~a/~a~a")
+          +gui-static-text-delim+
+          (truncate (age         object))
+          (truncate (get-decay-points object))
+          +gui-static-text-delim+))
+
 (defmethod description-for-humans :around ((object np-character))
   (strcat
-   (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~]~:[~;Trap~] ~a ~a~a")
+   (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~]~:[~;Trap~] ~a ~a~a~a~a")
            (can-cut-p   object)
            (can-smash-p object)
            (can-launch-bolt-p object)
@@ -110,6 +123,8 @@
            (trapp      object)
            (first-name object)
            (last-name  object)
+           +gui-static-text-delim+
+           (age-object-for-humans object)
            +gui-static-text-delim+)
    (call-next-method)))
 
@@ -887,10 +902,9 @@
                    (right-hand right-hand)
                    (ring       ring)) object
     (flet ((decayedp (item)
-             (let* ((decay-params (interaction-get-decay item))
-                    (decay-point  (and decay-params (interaction:points decay-params))))
-               (and decay-point
-                    (>= (age item) decay-point)))))
+             (let* ((decay-points (get-decay-points object)))
+               (and decay-points
+                    (>= (age item) decay-points)))))
       (let* ((new-inventory (remove-if #'(lambda (a) (decayedp a)) inventory))
              (removed-items (remove-if #'(lambda (a) (not (decayedp a))) inventory)))
         (when (and elm
