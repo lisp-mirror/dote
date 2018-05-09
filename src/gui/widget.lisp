@@ -990,8 +990,7 @@
                  :y                         y
                  :width                     w
                  :height                    h
-                 :texture-horizontal-offset h-offset
-                 :texture-window-width        h-offset
+                 :texture-window-width      h-offset
                  :animation-loop-p          animation-loop
                  :frequency-animation       freq-anim
                  :shown                     shown))

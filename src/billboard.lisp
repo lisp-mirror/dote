@@ -428,7 +428,6 @@
                                 :animation-loop-p          loop-p
                                 :animation-speed           1.0
                                 :frequency-animation       frequency-animation
-                                :texture-horizontal-offset texture-horizontal-offset
                                 :texture-window-width      texture-horizontal-offset
                                 :gravity                   gravity
                                 :renderp                   activep
