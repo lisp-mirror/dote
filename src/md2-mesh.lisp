@@ -2159,7 +2159,8 @@ to take care of that"
       (setf (spell-points    (ghost body)) 40.0)
       ;; note:   wear-item-event  will   not  be   catched  as   the
       ;; registration happens when the entity is added to world
-      (wear-item body forged-sword))
+      (wear-item body forged-sword)
+      (character:prevent-decay-all-items ghost))
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     body))
 

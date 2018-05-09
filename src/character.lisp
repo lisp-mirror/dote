@@ -101,11 +101,13 @@
     (and decay-params (interaction:points decay-params))))
 
 (defmethod age-object-for-humans ((object np-character))
-  (format nil (_ "~aage ~a/~a~a")
-          +gui-static-text-delim+
-          (truncate (age         object))
-          (truncate (get-decay-points object))
-          +gui-static-text-delim+))
+  (if (decay-prevented-p object)
+      (format nil +gui-static-text-delim+)
+      (format nil (_ "~aage ~a/~a~a")
+              +gui-static-text-delim+
+              (truncate (age         object))
+              (truncate (get-decay-points object))
+              +gui-static-text-delim+)))
 
 (defmethod description-for-humans :around ((object np-character))
   (strcat
@@ -712,6 +714,8 @@
 
 (defgeneric find-item-in-inventory-if (object predicate))
 
+(defgeneric prevent-decay-all-items (object))
+
 (defgeneric remove-decayed-items (object turn-count))
 
 (defgeneric remove-from-inventory (object item))
@@ -893,6 +897,25 @@
 (defmethod find-item-in-inventory-if ((object player-character) predicate)
   (find-if predicate (inventory object)))
 
+(defmethod prevent-decay-all-items ((object player-character))
+  (with-accessors ((inventory inventory)
+                   (elm        elm)
+                   (shoes      shoes)
+                   (armor      armor)
+                   (left-hand  left-hand)
+                   (right-hand right-hand)
+                   (ring       ring)) object
+    (flet ((%prevent-decay (a)
+             (when a
+               (prevent-decay a))))
+      (map nil #'prevent-decay inventory)
+      (%prevent-decay elm)
+      (%prevent-decay shoes)
+      (%prevent-decay armor)
+      (%prevent-decay left-hand)
+      (%prevent-decay right-hand)
+      (%prevent-decay ring))))
+
 (defmethod remove-decayed-items ((object player-character) turn-count)
   (with-accessors ((inventory inventory)
                    (elm        elm)
@@ -905,34 +928,35 @@
              (let* ((decay-points (get-decay-points object)))
                (and decay-points
                     (>= (age item) decay-points)))))
-      (let* ((new-inventory (remove-if #'(lambda (a) (decayedp a)) inventory))
-             (removed-items (remove-if #'(lambda (a) (not (decayedp a))) inventory)))
-        (when (and elm
-                   (decayedp elm))
-          (push elm removed-items)
-          (setf elm nil))
-        (when (and shoes
-                   (decayedp shoes))
-          (push shoes removed-items)
-          (setf shoes nil))
-        (when (and armor
-                   (decayedp armor))
-          (push armor removed-items)
-          (setf armor nil))
-        (when (and left-hand
-                   (decayedp left-hand))
-          (push left-hand removed-items)
-          (setf left-hand nil))
-        (when (and right-hand
-                   (decayedp right-hand))
-          (push right-hand removed-items)
-          (setf right-hand nil))
-        (when (and ring
-                   (decayedp ring))
-          (push ring removed-items)
-          (setf ring nil))
-        (setf inventory new-inventory)
-        (values removed-items inventory)))))
+      (when (not (decay-prevented-p object))
+        (let* ((new-inventory (remove-if #'(lambda (a) (decayedp a)) inventory))
+               (removed-items (remove-if #'(lambda (a) (not (decayedp a))) inventory)))
+          (when (and elm
+                     (decayedp elm))
+            (push elm removed-items)
+            (setf elm nil))
+          (when (and shoes
+                     (decayedp shoes))
+            (push shoes removed-items)
+            (setf shoes nil))
+          (when (and armor
+                     (decayedp armor))
+            (push armor removed-items)
+            (setf armor nil))
+          (when (and left-hand
+                     (decayedp left-hand))
+            (push left-hand removed-items)
+            (setf left-hand nil))
+          (when (and right-hand
+                     (decayedp right-hand))
+            (push right-hand removed-items)
+            (setf right-hand nil))
+          (when (and ring
+                     (decayedp ring))
+            (push ring removed-items)
+            (setf ring nil))
+          (setf inventory new-inventory)
+          (values removed-items inventory))))))
 
 (defmethod remove-from-inventory ((object player-character) item)
   (setf (inventory object) (remove (id item) (inventory object) :key #'id :test #'=)))

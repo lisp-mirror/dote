@@ -1082,6 +1082,7 @@
       (setf (current-damage-points   ghost) (damage-points   ghost))
       (setf (current-movement-points ghost) (movement-points ghost))
       (setf (current-spell-points    ghost) (spell-points    ghost))
+      (character:prevent-decay-all-items ghost)
       ;; setup model
       (let* ((dir (text-utils:strcat (fs:path-first-element (first preview-paths))
                                      fs:*directory-sep*))

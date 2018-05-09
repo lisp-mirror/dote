@@ -1257,7 +1257,8 @@
 
 (defun increase-game-turn (state)
   (let ((end-event   (make-instance 'game-event:end-turn
-                                    :end-turn-count  (game-state:game-turn state)))
+                                    :end-turn-count   (game-turn    state)
+                                    :end-turn-faction (faction-turn state)))
         (start-event (make-instance 'game-event:start-turn)))
     (game-event:propagate-end-turn   end-event)
     (game-event:propagate-start-turn start-event)))

@@ -86,7 +86,11 @@
   ((end-turn-count
     :initform 0
     :initarg  :end-turn-count
-    :accessor end-turn-count)))
+    :accessor end-turn-count)
+   (end-turn-faction
+    :initform nil
+    :initarg  :end-turn-faction
+    :accessor end-turn-faction)))
 
 (defevent start-turn () ())
 

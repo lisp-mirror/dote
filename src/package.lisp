@@ -2533,6 +2533,7 @@
    :on-game-event
    :end-turn
    :end-turn-count
+   :end-turn-faction
    :register-for-end-turn
    :unregister-for-end-turn
    :propagate-end-turn
@@ -3085,6 +3086,8 @@
    :object-keycode
    :clean-effects
    :description-type
+   :prevent-decay
+   :decay-prevented-p
    :can-talk-p
    :can-be-opened-p
    :can-attack-p
@@ -3474,6 +3477,7 @@
    :add-to-inventory
    :find-item-in-inventory
    :find-item-in-inventory-if
+   :prevent-decay-all-items
    :find-entity-by-id
    :sum-modifiers
    :player-class->class-description

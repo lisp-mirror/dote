@@ -118,6 +118,10 @@
 
 (defgeneric description-type (object))
 
+(defgeneric prevent-decay (object))
+
+(defgeneric decay-prevented-p (object))
+
 (defmethod lookup-basic-interaction ((object interactive-entity) key)
   (cdr (assoc key (basic-interaction-params object))))
 
@@ -144,8 +148,9 @@
 ;; events
 
 (defmethod game-event:on-game-event ((object interactive-entity) (event game-event:end-turn))
-  ;(misc:dbg " end turn character ~a(~a) ~a" (type-of object) (id object) (type-of event))
-  (incf (age object))
+  ;;(misc:dbg " end turn character ~a(~a) ~a" (type-of object) (id object) (type-of event))
+  (when (not (decay-prevented-p object))
+    (incf (age object)))
   nil)
 
 (gen-trivial-interaction-path get-strength                    +effects+ +strength+)
@@ -379,6 +384,12 @@
            (shoesp     object)
            (trapp      object))
    (call-next-method)))
+
+(defmethod prevent-decay ((object interactive-entity))
+  (setf (age object) nil))
+
+(defmethod decay-prevented-p ((object interactive-entity))
+  (not (numberp (age object))))
 
 (defmethod description-for-humans ((object interactive-entity))
   (strcat
