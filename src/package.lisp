@@ -2467,6 +2467,7 @@
    :faction-ai-p
    :approx-terrain-height@pos
    :place-player-on-map
+   :update-rendering-needed-ai
    :set-invalicable-cost-player-layer@
    :set-invalicable-cost-map-layer@
    :set-invalicable-cost-pc-layer@

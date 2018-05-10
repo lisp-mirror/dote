@@ -431,6 +431,8 @@
 
 (defgeneric place-player-on-map (object player faction &key position force-position-p))
 
+(defgeneric update-rendering-needed-ai (object))
+
 (defgeneric set-invalicable-cost-player-layer@ (object x y))
 
 (defgeneric set-invalicable-cost-pc-layer@ (object x y))
@@ -978,6 +980,16 @@
             (let ((pos-entity (mesh:calculate-cost-position player)))
               (add-to-ai-entities     object player)
               (set-tile-visited object player (ivec2-x pos-entity) (ivec2-y pos-entity))))))))
+
+(defmethod update-rendering-needed-ai (object)
+  "set rendering needed for all the visibles AI's pawn"
+  (loop-player-entities object
+       #'(lambda (a) (absee-mesh:update-visibility-cone a)))
+  (let ((all-ids-ai-visibles (blackboard:all-ai-id-visible-from-player object)))
+    (loop for id in all-ids-ai-visibles do
+         (let ((opponent-entity (find-entity-by-id object id)))
+           (setf (mesh:renderp opponent-entity) t))))
+  object)
 
 (defmacro with-set-cost-matrix@ (state mat x y value)
   `(with-accessors ((,mat ,mat)) ,state
