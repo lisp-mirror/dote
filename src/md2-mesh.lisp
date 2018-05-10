@@ -474,6 +474,8 @@
             (setf (current-action object) :move)
             (set-animation object :move :recalculate t)
             (setf dir (path->dir current-path :start-index 0))
+            (update-visibility-cone object)
+            (send-update-visibility-event object event)
             t)
           nil))))
 

@@ -3383,7 +3383,7 @@
                              :x        0.0
                              :y        (pgen-chk-button-y 9.0)
                              :callback #'generate-cb
-                             :label    (_ "Generate new"))
+                             :label    (_ "Generate"))
     :initarg  :b-generate
     :accessor b-generate)
    (b-save
