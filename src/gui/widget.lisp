@@ -2268,6 +2268,13 @@
                  :shown           nil
                  :button-status   nil))
 
+(defun make-change-character-cb (change-fn)
+  #'(lambda (w e)
+      (declare (ignore e))
+      (with-parent-widget (toolbar) w
+        (with-accessors ((bound-world  bound-world)) toolbar
+          (funcall change-fn bound-world)))))
+
 (defun next-turn-cb (w e)
   (declare (ignore e))
     (with-parent-widget (toolbar) w
@@ -2674,7 +2681,7 @@
                                   +save-overlay-texture-name+
                                   #'toolbar-save-game-cb
                                   :small t
-                                  :modal nil)
+                                  :modal t)
     :initarg :b-save
     :accessor b-save)
    (b-load
@@ -2704,7 +2711,8 @@
    (b-next
     :initform (make-square-button (d* 2.0 *small-square-button-size*) *small-square-button-size*
                                   +next-overlay-texture-name+
-                                  nil  ;; TODO callback
+                                  (make-change-character-cb
+                                   #'keyboard-world-navigation:select-next-player)
                                   :small t
                                   :modal nil)
     :initarg :b-next
@@ -2712,7 +2720,8 @@
    (b-previous
     :initform (make-square-button (d* 3.0 *small-square-button-size*) *small-square-button-size*
                                   +previous-overlay-texture-name+
-                                  nil  ;; TODO callback
+                                  (make-change-character-cb
+                                   #'keyboard-world-navigation:select-previous-player)
                                   :small t
                                   :modal nil)
     :initarg :b-previous

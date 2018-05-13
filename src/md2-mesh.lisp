@@ -2147,6 +2147,8 @@ to take care of that"
     (setf (ghost body) ghost)
     (setf (thinker (ghost body)) t)
     ;;   ;;;;;;;;;;;;;;;;;;;;;;;; test
+    (setf (movement-points (ghost body)) 50.0)
+    (setf (spell-points    (ghost body)) 40.0)
     ;; (let ((forged-potion              (forged-potion))
     ;;       (forged-potion-cure-dmg     (forged-potion-cure-dmg))
     ;;       (forged-potion-cure-berserk (forged-potion-cure-berserk))
@@ -2168,8 +2170,6 @@ to take care of that"
     ;;   (add-to-inventory (ghost body) forged-sword)
     ;;   (add-to-inventory (ghost body) forged-spear)
     ;;   (add-to-inventory (ghost body) forged-trap)
-    ;;   (setf (movement-points (ghost body)) 50.0)
-    ;;   (setf (spell-points    (ghost body)) 40.0)
     ;;   ;; note:   wear-item-event  will   not  be   catched  as   the
     ;;   ;; registration happens when the entity is added to world
     ;;   (wear-item body forged-sword)

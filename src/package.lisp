@@ -623,7 +623,8 @@
    :fetch-window
    :fetch-window-id
    :with-world
-   :clean-restart-gl-context))
+   :clean-restart-gl-context
+   :move-mouse-to-center-screen))
 
 (defpackage :interfaces
   (:use :cl

@@ -27,3 +27,8 @@
     (sdl2:gl-delete-context (slot-value window 'sdl2.kit:gl-context))
     (setf (slot-value window 'sdl2.kit:gl-context)
           (sdl2:gl-create-context (sdl2.kit:sdl-window window)))))
+
+(defun move-mouse-to-center-screen (window)
+  (multiple-value-bind (w h)
+      (sdl2:get-window-size (sdl-window window))
+    (sdl2:warp-mouse-in-window (sdl-window window) (/ w 2) (/ h 2))))

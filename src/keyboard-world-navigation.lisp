@@ -93,7 +93,8 @@
                    (main-state main-state)) world
     (multiple-value-bind (x-mouse y-mouse)
         (sdl2:mouse-state)
-      (let* ((pos-terrain-matrix (world:pick-pointer-position world world x-mouse y-mouse))
+      (let* ((pos-terrain-matrix (or (world:pick-pointer-position world world x-mouse y-mouse)
+                                     (ivec2:ivec2 0 0)))
              (x-world            (map-utils:coord-map->chunk (ivec2:ivec2-x pos-terrain-matrix)))
              (z-world            (map-utils:coord-map->chunk (ivec2:ivec2-y pos-terrain-matrix)))
              (y-world            (game-state:approx-terrain-height@pos main-state x-world z-world)))
