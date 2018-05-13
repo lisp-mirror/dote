@@ -297,8 +297,9 @@
   (when ambushp
     (billboard:enqueue-tooltip entity
                              billboard:+tooltip-surprise-attack-char+
-                             :color     billboard:+damage-color+
-                             :font-type gui:+tooltip-font-handle+))
+                             :color                 billboard:+damage-color+
+                             :font-type             gui:+tooltip-font-handle+
+                             :add-only-if-renderd-p t))
   (apply-damage entity damage) ;; it is ok for damage to be nil.
   (setf (attacked-by-entity entity) (attacker-entity event))
   (funcall register-for-end-attack-fn entity)
@@ -709,8 +710,9 @@ to take care of that"
                 (setf status +status-poisoned+)
                 (billboard:enqueue-tooltip object
                                            billboard:+tooltip-poison-char+
-                                           :color     billboard:+poison-damage-color+
-                                           :font-type gui:+tooltip-font-handle+)
+                                           :color                 billboard:+poison-damage-color+
+                                           :font-type             gui:+tooltip-font-handle+
+                                           :add-only-if-renderd-p t)
                 (send-refresh-toolbar-event :reset-health-status-animation t))
               t)
             nil)))))
@@ -725,8 +727,9 @@ to take care of that"
            (setf status ,new-status)
            (billboard:enqueue-tooltip ,mesh
                                       ,tooltip
-                                      :color     billboard:+poison-damage-color+
-                                      :font-type gui:+tooltip-font-handle+)
+                                      :color                 billboard:+poison-damage-color+
+                                      :font-type             gui:+tooltip-font-handle+
+                                      :add-only-if-renderd-p t)
                 (send-refresh-toolbar-event :reset-health-status-animation t))
          ,@body))))
 
@@ -772,11 +775,11 @@ to take care of that"
         (if (and (= id (id-destination event))
                  (dice:pass-d1.0 (random-object-messages:msg-chance event-data)))
             (progn
-              (when (renderp mesh)
-                (billboard:enqueue-tooltip mesh
-                                           billboard:+tooltip-heal-char+
-                                           :color     billboard:+healing-color+
-                                           :font-type gui:+tooltip-font-handle+))
+              (billboard:enqueue-tooltip mesh
+                                         billboard:+tooltip-heal-char+
+                                         :color                 billboard:+healing-color+
+                                         :font-type             gui:+tooltip-font-handle+
+                                         :add-only-if-renderd-p t)
               (setf status nil) ;; note: the player can be affected only by one at a time
               (funcall action-fn mesh ghost)
               (send-refresh-toolbar-event)
@@ -891,8 +894,9 @@ to take care of that"
            (setf ,immune-accessor t)
            (billboard:enqueue-tooltip ,mesh
                                       ,tooltip
-                                      :color     billboard:+poison-damage-color+
-                                      :font-type gui:+tooltip-font-handle+)
+                                      :color                 billboard:+poison-damage-color+
+                                      :font-type             gui:+tooltip-font-handle+
+                                      :add-only-if-renderd-p t)
            (send-refresh-toolbar-event :reset-health-status-animation t))
          ,@body))))
 
@@ -966,8 +970,9 @@ to take care of that"
                                          (format nil
                                                  +standard-float-print-format+
                                                  (random-object-messages:msg-points event-data))
-                                         :color     billboard:+healing-color+
-                                         :font-type gui:+tooltip-font-handle+)
+                                         :color                 billboard:+healing-color+
+                                         :font-type             gui:+tooltip-font-handle+
+                                         :add-only-if-renderd-p t)
               (send-refresh-toolbar-event)
               t)
             nil)))))
@@ -1116,9 +1121,10 @@ to take care of that"
         (if (null damage)
             (billboard:enqueue-tooltip object
                                        (format nil (_ "miss"))
-                                       :color     billboard:+damage-color+
-                                       :font-type gui:+tooltip-font-handle+
-                                       :activep   tooltip-active-p)
+                                       :color                 billboard:+damage-color+
+                                       :font-type             gui:+tooltip-font-handle+
+                                       :activep               tooltip-active-p
+                                       :add-only-if-renderd-p t)
             (progn
               (setf current-damage-points (d- current-damage-points damage))
               (if (entity-dead-p object)
@@ -1133,9 +1139,10 @@ to take care of that"
                                          (format nil
                                                  +standard-float-print-format+
                                                  (d- damage))
-                                         :color     billboard:+damage-color+
-                                         :font-type gui:+tooltip-font-handle+
-                                         :activep   tooltip-active-p)))))))
+                                         :color                 billboard:+damage-color+
+                                         :font-type             gui:+tooltip-font-handle+
+                                         :activep               tooltip-active-p
+                                         :add-only-if-renderd-p t)))))))
 
 (defmethod traverse-recurrent-effects ((object md2-mesh))
   (with-accessors ((ghost ghost)
@@ -1165,8 +1172,9 @@ to take care of that"
                                              (format nil
                                                      +standard-float-print-format+
                                                      (d- (random-object-messages:msg-damage effect)))
-                                             :color billboard:+damage-color+
-                                             :font-type gui:+tooltip-font-handle+)))))))))
+                                             :color                 billboard:+damage-color+
+                                             :font-type             gui:+tooltip-font-handle+
+                                             :add-only-if-renderd-p t)))))))))
 
 (defmethod process-postponed-messages ((object md2-mesh))
   (with-accessors ((ghost ghost)

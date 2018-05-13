@@ -259,26 +259,29 @@
 
 (defmethod enqueue-tooltip ((object mesh:triangle-mesh) label
                             &key
-                              (color     +damage-color+)
-                              (font-type gui:+default-font-handle+)
-                              (width     +default-tooltip-w+)
-                              (height    +default-tooltip-h+)
-                              (gravity   1.0)
+                              (color                         +damage-color+)
+                              (font-type                     gui:+default-font-handle+)
+                              (width                         +default-tooltip-w+)
+                              (height                        +default-tooltip-h+)
+                              (gravity                       1.0)
                               (additional-action-enqueued-fn nil)
-                              (activep    t))
-  (with-accessors ((state state)) object
-    (game-state:with-world (world state)
-      (action-scheduler:with-enqueue-action (world action-scheduler:tooltip-show-action)
-        (apply-tooltip object label
-                       :color     color
-                       :font-type font-type
-                       :width      width
-                       :height     height
-                       :gravity   gravity
-                       :activep   activep
-                       :enqueuedp t)
-        (when additional-action-enqueued-fn
-          (funcall additional-action-enqueued-fn))))))
+                              (activep                       t)
+                              (add-only-if-renderd-p         nil))
+  (when (or (not add-only-if-renderd-p)
+            (renderp object))
+    (with-accessors ((state state)) object
+      (game-state:with-world (world state)
+        (action-scheduler:with-enqueue-action (world action-scheduler:tooltip-show-action)
+          (apply-tooltip object label
+                         :color     color
+                         :font-type font-type
+                         :width      width
+                         :height     height
+                         :gravity   gravity
+                         :activep   activep
+                         :enqueuedp t)
+          (when additional-action-enqueued-fn
+            (funcall additional-action-enqueued-fn)))))))
 
 (defclass animated-billboard (triangle-mesh inner-animation end-life-trigger animated-spritesheet)
   ((duration/2

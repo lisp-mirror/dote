@@ -3949,6 +3949,7 @@
    :mesh
    :current-time
    :fog-density
+   :when-rendered
    :do-children-mesh
    :do-triangles
    :triangles

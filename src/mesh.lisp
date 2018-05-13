@@ -506,6 +506,10 @@
     :initarg :render-tangents
     :accessor render-tangents)))
 
+(defmacro when-rendered ((mesh) &body body)
+  `(when (renderp ,mesh)
+     ,@body))
+
 (defmacro gen-empty-predicate (slot)
   (let ((function-name (format nil "~:@(empty-~a-p~)" (symbol-name slot))))
     `(progn
