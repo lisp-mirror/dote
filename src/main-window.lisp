@@ -468,7 +468,7 @@
                    (let ((attacked (world:pick-any-entity world world x y)))
                      (when attacked
                        (battle-utils:attack-long-range-imprecise world selected-pc attacked))))
-                  (t
+                  ((world:human-interaction-allowed-p world)
                    (world:pick-player-entity world world x y :bind t))))
               (when (not (widget:on-mouse-released (world:gui world) gui-event))
                 (misc:dbg "~s button: ~A at ~A, ~A" state b x y))))))))

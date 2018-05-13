@@ -1182,3 +1182,11 @@
   (blackboard:invalidate-blackboard-cache)
   (ai-utils:invalidate-ai-utils-cache)
   (goap:invalidate-tests-cache))
+
+(defun human-interaction-allowed-p (world)
+  #+ allow-human-interaction-always (declare (ignore world))
+  #+ allow-human-interaction-always t
+  #- allow-human-interaction-always
+  (with-accessors ((main-state main-state)) world
+    (and (game-state:faction-turn-human-p main-state)
+         (world:actions-queue-empty-p world))))

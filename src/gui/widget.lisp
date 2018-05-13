@@ -2216,9 +2216,7 @@
   (with-parent-widget (toolbar) object
     (with-toolbar-world (world) toolbar
       (with-accessors ((main-state main-state)) world
-        (if #- inhibit-modal-button (and (game-state:faction-turn-human-p main-state)
-                                         (world:actions-queue-empty-p world))
-            #+ inhibit-modal-button t
+        (if (world:human-interaction-allowed-p world)
             (call-next-method)
             (if (mouse-over object (x-event event) (y-event event))
                 (progn

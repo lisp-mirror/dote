@@ -4990,6 +4990,7 @@
    :apply-tremor-2
    :apply-tremor-3
    :clear-all-memoized-function-cache
+   :human-interaction-allowed-p
    ;; inventory
    :build-inventory))
 

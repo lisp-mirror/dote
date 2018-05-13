@@ -211,8 +211,8 @@
 (progn
   ;; debug
   (pushnew :debug-mode                        *features*)
-  ;; *push* for release
-  ;;(pushnew :inhibit-update-unexplored-layer   *features*)
+  ;; do not push for release
+  (pushnew :allow-human-interaction-always    *features*)
   ;; do not push for release
   (pushnew :inhibit-modal-button              *features*)
   ;; do not push for release
