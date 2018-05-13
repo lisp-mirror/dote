@@ -317,7 +317,7 @@
             (get-selected-item win)
           (when item
             (let ((c-slot       (item->available-player-character-slot ghost item))
-                  (win-accessor (item->window-accessor       win   item)))
+                  (win-accessor (item->window-accessor                 win   item)))
               (when (and c-slot
                          win-accessor
                          (can-use-movement-points-p owner))

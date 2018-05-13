@@ -44,8 +44,6 @@
 
 (define-constant +large-map-size+                    96.0              :test #'=)
 
-(define-constant +maximum-level-difficult+           10.0              :test #'=)
-
 (define-constant +quad-tree-leaf-size+               64.0              :test #'=)
 
 (define-constant +zero-height+                       10.0              :test '=)
@@ -334,6 +332,8 @@
 (define-constant +retreat-strategy+               :retreat                        :test #'eq)
 
 (define-constant +difficult-medium+                3                              :test #'=)
+
+(define-constant +maximum-level-difficult+        10.0                            :test #'=)
 
 (define-constant +exp-capital-delta+             100.0                            :test #'=)
 

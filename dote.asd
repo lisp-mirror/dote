@@ -148,6 +148,7 @@
                (:file "billboard")
                (:file "status-orb")
                (:file "world")
+               (:file "initial-inventory")
                (:file "terrain-chunk")
                (:file "particles")
                (:file "arrows")

@@ -68,8 +68,8 @@
     :initform (make-instance 'simple-label-prefixed
                              :prefix     (_ "Class: ")
                              :label      ""
-                             :width  (preprt-label-ability-w)
-                             :height (preprt-label-ability-h)
+                             :width     (preprt-label-ability-w)
+                             :height    (preprt-label-ability-h)
                              :font-size (preprt-label-ability-h)
                              :x         0.0
                              :y         0.0)
@@ -319,9 +319,8 @@
     :initform (make-instance 'simple-label
                              :width  (input-text-w *reference-sizes*)
                              :height (input-text-h *reference-sizes*)
-                             :x 0.0
-                             :y (d+ +portrait-size+
-                                    (d* 2.0 (h1-font-size *reference-sizes*)))
+                             :x      0.0
+                             :y      (d* 2.0 (preprt-label-ability-h))
                              :label-font-color §cdffffeff
                              :label " ")
     :initarg :lb-name

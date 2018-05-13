@@ -1082,7 +1082,6 @@
       (setf (current-damage-points   ghost) (damage-points   ghost))
       (setf (current-movement-points ghost) (movement-points ghost))
       (setf (current-spell-points    ghost) (spell-points    ghost))
-      (character:prevent-decay-all-items ghost)
       ;; setup model
       (let* ((dir (text-utils:strcat (fs:path-first-element (first preview-paths))
                                      fs:*directory-sep*))
@@ -1098,6 +1097,9 @@
         (setf (character:model-origin-dir ghost) dir)
         (setf (portrait (entity:ghost model)) portrait-texture)
         (setf (renderp  model) nil)
+        (world:build-inventory model +npc-type+ (character:player-class ghost))
+        ;; items owned by AI do not decay
+        (character:prevent-decay-all-items ghost)
         (world:place-player-on-map object model game-state:+npc-type+ :position #(0 0))
         ;; initialize visited tiles per turn for new AI's pawn
         (let ((position (calculate-cost-position model)))

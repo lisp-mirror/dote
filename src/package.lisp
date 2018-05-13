@@ -3653,6 +3653,8 @@
         :character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
+   :+maximum-level+
+   :+minimum-level+
    :calculate-modifier
    :calculate-healing-fx-params-chance
    :generate-weapon))
@@ -4985,7 +4987,9 @@
    :apply-tremor-1
    :apply-tremor-2
    :apply-tremor-3
-   :clear-all-memoized-function-cache))
+   :clear-all-memoized-function-cache
+   ;; inventory
+   :build-inventory))
 
 (defpackage :terrain-chunk
   (:use :cl
@@ -5262,7 +5266,10 @@
    :my-faction
    :place-trap
    :clean-db
-   :blacklist-clear-id))
+   :blacklist-clear-id
+   :md2-mesh-shell
+   :wear-item
+   :add-to-inventory))
 
 (defpackage :obj-mesh
   (:shadow :load)

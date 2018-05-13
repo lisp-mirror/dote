@@ -4316,23 +4316,19 @@
                      (model-preview-paths          model-preview-paths)
                      (backup-data-texture-portrait backup-data-texture-portrait)
                      (backup-data-texture-preview  backup-data-texture-preview)) win
+      (flet ((show-error-message (msg)
+               (let ((error-message (make-message-box msg
+                                                      (_ "Error")
+                                                      :error
+                                                      (cons (_ "OK")
+                                                            #'player-accept-error-message-cb))))
+                 (setf (compiled-shaders error-message) (compiled-shaders win))
+                 (add-child win error-message))))
       (if (<= max-player-count 0)
-          (let ((error-message (make-message-box (_ "Limit of available player reached!")
-                                                 (_ "Error")
-                                                 :error
-                                                 (cons (_ "OK")
-                                                       #'player-accept-error-message-cb))))
-            (setf (compiled-shaders error-message) (compiled-shaders win))
-            (add-child win error-message))
+          (show-error-message (_ "Limit of available player reached!"))
           (with-accessors ((main-state main-state)) world
             (if (null model-preview-paths)
-                (let ((error-message (make-message-box (_ "Mesh not specified")
-                                                       (_ "Error")
-                                                       :error
-                                                       (cons (_ "OK")
-                                                             #'player-accept-error-message-cb))))
-                  (setf (compiled-shaders error-message) (compiled-shaders win))
-                  (add-child win error-message))
+                (show-error-message (_ "Mesh not specified"))
                 (progn
                   ;; copy some new points to current
                   (setf (current-damage-points   player) (damage-points player))
@@ -4341,12 +4337,13 @@
                   ;; setup model
                   (let* ((dir (strcat (fs:path-first-element (first model-preview-paths))
                                       fs:*directory-sep*))
-                         (model (md2:load-md2-player player
-                                                     dir
-                                                     (compiled-shaders world)
-                                                     +human-player-models-resource+))
+                         (model            (md2:load-md2-player player
+                                                                dir
+                                                                (compiled-shaders world)
+                                                                +human-player-models-resource+))
+                         (original-texture (get-texture +portrait-unknown-texture-name+))
                          (portrait-texture (texture:gen-name-and-inject-in-database
-                                            (texture:clone (get-texture +portrait-unknown-texture-name+)))))
+                                            (texture:clone original-texture))))
                     (pixmap:sync-data-to-bits portrait-texture)
                     (texture:prepare-for-rendering portrait-texture)
                     (setf (character:first-name player) (label input-name))
@@ -4356,6 +4353,7 @@
                     (setf (portrait (entity:ghost model)) portrait-texture)
                     (md2:setup-orb model)
                     (decf max-player-count)
+                    (world:build-inventory model +pc-type+ (character:player-class player))
                     (world:place-player-on-map world model game-state:+pc-type+ ;#(61 109)))
                                                :position #(0 0)))
                   ;; restore preview
@@ -4366,7 +4364,7 @@
                         backup-data-texture-portrait)
                   (pixmap:sync-data-to-bits (get-texture +portrait-unknown-texture-name+))
                   (update-for-rendering (get-texture +portrait-unknown-texture-name+))
-                  (update-for-rendering (get-texture +preview-unknown-texture-name+))))))))
+                  (update-for-rendering (get-texture +preview-unknown-texture-name+)))))))))
   t)
 
 (defun %find-max-lenght-ability-prefix (win)

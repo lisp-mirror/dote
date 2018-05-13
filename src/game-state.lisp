@@ -314,7 +314,7 @@
    (level-difficult
     :accessor level-difficult
     :initarg  :level-difficult
-    :initform 4)
+    :initform (1+ +difficult-medium+))
    (level-name
     :accessor level-name
     :initarg  :level-name
