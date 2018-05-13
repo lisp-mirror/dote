@@ -2008,106 +2008,106 @@ to take care of that"
 
 ;;;;;;;;;;;;;;;; testing only! ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun forged-potion ()
-  (let ((potion (random-potion:generate-potion 10))
-        (effect-cause-berserk (make-instance 'basic-interaction-parameters:healing-effect-parameters
-                                            :trigger basic-interaction-parameters:+effect-when-consumed+
-                                            :duration 2
-                                            :chance   0.9)))
-    (n-setf-path-value (basic-interaction-params potion)
-                       '(:healing-effects :cause-berserk)
-                       effect-cause-berserk)
-    potion))
+;; (defun forged-potion ()
+;;   (let ((potion (random-potion:generate-potion 10))
+;;         (effect-cause-berserk (make-instance 'basic-interaction-parameters:healing-effect-parameters
+;;                                             :trigger basic-interaction-parameters:+effect-when-consumed+
+;;                                             :duration 2
+;;                                             :chance   0.9)))
+;;     (n-setf-path-value (basic-interaction-params potion)
+;;                        '(:healing-effects :cause-berserk)
+;;                        effect-cause-berserk)
+;;     potion))
 
-(defun forged-potion-cure-berserk ()
-  (let ((potion (random-potion:generate-potion 10))
-        (effect-cure (basic-interaction-parameters:define-healing-effect
-                         (duration unlimited
-                                   trigger  when-consumed
-                                   chance   0.9
-                                   target   self))))
-    (n-setf-path-value (basic-interaction-params potion)
-                       '(:healing-effects :heal-berserk)
-                       effect-cure)
-    potion))
+;; (defun forged-potion-cure-berserk ()
+;;   (let ((potion (random-potion:generate-potion 10))
+;;         (effect-cure (basic-interaction-parameters:define-healing-effect
+;;                          (duration unlimited
+;;                                    trigger  when-consumed
+;;                                    chance   0.9
+;;                                    target   self))))
+;;     (n-setf-path-value (basic-interaction-params potion)
+;;                        '(:healing-effects :heal-berserk)
+;;                        effect-cure)
+;;     potion))
 
-(defun forged-potion-cure-dmg ()
-  (let ((potion (random-potion:generate-potion 10))
-        (effect-cure (basic-interaction-parameters:define-heal-dmg-effect (points 3.0
-                                                     trigger  when-consumed
-                                                     chance   0.9
-                                                     target   self))))
-    (n-setf-path-value (basic-interaction-params potion)
-                       '(:healing-effects :heal-damage-points)
-                       effect-cure)
-    (clean-effects potion)))
+;; (defun forged-potion-cure-dmg ()
+;;   (let ((potion (random-potion:generate-potion 10))
+;;         (effect-cure (basic-interaction-parameters:define-heal-dmg-effect (points 3.0
+;;                                                      trigger  when-consumed
+;;                                                      chance   0.9
+;;                                                      target   self))))
+;;     (n-setf-path-value (basic-interaction-params potion)
+;;                        '(:healing-effects :heal-damage-points)
+;;                        effect-cure)
+;;     (clean-effects potion)))
 
-(defun forged-ring ()
-  (let ((ring (random-ring:generate-ring 1))
-        (effect-cause-berserk (make-instance 'basic-interaction-parameters:healing-effect-parameters
-                                             :trigger
-                                             basic-interaction-parameters:+effect-when-worn+
-                                             :duration 2
-                                             :chance   0.9))
-        (immune-terror                (make-instance 'basic-interaction-parameters:healing-effect-parameters
-                                                     :trigger  basic-interaction-parameters:+effect-when-worn+
-                                                     :duration 2
-                                                     :chance 0.99
-                                                     :target basic-interaction-parameters:+target-self+)))
+;; (defun forged-ring ()
+;;   (let ((ring (random-ring:generate-ring 1))
+;;         (effect-cause-berserk (make-instance 'basic-interaction-parameters:healing-effect-parameters
+;;                                              :trigger
+;;                                              basic-interaction-parameters:+effect-when-worn+
+;;                                              :duration 2
+;;                                              :chance   0.9))
+;;         (immune-terror                (make-instance 'basic-interaction-parameters:healing-effect-parameters
+;;                                                      :trigger  basic-interaction-parameters:+effect-when-worn+
+;;                                                      :duration 2
+;;                                                      :chance 0.99
+;;                                                      :target basic-interaction-parameters:+target-self+)))
 
-    (n-setf-path-value (basic-interaction-params ring)
-                       '(:healing-effects :cause-berserk)
-                       effect-cause-berserk)
-    (n-setf-path-value (basic-interaction-params ring)
-                       '(:healing-effects :immune-terror)
-                        immune-terror)
+;;     (n-setf-path-value (basic-interaction-params ring)
+;;                        '(:healing-effects :cause-berserk)
+;;                        effect-cause-berserk)
+;;     (n-setf-path-value (basic-interaction-params ring)
+;;                        '(:healing-effects :immune-terror)
+;;                         immune-terror)
 
-    (clean-effects ring)
-    ring))
+;;     (clean-effects ring)
+;;     ring))
 
-(defun forged-sword ()
-  (let ((sword (random-weapon:generate-weapon 10 :sword))
-        (effect-modifier  (make-instance 'basic-interaction-parameters:effect-parameters
-                                         :trigger basic-interaction-parameters:+effect-when-worn+
-                                         :duration basic-interaction-parameters:+duration-unlimited+
-                                         :modifier 5.0))
-        (poisoning        (make-instance 'basic-interaction-parameters:poison-effect-parameters
-                                         :chance 0.9
-                                         :target basic-interaction-parameters:+target-other+
-                                         :points-per-turn 2.0)))
-    (n-setf-path-value (basic-interaction-params sword)
-                       '(:effects :melee-attack-chance)
-                       effect-modifier)
-    (n-setf-path-value (basic-interaction-params sword)
-                        '(:healing-effects :cause-poison)
-                        poisoning)
-    (clean-effects sword)
-    sword))
+;; (defun forged-sword ()
+;;   (let ((sword (random-weapon:generate-weapon 10 :sword))
+;;         (effect-modifier  (make-instance 'basic-interaction-parameters:effect-parameters
+;;                                          :trigger basic-interaction-parameters:+effect-when-worn+
+;;                                          :duration basic-interaction-parameters:+duration-unlimited+
+;;                                          :modifier 5.0))
+;;         (poisoning        (make-instance 'basic-interaction-parameters:poison-effect-parameters
+;;                                          :chance 0.9
+;;                                          :target basic-interaction-parameters:+target-other+
+;;                                          :points-per-turn 2.0)))
+;;     (n-setf-path-value (basic-interaction-params sword)
+;;                        '(:effects :melee-attack-chance)
+;;                        effect-modifier)
+;;     (n-setf-path-value (basic-interaction-params sword)
+;;                         '(:healing-effects :cause-poison)
+;;                         poisoning)
+;;     (clean-effects sword)
+;;     sword))
 
-(defun forged-spear ()
-  (random-weapon:generate-weapon 10 :spear))
+;; (defun forged-spear ()
+;;   (random-weapon:generate-weapon 10 :spear))
 
-(defun forged-bow ()
-  (let ((bow (random-weapon:generate-weapon 10 :bow))
-        (effect-modifier  (make-instance 'basic-interaction-parameters:effect-parameters
-                                         :trigger basic-interaction-parameters:+effect-when-worn+
-                                         :duration basic-interaction-parameters:+duration-unlimited+
-                                         :modifier 5.0))
-        (poisoning        (make-instance 'basic-interaction-parameters:poison-effect-parameters
-                                         :chance 0.9
-                                         :target basic-interaction-parameters:+target-other+
-                                         :points-per-turn 2.0)))
-    (n-setf-path-value (basic-interaction-params bow)
-                       '(:effects :melee-attack-chance)
-                       effect-modifier)
-    (n-setf-path-value (basic-interaction-params bow)
-                       '(:healing-effects :cause-poison)
-                       poisoning)
-    (clean-effects bow)
-    bow))
+;; (defun forged-bow ()
+;;   (let ((bow (random-weapon:generate-weapon 10 :bow))
+;;         (effect-modifier  (make-instance 'basic-interaction-parameters:effect-parameters
+;;                                          :trigger basic-interaction-parameters:+effect-when-worn+
+;;                                          :duration basic-interaction-parameters:+duration-unlimited+
+;;                                          :modifier 5.0))
+;;         (poisoning        (make-instance 'basic-interaction-parameters:poison-effect-parameters
+;;                                          :chance 0.9
+;;                                          :target basic-interaction-parameters:+target-other+
+;;                                          :points-per-turn 2.0)))
+;;     (n-setf-path-value (basic-interaction-params bow)
+;;                        '(:effects :melee-attack-chance)
+;;                        effect-modifier)
+;;     (n-setf-path-value (basic-interaction-params bow)
+;;                        '(:healing-effects :cause-poison)
+;;                        poisoning)
+;;     (clean-effects bow)
+;;     bow))
 
-(defun forged-trap ()
-  (random-trap:generate-trap 10))
+;; (defun forged-trap ()
+;;   (random-trap:generate-trap 10))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

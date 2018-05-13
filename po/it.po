@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dote 0.0.1\n"
 "Report-Msgid-Bugs-To: cage@katamail.com\n"
-"POT-Creation-Date: 2018-05-10 19:32+0200\n"
+"POT-Creation-Date: 2018-05-13 12:22+0200\n"
 "PO-Revision-Date: 2018-05-10 19:33+0200\n"
 "Last-Translator: cage <cage@katamail.com>\n"
 "Language-Team: Italian\n"
@@ -177,7 +177,9 @@ msgstr "~aeta' ~a/~a~a"
 msgid ""
 "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~]~:[~;Trap~] "
 "~a ~a~a~a~a"
-msgstr "~:[~;Arma da taglio~]~:[~;Arma ad impatto~]~:[~;Arma da lancio~]~:[~;Arma da lancio~]~:[~;Fontana~]~:[~;Pozione~]~:[~;Elmo~]~:[~;Armatura~]~:[~;Anello~]~:[~;Scarpe~]~:[~;Trappola~] ~a ~a~a~a~a"
+msgstr ""
+"~:[~;Arma da taglio~]~:[~;Arma ad impatto~]~:[~;Arma da lancio~]~:[~;Arma da lancio~]~:[~;Fontana~]~:[~;Pozione~]~:[~;Elmo~]~:[~;Armatura~]~:[~;Anello~]~:[~;Scarpe~]~:[~;Trappola~] "
+"~a ~a~a~a~a"
 
 #: src/character.lisp:850
 msgid "warrior"
@@ -434,36 +436,35 @@ msgstr "~a causa berserk"
 msgid "launchs ~a"
 msgstr "lancia ~a"
 
-#: src/md2-mesh.lisp:525
+#: src/md2-mesh.lisp:527
 #, lisp-format
 msgid "Trap found! deactivate (chance ~a)?"
 msgstr "Attivata una trappola! Provare a disinnescarla (possibilita' ~a)"
 
-#: src/md2-mesh.lisp:529 src/world.lisp:1002 src/gui/widget.lisp:4323
-#: src/gui/widget.lisp:4332 src/gui/widget.lisp:4821
-#: src/gui/load-save-window.lisp:144
+#: src/md2-mesh.lisp:531 src/world.lisp:1002 src/gui/widget.lisp:4323
+#: src/gui/widget.lisp:4819 src/gui/load-save-window.lisp:144
 msgid "OK"
 msgstr "OK"
 
-#: src/md2-mesh.lisp:531 src/gui/widget.lisp:2505
+#: src/md2-mesh.lisp:533 src/gui/widget.lisp:2505
 msgid "No"
 msgstr "No"
 
-#: src/md2-mesh.lisp:821 src/md2-mesh.lisp:846 src/md2-mesh.lisp:1063
+#: src/md2-mesh.lisp:823 src/md2-mesh.lisp:848 src/md2-mesh.lisp:1065
 msgid "Move to"
 msgstr "Spostati"
 
-#: src/md2-mesh.lisp:1007
+#: src/md2-mesh.lisp:1009
 #, lisp-format
 msgid "You can cast ~a!"
 msgstr "Adesso puoi lanciare ~a!"
 
-#: src/md2-mesh.lisp:1060
+#: src/md2-mesh.lisp:1062
 #, lisp-format
 msgid "~a broken"
 msgstr "~a rotto/a"
 
-#: src/md2-mesh.lisp:1116
+#: src/md2-mesh.lisp:1118
 msgid "miss"
 msgstr "mancato"
 
@@ -702,35 +703,35 @@ msgstr "Livello: "
 msgid "Experience points: "
 msgstr "Punti esperienza: "
 
-#: src/gui/player-report-window.lisp:335 src/gui/widget.lisp:3920
+#: src/gui/player-report-window.lisp:334 src/gui/widget.lisp:3920
 msgid "STR: "
 msgstr "STR: "
 
-#: src/gui/player-report-window.lisp:347 src/gui/widget.lisp:3930
+#: src/gui/player-report-window.lisp:346 src/gui/widget.lisp:3930
 msgid "ST:  "
 msgstr "ST:  "
 
-#: src/gui/player-report-window.lisp:357 src/gui/widget.lisp:3940
+#: src/gui/player-report-window.lisp:356 src/gui/widget.lisp:3940
 msgid "DX:  "
 msgstr "DX:  "
 
-#: src/gui/player-report-window.lisp:367 src/gui/widget.lisp:3950
+#: src/gui/player-report-window.lisp:366 src/gui/widget.lisp:3950
 msgid "AG:  "
 msgstr "AG:  "
 
-#: src/gui/player-report-window.lisp:377 src/gui/widget.lisp:3960
+#: src/gui/player-report-window.lisp:376 src/gui/widget.lisp:3960
 msgid "SM:  "
 msgstr "SM:  "
 
-#: src/gui/player-report-window.lisp:387 src/gui/widget.lisp:3970
+#: src/gui/player-report-window.lisp:386 src/gui/widget.lisp:3970
 msgid "EM:  "
 msgstr "EM:  "
 
-#: src/gui/player-report-window.lisp:397 src/gui/widget.lisp:3980
+#: src/gui/player-report-window.lisp:396 src/gui/widget.lisp:3980
 msgid "WG:  "
 msgstr "WG:  "
 
-#: src/gui/player-report-window.lisp:648
+#: src/gui/player-report-window.lisp:647
 msgid "Player status"
 msgstr "Status del giocatore"
 
@@ -815,21 +816,21 @@ msgstr "Cognome"
 msgid "Next"
 msgstr "Successivo"
 
-#: src/gui/widget.lisp:4320
+#: src/gui/widget.lisp:4321 src/gui/widget.lisp:4817
+msgid "Error"
+msgstr "Errore"
+
+#: src/gui/widget.lisp:4328
 msgid "Limit of available player reached!"
 msgstr ""
 "Raggiunto il limite massimo di personaggi che possono essere disposti sulla "
 "mappa!"
 
-#: src/gui/widget.lisp:4321 src/gui/widget.lisp:4330 src/gui/widget.lisp:4819
-msgid "Error"
-msgstr "Errore"
-
-#: src/gui/widget.lisp:4329
+#: src/gui/widget.lisp:4331
 msgid "Mesh not specified"
 msgstr "Modello non indicato"
 
-#: src/gui/widget.lisp:4698
+#: src/gui/widget.lisp:4696
 msgid "Generate character"
 msgstr "Genera personaggio"
 
