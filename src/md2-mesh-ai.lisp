@@ -740,34 +740,35 @@ attempts Note: all attackable position will be updated as well"
       (with-accessors ((ai-entities-action-order game-state:ai-entities-action-order)) state
         (when (and (eq  (my-faction mesh) game-state:+npc-type+)
                    (eq  (my-faction mesh) (game-state:faction-turn state))
-                   (world:actions-queue-empty-p world) ;; ensure one action at time
-                   ai-entities-action-order            ;; if nil all ai players made a move
-                   (= (id mesh)
-                      (id (first-elt ai-entities-action-order))) ;; ensure it's my turn
+                   (world:actions-queue-empty-p world) ; ensure one action at time
                    ghost)
-          (flet ((spawn-planner-task ()
-                   #+ (and debug-mode debug-ai) (misc:dbg "spawn planner")
-                   (world:toolbar-selected-action world)
-                   (widget:activate-planner-icon  world)
-                   (setf *planner-channel* (lparallel:make-channel))
-                   (lparallel:submit-task *planner-channel*
-                                          'elaborate-current-tactical-plan
-                                          ghost blackboard mesh nil))
-                 (terminate-planner-task ()
-                   (widget:deactivate-planner-icon world)
-                   (setf *planner-channel* nil)
-                   (let ((action (pop-action-plan ghost)))
-                     #+(and debug-mode debug-ai) (misc:dbg "popped action ~a" action)
-                     (actuate-plan mesh
-                                   (blackboard:strategy-decision blackboard)
-                                   action)))
-                 (check-ending (channel)
-                   (lparallel:try-receive-result channel
-                                                 :timeout +channel-planner-timeout+)))
-            (if (not *planner-channel*) ;; no planning
-                (if (not *update-infos-channel*) ; no  updating
-                    (spawn-planner-task)
-                    (when (check-ending *update-infos-channel*)
-                      (setf *update-infos-channel* nil)))
-                (when (check-ending *planner-channel*)
-                  (terminate-planner-task)))))))))
+          (if (null ai-entities-action-order)       ; if nil all ai players made a move
+              (game-state:increase-game-turn state) ; turn is terminated for AI
+              (when   (and (= (id mesh)
+                              (id (first-elt ai-entities-action-order)))) ;; ensure it's my turn
+                (flet ((spawn-planner-task ()
+                         #+ (and debug-mode debug-ai) (misc:dbg "spawn planner")
+                         (world:toolbar-selected-action world)
+                         (widget:activate-planner-icon  world)
+                         (setf *planner-channel* (lparallel:make-channel))
+                         (lparallel:submit-task *planner-channel*
+                                                'elaborate-current-tactical-plan
+                                                ghost blackboard mesh nil))
+                       (terminate-planner-task ()
+                         (widget:deactivate-planner-icon world)
+                         (setf *planner-channel* nil)
+                         (let ((action (pop-action-plan ghost)))
+                           #+(and debug-mode debug-ai) (misc:dbg "popped action ~a" action)
+                           (actuate-plan mesh
+                                         (blackboard:strategy-decision blackboard)
+                                         action)))
+                       (check-ending (channel)
+                         (lparallel:try-receive-result channel
+                                                       :timeout +channel-planner-timeout+)))
+                  (if (not *planner-channel*) ;; no planning
+                      (if (not *update-infos-channel*) ; no  updating
+                          (spawn-planner-task)
+                          (when (check-ending *update-infos-channel*)
+                            (setf *update-infos-channel* nil)))
+                      (when (check-ending *planner-channel*)
+                        (terminate-planner-task)))))))))))
