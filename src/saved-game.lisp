@@ -386,9 +386,10 @@
       (fs:dump-sequence-to-file (serialize to-save) saved-file)
       saved-file)))
 
-(defun init-new-map (window)
+(defun init-new-map (window difficult-level)
   (with-accessors ((world world)
                    (root-compiled-shaders main-window:root-compiled-shaders)) window
+    (setf (level-difficult  (main-state world)) difficult-level)
     (setf (world:gui world)
           (make-instance 'widget:widget
                          :x 0.0 :y 0.0

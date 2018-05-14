@@ -1565,6 +1565,103 @@
   (d+ frame
       (d* 2.0 (left-frame-offset *reference-sizes*) frame)))
 
+(defclass scale-value (widget)
+  ((val
+    :initform nil
+    :initarg :val
+    :accessor val)
+   (text
+    :initform ""
+    :initarg :text
+    :accessor text)
+   (b-plus
+    :initform nil
+    :initarg :b-plus
+    :accessor b-plus)
+   (b-minus
+    :initform nil
+    :initarg :b-minus
+    :accessor b-minus)
+   (val->string-fn
+    :initform #'(lambda (a) (format nil "~a" a))
+    :initarg  :val->string-fn
+    :accessor val->string-fn)))
+
+(defmethod initialize-instance :after ((object scale-value) &key &allow-other-keys)
+  (with-accessors ((b-plus          b-plus)
+                   (b-minus         b-minus)
+                   (width           width)
+                   (height          height)
+                   (label           label)
+                   (val             val)
+                   (text            text)
+                   (val->string-fn  val->string-fn)
+                   (label-font-size label-font-size)) object
+    (flet ((make-button (x texture-name)
+             (make-instance 'naked-button
+                            :x               x
+                            :y               0.0
+                            :width           height
+                            :height          height
+                            :texture-object  (get-texture +square-button-texture-name+)
+                            :texture-pressed (get-texture +square-button-pressed-texture-name+)
+                            :texture-overlay (get-texture texture-name)
+                            :callback        nil)))
+      (let* ((buttons-cumulative-w (d- width (d* 2.0 height)))
+             (text-font-size (min label-font-size
+                                  (d* (label-font-size object)
+                                      (d/ buttons-cumulative-w ;; checkbox is square
+                                          (label-width object))))))
+        (setf b-plus  (make-button buttons-cumulative-w
+                                   +plus-overlay-texture-name+))
+        (setf b-minus (make-button (d- buttons-cumulative-w height)
+                                   +minus-overlay-texture-name+))
+        (setf label "")
+        (setf text (make-instance 'simple-label
+                                  :x               0.0
+                                  :y               0.0
+                                  :width           buttons-cumulative-w
+                                  :height          height
+                                  :label           (funcall val->string-fn label)
+                                  :justified       nil
+                                  :label-font-size text-font-size)))
+      (add-children* object b-minus b-plus text))))
+
+(defmethod setup-label ((object scale-value) new-label &key (reset-label-slot t))
+  (with-accessors ((text text)) object
+    (setup-label text new-label :reset-label-slot reset-label-slot)))
+
+(defgeneric sync-value-w-label (object))
+
+(defmethod sync-value-w-label (object)
+  (with-accessors ((val->string-fn val->string-fn)
+                   (val            val))           object
+    (setup-label object (funcall val->string-fn val) :reset-label-slot t)))
+
+(defmethod render :after ((object scale-value) renderer)
+  (mesh:do-children-mesh (c object)
+    (render c renderer)))
+
+(defmethod callback-plus ((object scale-value))
+  (callback (b-plus object)))
+
+(defmethod (setf callback-plus) (value (object scale-value))
+  (setf (callback (b-plus object)) value))
+
+(defmethod callback-minus ((object scale-value))
+  (callback (b-minus object)))
+
+(defmethod (setf callback-minus) (value (object scale-value))
+  (setf (callback (b-minus object)) value))
+
+(defmethod on-mouse-pressed ((object scale-value) event)
+  (or (on-mouse-pressed (b-plus object) event)
+      (on-mouse-pressed (b-minus object) event)))
+
+(defmethod on-mouse-released ((object scale-value) event)
+  (or (on-mouse-released (b-plus object) event)
+      (on-mouse-released (b-minus object) event)))
+
 (defclass window (widget)
   ((top-bar
     :initform (make-instance 'widget

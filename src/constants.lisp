@@ -331,6 +331,8 @@
 
 (define-constant +retreat-strategy+               :retreat                        :test #'eq)
 
+(define-constant +difficult-minimum+               1                              :test #'=)
+
 (define-constant +difficult-medium+                3                              :test #'=)
 
 (define-constant +maximum-level-difficult+        10.0                            :test #'=)

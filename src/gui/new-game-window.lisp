@@ -69,6 +69,9 @@
                  :button-status t))
 
 
+(defun scale-difficult-x ()
+  (d* 2.0 (%square-button-size)))
+
 (defclass new-game-window (window)
   ((buttons-start
     :initform 0
@@ -114,7 +117,7 @@
     :accessor b-ok)
    (text-notes
     :initform (make-instance 'widget:static-text
-                             :height          (d* (new-game-window-h) 0.9)
+                             :height          (d* (new-game-window-h) 0.75)
                              :width           (d- (new-game-window-w)
                                                   (new-game-win-button-list-w))
                              :x               (new-game-win-button-list-w)
@@ -123,20 +126,57 @@
                              :label           (_ "Notes")
                              :justified       t)
     :initarg  :text-notes
-    :accessor text-notes)))
+    :accessor text-notes)
+   (s-difficult
+    :initform (make-instance 'scale-value
+                             :height          (%square-button-size)
+                             :width           (d- (new-game-window-w)
+                                                  (new-game-win-button-list-w))
+                             :x               (new-game-win-button-list-w)
+                             :y               (d- (new-game-window-h)
+                                                  (%square-button-size))
+                             :label-font-size (h3-font-size *reference-sizes*)
+                             :val             0
+                             :justified       t)
+    :initarg  :s-diffcult
+    :accessor s-difficult)))
 
 (defmethod initialize-instance :after ((object new-game-window) &key &allow-other-keys)
   (with-accessors ((b-ok          b-ok)
                    (b-scroll-down b-scroll-down)
                    (b-scroll-up   b-scroll-up)
                    (input-path    input-path)
-                   (text-notes    text-notes)) object
+                   (text-notes    text-notes)
+                   (s-difficult   s-difficult)) object
+    (setf (callback-plus s-difficult)
+          #'(lambda (w e)
+              (declare (ignore e))
+              (with-parent-widget (sc) w
+                (with-accessors ((val   val)
+                                 (label label)) sc
+                  (setf val (truncate (min +maximum-level-difficult+
+                                           (1+ val))))
+                  (sync-value-w-label sc)))))
+    (setf (val->string-fn s-difficult)
+          #'(lambda (a)
+              (format nil (_ "difficult: ~a") a)))
+    (setf (val s-difficult) +difficult-minimum+)
+    (sync-value-w-label s-difficult)
+    (setf (callback-minus s-difficult)
+          #'(lambda (w e)
+              (declare (ignore e))
+              (with-parent-widget (sc) w
+                (with-accessors ((val   val)
+                                 (label label)) sc
+                  (setf val  (truncate (max +difficult-minimum+ (1- val))))
+                  (sync-value-w-label sc)))))
     (regenerate-map-buttons object)
     (add-children* object
                    text-notes
                    b-ok
                    b-scroll-up
-                   b-scroll-down)))
+                   b-scroll-down
+                   s-difficult)))
 
 (defgeneric regenerate-map-buttons (object))
 
@@ -235,10 +275,9 @@
                      (map-file map-file)) win
       (when  map-file
         (let ((render-window (game-state:fetch-render-window state)))
-
           (saved-game::prepare-for-map-loading render-window)
           (saved-game:load-map render-window map-file)
-          (saved-game:init-new-map render-window))))))
+          (saved-game:init-new-map render-window (val (s-difficult win))))))))
 
 (defun make-window (compiled-shaders)
   (let ((win (make-instance 'new-game-window

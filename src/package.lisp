@@ -194,6 +194,7 @@
    :+attack-strategy+
    :+defend-strategy+
    :+retreat-strategy+
+   :+difficult-minimum+
    :+difficult-medium+
    :+exp-capital-delta+
    :+exp-change-level-thrs+
@@ -4563,6 +4564,7 @@
    :label-font-size
    :label-font-color
    :hide
+   :label-width
    :focus
    :on-mouse-pressed
    :on-mouse-released
@@ -4593,6 +4595,15 @@
    :static-text
    :h-bar
    :fill-level
+   :scale-value
+   :val
+   :text
+   :b-plus
+   :b-minus
+   :val->string-fn
+   :sync-value-w-label
+   :callback-minus
+   :callback-plus
    :adjust-window-h
    :adjust-window-w
    :window
