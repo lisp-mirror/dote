@@ -976,7 +976,9 @@
                                             (elt player-coordinates 0)
                                             (elt player-coordinates 1))
         (if (eq faction +pc-type+)
-            (add-to-player-entities object player)
+            (progn
+              (md2:attach-orb player)
+              (add-to-player-entities object player))
             (let ((pos-entity (mesh:calculate-cost-position player)))
               (add-to-ai-entities     object player)
               (set-tile-visited object player (ivec2-x pos-entity) (ivec2-y pos-entity))))))))

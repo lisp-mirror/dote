@@ -3358,7 +3358,7 @@
                              :font-size (h2-font-size *reference-sizes*)
                              :width  (pgen-chk-button-w)
                              :x      0.0
-                             :y      (pgen-chk-button-y 5.0))
+                             :y      (pgen-chk-button-y 6.0))
     :initarg  :lb-gender
     :accessor lb-gender)
    (checkb-male
@@ -3366,7 +3366,7 @@
                              :height (checkbutton-h *reference-sizes*)
                              :width  (pgen-chk-button-w)
                              :x 0.0
-                             :y (pgen-chk-button-y 6.0)
+                             :y (pgen-chk-button-y 7.0)
                              :label (_ "Male ")
                              :callback (update-preview-gender-cb :male)
                              :color :green)
@@ -3377,7 +3377,7 @@
                              :height (checkbutton-h *reference-sizes*)
                              :width  (pgen-chk-button-w)
                              :x 0.0
-                             :y (pgen-chk-button-y 7.0)
+                             :y (pgen-chk-button-y 8.0)
                              :label (_ "Female ")
                              :callback (update-preview-gender-cb :female)
                              :color :green)
@@ -3388,7 +3388,7 @@
                              :height   (pgen-button-h)
                              :width    (pgen-chk-button-w)
                              :x        0.0
-                             :y        (pgen-chk-button-y 9.0)
+                             :y        (pgen-chk-button-y 10.0)
                              :callback #'generate-cb
                              :label    (_ "Generate"))
     :initarg  :b-generate
@@ -3399,7 +3399,7 @@
                              :width    (pgen-chk-button-w)
                              :x        0.0
                              :y        (d+ (pgen-button-h)
-                                           (pgen-chk-button-y 9.0))
+                                           (pgen-chk-button-y 10.0))
                              :callback #'player-save-cb
                              :label    (_ "Save"))
     :initarg  :b-save
@@ -3410,7 +3410,7 @@
                              :width    (pgen-chk-button-w)
                              :x        0.0
                              :y        (d+ (d* 2.0 (pgen-button-h))
-                                           (pgen-chk-button-y 9.0))
+                                           (pgen-chk-button-y 10.0))
                              :callback #'player-load-cb
                              :label    (_ "Load"))
     :initarg  :b-load
@@ -3421,7 +3421,7 @@
                              :width    (pgen-chk-button-w)
                              :x        0.0
                              :y        (d+ (d* 3.0 (pgen-button-h))
-                                           (pgen-chk-button-y 9.0))
+                                           (pgen-chk-button-y 10.0))
                              :callback #'player-accept-cb
                              :label    (_ "Accept"))
     :initarg  :b-accept
@@ -4000,7 +4000,7 @@
     :accessor img-preview)
    (b-next-preview
     :initform (make-instance 'button
-                             :height   (checkbutton-h *reference-sizes*)
+                             :height   (pgen-button-h)
                              :width    (pgen-chk-button-w)
                              :x        (pgen-preview-x)
                              :y        (d+ +portrait-size+
@@ -4358,7 +4358,6 @@
                     (setf (character:model-origin-dir player) dir)
                     ;;(setf (entity:ghost model) player)
                     (setf (portrait (entity:ghost model)) portrait-texture)
-                    (md2:setup-orb model)
                     (decf max-player-count)
                     (world:build-inventory model +pc-type+ (character:player-class player))
                     (world:place-player-on-map world model game-state:+pc-type+ ;#(61 109)))

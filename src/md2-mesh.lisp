@@ -192,6 +192,8 @@
                                     status-orb:+texture-active+ t t))
       (mtree:add-child mesh orb))))
 
+(defalias attach-orb #'setup-orb)
+
 (defun setup-orb-texture (mesh texture-name)
   (with-accessors ((orb orb)) mesh
     (when orb

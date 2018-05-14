@@ -5256,6 +5256,7 @@
    :+tag-right-weapon-key+
    :find-tag
    :setup-orb
+   :attach-orb
    :setup-orb-texture
    :orb-active
    :orb-inactive
