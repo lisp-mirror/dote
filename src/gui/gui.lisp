@@ -180,7 +180,11 @@
                                           (subseq f 2)
                                           nil))))))
 
-(gen-texture-bulk (white.tga
+(gen-texture-bulk (game-over.tga
+                   +default-gui-resource+)
+                  (victory.tga
+                   +default-gui-resource+)
+                  (white.tga
                    +default-gui-resource+)
                   (elaborating-plan-spinner.tga
                    +default-gui-resource+
@@ -555,6 +559,8 @@
 (defun setup-gui (compiled-shaders)
   (load-font +default-font+ +default-font-handle+ compiled-shaders)
   (load-font +tooltip-font+ +tooltip-font-handle+ compiled-shaders)
+  (setup-tex-game-over)
+  (setup-tex-victory)
   (setup-tex-white)
   (setup-tex-frame)
   (setup-tex-window-top-bar)

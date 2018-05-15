@@ -1213,19 +1213,24 @@ to take care of that"
                    (cycle-animation  cycle-animation)
                    (stop-animation   stop-animation)) object
     (with-accessors ((blackboard blackboard:blackboard)) state
-    (with-accessors ((status                status)
-                     (current-damage-points current-damage-points)) ghost
-      (setf (status ghost) +status-faint+)
-      (setf current-action  :death)
-      (set-animation object :death :recalculate t)
-      (setf stop-animation nil)
-      (setf cycle-animation nil)
-      (setf current-damage-points (d 0.0))
-      ;; also make the blackboard "forget" about this character if is from human side
-      (when (faction-player-p state id)
-        (orb-remove object)
-        (blackboard:remove-entity-from-all-attack-pos blackboard object))
-      (particles:add-blood-death object (aabb-center aabb) +y-axe+)))))
+      (with-accessors ((status                status)
+                       (current-damage-points current-damage-points)) ghost
+        (game-state:with-world (world state)
+          (setf (status ghost) +status-faint+)
+          (setf current-action  :death)
+          (set-animation object :death :recalculate t)
+          (setf stop-animation nil)
+          (setf cycle-animation nil)
+          (setf current-damage-points (d 0.0))
+          ;; also make the blackboard "forget" about this character if is from human side
+          (when (faction-player-p state id)
+            (orb-remove object)
+            (blackboard:remove-entity-from-all-attack-pos blackboard object))
+          (particles:add-blood-death object (aabb-center aabb) +y-axe+)
+          (when (battle-utils:victoryp state)
+            (closing-sequence:start-victory-sequence world))
+          (when (battle-utils:defeatedp state)
+            (closing-sequence:start-game-over-sequence world)))))))
 
 (defmethod unset-death-status ((object md2-mesh))
   (with-accessors ((id               id)

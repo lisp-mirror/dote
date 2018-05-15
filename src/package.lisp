@@ -4348,7 +4348,11 @@
    :reward-exp-long-range-attack
    :reward-exp-launch-attack-spell
    :reward-exp-launch-spell
-   :reward-movement))
+   :reward-movement
+   :game-over-p
+   :all-death-p
+   :victoryp
+   :defeatedp))
 
 ;; UI
 
@@ -4416,6 +4420,8 @@
    :+blue-h-bar+
    :+red-h-bar+
    :+green-h-bar+
+   :+game-over-texture-name+
+   :+victory-texture-name+
    :+white-texture-name+
    :+check-button-texture-name+
    :+check-button-checked-green+
@@ -4797,6 +4803,40 @@
    :make-logo-lava
    :make-logo
    :make-opening))
+
+(defpackage :closing-sequence
+  (:use
+   :cl
+   :alexandria
+   :config
+   :constants
+   :ubvec4
+   :vec4
+   :misc
+   :num
+   :3d-utils
+   :static-queue
+   :shaders-utils
+   :cl-gl-utils
+   :interfaces
+   :mesh-material
+   :identificable
+   :transformable
+   :entity
+   :camera
+   :game-state
+   :mesh
+   :gui-events
+   :gui
+   :widget
+   :full-screen-masks)
+  (:nicknames :clos-seq)
+  (:shadowing-import-from :misc :shuffle :random-elt)
+  (:export
+   :make-closing
+   :start-closing-sequence
+   :start-game-over-sequence
+   :start-victory-sequence))
 
 (defpackage :billboard
   (:use :cl

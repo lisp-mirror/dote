@@ -2457,7 +2457,6 @@
                 (game-event:propagate-close-door-event door-event))))))))
   t)
 
-
 (defun %find-entity (state pos)
   (game-state:find-entity-by-id state
                                 (game-state:entity-id (matrix:matrix-elt (map-state state)

@@ -1593,6 +1593,8 @@ data/gui/default/inventory/trap-8.tga                    \
 data/gui/default/inventory/trap-9.tga                    \
 data/gui/default/inventory/trap-10.tga                   \
 data/gui/default/inventory/unknown-object.tga            \
+data/gui/default/victory.tga                             \
+data/gui/default/game-over.tga                           \
 data/gui/default/white.tga                               \
 data/gui/default/drop-overlay.tga                        \
 data/gui/default/padlock-overlay.tga                     \

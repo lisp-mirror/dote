@@ -916,6 +916,18 @@
             (d/ cost-destination 10.0))
       entity)))
 
+(defun game-over-p (predicate state)
+  (funcall predicate state))
+
+(defun all-death-p (map-fn state)
+  (game-over-p #'(lambda(s) (null (funcall map-fn s #'identity))) state))
+
+(defun victoryp (state)
+  (all-death-p  #'game-state:map-ai-entities state))
+
+(defun defeatedp (state)
+  (all-death-p  #'game-state:map-player-entities state))
+
 (defun attack-statistics (weapon-level attack-dmg shield-level armor-level
                            &optional (count 10000))
   (macrolet ((fmt-comment (a fmt-params)
