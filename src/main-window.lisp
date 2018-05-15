@@ -94,7 +94,7 @@
                    (root-compiled-shaders root-compiled-shaders)) window
     (saved-game::prepare-for-map-loading window)
     (saved-game:load-map window "test.lisp")
-    (saved-game:init-new-map window +maximum-level-difficult+)
+    (saved-game:init-new-map window (truncate +maximum-level-difficult+))
     #+debug-mode
     (progn
       (setf *placeholder* (trees:gen-tree

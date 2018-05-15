@@ -68,7 +68,6 @@
   (with-accessors ((texture-window-width texture-window-width)
                    (frames-number        frames-number)
                    (frequency-animation  frequency-animation)) object
-    (setf (use-blending-p object) t)
     (setf frames-number (truncate (* frequency-animation
                                      (/ 1 texture-window-width))))
     (let ((w/2 (d* w 0.5))
@@ -101,52 +100,6 @@
 
 (defmethod removeable-from-world-p ((object status-orb))
   nil)
-
-(defmethod render ((object status-orb) renderer)
-  (declare (optimize (debug 0) (speed 3) (safety 0)))
-  (with-accessors ((duration/2           duration/2)
-                   (anim-delay           anim-delay)
-                   (projection-matrix    projection-matrix)
-                   (compiled-shaders     compiled-shaders)
-                   (el-time              el-time)
-                   (gravity              gravity)
-                   (texture-window-width texture-window-width)
-                   (frame-idx            frame-idx)
-                   (model-matrix         model-matrix)
-                   (triangles            triangles)
-                   (scaling              scaling)
-                   (texture-object       texture-object)
-                   (vao                  vao)
-                   (view-matrix          view-matrix)
-                   (renderp              renderp)) object
-    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
-    (declare (list triangles))
-    (declare (fixnum anim-delay))
-    (when renderp
-      (with-camera-view-matrix (camera-vw-matrix renderer)
-        (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-          (cl-gl-utils:with-depth-disabled
-            (cl-gl-utils:with-blending
-              (gl:blend-func                :src-alpha :one-minus-src-alpha)
-              (use-program compiled-shaders :status-orb)
-              (gl:active-texture            :texture0)
-              (texture:bind-texture texture-object)
-              (uniformi  compiled-shaders :texture-object           +texture-unit-diffuse+)
-              (uniformi  compiled-shaders :frame-idx                frame-idx)
-              (uniformf  compiled-shaders :texture-window-width     texture-window-width)
-              (uniform-matrix compiled-shaders
-                              :post-scaling 4
-                              (vector (scale scaling))
-                              nil)
-              (uniform-matrix compiled-shaders
-                              :modelview-matrix 4
-                              (vector (matrix* camera-vw-matrix
-                                               (elt view-matrix  0)
-                                               (elt model-matrix 0)))
-                              nil)
-              (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
-              (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-              (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))))))
 
 (defclass status-orb-shell (triangle-mesh-shell inner-animation animated-spritesheet) ())
 
@@ -195,28 +148,25 @@
     (when renderp
       (with-camera-view-matrix (camera-vw-matrix renderer)
         (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-          (cl-gl-utils:with-depth-disabled
-            (cl-gl-utils:with-blending
-              (gl:blend-func                :src-alpha :one-minus-src-alpha)
-              (use-program compiled-shaders :status-orb)
-              (gl:active-texture            :texture0)
-              (texture:bind-texture texture-object)
-              (uniformi  compiled-shaders :texture-object           +texture-unit-diffuse+)
-              (uniformi  compiled-shaders :frame-idx                frame-idx)
-              (uniformf  compiled-shaders :texture-window-width     texture-window-width)
-              (uniform-matrix compiled-shaders
-                              :post-scaling 4
-                              (vector (scale scaling))
-                              nil)
-              (uniform-matrix compiled-shaders
-                              :modelview-matrix 4
-                              (vector (matrix* camera-vw-matrix
-                                               (elt view-matrix  0)
-                                               (elt model-matrix 0)))
-                              nil)
-              (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
-              (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-              (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))))))
+          (use-program compiled-shaders :status-orb)
+          (gl:active-texture            :texture0)
+          (texture:bind-texture texture-object)
+          (uniformi  compiled-shaders :texture-object           +texture-unit-diffuse+)
+          (uniformi  compiled-shaders :frame-idx                frame-idx)
+          (uniformf  compiled-shaders :texture-window-width     texture-window-width)
+          (uniform-matrix compiled-shaders
+                          :post-scaling 4
+                          (vector (scale scaling))
+                          nil)
+          (uniform-matrix compiled-shaders
+                          :modelview-matrix 4
+                          (vector (matrix* camera-vw-matrix
+                                           (elt view-matrix  0)
+                                           (elt model-matrix 0)))
+                          nil)
+          (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+          (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+          (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))))
 
 (defun get-orb (pos compiled-shaders texture-name
                 &optional (calculatep nil) (renderp nil))

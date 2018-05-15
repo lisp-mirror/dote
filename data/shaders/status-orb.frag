@@ -8,5 +8,10 @@ out vec4 color;
 
 void main () {
   vec4  texel = texture2D(texture_object, frag_text_coord);
+
+  if(texel.a < 0.01){
+    discard;
+  }
+
   color       = texel;
 }
