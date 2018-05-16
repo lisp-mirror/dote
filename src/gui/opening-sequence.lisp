@@ -63,7 +63,6 @@
 
 (defmethod calculate :after ((object spark-fx) dt)
   (with-accessors ((el-time                 el-time)
-                   (fading-fn               fading-fn)
                    (alpha                   alpha)
                    (animation-speed         animation-speed)
                    (actual-el-time          actual-el-time)
@@ -74,7 +73,6 @@
     (declare (optimize (debug 0) (speed 3) (safety 0)))
     (declare (desired-type dt el-time actual-el-time animation-speed))
     (declare (fixnum delay delay-ct))
-    (declare (function fading-fn))
     (setf actual-el-time (d+ actual-el-time (d* animation-speed dt)))
     (when (and (animatep object)
                (>= el-time 1.0))

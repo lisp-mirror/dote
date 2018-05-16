@@ -647,7 +647,13 @@ active program (set by sdk2.kit:use-program)."
                 :frame-idx)
      (:shaders :vertex-shader   ,(get-shader-source "status-orb.vert")
                :fragment-shader ,(get-shader-source "status-orb.frag")))
-
+    (:closing-curtain
+     (:uniforms :modelview-matrix
+                :proj-matrix
+                :texture-object
+                :alpha)
+     (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
+               :fragment-shader ,(get-shader-source "closing-curtain.frag")))
     (:particles-blood
      (:uniforms :modelview-matrix
                 :proj-matrix
