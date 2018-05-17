@@ -386,6 +386,25 @@
       (fs:dump-sequence-to-file (serialize to-save) saved-file)
       saved-file)))
 
+(defun start-player-generator (world)
+  #'(lambda (w e)
+      (mtree:add-child (world:gui world)
+                       (widget:make-player-generator world))
+      (widget:hide-and-remove-parent-cb w e)))
+
+(defun choose-game-characters (window)
+  (with-accessors ((world                 world)
+                   (root-compiled-shaders main-window:root-compiled-shaders)) window
+    (let* ((message (widget:make-message-box (_ "Pick characters form previous game session?")
+                                             (_ "Choose characters")
+                                             :question
+                                             (cons (_ "No")
+                                                   (start-player-generator world))
+                                             (cons (_ "Yes")
+                                                   (start-player-generator world)))))
+      (setf (compiled-shaders message) root-compiled-shaders)
+      (mtree:add-child (world:gui world) message))))
+
 (defun init-new-map (window difficult-level)
   (with-accessors ((world world)
                    (root-compiled-shaders main-window:root-compiled-shaders)) window
@@ -397,10 +416,7 @@
                          :height *window-h*
                          :label  nil))
     (mtree:add-child (world:gui world) (world:toolbar world))
-    ;; test!
-    (mtree:add-child (world:gui world)
-                     (widget:make-player-generator world))
-    ;;
+    (choose-game-characters window)
     (mtree:add-child (world:gui world)
                      (full-screen-masks:make-burn-mask
                       (level-name (main-state world))

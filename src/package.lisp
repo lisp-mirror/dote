@@ -4598,7 +4598,10 @@
    :simple-label
    :flush-left-label
    :flush-center-label
+   :delay-text-appears-random
+   :delay-text-appears-in-sequence
    :static-text
+   :delay-fn
    :h-bar
    :fill-level
    :scale-value

@@ -66,25 +66,46 @@
   ((font-color
     :initform §cffffffff
     :initarg  :font-color
-    :accessor font-color)))
+    :accessor font-color)
+   (rendering-delay
+    :initform 0
+    :initarg  :rendering-delay
+    :accessor rendering-delay)))
+
+(defmethod initialize-instance :after ((object font-mesh-shell) &key &allow-other-keys)
+  (with-accessors ((renderp renderp)) object
+    (setf renderp nil)))
+
+(defmethod calculate :after ((object font-mesh-shell) dt)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (declare (desired-type dt))
+  (with-accessors ((rendering-delay rendering-delay)
+                   (renderp         renderp)) object
+    (declare (fixnum rendering-delay))
+    (when (not renderp)
+      (if (= rendering-delay 0)
+          (setf renderp t)
+          (setf rendering-delay (f- rendering-delay 1))))
+    object))
 
 (defmethod render ((object font-mesh-shell) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((vbo vbo)
                    (vao vao)
-                   (texture-object texture-object)
+                   (texture-object    texture-object)
                    (projection-matrix projection-matrix)
-                   (model-matrix model-matrix)
-                   (view-matrix view-matrix)
-                   (compiled-shaders compiled-shaders)
-                   (triangles triangles)
-                   (font-color font-color)
-                   (material-params material-params)) object
+                   (model-matrix      model-matrix)
+                   (view-matrix       view-matrix)
+                   (compiled-shaders  compiled-shaders)
+                   (triangles         triangles)
+                   (font-color        font-color)
+                   (material-params   material-params)
+                   (renderp           renderp)) object
     (declare (texture:texture texture-object))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
     (declare (vec4 font-color))
-    (when (> (length triangles) 0)
+    (when renderp
       (with-camera-view-matrix (camera-vw-matrix renderer)
         (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
           (use-program compiled-shaders :gui-fonts)
@@ -101,9 +122,10 @@
           (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
           (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))))
 
-(defun fill-font-mesh-shell (mesh &key (color §cffffffff))
+(defun fill-font-mesh-shell (mesh &key (color §cffffffff) (delay 0))
   (let ((shell (fill-shell-from-mesh mesh 'font-mesh-shell)))
-    (setf (font-color shell) color)
+    (setf (font-color      shell) color
+          (rendering-delay shell) delay)
     shell))
 
 (defclass simple-gui-mesh (triangle-mesh) ())
@@ -1345,12 +1367,26 @@
 (defmethod (setf label) (new-label (object flush-center-label))
   (setup-label object new-label :reset-label-slot t))
 
+(defun delay-text-appears-random (&key (max 10))
+  #'(lambda () (lcg-next-upto max)))
+
+(defun delay-text-appears-in-sequence (&key (increment 1))
+  (let ((delay 0))
+    #'(lambda ()
+        (prog1
+            delay
+          (incf delay increment)))))
+
 (defclass static-text (#+debug-gui naked-button
                        #-debug-gui widget)
   ((justified
     :initform t
     :initarg  :justified
-    :accessor justified)))
+    :accessor justified)
+   (delay-fn
+    :initform (constantly 0)
+    :initarg  :delay-fn
+    :accessor delay-fn)))
 
 (defmethod initialize-instance :after ((object static-text) &key &allow-other-keys)
   (with-slots (label) object
@@ -1372,13 +1408,14 @@
           lines))
 
 (defmethod setup-label ((object static-text) new-label &key (reset-label-slot t))
-  (with-accessors ((label-font-size label-font-size)
-                   (label-font label-font)
+  (with-accessors ((label-font-size  label-font-size)
+                   (label-font       label-font)
                    (label-font-color label-font-color)
-                   (height height)
-                   (width width)
-                   (children children)
-                   (justified justified)) object
+                   (height           height)
+                   (width            width)
+                   (children         children)
+                   (delay-fn         delay-fn)
+                   (justified        justified)) object
     (declare (desired-type width height label-font-size))
     (remove-all-children object)
     (when reset-label-slot
@@ -1394,8 +1431,8 @@
            (actual-height      (d- (d height)
                                    (d* actual-height-font (d (length lines))))))
       (declare (list lines))
-      (do ((line-count (d 0.0) (d+ line-count 1.0))
-           (line       lines   (rest line)))
+      (do ((line-count (d (1- (length lines))) (d- line-count 1.0))
+           (line       (reverse lines)         (rest line)))
           ((not line))
         (declare (list line))
         (declare (desired-type line-count))
@@ -1404,7 +1441,9 @@
            for xf single-float from  0.0 by label-font-size do
            (let* ((mesh  (get-char-mesh label-font c))
                   (shell (if mesh
-                             (fill-font-mesh-shell mesh :color label-font-color)
+                             (fill-font-mesh-shell mesh
+                                                   :color label-font-color
+                                                   :delay (funcall delay-fn))
                              nil)))
              (when shell
                (setf (scaling shell) (sb-cga:vec label-font-size actual-height-font 0.0))

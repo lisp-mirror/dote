@@ -247,9 +247,9 @@
          ;; TEST ;;;;;;;;;;;;,
          (when (or t
                    (with-no-terror-status (,object)
-                     (with-no-terror-status (,object)
+                     (with-no-berserk-status (,object)
                        (and (not (entity:reply-attack-p ,attacked-by-entity)) ; avoid 'ping pong'
-                            ( dice:pass-d100.0 ,chance)))))
+                            (dice:pass-d100.0 ,chance)))))
            ;; attack!
            (game-state:with-world (,world ,state)
              (let ((,weapon-short-range (weapon-type-short-range ,ghost))
@@ -259,8 +259,10 @@
                   (setf (entity:reply-attack ,object) t)
                   (battle-utils:attack-short-range ,world ,object ,attacked-by-entity))
                  (,weapon-long-range
-                  (setf (entity:reply-attack ,object) t)
-                  (battle-utils:attack-long-range ,world ,object ,attacked-by-entity))))))
+                  ;; an additional test for long range weapon
+                  (when (dice:pass-d100.0 (d* 1.2 ,chance))
+                    (setf (entity:reply-attack ,object) t)
+                    (battle-utils:attack-long-range ,world ,object ,attacked-by-entity)))))))
          ,@body))))
 
 (defmethod on-game-event ((object md2-mesh) (event end-attack-melee-event))

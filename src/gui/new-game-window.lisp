@@ -124,6 +124,7 @@
                              :y               0.0
                              :label-font-size (h3-font-size *reference-sizes*)
                              :label           (_ "Notes")
+                             :delay-fn        (delay-text-appears-in-sequence)
                              :justified       t)
     :initarg  :text-notes
     :accessor text-notes)
@@ -203,6 +204,7 @@
                        (buttons-slice-size buttons-slice-size)
                        (map-file           map-file)
                        (text-notes         text-notes)) new-game-window
+        (setf (delay-fn text-notes) (delay-text-appears-in-sequence))
         (let ((file (res:get-resource-file (label w)
                                            +maps-resource+))
               (level-config:*wants-complete-parsing* nil))
