@@ -4569,6 +4569,7 @@
    :label
    :label-font-size
    :label-font-color
+   :shown
    :hide
    :label-width
    :focus
@@ -5750,6 +5751,7 @@
    :clean-up-system
    :save-game
    :load-game
+   :load-players
    :load-map))
 
 (defpackage :main-window

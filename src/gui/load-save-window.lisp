@@ -109,13 +109,18 @@
       (%update-cb-for-save w e slot)))
 
 (defun load-game-cb (w e)
-  (declare (ignore e))
   (with-parent-widget (win) w
-    (with-accessors ((state      state)
-                     (res-action res-action)) win
+    (with-accessors ((state          state)
+                     (res-action     res-action)
+                     (players-only-p players-only-p)) win
       (when res-action
         (let ((render-window (game-state:fetch-render-window state)))
-          (saved-game:load-game render-window res-action))))))
+          (if players-only-p
+              (progn
+                (saved-game:load-players render-window res-action)
+                (widget:hide-and-remove-parent-cb w e))
+              (progn
+                (saved-game:load-game    render-window res-action))))))))
 
 (defun write-screenshot-for-saving (world filename)
   (let* ((pixmap (cl-gl-utils:with-render-to-pixmap (*window-w* *window-h*)
@@ -148,11 +153,20 @@
             (let ((image-file (res:get-resource-file +save-game-screenshot-name+
                                                      res-action
                                                      :if-does-not-exists :create)))
-              (write-screenshot-for-saving world image-file))
-            (add-child win success-message)))))))
+              (setf (shown win) nil) ; without the window ;)
+              (gl:clear :color-buffer :depth-buffer)
+              (interfaces:render world world)
+              (world:render-gui world)
+              (write-screenshot-for-saving world image-file)
+              (setf (shown win) t))
+            (add-child (world:gui world) success-message)))))))
 
 (defclass load-save-window (window)
-  ((res-action
+  ((players-only-p
+    :initform nil
+    :initarg  :players-only-p
+    :accessor players-only-p)
+   (res-action
     :initform nil
     :initarg  :res-action
     :accessor res-action)
@@ -237,15 +251,17 @@
 
 (defun make-window (compiled-shaders action
                     &key
-                      (x 50.0)
-                      (y (d (- *window-h* (load-save-window-h)))))
+                      (players-only nil)
+                      (x            50.0)
+                      (y            (d (- *window-h* (load-save-window-h)))))
   (let ((w (make-instance 'load-save-window
-                          :action action
-                          :x      x
-                          :y      y
-                          :width  (load-save-window-w)
-                          :height (load-save-window-h)
-                          :label  (_ "Load game"))))
+                          :players-only-p players-only
+                          :action         action
+                          :x              x
+                          :y              y
+                          :width          (load-save-window-w)
+                          :height         (load-save-window-h)
+                          :label          (_ "Load game"))))
     (add-window-button-cb-hide-remove w)
     (setf (compiled-shaders w) compiled-shaders)
     w))

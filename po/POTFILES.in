@@ -97,6 +97,7 @@ src/random-weapon.lisp
 src/rb-tree.lisp
 src/resource-cache.lisp
 src/resources-utils.lisp
+src/saved-game.lisp
 src/sb-cga-utils.lisp
 src/sdl2.kit-utils.lisp
 src/shaders-utils.lisp
@@ -121,23 +122,23 @@ src/with-rgb-texture.lisp
 src/world.lisp
 src/xmls-utils.lisp
 # GUI
+src/gui/configuration-windows.lisp
 src/gui/full-screen-masks.lisp
-src/gui/opening-sequence.lisp
 src/gui/gui-events.lisp
 src/gui/gui.lisp
 src/gui/inventory-window.lisp
+src/gui/load-save-window.lisp
+src/gui/new-game-window.lisp
+src/gui/opening-sequence.lisp
 src/gui/player-report-window.lisp
 src/gui/spell-window.lisp
 src/gui/splash-screen-progress-gauge.lisp
-src/gui/widget.lisp
-src/gui/configuration-windows.lisp
-src/gui/load-save-window.lisp
 src/gui/train-ai-window.lisp
-src/gui/new-game-window.lisp
+src/gui/widget.lisp
 # spells
-data/spells/vampire-1.lisp
-data/spells/vampire-2.lisp
-data/spells/vampire-3.lisp
 data/spells/teleport-1.lisp
 data/spells/teleport-2.lisp
 data/spells/teleport-3.lisp
+data/spells/vampire-1.lisp
+data/spells/vampire-2.lisp
+data/spells/vampire-3.lisp

@@ -392,17 +392,26 @@
                        (widget:make-player-generator world))
       (widget:hide-and-remove-parent-cb w e)))
 
+(defun start-player-fetcher (world shaders)
+  #'(lambda (w e)
+      (mtree:add-child (world:gui world)
+                       (load-save-window:make-window shaders
+                                                     :load
+                                                     :players-only t))
+      (widget:hide-and-remove-parent-cb w e)))
+
 (defun choose-game-characters (window)
-  (with-accessors ((world                 world)
-                   (root-compiled-shaders main-window:root-compiled-shaders)) window
+  (with-accessors ((world            world)
+                   (compiled-shaders main-window:root-compiled-shaders)) window
     (let* ((message (widget:make-message-box (_ "Pick characters form previous game session?")
                                              (_ "Choose characters")
                                              :question
                                              (cons (_ "No")
                                                    (start-player-generator world))
                                              (cons (_ "Yes")
-                                                   (start-player-generator world)))))
-      (setf (compiled-shaders message) root-compiled-shaders)
+                                                   (start-player-fetcher world
+                                                                         compiled-shaders)))))
+      (setf (compiled-shaders message) compiled-shaders)
       (mtree:add-child (world:gui world) message))))
 
 (defun init-new-map (window difficult-level)
@@ -646,6 +655,30 @@
              (loop for item in (inventory ghost) do
                   (clean-handle item)))))))
 
+(defun fix-id-carryed-items-players (dump)
+  (flet ((reset-id (a)
+           (and a
+                (refresh-id a))))
+    (with-accessors ((saved-players saved-players)) dump
+      (map nil #'(lambda (a) (reset-id (player-ghost a)))
+           saved-players)
+      (loop for player in saved-players do
+           (let ((ghost (player-ghost player)))
+             (with-accessors ((elm        elm)
+                              (shoes      shoes)
+                              (armor      armor)
+                              (left-hand  left-hand)
+                              (right-hand right-hand)
+                              (ring       ring)) ghost
+               (reset-id elm)
+               (reset-id shoes)
+               (reset-id armor)
+               (reset-id left-hand)
+               (reset-id right-hand)
+               (reset-id ring)
+               (loop for item in (inventory ghost) do
+                    (reset-id item))))))))
+
 (defun fix-texture-handlers-containers (dump)
   (with-accessors ((saved-containers saved-containers)) dump
     (loop for container in saved-containers do
@@ -661,13 +694,19 @@
       (ivec2:ivec2= needle
                     (original-map-pos a))))
 
-(defun place-player-in-map-destination (world dump x y faction shaders)
+(defun place-player-in-map-destination (world dump x y faction shaders &key (force-position t))
+  (let* ((map-pos       (ivec2:ivec2 x y))
+         (saved-player  (find-if (find-by-pos map-pos)
+                                 (saved-players dump))))
+    (place-player-in-map-destination* world saved-player x y faction shaders
+                                      :force-position force-position)))
+
+(defun place-player-in-map-destination* (world saved-player x y faction shaders
+                                        &key (force-position t))
   (let* ((resource-data (if (faction-player-p faction)
                             +human-player-models-resource+
                             +ai-player-models-resource+))
          (map-pos       (ivec2:ivec2 x y))
-         (saved-player  (find-if (find-by-pos map-pos)
-                                 (saved-players dump)))
          (mesh-info     (mesh-infos saved-player))
          (new-ghost     (player-ghost saved-player))
          (mesh          (md2:load-md2-player new-ghost
@@ -678,8 +717,8 @@
     (world:place-player-on-map world
                                mesh
                                faction
-                               :position         (ivec2:ivec2 x y)
-                               :force-position-p t)
+                               :position         map-pos
+                               :force-position-p force-position)
     (setf (dir mesh) (original-dir saved-player))
     (when (faction-ai-p faction)
       (setf (renderp mesh) nil)
@@ -746,13 +785,15 @@
                                                saved-dump
                                                x y
                                                +npc-type+
-                                               root-compiled-shaders))
+                                               root-compiled-shaders
+                                               :force-position t))
              ((entity-player@pos-p saved-dump x y)
               (place-player-in-map-destination world
                                                saved-dump
                                                x y
                                                +pc-type+
-                                               root-compiled-shaders))
+                                               root-compiled-shaders
+                                               :force-position t))
              ((trap@pos-p saved-dump x y)
               (place-trap-in-map-destination window-game-state saved-dump x y
                                              root-compiled-shaders))
@@ -816,7 +857,9 @@
             ;; workaround!     the    next     is    needed    because
             ;; init-new-map-from-dump   clean  the   texture  database
             ;; (texture:*texture-factory-db*)
-            (fix-texture-handles saved-dump)
+            (fix-texture-handles          saved-dump)
+            ;; refresh all ids
+            (fix-id-carryed-items-players saved-dump)
             ;; restore entitites
             (with-accessors ((window-game-state     main-window:window-game-state)
                              (root-compiled-shaders main-window:root-compiled-shaders)
@@ -835,3 +878,34 @@
                   (game-event:propagate-start-turn start-event)))))
           (error-message-save-game-outdated window))))
   window)
+
+(defun load-players (window resource-dir)
+  (let ((saved-dump (make-instance 'saved-game))
+        (saved-file (res:get-resource-file +map-saved-filename+
+                                           resource-dir
+                                           :if-does-not-exists :error)))
+    (setf saved-dump (deserialize saved-dump saved-file))
+    (with-accessors ((saved-players     saved-players)
+                     (original-map-file original-map-file)) saved-dump
+      (with-accessors ((window-game-state     main-window:window-game-state)
+                       (root-compiled-shaders main-window:root-compiled-shaders)
+                       (world                 main-window:world)) window
+      (if (not (fs:file-outdated-p saved-file
+                                   (load-level:get-level-file-abs-path original-map-file)))
+          (progn
+            ;; workaround!     the    next     is    needed    because
+            ;; init-new-map-from-dump   clean  the   texture  database
+            ;; (texture:*texture-factory-db*)
+            (fix-texture-handles          saved-dump)
+            ;; refresh all ids
+            (fix-id-carryed-items-players saved-dump)
+            ;; restore entitites
+            (loop
+               for player in saved-players when (eq (original-faction player)
+                                                    +pc-type+)
+               do
+                 (place-player-in-map-destination* world player 0 0 +pc-type+
+                                                   root-compiled-shaders
+                                                   :force-position nil)))
+          (error-message-save-game-outdated window))))
+  window))
