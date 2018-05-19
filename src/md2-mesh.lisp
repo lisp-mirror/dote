@@ -151,15 +151,31 @@
     :initarg :current-frame-offset
     :accessor current-frame-offset
     :type fixnum)
+   (next-frame-offset
+    :initform 0
+    :initarg :next-frame-offset
+    :accessor next-frame-offset
+    :type fixnum)
+   (interpolation-factor
+    :initform 0.0
+    :initarg :interpolation-factor
+    :accessor interpolation-factor
+    :type     desired-type)
+   (starting-frame-idx
+    :initform 0
+    :initarg  :starting-frame-idx
+    :accessor starting-frame-idx
+    :type     fixnum)
+   (next-frame-idx
+    :initform 0
+    :initarg  :next-frame-idx
+    :accessor next-frame-idx
+    :type     fixnum)
    (current-animation-time
     :initform 0
     :initarg :current-animation-time
     :accessor current-animation-time
     :type single-float)
-   (array-mixer
-    :initform  (make-instance 'gpu-lerp:array-mixer)
-    :initarg   :array-mixer
-    :accessor  array-mixer)
    (fps
     :initform 20
     :initarg :fps
@@ -207,11 +223,6 @@
 
 (defun orb-remove (mesh)
   (setf (orb mesh) nil))
-
-(defmethod initialize-instance :after ((object md2-mesh) &key &allow-other-keys)
-  (with-accessors ((array-mixer array-mixer)) object
-    (setf (gpu-lerp:compiled-shaders array-mixer) (compiled-shaders object))
-    (gpu-lerp:prepare array-mixer)))
 
 (defmethod print-object ((object md2-mesh) stream)
   (print-unreadable-object (object stream :type t :identity t)
@@ -1749,28 +1760,32 @@ to take care of that"
 (defmethod calculate ((object md2-mesh) dt)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (single-float dt))
-  (with-accessors ((renderer-data-vertices renderer-data-vertices)
-                   (renderer-data-count-vertices renderer-data-count-vertices)
-                   (renderer-data-normals renderer-data-normals)
-                   (renderer-data-count-normals renderer-data-count-normals)
-                   (array-mixer array-mixer)
-                   (tags-table tags-table)
-                   (tags-matrices tags-matrices)
-                   (tag-key-parent tag-key-parent)
-                   (frames frames)
-                   (starting-frame starting-frame)
-                   (end-frame end-frame)
-                   (current-frame-offset current-frame-offset)
-                   (fps fps)
-                   (current-animation-time current-animation-time)
-                   (stop-animation stop-animation)
-                   (cycle-animation cycle-animation)
+  (with-accessors ((renderer-data-vertices          renderer-data-vertices)
+                   (renderer-data-count-vertices    renderer-data-count-vertices)
+                   (renderer-data-normals           renderer-data-normals)
+                   (renderer-data-count-normals     renderer-data-count-normals)
+                   (array-mixer                     array-mixer)
+                   (tags-table                      tags-table)
+                   (tags-matrices                   tags-matrices)
+                   (tag-key-parent                  tag-key-parent)
+                   (frames                          frames)
+                   (starting-frame                  starting-frame)
+                   (end-frame                       end-frame)
+                   (current-frame-offset            current-frame-offset)
+                   (next-frame-offset               next-frame-offset)
+                   (interpolation-factor            interpolation-factor)
+                   (starting-frame-idx              starting-frame-idx)
+                   (next-frame-idx                  next-frame-idx)
+                   (fps                             fps)
+                   (current-animation-time          current-animation-time)
+                   (stop-animation                  stop-animation)
+                   (cycle-animation                 cycle-animation)
                    (renderer-data-normals-obj-space renderer-data-normals-obj-space)
-                   (data-aabb renderer-data-aabb-obj-space)
-                   (current-action current-action)
-                   (ghost ghost)) object
+                   (data-aabb                       renderer-data-aabb-obj-space)
+                   (current-action                  current-action)
+                   (ghost                           ghost)) object
     (declare (single-float current-animation-time fps))
-    (declare (fixnum end-frame starting-frame current-frame-offset))
+    (declare (fixnum end-frame starting-frame current-frame-offset next-frame-offset))
     (declare (simple-array frames))
     (declare (string tag-key-parent))
     (declare (list tags-table tags-matrices))
@@ -1828,89 +1843,67 @@ to take care of that"
         (let ((next-time (+ current-animation-time dt))
               (frame-freq (/ 1.0 fps)))
           (declare (single-float next-time frame-freq))
-          (declare (fixnum frames-numbers))
           (if (> next-time frame-freq)
-              (setf current-frame-offset (mod (the unsigned-byte (1+ current-frame-offset))
+              (setf current-frame-offset (rem (f+ 1 current-frame-offset)
                                               frames-numbers)
                     current-animation-time 0.0)
               (setf current-animation-time next-time))
-          (let* ((next-frame-offset    (mod (the fixnum (1+ current-frame-offset)) frames-numbers))
-                 (interpolation-factor (d* fps current-animation-time))
-                 (starting-frame-idx   (f+ starting-frame current-frame-offset))
-                 (next-frame-idx       (f+ starting-frame next-frame-offset)))
-            (declare (single-float interpolation-factor))
-            (declare (fixnum next-frame-offset starting-frame-idx next-frame-idx))
-            (when (and (not cycle-animation)
-                       (= next-frame-offset 0))
-              (setf stop-animation t))
-            #+md2-gpu-lerp
-            (progn
-              (gpu-lerp:mix array-mixer
-                            interpolation-factor
-                            (renderer-data-vertices (svref frames starting-frame-idx))
-                            (renderer-data-vertices (svref frames next-frame-idx))
-                            renderer-data-vertices)
-              (gpu-lerp:mix array-mixer
-                            interpolation-factor
-                            (renderer-data-normals (svref frames starting-frame-idx))
-                            (renderer-data-normals (svref frames next-frame-idx))
-                            renderer-data-normals))
-            #-md2-gpu-lerp
-            (progn
-              (gl-utils:lerp-gl-array (renderer-data-vertices
-                                       (svref frames starting-frame-idx))
-                                      (renderer-data-vertices
-                                       (svref frames next-frame-idx))
-                                      renderer-data-vertices
-                                      renderer-data-count-vertices
-                                      interpolation-factor)
-              (gl-utils:lerp-gl-array (renderer-data-normals
-                                       (svref frames starting-frame-idx))
-                                      (renderer-data-normals
-                                       (svref frames next-frame-idx))
-                                      renderer-data-normals
-                                      renderer-data-count-normals
-                                      interpolation-factor))
-            (when tags-table
-              (loop for i in tags-matrices do
-                   (let* ((orn1   (elt (the (simple-array (simple-array * (*)))
-                                            (find-tag-cdr (car i) tags-table))
-                                       starting-frame-idx))
-                          (orn2   (elt (the (simple-array (simple-array * (*)))
-                                            (find-tag-cdr (car i) tags-table))
-                                       next-frame-idx))
-                          (orn (vector (vec-lerp (elt orn1 0) (elt orn2 0) interpolation-factor)
-                                       (vec-lerp (elt orn1 1) (elt orn2 1) interpolation-factor)
-                                       (vec-lerp (elt orn1 2) (elt orn2 2) interpolation-factor)
-                                       (vec-lerp (elt orn1 3) (elt orn2 3) interpolation-factor))))
-                     (declare ((simple-array (simple-array single-float (3)) (4)) orn1 orn2))
-                     (nsetup-tag-matrix (cdr i) orn))))
-            (when (render-normals object)
-              #+md2-gpu-lerp
-              (gpu-lerp:mix array-mixer
-                            interpolation-factor
-                            (renderer-data-normals-obj-space (svref frames starting-frame-idx))
-                            (renderer-data-normals-obj-space (svref frames next-frame-idx))
-                            renderer-data-normals-obj-space)
-              #-md2-gpu-lerp
-              (gl-utils:lerp-gl-array (renderer-data-normals-obj-space
-                                       (svref frames starting-frame-idx))
-                                      (renderer-data-normals-obj-space
-                                       (svref frames next-frame-idx))
-                                      renderer-data-normals-obj-space
-                                      (normals-obj-space-vertex-count object)
-                                      interpolation-factor))
-            (with-slots (aabb) object
-              (reset aabb)
-              (loop for i fixnum from 0 below renderer-data-count-vertices by 3 do
-                   (let* ((pos (the (unsigned-byte 32) i))
-                          (vert (vec (gl-utils:fast-glaref renderer-data-vertices pos)
-                                     (gl-utils:fast-glaref renderer-data-vertices (+ pos 1))
-                                     (gl-utils:fast-glaref renderer-data-vertices (+ pos 2)))))
-                     (expand aabb vert)))
-              (setf (bounding-sphere object) (aabb->bounding-sphere aabb))
-              (when (render-aabb object)
-                (make-data-for-opengl-aabb-obj-space object))))))
+          (setf next-frame-offset    (rem (f+ 1 current-frame-offset) frames-numbers)
+                interpolation-factor (d* fps current-animation-time)
+                starting-frame-idx   (f+ starting-frame current-frame-offset)
+                next-frame-idx       (f+ starting-frame next-frame-offset))
+          (when (and (not cycle-animation)
+                     (= next-frame-offset 0))
+            (setf stop-animation t))
+          #-md2-gpu-lerp
+          (progn
+            (gl-utils:lerp-gl-array (renderer-data-vertices
+                                     (svref frames starting-frame-idx))
+                                    (renderer-data-vertices
+                                     (svref frames next-frame-idx))
+                                    renderer-data-vertices
+                                    renderer-data-count-vertices
+                                    interpolation-factor)
+            (gl-utils:lerp-gl-array (renderer-data-normals
+                                     (svref frames starting-frame-idx))
+                                    (renderer-data-normals
+                                     (svref frames next-frame-idx))
+                                    renderer-data-normals
+                                  renderer-data-count-normals
+                                  interpolation-factor))
+          (when tags-table
+            (loop for i in tags-matrices do
+                 (let* ((orn1   (elt (the (simple-array (simple-array * (*)))
+                                          (find-tag-cdr (car i) tags-table))
+                                     starting-frame-idx))
+                        (orn2   (elt (the (simple-array (simple-array * (*)))
+                                          (find-tag-cdr (car i) tags-table))
+                                     next-frame-idx))
+                        (orn (vector (vec-lerp (elt orn1 0) (elt orn2 0) interpolation-factor)
+                                     (vec-lerp (elt orn1 1) (elt orn2 1) interpolation-factor)
+                                     (vec-lerp (elt orn1 2) (elt orn2 2) interpolation-factor)
+                                     (vec-lerp (elt orn1 3) (elt orn2 3) interpolation-factor))))
+                   (declare ((simple-array (simple-array single-float (3)) (4)) orn1 orn2))
+                   (nsetup-tag-matrix (cdr i) orn))))
+          (when (render-normals object)
+            (gl-utils:lerp-gl-array (renderer-data-normals-obj-space
+                                     (svref frames starting-frame-idx))
+                                    (renderer-data-normals-obj-space
+                                     (svref frames next-frame-idx))
+                                    renderer-data-normals-obj-space
+                                    (normals-obj-space-vertex-count object)
+                                    interpolation-factor))
+          (with-slots (aabb) object
+            (reset aabb)
+            (loop for i fixnum from 0 below renderer-data-count-vertices by 3 do
+                 (let* ((pos (the (unsigned-byte 32) i))
+                        (vert (vec (gl-utils:fast-glaref renderer-data-vertices pos)
+                                   (gl-utils:fast-glaref renderer-data-vertices (+ pos 1))
+                                   (gl-utils:fast-glaref renderer-data-vertices (+ pos 2)))))
+                   (expand aabb vert)))
+            (setf (bounding-sphere object) (aabb->bounding-sphere aabb))
+            (when (render-aabb object)
+              (make-data-for-opengl-aabb-obj-space object)))))
       (bubbleup-modelmatrix object)
       (when (not (mtree-utils:rootp object))
         (let ((tag-matrix (find-tag-cdr tag-key-parent
@@ -2016,7 +2009,6 @@ to take care of that"
                                        resource-path
                                        :if-does-not-exists :error))
     (setf (compiled-shaders model) shaders)
-    (setf (compiled-shaders (array-mixer model)) shaders)
     #+debug-mode (misc:dbg "error md2 parsing ~a" (parsing-errors model))
     (prepare-for-rendering model)
     ;;(map nil #'mesh:remove-mesh-data (frames model))
@@ -2145,10 +2137,6 @@ to take care of that"
                              :resource-path  resource-path)))
     (setf (interfaces:compiled-shaders body) compiled-shaders
           (interfaces:compiled-shaders head) compiled-shaders)
-    ;; for position lerp in feedback-shader
-    (setf (compiled-shaders (array-mixer body)) compiled-shaders)
-    ;; for position lerp in feedback-shader
-    (setf (compiled-shaders (array-mixer head)) compiled-shaders)
     (set-animation body :stand :recalculate t)
     (set-animation head :stand :recalculate t)
     (setf (md2:tag-key-parent head) md2:+tag-head-key+)
