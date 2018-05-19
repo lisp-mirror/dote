@@ -5288,6 +5288,8 @@
         :constants
         :config
         :conditions
+        :shaders-utils
+        :cl-gl-utils
         :interfaces
         :transformable
         :identificable

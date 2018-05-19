@@ -17,6 +17,8 @@
 
 (in-package :md2-mesh)
 
+(define-constant +attribute-position-location-next+   1                  :test #'=)
+
 (alexandria:define-constant +magic-number+            "IDP2"             :test #'string=)
 
 (alexandria:define-constant +version+                 8                  :test #'=)
@@ -181,6 +183,15 @@
     :initarg :fps
     :accessor fps
     :type single-float)
+   (renderer-data-vertices-next-frame
+    :initform nil
+    :initarg :renderer-data-vertices-next-frame
+    :accessor renderer-data-vertices-next-frame)
+   (renderer-data-count-vertices-next-frame
+    :initform 0
+    :initarg :renderer-data-count-vertices-next-frame
+    :accessor renderer-data-count-vertices-next-frame
+    :type (unsigned-byte 64))
    (stop-animation
     :initform nil
     :initarg :stop-animation
@@ -1461,38 +1472,48 @@ to take care of that"
     (values vertices name)))
 
 (defmethod %alloc-arrays ((object md2-mesh))
-  (with-accessors ((renderer-data-vertices renderer-data-vertices)
-                   (renderer-data-count-vertices renderer-data-count-vertices)
-                   (renderer-data-texture renderer-data-texture)
-                   (renderer-data-count-texture renderer-data-count-texture)
-                   (renderer-data-normals renderer-data-normals)
-                   (renderer-data-count-normals renderer-data-count-normals)
-                   (renderer-data-tangents renderer-data-tangents)
-                   (renderer-data-count-tangents renderer-data-count-tangents)
-                   (renderer-data-normals-obj-space renderer-data-normals-obj-space)
-                   (renderer-data-aabb-obj-space renderer-data-aabb-obj-space)
-                   (starting-frame starting-frame)
-                   (triangles-mesh triangles)
-                   (end-frame end-frame)
-                   (frames frames)) object
+  (with-accessors ((renderer-data-vertices            renderer-data-vertices)
+                   (renderer-data-vertices-next-frame renderer-data-vertices-next-frame)
+                   (renderer-data-count-vertices-next-frame
+                    renderer-data-count-vertices-next-frame)
+                   (renderer-data-count-vertices      renderer-data-count-vertices)
+                   (renderer-data-texture             renderer-data-texture)
+                   (renderer-data-count-texture       renderer-data-count-texture)
+                   (renderer-data-normals             renderer-data-normals)
+                   (renderer-data-count-normals       renderer-data-count-normals)
+                   (renderer-data-tangents            renderer-data-tangents)
+                   (renderer-data-count-tangents      renderer-data-count-tangents)
+                   (renderer-data-normals-obj-space   renderer-data-normals-obj-space)
+                   (renderer-data-aabb-obj-space      renderer-data-aabb-obj-space)
+                   (starting-frame                    starting-frame)
+                   (triangles-mesh                    triangles)
+                   (end-frame                         end-frame)
+                   (interpolation-factor              interpolation-factor)
+                   (frames                            frames)) object
     (let ((start-frame (elt frames starting-frame)))
-      (setf renderer-data-vertices (gl:alloc-gl-array
-                                    :float
-                                    (mesh:renderer-data-count-vertices start-frame))
-            renderer-data-texture (gl:alloc-gl-array
+      #-md2-gpu-lerp
+      (progn
+        (setf renderer-data-vertices (gl:alloc-gl-array
+                                      :float
+                                      (mesh:renderer-data-count-vertices start-frame)))
+        (setf renderer-data-vertices-next-frame
+              (gl:alloc-gl-array :float (mesh:renderer-data-count-vertices start-frame)))
+        (setf renderer-data-normals (gl:alloc-gl-array
+                                     :float
+                                     (mesh:renderer-data-count-normals start-frame))))
+      (setf renderer-data-texture (gl:alloc-gl-array
                                    :float
-                                   (mesh:renderer-data-count-texture start-frame))
-            renderer-data-normals (gl:alloc-gl-array
-                                   :float
-                                   (mesh:renderer-data-count-normals start-frame))
-            renderer-data-tangents (gl:alloc-gl-array
+                                   (mesh:renderer-data-count-texture start-frame)))
+      (setf renderer-data-tangents (gl:alloc-gl-array
                                     :float
-                                    (mesh:renderer-data-count-tangents start-frame))
-            renderer-data-aabb-obj-space (gl:alloc-gl-array :float +aabb-vertex-count+)
-            renderer-data-count-vertices (mesh:renderer-data-count-vertices start-frame)
-            renderer-data-count-texture (mesh:renderer-data-count-texture start-frame)
-            renderer-data-count-normals (mesh:renderer-data-count-normals start-frame)
-            renderer-data-count-tangents (mesh:renderer-data-count-tangents start-frame))
+                                    (mesh:renderer-data-count-tangents start-frame)))
+      (setf renderer-data-aabb-obj-space (gl:alloc-gl-array :float +aabb-vertex-count+))
+      (setf renderer-data-count-vertices (mesh:renderer-data-count-vertices start-frame))
+      (setf renderer-data-count-vertices-next-frame
+            (mesh:renderer-data-count-vertices start-frame))
+      (setf renderer-data-count-texture (mesh:renderer-data-count-texture start-frame))
+      (setf renderer-data-count-normals (mesh:renderer-data-count-normals start-frame))
+      (setf renderer-data-count-tangents (mesh:renderer-data-count-tangents start-frame))
       (gl-utils:copy-gl-array (mesh:renderer-data-texture start-frame)
                               renderer-data-texture
                               renderer-data-count-texture)
@@ -1503,26 +1524,37 @@ to take care of that"
             renderer-data-normals-obj-space
             (gl:alloc-gl-array :float (normals-obj-space-vertex-count object)))
             ;; setup finalizer
-      (let ((gl-arr-vert     (slot-value object 'renderer-data-vertices))
-            (gl-arr-tex      (slot-value object 'renderer-data-texture))
-            (gl-arr-norm     (slot-value object 'renderer-data-normals))
-            (gl-arr-norm-obj (slot-value object 'renderer-data-normals-obj-space))
-            (gl-arr-tan      (slot-value object 'renderer-data-tangents))
-            (gl-arr-aabb     (slot-value object 'renderer-data-aabb-obj-space))
-            (vbos            (slot-value object 'vbo))
-            (vaos            (slot-value object 'vao))
+      (let (#-md2-gpu-lerp
+            (gl-arr-vert      (slot-value object 'renderer-data-vertices))
+            #-md2-gpu-lerp
+            (gl-arr-vert-next (slot-value object 'renderer-data-vertices-next-frame))
+            (gl-arr-tex       (slot-value object 'renderer-data-texture))
+            #-md2-gpu-lerp
+            (gl-arr-norm      (slot-value object 'renderer-data-normals))
+            (gl-arr-norm-obj  (slot-value object 'renderer-data-normals-obj-space))
+            (gl-arr-tan       (slot-value object 'renderer-data-tangents))
+            (gl-arr-aabb      (slot-value object 'renderer-data-aabb-obj-space))
+            (vbos             (slot-value object 'vbo))
+            (vaos             (slot-value object 'vao))
             #+debug-mode
             (id              (slot-value object 'id)))
         #+debug-mode (misc:dbg "adding finalizer md2 ~a ~a" id (type-of object))
         (tg:finalize object
                      #'(lambda ()
                          #+debug-mode (misc:dbg "finalize destroy md2 mesh ~a" id)
-                         (free-memory* (list gl-arr-vert
-                                             gl-arr-tex
-                                             gl-arr-norm
-                                             gl-arr-norm-obj
-                                             gl-arr-tan
-                                             gl-arr-aabb)
+                         (free-memory*  #-md2-gpu-lerp
+                                        (list gl-arr-vert
+                                              gl-arr-vert-next
+                                              gl-arr-tex
+                                              gl-arr-norm
+                                              gl-arr-norm-obj
+                                              gl-arr-tan
+                                              gl-arr-aabb)
+                                        #+md2-gpu-lerp
+                                        (list gl-arr-tex
+                                              gl-arr-norm-obj
+                                              gl-arr-tan
+                                              gl-arr-aabb)
                                        vbos vaos)))))))
 
 ;;;; NOTE just for testing purpose! ;;;;;;;;;;;;;;;;;;;;;
@@ -1671,19 +1703,46 @@ to take care of that"
                             (coerce (fourth r) 'single-float)))
                   (animation-table object)))))
 
+(defun gen-md2-vbos ()
+  (gl:gen-vertex-arrays (1+ +vao-count+)))
+
+(defun vbo-next-frame-handle (vbos)
+  (last-elt vbos))
+
+(defun common-md2-prepare-for-rendering (mesh)
+  (with-accessors ((renderer-data-vertices            renderer-data-vertices)
+                   (renderer-data-vertices-next-frame renderer-data-vertices-next-frame)
+                   (renderer-data-normals             renderer-data-normals)
+                   (frames                            frames)
+                   (vbo                               vbo)
+                   (vao                               vao)) mesh
+    (setf vbo (gen-md2-vbos)
+          vao (gl:gen-vertex-arrays +vao-count+))
+    #+debug-mode (misc:dbg "alloc md2 ~a" mesh)
+    #+md2-gpu-lerp
+    (setf renderer-data-normals             (renderer-data-normals (svref frames 0))
+          renderer-data-vertices            (renderer-data-vertices (svref frames 0))
+          renderer-data-vertices-next-frame (renderer-data-vertices (svref frames 0)))
+    #+md2-gpu-lerp
+    (with-unbind-vao
+      (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+      ;; vertices next
+      (gl:bind-buffer :array-buffer (vbo-next-frame-handle vbo))
+      (gl:vertex-attrib-pointer +attribute-position-location-next+
+                                3
+                                :float
+                                0 0
+                                (mock-null-pointer))
+      (gl:enable-vertex-attrib-array +attribute-position-location-next+))
+    (%alloc-arrays mesh)
+    (bind-vbo mesh nil)))
+
 (defmethod prepare-for-rendering ((object md2-mesh))
-  (with-accessors ((vbo vbo) (vao vao)
-                   (renderer-data-vertices renderer-data-vertices)
-                   (renderer-data-normals renderer-data-normals)
-                   (renderer-data-texture renderer-data-texture)
-                   (texture-object texture-object)) object
+  (with-accessors ((frames frames)) object
     (destroy object)
     (map nil #'prepare-for-rendering (frames object))
-    (setf vbo (gl:gen-buffers +vbo-count+)
-          vao (gl:gen-vertex-arrays +vao-count+))
-    #+debug-mode (misc:dbg "alloc md2 ~a" object)
-    (%alloc-arrays object)
-    (bind-vbo object nil)))
+    (common-md2-prepare-for-rendering object)
+    object))
 
 (defmacro with-common-calc-move ((entity end) &body body)
   (with-gensyms (movement-event)
@@ -1760,30 +1819,31 @@ to take care of that"
 (defmethod calculate ((object md2-mesh) dt)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (single-float dt))
-  (with-accessors ((renderer-data-vertices          renderer-data-vertices)
-                   (renderer-data-count-vertices    renderer-data-count-vertices)
-                   (renderer-data-normals           renderer-data-normals)
-                   (renderer-data-count-normals     renderer-data-count-normals)
-                   (array-mixer                     array-mixer)
-                   (tags-table                      tags-table)
-                   (tags-matrices                   tags-matrices)
-                   (tag-key-parent                  tag-key-parent)
-                   (frames                          frames)
-                   (starting-frame                  starting-frame)
-                   (end-frame                       end-frame)
-                   (current-frame-offset            current-frame-offset)
-                   (next-frame-offset               next-frame-offset)
-                   (interpolation-factor            interpolation-factor)
-                   (starting-frame-idx              starting-frame-idx)
-                   (next-frame-idx                  next-frame-idx)
-                   (fps                             fps)
-                   (current-animation-time          current-animation-time)
-                   (stop-animation                  stop-animation)
-                   (cycle-animation                 cycle-animation)
-                   (renderer-data-normals-obj-space renderer-data-normals-obj-space)
-                   (data-aabb                       renderer-data-aabb-obj-space)
-                   (current-action                  current-action)
-                   (ghost                           ghost)) object
+  (with-accessors ((renderer-data-vertices            renderer-data-vertices)
+                   (renderer-data-count-vertices      renderer-data-count-vertices)
+                   (renderer-data-vertices-next-frame renderer-data-vertices-next-frame)
+                   (renderer-data-normals             renderer-data-normals)
+                   (renderer-data-count-normals       renderer-data-count-normals)
+                   (array-mixer                       array-mixer)
+                   (tags-table                        tags-table)
+                   (tags-matrices                     tags-matrices)
+                   (tag-key-parent                    tag-key-parent)
+                   (frames                            frames)
+                   (starting-frame                    starting-frame)
+                   (end-frame                         end-frame)
+                   (current-frame-offset              current-frame-offset)
+                   (next-frame-offset                 next-frame-offset)
+                   (interpolation-factor              interpolation-factor)
+                   (starting-frame-idx                starting-frame-idx)
+                   (next-frame-idx                    next-frame-idx)
+                   (fps                               fps)
+                   (current-animation-time            current-animation-time)
+                   (stop-animation                    stop-animation)
+                   (cycle-animation                   cycle-animation)
+                   (renderer-data-normals-obj-space   renderer-data-normals-obj-space)
+                   (data-aabb                         renderer-data-aabb-obj-space)
+                   (current-action                    current-action)
+                   (ghost                             ghost)) object
     (declare (single-float current-animation-time fps))
     (declare (fixnum end-frame starting-frame current-frame-offset next-frame-offset))
     (declare (simple-array frames))
@@ -1871,6 +1931,14 @@ to take care of that"
                                     renderer-data-normals
                                   renderer-data-count-normals
                                   interpolation-factor))
+          #+md2-gpu-lerp
+          (progn
+            (setf renderer-data-vertices
+                  (renderer-data-vertices (svref frames starting-frame-idx)))
+            (setf renderer-data-vertices-next-frame
+                  (renderer-data-vertices (svref frames next-frame-idx)))
+            (setf renderer-data-normals
+                  (renderer-data-normals (svref frames starting-frame-idx))))
           (when tags-table
             (loop for i in tags-matrices do
                  (let* ((orn1   (elt (the (simple-array (simple-array * (*)))
@@ -1917,19 +1985,129 @@ to take care of that"
       (do-children-mesh (i object)
         (calculate i dt)))))
 
+#+md2-gpu-lerp
+(defmethod render-phong ((object md2-mesh) renderer)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((vbo vbo)
+                   (vao vao)
+                   (texture-object texture-object)
+                   (projection-matrix projection-matrix)
+                   (model-matrix model-matrix)
+                   (view-matrix view-matrix)
+                   (compiled-shaders compiled-shaders)
+                   (triangles triangles)
+                   (material-params material-params)
+                   (current-time current-time)
+                   (interpolation-factor interpolation-factor)
+                   (fog-density fog-density)) object
+    (declare (texture:texture texture-object))
+    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
+    (declare (list triangles vao vbo))
+    (when (> (length triangles) 0)
+      (with-camera-view-matrix (camera-vw-matrix renderer)
+        (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+          (use-program compiled-shaders :md2-ads)
+          (gl:active-texture :texture0)
+          (texture:bind-texture texture-object)
+          (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+          (uniformfv compiled-shaders :light-pos
+                     (the vec (main-light-pos-eye-space renderer)))
+          (uniformf  compiled-shaders :scale-text-coord 1.0)
+          (uniformf  compiled-shaders :keyframe-interpolation interpolation-factor)
+          (uniformfv compiled-shaders :ia    #(1.0 1.0 1.0))
+          (uniformfv compiled-shaders :id    (the vec (main-light-color renderer)))
+          (uniformfv compiled-shaders :is    (the vec (main-light-color renderer)))
+          (uniformf  compiled-shaders :ka    (ka material-params))
+          (uniformf  compiled-shaders :kd    (kd material-params))
+          (uniformf  compiled-shaders :ks    (ks material-params))
+          (uniformf  compiled-shaders :shine (shininess material-params))
+          (uniformf  compiled-shaders :time  current-time)
+          (uniformf  compiled-shaders :fog-density fog-density)
+          (uniform-matrix compiled-shaders :model-matrix 4 model-matrix nil)
+          (uniform-matrix compiled-shaders :modelview-matrix 4
+                                   (vector (matrix* camera-vw-matrix
+                                                    (elt view-matrix 0)
+                                                    (elt model-matrix 0)))
+                                   nil)
+          (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+          (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+          (gl:draw-arrays :triangles 0 (* 3 (length triangles)))
+          (render-debug object renderer))))))
+
+#+md2-gpu-lerp
+(defmethod render-normalmap ((object md2-mesh) renderer)
+  (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (with-accessors ((vbo vbo)
+                   (vao vao)
+                   (texture-object texture-object)
+                   (normal-map normal-map)
+                   (projection-matrix projection-matrix)
+                   (model-matrix model-matrix)
+                   (view-matrix view-matrix)
+                   (compiled-shaders compiled-shaders)
+                   (triangles triangles)
+                   (material-params material-params)
+                   (current-time current-time)
+                   (interpolation-factor interpolation-factor)
+                   (fog-density fog-density)) object
+    (declare (texture:texture texture-object normal-map))
+    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
+    (declare (list triangles vao vbo))
+    (when (> (length triangles) 0)
+      (with-camera-view-matrix (camera-vw-matrix renderer)
+        (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
+          (use-program compiled-shaders :md2-bump)
+          (gl:active-texture :texture0)
+          (texture:bind-texture texture-object)
+          (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
+          (gl:active-texture :texture1)
+          (texture:bind-texture normal-map)
+          (uniformf  compiled-shaders :keyframe-interpolation interpolation-factor)
+          (uniformi compiled-shaders :normal-map +texture-unit-normalmap+)
+          (uniformfv compiled-shaders :light-pos
+                              (the vec (main-light-pos-eye-space renderer)))
+          (uniformfv compiled-shaders :ia    #(1.0 1.0 1.0))
+          (uniformfv compiled-shaders :id    #(1.0 1.0 1.0))
+          (uniformfv compiled-shaders :is    #(1.0 1.0 1.0))
+          (uniformf  compiled-shaders :ka    (ka material-params))
+          (uniformf  compiled-shaders :kd    (kd material-params))
+          (uniformf  compiled-shaders :ks    (ks material-params))
+          (uniformf  compiled-shaders :shine (shininess material-params))
+          (uniformf  compiled-shaders :time  current-time)
+          (uniformf  compiled-shaders :fog-density fog-density)
+          (uniform-matrix compiled-shaders :model-matrix 4 model-matrix nil)
+          (uniform-matrix compiled-shaders :modelview-matrix 4
+                                   (vector (matrix* camera-vw-matrix
+                                                    (elt view-matrix 0)
+                                                    (elt model-matrix 0)))
+                                   nil)
+          (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
+          (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
+          (gl:draw-arrays :triangles 0 (* 3 (length triangles)))
+          (render-debug object renderer))))))
+
+
 (defmethod bind-vbo ((object md2-mesh) &optional (refresh nil))
   (with-accessors ((vbo vbo) (vao vao)
-                   (renderer-data-tangents renderer-data-tangents)
-                   (renderer-data-texture renderer-data-texture)
-                   (renderer-data-vertices renderer-data-vertices)
-                   (renderer-data-normals renderer-data-normals)
-                   (renderer-data-aabb-obj-space renderer-data-aabb-obj-space)
-                   (renderer-data-normals-obj-space renderer-data-normals-obj-space)) object
+                   (renderer-data-tangents            renderer-data-tangents)
+                   (renderer-data-texture             renderer-data-texture)
+                   (renderer-data-vertices            renderer-data-vertices)
+                   (renderer-data-vertices-next-frame renderer-data-vertices-next-frame)
+                   (renderer-data-normals             renderer-data-normals)
+                   (renderer-data-aabb-obj-space      renderer-data-aabb-obj-space)
+                   (renderer-data-normals-obj-space   renderer-data-normals-obj-space)) object
     ;; vertices
     (gl:bind-buffer :array-buffer (vbo-vertex-buffer-handle vbo))
     (if refresh
         (gl:buffer-sub-data :array-buffer renderer-data-vertices)
         (gl:buffer-data :array-buffer :dynamic-draw renderer-data-vertices))
+    ;; vertices next-frame
+    #+md2-gpu-lerp
+    (progn
+      (gl:bind-buffer :array-buffer (vbo-next-frame-handle vbo))
+      (if refresh
+          (gl:buffer-sub-data :array-buffer renderer-data-vertices-next-frame)
+          (gl:buffer-data :array-buffer :dynamic-draw renderer-data-vertices-next-frame)))
     ;; normals
     (gl:bind-buffer :array-buffer (vbo-normals-buffer-handle vbo))
     (if refresh
@@ -2245,16 +2423,7 @@ to take care of that"
       object)))
 
 (defmethod prepare-for-rendering ((object md2-mesh-shell))
-  (with-accessors ((vbo vbo) (vao vao)
-                   (renderer-data-vertices renderer-data-vertices)
-                   (renderer-data-normals renderer-data-normals)
-                   (renderer-data-texture renderer-data-texture)
-                   (texture-object texture-object)) object
-    (setf vbo (gl:gen-buffers +vbo-count+)
-          vao (gl:gen-vertex-arrays +vao-count+))
-    #+debug-mode (misc:dbg "alloc shell ~a" object)
-    (%alloc-arrays object)
-    (bind-vbo object nil)))
+  (common-md2-prepare-for-rendering object))
 
 (defmethod fill-mesh-data ((object md2-mesh-shell) (source md2-mesh))
   (with-accessors ((vao-host vao) (vbo-host vbo)
