@@ -489,13 +489,53 @@ active program (set by sdk2.kit:use-program)."
      (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
                :vertex-shader   ,(get-shader-source "mesh-ads-inst.vert")
                :fragment-shader ,(get-shader-source "mesh-ads.frag")))
-
     (:mesh-debug
      (:uniforms :out-color
                 :modelview-matrix
                 :proj-matrix)
      (:shaders :vertex-shader   ,(get-shader-source "mesh-debug.vert")
                :fragment-shader ,(get-shader-source "mesh-debug.frag")))
+    (:md2-ads
+     (:uniforms :light-pos
+                :ia
+                :id
+                :is
+                :ka
+                :kd
+                :ks
+                :shine
+                :modelview-matrix
+                :model-matrix
+                :keyframe-interpolation
+                :time
+                :fog-density
+                :proj-matrix
+                :texture-object
+                :scale-text-coord)
+     (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
+               :vertex-shader   ,(get-shader-source "md2-ads.vert")
+               :fragment-shader ,(get-shader-source "mesh-ads.frag")))
+    (:md2-bump
+     (:uniforms :light-pos
+                :ia
+                :id
+                :is
+                :ka
+                :kd
+                :ks
+                :shine
+                :time
+                :keyframe-interpolation
+                :fog-density
+                :model-matrix
+                :model-matrix
+                :modelview-matrix
+                :proj-matrix
+                :texture-object
+                :normal-map)
+     (:shaders :vertex-shader   ,(get-shader-source "bump.vert")
+               :vertex-shader   ,(get-shader-source "md2-bump.vert")
+               :fragment-shader ,(get-shader-source "mesh-bump.frag")))
     (:wall-decorated
      (:uniforms :light-pos
                 :ia
