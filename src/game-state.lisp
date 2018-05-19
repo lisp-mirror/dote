@@ -981,7 +981,12 @@
               (add-to-player-entities object player))
             (let ((pos-entity (mesh:calculate-cost-position player)))
               (add-to-ai-entities     object player)
-              (set-tile-visited object player (ivec2-x pos-entity) (ivec2-y pos-entity))))))))
+              (set-tile-visited object player (ivec2-x pos-entity) (ivec2-y pos-entity))))
+        ;; update visibility, keep the last here as to works the hook to an update-visibility
+        ;; event make a lookup in (ai|player)-entities.
+        ;; see: md2-mesh:on-game-event ((object md2-mesh) (event update-visibility))
+        (absee-mesh:update-visibility-cone       player)
+        (game-event:send-update-visibility-event player nil)))))
 
 (defmethod update-rendering-needed-ai (object)
   "set rendering needed for all the visibles AI's pawn"

@@ -183,14 +183,14 @@
     :accessor  orb)))
 
 (defun setup-orb (mesh)
-  (with-accessors ((aabb             aabb)
-                   (orb              orb)
-                   (compiled-shaders compiled-shaders)) mesh
-    (with-accessors ((aabb-p2 aabb-p2)) aabb
-      (setf orb (status-orb:get-orb aabb-p2
-                                    compiled-shaders
-                                    status-orb:+texture-active+ t t))
-      (mtree:add-child mesh orb))))
+  (with-slots (aabb) mesh
+    (with-accessors ((orb              orb)
+                     (compiled-shaders compiled-shaders)) mesh
+      (with-accessors ((aabb-p2 aabb-p2)) aabb
+        (setf orb (status-orb:get-orb aabb-p2
+                                      compiled-shaders
+                                      status-orb:+texture-active+ t t))
+        (mtree:add-child mesh orb)))))
 
 (defalias attach-orb #'setup-orb)
 
