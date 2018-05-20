@@ -1102,7 +1102,10 @@
                             (:wizard
                              (make-wizard  :human))
                             (:healer
-                             (make-healer  :human)))))
+                             (make-healer  :human))))
+           (map            (map-state main-state))
+           (placing-pos    (ivec2:ivec2 (1- (matrix:width  map))
+                                        (1- (matrix:height map)))))
       ;; copy some new points to current
       (setf (current-damage-points   ghost) (damage-points   ghost))
       (setf (current-movement-points ghost) (movement-points ghost))
@@ -1125,7 +1128,7 @@
         (world:build-inventory model +npc-type+ (character:player-class ghost))
         ;; items owned by AI do not decay
         (character:prevent-decay-all-items ghost)
-        (world:place-player-on-map object model game-state:+npc-type+ :position #(0 0))
+        (world:place-player-on-map object model game-state:+npc-type+ :position placing-pos)
         ;; initialize visited tiles per turn for new AI's pawn
         (let ((position (calculate-cost-position model)))
           (2d-utils:displace-2d-vector (position x y)
