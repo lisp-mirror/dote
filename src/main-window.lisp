@@ -486,10 +486,6 @@
                                                                              cost-pointer-pos-y))
                                                     +invalicable-element-cost+)
                              (ghost                 (entity:ghost selected-pc)))
-        ;; test concerning tiles
-        ;; (blackboard            (game-state:blackboard main-state)))
-
-        ;; (concerning-tiles      (blackboard:concerning-tiles->costs-matrix blackboard)))
         (when (not (path-same-ends-p main-state
                                      cost-player-position
                                      cost-pointer-position))

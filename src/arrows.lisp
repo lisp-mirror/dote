@@ -368,8 +368,7 @@
                                               mesh
                                               #'battle-utils:send-attack-long-range-event
                                               imprecision-increase
-                                              ;; test was ':camera-follow-p t'
-                                              :camera-follow-p nil)))
+                                              :camera-follow-p t)))
     (when successp
       (world:push-entity world mesh))))
 
@@ -513,8 +512,7 @@
          (dist         (map-utils:map-manhattam-distance (ivec2:ivec2 x-attacker z-attacker)
                                                          (ivec2:ivec2 x-defender z-defender))))
     (if (<= dist range)
-        ;;; TEST
-        (if (or t (die-utils:pass-d100.0 (character:actual-spell-chance (ghost attacker))))
+        (if (die-utils:pass-d100.0 (character:actual-spell-chance (ghost attacker)))
             (let* ((shaders (compiled-shaders world))
                    (target-effect (funcall (spell:visual-effect-target spell)
                                            (copy-vec (aabb-center (aabb defender)))

@@ -237,6 +237,7 @@
         #+debug-mode (misc:dbg "finding max...")
         (multiple-value-bind (max min)
             (find-traj-max-min trajectories)
+          #-debug-mode (declare (ignore min))
           #+debug-mode (misc:dbg "found ~a ~a." 1.0 (d (/ min max)))
           (with-file-matrix (pixmap size size)
             #+debug-mode (misc:dbg "converting.")
@@ -294,6 +295,7 @@
         #+debug-mode (misc:dbg "finding max...")
         (multiple-value-bind (max min)
             (find-traj-max-min trajectories)
+          #-debug-mode (declare (ignore min))
           #+debug-mode (misc:dbg "found ~a ~a." 1.0 (d (/ min max)))
           #+debug-mode (misc:dbg "converting.")
           (loop for i from 0 below (* (width trajectories) (height trajectories)) do

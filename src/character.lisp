@@ -1097,8 +1097,6 @@
                           #'(lambda (a) (find tag (spell:tags a)))))
 
 (defmethod available-spells-list ((object player-character))
-  ;;; TEST ;;;;
-  ;; (return-from available-spells-list spell::*spells-db*)
   (let ((affordables (spell:filter-spell-db (%filter-spell-cost-clsr object))))
     (when (pclass-of-no-attack-spells-p object)
       (setf affordables (remove-if #'(lambda (a) (spell:attack-spell-p a)) affordables)))

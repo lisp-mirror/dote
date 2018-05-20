@@ -185,7 +185,7 @@
                    (,world action-scheduler:tactical-plane-action)
                  (with-maybe-set-cost-occurred (,entity ,saved-mp ,saved-sp))))
            (when (action-terminal-p ,ghost ,action)
-             #+debug-ai
+             #+(and debug-mode debug-ai)
              (misc:dbg "~a is terminal in ~a!" ,action (original-current-plan (ghost ,entity)))
              (action-scheduler:with-enqueue-action-and-send-remove-after
                  (,world action-scheduler:tactical-plane-action)
@@ -248,14 +248,15 @@
                                                               :test
                                                               #'ai-logger:equal-presence-p)))))
              #+(and debug-mode debug-ai)
-             ;; (misc:dbg "diff ~a old-pc ~a new-pc ~a  old-ai ~a new-ai ~a diff-pc ~a diff-ai ~a"
-             ;;           ,no-diff-pres-p
-             ;;           ,old-pc-log ,new-pc-log
-             ;;           ,old-ai-log ,new-ai-log
-             ;;           (set-difference ,old-pc-log ,new-pc-log
-             ;;                           :test #'ai-logger:equal-presence-p)
-             ;;           (set-difference ,old-ai-log ,new-ai-log
-             ;;                           :test #'ai-logger:equal-presence-p))
+             (misc:dbg (text-utils:strcat "diff ~a old-pc ~a new-pc ~a  old-ai ~a "
+                                          "new-ai ~a diff-pc ~a diff-ai ~a")
+                        ,no-diff-pres-p
+                        ,old-pc-log ,new-pc-log
+                        ,old-ai-log ,new-ai-log
+                        (set-difference ,old-pc-log ,new-pc-log
+                                        :test #'ai-logger:equal-presence-p)
+                        (set-difference ,old-ai-log ,new-ai-log
+                                        :test #'ai-logger:equal-presence-p))
              (when (not ,no-diff-pres-p)
                (spawn-update-infos-task ,entity))))))))
 

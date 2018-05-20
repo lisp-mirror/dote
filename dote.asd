@@ -211,15 +211,15 @@
 
 (progn
   ;; debug
-  (pushnew :debug-mode                        *features*)
+  ;;(pushnew :debug-mode                        *features*)
   ;; do not push for release
-  (pushnew :allow-human-interaction-always    *features*)
+  ;;(pushnew :allow-human-interaction-always    *features*)
   ;; do not push for release
-  (pushnew :inhibit-modal-button              *features*)
+  ;;(pushnew :inhibit-modal-button              *features*)
   ;; do not push for release
   ;; (pushnew :small-skydome                    *features*)
   ;; do not push for release
-  (pushnew :fast-opening                      *features*)
+  ;;(pushnew :fast-opening                      *features*)
   ;; do not push for release
   (pushnew :debug-blackboard-layers           *features*)
   ;; do not push for release

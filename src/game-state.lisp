@@ -808,8 +808,6 @@
 
 (defmethod add-to-player-entities ((object game-state) entity)
   (with-accessors ((player-entities player-entities)) object
-    ;; test
-    (character:reset-movement-points (ghost entity))
     (push entity player-entities)))
 
 (defmethod add-to-ai-entities ((object game-state) entity)

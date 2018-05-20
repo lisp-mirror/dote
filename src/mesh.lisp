@@ -3378,7 +3378,6 @@ possible)."
     (when (> (length triangles) 0)
       (with-camera-view-matrix (camera-vw-matrix renderer)
         (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
-                                        ;(gl:disable :depth-test)
           (with-blending
             (gl:blend-func :src-alpha :one-minus-src-alpha)
             (use-program compiled-shaders :water)

@@ -439,7 +439,6 @@
     ;; workaround! approx-terrain-height@pos  fails if we do  not call
     ;; this before
     (interfaces:calculate  world 0.0)
-    ;; test
     ;; testing opponents
     (world:add-ai-opponent world :warrior :male)
     (world:add-ai-opponent world :wizard  :male)

@@ -739,16 +739,6 @@
 (defun reset-attack-layer (unexplored-layer)
   (reset-layer unexplored-layer +attack-nongoal-tile-value+))
 
-;; ;; TODO remove
-;; (defun all-player-id-visible-from-faction (game-state)
-;;   (let ((all-visibles '()))
-;;     (loop-ai-entities game-state
-;;                      #'(lambda (v)
-;;                          (let ((visibles (able-to-see-mesh:other-faction-visible-players v)))
-;;                            (loop for visible in visibles do
-;;                                 (pushnew visible all-visibles :key #'id :test #'=)))))
-;;     (map 'list #'id all-visibles)))
-
 (defun all-*-id-visible-from-faction (game-state faction)
   "Note: loop-*-entities will skip death characters"
   (let ((all-visibles '())
@@ -1489,12 +1479,6 @@ values nil, i. e. the ray is not blocked"
       (let ((all-ai-entities (num:shellsort (ai-entities main-state)
                                             (ai-utils:combined-power-compare-clsr nil))))
         (setf all-ai-entities (remove-if #'entity-dead-p all-ai-entities))
-        ;;;;;;;; TEST!!!!!!!!!!!!!!
-        ;; removing non wizards
-        (setf all-ai-entities (remove-if-not #'(lambda (e)
-                                                 (character:pclass-of-magic-user-p (ghost e)))
-                                             all-ai-entities))
-        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         (setf ai-entities-action-order all-ai-entities)))))
 
 (defmethod fountain-exhausted-p ((object blackboard) (entity mesh:fountain-mesh-shell))

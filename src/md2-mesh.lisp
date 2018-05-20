@@ -266,12 +266,10 @@
     `(with-accessors ((,state state)) ,object
        (let* ((,ghost (ghost ,object))
               (,chance (actual-reply-attack-chance ,ghost)))
-         ;; TEST ;;;;;;;;;;;;,
-         (when (or t
-                   (with-no-terror-status (,object)
-                     (with-no-berserk-status (,object)
-                       (and (not (entity:reply-attack-p ,attacked-by-entity)) ; avoid 'ping pong'
-                            (dice:pass-d100.0 ,chance)))))
+         (when (with-no-terror-status (,object)
+                 (with-no-berserk-status (,object)
+                   (and (not (entity:reply-attack-p ,attacked-by-entity)) ; avoid 'ping pong'
+                        (dice:pass-d100.0 ,chance))))
            ;; attack!
            (game-state:with-world (,world ,state)
              (let ((,weapon-short-range (weapon-type-short-range ,ghost))
@@ -425,7 +423,7 @@
                        (setf already-stopped t)
                        (stop-movements nil interrupt-plan-if-ai))
                      ;;;;; TEST;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                     (when (or t (dice:pass-d100.0 (actual-ambush-attack-chance (ghost entity))))
+                     (when (dice:pass-d100.0 (actual-ambush-attack-chance (ghost entity)))
                        (cond
                          ((battle-utils:long-range-attack-possible-p entity object)
                           (game-state:with-world (world state)
@@ -706,8 +704,7 @@ to take care of that"
                       (status status)) ghost
        (with-accessors ((event-data event-data)) ,event
          (if (and (= id (id-destination ,event))
-                  ;; TEST ;;;;;
-                  (or t (dice:pass-d1.0 (random-object-messages:msg-chance event-data)))
+                  (dice:pass-d1.0 (random-object-messages:msg-chance event-data))
                   (not ,immune-status-accessor)
                   (null status)) ;; ensure player  can not  suffers
                                  ;; more than one abnormal status
@@ -724,8 +721,7 @@ to take care of that"
                      (status status)) ghost
       (with-accessors ((event-data event-data)) event
         (if (and (= id (id-destination event))
-                 ;;; TEST ;;;;
-                 (or t (dice:pass-d1.0 (random-object-messages:msg-chance event-data)))
+                 (dice:pass-d1.0 (random-object-messages:msg-chance event-data))
                  (not immune-poison-status)
                  (null status)) ;; ensure player  can not  suffers
                                 ;; more than one abnormal status
@@ -983,8 +979,7 @@ to take care of that"
                      (status status)) ghost
       (with-accessors ((event-data event-data)) event
         (if (and (= id (id-destination event))
-                 ;; TEST
-                 (or t (dice:pass-d1.0 (random-object-messages:msg-chance event-data)))
+                 (dice:pass-d1.0 (random-object-messages:msg-chance event-data))
                  (not (or (character:status-faint-p ghost)
                           (character:status-berserk-p ghost))))
             (progn
@@ -1025,10 +1020,9 @@ to take care of that"
                 (push effect modifiers-effects))
               ;; spells
               (when (and magic-effect
-                         ;; TEST ;;;;;;;;;;;;;;;;;;;;;
-                         (or t (die-utils:pass-d100.0 (smoothstep-interpolate 0.0
-                                                                              100.0
-                                                                              (d (smartness ghost))))))
+                         (die-utils:pass-d100.0 (smoothstep-interpolate 0.0
+                                                                        100.0
+                                                                        (d (smartness ghost)))))
                 (let* ((spell-id (random-object-messages:msg-spell-id magic-effect))
                        (spell    (spell:get-spell spell-id)))
                   (setf (spell-loaded ghost) spell)
@@ -1074,14 +1068,6 @@ to take care of that"
                    (state state)) object
     (game-state:with-world (world state)
       (when ghost
-        ;; TEST
-        (when (faction-ai-p (state object) (id object))
-          (with-accessors ((blackboard blackboard:blackboard)) state
-            (let ((reachable-fn (blackboard:reachable-p-w/concening-tiles-fn blackboard)))
-              (misc:dbg "all-tactics ~a"
-                        (blackboard:build-all-attack-tactics blackboard reachable-fn)))
-            (setf (character:movement-points (ghost object)) 50.0)))
-        ;;;;;;;;;;;;;;;;;;;;;;;
         (reset-spell-points    ghost)
         (reset-movement-points ghost)
         (traverse-recurrent-effects      object)
@@ -2193,111 +2179,6 @@ to take care of that"
     (set-animation model :stand :recalculate t)
     model))
 
-;;;;;;;;;;;;;;;; testing only! ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; (defun forged-potion ()
-;;   (let ((potion (random-potion:generate-potion 10))
-;;         (effect-cause-berserk (make-instance 'basic-interaction-parameters:healing-effect-parameters
-;;                                             :trigger basic-interaction-parameters:+effect-when-consumed+
-;;                                             :duration 2
-;;                                             :chance   0.9)))
-;;     (n-setf-path-value (basic-interaction-params potion)
-;;                        '(:healing-effects :cause-berserk)
-;;                        effect-cause-berserk)
-;;     potion))
-
-;; (defun forged-potion-cure-berserk ()
-;;   (let ((potion (random-potion:generate-potion 10))
-;;         (effect-cure (basic-interaction-parameters:define-healing-effect
-;;                          (duration unlimited
-;;                                    trigger  when-consumed
-;;                                    chance   0.9
-;;                                    target   self))))
-;;     (n-setf-path-value (basic-interaction-params potion)
-;;                        '(:healing-effects :heal-berserk)
-;;                        effect-cure)
-;;     potion))
-
-;; (defun forged-potion-cure-dmg ()
-;;   (let ((potion (random-potion:generate-potion 10))
-;;         (effect-cure (basic-interaction-parameters:define-heal-dmg-effect (points 3.0
-;;                                                      trigger  when-consumed
-;;                                                      chance   0.9
-;;                                                      target   self))))
-;;     (n-setf-path-value (basic-interaction-params potion)
-;;                        '(:healing-effects :heal-damage-points)
-;;                        effect-cure)
-;;     (clean-effects potion)))
-
-;; (defun forged-ring ()
-;;   (let ((ring (random-ring:generate-ring 1))
-;;         (effect-cause-berserk (make-instance 'basic-interaction-parameters:healing-effect-parameters
-;;                                              :trigger
-;;                                              basic-interaction-parameters:+effect-when-worn+
-;;                                              :duration 2
-;;                                              :chance   0.9))
-;;         (immune-terror                (make-instance 'basic-interaction-parameters:healing-effect-parameters
-;;                                                      :trigger  basic-interaction-parameters:+effect-when-worn+
-;;                                                      :duration 2
-;;                                                      :chance 0.99
-;;                                                      :target basic-interaction-parameters:+target-self+)))
-
-;;     (n-setf-path-value (basic-interaction-params ring)
-;;                        '(:healing-effects :cause-berserk)
-;;                        effect-cause-berserk)
-;;     (n-setf-path-value (basic-interaction-params ring)
-;;                        '(:healing-effects :immune-terror)
-;;                         immune-terror)
-
-;;     (clean-effects ring)
-;;     ring))
-
-;; (defun forged-sword ()
-;;   (let ((sword (random-weapon:generate-weapon 10 :sword))
-;;         (effect-modifier  (make-instance 'basic-interaction-parameters:effect-parameters
-;;                                          :trigger basic-interaction-parameters:+effect-when-worn+
-;;                                          :duration basic-interaction-parameters:+duration-unlimited+
-;;                                          :modifier 5.0))
-;;         (poisoning        (make-instance 'basic-interaction-parameters:poison-effect-parameters
-;;                                          :chance 0.9
-;;                                          :target basic-interaction-parameters:+target-other+
-;;                                          :points-per-turn 2.0)))
-;;     (n-setf-path-value (basic-interaction-params sword)
-;;                        '(:effects :melee-attack-chance)
-;;                        effect-modifier)
-;;     (n-setf-path-value (basic-interaction-params sword)
-;;                         '(:healing-effects :cause-poison)
-;;                         poisoning)
-;;     (clean-effects sword)
-;;     sword))
-
-;; (defun forged-spear ()
-;;   (random-weapon:generate-weapon 10 :spear))
-
-;; (defun forged-bow ()
-;;   (let ((bow (random-weapon:generate-weapon 10 :bow))
-;;         (effect-modifier  (make-instance 'basic-interaction-parameters:effect-parameters
-;;                                          :trigger basic-interaction-parameters:+effect-when-worn+
-;;                                          :duration basic-interaction-parameters:+duration-unlimited+
-;;                                          :modifier 5.0))
-;;         (poisoning        (make-instance 'basic-interaction-parameters:poison-effect-parameters
-;;                                          :chance 0.9
-;;                                          :target basic-interaction-parameters:+target-other+
-;;                                          :points-per-turn 2.0)))
-;;     (n-setf-path-value (basic-interaction-params bow)
-;;                        '(:effects :melee-attack-chance)
-;;                        effect-modifier)
-;;     (n-setf-path-value (basic-interaction-params bow)
-;;                        '(:healing-effects :cause-poison)
-;;                        poisoning)
-;;     (clean-effects bow)
-;;     bow))
-
-;; (defun forged-trap ()
-;;   (random-trap:generate-trap 10))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defun load-md2-player (ghost dir compiled-shaders resource-path)
   (let ((body (get-md2-shell :shaders        compiled-shaders
                              :dir            dir
@@ -2321,35 +2202,6 @@ to take care of that"
     (mtree-utils:add-child body head)
     (setf (ghost body) ghost)
     (setf (thinker (ghost body)) t)
-    ;;   ;;;;;;;;;;;;;;;;;;;;;;;; test
-    (setf (movement-points (ghost body)) 50.0)
-    (setf (spell-points    (ghost body)) 40.0)
-    ;; (let ((forged-potion              (forged-potion))
-    ;;       (forged-potion-cure-dmg     (forged-potion-cure-dmg))
-    ;;       (forged-potion-cure-berserk (forged-potion-cure-berserk))
-    ;;       (forged-ring                (forged-ring))
-    ;;       (forged-sword               (forged-sword))
-    ;;       (forged-bow                 (forged-bow))
-    ;;       (forged-spear               (forged-spear))
-    ;;       (forged-trap                (forged-trap)))
-    ;;   ;; (game-event:register-for-end-turn forged-potion)
-    ;;   ;; (game-event:register-for-end-turn forged-potion-cure-dmg)
-    ;;   ;; (game-event:register-for-end-turn forged-potion-cure-berserk)
-    ;;   ;; (game-event:register-for-end-turn forged-ring)
-    ;;   ;; (game-event:register-for-end-turn forged-bow)
-    ;;   (add-to-inventory (ghost body) forged-potion)
-    ;;   (add-to-inventory (ghost body) forged-potion-cure-dmg)
-    ;;   (add-to-inventory (ghost body) forged-potion-cure-berserk)
-    ;;   (add-to-inventory (ghost body) forged-ring)
-    ;;   (add-to-inventory (ghost body) forged-bow)
-    ;;   (add-to-inventory (ghost body) forged-sword)
-    ;;   (add-to-inventory (ghost body) forged-spear)
-    ;;   (add-to-inventory (ghost body) forged-trap)
-    ;;   ;; note:   wear-item-event  will   not  be   catched  as   the
-    ;;   ;; registration happens when the entity is added to world
-    ;;   (wear-item body forged-sword)
-    ;;   (character:prevent-decay-all-items ghost))
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     body))
 
 (alexandria:define-constant +magic-num-md2-tag-file '(74 68 80 50) :test #'equalp)
