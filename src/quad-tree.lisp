@@ -110,7 +110,7 @@
 
 (defgeneric rootp (object))
 
-(defgeneric push-down (object entity &optional ent-aabb))
+(defgeneric push-down (object entity &key ent-aabb))
 
 (defgeneric remove-element (object entity))
 
@@ -224,11 +224,15 @@
         `((t
            (vector-push-extend ,entity (data ,object)))))))
 
-(defmethod push-down ((object quad-tree) entity &optional (ent-aabb (entity:aabb-2d entity)))
+(defmethod push-down ((object quad-tree) entity
+                      &key
+                        (ent-aabb    (entity:aabb-2d entity))
+                        (add-to-root nil))
   (with-accessors ((nw nw) (ne ne) (sw sw) (se se) (data data)) object
-    (if (leafp object)
+    (if (or add-to-root
+            (leafp object))
         (vector-push-extend entity (data object))
-        (%cond-push-down object entity ent-aabb  (nw ne sw se)))))
+        (%cond-push-down object entity ent-aabb (nw ne sw se)))))
 
 (defmethod remove-entity-by-id ((object quad-tree) id)
   (iterate-nodes object

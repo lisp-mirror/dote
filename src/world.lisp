@@ -415,6 +415,13 @@
                                       add-to-world
                                       add-to-gamestate))
 
+(defgeneric push-character-entity  (object entity type occlusion-value
+                                     &key
+                                      add-to-world
+                                      add-to-gamestate))
+
+(defgeneric push-entity-always-rendered (object entity))
+
 (defgeneric push-terrain-chunk (object entity aabb))
 
 (defgeneric setup-map-state-tile (object x y type id occlusion-value))
@@ -713,6 +720,10 @@
   (bubbleup-modelmatrix entity)
   (quad-tree:push-down (entities object) entity))
 
+(defmethod push-entity-always-rendered ((object world) entity)
+  (bubbleup-modelmatrix entity)
+  (quad-tree:push-down (entities object) entity :add-to-root t))
+
 (defmethod get-camera-pos ((object world))
   (pos (camera object)))
 
@@ -846,18 +857,32 @@
        (containers-bag       object)
        (magic-furnitures-bag object)))
 
+(defun %push-interactive-entity (world entity type
+                                 occlusion-value add-to-world add-to-gamestate
+                                 push-in-world-fn)
+  (when add-to-world
+    (funcall push-in-world-fn world entity))  ; add to quadtree
+  (when add-to-gamestate
+    ;; add to entity tree of game-state
+    (push-entity (main-state      world) entity)
+    ;; add to game-state's matrix
+    (world:setup-map-state-entity world entity type occlusion-value)))
+
 (defmethod push-interactive-entity ((object world) entity type occlusion-value
                                     &key
                                       (add-to-world t)
                                       (add-to-gamestate t))
   "Use for any interactive entity (i.e. has a character)"
-  (when add-to-world
-    (push-entity                  object  entity))  ; add to quadtree
-  (when add-to-gamestate
-    ;; add to entity tree of game-state
-    (push-entity (main-state      object) entity)
-    ;; add to game-state's matrix
-    (world:setup-map-state-entity object  entity type occlusion-value)))
+  (%push-interactive-entity object entity type occlusion-value add-to-world
+                            add-to-gamestate #'push-entity))
+
+(defmethod push-character-entity ((object world) entity type occlusion-value
+                                    &key
+                                      (add-to-world t)
+                                      (add-to-gamestate t))
+  "Use for any character player (e.g a warrior, wizard etc.)"
+  (%push-interactive-entity object entity type occlusion-value add-to-world
+                            add-to-gamestate #'push-entity-always-rendered))
 
 (defmethod push-trap-entity ((object world) entity)
   (push-entity object entity)  ; add to quadtree
