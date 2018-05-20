@@ -1318,7 +1318,7 @@
                                            (weight    (25 10)))))
        (let* ((,char (or charact (make-instance 'player-character)))
               (,rest-capital (random-fill-slots ,char capital slots)))
-         (setf (damage-points ,char)   (d (truncate (* (stamina ,char) 0.5)))
+         (setf (damage-points ,char)   (d (truncate (* (stamina ,char) 0.25)))
                (movement-points ,char) (d (truncate (* (agility ,char) 0.5)))
                (spell-points ,char) (d (truncate (/ (lerp 0.1
                                                           (lerp 0.5

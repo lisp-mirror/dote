@@ -97,6 +97,21 @@
     (maybe-add-to-inventory entity trap)
     entity))
 
+(defun increase-change-weapon (ghost)
+  (flet ((clamp (a)
+           (max 0.0 a)))
+    (let* ((best-weapon-type (best-weapon-type ghost)))
+      (ecase best-weapon-type
+        (:edge
+         (setf (edge-weapons-chance-bonus ghost)
+               (clamp (edge-weapons-chance-bonus ghost))))
+        (:impact
+         (setf (impact-weapons-chance-bonus ghost)
+               (clamp (impact-weapons-chance-bonus ghost))))
+        (:pole
+         (setf (pole-weapons-chance-bonus ghost)
+               (clamp (pole-weapons-chance-bonus ghost))))))))
+
 (defgeneric build-inventory* (object faction player-class map-level))
 
 (defmethod build-inventory* ((object entity) (faction (eql +npc-type+))
@@ -111,6 +126,7 @@
                                 (make-mace map-level))
                                (:pole
                                 (make-spear map-level)))))
+      (increase-change-weapon ghost)
       (add-common-items object map-level)
       (wear-all object weapon)))
   object)

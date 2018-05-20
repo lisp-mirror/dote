@@ -380,6 +380,7 @@
    :random-pick-from-set
    :range-0to1
    :clamp-0->max-less-one
+   :clamp-0->max
    :*default-epsilon*
    :with-epsilon
    :add-epsilon-rel
