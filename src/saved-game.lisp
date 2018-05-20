@@ -420,7 +420,8 @@
     (setf (level-difficult  (main-state world)) difficult-level)
     (setf (world:gui world)
           (make-instance 'widget:widget
-                         :x 0.0 :y 0.0
+                         :x      0.0
+                         :y      0.0
                          :width  *window-w*
                          :height *window-h*
                          :label  nil))
@@ -439,10 +440,7 @@
     ;; workaround! approx-terrain-height@pos  fails if we do  not call
     ;; this before
     (interfaces:calculate  world 0.0)
-    ;; testing opponents
-    (world:add-ai-opponent world :warrior :male)
-    (world:add-ai-opponent world :wizard  :male)
-    ;;;;;
+    (place-opponents world difficult-level)
     (setf (main-window::delta-time-elapsed window) (sdl2:get-ticks))
     ;; bg color
     (let ((color (skydome-bottom-color (main-window:window-game-state window))))

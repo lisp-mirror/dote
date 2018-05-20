@@ -168,6 +168,7 @@
                (:file "goap")
                (:file "strategic-ai")
                (:file "keyboard-world-navigation")
+               (:file "calc-game-opponents")
                (:file "saved-game")
                (:file "easter-egg")
                (:file "main-window")
