@@ -5634,6 +5634,8 @@
    :visible-opponents
    :visible-friends
    :register-ai-tree-data
+   :register-ai-tree-data-cached
+   :register-ai-tree-data-cached-clear-cache
    :save-ai-tree-data
    :register-strategy-from-human
    :dump-ai-facts

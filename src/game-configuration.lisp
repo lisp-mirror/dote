@@ -94,7 +94,7 @@
     :initarg  :smooth-movements
     :accessor smooth-movements)
    (inhibit-planner
-    :initform t
+    :initform nil
     :initarg  :inhibit-planner
     :accessor inhibit-planner)
    (camera-fp-scaling-movement

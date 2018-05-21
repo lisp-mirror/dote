@@ -347,6 +347,16 @@
                                       wizard-dmg)))
         new-row))))
 
+(defcached register-ai-tree-data-cached ((world faction) :clear-cache nil :test eq)
+  (declare (optimize  (safety 3) (debug 1)))
+  (let ((cached (gethash :v cache)))
+    (if cached
+        cached
+        (progn
+          (setf (gethash :v cache)
+                (register-ai-tree-data world faction))
+          (register-ai-tree-data-cached world faction)))))
+
 (defun save-ai-tree-data (world)
   (flet ((init-data (file)
            (with-open-file (s file :direction :io :if-exists :overwrite)

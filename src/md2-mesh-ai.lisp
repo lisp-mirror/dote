@@ -399,7 +399,7 @@
 ;;;; explore
 
 (defmethod actuate-plan ((object md2-mesh)
-                         (strategy (eql +explore-strategy+))
+                         strategy
                          (action   (eql ai-utils:+move-action+)))
   (with-maybe-blacklist (object strategy action)
     (with-accessors ((state state)) object
@@ -760,9 +760,8 @@ attempts Note: all attackable position will be updated as well"
                          (setf *planner-channel* nil)
                          (let ((action (pop-action-plan ghost)))
                            #+(and debug-mode debug-ai) (misc:dbg "popped action ~a" action)
-                           (actuate-plan mesh
-                                         (blackboard:strategy-decision blackboard)
-                                         action)))
+                           (let ((strategy (time (blackboard:strategy-decision blackboard))))
+                             (actuate-plan mesh strategy action))))
                        (check-ending (channel)
                          (lparallel:try-receive-result channel
                                                        :timeout +channel-planner-timeout+)))

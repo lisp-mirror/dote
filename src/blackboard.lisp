@@ -593,7 +593,7 @@
 (defmethod strategy-decision ((object blackboard))
   (with-accessors ((main-state main-state)) object
     (with-world (world main-state)
-      (let* ((fact     (strategic-ai:register-ai-tree-data world +npc-type+))
+      (let* ((fact     (strategic-ai:register-ai-tree-data-cached world +npc-type+))
              (decision (id3:take-decision (strategic-ai:current-decision-tree)
                                           +ai-fact-header+
                                           fact)))

@@ -25,7 +25,8 @@
                                              :warrior
                                              :archer
                                              :archer
-                                             :healer)
+                                             :healer
+                                             :ranger)
   :test #'equalp)
 
 (defun no-of-opponents (difficult-level)

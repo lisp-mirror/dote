@@ -1207,6 +1207,7 @@
 
 (defun clear-all-memoized-function-cache ()
   #+(and debug-mode debug-ai) (misc:dbg "clear planner cache")
+  (strategic-ai:register-ai-tree-data-cached-clear-cache)
   (blackboard:invalidate-blackboard-cache)
   (ai-utils:invalidate-ai-utils-cache)
   (goap:invalidate-tests-cache))
