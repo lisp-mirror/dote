@@ -1305,124 +1305,181 @@
                             spell-chance
                             attack-spell-chance)
 
-(defmacro gen-make-player (player-class)
-  (with-gensyms (char rest-capital)
-    `(defun ,(format-symbol t "~@:(make-~a~)" player-class)
-         (capital race
-          &optional (charact nil) (slots '((strength (50 10))
-                                           (stamina  (40 10))
-                                           (dexterity (5 3))
-                                           (agility   (5 3))
-                                           (empaty    (2 0))
-                                           (smartness (2 0))
-                                           (weight    (25 10)))))
-       (let* ((,char (or charact (make-instance 'player-character)))
-              (,rest-capital (random-fill-slots ,char capital slots)))
-         (setf (damage-points ,char)   (d (truncate (* (stamina ,char) 0.25)))
-               (movement-points ,char) (d (truncate (* (agility ,char) 0.5)))
-               (spell-points ,char) (d (truncate (/ (lerp 0.1
-                                                          (lerp 0.5
-                                                                (smartness ,char)
-                                                                (empaty ,char))
-                                                          (dexterity ,char))
-                                                    3)))
-               (dodge-chance ,char) (d (truncate (max 0 (- (agility ,char) (/ (weight ,char) 2)))))
-               (melee-attack-chance ,char) (lerp 0.3 (strength ,char) (agility ,char))
-               (range-attack-chance ,char) (lerp 0.1
-                                                 (dexterity ,char)
-                                                 (agility   ,char))
-               (melee-attack-damage ,char) (d (truncate (* (strength ,char) 0.25)))
-               (range-attack-damage ,char) (d (truncate (* (dexterity ,char) 0.25)))
-               (unlock-chance ,char) (d (truncate (/ (lerp 0.9
-                                                           (agility ,char)
-                                                           (dexterity ,char))
+(defun lerp-char (v a b scale)
+  (d (truncate (/ (lerp v a b)
+                  scale))))
 
-                                                     10)))
-               (deactivate-trap-chance ,char) (d (truncate
-                                                  (/ (lerp 0.8
-                                                           (agility ,char)
-                                                           (dexterity ,char))
-                                                     10)))
-               (reply-attack-chance ,char)  (d (truncate (/ (agility ,char) 5)))
-               (ambush-attack-chance ,char) (d (truncate
-                                                (/ (lerp 0.9
-                                                         (agility ,char)
-                                                         (strength ,char))
-                                                   10)))
-               (spell-chance ,char) (d (truncate (/ (lerp 0.9
-                                                          (smartness ,char)
-                                                          (empaty ,char))
-                                                    3)))
-               (attack-spell-chance ,char) (d (truncate (/ (lerp 0.9
-                                                                 (agility ,char)
-                                                                 (smartness ,char))
-                                                           3)))
-               (race ,char) race)
-         (if (> ,rest-capital 0)
-             (,(format-symbol t "~@:(make-~a~)" player-class)
-               ,rest-capital race ,char slots)
-             (progn
-               (setf (current-spell-points    ,char) (spell-points ,char)
-                     (current-movement-points ,char) (movement-points ,char)
-                     (current-damage-points    ,char) (damage-points ,char))
-               (values ,char ,rest-capital)))))))
+(defgeneric lerp-spell (smartness empaty dexterity class))
 
-(gen-make-player player)
+(defmethod lerp-spell (smartness empaty dexterity (class (eql 'wizard)))
+  (dlerp (smoothstep-interpolate 50.0
+                                 200.0
+                                 (lerp 0.1
+                                       (lerp 0.25
+                                             smartness
+                                             empaty)
+                                       dexterity))
+         2.0
+         200.0))
+
+(defmethod lerp-spell (smartness empaty dexterity (class (eql 'healer)))
+  (dlerp (smoothstep-interpolate 50.0
+                                 200.0
+                                 (lerp 0.1
+                                       (lerp 0.33
+                                             smartness
+                                             empaty)
+                                       dexterity))
+         2.0
+         200.0))
+
+(defmethod lerp-spell (smartness empaty dexterity (class (eql 'ranger)))
+  (dlerp (smoothstep-interpolate 50.0
+                                 200.0
+                                 (lerp 0.5
+                                       (lerp 0.25
+                                             smartness
+                                             empaty)
+                                       dexterity))
+         2.0
+         200.0))
+
+(defmethod lerp-spell (smartness empaty dexterity class)
+  (dlerp (smoothstep-interpolate 1.0
+                                 20.0
+                                 (lerp 0.25
+                                       smartness
+                                       empaty))
+         2.0
+         50.0))
+
+(defgeneric calc-reply-attack-spell (player class))
+
+(defmethod calc-reply-attack-spell (actual-character (class (eql 'warrior)))
+  (d (agility actual-character)))
+
+(defmethod calc-reply-attack-spell (actual-character class)
+  (d (truncate (/ (agility actual-character) 5))))
+
+(defgeneric calc-ambush-chance (player class))
+
+(defmethod calc-ambush-chance (actual-character (class (eql 'ranger)))
+  (lerp-char 0.1 (agility actual-character) (strength actual-character) 4))
+
+(defmethod calc-ambush-chance (actual-character class)
+  (lerp-char 0.5 (agility actual-character) (strength actual-character) 8))
+
+(defun make-player (capital race player-class
+                    &optional
+                      (slots '((strength (50 10))
+                               (stamina (40 10))
+                               (dexterity (5 3))
+                               (agility (5 3))
+                               (empaty (2 0))
+                               (smartness (2 0))
+                               (weight (25 10))))
+                      (charact nil))
+  (let* ((actual-character (or charact (make-instance 'player-character)))
+         (rest-capital (random-fill-slots actual-character capital slots)))
+    (setf (damage-points actual-character) (d (truncate (* (stamina actual-character) 0.25))))
+    (setf (movement-points actual-character)
+          (lerp-char 0.7 (agility actual-character) (stamina actual-character) 2))
+    (setf (spell-points actual-character)
+          (lerp-spell (smartness actual-character)
+                      (empaty actual-character)
+                      (dexterity actual-character)
+                      player-class))
+    (setf (dodge-chance actual-character)
+          (d (truncate (max 0 (- (lerp 0.5
+                                       (agility actual-character)
+                                       (dexterity actual-character))
+                                 (/ (weight actual-character)
+                                    2.0))))))
+    (setf (melee-attack-chance actual-character)
+          (lerp 0.2 (strength actual-character) (agility actual-character)))
+    (setf (range-attack-chance actual-character)
+          (lerp 0.1 (agility actual-character) (dexterity actual-character)))
+    (setf (melee-attack-damage actual-character)
+          (d (truncate (* (strength actual-character) 0.25))))
+    (setf (range-attack-damage actual-character)
+          (lerp-char 0.25 (agility actual-character) (strength actual-character) 4.0))
+    (setf (unlock-chance actual-character)
+          (lerp-char 0.1 (dexterity actual-character) (agility actual-character) 10))
+    (setf (deactivate-trap-chance actual-character)
+          (lerp-char 0.1 (dexterity actual-character) (agility actual-character) 10))
+    (setf (reply-attack-chance actual-character)
+          (calc-reply-attack-spell actual-character player-class))
+    (setf (ambush-attack-chance actual-character)
+          (calc-ambush-chance actual-character player-class))
+    (setf (spell-chance actual-character)
+          (lerp-char 0.2 (empaty actual-character) (smartness actual-character) 3))
+    (setf (attack-spell-chance actual-character)
+          (lerp-char 0.2 (smartness actual-character) (agility actual-character) 3))
+    (setf (race actual-character) race)
+    (setf (player-class actual-character) player-class)
+    (if (> rest-capital 0)
+        (make-player rest-capital race player-class slots actual-character)
+        (progn
+         (setf (current-spell-points actual-character) (spell-points actual-character)
+               (current-movement-points actual-character) (movement-points actual-character)
+               (current-damage-points actual-character) (damage-points actual-character))
+         (values actual-character rest-capital)))))
 
 (defun make-warrior (race)
-  (let ((player (make-player *standard-capital-characteristic* race nil '((strength (50 10))
-                                                                          (stamina  (40 10))
-                                                                          (dexterity (5 3))
-                                                                          (agility   (10 3))
-                                                                          (empaty    (2 0))
-                                                                          (smartness (2 0))
-                                                                          (weight    (52 23))))))
-    (setf (player-class player) :warrior)
+  (let ((player (make-player *standard-capital-characteristic* race 'warrior
+                             '((strength  (50 10))
+                               (stamina   (40 10))
+                               (dexterity (5 3))
+                               (agility   (10 3))
+                               (empaty    (2 1))
+                               (smartness (2 1))
+                               (weight    (52 23))))))
     player))
 
 (defun make-wizard (race)
-  (let ((player (make-player *standard-capital-characteristic* race nil '((smartness (40 10))
-                                                                          (agility   (30 10))
-                                                                          (stamina  (20 10))
-                                                                          (strength (10 10))
-                                                                          (dexterity (5 3))
-                                                                          (empaty    (2 0))
-                                                                          (weight    (30 5))))))
+  (let ((player (make-player *standard-capital-characteristic* race 'wizard
+                             '((smartness (40 10))
+                               (stamina   (20 10))
+                               (agility   (15 10))
+                               (strength  (10 10))
+                               (dexterity (5 3))
+                               (empaty    (2 0))
+                               (weight    (35 10))))))
     (setf (player-class player) :wizard)
     player))
 
 (defun make-healer (race)
-  (let ((player (make-player *standard-capital-characteristic* race nil '((empaty (40 10))
-                                                                          (smartness (20 20))
-                                                                          (agility   (15 10))
-                                                                          (stamina  (10 10))
-                                                                          (strength (10 10))
-                                                                          (dexterity (5 3))
-                                                                          (weight    (42 12))))))
-    (setf (player-class player) :healer)
+  (let ((player (make-player *standard-capital-characteristic* race 'healer
+                             '((empaty    (40 10))
+                               (smartness (20 20))
+                               (agility   (15 10))
+                               (stamina   (10 10))
+                               (strength  (10 10))
+                               (dexterity (5 3))
+                               (weight    (35 10))))))
     player))
 
 (defun make-archer (race)
-  (let ((player (make-player *standard-capital-characteristic* race nil '((dexterity (50 0))
-                                                                          (stamina  (40 10))
-                                                                          (strength (10 10))
-                                                                          (empaty    (1 1))
-                                                                          (agility   (10 3))
-                                                                          (smartness (5 3))
-                                                                          (weight    (30 55))))))
-    (setf (player-class player) :archer)
+  (let ((player (make-player *standard-capital-characteristic* race 'archer
+                             '((agility   (40 10))
+                               (stamina   (10 5))
+                               (dexterity (10 5))
+                               (strength  (5 3))
+                               (empaty    (2 1))
+                               (smartness (2 1))
+                               (weight    (52 23))))))
     player))
 
 (defun make-ranger (race)
-  (let ((player (make-player *standard-capital-characteristic* race nil '((agility (60 0))
-                                                                          (dexterity  (40 10))
-                                                                          (stamina (15 10))
-                                                                          (strength (15 10))
-                                                                          (empaty    (10 10))
-                                                                          (smartness (5 3))
-                                                                          (weight    (56 20))))))
+  (let ((player (make-player *standard-capital-characteristic* race 'ranger
+                             '((dexterity  (40 10))
+                               (agility    (30 10))
+                               (stamina    (50 10))
+                               (strength   (15 10))
+                               (empaty     (10 10))
+                               (smartness  (5 3))
+                               (weight     (40 5))))))
     (incf (deactivate-trap-chance player) 3)
-    (setf (player-class player) :ranger)
     player))
 
 ;; character definition
@@ -1640,3 +1697,24 @@
                                   :exp-points                  (randomize-a-bit
                                                                 (fetch-exp-points params)))))
       results)))
+
+(defun stats (ability-fn make-char-fn race)
+  (loop for level from 1 to 10 collect
+       (let* ((*standard-capital-characteristic*
+               (world::calc-capital *standard-capital-characteristic* level)))
+         (let ((c (funcall make-char-fn race)))
+           (funcall ability-fn c)))))
+
+(defun stats-all (ability-fn)
+  (flet ((strip (s)
+           (cl-ppcre:regex-replace "^[^: ]+" (format nil "~a" s) "")))
+    (loop
+       for i in (list #'make-warrior
+                      #'make-archer
+                      #'make-healer
+                      #'make-wizard
+                      #'make-ranger)
+       do
+         (format t "~a ~a~%~a~%"
+                 i (strip ability-fn)
+                 (stats ability-fn i :human)))))
