@@ -188,6 +188,7 @@
       ;; goes away when you do (your window, gl-context, etc)!
       (saved-game:clean-up-system w)
       (saved-game:clean-parallel-kernel)
+      (sound:close-sound-system)
       #+debug-mode (clean-up-placeholder)
       (tg:gc :full t)
       (call-next-method))))
@@ -271,7 +272,8 @@
               (misc:dbg "n ~a" *near*)
               (incf *near* -.1))
             (when (string= text "p")
-              (closing-sequence:start-victory-sequence world))
+              (sound:play-music sound:+bg-battle-1+))
+              ;(closing-sequence:start-victory-sequence world))
               ;; (mtree:add-child (world:gui world)
               ;;                   (widget:make-player-generator world)))
             (when (string= text "D")

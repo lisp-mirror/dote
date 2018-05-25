@@ -104,7 +104,11 @@
    (train-ai
     :initform nil
     :initarg  :train-ai
-    :accessor train-ai)))
+    :accessor train-ai)
+   (sound-volume
+    :initform 68
+    :initarg  :sound-volume
+    :accessor sound-volume)))
 
 (defmethod marshal:class-persistant-slots ((object game-config))
     '(forward
@@ -122,7 +126,8 @@
       smooth-movements
       inhibit-planner
       camera-fp-scaling-movement
-      train-ai))
+      train-ai
+      sound-volume))
 
 (defun make-default-config ()
   (make-instance 'game-config))
@@ -205,3 +210,5 @@
 (gen-acc-fn camera-fp-scaling-movement)
 
 (gen-acc-fn train-ai)
+
+(gen-acc-fn sound-volume)

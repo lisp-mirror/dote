@@ -876,6 +876,17 @@
   according to https://opengameart.org/content/rotating-orbs
 
 
+- data/music/bg-battle-1.ogg
+  © 2018 Zefz
+  released under (CC BY-SA 3.0)
+  https://creativecommons.org/licenses/by-sa/3.0/
+
+  according to
+
+  https://opengameart.org/content/orchestral-battle-music
+
+
+
 ** Source code
 
 - src/mesh.lisp use codes from cl-opengl

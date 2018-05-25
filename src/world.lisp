@@ -1125,7 +1125,7 @@
         (setf (character:model-origin-dir ghost) dir)
         (setf (portrait (entity:ghost model)) portrait-texture)
         (setf (renderp  model) nil)
-        (world:build-inventory model +npc-type+ (character:player-class ghost))
+        (build-inventory model +npc-type+ (character:player-class ghost))
         ;; items owned by AI do not decay
         (character:prevent-decay-all-items ghost)
         (world:place-player-on-map object model game-state:+npc-type+ :position placing-pos)

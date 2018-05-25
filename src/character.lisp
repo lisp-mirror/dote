@@ -1311,7 +1311,7 @@
 
 (defgeneric lerp-spell (smartness empaty dexterity class))
 
-(defmethod lerp-spell (smartness empaty dexterity (class (eql 'wizard)))
+(defmethod lerp-spell (smartness empaty dexterity (class (eql :wizard)))
   (dlerp (smoothstep-interpolate 50.0
                                  200.0
                                  (lerp 0.1
@@ -1322,7 +1322,7 @@
          2.0
          200.0))
 
-(defmethod lerp-spell (smartness empaty dexterity (class (eql 'healer)))
+(defmethod lerp-spell (smartness empaty dexterity (class (eql :healer)))
   (dlerp (smoothstep-interpolate 50.0
                                  200.0
                                  (lerp 0.1
@@ -1333,7 +1333,7 @@
          2.0
          200.0))
 
-(defmethod lerp-spell (smartness empaty dexterity (class (eql 'ranger)))
+(defmethod lerp-spell (smartness empaty dexterity (class (eql :ranger)))
   (dlerp (smoothstep-interpolate 50.0
                                  200.0
                                  (lerp 0.5
@@ -1355,7 +1355,7 @@
 
 (defgeneric calc-reply-attack-spell (player class))
 
-(defmethod calc-reply-attack-spell (actual-character (class (eql 'warrior)))
+(defmethod calc-reply-attack-spell (actual-character (class (eql :warrior)))
   (d (agility actual-character)))
 
 (defmethod calc-reply-attack-spell (actual-character class)
@@ -1363,7 +1363,7 @@
 
 (defgeneric calc-ambush-chance (player class))
 
-(defmethod calc-ambush-chance (actual-character (class (eql 'ranger)))
+(defmethod calc-ambush-chance (actual-character (class (eql :ranger)))
   (lerp-char 0.1 (agility actual-character) (strength actual-character) 4))
 
 (defmethod calc-ambush-chance (actual-character class)
@@ -1416,7 +1416,7 @@
     (setf (attack-spell-chance actual-character)
           (lerp-char 0.2 (smartness actual-character) (agility actual-character) 3))
     (setf (race actual-character) race)
-    (setf (player-class actual-character) player-class)
+    (setf (player-class actual-character) (make-keyword player-class))
     (if (> rest-capital 0)
         (make-player rest-capital race player-class slots actual-character)
         (progn
@@ -1426,7 +1426,7 @@
          (values actual-character rest-capital)))))
 
 (defun make-warrior (race)
-  (let ((player (make-player *standard-capital-characteristic* race 'warrior
+  (let ((player (make-player *standard-capital-characteristic* race :warrior
                              '((strength  (50 10))
                                (stamina   (40 10))
                                (dexterity (5 3))
@@ -1437,7 +1437,7 @@
     player))
 
 (defun make-wizard (race)
-  (let ((player (make-player *standard-capital-characteristic* race 'wizard
+  (let ((player (make-player *standard-capital-characteristic* race :wizard
                              '((smartness (40 10))
                                (stamina   (20 10))
                                (agility   (15 10))
@@ -1449,7 +1449,7 @@
     player))
 
 (defun make-healer (race)
-  (let ((player (make-player *standard-capital-characteristic* race 'healer
+  (let ((player (make-player *standard-capital-characteristic* race :healer
                              '((empaty    (40 10))
                                (smartness (20 20))
                                (agility   (15 10))
@@ -1460,7 +1460,7 @@
     player))
 
 (defun make-archer (race)
-  (let ((player (make-player *standard-capital-characteristic* race 'archer
+  (let ((player (make-player *standard-capital-characteristic* race :archer
                              '((agility   (40 10))
                                (stamina   (10 5))
                                (dexterity (10 5))
@@ -1471,7 +1471,7 @@
     player))
 
 (defun make-ranger (race)
-  (let ((player (make-player *standard-capital-characteristic* race 'ranger
+  (let ((player (make-player *standard-capital-characteristic* race :ranger
                              '((dexterity  (40 10))
                                (agility    (30 10))
                                (stamina    (50 10))

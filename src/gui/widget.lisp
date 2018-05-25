@@ -1859,6 +1859,41 @@
                     label-height  height)))))))
   (values object window))
 
+(defmethod fit-into-window :after ((object scale-value) (window window))
+  (with-accessors ((child-y y)
+                   (child-x x)
+                   (child-h height)
+                   (child-w width)) object
+    (let* ((scale-y (remap-y-child-in-window window object))
+           (scale-x (remap-x-child-in-window window object)))
+      (with-accessors ((text    text)
+                       (width   width)
+                       (height  height)
+                       (b-plus  b-plus)
+                       (b-minus b-minus)) object
+        (with-accessors ((label-width  width)
+                         (label-height height)) text
+          (with-accessors ((x-b-plus x)
+                           (b-plus-width  width)
+                           (b-plus-height height)) b-plus
+            (with-accessors ((x-b-minus x)
+                             (b-minus-width  width)
+                             (b-minus-height height)) b-minus
+              (let* ((new-b-plus-width   (d* b-plus-width  scale-x))
+                     (new-b-plus-height  (d* b-plus-height scale-y))
+                     (new-label-width    (d- width
+                                             (d* 2.0 (max new-b-plus-width
+                                                          new-b-plus-height)))))
+                (setf x-b-plus      new-label-width
+                      x-b-minus     (d+ new-label-width new-b-plus-width)
+                      b-plus-width  new-b-plus-width
+                      b-plus-height new-b-plus-height
+                      b-minus-width  new-b-plus-width
+                      b-minus-height new-b-plus-height
+                      label-width   new-label-width
+                      label-height  height))))))))
+  (values object window))
+
 (defmethod add-child :after ((object window) child
                              &optional (child-pos (length (children object))))
   (with-accessors ((width width)) object

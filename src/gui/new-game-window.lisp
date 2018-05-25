@@ -142,6 +142,15 @@
     :initarg  :s-diffcult
     :accessor s-difficult)))
 
+(defun make-simple-scale-cb (delta-fn)
+  #'(lambda (w e)
+      (declare (ignore e))
+      (with-parent-widget (sc) w
+        (with-accessors ((val   val)
+                         (label label)) sc
+          (setf val (funcall delta-fn val))
+          (sync-value-w-label sc)))))
+
 (defmethod initialize-instance :after ((object new-game-window) &key &allow-other-keys)
   (with-accessors ((b-ok          b-ok)
                    (b-scroll-down b-scroll-down)
@@ -150,27 +159,16 @@
                    (text-notes    text-notes)
                    (s-difficult   s-difficult)) object
     (setf (callback-plus s-difficult)
-          #'(lambda (w e)
-              (declare (ignore e))
-              (with-parent-widget (sc) w
-                (with-accessors ((val   val)
-                                 (label label)) sc
-                  (setf val (truncate (min +maximum-level-difficult+
-                                           (1+ val))))
-                  (sync-value-w-label sc)))))
+          (make-simple-scale-cb #'(lambda (val) (truncate (min +maximum-level-difficult+
+                                                         (1+ val))))))
+    (setf (callback-minus s-difficult)
+          (make-simple-scale-cb #'(lambda (val) (truncate (max +difficult-minimum+
+                                                         (1- val))))))
     (setf (val->string-fn s-difficult)
           #'(lambda (a)
               (format nil (_ "difficult: ~a") a)))
     (setf (val s-difficult) +difficult-minimum+)
     (sync-value-w-label s-difficult)
-    (setf (callback-minus s-difficult)
-          #'(lambda (w e)
-              (declare (ignore e))
-              (with-parent-widget (sc) w
-                (with-accessors ((val   val)
-                                 (label label)) sc
-                  (setf val  (truncate (max +difficult-minimum+ (1- val))))
-                  (sync-value-w-label sc)))))
     (regenerate-map-buttons object)
     (add-children* object
                    text-notes

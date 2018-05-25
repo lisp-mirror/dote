@@ -408,13 +408,16 @@
 (defun gui-scaling-camera-text-entry-h ()
   (d* 0.4 (gui-button-h)))
 
-(defun save-config-camera-fp-scaling-movement (w e)
+(defun save-configuration-gui-cb (w e)
   (declare (ignore e))
   (with-parent-widget (window) w
-    (let* ((text-entry (input-camera-fp-scaling-movement window))
-           (value      (conditions:with-default-on-error (1.0)
-                         (parse-number->desired (label text-entry)))))
-      (gconf:set-camera-fp-scaling-movement value)
+    (let* ((camera-scaling-text-entry (input-camera-fp-scaling-movement window))
+           (camera-scaling            (conditions:with-default-on-error (1.0)
+                                        (parse-number->desired
+                                         (label camera-scaling-text-entry))))
+           (sound-volume               (val (s-sound-volume window))))
+      (gconf:set-camera-fp-scaling-movement camera-scaling)
+      (gconf:set-sound-volume               sound-volume)
       (gconf:dump))))
 
 (defclass gui-window (window)
@@ -437,6 +440,19 @@
                                         :height (gui-scaling-camera-text-entry-h))
     :initarg  :input-camera-fp-scaling-movement
     :accessor input-camera-fp-scaling-movement)
+   (s-sound-volume
+    :initform (make-instance 'scale-value
+                             :height          (d* 0.5 (gui-button-h))
+                             :width           (gui-window-w)
+                             :x               0.0
+                             :y               (add-epsilon-rel (d* 2.0
+                                                                   (gui-scaling-scaling-camera-label-h))
+                                                               (spacing-rel *reference-sizes*))
+                             :label-font-size (h4-font-size *reference-sizes*)
+                             :val             (sound:get-volume)
+                             :justified       t)
+    :initarg  :s-sound-volume
+    :accessor s-sound-volume)
    (b-save
     :initform (make-instance 'button
                              :width    (gui-button-w)
@@ -444,7 +460,7 @@
                              :x        0.0
                              :y        (d- (gui-window-h)
                                            (gui-button-h))
-                             :callback #'save-config-camera-fp-scaling-movement
+                             :callback #'save-configuration-gui-cb
                              :label    (_ "Save"))
     :initarg :b-save
     :accessor b-save)))
@@ -452,9 +468,23 @@
 (defmethod initialize-instance :after ((object gui-window) &key &allow-other-keys)
   (with-accessors ((l-scale-fp-speed                 l-scale-fp-speed)
                    (input-camera-fp-scaling-movement input-camera-fp-scaling-movement)
-                   (b-save                           b-save)) object
+                   (b-save                           b-save)
+                   (s-sound-volume                   s-sound-volume)) object
+    (setf (callback-plus s-sound-volume)
+          (make-simple-scale-cb #'(lambda (val)
+                                    (declare (ignore val))
+                                    (sound:increase-volume))))
+    (setf (callback-minus s-sound-volume)
+          (make-simple-scale-cb #'(lambda (val)
+                                    (declare (ignore val))
+                                    (sound:decrease-volume))))
+    (setf (val->string-fn s-sound-volume)
+          #'(lambda (a)
+              (format nil (_ "sound volume: ~a") a)))
+    (sync-value-w-label s-sound-volume)
     (add-child object l-scale-fp-speed)
     (add-child object input-camera-fp-scaling-movement)
+    (add-child object s-sound-volume)
     (add-child object b-save)))
 
 (defun make-gui-window (compiled-shaders)

@@ -23,6 +23,7 @@
                :sb-cga
                :cl-opengl
                :sdl2kit
+               :sdl2-mixer
                :cl-kanren
                :s-dot2)
   :components ((:file "package")
@@ -90,6 +91,7 @@
                (:file "transformable")
                (:file "mesh-material")
                (:file "texture")
+               (:file "sound")
                (:file "level-config")
                (:file "game-events")
                (:file "action-scheduler")
@@ -212,7 +214,7 @@
 
 (progn
   ;; debug
-  ;;(pushnew :debug-mode                        *features*)
+  (pushnew :debug-mode                        *features*)
   ;; do not push for release
   ;;(pushnew :allow-human-interaction-always    *features*)
   ;; do not push for release
@@ -220,7 +222,7 @@
   ;; do not push for release
   ;; (pushnew :small-skydome                    *features*)
   ;; do not push for release
-  ;;(pushnew :fast-opening                      *features*)
+  (pushnew :fast-opening                      *features*)
   ;; do not push for release
   (pushnew :debug-blackboard-layers           *features*)
   ;; do not push for release

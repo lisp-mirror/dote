@@ -1755,7 +1755,8 @@ data/furniture-templates/small-table-v.tga               \
 data/furniture-templates/wall-e.tga                      \
 data/furniture-templates/wall-n.tga                      \
 data/furniture-templates/wall-s.tga                      \
-data/furniture-templates/wall-w.tga
+data/furniture-templates/wall-w.tga                      \
+data/music/bg-battle-1.ogg
 
 CONF_PATH_FILE = src/config.lisp
 

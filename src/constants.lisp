@@ -246,6 +246,8 @@
 
   :test #'equalp)
 
+(define-constant +music-resource+                  "music"                        :test #'equalp)
+
 (define-constant +turn-billboard-ai-texture-name+    "ai.tga"                     :test #'string=)
 
 (define-constant +turn-billboard-human-texture-name+ "human.tga"                  :test #'string=)

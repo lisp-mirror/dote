@@ -152,6 +152,7 @@
    :+default-character-inert-obj-dir+
    :+animation-texture-dir+
    :+turn-transition-billboard-dir+
+   :+music-resource+
    :+turn-billboard-ai-texture-name+
    :+turn-billboard-human-texture-name+
    :+default-character-filename+
@@ -1739,6 +1740,8 @@
    :set-inhibit-planner
    :set-camera-fp-scaling-movement
    :set-train-ai
+   :config-sound-volume
+   :set-sound-volume
    :*game-config*
    :dump
    :init
@@ -2283,6 +2286,32 @@
    :n-shininess
    :bind-texture
    :unbind-texture))
+
+(defpackage :sound
+  (:use :cl
+        :alexandria
+        :config
+        :constants
+        :misc)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:shadowing-import-from :sb-cga :rotate)
+  (:export
+   :+bg-battle-1+
+   :music-resource
+   :file
+   :chunk
+   :identifier
+   :get-volume
+   :set-volume
+   :increase-volume
+   :decrease-volume
+   :init-sound-system
+   :close-sound-system
+   :free-music
+   :get-music
+   :remove-music
+   :add-music
+   :play-music))
 
 ;; game
 
@@ -4615,6 +4644,7 @@
    :sync-value-w-label
    :callback-minus
    :callback-plus
+   :make-simple-scale-cb
    :adjust-window-h
    :adjust-window-w
    :window
