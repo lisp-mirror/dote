@@ -117,6 +117,7 @@
                    (world world) (mesh mesh)
                    (window-game-state window-game-state)
                    (delta-time-elapsed delta-time-elapsed)) object
+    (sound:init-sound-system (gconf:config-sound-volume))
     (saved-game:init-system-when-gl-context-active object)
     (mtree:add-child (world:gui world)
                      (op-seq:make-opening world))))

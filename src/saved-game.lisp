@@ -506,7 +506,6 @@
   (with-accessors ((root-compiled-shaders main-window:root-compiled-shaders)
                    (world            main-window:world)
                    (window-game-state main-window:window-game-state)) window
-    (sound:init-sound-system (gconf:config-sound-volume))
     (setf window-game-state (make-instance 'game-state:game-state))
     (setf (game-state:window-id window-game-state)
           (sdl2.kit-utils:fetch-window-id window))
