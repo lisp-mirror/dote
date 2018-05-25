@@ -480,7 +480,7 @@
                                     (sound:decrease-volume))))
     (setf (val->string-fn s-sound-volume)
           #'(lambda (a)
-              (format nil (_ "sound volume: ~a") a)))
+              (format nil (_ "Music volume: ~a") a)))
     (sync-value-w-label s-sound-volume)
     (add-child object l-scale-fp-speed)
     (add-child object input-camera-fp-scaling-movement)

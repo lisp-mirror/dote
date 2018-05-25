@@ -442,6 +442,8 @@
     (interfaces:calculate  world 0.0)
     (place-opponents world difficult-level)
     (setf (main-window::delta-time-elapsed window) (sdl2:get-ticks))
+    ;; play bg music
+    (sound:play-music sound:+bg-battle-1+)
     ;; bg color
     (let ((color (skydome-bottom-color (main-window:window-game-state window))))
       (gl:clear-color (elt color 0)
