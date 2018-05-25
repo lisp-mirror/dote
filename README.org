@@ -76,6 +76,7 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
    - sb-cga;
    - cl-opengl;
    - sdl2kit;
+   - cl-sd2-mixer;
    - s-dot2;
    - cl-kanren.
 
