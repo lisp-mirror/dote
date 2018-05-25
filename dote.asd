@@ -213,8 +213,8 @@
                                      (:file "influence-map-test")))))
 
 (progn
-  ;; debug
-  (pushnew :debug-mode                        *features*)
+  ;; do not push for release
+  ;;(pushnew :debug-mode                        *features*)
   ;; do not push for release
   ;;(pushnew :allow-human-interaction-always    *features*)
   ;; do not push for release
@@ -222,11 +222,11 @@
   ;; do not push for release
   ;; (pushnew :small-skydome                    *features*)
   ;; do not push for release
-  (pushnew :fast-opening                      *features*)
+  ;(pushnew :fast-opening                      *features*)
   ;; do not push for release
-  (pushnew :debug-blackboard-layers           *features*)
+  ;(pushnew :debug-blackboard-layers           *features*)
   ;; do not push for release
-  (pushnew :debug-ai                          *features*)
+  ;(pushnew :debug-ai                          *features*)
   ;; do not push for release
   ;;(pushnew :keep-dead-player                  *features*)
   ;; do not push for release

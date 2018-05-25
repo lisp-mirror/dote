@@ -21,8 +21,8 @@ tactical game.
 
 * Current status
 
-The game  is not playable  but someway  interactive, there is  an old,
-short video showing the terrain rendering in the video directory.
+The game  is *playable*  but many things are missing (most of the audio and video).
+Please send me an email if you want to [[Contributing][help]].
 
 * Building
 
@@ -110,7 +110,6 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
   needed. If you intend to contribute please send a message to cage at
   katamail  dot  com or,  alternatively,  point  your browser  to  the
   [[https://notabug.org/cage/dote/issues][issue tracker]]
-
 
 * NO WARRANTY
 
