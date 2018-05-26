@@ -403,6 +403,13 @@
                                               defender
                                               :assume-visible nil))))
 
+(defun play-sound-effect (fx)
+  (cond
+    ((functionp fx)
+     (funcall fx))
+    ((stringp fx)
+     (sound:play-fx fx))))
+
 (defun launch-attack-spell (spell world attacker defender
                             &key (invisiblep nil))
   (let* ((mesh     (make-instance 'arrow-attack-spell-mesh
@@ -435,6 +442,7 @@
                        (spell:tremor-fn spell))
               (funcall (spell:tremor-fn spell) world))
             (setf (pos target-effect) (pos mesh))
+            (play-sound-effect (spell:sound-effect-target spell))
             (world:push-entity world target-effect))
           (with-enqueue-action-and-send-remove-after
               (world action-scheduler:end-attack-spell-action)
@@ -456,6 +464,7 @@
         (world action-scheduler:particle-effect-action)
       (when (spell:tremor-fn spell)
         (funcall (spell:tremor-fn spell) world))
+      (play-sound-effect (spell:sound-effect-target spell))
       (world:push-entity world target-effect))
     (with-enqueue-action-and-send-remove-after
         (world action-scheduler:send-spell-fx-action)
@@ -521,6 +530,7 @@
                 (end-of-life-remove-from-action-scheduler target-effect
                                                           action-scheduler:particle-effect-action)
                 (with-enqueue-action (world action-scheduler:particle-effect-action)
+                  (play-sound-effect (spell:sound-effect-target spell))
                   (world:push-entity world target-effect)))
               (with-enqueue-action-and-send-remove-after
                   (world action-scheduler:send-spell-fx-action)

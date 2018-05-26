@@ -2297,6 +2297,7 @@
   (:shadowing-import-from :sb-cga :rotate)
   (:export
    :+bg-battle-1+
+   :+boom-3+
    :music-resource
    :file
    :chunk
@@ -2311,7 +2312,8 @@
    :get-music
    :remove-music
    :add-music
-   :play-music))
+   :play-music
+   :play-fx))
 
 ;; game
 
@@ -5292,6 +5294,7 @@
    :tremor-fn
    :arrow
    :visual-effect-target
+   :sound-effect-target
    :spell-id->string-for-human))
 
 (defclass attack-spell (spell)

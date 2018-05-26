@@ -885,7 +885,12 @@
 
   https://opengameart.org/content/orchestral-battle-music
 
+- data/music/explosion-3.ogg
+  © 2018 Blender Foundation
+  released under (CC BY 3.0)
+  https://creativecommons.org/licenses/by/3.0/
 
+  according to: https://opengameart.org/content/rockbreaking
 
 ** Source code
 

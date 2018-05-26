@@ -158,7 +158,11 @@
    (visual-effect-target
     :initform nil
     :initarg  :visual-effect-target
-    :accessor visual-effect-target)))
+    :accessor visual-effect-target)
+   (sound-effect-target
+    :initform nil
+    :initarg  :sound-effect-target
+    :accessor sound-effect-target)))
 
 (gen-type-p spell)
 
@@ -351,6 +355,8 @@
                                                  #'%default-effective-aabb-size)
                                     :visual-effect-target ,(%get-fn-param params
                                                                           :visual-effect-target)
+                                    :sound-effect-target ,(%get-param params
+                                                                      :sound-effect-target)
                                     :damage-inflicted     ,(%get-param
                                                             params
                                                             :damage-inflicted 0.0)
@@ -396,7 +402,10 @@
                                                             :effective-range
                                                             +terrain-chunk-tile-size+)
                                     :visual-effect-target ,(%get-fn-param params
-                                                                          :visual-effect-target))))
+                                                                          :visual-effect-target)
+                                    :sound-effect-target ,(%get-param params
+                                                                      :sound-effect-target))))
+
          (let ((effects ,(%get-param params :effects)))
            (if (%use-custom-effects-p effects)
                (setf (basic-interaction-params ,spell) effects)

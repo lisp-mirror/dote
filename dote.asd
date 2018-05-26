@@ -214,13 +214,13 @@
 
 (progn
   ;; do not push for release
-  ;;(pushnew :debug-mode                        *features*)
+  ;(pushnew :debug-mode                        *features*)
   ;; do not push for release
-  ;;(pushnew :allow-human-interaction-always    *features*)
+  ;(pushnew :allow-human-interaction-always    *features*)
   ;; do not push for release
-  ;;(pushnew :inhibit-modal-button              *features*)
+  ;(pushnew :inhibit-modal-button              *features*)
   ;; do not push for release
-  ;; (pushnew :small-skydome                    *features*)
+  ; (pushnew :small-skydome                    *features*)
   ;; do not push for release
   ;(pushnew :fast-opening                      *features*)
   ;; do not push for release
@@ -228,8 +228,10 @@
   ;; do not push for release
   ;(pushnew :debug-ai                          *features*)
   ;; do not push for release
-  ;;(pushnew :keep-dead-player                  *features*)
+  ;(pushnew :keep-dead-player                  *features*)
   ;; do not push for release
-  ;;(pushnew :debug-gui                         *features*)
+  ;(pushnew :debug-gui                         *features*)
+  ;; do not push for release
+  ;(pushnew :god-mode                          *features*)
   ;; config
   (pushnew :md2-gpu-lerp                      *features*))

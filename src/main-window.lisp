@@ -273,7 +273,7 @@
               (misc:dbg "n ~a" *near*)
               (incf *near* -.1))
             (when (string= text "p")
-              (sound:play-music sound:+bg-battle-1+))
+              (sound:play-fx sound:+boom-3+))
               ;(closing-sequence:start-victory-sequence world))
               ;; (mtree:add-child (world:gui world)
               ;;                   (widget:make-player-generator world)))

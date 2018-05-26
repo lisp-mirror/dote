@@ -4530,8 +4530,12 @@
                     (setf (portrait (entity:ghost model)) portrait-texture)
                     (decf max-player-count)
                     (world:build-inventory model +pc-type+ (character:player-class player))
-                    (world:place-player-on-map world model game-state:+pc-type+ ;#(61 109)))
-                                               :position #(0 0)))
+                    (world:place-player-on-map world model game-state:+pc-type+
+                                               :position #(0 0))
+                    #+ god-mode
+                    (progn
+                      (setf (character:movement-points (ghost model)) 100.0)
+                      (setf (character:spell-points    (ghost model)) 100.0)))
                   ;; restore preview
                   (setf (pixmap:data (get-texture +preview-unknown-texture-name+))
                         backup-data-texture-preview)
