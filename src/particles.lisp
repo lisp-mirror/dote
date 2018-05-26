@@ -1161,7 +1161,7 @@
                           when (< (particle-life p) 0.0)
                           sum 1))))
     (d> (d/ removeable all)
-        0.1)))
+        0.9)))
 
 (defun make-particles-cluster (class particles-count shaders-dict
                                &key
@@ -3380,6 +3380,7 @@
       (action-scheduler:end-of-life-remove-from-action-scheduler particles
                                                                  action-scheduler:particle-effect-action)
       (action-scheduler:with-enqueue-action (world action-scheduler:particle-effect-action)
+        (sound:play-fx sound:+level-up+)
         (world:push-entity world particles)))))
 
 (defclass exp-increase-particles (minimal-particle-effect cluster-w-global-life end-life-trigger)

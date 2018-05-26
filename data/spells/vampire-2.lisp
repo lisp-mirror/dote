@@ -13,6 +13,7 @@
     :range                 25 ;; in tile units
     :effective-range        0 ;; in tile units
     :visual-effect-target  (lambda (a b) (declare (ignore a b)) nil)
+    :sound-effect-target     sound:+generic-spell+ ;; see: sound.lisp
     :effects
     (lambda (attacker defender)
       (with-accessors ((state state)) defender

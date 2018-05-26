@@ -11,6 +11,7 @@
   :range                 1  ;; in tile units
   :effective-range       0  ;; in tile units
   :visual-effect-target  particles:make-summon-player-fx
+  :sound-effect-target     sound:+generic-spell+ ;; see: sound.lisp
   :effects
   (lambda (attacker defender)
     (declare (ignore attacker))

@@ -9,6 +9,7 @@
   :range                 15  ;; in tile units
   :effective-range       5   ;; in tile units
   :visual-effect-target  particles:make-cure-level-1
+  :sound-effect-target     sound:+generic-spell+ ;; see: sound.lisp
   :effects               (define-interaction
 			   effects         (define-effects)
 			   healing-effects (define-healing-effects

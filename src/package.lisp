@@ -2297,7 +2297,17 @@
   (:shadowing-import-from :sb-cga :rotate)
   (:export
    :+bg-battle-1+
+   :+boom-1+
+   :+boom-2+
    :+boom-3+
+   :+fireball-1+
+   :+fireball-2+
+   :+fireball-3+
+   :+firebolt-1+
+   :+firebolt-2+
+   :+firebolt-3+
+   :+generic-spell+
+   :+level-up+
    :music-resource
    :file
    :chunk
@@ -5287,6 +5297,7 @@
    :gui-texture
    :cost
    :visual-effect-self
+   :sound-effect-self
    :range
    :effective-range
    :effective-aabb-size

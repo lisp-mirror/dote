@@ -13,6 +13,7 @@
     :range                 30  ;; in tile units
     :effective-range        0  ;; in tile units
     :visual-effect-target  particles:make-vampire-level-2
+    :sound-effect-target     sound:+generic-spell+ ;; see: sound.lisp
     :effects
     (lambda (attacker defender)
       (let ((msg-melee  (make-instance 'game-event:attack-melee-event

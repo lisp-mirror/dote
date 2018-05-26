@@ -147,6 +147,10 @@
     :initform nil
     :initarg  :visual-effect-self
     :accessor visual-effect-self)
+   (sound-effect-self
+    :initform nil
+    :initarg  :sound-effect-self
+    :accessor sound-effect-self)
    (range
     :initform 0.0
     :initarg :range
@@ -344,7 +348,8 @@
                                     :cost                 ,(%get-param params :cost)
                                     :visual-effect-self   ,(%get-fn-param params
                                                                           :visual-effect-self)
-
+                                    :sound-effect-self   ,(%get-param params
+                                                                      :sound-effect-self)
                                     :range                ,(%get-param params :range 0.0)
                                     :effective-range      ,(%get-param params
                                                                        :effective-range
@@ -396,6 +401,8 @@
                                                             :damage-inflicted 0.0)
                                     :visual-effect-self   ,(%get-fn-param params
                                                                           :visual-effect-self)
+                                    :sound-effect-self   ,(%get-param params
+                                                                      :sound-effect-self)
                                     :range                ,(%get-param params :range 0.0)
                                     :effective-range      ,(%get-param
                                                             params

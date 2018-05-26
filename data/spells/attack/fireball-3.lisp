@@ -6,10 +6,11 @@
   :gui-texture           "attack/fireburst.tga"
   :cost                  40.0
   :visual-effect-self    none
+  :sound-effect-self     sound:+fireball-3+ ;; see: sound.lisp
   :range                 30 ;; in tile units
   :effective-range       7  ;; in tile units
   :visual-effect-target  particles:make-aerial-explosion-level-3
-  :sound-effect-target   sound:+boom-3+ ;; can be a function too
+  :sound-effect-target   sound:+boom-3+ ;; see: sound.lisp
   :damage-inflicted      30.0
   :arrow                 particles:make-fireball-level-2
   :tremor                (lambda (world) (world:apply-tremor-2 world))

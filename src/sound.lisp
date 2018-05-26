@@ -16,13 +16,33 @@
 
 (in-package :sound)
 
-(define-constant +bg-battle-1+ "bg-battle-1.ogg"  :test #'string=)
+(define-constant +bg-battle-1+   "bg-battle-1.ogg"   :test #'string=)
 
-(define-constant +boom-3+      "explosion-3.ogg" :test #'string=)
+(define-constant +boom-1+        "explosion-3.ogg"   :test #'string=)
 
-(define-constant +max-volume+  255                :test #'=)
+(define-constant +boom-2+        "explosion-3.ogg"   :test #'string=)
 
-(define-constant +min-volume+    0                :test #'=)
+(define-constant +boom-3+        "explosion-3.ogg"   :test #'string=)
+
+(define-constant +fireball-1+    "fireball-1.ogg"    :test #'string=)
+
+(define-constant +fireball-2+    "fireball-1.ogg"    :test #'string=)
+
+(define-constant +fireball-3+    "fireball-1.ogg"    :test #'string=)
+
+(define-constant +firebolt-1+    "fireball-1.ogg"    :test #'string=)
+
+(define-constant +firebolt-2+    "fireball-1.ogg"    :test #'string=)
+
+(define-constant +firebolt-3+    "fireball-1.ogg"    :test #'string=)
+
+(define-constant +generic-spell+ "generic-spell.ogg" :test #'string=)
+
+(define-constant +level-up+      "level-up.ogg"      :test #'string=)
+
+(define-constant +max-volume+  255                   :test #'=)
+
+(define-constant +min-volume+    0                   :test #'=)
 
 (defclass file-res ()
   ((file
@@ -51,8 +71,6 @@
 
 (defparameter *fx-db* '())
 
-(defparameter *music-channel* '())
-
 (defparameter *current-volume* 128)
 
 (defun get-volume ()
@@ -80,7 +98,7 @@
   (sdl2-mixer:init :ogg)
   (sdl2-mixer:open-audio 22050 :s16sys 1 1024)
   (setf *current-volume* volume)
-  (sdl2-mixer:allocate-channels 1)
+  (sdl2-mixer:allocate-channels 2)
   (set-volume)
   (init-music-db)
   (init-fx-db))
@@ -89,6 +107,16 @@
   (add-music +bg-battle-1+))
 
 (defun init-fx-db ()
+  (add-fx +generic-spell+)
+  (add-fx +level-up+)
+  (add-fx +fireball-1+)
+  (add-fx +fireball-2+)
+  (add-fx +fireball-3+)
+  (add-fx +firebolt-1+)
+  (add-fx +firebolt-2+)
+  (add-fx +firebolt-3+)
+  (add-fx +boom-1+)
+  (add-fx +boom-2+)
   (add-fx +boom-3+))
 
 (defun close-sound-system ()

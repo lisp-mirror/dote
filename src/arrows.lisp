@@ -435,6 +435,7 @@
                (target-effect (funcall (spell:visual-effect-target spell)
                                        +zero-vec+
                                        shaders)))
+          (play-sound-effect (spell:sound-effect-self spell))
           (mtree:add-child mesh bullet)
           (with-enqueue-action
               (world action-scheduler:particle-effect-action)
