@@ -892,6 +892,28 @@
 
   according to: https://opengameart.org/content/rockbreaking
 
+- data/music/fireball-1.ogg
+  © 2018 Julien Matthey
+  released under (CC0 1.0)
+  https://creativecommons.org/publicdomain/zero/1.0/
+
+  according to: https://opengameart.org/content/fireball-1
+
+- data/music/generic-spell.ogg
+  © 2018 artisticdude
+  released under (CC0 1.0)
+  https://creativecommons.org/publicdomain/zero/1.0/
+
+  according to: https://opengameart.org/content/rpg-sound-pack
+
+- data/music/level-up.ogg
+  © 2018 copyc4t
+  released under (CC BY 3.0)
+  https://creativecommons.org/licenses/by/3.0/
+
+  according to: https://opengameart.org/content/levelup-sound-atmospheric
+
+
 ** Source code
 
 - src/mesh.lisp use codes from cl-opengl
