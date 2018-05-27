@@ -61,7 +61,7 @@
 (defun tactic-valid-p (tactic)
   (= (length tactic) 3))
 
-(defmacro with-position-vaild-slot ((tactics candidate) &body additional-constrains)
+(defmacro with-position-valid-slot ((tactics candidate) &body additional-constrains)
   (with-gensyms (atk-pos atk-mp)
     `(let ((,atk-pos (atk-pos ,candidate))
            (,atk-mp   (atk-mp  ,candidate)))
@@ -72,12 +72,12 @@
                              (funcall *reachable-p-fn* ,atk-pos (def-pos a) ,atk-mp)))
                     ,tactics))))
 
-(defun position-vaild-in-free-slot (tactics candidate)
-  (with-position-vaild-slot (tactics candidate)
+(defun position-valid-in-free-slot (tactics candidate)
+  (with-position-valid-slot (tactics candidate)
     (def-free-goal-p a)))
 
-(defun position-vaild-in-occupied-slot (tactics candidate)
-  (with-position-vaild-slot (tactics candidate)
+(defun position-valid-in-occupied-slot (tactics candidate)
+  (with-position-valid-slot (tactics candidate)
     (not (def-free-goal-p a))))
 
 ;; this is suboptimal at best...
@@ -110,7 +110,7 @@
                                                     ,position-occupied)))))
       (if (null candidate)
           tactics
-          (let ((position-free (position-vaild-in-free-slot tactics candidate)))
+          (let ((position-free (position-valid-in-free-slot tactics candidate)))
             (if position-free
                 (%build-single-attack-tactics (make-new-tactics tactics
                                                                 candidate
@@ -118,7 +118,7 @@
                                               (rest  position-attackers)
                                               (first position-attackers)
                                               nil)
-                (let ((position-occupied (position-vaild-in-occupied-slot tactics candidate)))
+                (let ((position-occupied (position-valid-in-occupied-slot tactics candidate)))
                   (if position-occupied
                       (if substituted-by-idx
                           (if (= position-occupied substituted-by-idx) ; trying to swap
