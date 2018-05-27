@@ -11,7 +11,7 @@
   :range                 30  ;; in tile units
   :effective-range        0  ;; in tile units
   :visual-effect-target  particles:make-teleport-level-3
-  :sound-effect-target     sound:+generic-spell+ ;; see: sound.lisp
+  :sound-effect-target   sound:+teleport+ ;; see: sound.lisp
   :effects
   (lambda (attacker defender)
     (declare (ignore attacker))
@@ -37,14 +37,14 @@
 	    (let ((displacement
 		   (do ((displacement (gen-displacement) (gen-displacement))
 			(ct           0                  (1+ ct)))
-		       ((and (not (count-max-reached-p ct))
-			     displacement
-			     (game-state:map-element-empty-p
-			      (game-state:element-mapstate@ state
-							    (map-utils:coord-chunk->matrix
-							     (elt displacement 0))
-							    (map-utils:coord-chunk->matrix
-							     (elt displacement 2)))))
+		       ((let ((x (map-utils:coord-chunk->matrix (vec-x displacement)))
+                              (y (map-utils:coord-chunk->matrix (vec-z displacement))))
+                          (and (not (count-max-reached-p ct))
+                               displacement
+                               (game-state:map-element-empty-p
+                                (game-state:element-mapstate@ state x y))
+                               (>= (actual-movement-points (ghost defender)) ;; water...
+                                   (game-state:get-cost state x y))))
 			(and (not (count-max-reached-p ct))
 			     displacement))))
 		  (old-tile (map-utils:pos->game-state-pos defender)))

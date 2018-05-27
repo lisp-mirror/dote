@@ -1760,7 +1760,10 @@ data/music/bg-battle-1.ogg                               \
 data/music/explosion-3.ogg                               \
 data/music/fireball-1.ogg                                \
 data/music/generic-spell.ogg                             \
-data/music/level-up.ogg
+data/music/level-up.ogg                                  \
+data/music/explosion-1.ogg                               \
+data/music/heal-1.ogg                                    \
+data/music/teleport.ogg
 
 CONF_PATH_FILE = src/config.lisp
 

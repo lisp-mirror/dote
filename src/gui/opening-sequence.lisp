@@ -247,7 +247,9 @@
   #'(lambda (w e)
       (declare (ignore e))
       (tg:gc)
-      (let ((window  (load-save-window:make-window (compiled-shaders w) :load)))
+      (let ((window (load-save-window:make-window (compiled-shaders w)
+                                                  :load
+                                                  :title (_ "Load game"))))
         (mtree:add-child gui window))))
 
 (defun make-new-game-cb (gui)

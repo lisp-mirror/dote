@@ -18,11 +18,19 @@
 
 (define-constant +bg-battle-1+   "bg-battle-1.ogg"   :test #'string=)
 
-(define-constant +boom-1+        "explosion-3.ogg"   :test #'string=)
+(define-constant +boom-1+        "explosion-1.ogg"   :test #'string=)
 
 (define-constant +boom-2+        "explosion-3.ogg"   :test #'string=)
 
 (define-constant +boom-3+        "explosion-3.ogg"   :test #'string=)
+
+(define-constant +teleport+      "teleport.ogg"      :test #'string=)
+
+(define-constant +heal-1+        "heal-1.ogg"        :test #'string=)
+
+(define-constant +heal-2+        "heal-1.ogg"        :test #'string=)
+
+(define-constant +heal-3+        "heal-1.ogg"        :test #'string=)
 
 (define-constant +fireball-1+    "fireball-1.ogg"    :test #'string=)
 
@@ -117,7 +125,11 @@
   (add-fx +firebolt-3+)
   (add-fx +boom-1+)
   (add-fx +boom-2+)
-  (add-fx +boom-3+))
+  (add-fx +boom-3+)
+  (add-fx +teleport+)
+  (add-fx +heal-1+)
+  (add-fx +heal-2+)
+  (add-fx +heal-3+))
 
 (defun close-sound-system ()
   (sdl2-mixer:halt-music)

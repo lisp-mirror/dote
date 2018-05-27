@@ -875,6 +875,7 @@ composed by just one tile, see 'attackable-position-exists-path'"
 
 (defun is-near-weak-friend-p (strategy-expert entity)
   (let ((res (ai-utils:near-weak-friend-p strategy-expert entity)))
+    #+ (and debug debug-ai)
     (dbg "is-near-weak-friend-p -> ~a" res)
     res))
 
@@ -882,6 +883,7 @@ composed by just one tile, see 'attackable-position-exists-path'"
   "note: places-near contains only reachable tiles so
 path-near-goal-w/o-concerning-tiles always returns a non nil value"
   (let ((res (ai-utils:attack-when-near-pos-p strategy-expert entity)))
+    #+ (and debug debug-ai)
     (dbg "can-attack-when-near-pos-p -> ~a" res)
     res))
 
@@ -893,6 +895,7 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
 
 (defun is-there-useful-reachable-fountain-p (strategy-expert entity)
   (declare (ignore strategy-expert))
+  #+ (and debug debug-ai)
   (misc:dbg "is-there-useful-reachable-fountain-p ~a"
             (ai-utils:useful-reachable-fountain entity))
   (ai-utils:useful-reachable-fountain entity))
@@ -900,18 +903,21 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
 (defun exists-reachable-pos-to-launch-attack-spell (strategy-expert entity)
   (declare (ignore strategy-expert))
   (let ((res (ai-utils:reachable-attackable-opponents-attack-spell entity)))
+    #+ (and debug debug-ai)
     (misc:dbg " exists-reachable-pos-to-launch-attack-spell ~a" res)
     res))
 
 (defun exists-reachable-pos-to-launch-heal-spell (strategy-expert entity)
   (declare (ignore strategy-expert))
   (let ((res (ai-utils:reachable-healing-friend-heal-spell entity)))
+    #+ (and debug debug-ai)
     (misc:dbg " exists-reachable-pos-to-launch-heal-spell ~a" res)
     res))
 
 (defun exists-reachable-pos-to-launch-damage-spell (strategy-expert entity)
   (declare (ignore strategy-expert))
   (let ((res (ai-utils:reachable-attackable-opponents-damage-spell entity)))
+    #+ (and debug debug-ai)
     (misc:dbg " exists-reachable-pos-to-launch-damage-spell ~a" res)
     res))
 

@@ -913,6 +913,21 @@
 
   according to: https://opengameart.org/content/levelup-sound-atmospheric
 
+- data/music/explosion-1.ogg
+- data/music/heal-1.ogg
+  © 2018 p0ss
+  released under (CC BY-SA 3.0)
+  https://creativecommons.org/licenses/by-sa/3.0/
+
+  according to: https://opengameart.org/content/spell-sounds-starter-pack
+
+- data/music/teleport.ogg
+  derived from  © 2018 p0ss
+  released under (CC BY-SA 3.0)
+  https://creativecommons.org/licenses/by-sa/3.0/
+
+  according to: https://opengameart.org/content/spell-sounds-starter-pack
+
 
 ** Source code
 

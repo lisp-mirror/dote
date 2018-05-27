@@ -702,8 +702,18 @@ attempts Note: all attackable position will be updated as well"
               (let* ((path-struct (game-state:make-movement-path path total-cost)))
                 (put-in-memory target-id-move path-struct))))))))
 
-(defalias insecure-path-to-reach-attack-pos
-  #'blackboard:insecure-path-to-reach-attack-pos-w-current-weapon)
+(defun insecure-path-to-reach-attack-pos (blackboard
+                                          player
+                                          &key
+                                          (cut-off-first-tile nil)
+                                          (reachable-fn-p     nil))
+  (blackboard:insecure-path-to-reach-attack-pos-w-current-weapon blackboard
+                                                                 player
+                                                                 :cut-off-first-tile
+                                                                 cut-off-first-tile
+                                                                 :reachable-fn-p
+                                                                 reachable-fn-p))
+
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy

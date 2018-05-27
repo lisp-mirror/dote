@@ -397,7 +397,8 @@
       (mtree:add-child (world:gui world)
                        (load-save-window:make-window shaders
                                                      :load
-                                                     :players-only t))
+                                                     :players-only t
+                                                     :title        (_ "Load Characters")))
       (widget:hide-and-remove-parent-cb w e)))
 
 (defun choose-game-characters (window)

@@ -2306,6 +2306,10 @@
    :+firebolt-1+
    :+firebolt-2+
    :+firebolt-3+
+   :+teleport+
+   :+heal-1+
+   :+heal-2+
+   :+heal-3+
    :+generic-spell+
    :+level-up+
    :music-resource

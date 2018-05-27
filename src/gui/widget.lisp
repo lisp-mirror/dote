@@ -2650,7 +2650,9 @@
   (with-parent-widget (toolbar) w
     (with-toolbar-world (world) toolbar
       (with-accessors ((main-state main-state)) world
-        (let ((window  (load-save-window:make-window (compiled-shaders w) :save)))
+        (let ((window  (load-save-window:make-window (compiled-shaders w)
+                                                     :save
+                                                     :title (_ "Save Game"))))
           (add-child toolbar window))))))
 
 (defun toolbar-load-game-cb (w e)
@@ -2659,7 +2661,9 @@
     (with-toolbar-world (world) toolbar
       (with-accessors ((main-state main-state)) world
         (tg:gc)
-        (let ((window  (load-save-window:make-window (compiled-shaders w) :load)))
+        (let ((window (load-save-window:make-window (compiled-shaders w)
+                                                    :load
+                                                    :title (_ "Load Game"))))
           (add-child toolbar window))))))
 
 (defun toolbar-quit-cb (w e)

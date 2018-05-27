@@ -242,7 +242,6 @@
     (add-child object b-3)
     (add-child object b-action)
     (when (not (eq action :load))
-      (setf (label object)   (_ "Save game"))
       (setf (label b-action) (_ "Save"))
       (setf (callback b-action) #'save-game-cb)
       (setf (callback b-1) (update-cb-for-save-clsr +save-game-dir-1+))
@@ -251,6 +250,7 @@
 
 (defun make-window (compiled-shaders action
                     &key
+                      (title        (_ "Load game"))
                       (players-only nil)
                       (x            50.0)
                       (y            (d (- *window-h* (load-save-window-h)))))
@@ -261,7 +261,7 @@
                           :y              y
                           :width          (load-save-window-w)
                           :height         (load-save-window-h)
-                          :label          (_ "Load game"))))
+                          :label          title)))
     (add-window-button-cb-hide-remove w)
     (setf (compiled-shaders w) compiled-shaders)
     w))
