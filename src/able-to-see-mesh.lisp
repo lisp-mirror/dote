@@ -242,6 +242,8 @@ Returns two values: *invisibles* and *visibles* tiles"
                                                  exclude-if-labyrinth-entity
                                                  me-visible-by-myself-p))
 
+(defgeneric update-visibles-state (object))
+
 (defgeneric labyrinth-element-hitted-by-ray (object target))
 
 (defgeneric nonlabyrinth-element-hitted-by-ray (object target))
@@ -295,6 +297,7 @@ Returns two values: *invisibles* and *visibles* tiles"
   (let ((opposite-faction (faction->opposite-faction faction))
         (map-fn           (faction->map-faction-fn faction))
         (res              '()))
+
     (funcall map-fn
              object
              #'(lambda (ent)
@@ -391,6 +394,13 @@ Also note that that ray is long as much as the height of the visibility cone of 
                  (values ray-lab-hitted entity-lab-hitted))
                 (t ;; not visible
                  (values nil nil))))))))
+
+(defmethod update-visibles-state ((object able-to-see-mesh))
+  "update visibility, note that the  update-visibility event is sent.
+   See: md2-mesh:on-game-event ((object md2-mesh) (event update-visibility))"
+  (absee-mesh:update-visibility-cone       object)
+  (game-event:send-update-visibility-event object nil))
+
 
 (defmethod nonlabyrinth-element-hitted-by-ray ((object able-to-see-mesh) (target triangle-mesh))
   (with-accessors ((dir dir)

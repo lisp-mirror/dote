@@ -344,10 +344,15 @@
               (let* ((game-state         (window-game-state object))
                      (blackboard         (blackboard game-state)))
                 (with-accessors ((selected-pc selected-pc)) world
-                  (misc:dbg "ppp ~a"
-                            (blackboard:path-with-concerning-tiles blackboard
-                                                                   (mesh:calculate-cost-position selected-pc)
-                                                                   (ivec2 0 5)))))))
+                  (let ((pos (mesh:calculate-cost-position selected-pc)))
+                    (misc:dbg "w conc ~a"
+                              (blackboard:path-with-concerning-tiles blackboard
+                                                                     pos
+                                                                     (ivec2 3 1)))
+                    (misc:dbg "w conc ~a"
+                              (game-state:build-movement-path-pc (main-state world)
+                                                                 pos
+                                                                 (ivec2 3 1))))))))
           (when (eq :scancode-2 scancode)
             (make-screenshot world)
             #+ (and debug-mode debug-ai)

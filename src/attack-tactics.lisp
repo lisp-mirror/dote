@@ -156,11 +156,19 @@
                                     (d- +open-terrain-cost+ +invalicable-element-cost+)))))
         res))))
 
-;; Best...well...
-(defun build-best-path-to-attack (blackboard ai-player weapon-tactic
-                                  &key
-                                    (cut-off-first-tile t)
-                                    (reachable-fn-p (reachable-p-w/concening-tiles-fn blackboard)))
+(defun tactic-exists-p (blackboard ai-player weapon-tactic reachable-fn-p)
+  (when-let* ((all-tactics        (build-all-attack-tactics blackboard
+                                                            reachable-fn-p))
+              (all-weapon-tactics (getf all-tactics weapon-tactic))
+              (my-tactic          (find-if #'(lambda (a) (= (id ai-player) (entity-id a)))
+                                    all-weapon-tactics)))
+    t))
+
+(defun build-path-to-attack (blackboard ai-player weapon-tactic
+                             &key
+                               (cut-off-first-tile t)
+                               (reachable-fn-p (reachable-p-w/concening-tiles-fn blackboard))
+                               (building-path-fn #'path-with-concerning-tiles))
   "returns four values:
 - the path (taking into account concerning tiles);
 - the cost of each move (taking  into account terrain and other objects;
@@ -177,11 +185,46 @@
             (end-pos            (target-pos my-tactic)))
         ;;(dbg "from ~a -> ~a" start-pos end-pos)
         (multiple-value-bind (result-path cumulative-cost costs-terrain)
-            (path-with-concerning-tiles blackboard
-                                        start-pos
-                                        end-pos
-                                        :cut-off-first-tile cut-off-first-tile)
+            (funcall building-path-fn
+                     blackboard
+                     start-pos
+                     end-pos
+                     :cut-off-first-tile cut-off-first-tile)
           (values result-path cumulative-cost costs-terrain (target-id my-tactic)))))))
+
+
+;; Best...well...
+(defun build-best-path-to-attack (blackboard ai-player weapon-tactic
+                                  &key
+                                    (cut-off-first-tile t)
+                                    (reachable-fn-p (reachable-p-w/concening-tiles-fn blackboard)))
+  "takes into account concerning-tiles for build paths.
+returns four values:
+- the path (taking into account concerning tiles);
+- the cost of each move (taking  into account terrain and other objects;
+  like building or  players)
+- the total cost of  the path (again only with map cost (i.e. no concerning tiles);
+- the id of the target entity."
+  (build-path-to-attack blackboard ai-player weapon-tactic
+                        :cut-off-first-tile cut-off-first-tile
+                        :reachable-fn-p     reachable-fn-p
+                        :building-path-fn   #'path-with-concerning-tiles))
+
+(defun build-insecure-path-to-attack (blackboard ai-player weapon-tactic
+                                      &key
+                                        (cut-off-first-tile t)
+                                        (reachable-fn-p (reachable-p-w/concening-tiles-fn blackboard)))
+  "takes into account concerning-tiles for build paths.
+returns four values:
+- the path (taking into account concerning tiles);
+- the cost of each move (taking  into account terrain and other objects;
+  like building or  players)
+- the total cost of  the path (again only with map cost (i.e. no concerning tiles);
+- the id of the target entity."
+  (build-path-to-attack blackboard ai-player weapon-tactic
+                        :cut-off-first-tile cut-off-first-tile
+                        :reachable-fn-p     reachable-fn-p
+                        :building-path-fn   #'path-w/o-concerning-tiles))
 
 (defun index-last-reachable-tile (entity path-costs)
   (with-accessors ((ghost ghost)) entity
@@ -223,31 +266,69 @@
                   costs
                   (id target)))))))
 
-(defun best-path-to-reach-attack-pos-w-current-weapon (blackboard ai-player
-                                                  &key
-                                                    (cut-off-first-tile t)
-                                                    (reachable-fn-p
-                                                     (reachable-p-w/concening-tiles-fn blackboard)))
+(defun ghost->weapon-tactics (ai-player)
   (with-accessors ((ghost ghost)) ai-player
     (let ((weapon-type (character:weapon-type ghost)))
       (when weapon-type
         (cond
           ((character:weapon-type-pole-p ghost)
-           (build-best-path-to-attack blackboard ai-player +pole-key-tactics+
+           +pole-key-tactics+)
+          ((character:weapon-type-bow-p ghost)
+           +bow-key-tactics+)
+          ((character:weapon-type-crossbow-p ghost)
+           +crossbow-key-tactics+)
+          (t ;; any other melee weapon
+           +melee-key-tactics+))))))
+
+(defun path-to-reach-attack-pos-w-current-weapon (blackboard ai-player
+                                                  &key
+                                                    (cut-off-first-tile t)
+                                                    (reachable-fn-p
+                                                     (reachable-p-w/concening-tiles-fn blackboard))
+                                                    (path-builder-fn #'build-best-path-to-attack))
+  (with-accessors ((ghost ghost)) ai-player
+    (let ((weapon-type (character:weapon-type ghost)))
+      (when weapon-type
+        (cond
+          ((character:weapon-type-pole-p ghost)
+           (funcall path-builder-fn blackboard ai-player +pole-key-tactics+
                                       :cut-off-first-tile cut-off-first-tile
                                       :reachable-fn-p reachable-fn-p))
           ((character:weapon-type-bow-p ghost)
-           (build-best-path-to-attack blackboard ai-player +bow-key-tactics+
+           (funcall path-builder-fn blackboard ai-player +bow-key-tactics+
                                       :cut-off-first-tile cut-off-first-tile
                                       :reachable-fn-p reachable-fn-p))
           ((character:weapon-type-crossbow-p ghost)
-           (build-best-path-to-attack blackboard ai-player +crossbow-key-tactics+
+           (funcall path-builder-fn blackboard ai-player +crossbow-key-tactics+
                                       :cut-off-first-tile cut-off-first-tile
                                       :reachable-fn-p reachable-fn-p))
           (t ;; any other melee weapon
-           (build-best-path-to-attack blackboard ai-player +melee-key-tactics+
+           (funcall path-builder-fn blackboard ai-player +melee-key-tactics+
                                       :cut-off-first-tile cut-off-first-tile
                                       :reachable-fn-p reachable-fn-p)))))))
+
+(defun best-path-to-reach-attack-pos-w-current-weapon (blackboard ai-player
+                                                  &key
+                                                    (cut-off-first-tile t)
+                                                    (reachable-fn-p
+                                                     (reachable-p-w/concening-tiles-fn blackboard)))
+  (path-to-reach-attack-pos-w-current-weapon blackboard
+                                             ai-player
+                                             :cut-off-first-tile cut-off-first-tile
+                                             :reachable-fn-p     reachable-fn-p
+                                             :path-builder-fn    #'build-best-path-to-attack))
+
+(defun insecure-path-to-reach-attack-pos-w-current-weapon (blackboard ai-player
+                                                           &key
+                                                             (cut-off-first-tile t)
+                                                             (reachable-fn-p
+                                                              (reachable-p-w/concening-tiles-fn blackboard)))
+  (path-to-reach-attack-pos-w-current-weapon blackboard
+                                             ai-player
+                                             :cut-off-first-tile cut-off-first-tile
+                                             :reachable-fn-p     reachable-fn-p
+                                             :path-builder-fn    #'build-insecure-path-to-attack))
+
 
 (defun best-path-w-current-weapon-reachable-p (blackboard ai-player)
   (multiple-value-bind (path cumulative-cost costs)

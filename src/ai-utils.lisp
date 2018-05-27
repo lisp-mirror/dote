@@ -287,7 +287,7 @@ Return the entity attackable, the best attack-spell available and the position t
   (< (* n (spell:cost spell))
      (character:current-spell-points ghost)))
 
-(defun attackable-position-exists-path (strategy-expert entity reachable-fn)
+(defun best-attackable-position-exists-path (strategy-expert entity reachable-fn)
   "note:  path  can be  made  by  a single  tile,  the  one where  the
 character is. In this case its cost is 0.0"
   (if (blackboard:entity-in-valid-attackable-pos-p entity)
@@ -296,6 +296,23 @@ character is. In this case its cost is 0.0"
                                                                  entity
                                                                  :reachable-fn-p
                                                                  reachable-fn)))
+
+(defun insecure-attackable-position-exists-path (strategy-expert entity reachable-fn)
+  "note:  path  can be  made  by  a single  tile,  the  one where  the
+character is. In this case its cost is 0.0"
+  (if (blackboard:entity-in-valid-attackable-pos-p entity)
+      (values (calculate-cost-position entity) 0.0)
+      (blackboard:insecure-path-to-reach-attack-pos-w-current-weapon strategy-expert
+                                                                     entity
+                                                                     :reachable-fn-p
+                                                                     reachable-fn)))
+
+(defun attackable-position-exists (strategy-expert entity reachable-fn)
+  (or (blackboard:entity-in-valid-attackable-pos-p entity)
+      (blackboard:tactic-exists-p strategy-expert entity
+                                  (blackboard:ghost->weapon-tactics entity)
+                                  reachable-fn)))
+
 (defun combined-power-compare-clsr (&optional (desc t))
   #'(lambda (a b)
       (let* ((ghost-a (entity:ghost a))

@@ -31,6 +31,12 @@
                                  reachable-opt/path-attack-current-weapon-and-mp)
          :effects               ((:reach-with-current-weapon t))
          :cost                  1)
+  (:name :find-attack-position-insecure
+         :preconditions         ((:weapon-loaded             t))
+         :context-preconditions (exists-attack-goal-w-current-weapon-p
+                                 reachable-insecure/path-attack-current-weapon-and-mp)
+         :effects               ((:reach-with-current-weapon t))
+         :cost                  2)
   (:name :load-weapon
          :preconditions         ()
          :context-preconditions (has-weapon-inventory-or-worn-p)

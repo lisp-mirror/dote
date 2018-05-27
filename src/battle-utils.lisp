@@ -928,6 +928,10 @@
 (defun defeatedp (state)
   (all-death-p  #'game-state:map-player-entities state))
 
+(defun someone-won-p (state)
+  (or (battle-utils:victoryp  state)
+      (battle-utils:defeatedp state)))
+
 (defun attack-statistics (weapon-level attack-dmg shield-level armor-level
                            &optional (count 10000))
   (macrolet ((fmt-comment (a fmt-params)

@@ -54,7 +54,7 @@
                                     (vector (explore-decision)
                                             (attack-decision)))
                          (make-tree +ai-fact-visible-friends+
-                                    (list 2.0 2.0 )
+                                    (list 2.0 2.0)
                                     (vector (make-tree +ai-fact-vulnerables-units+
                                                        (list 1.0 1.0)
                                                        (vector (attack-decision)

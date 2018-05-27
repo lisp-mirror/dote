@@ -244,7 +244,10 @@
   nil)
 
 (defun action-context-preconditions-satisfied-p (action strategy-expert player-entity)
+  ;;(misc:dbg "action ~a" action)
   (loop for precondition in (action-context-preconditions action) do
+       ;;(misc:dbg "testing precondition ~a -> ~a" precondition
+       ;;          (funcall precondition strategy-expert player-entity))
        (when (not (funcall precondition strategy-expert player-entity))
          (return-from action-context-preconditions-satisfied-p nil)))
   t)
@@ -613,7 +616,9 @@
   "using  the current  movement points  of the  entity is  possible to
 reach the enemy with optimal path?"
   (let* ((reachable-fn (reachable-p-w/concening-tiles-fn strategy-expert))
-         (res          (attackable-position-exists-path strategy-expert entity reachable-fn)))
+         (res          (best-attackable-position-exists-path strategy-expert
+                                                             entity
+                                                             reachable-fn)))
     res))
 
 (defgoap-test is-in-attack-pos-p (strategy-expert entity)
@@ -638,16 +643,25 @@ reach the enemy with optimal path?"
     (and res
          (> (length res) 1))))
 
+
 (defgoap-test exists-attack-goal-w-current-weapon-p (strategy-expert entity)
-  (let ((res (attackable-position-exists-path strategy-expert entity
+  "check the mere existence"
+  (ai-utils:attackable-position-exists strategy-expert entity
+                                       #'blackboard:reachable-constantly-t))
+
+(defgoap-test exists-opt-attack-goal-w-current-weapon-p (strategy-expert entity)
+  (let ((res (best-attackable-position-exists-path strategy-expert entity
                                               #'blackboard:reachablep)))
-    (misc:dbg "exists-attack-goal-w-current-weapon-p ~a" res)
+    res))
+
+(defgoap-test exists-insecure-attack-goal-w-current-weapon-p (strategy-expert entity)
+  (let ((res (insecure-attackable-position-exists-path strategy-expert entity
+                                                       #'blackboard:reachablep)))
     res))
 
 (defgoap-test exists-visible-enemy (strategy-expert entity)
   (declare (ignore strategy-expert))
   (let ((res (ai-utils:target-reachable-attack/damage-spell entity)))
-    (misc:dbg "exists-visible-enemy ~a" res)
     res))
 
 (defgoap-test reachable-opt/path-attack-current-weapon-and-mp (strategy-expert entity)
@@ -656,7 +670,20 @@ reach  and attack  the enemy  with optimal  path?  Note:  path can  be
 composed by just one tile, see 'attackable-position-exists-path'"
   (let* ((reachable-fn (reachable-p-w/concening-tiles-fn strategy-expert)))
     (multiple-value-bind (reachablep cost)
-        (attackable-position-exists-path strategy-expert entity reachable-fn)
+        (best-attackable-position-exists-path strategy-expert entity reachable-fn)
+      (let ((attack-cost (battle-utils:cost-attack-w-current-weapon entity)))
+        (and reachablep
+             attack-cost ;; attack-cost is nil if no weapon is carried
+             (<= (+ cost attack-cost)
+                 (character:current-movement-points (entity:ghost entity))))))))
+
+(defgoap-test reachable-insecure/path-attack-current-weapon-and-mp (strategy-expert entity)
+    "using the  current movement points  of the entity is  possible to
+reach  and attack  the enemy  with a suboptimal  path?  Note:  path can  be
+composed by just one tile, see 'attackable-position-exists-path'"
+  (let* ((reachable-fn (reachable-p-w/o-concening-tiles-fn strategy-expert)))
+    (multiple-value-bind (reachablep cost)
+        (insecure-attackable-position-exists-path strategy-expert entity reachable-fn)
       (let ((attack-cost (battle-utils:cost-attack-w-current-weapon entity)))
         (and reachablep
              attack-cost ;; attack-cost is nil if no weapon is carried
@@ -890,8 +917,11 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
 
 (defun invalidate-tests-cache ()
   (exists-attack-goal-w-current-weapon-p-clear-cache)
+  (exists-opt-attack-goal-w-current-weapon-p-clear-cache)
+  (exists-insecure-attack-goal-w-current-weapon-p-clear-cache)
   (exists-visible-enemy-clear-cache)
   (reachable-opt/path-attack-current-weapon-and-mp-clear-cache)
+  (reachable-insecure/path-attack-current-weapon-and-mp-clear-cache)
   (friend-needs-help-p-clear-cache)
   (someone-needs-help-p-clear-cache)
   (there-is-reachable-help-needed-friend-heal-spell-p-clear-cache)

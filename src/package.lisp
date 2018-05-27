@@ -2512,6 +2512,7 @@
    :approx-terrain-height@pos
    :place-player-on-map
    :update-rendering-needed-ai
+   :update-all-visibility-state
    :set-invalicable-cost-player-layer@
    :set-invalicable-cost-map-layer@
    :set-invalicable-cost-pc-layer@
@@ -3264,6 +3265,7 @@
    :+attack-action+
    :+go-to-attack-pos-action+
    :+find-attack-pos-action+
+   :+find-attack-pos-insecure-action+
    :+load-weapon-action+
    :+go-near-to-attack-pos-action+
    :+go-near-weak-friend-atk-action+
@@ -3294,7 +3296,9 @@
    :available-damage-spells
    :best-visible-target
    :target-reachable-attack/damage-spell
-   :attackable-position-exists-path
+   :best-attackable-position-exists-path
+   :insecure-attackable-position-exists-path
+   :attackable-position-exists
    :reachable-help-needed-friend-heal-spell-p
    :target-reachable-attack-spell
    :attackable-opponents-attack-spell
@@ -4235,6 +4239,7 @@
    :other-visible-p
    :other-visible-cone-p
    :other-visible-ray-p
+   :update-visibles-state
    :calc-end-line-sight
    :calc-angle-sight))
 
@@ -4394,7 +4399,8 @@
    :game-over-p
    :all-death-p
    :victoryp
-   :defeatedp))
+   :defeatedp
+   :someone-won-p))
 
 ;; UI
 
@@ -5540,6 +5546,7 @@
    :attack-equals-p
    :make-def-o
    :reachablep
+   :reachable-constantly-t
    :*reachable-p-fn*
    :reachableo
    :attach-attacker@-o
@@ -5555,12 +5562,17 @@
    :best-path-near-attack-goal-w-current-weapon
    :best-path-near-enemy-pos-w-current-weapon
    :best-path-w-current-weapon-reachable-p
+   :insecure-path-to-reach-attack-pos-w-current-weapon
    :reachable-p-w/concening-tiles-fn-clear-cache
    :reachable-p-w/concening-tiles-fn
    :reachable-p-w/concening-tiles-unlimited-cost-fn-clear-cache
    :reachable-p-w/concening-tiles-unlimited-cost-fn
    :cost-w/o-concening-tiles
    :reachable-p-w/o-concening-tiles-fn
+   :build-best-path-to-attack
+   :build-insecure-path-to-attack
+   :tactic-exists-p
+   :ghost->weapon-tactics
    :find-defender-id-by-goal-position
    :build-all-attack-tactics
    :path-with-concerning-tiles

@@ -433,6 +433,8 @@
 
 (defgeneric update-rendering-needed-ai (object))
 
+(defgeneric update-all-visibility-state (object))
+
 (defgeneric set-invalicable-cost-player-layer@ (object x y))
 
 (defgeneric set-invalicable-cost-pc-layer@ (object x y))
@@ -983,10 +985,9 @@
         ;; update visibility, keep the last here as to works the hook to an update-visibility
         ;; event make a lookup in (ai|player)-entities.
         ;; see: md2-mesh:on-game-event ((object md2-mesh) (event update-visibility))
-        (absee-mesh:update-visibility-cone       player)
-        (game-event:send-update-visibility-event player nil)))))
+        (absee-mesh:update-visibles-state player)))))
 
-(defmethod update-rendering-needed-ai (object)
+(defmethod update-rendering-needed-ai ((object game-state))
   "set rendering needed for all the visibles AI's pawn"
   (loop-player-entities object
        #'(lambda (a) (absee-mesh:update-visibility-cone a)))
@@ -995,6 +996,12 @@
          (let ((opponent-entity (find-entity-by-id object id)))
            (setf (mesh:renderp opponent-entity) t))))
   object)
+
+(defmethod update-all-visibility-state ((object game-state))
+  (flet ((update-fn (a)
+           (absee-mesh:update-visibles-state a)))
+    (loop-player-entities object #'update-fn)
+    (loop-ai-entities     object #'update-fn)))
 
 (defmacro with-set-cost-matrix@ (state mat x y value)
   `(with-accessors ((,mat ,mat)) ,state

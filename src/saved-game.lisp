@@ -874,6 +874,8 @@
                 (restore-blackboard blackboard saved-dump)
                 ;; some enemy (AI) need to be rendered
                 (update-rendering-needed-ai window-game-state)
+                ;; update all visibility
+                (update-all-visibility-state window-game-state)
                 ;; start a new turn
                 (let ((start-event (make-instance 'game-event:start-turn)))
                   (game-event:propagate-start-turn start-event)))))

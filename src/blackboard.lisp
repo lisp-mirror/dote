@@ -52,6 +52,10 @@
   (<= (map-manhattam-distance atk-pos def-pos)
       mp))
 
+(defun reachable-constantly-t (atk-pos def-pos mp)
+  (declare (ignore atk-pos def-pos mp))
+  t)
+
 (defparameter *reachable-p-fn* #'reachablep)
 
 (definline cost-limit-concerning-tiles ()

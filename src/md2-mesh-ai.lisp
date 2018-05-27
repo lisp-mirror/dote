@@ -697,6 +697,33 @@ attempts Note: all attackable position will be updated as well"
                                                                            :cut-off-first-tile
                                                                            nil)
               (declare (ignore costs))
+              #+ (and debug debug-ai)
+              (misc:dbg "path attack optimal ~a ~a" path total-cost)
+              (let* ((path-struct (game-state:make-movement-path path total-cost)))
+                (put-in-memory target-id-move path-struct))))))))
+
+(defalias insecure-path-to-reach-attack-pos
+  #'blackboard:insecure-path-to-reach-attack-pos-w-current-weapon)
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+find-attack-pos-insecure-action+)))
+  (flet ((put-in-memory (target-id path-struct)
+           (put-in-working-memory object +w-memory-path-struct+ path-struct)
+           (put-in-working-memory object +w-memory-target-id+   target-id)))
+    (with-slots-for-reasoning (object state ghost blackboard)
+      (let* ((target-next  (blackboard:entity-in-valid-attackable-pos-p object))
+             (reachable-fn (blackboard:reachable-p-w/o-concening-tiles-fn blackboard)))
+        (if target-next ;; if non nil we are in an attack position
+            (put-in-memory (id target-next) nil)
+            (multiple-value-bind (path total-cost costs target-id-move)
+                (insecure-path-to-reach-attack-pos blackboard
+                                                   object
+                                                   :cut-off-first-tile nil
+                                                   :reachable-fn-p     reachable-fn)
+              (declare (ignore costs))
+              #+ (and debug debug-ai)
+              (misc:dbg "path attack insecure ~a ~a" path total-cost)
               (let* ((path-struct (game-state:make-movement-path path total-cost)))
                 (put-in-memory target-id-move path-struct))))))))
 
