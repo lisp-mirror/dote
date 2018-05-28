@@ -393,11 +393,25 @@
                        (entity:entity-dead-p ent)))
                  not-starved))))
 
+(defun someone-ai-carry-weapon-fn (blackboard probe-fn)
+  (with-accessors ((main-state main-state)) blackboard
+    (loop-ai-entities main-state
+         #'(lambda (a) (when (funcall probe-fn a)
+                         (return-from someone-ai-carry-weapon-fn t)))))
+  nil)
+
 (defun update-all-attacking-pos (blackboard)
-  (update-pole-attackable-pos     blackboard)
-  (update-melee-attackable-pos    blackboard)
-  (update-bow-attackable-pos      blackboard)
-  (update-crossbow-attackable-pos blackboard))
+  (flet ((carry-test (fn)
+           (someone-ai-carry-weapon-fn blackboard #'(lambda (a) (funcall fn (ghost a))))))
+    (when (carry-test #'character:weapon-type-pole-p)
+      (update-pole-attackable-pos     blackboard))
+    (when (carry-test #'(lambda (g) (or (character:weapon-type-impact-p g)
+                                        (character:weapon-type-edge-p g))))
+      (update-melee-attackable-pos    blackboard))
+    (when (carry-test #'character:weapon-type-bow-p)
+      (update-bow-attackable-pos      blackboard))
+    (when (carry-test #'character:weapon-type-crossbow-p)
+      (update-crossbow-attackable-pos blackboard))))
 
 (defun %update-all-layers (blackboard)
   #- inhibit-update-unexplored-layer
@@ -449,15 +463,17 @@
     (decrease-concerning-invalicables (main-state object) concerning-tiles-invalicables)
     (%update-all-infos            object)
     (reset-per-turn-visited-tiles object)
-    (dbg "pole  ~a"      (attack-enemy-pole-positions     object))
-    (dbg "melee ~a"      (attack-enemy-melee-positions    object))
-    (dbg "bow   ~a"      (attack-enemy-bow-positions      object))
-    (dbg "crossbow   ~a" (attack-enemy-crossbow-positions object))
-    (dbg "def-pos ~a"    (fetch-defender-positions        object))
-    (dbg "atk-pos(melee) ~a" (fetch-attacker-positions object
-                                                       :filter-fn
-                                                       (filter-attack-pos-by-weapon
-                                                         #'character:weapon-type-minimum-range-p)))
+    #+ (and debug-mode debug-ai)
+    (progn
+      (dbg "pole  ~a"      (attack-enemy-pole-positions     object))
+      (dbg "melee ~a"      (attack-enemy-melee-positions    object))
+      (dbg "bow   ~a"      (attack-enemy-bow-positions      object))
+      (dbg "crossbow   ~a" (attack-enemy-crossbow-positions object))
+      (dbg "def-pos ~a"    (fetch-defender-positions        object))
+      (dbg "atk-pos(melee) ~a"
+           (fetch-attacker-positions object
+                                     :filter-fn (filter-attack-pos-by-weapon
+                                                 #'character:weapon-type-minimum-range-p))))
     nil))
 
 (defmethod game-event:on-game-event ((object blackboard)
@@ -1152,7 +1168,8 @@ values nil, i. e. the ray is not blocked"
                      (pushnew target-pos (goal-pos target-found) :test #'ivec2=)
                      (push (make-defender-target id-player
                                                  (calc-def-target-age game-state)
-                                                 (list target-pos)) bag)))
+                                                 (list target-pos))
+                           bag)))
                bag)
              (%find-maybe-remove-pos (target-pos bag)
                "if nil it is safe to add the position"
@@ -1166,7 +1183,7 @@ values nil, i. e. the ray is not blocked"
                            (setf (goal-pos target-with-pos)  ; remove the old slot
                                  (remove target-pos (goal-pos target-with-pos) :test #'ivec2=))
                            nil)
-                       t)
+                         t)
                      nil)))
              (%find-pos (blackboard target-pos)
                (with-accessors ((attack-enemy-pole-positions     attack-enemy-pole-positions)
