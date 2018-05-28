@@ -2957,7 +2957,7 @@ possible)."
     (setf (el-time object)
           (d+ (start-time object)
               (rem (d* (animation-speed object) (current-time object))
-                   1000.0)))))
+                   100.0)))))
 
 (defmethod render-phong ((object tree-mesh-shell) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))

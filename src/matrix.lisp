@@ -478,6 +478,20 @@ else
                 (vector-push-extend (ivec2:ivec2 x-box y-box) results))))
     results))
 
+(defun gen-cross-near (x y offset &key (add-center t))
+  (let ((res '()))
+    (when add-center
+      (push (ivec2 x y) res))
+    (loop for h from (- x (truncate offset)) to (+ x (truncate offset)) do
+         (push (ivec2 h y) res))
+    (loop for v from (- y (truncate offset)) to (+ y (truncate offset)) do
+         (push (ivec2 x v) res))
+    res))
+
+(defun gen-valid-cross-near (matrix x y offset &key (add-center t))
+  (remove-if-not #'(lambda (a) (pixel-inside-p matrix (elt a 0) (elt a 1)))
+                 (gen-cross-near x y offset :add-center add-center)))
+
 (defun xy-out-border-fn (matrix)
   #'(lambda (a)
       (2d-utils:displace-2d-vector (a x y)

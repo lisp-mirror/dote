@@ -1467,6 +1467,8 @@
    :gen-valid-4-neighbour-counterclockwise
    :gen-valid-4-neighbour-ccw
    :gen-neighbour-position-in-box
+   :gen-cross-near
+   :gen-valid-cross-near
    :gen-valid-neighbour-position-in-box
    :gen-ring-box-position
    :gen-valid-ring-box-position

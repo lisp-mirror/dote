@@ -52,8 +52,11 @@
     (let* ((all-bonuses  (list (cons :edge   edge-weapons-chance-bonus)
                                (cons :impact impact-weapons-chance-bonus)
                                (cons :pole   pole-weapons-chance-bonus)))
-           (bonus-sorted (shellsort all-bonuses #'(lambda (a b) (d> (cdr a) (cdr b))))))
-      (car (first bonus-sorted)))))
+           (bonus-sorted (shellsort all-bonuses #'(lambda (a b) (d> (cdr a) (cdr b)))))
+           (best-weapon  (first bonus-sorted))
+           (candidates   (remove-if-not #'(lambda (a) (epsilon= (cdr a) (cdr best-weapon)))
+                                        bonus-sorted)))
+      (car (misc:random-elt candidates)))))
 
 (defmacro gen-make-item (package type)
   `(defun ,(misc:format-fn-symbol t "make-~a" type) (map-level)
