@@ -142,6 +142,10 @@
     :type     matrix
     :documentation     "A     snapshot     of    the     matrix     in
     game-state:map-state-element when the game was saved.")
+   (saved-difficult-level
+    :initform nil
+    :initarg  :saved-difficult-level
+    :accessor saved-diffcult-level)
    (saved-players
     :initform nil
     :initarg  :saved-players
@@ -233,6 +237,7 @@
   '(original-map-file
     dmg-points
     delta-tiles
+    saved-difficult-level
     saved-players
     saved-traps
     saved-doors
@@ -329,7 +334,8 @@
     (let* ((saved-file                    (res:get-resource-file +map-saved-filename+
                                                                  resource-dir
                                                                  :if-does-not-exists :create))
-           (current-map-state             (map-state game-state))
+           (saved-difficult               (level-difficult              game-state))
+           (current-map-state             (map-state                    game-state))
            (saved-players                 (append (map-ai-entities      game-state
                                                                         #'mesh->saved-entity)
                                                   (map-player-entities  game-state
@@ -359,6 +365,7 @@
                                                    :saved-traps            saved-traps
                                                    :saved-players          saved-players
                                                    :saved-magic-furnitures saved-magic-furnitures
+                                                   :saved-difficult-level  saved-difficult
                                                    :dmg-points             dmg-matrix
                                                    :delta-tiles            current-map-state
                                                    :original-map-file
@@ -478,6 +485,8 @@
   (with-accessors ((world world)
                    (root-compiled-shaders main-window:root-compiled-shaders)) window
     (prepare-for-map-loading window)
+    (setf (level-difficult  (main-state world))
+          (saved-diffcult-level saved-dump))
     (load-map window (original-map-file saved-dump))
     (setf (world:gui world)
           (make-instance 'widget:widget
