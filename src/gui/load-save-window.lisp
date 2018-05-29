@@ -120,7 +120,13 @@
                 (saved-game:load-players render-window res-action)
                 (widget:hide-and-remove-parent-cb w e))
               (progn
-                (saved-game:load-game    render-window res-action))))))))
+                (saved-game:load-game    render-window res-action)))
+          ;; select a player
+          (game-state:with-world (world state)
+            (with-accessors ((player-entities game-state:player-entities)) state
+              (let* ((selected     (first-elt player-entities)))
+                (world:bind-entity-to-world world selected)
+                (keyboard-world-navigation:slide-to-active-player world)))))))))
 
 (defun write-screenshot-for-saving (world filename)
   (let* ((pixmap (cl-gl-utils:with-render-to-pixmap (*window-w* *window-h*)

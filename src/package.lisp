@@ -5062,6 +5062,7 @@
    :render-gui
    :highlight-tile-screenspace
    :highlight-path-costs-space
+   :bind-entity-to-world
    :pick-player-entity
    :pick-any-entity
    :pick-pointer-position

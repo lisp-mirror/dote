@@ -1377,8 +1377,8 @@
             delay
           (incf delay increment)))))
 
-(defclass static-text (#+debug-gui naked-button
-                       #-debug-gui widget)
+(defclass static-text (#+ (and debug-mode debug-gui)            naked-button
+                       #+ (or (not debug-mode) (not debug-ui))  widget)
   ((justified
     :initform t
     :initarg  :justified
@@ -1459,7 +1459,7 @@
 (defmethod label-width ((object static-text))
   (width object))
 
-#+debug-gui
+#+ (and debug-mode debug-gui)
 (defmethod render ((object static-text) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (with-accessors ((vbo vbo)
@@ -2840,9 +2840,9 @@
                              :y         0.0
                              :font-size (d* 0.1 *square-button-size*)
                              :label
-                             #+debug-gui
+                             #+ (and debug-mode debug-gui)
                              "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-                             #-debug-gui ""
+                             #+ (or (not debug-mode) (not debug-ui)) ""
                              :justified t)
     :initarg  :text-communication
     :accessor text-communication)
@@ -4536,7 +4536,7 @@
                     (world:build-inventory model +pc-type+ (character:player-class player))
                     (world:place-player-on-map world model game-state:+pc-type+
                                                :position #(0 0))
-                    #+ god-mode
+                    #+ (and debug-mode god-mode)
                     (progn
                       (setf (character:movement-points (ghost model)) 100.0)
                       (setf (character:spell-points    (ghost model)) 100.0)))

@@ -388,8 +388,10 @@
          (compiled-shaders (world:compiled-shaders world))
          (opening          (make-instance 'scrolling-opening
                                           :world            world
-                                          :animation-speed  #+fast-opening 3000.0
-                                                            #-fast-opening 30.0
+                                          :animation-speed  #+ (and debug-mode
+                                                                    fast-opening)
+                                                            3000.0
+                                                            #- debug-mode 30.0
                                           :compiled-shaders compiled-shaders
                                           :x                0.0
                                           :y                (d (- *window-h*))

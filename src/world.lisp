@@ -641,6 +641,14 @@
                        (return-from walking))))))))
        path))
 
+(defun bind-entity-to-world (world entity &key (refresh-toolbar t))
+  (with-accessors ((main-state main-state)
+                   (toolbar toolbar)) world
+    (setf (selected-pc main-state) entity)
+    (setf (widget:bound-player toolbar) entity)
+    (when refresh-toolbar
+      (game-event:send-refresh-toolbar-event :reset-health-status-animation nil))))
+
 (defmethod pick-player-entity ((object world) renderer x y &key (bind nil))
   "Coordinates in screen space"
   (with-accessors ((main-state main-state)
@@ -660,9 +668,7 @@
                               #- debug-mode (fetch-from-player-entities main-state entity-id)))
                   (when entity
                     (when bind
-                      (setf (selected-pc main-state) entity)
-                      (setf (widget:bound-player toolbar) entity)
-                      (game-event:send-refresh-toolbar-event :reset-health-status-animation nil))
+                      (bind-entity-to-world object entity))
                     (return-from pick-player-entity entity)))))))))
   nil)
 
@@ -1219,10 +1225,17 @@
     (when (not (%find :goap))
       (goap:invalidate-tests-cache))))
 
+#+ debug-mode
 (defun human-interaction-allowed-p (world)
   #+ allow-human-interaction-always (declare (ignore world))
   #+ allow-human-interaction-always t
   #- allow-human-interaction-always
+  (with-accessors ((main-state main-state)) world
+    (and (game-state:faction-turn-human-p main-state)
+         (world:actions-queue-empty-p world))))
+
+#- debug-mode
+(defun human-interaction-allowed-p (world)
   (with-accessors ((main-state main-state)) world
     (and (game-state:faction-turn-human-p main-state)
          (world:actions-queue-empty-p world))))
