@@ -546,6 +546,32 @@ path is removed
 
 (defgeneric fetch-attacker-positions (object &key filter-fn))
 
+(defun min-dist (blackboard pos &key (dist-fn #'map-utils:map-manhattam-distance))
+  (let ((min 1e6))
+    (loop-ai-entities (main-state blackboard)
+       #'(lambda (a)
+           (when-let* ((pos-player  (calculate-cost-position a))
+                       (dist        (funcall dist-fn pos-player pos))
+                       (visible-a-p (absee-mesh:placeholder-visible-p a
+                                                                      (ivec2-x pos)
+                                                                      (ivec2-y pos))))
+             (when (< dist min)
+               (setf min dist)))))
+    min))
+
+(defun sort-attack-position-pred (blackboard)
+  #'(lambda (a b)
+      (let ((dist-a (min-dist blackboard a))
+            (dist-b (min-dist blackboard b)))
+        (< dist-a dist-b))))
+
+(defun sort-attack-position (blackboard positions weapon-tactic)
+  (declare (ignore weapon-tactic))
+  (if positions
+      (let ((sorted (shellsort positions (sort-attack-position-pred blackboard) :key #'first)))
+        sorted)
+      positions)); nil
+
 (defmethod fetch-defender-positions ((object blackboard:blackboard))
   (with-accessors ((main-state                      main-state)
                    (attack-enemy-pole-positions     attack-enemy-pole-positions)
@@ -553,13 +579,14 @@ path is removed
                    (attack-enemy-bow-positions      attack-enemy-bow-positions)
                    (attack-enemy-crossbow-positions attack-enemy-crossbow-positions))
       object
-    (flet ((%fetch (l)
-             (loop for i in l append (defender-class->defender i))))
+    (flet ((%fetch (l weapon-tactic)
+             (let ((all-pos (loop for i in l append (defender-class->defender i))))
+               (sort-attack-position object all-pos weapon-tactic))))
       (list
-       +pole-key-tactics+     (%fetch attack-enemy-pole-positions)
-       +melee-key-tactics+    (%fetch attack-enemy-melee-positions)
-       +bow-key-tactics+      (%fetch attack-enemy-bow-positions)
-       +crossbow-key-tactics+ (%fetch attack-enemy-crossbow-positions)))))
+       +pole-key-tactics+     (%fetch attack-enemy-pole-positions     +pole-key-tactics+)
+       +melee-key-tactics+    (%fetch attack-enemy-melee-positions    +melee-key-tactics+)
+       +bow-key-tactics+      (%fetch attack-enemy-bow-positions      +bow-key-tactics+)
+       +crossbow-key-tactics+ (%fetch attack-enemy-crossbow-positions +crossbow-key-tactics+)))))
 
 (defmethod fetch-attacker-positions ((object blackboard)
                                      &key (filter-fn #'(lambda (a)
