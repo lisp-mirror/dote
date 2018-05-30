@@ -485,7 +485,21 @@
    :pass-d10.0
    :pass-d20
    :pass-d6
-   :pass-d4))
+   :pass-d4
+   :pass-d2-if
+   :pass-d1.0-if
+   :pass-d100.0-if
+   :pass-d10.0-if
+   :pass-d20-if
+   :pass-d6-if
+   :pass-d4-if
+   :pass-d2-periodic
+   :pass-d1.0-periodic
+   :pass-d100.0-periodic
+   :pass-d10.0-periodic
+   :pass-d20-periodic
+   :pass-d6-periodic
+   :pass-d4-periodic))
 
 (defpackage :filesystem-utils
   (:use

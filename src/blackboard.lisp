@@ -1308,11 +1308,11 @@ values nil, i. e. the ray is not blocked"
                            ((< level 2)
                             (gen-4-neighbour-counterclockwise x y :add-center nil))
                            ((<= 2 level +difficult-medium+)
-                            (if (die-utils:pass-d2 2)
+                            (if (die-utils:pass-d2-periodic 2 10)
                                 (gen-4-neighbour-counterclockwise x y :add-center nil)
-                                (gen-ring-box-position x y size size)))
+                                (gen-cross-near x y size :add-center nil)))
                            (t
-                            (gen-ring-box-position x y size size))))))))
+                            (gen-cross-near x y size :add-center nil))))))))
 
 (defun %calc-pole-attack-position-player (blackboard player all-visibles-from-ai)
   (with-accessors ((attack-enemy-pole-layer attack-enemy-pole-layer)

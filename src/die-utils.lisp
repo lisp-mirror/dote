@@ -28,3 +28,50 @@
             `(gen-pass-dice ,i))))
 
 (gen-pass-multiple-dice 2 1.0 100.0 10.0 20 6 4)
+
+(defmacro gen-pass-dice-if (max)
+  "generate a function  that lauch a dice  if fn return true  (fn is a
+function thaking die value as a single argument)"
+  (with-gensyms (dice-roll)
+    `(defun ,(format-fn-symbol t "pass-d~a-if" max) (fn)
+       (let ((,dice-roll (lcg-next-upto ,max)))
+         (funcall fn ,dice-roll)))))
+
+(gen-pass-dice-if 2)
+
+(gen-pass-dice-if 1.0)
+
+(gen-pass-dice-if 100.0)
+
+(gen-pass-dice-if 10.0)
+
+(gen-pass-dice-if 20)
+
+(gen-pass-dice-if 6)
+
+(gen-pass-dice-if 4)
+
+(defmacro gen-pass-dice-periodic (max)
+  (with-gensyms (ct)
+    `(let ((,ct 0))
+       (defun ,(format-fn-symbol t "pass-d~a-periodic" max) (val period &key (default nil))
+         (,(format-fn-symbol t "pass-d~a-if" max)
+           #'(lambda (a)
+               (incf ,ct)
+               (if (= (rem ,ct period) 0)
+                   (< a val)
+                   default)))))))
+
+(gen-pass-dice-periodic 2)
+
+(gen-pass-dice-periodic 1.0)
+
+(gen-pass-dice-periodic 100.0)
+
+(gen-pass-dice-periodic 10.0)
+
+(gen-pass-dice-periodic 20)
+
+(gen-pass-dice-periodic 6)
+
+(gen-pass-dice-periodic 4)

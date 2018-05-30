@@ -797,7 +797,7 @@ attempts Note: all attackable position will be updated as well"
                          (setf *planner-channel* nil)
                          (let ((action (pop-action-plan ghost)))
                            #+(and debug-mode debug-ai) (misc:dbg "popped action ~a" action)
-                           (let ((strategy (time (blackboard:strategy-decision blackboard))))
+                           (let ((strategy (blackboard:strategy-decision blackboard)))
                              (actuate-plan mesh strategy action))))
                        (check-ending (channel)
                          (lparallel:try-receive-result channel
