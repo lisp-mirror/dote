@@ -108,7 +108,11 @@
    (sound-volume
     :initform 68
     :initarg  :sound-volume
-    :accessor sound-volume)))
+    :accessor sound-volume)
+   (fullscreen
+    :initform t
+    :initarg  :fullscreen
+    :accessor fullscreen)))
 
 (defmethod marshal:class-persistant-slots ((object game-config))
     '(forward
@@ -127,7 +131,8 @@
       inhibit-planner
       camera-fp-scaling-movement
       train-ai
-      sound-volume))
+      sound-volume
+      fullscreen))
 
 (defun make-default-config ()
   (make-instance 'game-config))
@@ -212,3 +217,5 @@
 (gen-acc-fn train-ai)
 
 (gen-acc-fn sound-volume)
+
+(gen-acc-fn fullscreen)

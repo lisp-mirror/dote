@@ -553,8 +553,8 @@
                           :w          *window-w*
                           :h          *window-h*
                           :title      +program-name+)))
-    (multiple-value-bind (wi he)
-        (sdl2:get-window-size (sdl-window w))
-      (sdl2:warp-mouse-in-window (sdl-window w) (/ wi 2) (/ he 2)))
     (setf (idle-render w) t)
+    (when (gconf:config-fullscreen)
+      (sdl2.kit-utils:go-fullscreen w))
+    (sdl2.kit-utils:move-mouse-to-center-screen w)
     (tg:gc :full t)))

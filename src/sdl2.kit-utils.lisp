@@ -32,3 +32,6 @@
   (multiple-value-bind (w h)
       (sdl2:get-window-size (sdl-window window))
     (sdl2:warp-mouse-in-window (sdl-window window) (/ w 2) (/ h 2))))
+
+(defun go-fullscreen (window)
+  (sdl2:set-window-fullscreen (sdl2.kit:sdl-window window) t))

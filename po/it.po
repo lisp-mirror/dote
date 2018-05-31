@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dote 0.0.1\n"
 "Report-Msgid-Bugs-To: cage@katamail.com\n"
-"POT-Creation-Date: 2018-05-27 12:33+0200\n"
-"PO-Revision-Date: 2018-05-27 12:33+0200\n"
+"POT-Creation-Date: 2018-05-31 19:39+0200\n"
+"PO-Revision-Date: 2018-05-31 19:40+0200\n"
 "Last-Translator: cage <cage@katamail.com>\n"
 "Language-Team: Italian\n"
 "Language: it\n"
@@ -441,13 +441,13 @@ msgstr "lancia ~a"
 msgid "Trap found! deactivate (chance ~a)?"
 msgstr "Attivata una trappola! Provare a disinnescarla (possibilita' ~a)"
 
-#: src/md2-mesh.lisp:556 src/saved-game.lisp:626 src/world.lisp:1028
-#: src/gui/load-save-window.lisp:149 src/gui/widget.lisp:4504
+#: src/md2-mesh.lisp:556 src/saved-game.lisp:635 src/world.lisp:1034
+#: src/gui/load-save-window.lisp:155 src/gui/widget.lisp:4504
 #: src/gui/widget.lisp:5003
 msgid "OK"
 msgstr "OK"
 
-#: src/md2-mesh.lisp:558 src/saved-game.lisp:410 src/gui/widget.lisp:2684
+#: src/md2-mesh.lisp:558 src/saved-game.lisp:417 src/gui/widget.lisp:2684
 msgid "No"
 msgstr "No"
 
@@ -537,29 +537,29 @@ msgstr "trappola"
 msgid "Unknown weapon type"
 msgstr "Tipo di arma sconosciuta"
 
-#: src/saved-game.lisp:401
+#: src/saved-game.lisp:408
 msgid "Load Characters"
 msgstr "Scegli i Personaggi"
 
-#: src/saved-game.lisp:407
+#: src/saved-game.lisp:414
 msgid "Pick characters form previous game session?"
 msgstr "Caricare i personaggi da una precedente sessione di gioco?"
 
-#: src/saved-game.lisp:408
+#: src/saved-game.lisp:415
 msgid "Choose characters"
 msgstr "Scegli personaggi"
 
-#: src/saved-game.lisp:412 src/gui/widget.lisp:2683
+#: src/saved-game.lisp:419 src/gui/widget.lisp:2683
 msgid "Yes"
 msgstr "Si'"
 
-#: src/saved-game.lisp:622
+#: src/saved-game.lisp:631
 msgid "The map file of this level has been modified after the game was saved."
 msgstr ""
 "Il file della mappa di questo livello e' stato modificato dopo li "
 "salvataggio di questa partita."
 
-#: src/saved-game.lisp:624
+#: src/saved-game.lisp:633
 msgid "Saved game is outdated"
 msgstr "Il gioco salvato e' scaduto."
 
@@ -581,82 +581,85 @@ msgstr "Nessuna descrizione disponibile"
 msgid "Trap deactivated!"
 msgstr "Trappola disinnescata!"
 
-#: src/world.lisp:1035
+#: src/world.lisp:1041
 msgid "Message"
 msgstr "Messaggio"
 
-#: src/gui/configuration-windows.lisp:275
-#: src/gui/configuration-windows.lisp:464 src/gui/load-save-window.lisp:245
+#: src/gui/configuration-windows.lisp:276 src/gui/load-save-window.lisp:251
 #: src/gui/widget.lisp:3578
 msgid "Save"
 msgstr "Salva"
 
-#: src/gui/configuration-windows.lisp:287
+#: src/gui/configuration-windows.lisp:288
 msgid "Reset"
 msgstr "Reset"
 
-#: src/gui/configuration-windows.lisp:337
+#: src/gui/configuration-windows.lisp:338
 msgid "Keyboard Configuration"
 msgstr "Configurazione dei Tasti"
 
-#: src/gui/configuration-windows.lisp:369
+#: src/gui/configuration-windows.lisp:370
 msgid "Character smooth movements"
 msgstr "Movimenti fluido del personaggio"
 
-#: src/gui/configuration-windows.lisp:386
+#: src/gui/configuration-windows.lisp:387
 msgid "Appearance Configuration"
 msgstr "Aspetto"
 
-#: src/gui/configuration-windows.lisp:426
+#: src/gui/configuration-windows.lisp:431
 msgid "Speed for \"look around\" camera."
 msgstr "Velocita di \"spazzamento\" della telecamera."
 
-#: src/gui/configuration-windows.lisp:483
+#: src/gui/configuration-windows.lisp:473
+msgid "Fullscreen (requires restart)"
+msgstr "Schermo pieno (richiede il riavvio)"
+
+#: src/gui/configuration-windows.lisp:506
 #, lisp-format
 msgid "Music volume: ~a"
 msgstr "Volume della musica: ~a"
 
-#: src/gui/configuration-windows.lisp:496
+#: src/gui/configuration-windows.lisp:520
 msgid "GUI Configuration"
 msgstr "Configurazione dell'interfaccia"
 
-#: src/gui/configuration-windows.lisp:528
+#: src/gui/configuration-windows.lisp:552
 msgid "Inhibit AI planner"
 msgstr "Inibisci la pianificazione"
 
-#: src/gui/configuration-windows.lisp:545
+#: src/gui/configuration-windows.lisp:569
 msgid "Debug Configuration"
 msgstr "Configurazione della modalita' debug"
 
-#: src/gui/configuration-windows.lisp:577
+#: src/gui/configuration-windows.lisp:601
 msgid "Train computer opponent"
 msgstr "Addestra l'avversario non umano"
 
-#: src/gui/configuration-windows.lisp:594
+#: src/gui/configuration-windows.lisp:618
 msgid "AI Configuration"
 msgstr "Configurazione dell'IA"
 
-#: src/gui/configuration-windows.lisp:648
+#: src/gui/configuration-windows.lisp:672
 msgid "Keyboard"
 msgstr "Tastiera"
 
-#: src/gui/configuration-windows.lisp:659
+#: src/gui/configuration-windows.lisp:683
 msgid "Appearance"
 msgstr "Aspetto"
 
-#: src/gui/configuration-windows.lisp:670
+#: src/gui/configuration-windows.lisp:694
 msgid "GUI"
 msgstr "GUI"
 
-#: src/gui/configuration-windows.lisp:681
+#: src/gui/configuration-windows.lisp:705
 msgid "Computer opponent"
 msgstr "Avversario non umano"
 
-#: src/gui/configuration-windows.lisp:694
+#: src/gui/configuration-windows.lisp:718
 msgid "Debug"
 msgstr "Debug"
 
-#: src/gui/configuration-windows.lisp:715
+#: src/gui/configuration-windows.lisp:739
 msgid "Game Configuration"
 msgstr "Configurazione del Gioco"
 
@@ -701,32 +704,32 @@ msgstr "Inventario"
 msgid "No game is saved here"
 msgstr "Nessuna partita e' stata salvata in questa posizione"
 
-#: src/gui/load-save-window.lisp:145
+#: src/gui/load-save-window.lisp:151
 #, lisp-format
 msgid "Game saved in ~a"
 msgstr "Partita salvata in ~a"
 
-#: src/gui/load-save-window.lisp:147
+#: src/gui/load-save-window.lisp:153
 msgid "Success"
 msgstr "Successo"
 
-#: src/gui/load-save-window.lisp:189
+#: src/gui/load-save-window.lisp:195
 msgid "Slot 1"
 msgstr "Posizione 1"
 
-#: src/gui/load-save-window.lisp:202
+#: src/gui/load-save-window.lisp:208
 msgid "Slot 2"
 msgstr "Posizione 2"
 
-#: src/gui/load-save-window.lisp:215
+#: src/gui/load-save-window.lisp:221
 msgid "Slot 3"
 msgstr "Posizione 3"
 
-#: src/gui/load-save-window.lisp:228 src/gui/widget.lisp:3589
+#: src/gui/load-save-window.lisp:234 src/gui/widget.lisp:3589
 msgid "Load"
 msgstr "Carica"
 
-#: src/gui/load-save-window.lisp:253 src/gui/opening-sequence.lisp:252
+#: src/gui/load-save-window.lisp:259 src/gui/opening-sequence.lisp:252
 msgid "Load game"
 msgstr "Carica la partita"
 

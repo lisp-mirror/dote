@@ -641,7 +641,8 @@
    :fetch-window-id
    :with-world
    :clean-restart-gl-context
-   :move-mouse-to-center-screen))
+   :move-mouse-to-center-screen
+   :go-fullscreen))
 
 (defpackage :interfaces
   (:use :cl
@@ -1758,6 +1759,8 @@
    :set-train-ai
    :config-sound-volume
    :set-sound-volume
+   :config-fullscreen
+   :set-fullscreen
    :*game-config*
    :dump
    :init

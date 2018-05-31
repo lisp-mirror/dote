@@ -267,7 +267,7 @@
     :initarg  :spacing
     :accessor spacing)
    (spacing-rel
-    :initform 0.3
+    :initform 0.4
     :initarg  :spacing-rel
     :accessor spacing-rel)
    (square-button-size

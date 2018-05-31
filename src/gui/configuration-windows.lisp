@@ -420,6 +420,11 @@
           (gconf:dump))
         nil)))
 
+(defun update-config-fullscreen-cb (button event)
+  (declare (ignore event))
+  (gconf:set-fullscreen (button-state button))
+  (gconf:dump))
+
 (defclass gui-window (window)
   ((l-scale-fp-speed
     :initform (make-instance 'widget:simple-label
@@ -443,17 +448,34 @@
     :accessor input-camera-fp-scaling-movement)
    (s-sound-volume
     :initform (make-instance 'scale-value
-                             :height          (d* 0.5 (gui-button-h))
+                             :height          (gui-scaling-camera-text-entry-h)
                              :width           (gui-window-w)
                              :x               0.0
-                             :y               (add-epsilon-rel (d* 2.0
-                                                                   (gui-scaling-scaling-camera-label-h))
-                                                               (spacing-rel *reference-sizes*))
+                             :y
+                             (add-epsilon-rel (d* 2.0
+                                                  (gui-scaling-scaling-camera-label-h))
+                                              (spacing-rel *reference-sizes*))
                              :label-font-size (h4-font-size *reference-sizes*)
                              :val             (sound:get-volume)
                              :justified       t)
     :initarg  :s-sound-volume
-    :accessor s-sound-volume)))
+    :accessor s-sound-volume)
+   (checkb-fullscreen
+    :initform (make-instance 'labeled-check-button
+                             :button-toggle-type t
+                             :height             (gui-scaling-camera-text-entry-h)
+                             :width              (gui-window-w)
+                             :x                  0.0
+                             :y
+                             (add-epsilon-rel (d* 3.0
+                                                  (gui-scaling-scaling-camera-label-h))
+                                              (spacing-rel *reference-sizes*))
+                             :label              (_ "Fullscreen (requires restart)")
+                             :callback           #'update-config-fullscreen-cb
+                             :initial-state      (gconf:config-fullscreen)
+                             :color              :green)
+    :initarg  :checkb-fullscreen
+    :accessor checkb-fullscreen)))
 
 (defmacro with-set-volume-and-dump-config (&body body)
   `(progn
@@ -475,16 +497,19 @@
 (defmethod initialize-instance :after ((object gui-window) &key &allow-other-keys)
   (with-accessors ((l-scale-fp-speed                 l-scale-fp-speed)
                    (input-camera-fp-scaling-movement input-camera-fp-scaling-movement)
-                   (s-sound-volume                   s-sound-volume)) object
+                   (s-sound-volume                   s-sound-volume)
+                   (checkb-fullscreen                checkb-fullscreen)) object
     (setf (callback-plus  s-sound-volume) (make-simple-scale-cb #'increase-volume-cb))
     (setf (callback-minus s-sound-volume) (make-simple-scale-cb #'decrease-volume-cb))
     (setf (val->string-fn s-sound-volume)
           #'(lambda (a)
               (format nil (_ "Music volume: ~a") a)))
     (sync-value-w-label s-sound-volume)
-    (add-child object l-scale-fp-speed)
-    (add-child object input-camera-fp-scaling-movement)
-    (add-child object s-sound-volume)))
+    (add-children* object
+                   l-scale-fp-speed
+                   input-camera-fp-scaling-movement
+                   s-sound-volume
+                   checkb-fullscreen)))
 
 (defun make-gui-window (compiled-shaders)
   (let ((w (make-instance 'gui-window

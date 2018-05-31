@@ -560,10 +560,15 @@ path is removed
     min))
 
 (defun sort-attack-position-pred (blackboard)
+  (with-accessors ((main-state main-state)) blackboard
   #'(lambda (a b)
-      (let ((dist-a (min-dist blackboard a))
+      (let ((cost-a (get-cost main-state (ivec2-x a) (ivec2-y a)))
+            (cost-b (get-cost main-state (ivec2-x b) (ivec2-y b)))
+            (dist-a (min-dist blackboard a))
             (dist-b (min-dist blackboard b)))
-        (< dist-a dist-b))))
+        (if (epsilon= dist-a dist-b)
+            (< cost-a cost-b)
+            (< dist-a dist-b))))))
 
 (defun sort-attack-position (blackboard positions weapon-tactic)
   (declare (ignore weapon-tactic))
