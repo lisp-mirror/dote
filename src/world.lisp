@@ -340,10 +340,6 @@
                        (number-npc@start-turn blackboard:number-npc@start-turn)) blackboard
         ;;(tg:gc :full t)
         (when (not (battle-utils:someone-won-p main-state))
-          (misc:dbg "np ppp ~a -> npc ~a~% pc ~a"
-                    (faction-turn main-state)
-                    number-npc@start-turn
-                    number-pc@start-turn)
           (strategic-ai:save-ai-tree-data object)
           (strategic-ai:register-strategy-from-human object)
           (push (length (strategic-ai:visible-friends blackboard
