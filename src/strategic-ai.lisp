@@ -321,6 +321,14 @@
     (with-open-file (stream dump-file :direction :output :if-exists :supersede)
       (format stream "~s~%" data))))
 
+(defun get-opponents-my-prev-turn (blackboard faction)
+  (let ((history (if (eq faction +pc-type+)
+                     (number-npc@start-turn blackboard)
+                     (number-pc@start-turn  blackboard))))
+    (if (>= (length history) 2)
+        (elt history 1)
+        0)))
+
 (defun register-ai-tree-data (world faction)
   (with-accessors ((main-state main-state)) world
     (with-accessors ((blackboard blackboard)) main-state
@@ -334,6 +342,7 @@
                                                                            faction)))
              (visible-opponents (length (strategic-ai:visible-opponents    blackboard
                                                                            faction)))
+             (visible-opponents-before  (get-opponents-my-prev-turn blackboard faction))
              (visible-pc        (length (strategic-ai:visible-friends      blackboard
                                                                            faction)))
              (wizard-dmg        (strategic-ai:average-dmg-wizards          blackboard
@@ -342,6 +351,7 @@
                                       dmg-ratio
                                       average-dist
                                       vulnerables-units
+                                      visible-opponents-before
                                       visible-opponents
                                       visible-pc
                                       wizard-dmg)))

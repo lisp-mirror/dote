@@ -63,8 +63,8 @@
                              :height             (train-ai-button-h)
                              :width              (train-ai-button-w)
                              :x                  0.0
-                             :y                  (d+ (spacing *reference-sizes*)
-                                                     (d* 3.0 (train-ai-button-h)))
+                             :y                  (add-epsilon-rel (d* 3.0 (train-ai-button-h))
+                                                                  (spacing-rel *reference-sizes*))
                              :label              (_ "Explore")
                              :callback           (make-callback +explore-strategy+)
                              :initial-state      nil
@@ -77,8 +77,8 @@
                              :height             (train-ai-button-h)
                              :width              (train-ai-button-w)
                              :x                  0.0
-                             :y                  (d+ (spacing *reference-sizes*)
-                                                     (d* 4.0 (train-ai-button-h)))
+                             :y                  (add-epsilon-rel (d* 4.0 (train-ai-button-h))
+                                                                  (spacing-rel *reference-sizes*))
                              :label              (_ "Attack")
                              :callback           (make-callback +attack-strategy+)
                              :initial-state      nil
@@ -91,8 +91,8 @@
                              :height             (train-ai-button-h)
                              :width              (train-ai-button-w)
                              :x                  0.0
-                             :y                  (d+ (spacing *reference-sizes*)
-                                                     (d* 5.0 (train-ai-button-h)))
+                             :y                  (add-epsilon-rel (d* 5.0 (train-ai-button-h))
+                                                                  (spacing-rel *reference-sizes*))
                              :label              (_ "Defend")
                              :callback           (make-callback +defend-strategy+)
                              :initial-state      nil
@@ -105,8 +105,8 @@
                              :height             (train-ai-button-h)
                              :width              (train-ai-button-w)
                              :x                  0.0
-                             :y                  (d+ (spacing *reference-sizes*)
-                                                     (d* 6.0 (train-ai-button-h)))
+                             :y                  (add-epsilon-rel (d* 6.0 (train-ai-button-h))
+                                                                  (spacing-rel *reference-sizes*))
                              :label              (_ "Retreat")
                              :callback           (make-callback +retreat-strategy+)
                              :initial-state      nil

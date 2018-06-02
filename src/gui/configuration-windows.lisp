@@ -341,18 +341,18 @@
     w))
 
 (defun appearance-window-w ()
-  (let ((frame (d/ (d *window-w*) 4.0)))
+  (let ((frame (d* 0.33 (d *window-w*))))
     (adjust-window-w frame)))
 
 (defun appearance-window-h ()
-  (let ((frame (d/ (d *window-w*) 90.0)))
+  (let ((frame (d* 0.025 (d *window-h*))))
     (adjust-window-h frame)))
 
 (defun appearance-button-w ()
   (appearance-window-w))
 
 (defun appearance-button-h ()
-  (d* 0.9 (appearance-window-h)))
+  (d* 0.5 (appearance-window-h)))
 
 (defun update-config-smooth-movements-cb (button event)
   (declare (ignore event))
@@ -404,7 +404,7 @@
   (d* 0.4 (gui-button-w)))
 
 (defun gui-scaling-scaling-camera-label-h ()
-  (d* 0.3 (gui-button-h)))
+  (d* 0.4 (gui-button-h)))
 
 (defun gui-scaling-camera-text-entry-h ()
   (d* 0.4 (gui-button-h)))
@@ -523,18 +523,18 @@
     w))
 
 (defun debug-window-w ()
-  (let ((frame (d* 0.2 (d *window-w*))))
+  (let ((frame (d* 0.33 (d *window-w*))))
     (adjust-window-w frame)))
 
 (defun debug-window-h ()
-  (let ((frame (d* 0.02 (d *window-h*))))
+  (let ((frame (d* 0.025 (d *window-h*))))
     (adjust-window-h frame)))
 
 (defun debug-button-w ()
   (debug-window-w))
 
 (defun debug-button-h ()
-  (d* 0.9 (debug-window-h)))
+  (d* 0.5 (debug-window-h)))
 
 (defun update-config-planner-cb (button event)
   (declare (ignore event))
@@ -542,7 +542,7 @@
   (gconf:dump))
 
 (defclass debug-window (window)
-  ((checkb-smooth-movement
+  ((checkb-inhibit-planner
     :initform (make-instance 'labeled-check-button
                              :button-toggle-type t
                              :height             (debug-button-h)
@@ -553,12 +553,12 @@
                              :callback           #'update-config-planner-cb
                              :initial-state      (gconf:config-inhibit-planner)
                              :color              :green)
-    :initarg  :checkb-smooth-movement
-    :accessor checkb-smooth-movement)))
+    :initarg  :checkb-inhibit-planner
+    :accessor checkb-inhibit-planner)))
 
 (defmethod initialize-instance :after ((object debug-window) &key &allow-other-keys)
-  (with-accessors ((checkb-smooth-movement checkb-smooth-movement)) object
-    (add-child object checkb-smooth-movement)))
+  (with-accessors ((checkb-inhibit-planner checkb-inhibit-planner)) object
+    (add-child object checkb-inhibit-planner)))
 
 (defun make-debug-window (compiled-shaders)
   (let ((w (make-instance 'debug-window
@@ -572,18 +572,18 @@
     w))
 
 (defun ai-window-w ()
-  (let ((frame (d* 0.2 (d *window-w*))))
+  (let ((frame (d* 0.33 (d *window-w*))))
     (adjust-window-w frame)))
 
 (defun ai-window-h ()
-  (let ((frame (d* 0.02 (d *window-h*))))
+  (let ((frame (d* 0.025 (d *window-h*))))
     (adjust-window-h frame)))
 
 (defun ai-button-w ()
   (ai-window-w))
 
 (defun ai-button-h ()
-  (d* 0.9 (ai-window-h)))
+  (d* 0.6 (ai-window-h)))
 
 (defun update-config-ai-training-cb (button event)
   (declare (ignore event))
@@ -591,7 +591,7 @@
   (gconf:dump))
 
 (defclass ai-window (window)
-  ((checkb-smooth-movement
+  ((checkb-train-ai
     :initform (make-instance 'labeled-check-button
                              :button-toggle-type t
                              :height             (ai-button-h)
@@ -602,12 +602,12 @@
                              :callback           #'update-config-ai-training-cb
                              :initial-state      (gconf:config-train-ai)
                              :color              :green)
-    :initarg  :checkb-smooth-movement
-    :accessor checkb-smooth-movement)))
+    :initarg  :checkb-train-ai
+    :accessor checkb-train-ai)))
 
 (defmethod initialize-instance :after ((object ai-window) &key &allow-other-keys)
-  (with-accessors ((checkb-smooth-movement checkb-smooth-movement)) object
-    (add-child object checkb-smooth-movement)))
+  (with-accessors ((checkb-train-ai checkb-train-ai)) object
+    (add-child object checkb-train-ai)))
 
 (defun make-ai-window (compiled-shaders)
   (let ((w (make-instance 'ai-window

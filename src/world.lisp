@@ -335,19 +335,32 @@
 
 (defmethod game-event:on-game-event ((object world) (event game-event:start-turn))
   (with-accessors ((main-state main-state)) object
-    ;;(tg:gc :full t)
-    (when (not (battle-utils:someone-won-p main-state))
-      (strategic-ai:save-ai-tree-data object)
-      (strategic-ai:register-strategy-from-human object)
-      (flet ((%process-postponed-messages (entity)
-               (mesh:process-postponed-messages entity)))
-        (loop-player-entities main-state #'%process-postponed-messages)
-        (loop-ai-entities     main-state #'%process-postponed-messages))
-      (calc-ai-entities-action-order main-state)
-      (add-start-turn-billboard object)
-      (when (game-state:faction-turn-human-p main-state)
-        (setup-orbs-active object)))
-    nil))
+    (with-accessors ((blackboard blackboard)) main-state
+      (with-accessors ((number-pc@start-turn  blackboard:number-pc@start-turn)
+                       (number-npc@start-turn blackboard:number-npc@start-turn)) blackboard
+        ;;(tg:gc :full t)
+        (when (not (battle-utils:someone-won-p main-state))
+          (misc:dbg "np ppp ~a -> npc ~a~% pc ~a"
+                    (faction-turn main-state)
+                    number-npc@start-turn
+                    number-pc@start-turn)
+          (strategic-ai:save-ai-tree-data object)
+          (strategic-ai:register-strategy-from-human object)
+          (push (length (strategic-ai:visible-friends blackboard
+                                                      +pc-type+))
+                 number-pc@start-turn)
+          (push (length (strategic-ai:visible-friends blackboard
+                                                      +npc-type+))
+                number-npc@start-turn)
+          (flet ((%process-postponed-messages (entity)
+                   (mesh:process-postponed-messages entity)))
+            (loop-player-entities main-state #'%process-postponed-messages)
+            (loop-ai-entities     main-state #'%process-postponed-messages))
+          (calc-ai-entities-action-order main-state)
+          (add-start-turn-billboard object)
+          (when (game-state:faction-turn-human-p main-state)
+            (setup-orbs-active object)))
+        nil))))
 
 (defmethod game-event:on-game-event ((object world) (event game-event:end-turn))
   (with-accessors ((main-state main-state)) object

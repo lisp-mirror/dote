@@ -128,6 +128,16 @@
     :initarg  :main-state
     :accessor main-state
     :type     game-state)
+   (number-pc@start-turn
+    :initform (list 0 0)
+    :initarg  :number-pc@start-turn
+    :accessor number-pc@start-turn
+    :type     list)
+   (number-npc@start-turn
+    :initform (list 0 0)
+    :initarg  :number-npc@start-turn
+    :accessor number-npc@start-turn
+    :type     list)
    (exhausted-fountains-ids
     :initform '()
     :initarg  :exhausted-fountains-ids

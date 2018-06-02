@@ -349,26 +349,29 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
 
-  (define-constant +ai-fact-map-under-control+ :map-under-control :test #'eq)
+  (define-constant +ai-fact-map-under-control+           :map-under-control          :test #'eq)
 
-  (define-constant +ai-fact-dmg-ratio+         :dmg-ratio         :test #'eq)
+  (define-constant +ai-fact-dmg-ratio+                   :dmg-ratio                  :test #'eq)
 
-  (define-constant +ai-fact-average-dist+      :average-dist      :test #'eq)
+  (define-constant +ai-fact-average-dist+                :average-dist               :test #'eq)
 
-  (define-constant +ai-fact-vulnerables-units+ :vulnerables-units :test #'eq)
+  (define-constant +ai-fact-vulnerables-units+           :vulnerables-units          :test #'eq)
 
-  (define-constant +ai-fact-visible-opponents+ :visible-opponents :test #'eq)
+  (define-constant +ai-fact-visible-opponents-last-turn+ :visible-opponents-lst-turn :test #'eq)
 
-  (define-constant +ai-fact-visible-friends+   :visible-friends   :test #'eq)
+  (define-constant +ai-fact-visible-opponents+           :visible-opponents          :test #'eq)
 
-  (define-constant +ai-fact-wizard-dmg+        :wizard-dmg        :test #'eq)
+  (define-constant +ai-fact-visible-friends+             :visible-friends            :test #'eq)
 
-  (define-constant +ai-decision-class+         :strategy          :test #'eq)
+  (define-constant +ai-fact-wizard-dmg+                  :wizard-dmg                 :test #'eq)
+
+  (define-constant +ai-decision-class+                   :strategy                   :test #'eq)
 
   (define-constant +ai-fact-header+ (list +ai-fact-map-under-control+
                                           +ai-fact-dmg-ratio+
                                           +ai-fact-average-dist+
                                           +ai-fact-vulnerables-units+
+                                          +ai-fact-visible-opponents-last-turn+
                                           +ai-fact-visible-opponents+
                                           +ai-fact-visible-friends+
                                           +ai-fact-wizard-dmg+

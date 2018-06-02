@@ -206,6 +206,7 @@
    :+ai-fact-average-dist+
    :+ai-fact-vulnerables-units+
    :+ai-fact-visible-opponents+
+   :+ai-fact-visible-opponents-last-turn+
    :+ai-fact-visible-friends+
    :+ai-fact-wizard-dmg+
    :+ai-decision-class+
@@ -5606,6 +5607,8 @@
    :+unexplored-tile-value+
    :+concerning-tile-value+
    :blackboard
+   :number-pc@start-turn
+   :number-npc@start-turn
    :main-influence-map
    :exhausted-fountains-ids
    :concerning-tiles
