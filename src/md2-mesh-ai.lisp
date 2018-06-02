@@ -137,7 +137,7 @@
                  (> ,saved-sp (current-spell-points    ,ghost)))
          (set-cost-occurred ,entity)))))
 
-(defun %clean-plan (entity)
+(defun %clean-plan (entity &optional (excluded '()))
   (with-accessors ((ghost ghost)
                    (state state)) entity
     (with-accessors ((blackboard blackboard:blackboard)) state
@@ -145,7 +145,7 @@
       (erase-working-memory ghost)
       (ai-logger:clean-log ghost      ai-logger:+ai-log-clean-end-plan+)
       (ai-logger:clean-log blackboard ai-logger:+ai-log-clean-end-plan+)
-      (world:clear-all-memoized-function-cache)
+      (world:clear-all-memoized-function-cache* excluded)
       (let ((all-visible-pcs (visible-players-in-state-from-faction state
                                                                     game-state:+npc-type+
                                                                     :alive-only t)))
@@ -161,9 +161,9 @@
                                      #'(lambda (a)
                                          (blackboard:log-ai-entity-presence blackboard a)))))))
 
-(defun %clean-plan-and-blacklist (entity)
+(defun %clean-plan-and-blacklist (entity &rest excluded)
   (with-accessors ((ghost ghost)) entity
-    (%clean-plan entity)
+    (%clean-plan entity excluded)
     ;; clear blacklisted actions for planner
     #+(and debug-mode debug-ai) (misc:dbg "clear planner cache and blacklist")
     (clear-blacklist ghost)))
@@ -264,7 +264,7 @@
                          strategy
                          (action (eql ai-utils:+plan-stopper+)))
   (with-spawn-if-presence-diff (object)
-    (%clean-plan object)))
+    (%clean-plan object (list :ai-tree))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
@@ -283,7 +283,7 @@
                          (action (eql ai-utils:+idle-action+)))
   (with-accessors ((state state) (ghost ghost)) object
     (with-accessors ((ai-entities-action-order game-state:ai-entities-action-order)) state
-      (%clean-plan-and-blacklist object)
+      (%clean-plan-and-blacklist object :ai-tree)
       ;; awake other AI player
       (and ai-entities-action-order
            (pop ai-entities-action-order)))))

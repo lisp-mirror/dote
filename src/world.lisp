@@ -1226,6 +1226,9 @@
                 tremor:+explosion-level-3-shake-duration+))
 
 (defun clear-all-memoized-function-cache (&rest excluded)
+  (clear-all-memoized-function-cache* excluded))
+
+(defun clear-all-memoized-function-cache* (excluded)
   #+(and debug-mode debug-ai) (misc:dbg "clear planner cache")
   (flet ((%find (a)
            (find a excluded :test #'eq)))

@@ -845,7 +845,8 @@
 (defun maybe-start-gui-increase-level (entity)
   (with-accessors ((ghost entity:ghost)
                    (state entity:state)) entity
-    (when (>= (character:exp-points ghost) +exp-change-level-thrs+)
+    (when (and (game-state:faction-turn-human-p state)
+               (>= (character:exp-points ghost) +exp-change-level-thrs+))
       (particles:add-level-up entity)
       (game-state:with-world (world state)
         (act-sched:with-enqueue-action-and-send-remove-after (world act-sched:gui-action)
