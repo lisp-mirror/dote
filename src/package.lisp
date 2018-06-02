@@ -1023,6 +1023,8 @@
         :vec2
         :vec4)
   (:export
+   :seq-x
+   :seq-y
    :uivec2
    :90deg->rad
    :iaabb2-min-x

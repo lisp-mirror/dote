@@ -16,6 +16,10 @@
 
 (in-package :2d-utils)
 
+(misc:gen-vec-comp (seq x 0))
+
+(misc:gen-vec-comp (seq y 1))
+
 (deftype uivec2 ()
   "A 2d vector of unsigned integer."
   `(simple-array (unsigned-byte 32) (2)))
