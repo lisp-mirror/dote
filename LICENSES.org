@@ -429,8 +429,8 @@
 
 - data/gui/default/white.tga
   data/gui/default/transparent.tga
-  data/gui/default/logo-mask.tga
-  data/gui/default/logo.tga
+  data/gui/default/opening/logo-mask.tga
+  data/gui/default/opening/logo.tga
   © 2018 cage released under CC0 1.0
   https://creativecommons.org/publicdomain/zero/1.0/
 
@@ -628,7 +628,7 @@
   Downloaded from: http://game-icons.net/
 
 
-- data/gui/default/bg-start.tga
+- data/gui/default/opening/bg-start.tga
 
   derived from © Babeskull
 

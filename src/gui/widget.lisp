@@ -2674,7 +2674,7 @@
       (with-accessors ((main-state main-state)) bound-world
         (flet ((quit-cb (a b)
                  (declare (ignore a b))
-                 (sdl2.kit:close-window (game-state:fetch-render-window main-state)))
+                 (sdl2.kit-utils:close-game (game-state:fetch-render-window main-state)))
                (close-cb (w e)
                  (hide-and-remove-parent-cb w e)))
           (let ((dialog-window (make-message-box* (_ "Are you sure you want to quit?")

@@ -35,3 +35,7 @@
 
 (defun go-fullscreen (window)
   (sdl2:set-window-fullscreen (sdl2.kit:sdl-window window) t))
+
+(defun close-game (window)
+  (sdl2.kit:close-window window)
+  (sdl2.kit:quit))

@@ -241,7 +241,7 @@
   #'(lambda (b e)
       (declare (ignore b e))
       (with-accessors ((main-state main-state)) world
-        (sdl2.kit:close-window (game-state:fetch-render-window main-state)))))
+        (sdl2.kit-utils:close-game (game-state:fetch-render-window main-state)))))
 
 (defun make-load-cb (gui)
   #'(lambda (w e)

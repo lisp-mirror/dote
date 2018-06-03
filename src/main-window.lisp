@@ -546,7 +546,7 @@
 (defmethod other-event ((object test-window) event)
   (misc:dbg "other ~a" event))
 
-(defun main ()
+(define-start-function %main ()
   (saved-game:init-system)
   (let ((w (make-instance 'test-window
                           :fullscreen nil
@@ -558,3 +558,6 @@
       (sdl2.kit-utils:go-fullscreen w))
     (sdl2.kit-utils:move-mouse-to-center-screen w)
     (tg:gc :full t)))
+
+(defun main ()
+  (sdl2:make-this-thread-main #'%main))

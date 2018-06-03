@@ -1672,9 +1672,9 @@ data/gui/default/message-16-ok.tga                       \
 data/gui/default/message-16-warning.tga                  \
 data/gui/default/elaborating-plan-spinner.tga            \
 data/gui/default/burn-mask.tga                           \
-data/gui/default/bg-start.tga                            \
-data/gui/default/logo-mask.tga                           \
-data/gui/default/logo.tga                                \
+data/gui/default/opening/logo-mask.tga                   \
+data/gui/default/opening/logo.tga                        \
+data/gui/default/opening/bg-start.tga                    \
 data/spells/heal-1.lisp                                  \
 data/spells/heal-2.lisp                                  \
 data/spells/heal-3.lisp                                  \
@@ -1792,4 +1792,4 @@ $(CONF_PATH_FILE):
 
 	echo "(alexandria:define-constant +program-name+"       >> $(CONF_PATH_FILE);
 	echo -e "\""$(PACKAGE)"\" :test #'string=)\n"           >> $(CONF_PATH_FILE);
-	cat  $(CONF_PATH_FILE).in | sed "\/^;;.*$\/d"             >> $(CONF_PATH_FILE);
+	cat  $(CONF_PATH_FILE).in | sed "\/^;;.*$\/d"           >> $(CONF_PATH_FILE);

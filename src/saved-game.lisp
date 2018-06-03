@@ -584,7 +584,6 @@
   (game-configuration:init)
   (strategic-ai:build-decision-tree)
   (setf saved-game:*map-loaded-p* nil)
-  (sdl2.kit:start)
   (sdl2:gl-set-attr :context-profile-mask  1)
   (sdl2:gl-set-attr :context-major-version 3)
   (sdl2:gl-set-attr :context-minor-version 3))

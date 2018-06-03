@@ -643,7 +643,8 @@
    :with-world
    :clean-restart-gl-context
    :move-mouse-to-center-screen
-   :go-fullscreen))
+   :go-fullscreen
+   :close-game))
 
 (defpackage :interfaces
   (:use :cl
