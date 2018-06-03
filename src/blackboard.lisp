@@ -1186,7 +1186,7 @@ values nil, i. e. the ray is not blocked"
                (let ((target-with-pos (find-if #'(lambda (a) (find target-pos a :test #'ivec2=))
                                                bag
                                                :key #'goal-pos))
-                     (removep (die-utils:pass-d2 1))) ; roll a die
+                     (removep         (die-utils:pass-d2 1))) ; roll a die
                  (if target-with-pos ; another target has the same slot
                      (if removep
                          (progn
@@ -1505,12 +1505,18 @@ values nil, i. e. the ray is not blocked"
                                   (character:disgregard-tactical-plan (ghost v)))))
 
 (defmethod calc-ai-entities-action-order ((object blackboard))
-  (with-accessors ((main-state main-state)) object
-    (with-accessors ((ai-entities-action-order ai-entities-action-order)) main-state
-      (let ((all-ai-entities (num:shellsort (ai-entities main-state)
-                                            (ai-utils:combined-power-compare-clsr nil))))
-        (setf all-ai-entities (remove-if #'entity-dead-p all-ai-entities))
-        (setf ai-entities-action-order all-ai-entities)))))
+  (flet ((sort-entities (entities)
+           (num-utils:multisort* entities
+                                (ai-utils:multisort-ai-visibile-asc-clsr object)
+                                #'ai-utils:multisort-combined-power-asc)))
+    (with-accessors ((main-state main-state)) object
+      (with-accessors ((ai-entities-action-order ai-entities-action-order)
+                       (ai-entities              ai-entities))              main-state
+        (let* ((ai-entities-sorted    (sort-entities ai-entities))
+               (all-ai-entities-order (remove-if #'entity-dead-p
+                                                 (copy-list ai-entities-sorted))))
+          (setf ai-entities              ai-entities-sorted)
+          (setf ai-entities-action-order all-ai-entities-order))))))
 
 (defmethod fountain-exhausted-p ((object blackboard) (entity mesh:fountain-mesh-shell))
   (with-accessors ((exhausted-fountains-ids exhausted-fountains-ids)) object

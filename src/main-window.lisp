@@ -273,10 +273,7 @@
               (misc:dbg "n ~a" *near*)
               (incf *near* -.1))
             (when (string= text "p")
-              (sound:play-fx sound:+boom-3+))
-              ;(closing-sequence:start-victory-sequence world))
-              ;; (mtree:add-child (world:gui world)
-              ;;                   (widget:make-player-generator world)))
+              (closing-sequence:start-victory-sequence world))
             (when (string= text "D")
               (world:apply-tremor-0 world))
             (when (string= text "L")
@@ -545,6 +542,22 @@
 
 (defmethod other-event ((object test-window) event)
   (misc:dbg "other ~a" event))
+
+#+ debug-mode
+(defun main-debug ()
+  (sdl2.kit:init)
+  (saved-game:init-system)
+  (let ((w (make-instance 'test-window
+                          :fullscreen nil
+                          :w          *window-w*
+                          :h          *window-h*
+                          :title      +program-name+)))
+    (setf (idle-render w) t)
+    (when (gconf:config-fullscreen)
+      (sdl2.kit-utils:go-fullscreen w))
+    (sdl2.kit-utils:move-mouse-to-center-screen w)
+    (tg:gc :full t))
+  (sdl2.kit:start))
 
 (define-start-function %main ()
   (saved-game:init-system)

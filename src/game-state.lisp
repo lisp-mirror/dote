@@ -249,7 +249,8 @@
    (ai-entities-action-order
     :accessor ai-entities-action-order
     :initarg  :ai-entities-action-order
-    :initform '())
+    :initform '()
+    :documentation "Note: keep always ordered: see blackboard:calc-ai-entities-action-order")
    (current-time
     :accessor current-time
     :initarg :current-time
@@ -344,7 +345,8 @@
     :initform ()
     :initarg  :ai-entities
     :accessor ai-entities
-    :type     :list)
+    :type     :list
+    :documentation "Note: keep always ordered: see blackboard:calc-ai-entities-action-order")
    (selected-pc
     :initform nil
     :initarg  :selected-pc

@@ -19,14 +19,14 @@
 (define-constant +number-opponents-sigma+  #(1.0 1.0 1.1 1.1 2.0 2.2 2.3 2.5 2.7 2.7)
   :test #'equalp)
 
-(define-constant +opponents-type+          '(:wizard
-                                             :warrior
-                                             :warrior
-                                             :warrior
-                                             :archer
-                                             :archer
-                                             :healer
-                                             :ranger)
+(define-constant +opponents-type+ '(:wizard
+                                    :warrior
+                                    :warrior
+                                    :archer
+                                    :warrior
+                                    :archer
+                                    :healer
+                                    :ranger)
   :test #'equalp)
 
 (defun no-of-opponents (difficult-level)

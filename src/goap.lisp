@@ -246,8 +246,8 @@
 (defun action-context-preconditions-satisfied-p (action strategy-expert player-entity)
   ;;(misc:dbg "action ~a" action)
   (loop for precondition in (action-context-preconditions action) do
-       ;;(misc:dbg "testing precondition ~a -> ~a" precondition
-       ;;          (funcall precondition strategy-expert player-entity))
+       ;; (misc:dbg "testing precondition ~a -> ~a" precondition
+       ;;           (funcall precondition strategy-expert player-entity))
        (when (not (funcall precondition strategy-expert player-entity))
          (return-from action-context-preconditions-satisfied-p nil)))
   t)

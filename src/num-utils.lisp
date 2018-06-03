@@ -318,6 +318,9 @@
                                         (return-from outer nil))))))
                    partial))))
 
+(defun multisort* (bag &rest fns)
+  (multisort bag fns))
+
 (defmacro gen-multisort-test (fn-< fn-> fn-access)
   (alexandria:with-gensyms (a b access-a access-b)
     `(lambda (,a ,b)

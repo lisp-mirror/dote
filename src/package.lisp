@@ -377,6 +377,7 @@
    :random-select-by-frequency*
    :shellsort
    :multisort
+   :multisort*
    :gen-multisort-test
    :bag-picker
    :random-pick-from-set
@@ -3333,6 +3334,9 @@
    :reachable-attackable-opponents-damage-spell
    :reachable-healing-friend-heal-spell
    :combined-power-compare-clsr
+   :multisort-combined-power-asc
+   :multisort-ai-visibile-asc-clsr
+   :sort-ai-visibile-asc-clsr
    :sort-by-manhattam-dist-clsr
    :sort-by-path-w/concerning-tiles-cost-clsr
    :sort-by-concerning-value-clsr

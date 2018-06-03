@@ -323,6 +323,37 @@ character is. In this case its cost is 0.0"
             (>= power-a power-b)
             (<  power-a power-b)))))
 
+(defun multisort-combined-power-asc (a b)
+  (let* ((ghost-a (entity:ghost a))
+         (ghost-b (entity:ghost b))
+         (power-a (character:combined-power ghost-a))
+         (power-b (character:combined-power ghost-b)))
+    (if (> power-a power-b)
+        -1
+        (if (epsilon= power-a power-b)
+            0
+            1))))
+
+(defun multisort-ai-visibile-asc-clsr (blackboard)
+  "Ascendig order. The more visibles the better"
+  #'(lambda (a b)
+      (let ((vis-a (length (all-visibles-opponents blackboard a :alive-only t)))
+            (vis-b (length (all-visibles-opponents blackboard b :alive-only t))))
+        (if (> vis-a vis-b)
+            -1
+            (if (< vis-a vis-b)
+                1
+                0)))))
+
+(defun sort-ai-visibile-asc-clsr (blackboard)
+  "Ascendig order. The more visibles the better"
+  #'(lambda (a b)
+      (let ((vis-a (length (all-visibles-opponents blackboard a :alive-only t)))
+            (vis-b (length (all-visibles-opponents blackboard b :alive-only t))))
+        (if (> vis-a vis-b)
+            t
+            nil))))
+
 (defun sort-by-manhattam-dist-clsr (entity-pivot-pos &optional (comp-fn #'<))
   #'(lambda (a b)
       (let ((d1 (map-utils:map-manhattam-distance entity-pivot-pos a))
