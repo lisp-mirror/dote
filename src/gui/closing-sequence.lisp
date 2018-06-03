@@ -66,8 +66,7 @@
 (defun restart-game (widget)
   (with-accessors ((state state)) widget
     (let ((render-window (game-state:fetch-render-window state)))
-      (sdl2.kit:close-window render-window)
-      (main-window:main))))
+      (sdl2.kit-utils:close-game render-window))))
 
 (defmethod on-mouse-pressed ((object closing-curtain) event)
   (declare (ignore event))
