@@ -38,6 +38,10 @@
 
 (alexandria:define-constant +density-fog+         0.006      :test #'=)
 
+(alexandria:define-constant +pc-a*-cross-weight+   4.05      :test #'=)
+
+(alexandria:define-constant +npc-a*-cross-weight+  0.0       :test #'=)
+
 (defun hour->light-color (h)
   (cond
     ((or (<= 0 h +start-day+)
@@ -675,7 +679,7 @@
      (loop for i from 0 below (length (data map-state)) do
           (setf (elt (data map-state) i) (make-instance 'map-state-element)))))
 
-(defun heuristic-manhattam ()
+(defun heuristic-manhattam (&optional (cross-product-weight +npc-a*-cross-weight+))
   #'(lambda (object a b start-node)
       (declare (ignore object))
       (let* ((a-x   (d (elt a 0)))
@@ -691,7 +695,7 @@
              (dx2   (d- s-x a-x))
              (dy2   (d- s-y a-y))
              (cross (abs (d- (d* dx1 dy2) (d* dx2 dy1)))))
-        (d+ cost (d* cross 4.05)))))
+        (d+ cost (d* cross cross-product-weight)))))
 
 (defun %build-movement-path (graph start end other-costs-layer)
   (graph:with-pushed-cost-layer (graph other-costs-layer)

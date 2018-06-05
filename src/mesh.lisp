@@ -1442,10 +1442,15 @@
               (vbos            (slot-value object 'vbo))
               (vaos            (slot-value object 'vao))
               #+debug-mode
+              (texture-object  (and (slot-value object 'texture-object)
+                                    (slot-value (slot-value object 'texture-object)
+                                                'texture:filename)))
+              #+debug-mode
               (id              (slot-value object 'id)))
           (tg:finalize object
                        #'(lambda ()
-                           #+debug-mode (misc:dbg "finalize destroy mesh ~a" id)
+                           #+debug-mode (misc:dbg "finalize destroy mesh ~a ~a"
+                                                  id texture-object)
                            (free-memory* (list gl-arr-vert
                                                gl-arr-tex
                                                gl-arr-norm
