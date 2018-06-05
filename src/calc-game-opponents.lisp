@@ -49,4 +49,4 @@
   (let ((all-opponents (type-of-opponents (no-of-opponents difficult))))
     (loop for i in all-opponents do
          ;; TODO change with (random-elt '(:male :female)
-         (world:add-ai-opponent world :warrior :male))))
+         (world:add-ai-opponent world i :male))))
