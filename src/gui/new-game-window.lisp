@@ -123,7 +123,8 @@
                              :x               (new-game-win-button-list-w)
                              :y               0.0
                              :label-font-size (h3-font-size *reference-sizes*)
-                             :label           (_ "Notes")
+                             :label
+                             (_ "Click on the button on the left to choose a map")
                              :delay-fn        (delay-text-appears-in-sequence)
                              :justified       t)
     :initarg  :text-notes

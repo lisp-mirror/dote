@@ -494,6 +494,21 @@
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
+                         (action (eql ai-utils:+go-near-to-enemy-insecure-action+)))
+  (with-maybe-blacklist (object strategy action)
+    (with-slots-for-reasoning (object state ghost blackboard)
+      (game-state:with-world (world state)
+        (multiple-value-bind (path total-cost)
+            (blackboard:insecure-path-near-enemy-pos-w-current-weapon blackboard
+                                                                      object
+                                                                      :cut-off-first-tile nil)
+          #+(and debug-mode debug-ai) (assert path)
+          (when path
+            (let* ((path-struct (game-state:make-movement-path path total-cost)))
+              (%do-simple-move object path-struct state world))))))))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
                          (action (eql ai-utils:+protect-action+)))
   (with-maybe-blacklist (object strategy action)
     (with-accessors ((state state)
@@ -697,7 +712,7 @@ attempts Note: all attackable position will be updated as well"
                                                                            :cut-off-first-tile
                                                                            nil)
               (declare (ignore costs))
-              #+ (and debug debug-ai)
+              #+ (and debug-mode debug-ai)
               (misc:dbg "path attack optimal ~a ~a" path total-cost)
               (let* ((path-struct (game-state:make-movement-path path total-cost)))
                 (put-in-memory target-id-move path-struct))))))))
@@ -732,7 +747,7 @@ attempts Note: all attackable position will be updated as well"
                                                    :cut-off-first-tile nil
                                                    :reachable-fn-p     reachable-fn)
               (declare (ignore costs))
-              #+ (and debug debug-ai)
+              #+ (and debug-mode debug-ai)
               (misc:dbg "path attack insecure ~a ~a" path total-cost)
               (let* ((path-struct (game-state:make-movement-path path total-cost)))
                 (put-in-memory target-id-move path-struct))))))))

@@ -244,12 +244,14 @@
   nil)
 
 (defun action-context-preconditions-satisfied-p (action strategy-expert player-entity)
-  ;;(misc:dbg "action ~a" action)
+  (misc:dbg "testing action ~a" action)
   (loop for precondition in (action-context-preconditions action) do
-       ;; (misc:dbg "testing precondition ~a -> ~a" precondition
-       ;;           (funcall precondition strategy-expert player-entity))
+       (misc:dbg "testing precondition ~a -> ~a" precondition
+                 (and (funcall precondition strategy-expert player-entity)
+                      t))
        (when (not (funcall precondition strategy-expert player-entity))
          (return-from action-context-preconditions-satisfied-p nil)))
+  (misc:dbg "choosen!")
   t)
 
 (defun %apply-action (state goal-state action)
@@ -664,6 +666,16 @@ reach the enemy with optimal path?"
   (let ((res (ai-utils:target-reachable-attack/damage-spell entity)))
     res))
 
+(defun probably-stronger-than-enemy-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (with-accessors ((entity-ghost ghost)) entity
+    (let* ((target       (ai-utils:target-reachable-attack/damage-spell entity))
+           (target-ghost (ghost target)))
+      (and target
+           (< (num:d/ (character:combined-power target-ghost)
+                      (character:combined-power entity-ghost))
+              0.5)))))
+
 (defgoap-test reachable-opt/path-attack-current-weapon-and-mp (strategy-expert entity)
     "using the  current movement points  of the entity is  possible to
 reach  and attack  the enemy  with optimal  path?  Note:  path can  be
@@ -875,7 +887,7 @@ composed by just one tile, see 'attackable-position-exists-path'"
 
 (defun is-near-weak-friend-p (strategy-expert entity)
   (let ((res (ai-utils:near-weak-friend-p strategy-expert entity)))
-    #+ (and debug debug-ai)
+    #+ (and debug-mode debug-ai)
     (dbg "is-near-weak-friend-p -> ~a" res)
     res))
 
@@ -883,7 +895,7 @@ composed by just one tile, see 'attackable-position-exists-path'"
   "note: places-near contains only reachable tiles so
 path-near-goal-w/o-concerning-tiles always returns a non nil value"
   (let ((res (ai-utils:attack-when-near-pos-p strategy-expert entity)))
-    #+ (and debug debug-ai)
+    #+ (and debug-mode debug-ai)
     (dbg "can-attack-when-near-pos-p -> ~a" res)
     res))
 
@@ -895,7 +907,7 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
 
 (defun is-there-useful-reachable-fountain-p (strategy-expert entity)
   (declare (ignore strategy-expert))
-  #+ (and debug debug-ai)
+  #+ (and debug-mode debug-ai)
   (misc:dbg "is-there-useful-reachable-fountain-p ~a"
             (ai-utils:useful-reachable-fountain entity))
   (ai-utils:useful-reachable-fountain entity))
@@ -903,21 +915,22 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
 (defun exists-reachable-pos-to-launch-attack-spell (strategy-expert entity)
   (declare (ignore strategy-expert))
   (let ((res (ai-utils:reachable-attackable-opponents-attack-spell entity)))
-    #+ (and debug debug-ai)
-    (misc:dbg " exists-reachable-pos-to-launch-attack-spell ~a" res)
+    #+ (and debug-mode debug-ai)
+    (misc:dbg "spell to attack exists? ~a"
+              (multiple-value-list (ai-utils:reachable-attackable-opponents-attack-spell entity)))
     res))
 
 (defun exists-reachable-pos-to-launch-heal-spell (strategy-expert entity)
   (declare (ignore strategy-expert))
   (let ((res (ai-utils:reachable-healing-friend-heal-spell entity)))
-    #+ (and debug debug-ai)
+    #+ (and debug-mode debug-ai)
     (misc:dbg " exists-reachable-pos-to-launch-heal-spell ~a" res)
     res))
 
 (defun exists-reachable-pos-to-launch-damage-spell (strategy-expert entity)
   (declare (ignore strategy-expert))
   (let ((res (ai-utils:reachable-attackable-opponents-damage-spell entity)))
-    #+ (and debug debug-ai)
+    #+ (and debug-mode debug-ai)
     (misc:dbg " exists-reachable-pos-to-launch-damage-spell ~a" res)
     res))
 

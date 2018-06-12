@@ -3299,6 +3299,7 @@
    :+go-near-weak-friend-atk-action+
    :+go-near-weak-friend-action+
    :+go-near-to-enemy-action+
+   :+go-near-to-enemy-insecure-action+
    :+protect-attack-action+
    :+protect-action+
    :+launch-attack-spell-action+
@@ -4260,6 +4261,7 @@
    :tiles-placeholder-visibility-in-ring-by-faction
    :with-invisible-ids
    :placeholder-visible-ray-p
+   :placeholder-able-to-see-p
    :able-to-see-mesh
    :visibility-cone
    :other-visible-p
@@ -5594,6 +5596,7 @@
    :best-path-to-reach-attack-pos-w-current-weapon
    :best-path-near-attack-goal-w-current-weapon
    :best-path-near-enemy-pos-w-current-weapon
+   :insecure-path-near-enemy-pos-w-current-weapon
    :best-path-w-current-weapon-reachable-p
    :insecure-path-to-reach-attack-pos-w-current-weapon
    :reachable-p-w/concening-tiles-fn-clear-cache

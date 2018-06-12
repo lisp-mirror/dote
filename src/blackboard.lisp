@@ -1088,6 +1088,19 @@ values nil, i. e. the ray is not blocked"
           (t
            nil))))))
 
+(defun is-visible-player-pov-p (goal-tile-pos player use-enemy-fov-when-attacking-p)
+  (if use-enemy-fov-when-attacking-p
+      (displace-2d-vector (goal-tile-pos x y)
+        ;; check if  visible or blocked
+        ;; by  ray (even  if not  in the
+        ;; visibility cone  (for example
+        ;; behind the attacked entity).
+        (or (able-to-see-mesh:placeholder-visible-p player x y)
+            (not (able-to-see-mesh:placeholder-visible-ray-p player x y))))
+      (displace-2d-vector (goal-tile-pos x y)
+        (able-to-see-mesh:placeholder-visible-ray-p player x y))))
+
+;; TODO use is-visible-player-pov-p
 (defun remove-from-player-pov (goal-tiles-pos player use-enemy-fov-when-attacking-p)
   "remove tiles from the target's point of view (player is from human side)"
   (if use-enemy-fov-when-attacking-p
@@ -1583,9 +1596,13 @@ values nil, i. e. the ray is not blocked"
 (defstruct spell-pos
   (tile)
   (concerning)
-  (cost))
+  (cost)
+  (enemy-visible-tricky-p) ; is the enemy visible from this position but not the converse?
+  (enemy-able-to-see-p))   ; is the enemy able to see this position?
 
-(defun goal-pos->spell-struct-fn (blackboard concerning-tiles attacker-pos)
+(defun goal-pos->spell-struct-fn (blackboard concerning-tiles attacker-pos attacker
+                                  dodged-entity)
+  (declare (ignore attacker))
   #'(lambda (a)
       (with-conc-path-total-cost (cost)
           (path-with-concerning-tiles blackboard
@@ -1593,16 +1610,37 @@ values nil, i. e. the ray is not blocked"
                                       a
                                       :cut-off-first-tile nil
                                       :allow-path-length-1 t)
-        (make-spell-pos :tile       a
-                        :concerning
-                        (matrix:matrix-elt concerning-tiles
-                                           (ivec2:ivec2-y a)
-                                           (ivec2:ivec2-x a))
-                        :cost  cost))))
+        (displace-2d-vector (a x y)
+          (make-spell-pos :tile       a
+                          :concerning (matrix:matrix-elt concerning-tiles y x)
 
-(defun calculate-single-spell-goal-pos (attacker defender pivot-entity spell range
-                                        gen-pos-fn use-enemy-fov-when-attacking-p
-                                        &key (spell-type :attack))
+                          :cost  cost
+                          :enemy-visible-tricky-p
+                          (and dodged-entity
+                               (not (absee-mesh:placeholder-visible-p dodged-entity x y))
+                               (absee-mesh:placeholder-able-to-see-p x y dodged-entity))
+                          :enemy-able-to-see-p
+                          (and dodged-entity
+                               (absee-mesh:placeholder-visible-p dodged-entity x y)))))))
+
+(defun multisort-spell-pos-tricky-vis< (a b)
+  (if (spell-pos-enemy-visible-tricky-p a)
+      (if (spell-pos-enemy-visible-tricky-p b)
+          nil
+          t)
+      nil))
+
+(defun multisort-spell-pos-tricky-vis> (a b)
+  (if (spell-pos-enemy-visible-tricky-p a)
+      (if (spell-pos-enemy-visible-tricky-p b)
+          nil
+          t)
+      nil))
+
+(defun calculate-single-spell-goal-pos (attacker defender pivot-entity
+                                        dodged-entity
+                                        spell range
+                                        gen-pos-fn)
   "Calculate best position to launch spell from attacker to defender around pivot"
   (with-accessors ((state          state)
                    (attacker-ghost ghost)) attacker
@@ -1622,34 +1660,50 @@ values nil, i. e. the ray is not blocked"
                                         goal-tiles-pos))
         ;; remove out of range
         (setf goal-tiles-pos (remove-if-not #'(lambda (a)
-                                                (<= (manhattam-distance a defender-pos)
-                                                    spell-range))
+                                                (< (manhattam-distance a defender-pos)
+                                                   spell-range))
                                             goal-tiles-pos))
-        (when (find spell-type (list :attack :damage) :test #'eq)
-          ;; remove tiles from the target's point of view
-          (setf goal-tiles-pos (remove-from-player-pov goal-tiles-pos
-                                                       defender
-                                                       use-enemy-fov-when-attacking-p)))
+        ;; (when (find spell-type (list :attack :damage) :test #'eq)
+        ;;   ;; remove tiles from the target's point of view
+        ;;   (setf goal-tiles-pos (remove-from-player-pov goal-tiles-pos
+        ;;                                                defender
+        ;;                                                use-enemy-fov-when-attacking-p)))
         ;; remove non reachables
         (setf goal-tiles-pos (ai-utils:remove-non-reachables-pos reach-fn
                                                                  attacker-pos
                                                                  attacker-ghost
                                                                  goal-tiles-pos
                                                                  :key #'identity))
+        ;; ;; remove is enemy is not visible from tiles position
+        (setf goal-tiles-pos
+               (remove-if-not #'(lambda (a)
+                                  (2d-utils:displace-2d-vector (a x y)
+                                    (able-to-see-mesh:placeholder-visible-p defender
+                                                                            x y)))
+                              goal-tiles-pos))
         (let ((goal-structs (map 'list
                                  (goal-pos->spell-struct-fn blackboard
-                                                           concerning-smoothed
-                                                           attacker-pos)
+                                                            concerning-smoothed
+                                                            attacker-pos
+                                                            attacker
+                                                            dodged-entity)
                                  goal-tiles-pos)))
-          ;; sort by concerning (the less the better) and if equals by
-          ;; cost to reach the tile (again in increasing order).
-          (setf goal-structs
-                (num:multisort goal-structs
-                               (list (num:gen-multisort-test < > spell-pos-concerning)
-                                     (num:gen-multisort-test epsilon<=
-                                                             epsilon>=
-                                                             spell-pos-cost))))
-          ;; (misc:dbg "~a" goal-structs)
+          (if-difficult-level>medium (state)
+            ;; sort by "not visible by  enemy", concerning (the less the
+            ;; better)  and  by  cost  to   reach  the  tile  (again  in
+            ;; increasing order).
+            (setf goal-structs
+                  (num:multisort* goal-structs
+                                  (num:gen-multisort-test multisort-spell-pos-tricky-vis<
+                                                          multisort-spell-pos-tricky-vis>
+                                                          identity)
+                                  (num:gen-multisort-test <
+                                                          >
+                                                          spell-pos-concerning)
+                                  (num:gen-multisort-test <
+                                                          >
+                                                          spell-pos-cost)))
+            nil)
           ;; retun the positions and the structs as well
           (values (map 'list #'spell-pos-tile goal-structs)
                   goal-structs))))))
@@ -1817,10 +1871,10 @@ effective range.  I think this is safe to assume. ;)"
             (calculate-single-spell-goal-pos attacker
                                              defender
                                              defender
+                                             defender
                                              best-attack-spell
                                              (spell:range best-attack-spell)
-                                             #'tiles-attack-spell-around-human
-                                             use-enemy-fov-when-attacking-p)))))))
+                                             #'tiles-attack-spell-around-human)))))))
 
 (defcached-list best-attack-spell-goal-pos ((attacker defender)
                                                  :equal-fn #'%atk-spell-around-me-equal)
@@ -1843,10 +1897,10 @@ effective range.  I think this is safe to assume. ;)"
               (calculate-single-spell-goal-pos attacker
                                                defender
                                                friend
+                                               defender
                                                best-attack-spell
                                                range
-                                               #'tiles-attack-spell-around-ai
-                                               use-enemy-fov-when-attacking-p))))))))
+                                               #'tiles-attack-spell-around-ai))))))))
 
 (defcached-list attack-spell-goal-pos-around-friend ((attacker defender friend)
                                                  :equal-fn #'%atk-spell-around-friend-equal)
@@ -1900,11 +1954,10 @@ effective range.  I think this is safe to assume. ;)"
           (calculate-single-spell-goal-pos launcher
                                            target
                                            target
+                                           nil
                                            best-heal-spell
                                            range
-                                           #'tiles-heal-spell-around-ai
-                                           use-enemy-fov-when-attacking-p
-                                           :spell-type :heal))))))
+                                           #'tiles-heal-spell-around-ai))))))
 
 (defcached-list heal-spell-goal-pos-around-friend ((launcher target friend)
                                                  :equal-fn #'%atk-spell-around-friend-equal)
@@ -1949,7 +2002,6 @@ effective range.  I think this is safe to assume. ;)"
                                         heal-spell-goal-pos-around-me-search-cache
                                         heal-spell-goal-pos-around-me-insert-cache))
 
-;;;
 (defun damage-spell-goal-pos-around-friend-nocache (launcher target)
   (with-accessors ((state state)) launcher
     (with-accessors ((blackboard blackboard)
@@ -1959,11 +2011,10 @@ effective range.  I think this is safe to assume. ;)"
           (calculate-single-spell-goal-pos launcher
                                            target
                                            target
+                                           target
                                            best-damage-spell
                                            range
-                                           #'tiles-damage-spell-around-ai
-                                           use-enemy-fov-when-attacking-p
-                                           :spell-type :damage))))))
+                                           #'tiles-damage-spell-around-ai))))))
 
 (defcached-list damage-spell-goal-pos-around-friend ((launcher target friend)
                                                  :equal-fn #'%atk-spell-around-friend-equal)

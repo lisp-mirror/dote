@@ -250,21 +250,34 @@ returns four values:
               costs
               target-id))))
 
-(defun best-path-near-enemy-pos-w-current-weapon (blackboard ai-player
-                                                  &key (cut-off-first-tile t))
+(defun path-near-enemy-pos-w-current-weapon (blackboard ai-player path-builder-fn
+                                             &key (cut-off-first-tile t))
   (let ((target (ai-utils:best-visible-target ai-player)))
     (multiple-value-bind (path cumulative-cost costs)
-        (path-with-concerning-tiles blackboard
-                                    (calculate-cost-position ai-player)
-                                    (calculate-cost-position target)
-                                    :cut-off-first-tile  cut-off-first-tile
-                                    :allow-path-length-1 nil)
+        (funcall path-builder-fn
+                 blackboard
+                 (calculate-cost-position ai-player)
+                 (calculate-cost-position target)
+                 :cut-off-first-tile  cut-off-first-tile
+                 :allow-path-length-1 nil)
       (when path
         (let ((max (index-last-reachable-tile ai-player costs)))
           (values (subseq path 0 max)
                   cumulative-cost
                   costs
                   (id target)))))))
+
+(defun best-path-near-enemy-pos-w-current-weapon (blackboard ai-player
+                                                  &key (cut-off-first-tile t))
+  (path-near-enemy-pos-w-current-weapon blackboard ai-player
+                                        #'path-with-concerning-tiles
+                                        :cut-off-first-tile cut-off-first-tile))
+
+(defun insecure-path-near-enemy-pos-w-current-weapon (blackboard ai-player
+                                                      &key (cut-off-first-tile t))
+  (path-near-enemy-pos-w-current-weapon blackboard ai-player
+                                        #'path-w/o-concerning-tiles
+                                        :cut-off-first-tile cut-off-first-tile))
 
 (defun ghost->weapon-tactics (ai-player)
   (with-accessors ((ghost ghost)) ai-player

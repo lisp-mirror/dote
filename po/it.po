@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dote 0.0.1\n"
 "Report-Msgid-Bugs-To: cage@katamail.com\n"
-"POT-Creation-Date: 2018-05-31 19:39+0200\n"
-"PO-Revision-Date: 2018-05-31 19:40+0200\n"
+"POT-Creation-Date: 2018-06-05 17:17+0200\n"
+"PO-Revision-Date: 2018-06-05 17:17+0200\n"
 "Last-Translator: cage <cage@katamail.com>\n"
 "Language-Team: Italian\n"
 "Language: it\n"
@@ -441,7 +441,7 @@ msgstr "lancia ~a"
 msgid "Trap found! deactivate (chance ~a)?"
 msgstr "Attivata una trappola! Provare a disinnescarla (possibilita' ~a)"
 
-#: src/md2-mesh.lisp:556 src/saved-game.lisp:635 src/world.lisp:1034
+#: src/md2-mesh.lisp:556 src/saved-game.lisp:634 src/world.lisp:1043
 #: src/gui/load-save-window.lisp:155 src/gui/widget.lisp:4504
 #: src/gui/widget.lisp:5003
 msgid "OK"
@@ -553,13 +553,13 @@ msgstr "Scegli personaggi"
 msgid "Yes"
 msgstr "Si'"
 
-#: src/saved-game.lisp:631
+#: src/saved-game.lisp:630
 msgid "The map file of this level has been modified after the game was saved."
 msgstr ""
 "Il file della mappa di questo livello e' stato modificato dopo li "
 "salvataggio di questa partita."
 
-#: src/saved-game.lisp:633
+#: src/saved-game.lisp:632
 msgid "Saved game is outdated"
 msgstr "Il gioco salvato e' scaduto."
 
@@ -581,7 +581,7 @@ msgstr "Nessuna descrizione disponibile"
 msgid "Trap deactivated!"
 msgstr "Trappola disinnescata!"
 
-#: src/world.lisp:1041
+#: src/world.lisp:1050
 msgid "Message"
 msgstr "Messaggio"
 
@@ -733,20 +733,20 @@ msgstr "Carica"
 msgid "Load game"
 msgstr "Carica la partita"
 
-#: src/gui/new-game-window.lisp:126
-msgid "Notes"
-msgstr "Note"
+#: src/gui/new-game-window.lisp:127
+msgid "Click on the button on the left to choose a map"
+msgstr "Premere un bottone a sinistra per scegliere una mappa."
 
-#: src/gui/new-game-window.lisp:169
+#: src/gui/new-game-window.lisp:170
 #, lisp-format
 msgid "difficult: ~a"
 msgstr "difficolta': ~a"
 
-#: src/gui/new-game-window.lisp:221
+#: src/gui/new-game-window.lisp:222
 msgid "File corrupted"
 msgstr "File corrotto"
 
-#: src/gui/new-game-window.lisp:290
+#: src/gui/new-game-window.lisp:291
 msgid "Choose a map"
 msgstr "Scegli una mappa"
 
@@ -1037,6 +1037,9 @@ msgid ""
 msgstr ""
 "Ruba un massimo di 30 DMG e avvelena il nemico (per infliggere danno deve "
 "essere indossata un'arma a corto raggio)"
+
+#~ msgid "Notes"
+#~ msgstr "Note"
 
 #~ msgid "shield"
 #~ msgstr "scudo"

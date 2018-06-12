@@ -204,7 +204,7 @@
   (target-reachable-attack/damage-spell entity))
 
 (defun attackable-opponents-attack-spell (available-spells launcher-entity)
-  "can the laucher attack with an attack-spell from the current position?
+  "can the launcher attack with an attack-spell from the current position?
 Return the entity attackable and the best attack-spell available"
    (with-slots-for-reasoning (launcher-entity state ghost blackboard)
     (when-let* ((target-entity (target-reachable-attack-spell launcher-entity))
@@ -220,7 +220,7 @@ Return the entity attackable and the best attack-spell available"
                                                     &key
                                                       (available-spells
                                                        (available-attack-spells launcher-entity)))
-  "can the laucher *move* and attack with an attack-spell?
+  "can the launcher *move* and attack with an attack-spell?
 Return the entity attackable, the best attack-spell available and the position to reach."
   (with-slots-for-reasoning (launcher-entity state ghost blackboard)
     (with-predictable-for-turn-random-sequence (state)

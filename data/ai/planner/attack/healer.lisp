@@ -51,8 +51,20 @@
                                  !is-status-terror-p
                                  !is-in-attack-pos-p
                                  exists-visible-enemy
+                                 !probably-stronger-than-enemy-p
                                  can-move-near-enemy-pos)
          :cost                  5)
+  (:name :go-near-to-enemy-insecure
+         :preconditions         ()
+         :effects               ((:curb-threat    t))
+         :context-preconditions (can-minimally-move-p
+                                 enough-health-p
+                                 none-needs-help-p
+                                 !is-status-terror-p
+                                 !is-in-attack-pos-p
+                                 exists-visible-enemy
+                                 can-move-near-enemy-pos)
+         :cost                  8)
   (:name :use-fountain
          :preconditions         ((:has-fountain-facing t))
          :context-preconditions (!enough-health-p pass-1d4)

@@ -18,6 +18,8 @@
 
 (defparameter *visibility-target-placeholder* nil)
 
+(defclass visibility-placeholder (tree-mesh-shell able-to-see-mesh) ())
+
 (defparameter *ray-test-id-entities-ignored* nil
   "a list of id that the ray will ignore" )
 
@@ -31,7 +33,7 @@
                                    :flatten t)))
     (setf (compiled-shaders tree-mesh) shaders)
     (setf *visibility-target-placeholder* (mesh:fill-shell-from-mesh tree-mesh
-                                                                     'mesh:tree-mesh-shell))
+                                                                     'visibility-placeholder))
     (setf (renderp *visibility-target-placeholder*) nil)
     (setf (entity:pos *visibility-target-placeholder*)
           (vec (map-utils:coord-map->chunk 0.0)
@@ -48,6 +50,8 @@
      ,@body))
 
 (defmacro %placeholder-visible-p-wrapper ((player x y) &body body)
+  "convert x y (integer coordinate (e. g. cost space) in 3d coordinates and
+move the placeholder there"
   (with-gensyms (x-terrain-space z-terrain-space h-terrain-space state)
     `(with-accessors ((,state state)) ,player
        (let* ((,x-terrain-space (map-utils:coord-map->chunk ,x))
@@ -57,6 +61,17 @@
                                                            ,z-terrain-space)))
          (with-placeholder@ (,x-terrain-space ,h-terrain-space ,z-terrain-space)
            ,@body)))))
+
+(defun reset-placeholder-position ()
+  "move in an invisible place the placeholder"
+  (setf (entity:pos *visibility-target-placeholder*)
+        (vec (map-utils:coord-map->chunk 0.0)
+             (- +zero-height+)
+             (map-utils:coord-map->chunk 0.0)))
+  (world:move-entity (game-state:fetch-world (state *visibility-target-placeholder*))
+                     *visibility-target-placeholder*
+                     nil
+                     :update-costs nil))
 
 (defun placeholder-visible-p (player x y &key (me-visible-by-myself-p t))
   "x y z logical map space (integer)"
@@ -70,6 +85,8 @@
           (multiple-value-bind (ray entity)
               (other-visible-p player *visibility-target-placeholder*
                                :me-visible-by-myself-p me-visible-by-myself-p)
+            ;; reset placeholder's posittion
+            ;; TODO: use reset-placeholder-position
             (setf (entity:pos *visibility-target-placeholder*)
                   (vec (map-utils:coord-map->chunk 0.0)
                        (- +zero-height+)
@@ -198,7 +215,7 @@ Returns two values: *invisibles* and *visibles* tiles"
               visibles))))
 
 (defun placeholder-visible-ray-p (player x y &key (me-visible-by-myself-p t))
-  "x y z logical map space (integer)"
+  "x y logical map space (integer)"
   (with-accessors ((state state)) player
     ;; if the position is occupied switch to normal visibility test
     (if (not (map-element-empty-p (element-mapstate@ state x y)))
@@ -214,6 +231,31 @@ Returns two values: *invisibles* and *visibles* tiles"
                        (- +zero-height+)
                        (map-utils:coord-map->chunk 0.0)))
             (values ray entity))))))
+
+(defun placeholder-able-to-see-p (x-placeholder y-placeholder target
+                              &key
+                                (me-visible-by-myself-p t)
+                                (placeholder-direction  nil))
+  "can a placeholder see the entity target?
+If direction is nil the placeholder turn around and test for visibility until sweep 360°"
+  (labels ((visibility-test ()
+             (multiple-value-bind (ray entity)
+                 (other-visible-p *visibility-target-placeholder*
+                                  target
+                                  :me-visible-by-myself-p me-visible-by-myself-p)
+               (reset-placeholder-position)
+               (values ray entity)))
+           (set-dir-and-test (dir)
+             (%placeholder-visible-p-wrapper (target x-placeholder y-placeholder)
+               (setf (dir *visibility-target-placeholder*) dir)
+               (update-visibility-cone *visibility-target-placeholder*)
+               (visibility-test))))
+      (if placeholder-direction
+          (set-dir-and-test placeholder-direction)
+          (or (set-dir-and-test +x-axe+)
+              (set-dir-and-test (vec-negate +x-axe+))
+              (set-dir-and-test +z-axe+)
+              (set-dir-and-test (vec-negate +z-axe+))))))
 
 (defclass able-to-see-mesh (triangle-mesh)
   ((visibility-cone
@@ -331,8 +373,8 @@ note: by default non labyrinth elements are ignored"
                                            :cone cone
                                            :me-visible-by-myself-p me-visible-by-myself-p)))
       (when in-cone-p
-        ;; (misc:dbg "visible for cone ~a" (id target))
-        ;; (return-from other-visible-p t)
+        ;;(misc:dbg "visible for cone ~a" target)
+        ;;(return-from other-visible-p t)
         (multiple-value-bind (ray-hitted entity-hitted)
             (other-visible-ray-p object
                                  target
@@ -346,6 +388,22 @@ note: by default non labyrinth elements are ignored"
   `(and (not (entity-dead-p ,entity))
         ,@body))
 
+(defmethod other-visible-cone-p ((object able-to-see-mesh) (target vector)
+                                 &key
+                                   (cone (visibility-cone object))
+                                   (me-visible-by-myself-p t))
+  "is target visible from object (cone test)? Trget is a 3d vector."
+  (with-accessors ((pos pos)) object
+    (if (and me-visible-by-myself-p
+             (vec~ pos target))
+        (values (make-instance 'ray
+                               :displacement 0.0
+                               :ray-direction (dir object))
+                object)
+        (ensure-not-dead (object)
+          (point-in-cone-p cone target)))))
+
+;; TODO use the method specialized in: mesh, vector
 (defmethod other-visible-cone-p ((object able-to-see-mesh) (target triangle-mesh)
                                  &key
                                    (cone (visibility-cone object))
