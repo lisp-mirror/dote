@@ -16,31 +16,31 @@
 
 (in-package :game-state)
 
-(alexandria:define-constant +start-day+     6                :test #'=)
+(alexandria:define-constant +start-day+                 6          :test #'=)
 
-(alexandria:define-constant +end-day+      20                :test #'=)
+(alexandria:define-constant +end-day+                  20          :test #'=)
 
-(alexandria:define-constant +start-night+  21                :test #'=)
+(alexandria:define-constant +start-night+              21          :test #'=)
 
-(alexandria:define-constant +end-night+     5                :test #'=)
+(alexandria:define-constant +end-night+                 5          :test #'=)
 
-(alexandria:define-constant +zenith-night+ 23                :test #'=)
+(alexandria:define-constant +zenith-night+             23          :test #'=)
 
-(alexandria:define-constant +zenith-day+   13                :test #'=)
+(alexandria:define-constant +zenith-day+               13          :test #'=)
 
-(alexandria:define-constant +yellow-light-color+  §cffff99ff :test #'vec4~)
+(alexandria:define-constant +yellow-light-color+        §cffff99ff :test #'vec4~)
 
-(alexandria:define-constant +white-light-color+   §cffffffff :test #'vec4~)
+(alexandria:define-constant +white-light-color+         §cffffffff :test #'vec4~)
 
-(alexandria:define-constant +blueish-light-color+ §c7ba8e4ff :test #'vec4~)
+(alexandria:define-constant +blueish-light-color+       §c7ba8e4ff :test #'vec4~)
 
-(alexandria:define-constant +density-no-fog+      0.0        :test #'=)
+(alexandria:define-constant +density-no-fog+            0.0        :test #'=)
 
-(alexandria:define-constant +density-fog+         0.006      :test #'=)
+(alexandria:define-constant +density-fog+               0.006      :test #'=)
 
-(alexandria:define-constant +pc-a*-cross-weight+   4.05      :test #'=)
+(alexandria:define-constant +pc-a*-cross-weight+        4.05       :test #'=)
 
-(alexandria:define-constant +npc-a*-cross-weight+  0.0       :test #'=)
+(alexandria:define-constant  +default-a*-cost-scaling+  1.001      :test #'=)
 
 (defun hour->light-color (h)
   (cond
@@ -679,23 +679,16 @@
      (loop for i from 0 below (length (data map-state)) do
           (setf (elt (data map-state) i) (make-instance 'map-state-element)))))
 
-(defun heuristic-manhattam (&optional (cross-product-weight +npc-a*-cross-weight+))
+(defun heuristic-manhattam (&optional (cost-scaling +default-a*-cost-scaling+))
   #'(lambda (object a b start-node)
-      (declare (ignore object))
+      (declare (ignore object start-node))
       (let* ((a-x   (d (elt a 0)))
              (a-y   (d (elt a 1)))
              (b-x   (d (elt b 0)))
              (b-y   (d (elt b 1)))
-             (s-x   (d (elt start-node 0)))
-             (s-y   (d (elt start-node 1)))
              (cost  (d+ (dabs (d- b-x a-x))
-                        (dabs (d- b-y a-y))))
-             (dx1   (d- b-x a-x))
-             (dy1   (d- b-y a-y))
-             (dx2   (d- s-x a-x))
-             (dy2   (d- s-y a-y))
-             (cross (abs (d- (d* dx1 dy2) (d* dx2 dy1)))))
-        (d+ cost (d* cross cross-product-weight)))))
+                        (dabs (d- b-y a-y)))))
+        (d* cost cost-scaling))))
 
 (defun %build-movement-path (graph start end other-costs-layer)
   (graph:with-pushed-cost-layer (graph other-costs-layer)
@@ -940,7 +933,7 @@
 (defmethod approx-terrain-height@pos ((object game-state) x z)
   "x and z in world space"
   (let ((world-ref (fetch-world object)))
-    (world::pick-height-terrain world-ref x z)))
+    (world:pick-height-terrain world-ref x z)))
 
 (defmethod place-player-on-map ((object game-state) player faction
                                 &key (position #(0 0)) (force-position-p nil))
