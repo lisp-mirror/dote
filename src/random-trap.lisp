@@ -30,6 +30,12 @@
 
 (define-constant +minimum-chance-healing-fx+             0.05  :test #'=)
 
+(define-constant +decay-sigma+    #(56.0 48.0 40.0 36.0 36.0 24.0 22.0 20.0 30.0 35.0)
+  :test #'equalp)
+
+(define-constant +decay-mean+     #(30.0 28.0 26.0 24.0 12.0 10.0 9.0 8.0 4.0 0.0)
+  :test #'equalp)
+
 (define-constant +level-sigma+         #(1 1.2 1.8 1.9 2.0 2.2 2.3 2.5 2.7 3.0)
   :test #'equalp)
 
@@ -61,6 +67,24 @@
 (define-constant +minimum-damage-point+                   1.0          :test #'=)
 
 (define-constant +maximum-damage-point+                  20.0          :test #'=)
+
+(define-constant +minimum-decay+                         20.0        :test #'=)
+
+(defun decay-params (trap-level)
+  (values (elt +decay-sigma+ trap-level)
+          (elt +decay-mean+  trap-level)))
+
+(defun calculate-decay-points (trap-level)
+  (multiple-value-bind (sigma mean)
+      (decay-params (1- trap-level))
+    (truncate (max +minimum-decay+ (gaussian-probability sigma mean)))))
+
+(defun calculate-decay (object-level decay-points)
+  (make-instance 'decay-parameters
+                 :leaving-message (format nil
+                                          (_ " (object level ~a).") object-level)
+                 :points decay-points
+                 :when-decay  +decay-by-turns+))
 
 (defun randomize-damage-points (character level)
   (setf (damage-points character)
@@ -174,8 +198,12 @@
     (with-interaction-parameters-file (template interaction-file)
       (let* ((trap-level          (calculate-level map-level))
              (healing-effects-no (number-of-healing-effects trap-level 0))
-             (healing-effects    (get-healing-fx-shuffled template healing-effects-no)))
+             (healing-effects    (get-healing-fx-shuffled template healing-effects-no))
+             (trap-decay       (calculate-decay-points trap-level)))
         (n-setf-path-value char-template (list +level+) (d trap-level))
+        (n-setf-path-value template
+                           (list +decay+)
+                           (calculate-decay trap-level trap-decay))
         (loop for i in healing-effects do
              (cond
                ((eq i +heal-damage-points+)

@@ -72,6 +72,12 @@
 
 (define-constant +maximum-damage-point+                  20.0          :test #'=)
 
+(defun calculate-decay ()
+  (make-instance 'decay-parameters
+                 :leaving-message "Bye"
+                 :points          100.0
+                 :when-decay      +decay-by-turns+))
+
 (defun randomize-damage-points (character level)
   (setf (damage-points character)
         (calculate-randomized-damage-points level
@@ -80,7 +86,6 @@
                                              +minimum-damage-point+
                                              +maximum-damage-point+
                                              (d/ (d level) (d* 5.0 (d +maximum-level+))))))
-
 
 (defun level-params (map-level)
   (values (elt +level-sigma+ map-level)
@@ -166,6 +171,9 @@
              (healing-effects-no (number-of-healing-effects key-level 0))
              (healing-effects    (get-healing-fx-shuffled template healing-effects-no)))
         (n-setf-path-value char-template (list +level+) (d key-level))
+        (n-setf-path-value template
+                           (list +decay+)
+                           (calculate-decay))
         (loop for i in healing-effects do
              (cond
                ((eq i +heal-damage-points+)
