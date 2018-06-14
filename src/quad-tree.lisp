@@ -220,7 +220,7 @@
      ,@(append
         (loop for i in slots collect
              `((aabb2-inglobe-p (aabb ,i) ,aabb-entity)
-               (push-down (,i ,object) ,entity ,aabb-entity)))
+               (push-down (,i ,object) ,entity :ent-aabb ,aabb-entity)))
         `((t
            (vector-push-extend ,entity (data ,object)))))))
 
