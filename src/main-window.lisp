@@ -93,7 +93,7 @@
   (with-accessors ((world world)
                    (root-compiled-shaders root-compiled-shaders)) window
     (saved-game::prepare-for-map-loading window)
-    (saved-game:load-map window "test.lisp")
+    (saved-game:load-map window "test.lisp" (truncate +maximum-level-difficult+))
     (saved-game:init-new-map window (truncate +maximum-level-difficult+))
     #+debug-mode
     (progn

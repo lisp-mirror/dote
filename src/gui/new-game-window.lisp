@@ -112,7 +112,7 @@
                              :texture-object      (get-texture +square-button-texture-name+)
                              :texture-pressed     (get-texture +square-button-pressed-texture-name+)
                              :texture-overlay     (get-texture +button-ok-texture-name+)
-                             :callback            #'load-game-cb)
+                             :callback            #'start-new-game-cb)
     :initarg  :b-ok
     :accessor b-ok)
    (text-notes
@@ -269,16 +269,17 @@
       (when (> buttons-start 0)
         (scroll win #'(lambda (a) (- a 1)))))))
 
-(defun load-game-cb (w e)
+(defun start-new-game-cb (w e)
   (declare (ignore e))
   (with-parent-widget (win) w
     (with-accessors ((state    state)
                      (map-file map-file)) win
       (when  map-file
-        (let ((render-window (game-state:fetch-render-window state)))
+        (let ((render-window   (game-state:fetch-render-window state))
+              (difficult-level (val (s-difficult win))))
           (saved-game::prepare-for-map-loading render-window)
-          (saved-game:load-map render-window map-file)
-          (saved-game:init-new-map render-window (val (s-difficult win))))))))
+          (saved-game:load-map render-window map-file difficult-level)
+          (saved-game:init-new-map render-window difficult-level))))))
 
 (defun make-window (compiled-shaders)
   (let ((win (make-instance 'new-game-window

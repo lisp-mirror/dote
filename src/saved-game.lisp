@@ -425,7 +425,7 @@
 (defun init-new-map (window difficult-level)
   (with-accessors ((world world)
                    (root-compiled-shaders main-window:root-compiled-shaders)) window
-    (setf (level-difficult  (main-state world)) difficult-level)
+    ;(setf (level-difficult  (main-state world)) difficult-level)
     (setf (world:gui world)
           (make-instance 'widget:widget
                          :x      0.0
@@ -485,9 +485,9 @@
   (with-accessors ((world world)
                    (root-compiled-shaders main-window:root-compiled-shaders)) window
     (prepare-for-map-loading window)
-    (setf (level-difficult  (main-state world))
-          (saved-diffcult-level saved-dump))
-    (load-map window (original-map-file saved-dump))
+    ;; (setf (level-difficult  (main-state world))
+    ;;       (saved-diffcult-level saved-dump))
+    (load-map window (original-map-file saved-dump) (saved-diffcult-level saved-dump))
     (setf (world:gui world)
           (make-instance 'widget:widget
                          :x 0.0 :y 0.0
@@ -603,10 +603,11 @@
   (setf (main-window:world window) nil)
   (tg:gc :full t))
 
-(defun load-map (window map-file)
+(defun load-map (window map-file difficult-level)
   (with-accessors ((world world)
                    (root-compiled-shaders main-window:root-compiled-shaders)) window
     (setf *map-loaded-p* nil)
+    (setf (level-difficult  (main-state world)) difficult-level)
     (load-level:load-level window
                            world
                            (main-window:window-game-state window)
