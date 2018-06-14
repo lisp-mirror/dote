@@ -1568,6 +1568,7 @@
    :heuristic-manhattam
    :astar-search
    :dijkstra-search
+   :all-minimum-path-costs
    :dfs-search
    :bfs-search
    :graph->path

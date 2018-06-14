@@ -46,6 +46,8 @@
 
 (defgeneric dijkstra-search (object from))
 
+(defgeneric all-minimum-path-costs (object from-id))
+
 (defgeneric dfs-search (object from compare-fn key-fn map-fn))
 
 (defgeneric bfs-search (object from compare-fn key-fn map-fn))
@@ -484,7 +486,7 @@
                                               :key #'first
                                               :compare #'<
                                               :equal #'=))))
-        (and ca cb (= (second ca) (second cb))))))
+        (and ca cb (= (cdr ca) (cdr cb))))))
 
 (defun compare-function* ()
   #'(lambda (a b)
@@ -496,7 +498,7 @@
                                               :key #'first
                                               :compare #'<
                                               :equal #'=))))
-        (and ca cb (< (second ca) (second cb))))))
+        (and ca cb (< (cdr ca) (cdr cb))))))
 
 (defun heuristic-manhattam ()
   #'(lambda (object a b start-node)
@@ -519,15 +521,16 @@
              (let ((found (bs-tree:search the-set node-id :key #'first :compare #'< :equal #'=)))
                (if found
                    (bs-tree:data found)
-                   (list node-id 0))))
+                   (cons node-id 0))))
            (find-cost-in-node-set (node-id the-set)
-             (second (find-node-in-set node-id the-set))))
+             (cdr (find-node-in-set node-id the-set))))
     (let ((cumulative-cost (rb-tree:make-root-rb-node nil 'black))
           (*cumulative-cost-plus-heuristic* (rb-tree:make-root-rb-node nil 'black))
           (bst (make-instance 'list-graph))
           (frontier (make-instance 'list-graph)))
       (pq:with-min-queue (queue (equal-function*) (compare-function*) #'identity)
         (pq:push-element queue from-id)
+        ;; (setf (traverse-cost ...) ...) will add the nodes, too
         (setf (traverse-cost frontier from-id from-id) 0)
         (do ((visited (pq:pop-element queue) (pq:pop-element queue)))
             ((not visited) (values bst cumulative-cost))
@@ -554,14 +557,14 @@
                                                   next cumulative-cost))))
                        (setf *cumulative-cost-plus-heuristic*
                              (bs-tree:insert *cumulative-cost-plus-heuristic*
-                                             (list next new-cost-plus-heuristic)
+                                             (cons next new-cost-plus-heuristic)
                                              :key #'first
                                              :key-datum #'first
                                              :compare #'<
                                              :equal #'=))
                        (setf cumulative-cost
                              (bs-tree:insert cumulative-cost
-                                             (list next new-cost)
+                                             (cons next new-cost)
                                              :key #'first
                                              :key-datum #'first
                                              :compare #'<
@@ -574,6 +577,64 @@
   (astar-search object from-id nil
                 :heuristic-cost-function #'(lambda (a b)
                                              (declare (ignore a b)) 0)))
+
+(defmethod all-minimum-path-costs ((object tile-multilayers-graph) from-id)
+  "Find all the path cost starting from \"from-id\" node to all others nodes of the graph"
+  (with-accessors ((layers layers)) object
+    (labels ((find-node-in-set (node-id the-set)
+               (let ((found (bs-tree:search the-set node-id :key #'first :compare #'< :equal #'=)))
+                 (if found
+                     (bs-tree:data found)
+                     (cons node-id 0))))
+             (find-cost-in-node-set (node-id the-set)
+               (cdr (find-node-in-set node-id the-set))))
+      (let* ((first-layer-mat                  (alexandria:first-elt layers))
+             (results                          (matrix:make-matrix (matrix:width  first-layer-mat)
+                                                                   (matrix:height first-layer-mat)))
+             (*cumulative-cost-plus-heuristic* (rb-tree:make-root-rb-node nil 'black))
+             (frontier                         (make-instance 'list-graph)))
+        (pq:with-min-queue (queue (equal-function*) (compare-function*) #'identity)
+          (pq:push-element queue from-id)
+          (setf (traverse-cost frontier from-id from-id) 0)
+          (do ((visited (pq:pop-element queue) (pq:pop-element queue)))
+              ((not visited))
+            (let* ((node-coord         (node-id->node object visited))
+                   (node-cost-to-reach (find-cost-in-node-set visited
+                                                              *cumulative-cost-plus-heuristic*)))
+              (setf (matrix:matrix-elt results
+                                       (2d-utils:seq-y node-coord)
+                                       (2d-utils:seq-x node-coord))
+                    node-cost-to-reach)
+              (let ((next-nodes (get-first-near-as-id object visited)))
+                (loop for next in next-nodes do
+                     (let* ((new-cost (+ (find-cost-in-node-set visited
+                                                                *cumulative-cost-plus-heuristic*)
+                                         (traverse-cost object (node-id->node object visited)
+                                                        (node-id->node object next)))))
+                       (when (or (null (find-node frontier next))
+                                 (< new-cost
+                                    (find-cost-in-node-set next
+                                                           *cumulative-cost-plus-heuristic*)))
+                         (setf *cumulative-cost-plus-heuristic*
+                               (bs-tree:insert *cumulative-cost-plus-heuristic*
+                                               (cons next new-cost)
+                                               :key #'first
+                                               :key-datum #'first
+                                               :compare #'<
+                                               :equal #'=))
+                         (pq:push-element queue next)
+                         (delete-all-arcs frontier next)
+                         (setf (traverse-cost frontier next visited) new-cost))))))))
+        results))))
+
+(defun testing-layer-graph ()
+  (let ((m (matrix:make-matrix 96 96 1.0)))
+    (make-tile-multilayer-graph m)))
+
+(defun a*-multilayer-all ()
+  (all-minimum-path-costs (testing-layer-graph)
+                         (node->node-id (testing-layer-graph) #(1 0))))
+
 
 ;; TODO
 ;; (defmethod to-sexp ((object list-graph)))
