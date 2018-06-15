@@ -182,7 +182,7 @@
             (*lcg-seed* ,turn))
        ,@body)))
 
-(defun %best-visible-target (entity visibility-fn)
+(defun %best-visible-target (entity visibility-fn least-powerful-select-fn)
   (with-accessors ((state state)) entity
     (with-accessors ((blackboard blackboard:blackboard)) state
       (when-let ((all-visibles (funcall visibility-fn blackboard entity))
@@ -191,14 +191,16 @@
                                  +attack-least-powerful-low-level-chance+)))
         (with-predictable-for-turn-random-sequence (state)
           (if (dice:pass-d100.0 chance)
-              (least-powerful-visible-opponents blackboard entity)
+              (funcall least-powerful-select-fn blackboard entity)
               (random-elt all-visibles)))))))
 
 (defun best-visible-target (entity)
-  (%best-visible-target entity #'visible-opponents-sorted))
+  (%best-visible-target entity #'visible-opponents-sorted #'least-powerful-visible-opponents))
 
 (defun faction-best-visible-target (entity)
-  (%best-visible-target entity #'faction-visible-opponents-sorted))
+  (%best-visible-target entity
+                        #'faction-visible-opponents-sorted
+                        #'faction-least-powerful-visible-opponents))
 
 (defun target-attack/damage-spell (entity)
   (faction-best-visible-target entity))
@@ -598,8 +600,8 @@ sorted from the most powerful to the least one.
 see: character:combined-power"
   (with-accessors ((main-state main-state)) strategy-expert
     (when-let* ((all     (faction-all-visibles-opponents strategy-expert
-                                                 entity
-                                                 :alive-only alive-only))
+                                                         entity
+                                                         :alive-only alive-only))
                 (sorted  (shellsort all (combined-power-compare-clsr t))))
       sorted)))
 
