@@ -538,7 +538,7 @@
                  `(absee-mesh:other-visible-p ,entity ,target-entity)
                  `(absee-mesh:other-faction-visible-players ,entity))
             #+(and debug-mode debug-ai)
-             (misc:dbg "rotation end with see in ~a times" count)
+             (misc:dbg "rotation end with seen in ~a times" count)
              (when (and (> count 0)
                         ,set-cost-occurred-p)
                #+(and debug-mode debug-ai) (misc:dbg "setting cost!")
@@ -550,6 +550,8 @@
                                          :decrement-movement-points ,decrement-movement-points)))
               (action-scheduler:with-enqueue-action-and-send-remove-after
                   (,world action-scheduler:tactical-plane-action)
+                #+(and debug-mode debug-ai)
+                (misc:dbg "can't see an enemy, rotating (~a)" count)
                 (game-event:propagate-rotate-entity-ccw-event ,event)
                 (blackboard:update-all-attacking-pos ,blackboard)
                 ,(let ((function-recursive-call (list name state entity

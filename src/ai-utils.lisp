@@ -182,10 +182,10 @@
             (*lcg-seed* ,turn))
        ,@body)))
 
-(defun best-visible-target (entity)
+(defun %best-visible-target (entity visibility-fn)
   (with-accessors ((state state)) entity
     (with-accessors ((blackboard blackboard:blackboard)) state
-      (when-let ((all-visibles (visible-opponents-sorted blackboard entity))
+      (when-let ((all-visibles (funcall visibility-fn blackboard entity))
                  (chance       (if-difficult-level>medium (state)
                                  +attack-least-powerful-hi-level-chance+
                                  +attack-least-powerful-low-level-chance+)))
@@ -194,17 +194,11 @@
               (least-powerful-visible-opponents blackboard entity)
               (random-elt all-visibles)))))))
 
+(defun best-visible-target (entity)
+  (%best-visible-target entity #'visible-opponents-sorted))
+
 (defun faction-best-visible-target (entity)
-  (with-accessors ((state state)) entity
-    (with-accessors ((blackboard blackboard:blackboard)) state
-      (when-let ((all-visibles (faction-visible-opponents-sorted blackboard entity))
-                 (chance       (if-difficult-level>medium (state)
-                                 +attack-least-powerful-hi-level-chance+
-                                 +attack-least-powerful-low-level-chance+)))
-        (with-predictable-for-turn-random-sequence (state)
-          (if (dice:pass-d100.0 chance)
-              (least-powerful-visible-opponents blackboard entity)
-              (random-elt all-visibles)))))))
+  (%best-visible-target entity #'faction-visible-opponents-sorted))
 
 (defun target-attack/damage-spell (entity)
   (faction-best-visible-target entity))
