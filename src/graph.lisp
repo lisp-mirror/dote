@@ -627,42 +627,6 @@
                          (setf (traverse-cost frontier next visited) new-cost))))))))
         results))))
 
-(defun testing-layer-graph ()
-  (let ((m (matrix:make-matrix 96 96 1.0)))
-    (make-tile-multilayer-graph m)))
-
-(defun a*-multilayer-all ()
-  (all-minimum-path-costs (testing-layer-graph)
-                         (node->node-id (testing-layer-graph) #(1 0))))
-
-
-;; TODO
-;; (defmethod to-sexp ((object list-graph)))
-;;   (let ((visit (dfs-search object (random-node-id object))))
-;;     (mapcar #'(lambda (node-id)
-;;                 (let ((node (find-node object node-id)))
-;;                   (concatenate 'list
-;;                                (list (to-sexp (first node)))
-;;                                (mapcar #'(lambda (adj) (to-sexp adj))
-;;                                        (rest node)))))
-;;             visit)))
-
-;; (defmethod from-sexp ((object list-graph) sexp) ;; NO
-;;   (mapc #'(lambda (node)
-
-;;             (push
-;;              (concatenate 'list
-;;                           (list (first node))
-;;                           (mapcar #'(lambda (adj)
-;;                                       (make-instance 'arc-graph
-;;                                                      :start (getf adj +start-keyword+)
-;;                                                      :destination (getf adj +destination-keyword+)
-;;                                                      :cost (getf adj +cost-keyword+)))
-;;                                   (rest node)))
-;;              (adjacency-list object)))
-;;         sexp)
-;;   object)
-
 (defmacro with-container ((container compare-fn key-fn) &body body)
   (ecase container
     (:stack

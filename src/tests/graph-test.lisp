@@ -24,9 +24,9 @@
                                 2.0 1.0 2.0
                                 2.0 1.0 2.0)
                               (matrix:define-matrix (3 3)
-                                1.0  1.0 1.0
+                                1.0   1.0 1.0
                                 1.0  10.0 1.0
-                                1.0  1.0 1.0)))
+                                1.0   1.0 1.0)))
 
 (deftest test-a*-multilayer (graph-suite)
   (assert-true
@@ -41,3 +41,25 @@
                            raw-path)))
             (and (equalp path #((1 0) (2 0) (2 1) (2 2) (1 2)))
                  (=      cost 11.0)))))))
+
+
+(defun testing-dijkstra-search-multilayer-graph ()
+  (make-tile-multilayer-graph (matrix:define-matrix (3 3)
+                                2.0 1.0 2.0
+                                2.0 1.0 2.0
+                                3.0 1.0 2.0)
+                              (matrix:define-matrix (3 3)
+                                1.0   1.0  1.0
+                                1.0  10.0  1.0
+                                1.0   1.0  1.0)))
+
+(deftest dijkstra-search-multilayer-all (graph-suite)
+  (let* ((graph (testing-dijkstra-search-multilayer-graph))
+         (costs (all-minimum-path-costs graph
+                                        (node->node-id graph #(1 0)))))
+    (assert-equality #'(lambda (a b) (every #'num:epsilon= a b))
+        (matrix:data costs)
+        (matrix:data (matrix:define-matrix (3 3)
+                        3.0    0  3.0
+                        6.0 11.0  6.0
+                       10.0 11.0  9.0)))))
