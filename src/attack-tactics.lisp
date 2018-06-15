@@ -252,7 +252,7 @@ returns four values:
 
 (defun path-near-enemy-pos-w-current-weapon (blackboard ai-player path-builder-fn
                                              &key (cut-off-first-tile t))
-  (let ((target (ai-utils:best-visible-target ai-player)))
+  (let ((target (ai-utils:faction-best-visible-target ai-player)))
     (multiple-value-bind (path cumulative-cost costs)
         (funcall path-builder-fn
                  blackboard

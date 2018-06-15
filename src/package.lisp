@@ -3325,7 +3325,8 @@
    :available-attack-spells
    :available-damage-spells
    :best-visible-target
-   :target-reachable-attack/damage-spell
+   :faction-best-visible-target
+   :target-attack/damage-spell
    :best-attackable-position-exists-path
    :insecure-attackable-position-exists-path
    :attackable-position-exists

@@ -194,20 +194,32 @@
               (least-powerful-visible-opponents blackboard entity)
               (random-elt all-visibles)))))))
 
-(defun target-reachable-attack/damage-spell (entity)
-  (best-visible-target entity))
+(defun faction-best-visible-target (entity)
+  (with-accessors ((state state)) entity
+    (with-accessors ((blackboard blackboard:blackboard)) state
+      (when-let ((all-visibles (faction-visible-opponents-sorted blackboard entity))
+                 (chance       (if-difficult-level>medium (state)
+                                 +attack-least-powerful-hi-level-chance+
+                                 +attack-least-powerful-low-level-chance+)))
+        (with-predictable-for-turn-random-sequence (state)
+          (if (dice:pass-d100.0 chance)
+              (least-powerful-visible-opponents blackboard entity)
+              (random-elt all-visibles)))))))
 
-(defun target-reachable-attack-spell (entity)
-  (target-reachable-attack/damage-spell entity))
+(defun target-attack/damage-spell (entity)
+  (faction-best-visible-target entity))
 
-(defun target-reachable-damage-spell (entity)
-  (target-reachable-attack/damage-spell entity))
+(defun target-attack-spell (entity)
+  (target-attack/damage-spell entity))
+
+(defun target-damage-spell (entity)
+  (target-attack/damage-spell entity))
 
 (defun attackable-opponents-attack-spell (available-spells launcher-entity)
   "can the launcher attack with an attack-spell from the current position?
 Return the entity attackable and the best attack-spell available"
    (with-slots-for-reasoning (launcher-entity state ghost blackboard)
-    (when-let* ((target-entity (target-reachable-attack-spell launcher-entity))
+    (when-let* ((target-entity (target-attack-spell launcher-entity))
                 (spell         (find-best-attack-spell state
                                                        available-spells
                                                        launcher-entity
@@ -224,7 +236,7 @@ Return the entity attackable and the best attack-spell available"
 Return the entity attackable, the best attack-spell available and the position to reach."
   (with-slots-for-reasoning (launcher-entity state ghost blackboard)
     (with-predictable-for-turn-random-sequence (state)
-      (when-let* ((target-entity    (target-reachable-attack-spell launcher-entity))
+      (when-let* ((target-entity    (target-attack-spell launcher-entity))
                   (spell            (find-best-attack-spell state
                                                             available-spells
                                                             launcher-entity
@@ -269,7 +281,7 @@ Return the target entity, the best attack-spell available and the position to re
 Return the entity attackable, the best attack-spell available and the position to reach."
   (with-slots-for-reasoning (launcher-entity state ghost blackboard)
     (with-predictable-for-turn-random-sequence (state)
-      (when-let* ((target-entity    (target-reachable-damage-spell launcher-entity))
+      (when-let* ((target-entity    (target-damage-spell launcher-entity))
                   (spell            (find-best-damage-spell state
                                                             available-spells
                                                             launcher-entity

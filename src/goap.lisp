@@ -663,13 +663,13 @@ reach the enemy with optimal path?"
 
 (defgoap-test exists-visible-enemy (strategy-expert entity)
   (declare (ignore strategy-expert))
-  (let ((res (ai-utils:target-reachable-attack/damage-spell entity)))
+  (let ((res (ai-utils:target-attack/damage-spell entity)))
     res))
 
 (defun probably-stronger-than-enemy-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (with-accessors ((entity-ghost ghost)) entity
-    (let* ((target       (ai-utils:target-reachable-attack/damage-spell entity))
+    (let* ((target       (ai-utils:target-attack/damage-spell entity))
            (target-ghost (ghost target)))
       (and target
            (< (num:d/ (character:combined-power target-ghost)
