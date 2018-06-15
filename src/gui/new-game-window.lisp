@@ -72,6 +72,13 @@
 (defun scale-difficult-x ()
   (d* 2.0 (%square-button-size)))
 
+(defun title-height ()
+  (d* (new-game-window-h) 0.20))
+
+(defun notes-height ()
+  (d- (d* (new-game-window-h) 0.70)
+      (title-height)))
+
 (defclass new-game-window (window)
   ((buttons-start
     :initform 0
@@ -115,16 +122,31 @@
                              :callback            #'start-new-game-cb)
     :initarg  :b-ok
     :accessor b-ok)
+   (text-title
+    :initform (make-instance 'widget:static-text
+                             :height           (title-height)
+                             :width            (d- (new-game-window-w)
+                                                   (new-game-win-button-list-w))
+                             :x                (new-game-win-button-list-w)
+                             :y                0.0
+                             :label-font-size  (h3-font-size *reference-sizes*)
+                             :label
+                             (_ "Click on the button on the left to choose a map")
+                             :label-font-color §cb2ffffff
+                             :delay-fn         (constantly 0)
+                             :justified        t)
+    :initarg  :text-title
+    :accessor text-title)
    (text-notes
     :initform (make-instance 'widget:static-text
-                             :height          (d* (new-game-window-h) 0.75)
+                             :height          (notes-height)
                              :width           (d- (new-game-window-w)
                                                   (new-game-win-button-list-w))
                              :x               (new-game-win-button-list-w)
-                             :y               0.0
+                             :y               (title-height)
                              :label-font-size (h3-font-size *reference-sizes*)
-                             :label
-                             (_ "Click on the button on the left to choose a map")
+                             :label           ""
+
                              :delay-fn        (delay-text-appears-in-sequence)
                              :justified       t)
     :initarg  :text-notes
@@ -157,6 +179,7 @@
                    (b-scroll-down b-scroll-down)
                    (b-scroll-up   b-scroll-up)
                    (input-path    input-path)
+                   (text-title    text-title)
                    (text-notes    text-notes)
                    (s-difficult   s-difficult)) object
     (setf (callback-plus s-difficult)
@@ -172,6 +195,7 @@
     (sync-value-w-label s-difficult)
     (regenerate-map-buttons object)
     (add-children* object
+                   text-title
                    text-notes
                    b-ok
                    b-scroll-up
@@ -202,6 +226,7 @@
       (with-accessors ((buttons-start      buttons-start)
                        (buttons-slice-size buttons-slice-size)
                        (map-file           map-file)
+                       (text-title         text-title)
                        (text-notes         text-notes)) new-game-window
         (setf (delay-fn text-notes) (delay-text-appears-in-sequence))
         (let ((file (res:get-resource-file (label w)
@@ -212,12 +237,8 @@
                    level-config:*level-notes*)
               (progn
                 (setf map-file (label w))
-                (setf (label text-notes)
-                      (text-utils:join-with-strings* (text-utils:strcat
-                                                      +gui-static-text-delim+
-                                                      +gui-static-text-delim+)
-                                                     level-config:*level-name*
-                                                     level-config:*level-notes*))
+                (setf (label text-title) level-config:*level-name*)
+                (setf (label text-notes) level-config:*level-notes*)
                 (level-config:clean-global-vars))
               (setf (label text-notes) (_ "File corrupted")))))))
 
