@@ -276,8 +276,10 @@
                              (setf (gethash height actual-hashtable)
                                    (generate-particle height :depress depress))
                              (gethash height actual-hashtable))))
-         (aabb         (trasl-aabb2  (vec4:vec4 0.0 0.0 (desired size) (desired size))
-                                     (- x-center size) (- y-center size)))
+         (aabb         (trasl-aabb2 (vec4:vec4 0.0 0.0
+                                               (d (* 2 size))
+                                               (d (* 2 size)))
+                                    (- x-center size) (- y-center size)))
          (min-acceptable-height (max (- (matrix:matrix-elt matrix y-center x-center)
                                         (matrix:matrix-elt matrix
                                                            (/ (matrix:width new-particle) 2)
@@ -835,20 +837,29 @@
             (error 'invalid-position-error :coord (list x y))
             (matrix:with-check-matrix-borders (matrix x y)
               (let ((aabb   (matrix:good-aabb-start))
-                    (pixels (matrix:flood-fill matrix x y :max-iteration area
-                                     :tolerance 0
-                                     :randomize-growth randomize-growth
-                                     :position-acceptable-p-fn #'lake-particle-inside-limits-p)))
+                    (pixels (matrix:flood-fill matrix x y
+                                               :max-iteration    area
+                                               :tolerance        0
+                                               :randomize-growth randomize-growth
+                                               :position-acceptable-p-fn
+                                               #'lake-particle-inside-limits-p)))
                 (if (= (length pixels) area)
                     (progn
                       (loop for pix in pixels do
                            (if (zerop z)
                                (setf (matrix:matrix-elt matrix (elt pix 1) (elt pix 0))
                                      +lake-height+)
-                               (let ((aabb-part (deposit-particle matrix (elt pix 0) (elt pix 1)
-                                                                  z
-                                                                  :depress t
-                                                                  :min-height +min-height+)))
+                               (let* ((aabb-part (deposit-particle matrix
+                                                                   (elt pix 0)
+                                                                   (elt pix 1)
+                                                                   z
+                                                                   :depress t
+                                                                   :min-height +min-height+))
+                                      (x-corner (aabb2-min-x aabb-part))
+                                      (y-corner (aabb2-min-y aabb-part)))
+                                 (setf aabb (expand-aabb2 aabb
+                                                          (vec2 (- x-corner 1.0)
+                                                                (- y-corner 1.0))))
                                  (setf aabb (union-aabb2 aabb aabb-part)))))
                       (map 'vec4 #'(lambda (a) (if (d< a 0.0) 0.0 a)) aabb))
                     nil))))
@@ -1151,26 +1162,36 @@
           (grow-mountain object x y w h z sigma-w sigma-h))))))
 
 (defmethod make-lakes ((object random-terrain) &key
-                       (rate 0.2)
-                       (maximum-iteration 100000)
-                       (size-function (default-lake-size-function)))
+                                                 (rate 0.2)
+                                                 (maximum-iteration 100000)
+                                                 (size-function (default-lake-size-function)))
   (let* ((w-map (width  (matrix object)))
-         (h-map (height (matrix object))))
-    (do* ((iteration 0 (1+ iteration))
-          (x (num:lcg-next-upto w-map) (num:lcg-next-upto w-map))
-          (y (num:lcg-next-upto h-map) (num:lcg-next-upto h-map)))
-         ((not (and (< iteration maximum-iteration)
-                    (< (/ (cumulative-size-lakes object) (area-size object)) rate))))
-      (let ((area (funcall size-function object x y iteration)))
-        (handler-bind ((invalid-position-error
-                        #'(lambda (c)
-                            (declare (ignore c))
-                            (use-value nil)))
-                       (overlap-error
-                        #'(lambda (c)
-                            (declare (ignore c))
-                            (use-value nil))))
-          (grow-lake object x y area))))))
+         (h-map (height (matrix object)))
+         (x-lower-limit 1)
+         (y-lower-limit 1)
+         (x-upper-limit (1- w-map))
+         (y-upper-limit (1- h-map)))
+    (flet ((lake-limit (min max)
+             (num:lcg-next-in-range min max)))
+      (do* ((iteration 0 (1+ iteration))
+            (x (lake-limit x-lower-limit x-upper-limit)
+               (lake-limit x-lower-limit x-upper-limit))
+            (y (lake-limit y-lower-limit y-upper-limit)
+               (lake-limit y-lower-limit y-upper-limit)))
+           ((not (and (< iteration maximum-iteration)
+                      (< (/ (cumulative-size-lakes object)
+                            (area-size object))
+                         rate))))
+        (let ((area (funcall size-function object x y iteration)))
+          (handler-bind ((invalid-position-error
+                          #'(lambda (c)
+                              (declare (ignore c))
+                              (use-value nil)))
+                         (overlap-error
+                          #'(lambda (c)
+                              (declare (ignore c))
+                              (use-value nil))))
+            (grow-lake object x y area)))))))
 
 (defmethod make-labyrinth-space ((object random-terrain)
                                  &key
