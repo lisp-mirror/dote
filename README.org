@@ -17,19 +17,20 @@ tactical game.
 - supported mesh  in obj and MD2  file format, tags supported  for the
   latter;
 - simple caching system for levels;
-- Opengl GUI (minimal).
+- OpenGL GUI (minimal).
 
 * Current status
 
-The game  is *playable*  but many things are missing (most of the audio and video).
-Please send me an email if you want to [[Contributing][help]].
+The game  is *not playable* and  many things are missing  (most of the
+audio  and  video).    Please  send  me  an  email  if   you  want  to
+[[Contributing][help]].
 
 * Building
 
   A primitive building  method using autotools is  supported.  For the
-  moment just run  ./configure and then edit  the file src/config.lisp
-  and modify  the constants \+sys-data-dir\+ \+catalog-dir\+  to match
-  the path where the sources are.
+  moment just run =./configure= and then edit the file src/config.lisp
+  and  modify the  constants =+sys-data-dir+=  and =+catalog-dir+=  to
+  match the path where the sources are.
 
 For example
 
@@ -93,11 +94,12 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
 * BUGS
 
   Please send bug report to cage at katamail dot com
+  or point your browset to [[https://notabug.org/cage/dote/issues][notabug repository]].
 
 * License
 
-  This program is released under GNU General Public license version 3 or later (see
-  COPYING file).
+  This program is released under  GNU General Public license version 3
+  or later (see COPYING file).
 
   The  program  use data  and  code  from  other sources,  please  see
   LICENSES.org for credits.
