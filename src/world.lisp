@@ -214,6 +214,11 @@
                              :width  *window-w*
                              :height *window-h*
                              :label nil))
+   (reserve-send-action-terminated
+    :reader   reserve-send-action-terminated-p
+    :writer   (setf reserve-send-action-terminated)
+    :initarg  reserve-send-action-terminated
+    :initform nil)
    (influence-map-type
      :accessor influence-map-type
      :initarg  :influence-map-type
@@ -552,15 +557,20 @@
   (build-projection-matrix (camera object) near far fov ratio))
 
 (defmethod calculate ((object world) dt)
-  (with-accessors ((main-state   main-state)
-                   (gui          gui)
-                   (camera       camera)
-                   (skydome      skydome)
-                   (opening-mode opening-mode)) object
+  (with-accessors ((main-state                       main-state)
+                   (gui                              gui)
+                   (camera                           camera)
+                   (skydome                          skydome)
+                   (opening-mode                     opening-mode)
+                   (reserve-send-action-terminated-p reserve-send-action-terminated-p)) object
     (incf (current-time (main-state object)) dt)
     (when (not opening-mode)
       (setf (widget:label (widget:text-fps (elt (mtree-utils:children (gui object)) 0)))
             (format nil "~,2f" (main-window:fps (frame-window object)))))
+    (parallel-utils:with-mutex
+      (when reserve-send-action-terminated-p
+        (setf (reserve-send-action-terminated object) nil)
+        (game-event:send-action-terminated-event)))
     (calculate (gui object) dt)
     (calculate (camera object) dt)
     (when (not opening-mode)

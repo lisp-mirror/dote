@@ -122,21 +122,19 @@
                              :callback            #'start-new-game-cb)
     :initarg  :b-ok
     :accessor b-ok)
-   (text-title
-    :initform (make-instance 'widget:static-text
+   (label-title
+    :initform (make-instance 'widget:flush-center-label
                              :height           (title-height)
                              :width            (d- (new-game-window-w)
                                                    (new-game-win-button-list-w))
                              :x                (new-game-win-button-list-w)
                              :y                0.0
-                             :label-font-size  (h3-font-size *reference-sizes*)
+                             :label-font-size  (h2-font-size *reference-sizes*)
                              :label
                              (_ "Click on the button on the left to choose a map")
-                             :label-font-color §cb2ffffff
-                             :delay-fn         (constantly 0)
-                             :justified        t)
-    :initarg  :text-title
-    :accessor text-title)
+                             :label-font-color (title-font-color *reference-sizes*))
+    :initarg  :label-title
+    :accessor label-title)
    (text-notes
     :initform (make-instance 'widget:static-text
                              :height          (notes-height)
@@ -179,7 +177,7 @@
                    (b-scroll-down b-scroll-down)
                    (b-scroll-up   b-scroll-up)
                    (input-path    input-path)
-                   (text-title    text-title)
+                   (label-title   label-title)
                    (text-notes    text-notes)
                    (s-difficult   s-difficult)) object
     (setf (callback-plus s-difficult)
@@ -195,7 +193,7 @@
     (sync-value-w-label s-difficult)
     (regenerate-map-buttons object)
     (add-children* object
-                   text-title
+                   label-title
                    text-notes
                    b-ok
                    b-scroll-up
@@ -226,7 +224,7 @@
       (with-accessors ((buttons-start      buttons-start)
                        (buttons-slice-size buttons-slice-size)
                        (map-file           map-file)
-                       (text-title         text-title)
+                       (label-title        label-title)
                        (text-notes         text-notes)) new-game-window
         (setf (delay-fn text-notes) (delay-text-appears-in-sequence))
         (let ((file (res:get-resource-file (label w)
@@ -237,7 +235,7 @@
                    level-config:*level-notes*)
               (progn
                 (setf map-file (label w))
-                (setf (label text-title) level-config:*level-name*)
+                (setf (label label-title) level-config:*level-name*)
                 (setf (label text-notes) level-config:*level-notes*)
                 (level-config:clean-global-vars))
               (setf (label text-notes) (_ "File corrupted")))))))

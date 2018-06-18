@@ -391,8 +391,7 @@
                                           :animation-speed  #+ (and debug-mode
                                                                     fast-opening)
                                                             3000.0
-                                                            #- (or  (not debug-mode)
-                                                                    fast-opening)
+                                                            #- (not debug-mode)
                                                             30.0
                                           :compiled-shaders compiled-shaders
                                           :x                0.0

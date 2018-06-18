@@ -65,6 +65,8 @@
 
 (defclass gui-action                         (game-action) ())
 
+(defclass bg-process-action                  (game-action) ())
+
 (defclass tooltip-show-action                (game-action)
   ((label
     :initform  nil
@@ -245,6 +247,16 @@
     `(action-scheduler:with-enqueue-action ,params
        (game-event:with-send-action-terminated-check-type ,(subseq params 0 2)
          ,@body))))
+
+(defmacro with-enqueued-bg-process ((world action
+                                           &optional
+                                           (priority '*default-action-priority*))
+                                    &body body)
+  (let ((params `(,world ,action ,priority)))
+    `(action-scheduler:with-enqueue-action ,params
+      (lparallel:future ,@body
+                        (parallel-utils:with-mutex
+                          (setf (world:reserve-send-action-terminated ,world) t))))))
 
 (defun tt ()
   (let ((scheduler (make-instance 'action-scheduler))

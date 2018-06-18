@@ -234,6 +234,10 @@
     :initform 10.0
     :initarg  :standard-font-size
     :accessor standard-font-size)
+   (title-font-color
+    :initform §cb2ffffff
+    :initarg  :title-font-color
+    :accessor title-font-color)
    (button-text-offset-x
     :initform 0.1
     :initarg :button-text-offset-x
@@ -1285,7 +1289,7 @@
                  (format nil "~a~a" prefix new-label)
                  :reset-label-slot t)))
 
-(defun common-lush-*-label-setup (widget new-label x-shift-fn &key (reset-label-slot t))
+(defun common-flush-*-label-setup (widget new-label x-shift-fn &key (reset-label-slot t))
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (simple-string new-label))
   (declare (function x-shift-fn))
@@ -1300,11 +1304,14 @@
     (when reset-label-slot
       (with-slots (label) widget
         (setf label new-label)))
-    (let* ((char-width    (ftruncate (d/ width label-font-size)))
-           (lines         (reverse (flush-left-mono-text (split-words new-label) char-width)))
-           (actual-height (d* label-font-size (d (length lines)))))
+    (let* ((char-width         (ftruncate (d/ width label-font-size)))
+           (lines              (flush-left-mono-text (split-words new-label) char-width))
+           (wanted-height      (d* label-font-size (d (length lines))))
+           (scaling-height     (d/ height wanted-height))
+           (actual-font-height (if (d< wanted-height height)
+                                   label-font-size
+                                   (d/ (d* wanted-height scaling-height) (d (length lines))))))
       (declare (list lines))
-      (setf height actual-height)
       (loop
          for line-count from 0.0 by 1.0
          for line in lines do
@@ -1316,12 +1323,15 @@
                              (fill-font-mesh-shell mesh :color label-font-color)
                              nil)))
              (when shell
-               (setf (scaling shell) (sb-cga:vec label-font-size label-font-size 0.0))
+               (setf (scaling shell) (sb-cga:vec label-font-size actual-font-height 0.0))
                (setf (pos     shell) (sb-cga:vec (funcall x-shift-fn
                                                           widget
                                                           xf
                                                           line)
-                                                 (d* line-count label-font-size)
+                                                 (d- (d+ (d* (d- line-count) actual-font-height)
+                                                         height)
+                                                     actual-font-height)
+
                                                  0.0))
                (add-child widget shell))))))))
 
@@ -1338,7 +1348,7 @@
     (let ((x-shift-fn #'(lambda (widget xf line)
                           (declare (ignore widget line))
                           xf)))
-      (common-lush-*-label-setup object new-label x-shift-fn
+      (common-flush-*-label-setup object new-label x-shift-fn
                                  :reset-label-slot reset-label-slot))))
 
 (defmethod (setf label) (new-label (object flush-left-label))
@@ -1361,7 +1371,7 @@
                               (d/ (d* label-font-size
                                       (d (length line)))
                                   2.0)))))
-      (common-lush-*-label-setup object new-label x-shift-fn
+      (common-flush-*-label-setup object new-label x-shift-fn
                                  :reset-label-slot reset-label-slot))))
 
 (defmethod (setf label) (new-label (object flush-center-label))
