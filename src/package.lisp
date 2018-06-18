@@ -239,7 +239,8 @@
    :with-kernel
    :*parallel-setf-queue*
    :with-mutex
-   :parallel-setf))
+   :parallel-setf
+   :build-bg-process))
 
 (defpackage :misc-utils
   (:use :cl
@@ -2938,6 +2939,7 @@
    :trigger-trap-attack-action
    :tactical-plane-action
    :gui-action
+   :bg-process-action
    :tooltip-show-action
    :animated-billboard-show-action
    :turn-billboard-show-action
@@ -2956,7 +2958,8 @@
    :*default-action-priority*
    :with-enqueue-action
    :end-of-life-remove-from-action-scheduler
-   :with-enqueue-action-and-send-remove-after))
+   :with-enqueue-action-and-send-remove-after
+   :with-enqueued-bg-process))
 
 (defpackage :basic-interaction-parameters
   (:use :cl
@@ -4631,6 +4634,7 @@
    :h3-font-size
    :h4-font-size
    :standard-font-size
+   :title-font-color
    :button-text-offset-x
    :button-text-fit-height
    :button-label-max-size
@@ -5076,6 +5080,8 @@
    :traps-bag
    :windows-bag
    :gui
+   :reserve-send-action-terminated-p
+   :reserve-send-action-terminated
    :influence-map-type
    :toolbar
    :render-for-reflection

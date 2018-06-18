@@ -466,24 +466,28 @@
 (defmethod game-event:on-game-event ((object blackboard) (event game-event:end-turn))
   (with-accessors ((concerning-tiles              concerning-tiles)
                    (concerning-tiles-facing       concerning-tiles-facing)
-                   (concerning-tiles-invalicables concerning-tiles-invalicables)) object
+                   (concerning-tiles-invalicables concerning-tiles-invalicables)
+                   (main-state                    main-state))                   object
     (decrease-concerning              (main-state object) concerning-tiles)
     (decrease-concerning              (main-state object) concerning-tiles-facing)
     (reset-default-concerning-invalicable-range   object)
     (decrease-concerning-invalicables (main-state object) concerning-tiles-invalicables)
-    (%update-all-infos            object)
-    (reset-per-turn-visited-tiles object)
-    #+ (and debug-mode debug-ai)
-    (progn
-      (dbg "pole  ~a"      (attack-enemy-pole-positions     object))
-      (dbg "melee ~a"      (attack-enemy-melee-positions    object))
-      (dbg "bow   ~a"      (attack-enemy-bow-positions      object))
-      (dbg "crossbow   ~a" (attack-enemy-crossbow-positions object))
-      (dbg "def-pos ~a"    (fetch-defender-positions        object))
-      (dbg "atk-pos(melee) ~a"
-           (fetch-attacker-positions object
-                                     :filter-fn (filter-attack-pos-by-weapon
-                                                 #'character:weapon-type-minimum-range-p))))
+    (with-world (world main-state)
+      (action-scheduler:with-enqueued-bg-process (world action-scheduler:bg-process-action)
+        (%update-all-infos            object)
+        (reset-per-turn-visited-tiles object)
+        #+ (and debug-mode debug-ai)
+        (progn
+          (dbg "pole  ~a"      (attack-enemy-pole-positions     object))
+          (dbg "melee ~a"      (attack-enemy-melee-positions    object))
+          (dbg "bow   ~a"      (attack-enemy-bow-positions      object))
+          (dbg "crossbow   ~a" (attack-enemy-crossbow-positions object))
+          (dbg "def-pos ~a"    (fetch-defender-positions        object))
+          (dbg "atk-pos(melee) ~a"
+               (fetch-attacker-positions object
+                                         :filter-fn
+                                         (filter-attack-pos-by-weapon
+                                          #'character:weapon-type-minimum-range-p))))))
     nil))
 
 (defmethod game-event:on-game-event ((object blackboard)

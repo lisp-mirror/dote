@@ -57,3 +57,21 @@
   `(with-workers (workers-number)
      (let ((lparallel:*kernel* (lparallel:make-kernel workers-number)))
        ,@body)))
+
+(defun build-bg-process (fn timeout &key (cleanup-fn nil))
+  (let ((channel :start)
+        (results nil))
+    #'(lambda ()
+        (cond
+          ((eq channel :start)
+           (setf channel (lparallel:make-channel))
+           (lparallel:submit-task channel fn))
+          ((null channel)
+           results)
+          (t
+           (setf results (lparallel:try-receive-result channel :timeout timeout))
+           (when results
+             (setf channel nil)
+             (and  (functionp cleanup-fn)
+                   (funcall cleanup-fn))
+             results))))))

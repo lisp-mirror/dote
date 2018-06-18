@@ -321,7 +321,7 @@
                              :height (input-text-h *reference-sizes*)
                              :x      0.0
                              :y      (d* 2.0 (preprt-label-ability-h))
-                             :label-font-color §cdffffeff
+                             :label-font-color (title-font-color *reference-sizes*)
                              :label " ")
     :initarg :lb-name
     :accessor lb-name)

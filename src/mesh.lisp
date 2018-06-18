@@ -3227,11 +3227,12 @@ possible)."
               |      \-|      \-|
               +--------+--------+ ...
 "
-  (let* ((aabb   (map 'vector #'(lambda (a) (map-utils:coord-terrain->chunk a :tile-offset 0.0))
-                      (vec4:vec4 (d- (elt (measures object) 0) +terrain-chunk-tile-size+)
-                                 (d- (elt (measures object) 1) +terrain-chunk-tile-size+)
-                                 (d+ (elt (measures object) 2) +terrain-chunk-tile-size+)
-                                 (d+ (elt (measures object) 3) +terrain-chunk-tile-size+))))
+  (let* ((aabb    (map 'vector #'(lambda (a)
+                                   (map-utils:coord-terrain->chunk a :tile-offset 0.0))
+                       (vec4:vec4 (elt (measures object) 0)
+                                  (elt (measures object) 1)
+                                  (elt (measures object) 2)
+                                  (elt (measures object) 3))))
          (x-end   (aabb2-max-x aabb))
          (y-end   (aabb2-max-y aabb))
          (x-start (aabb2-min-x aabb))
