@@ -94,7 +94,7 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
 * BUGS
 
   Please send bug report to cage at katamail dot com
-  or point your browset to [[https://notabug.org/cage/dote/issues][notabug repository]].
+  or point your browser to the [[https://notabug.org/cage/dote/][notabug repository]].
 
 * License
 
