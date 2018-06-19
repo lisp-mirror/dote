@@ -393,9 +393,11 @@
 
 (defgeneric entity-player-in-pos (object x y))
 
-(defgeneric build-movement-path (object start end &key other-costs-layer))
+(defgeneric build-movement-path (object start end
+                                 &key other-costs-layer heuristic-cost-function))
 
-(defgeneric build-movement-path-pc (object start end &key other-costs-layer))
+(defgeneric build-movement-path-pc (object start end
+                                    &key other-costs-layer heuristic-cost-function))
 
 (defgeneric terrain-aabb-2d (object))
 
@@ -690,12 +692,30 @@
                         (dabs (d- b-y a-y)))))
         (d* cost cost-scaling))))
 
-(defun %build-movement-path (graph start end other-costs-layer)
+(defun heuristic-alt (landmarks)
+  #'(lambda (graph goal-node next-node start-node)
+      (declare (ignore graph start-node))
+      (loop for mat across landmarks maximize
+           (let ((min-cost-next (matrix-elt mat
+                                            (2d-utils:seq-y next-node)
+                                            (2d-utils:seq-x next-node)))
+                 (min-cost-goal (matrix-elt mat
+                                            (2d-utils:seq-y goal-node)
+                                            (2d-utils:seq-x goal-node))))
+             (dabs (d- (d min-cost-next) (d min-cost-goal)))))))
+
+(defun heuristic-alt-pc (game-state)
+  (with-accessors ((blackboard blackboard)) game-state
+    (with-accessors ((landmarks-dists blackboard:landmarks-dists)) blackboard
+      (heuristic-alt landmarks-dists))))
+
+(defun %build-movement-path (graph start end other-costs-layer
+                             &key (heuristic-cost-function (heuristic-manhattam)))
   (graph:with-pushed-cost-layer (graph other-costs-layer)
     (let ((tree (graph:astar-search graph
                                     (graph:node->node-id graph start)
                                     (graph:node->node-id graph end)
-                                    :heuristic-cost-function (heuristic-manhattam))))
+                                    :heuristic-cost-function heuristic-cost-function)))
       (multiple-value-bind (raw-path cost)
           (graph:graph->path tree (graph:node->node-id graph end))
         (let ((path (map 'vector
@@ -703,21 +723,31 @@
                          raw-path)))
           (values path cost))))))
 
-(defmethod build-movement-path ((object game-state) start end &key (other-costs-layer '()))
+(defmethod build-movement-path ((object game-state) start end
+                                &key
+                                  (other-costs-layer '())
+                                  (heuristic-cost-function (heuristic-manhattam)))
   (with-accessors ((movement-costs movement-costs)) object
-    (%build-movement-path movement-costs start end other-costs-layer)))
+    (%build-movement-path movement-costs start end other-costs-layer
+                          :heuristic-cost-function heuristic-cost-function)))
 
-(defmethod build-movement-path-pc ((object game-state) start end &key (other-costs-layer '()))
+(defmethod build-movement-path-pc ((object game-state) start end
+                                   &key
+                                     (other-costs-layer '())
+                                     (heuristic-cost-function (heuristic-alt-pc object)))
   (with-accessors ((movement-costs-pc movement-costs-pc)) object
-    (%build-movement-path movement-costs-pc start end other-costs-layer)))
+    (%build-movement-path movement-costs-pc start end other-costs-layer
+                         :heuristic-cost-function heuristic-cost-function)))
 
 (defmethod build-movement-path ((object graph:tile-multilayers-graph) start end
-                                &key (other-costs-layer '()))
+                                &key
+                                  (other-costs-layer '())
+                                  (heuristic-cost-function (heuristic-manhattam)))
     (graph:with-pushed-cost-layer (object other-costs-layer)
       (let ((tree (graph:astar-search object
                                       (graph:node->node-id object start)
                                       (graph:node->node-id object end)
-                                      :heuristic-cost-function (heuristic-manhattam))))
+                                      :heuristic-cost-function heuristic-cost-function)))
         (multiple-value-bind (raw-path cost)
             (graph:graph->path tree (graph:node->node-id object end))
           (let ((path (map 'vector

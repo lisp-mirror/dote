@@ -1566,7 +1566,6 @@
    :matrix
    :list-graph
    :*cumulative-cost-plus-heuristic*
-   :heuristic-manhattam
    :astar-search
    :dijkstra-search
    :all-minimum-path-costs
@@ -2510,6 +2509,9 @@
    :magic-furniture@pos-p
    :selected-pc
    :selected-path
+   :heuristic-alt
+   :heuristic-alt-pc
+   :heuristic-manhattam
    :build-movement-path
    :build-movement-path-pc
    :terrain-aabb-2d
@@ -5629,6 +5631,9 @@
    :number-pc@start-turn
    :number-npc@start-turn
    :main-influence-map
+   :landmarks-dists
+   :landmarks-w/concenring-no-doors-dists
+   :landmarks-w/o-concenring-no-doors-dists
    :exhausted-fountains-ids
    :concerning-tiles
    :concerning-tiles-invalicables
@@ -5670,6 +5675,9 @@
    :all-player-ray-visibles-by-entity
    :all-visibles-by-entity
    :all-visibles-ray-by-entity
+   :update-w-concerning-landmarks
+   :update-pc-landmarks
+   :update-w/o-concerning-landmarks
    :update-unexplored-layer
    :update-unreachable-layer
    :update-all-attacking-pos

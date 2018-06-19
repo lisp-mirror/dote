@@ -2379,6 +2379,7 @@ to take care of that"
     (with-accessors ((blackboard blackboard:blackboard)) state
         (ai-utils:next-explore-position blackboard object))))
 
+;; unused
 (defmethod build-player-path ((object md2-mesh) to-pos)
   "to-pos in cost coordinates (ivec2)"
   (assert (ivec2p to-pos))
@@ -2406,6 +2407,7 @@ to take care of that"
                 nil))
           nil))))
 
+;; unused
 (defmethod validate-player-path ((object md2-mesh) path)
   (with-accessors ((ghost ghost)
                    (state state)

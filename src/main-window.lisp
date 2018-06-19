@@ -342,6 +342,20 @@
             (when (world:opening-mode world)
               (skip-opening world))
             #+debug-mode (close-window object))
+          #+debug-mode
+          (when (eq :scancode-4 scancode)
+            (with-accessors ((world world) (mesh mesh)) object
+              (let* ((game-state         (window-game-state object)))
+                (with-accessors ((selected-pc selected-pc)) world
+                  (let ((pos (mesh:calculate-cost-position selected-pc)))
+                    (misc:dbg "w conc ~a"
+                              (game-state:build-movement-path-pc
+                               game-state
+                               pos
+                               (ivec2 16 16)
+                               :heuristic-cost-function
+                               (game-state:heuristic-alt-pc game-state))))))))
+          #+debug-mode
           (when (eq :scancode-3 scancode)
             (with-accessors ((world world) (mesh mesh)) object
               (let* ((game-state         (window-game-state object))
@@ -350,12 +364,14 @@
                   (let ((pos (mesh:calculate-cost-position selected-pc)))
                     (misc:dbg "w conc ~a"
                               (blackboard:path-with-concerning-tiles blackboard
-                                                                     pos
-                                                                     (ivec2 3 1)))
+                                                                      pos
+                                                                      (ivec2 3 1)))
                     (misc:dbg "w conc ~a"
                               (game-state:build-movement-path-pc (main-state world)
                                                                  pos
-                                                                 (ivec2 3 1))))))))
+                                                                 (ivec2 16 16)
+                                                                 :heuristic-cost-function
+                                                                  (heuristic-alt-pc game-state))))))))
           (when (eq :scancode-2 scancode)
             (make-screenshot world)
             #+ (and debug-mode debug-ai)
@@ -509,7 +525,9 @@
               (multiple-value-bind (path cost)
                   (game-state:build-movement-path-pc main-state
                                                      cost-player-position
-                                                     cost-pointer-position)
+                                                     cost-pointer-position
+                                                     :heuristic-cost-function
+                                                     (heuristic-alt-pc main-state))
                 (when (and path
                            (<= cost player-movement-points))
                   (setf (game-state:selected-path main-state)

@@ -192,6 +192,24 @@
                (with-blacklist-action-if-no-cost (,entity ,strategy-decision ,action)))))))))
 
 ;; used as parallel thread
+(defun update-all-blackboard-infos (entity)
+  (with-accessors ((state state)) entity
+    (with-accessors ((blackboard game-state:blackboard)) state
+      #+ (and debug-mode debug-ai)
+      (game-state:with-world (world state)
+        (world::render-influence-map world))
+      (blackboard::%update-all-infos blackboard)
+      (update-landmarks-infos entity)
+      entity)))
+
+(defun update-landmarks-infos (entity)
+  (with-accessors ((state state)) entity
+    (with-accessors ((blackboard game-state:blackboard)) state
+      (blackboard:update-w-concerning-landmarks blackboard)
+      entity)))
+
+;; used as parallel thread
+;; does not update landmarks
 (defun update-blackboard-infos (entity)
   (with-accessors ((state state)) entity
     (with-accessors ((blackboard game-state:blackboard)) state
@@ -211,12 +229,12 @@
 
 (defgeneric actuate-plan (object strategy action))
 
-(defun spawn-update-infos-task (mesh)
+(defun spawn-update-infos-task (mesh update-fn)
   (with-accessors ((state state)) mesh
     (game-state:with-world (world state)
       (widget:activate-planner-icon world)
       (setf *update-infos-channel* (lparallel:make-channel))
-      (lparallel:submit-task *update-infos-channel* 'update-blackboard-infos mesh))))
+      (lparallel:submit-task *update-infos-channel* update-fn mesh))))
 
 (defun get-presence-log-data (blackboard key)
   (ai-logger:ai-log-data (ai-logger:get-log blackboard key)))
@@ -229,7 +247,7 @@
   (ai-logger:ai-log-data (ai-logger:get-log blackboard
                                             ai-logger:+ai-log-pc-entity-presence+)))
 
-(defmacro with-spawn-if-presence-diff ((entity) &body body)
+(defmacro with-spawn-if-presence-diff ((entity update-fn) &body body)
   (with-gensyms (state blackboard old-pc-log old-ai-log
                        new-pc-log new-ai-log no-diff-pres-p)
     `(with-accessors ((,state state)) ,entity
@@ -258,18 +276,18 @@
                         (set-difference ,old-ai-log ,new-ai-log
                                         :test #'ai-logger:equal-presence-p))
              (when (not ,no-diff-pres-p)
-               (spawn-update-infos-task ,entity))))))))
+               (spawn-update-infos-task ,entity ,update-fn))))))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+plan-stopper+)))
-  (with-spawn-if-presence-diff (object)
+  (with-spawn-if-presence-diff (object 'update-blackboard-infos)
     (%clean-plan object (list :ai-tree))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+interrupt-action+)))
-  (with-spawn-if-presence-diff (object)
+  (with-spawn-if-presence-diff (object 'update-all-blackboard-infos)
     (%clean-plan-and-blacklist object)))
 
 (defmethod actuate-plan ((object md2-mesh)

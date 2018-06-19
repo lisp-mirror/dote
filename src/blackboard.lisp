@@ -40,6 +40,8 @@
 
 (define-constant +concerning-tiles-min-value+               0.0 :test #'=)
 
+(define-constant +landmark-numbers+                         4  :test #'=)
+
 (defmacro with-conc-path-total-cost ((total-cost) path-calculating-exp &body body)
   "Use with 'path-with-concerning-tiles' only"
   (with-gensyms (path costs)
@@ -215,6 +217,27 @@
     :type     matrix
     :documentation "This  is the influence map. Influence is based on
     character:calculate-influence")
+   (landmarks-dists
+    :initform (make-array-frame +landmark-numbers+ 'matrix t)
+    :initarg  :landmarks-dists
+    :accessor landmarks-dists
+    :documentation "A vector of matrix,  each matrix holds the minimum
+    path from all the tiles to a chosen landmarks (for path of the PCs
+    i.e. no concerning tiles and doors")
+   (landmarks-w/concenring-no-doors-dists
+    :initform (make-array-frame +landmark-numbers+ 'matrix t)
+    :initarg  :landmarks-w/concenring-no-doors-dists
+    :accessor landmarks-w/concenring-no-doors-dists
+    :documentation "A vector of matrix,  each matrix holds the minimum
+    path from  all the  tiles to  a chosen  landmarks (for  paths with
+    concerning tiles and no doors, usually for NPC)")
+   (landmarks-w/o-concenring-no-doors-dists
+    :initform (make-array-frame +landmark-numbers+ 'matrix t)
+    :initarg  :landmarks-w/o-concenring-no-doors-dists
+    :accessor landmarks-w/o-concenring-no-doors-dists
+    :documentation "A vector of matrix,  each matrix holds the minimum
+    path from  all the  tiles to  a chosen  landmarks (for  paths *without*
+    concerning tiles and without doors, usually for NPC)")
    (use-enemy-fov-when-exploring
     :initform nil
     :initarg  :use-enemy-fov-when-exploring-p
@@ -459,6 +482,56 @@
   (when-let ((tiles (get-matrix-turn-visited-tiles blackboard entity)))
     (matrix-elt tiles y x)))
 
+(defun %update-landmarks (blackboard all-dists movement-costs other-costs-layer)
+  (with-accessors ((main-state main-state)) blackboard
+    (graph:with-pushed-cost-layer (movement-costs other-costs-layer)
+      (let ((w-mat            (width (map-state main-state)))
+            (h-mat            (width (map-state main-state)))
+            (landmarks-so-far '()))
+        (lparallel:pdotimes (i +landmark-numbers+)
+          (do ((found nil))
+              (found)
+            (when-let* ((landmark-x          (lcg-next-upto w-mat))
+
+                        (landmark-y          (lcg-next-upto h-mat))
+                        (landmark-node       (ivec2 landmark-x landmark-y))
+                        (landmark-not-exists (not (find landmark-node
+                                                        landmarks-so-far
+                                                        :test #'ivec2=)))
+                        (landmark-id         (graph:node->node-id movement-costs landmark-node))
+                        (costs               (graph:all-minimum-path-costs movement-costs
+                                                                           landmark-id)))
+              (setf found t)
+              (setf (elt all-dists i) costs))))))))
+
+(defun update-pc-landmarks (blackboard)
+  (with-accessors ((main-state main-state)) blackboard
+    (%update-landmarks blackboard
+                       (landmarks-dists   blackboard)
+                       (movement-costs-pc main-state)
+                       nil)))
+
+(defun update-w-concerning-landmarks (blackboard &key (suppress-doors-p t))
+  (with-accessors ((main-state main-state)) blackboard
+    (let* ((concerning-tiles  (concerning-tiles->costs-matrix blackboard))
+           (suppress-door-mat (and suppress-doors-p
+                                   (list (suppress-closed-door-cost-mat blackboard))))
+           (others-costs     (append (list concerning-tiles) suppress-door-mat)))
+      (%update-landmarks blackboard
+                         (landmarks-w/concenring-no-doors-dists blackboard)
+                         (movement-costs                        main-state)
+                         others-costs))))
+
+(defun update-w/o-concerning-landmarks (blackboard &key (suppress-doors-p t))
+  (with-accessors ((main-state main-state)) blackboard
+    (let* ((suppress-door-mat (and suppress-doors-p
+                                   (suppress-closed-door-cost-mat blackboard)))
+           (others-costs      (list suppress-door-mat)))
+      (%update-landmarks blackboard
+                         (landmarks-w/o-concenring-no-doors-dists blackboard)
+                         (movement-costs                          main-state)
+                         others-costs))))
+
 (defun %update-all-infos (blackboard)
   (%update-all-layers       blackboard)
   (update-all-attacking-pos blackboard))
@@ -474,8 +547,14 @@
     (decrease-concerning-invalicables (main-state object) concerning-tiles-invalicables)
     (with-world (world main-state)
       (action-scheduler:with-enqueued-bg-process (world action-scheduler:bg-process-action)
+        (widget:activate-planner-icon world)
         (%update-all-infos            object)
         (reset-per-turn-visited-tiles object)
+        (if (faction-turn-ai-p world)
+            (update-pc-landmarks object)
+            (progn
+              (update-w-concerning-landmarks   object)
+              (update-w/o-concerning-landmarks object)))
         #+ (and debug-mode debug-ai)
         (progn
           (dbg "pole  ~a"      (attack-enemy-pole-positions     object))
@@ -487,7 +566,8 @@
                (fetch-attacker-positions object
                                          :filter-fn
                                          (filter-attack-pos-by-weapon
-                                          #'character:weapon-type-minimum-range-p))))))
+                                          #'character:weapon-type-minimum-range-p))))
+        (widget:deactivate-planner-icon world)))
     nil))
 
 (defmethod game-event:on-game-event ((object blackboard)

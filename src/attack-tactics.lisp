@@ -353,6 +353,7 @@ returns four values:
 
 (defun calc-path-tiles-no-doors (blackboard ai-position
                                  defender-position
+                                 heuristic
                                  &key
                                    (cut-off-first-tile t)
                                    (other-costs        '())
@@ -374,7 +375,9 @@ path is removed
                                                                    ai-position
                                                                    defender-position
                                                                    :other-costs-layer
-                                                                   actual-other-costs)))
+                                                                   actual-other-costs
+                                                                   :heuristic-cost-function
+                                                                   heuristic)))
           (if path-w/concering
               (cond
                 ((and allow-path-length-1
@@ -416,8 +419,10 @@ If cut-off-first-tile is  not nil the first element  of the calculated
 path is removed
 "
   (let* ((concerning-tiles (concerning-tiles->costs-matrix blackboard))
-         (others-costs     (list concerning-tiles)))
+         (others-costs     (list concerning-tiles))
+         (heuristic (heuristic-alt (landmarks-w/concenring-no-doors-dists blackboard))))
     (calc-path-tiles-no-doors blackboard ai-position defender-position
+                              heuristic
                               :cut-off-first-tile  cut-off-first-tile
                               :other-costs         others-costs
                               :allow-path-length-1 allow-path-length-1)))
@@ -428,10 +433,12 @@ path is removed
                                     (cut-off-first-tile t)
                                     (allow-path-length-1 nil))
   "see calc-path-tiles-no-doors"
-  (calc-path-tiles-no-doors blackboard ai-position defender-position
-                            :cut-off-first-tile cut-off-first-tile
-                            :other-costs        '()
-                            :allow-path-length-1 allow-path-length-1))
+  (let ((heuristic (heuristic-alt (landmarks-w/o-concenring-no-doors-dists blackboard))))
+    (calc-path-tiles-no-doors blackboard ai-position defender-position
+                              heuristic
+                              :cut-off-first-tile cut-off-first-tile
+                              :other-costs        '()
+                              :allow-path-length-1 allow-path-length-1)))
 
 (defun pos-longest-reachable-path (entity costs)
   (do ((accum 0.0)
