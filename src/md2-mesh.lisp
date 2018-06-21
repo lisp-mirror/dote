@@ -318,6 +318,9 @@
                                register-for-end-attack-fn
                                send-end-attack-event-fn
                                weapon)
+  #+(and debug-mode god-mode)
+  (when (faction-player-p (state entity) (id entity))
+    (setf damage nil))
   (when ambushp
     (billboard:enqueue-tooltip entity
                              billboard:+tooltip-surprise-attack-char+

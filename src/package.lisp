@@ -3283,6 +3283,9 @@
    :+planner-file-extension+
    :+idle-action+
    :+interrupt-action+
+   :+attack-spell-curr-pos-action+
+   :+damage-spell-curr-pos-action+
+   :+heal-spell-curr-pos-action+
    :+rotate-action+
    :+move-action+
    :+faint-action+
@@ -3335,7 +3338,9 @@
    :attackable-position-exists
    :reachable-help-needed-friend-heal-spell-p
    :target-reachable-attack-spell
+   :exists-entity-receive-heal-spell-p
    :attackable-opponents-attack-spell
+   :attackable-opponents-damage-spell
    :reachable-attackable-opponents-attack-spell
    :reachable-attackable-opponents-damage-spell
    :reachable-healing-friend-heal-spell

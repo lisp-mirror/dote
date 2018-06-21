@@ -49,6 +49,11 @@
          :context-preconditions (is-there-useful-reachable-fountain-p)
          :effects               ((:has-fountain-near t))
          :cost                  1)
+  (:name :heal-spell-current-pos
+         :preconditions         ()
+         :effects               ((:near-enemy-heal-spell t))
+         :context-preconditions (can-launch-heal-spell-current-pos-p)
+         :cost                  1)
   (:name :launch-heal-spell
          :preconditions         ((:near-enemy-heal-spell t))
          :context-preconditions (has-enough-sp-heal-p

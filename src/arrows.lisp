@@ -442,7 +442,9 @@
             (when (and (hittedp mesh)
                        (spell:tremor-fn spell))
               (funcall (spell:tremor-fn spell) world))
-            (setf (pos target-effect) (pos mesh))
+            (if (hittedp mesh)
+                (setf (pos target-effect) (pos defender))
+                (setf (pos target-effect) (pos mesh)))
             (play-sound-effect (spell:sound-effect-target spell))
             (world:push-entity world target-effect))
           (with-enqueue-action-and-send-remove-after

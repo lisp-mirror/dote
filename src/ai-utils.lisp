@@ -211,12 +211,39 @@
 (defun target-damage-spell (entity)
   (target-attack/damage-spell entity))
 
+(defun exists-entity-receive-heal-spell-p (available-spells launcher-entity)
+  "can the launcher heal with a spell from the current position?
+Return the entity target and the best spell available"
+   (with-slots-for-reasoning (launcher-entity state ghost blackboard)
+     (when-let* ((target-entity (friend-who-needs-help blackboard
+                                                       launcher-entity
+                                                       :exclude-me nil))
+                 (spell         (find-best-heal-spell state
+                                                      available-spells
+                                                      target-entity)))
+       (if (battle-utils:range-spell-valid-p launcher-entity target-entity spell)
+           (values target-entity spell)
+           (values nil nil)))))
+
 (defun attackable-opponents-attack-spell (available-spells launcher-entity)
   "can the launcher attack with an attack-spell from the current position?
 Return the entity attackable and the best attack-spell available"
    (with-slots-for-reasoning (launcher-entity state ghost blackboard)
     (when-let* ((target-entity (target-attack-spell launcher-entity))
                 (spell         (find-best-attack-spell state
+                                                       available-spells
+                                                       launcher-entity
+                                                       target-entity)))
+      (if (battle-utils:range-spell-valid-p launcher-entity target-entity spell)
+          (values target-entity spell)
+          (values nil nil)))))
+
+(defun attackable-opponents-damage-spell (available-spells launcher-entity)
+  "can the launcher attack with an damage-spell from the current position?
+Return the entity attackable and the best attack-spell available"
+   (with-slots-for-reasoning (launcher-entity state ghost blackboard)
+    (when-let* ((target-entity (target-damage-spell launcher-entity))
+                (spell         (find-best-damage-spell state
                                                        available-spells
                                                        launcher-entity
                                                        target-entity)))

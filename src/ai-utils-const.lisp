@@ -46,6 +46,12 @@
 
 (define-constant +interrupted-action+               :interrupt                     :test #'eq)
 
+(define-constant +attack-spell-curr-pos-action+     :attack-spell-current-pos      :test #'eq)
+
+(define-constant +damage-spell-curr-pos-action+     :damage-spell-current-pos      :test #'eq)
+
+(define-constant +heal-spell-curr-pos-action+       :heal-spell-current-pos        :test #'eq)
+
 (define-constant +launch-heal-spell-action+         :launch-heal-spell             :test #'eq)
 
 (define-constant +launch-heal-spell-friend-action+  :launch-heal-spell-friend      :test #'eq)
