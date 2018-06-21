@@ -711,10 +711,10 @@ composed by just one tile, see 'attackable-position-exists-path'"
 (defgoap-test someone-needs-help-p (strategy-expert entity)
   (ai-utils:friend-who-needs-help strategy-expert entity :exclude-me nil))
 
-(defun none-needs-help-p (strategy-expert entity)
+(defgoap-test none-needs-help-p (strategy-expert entity)
   (not (someone-needs-help-p strategy-expert entity)))
 
-(defun has-weapon-inventory-or-worn-p (strategy-expert entity)
+(defgoap-test has-weapon-inventory-or-worn-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (with-accessors ((ghost entity::ghost)) entity
     (or (character:weapon-type ghost)
@@ -730,23 +730,23 @@ composed by just one tile, see 'attackable-position-exists-path'"
   (character:with-no-terror-status (entity)
     (character:castable-spells-list-by-tag (entity:ghost entity) tag)))
 
-(defun has-enough-sp-heal-p (strategy-expert entity)
+(defgoap-test has-enough-sp-heal-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (%has-enough-sp-p entity spell:+spell-tag-heal+))
 
-(defun has-enough-sp-damage-p (strategy-expert entity)
+(defgoap-test has-enough-sp-damage-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (%has-enough-sp-p entity spell:+spell-tag-damage+))
 
-(defun has-enough-sp-attack-p (strategy-expert entity)
+(defgoap-test has-enough-sp-attack-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (%has-enough-sp-if entity #'(lambda (a) (not (spell:attack-spell-p a)))))
 
-(defun has-enough-sp-break-wall-p (strategy-expert entity)
+(defgoap-test has-enough-sp-break-wall-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (%has-enough-sp-p entity spell:+spell-tag-remove-wall+))
 
-(defun has-enough-sp-teleport-p (strategy-expert entity)
+(defgoap-test has-enough-sp-teleport-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (%has-enough-sp-p entity spell:+spell-tag-teleport+))
 
@@ -755,7 +755,7 @@ composed by just one tile, see 'attackable-position-exists-path'"
   (when-let ((available-spells (ai-utils:available-heal-spells entity)))
     (ai-utils:reachable-help-needed-friend-heal-spell-p available-spells entity)))
 
-(defun there-is-attackable-opponents-attack-spell-p (strategy-expert entity)
+(defgoap-test there-is-attackable-opponents-attack-spell-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (when-let ((available-spells (ai-utils:available-attack-spells entity)))
     (let ((res (ai-utils:attackable-opponents-attack-spell available-spells entity)))
@@ -807,17 +807,17 @@ composed by just one tile, see 'attackable-position-exists-path'"
       (>= (character:current-movement-points ghost)
           (funcall predicate neigh-cost)))))
 
-(defun can-rotate-p (strategy-expert entity)
+(defgoap-test can-rotate-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (with-accessors ((ghost ghost)) entity
     (>= (character:current-movement-points ghost)
         +rotate-entity-cost-cost+)))
 
-(defun can-minimally-move-p (strategy-expert entity)
+(defgoap-test can-minimally-move-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (able-to-move-if entity #'num:find-min))
 
-(defun able-to-explore-p (strategy-expert entity)
+(defgoap-test able-to-explore-p (strategy-expert entity)
   (with-accessors ((state entity:state)
                    (ghost entity:ghost)) entity
     (multiple-value-bind (path cost)
@@ -851,17 +851,17 @@ composed by just one tile, see 'attackable-position-exists-path'"
             (absee-mesh:visible-players-in-state-from-faction state opposite-faction)))
       (find entity visibles-from-pcs :test #'test-id=))))
 
-(defun has-wall-near-p (strategy-expert entity)
+(defgoap-test has-wall-near-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (let ((wall (find-nearest-visible-wall entity)))
     wall))
 
-(defun has-trap-p (strategy-expert entity)
+(defgoap-test has-trap-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (with-accessors ((ghost entity:ghost)) entity
     (character:find-item-in-inventory-if ghost #'interactive-entity:trapp)))
 
-(defun can-place-trap-p (strategy-expert entity)
+(defgoap-test can-place-trap-p (strategy-expert entity)
   (with-accessors ((main-state main-state)) strategy-expert
     (with-accessors ((map-state map-state)) main-state
       (entity:with-player-cost-pos (entity x y)
@@ -882,16 +882,16 @@ composed by just one tile, see 'attackable-position-exists-path'"
                               (tile-high-cost-p d)))
                      (mesh:trap-can-be-placed-p entity))))))))))
 
-(defun find-good-places-to-protect (strategy-expert entity)
+(defgoap-test find-good-places-to-protect (strategy-expert entity)
   (ai-utils:good-places-to-protect strategy-expert entity))
 
-(defun is-near-weak-friend-p (strategy-expert entity)
+(defgoap-test is-near-weak-friend-p (strategy-expert entity)
   (let ((res (ai-utils:near-weak-friend-p strategy-expert entity)))
     #+ (and debug-mode debug-ai)
     (dbg "is-near-weak-friend-p -> ~a" res)
     res))
 
-(defun can-attack-when-near-pos-p (strategy-expert entity)
+(defgoap-test can-attack-when-near-pos-p (strategy-expert entity)
   "note: places-near contains only reachable tiles so
 path-near-goal-w/o-concerning-tiles always returns a non nil value"
   (let ((res (ai-utils:attack-when-near-pos-p strategy-expert entity)))
@@ -899,42 +899,82 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
     (dbg "can-attack-when-near-pos-p -> ~a" res)
     res))
 
-(defun enough-mp-to-attack-p (strategy-expert entity)
+(defgoap-test enough-mp-to-attack-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (when-let ((attack-cost (battle-utils:cost-attack-w-current-weapon entity)))
     (<= attack-cost
         (character:current-movement-points (entity:ghost entity)))))
 
-(defun is-there-useful-reachable-fountain-p (strategy-expert entity)
+(defgoap-test is-there-useful-reachable-fountain-p (strategy-expert entity)
   (declare (ignore strategy-expert))
-  #+ (and debug-mode debug-ai)
-  (misc:dbg "is-there-useful-reachable-fountain-p ~a"
-            (ai-utils:useful-reachable-fountain entity))
   (ai-utils:useful-reachable-fountain entity))
 
-(defun exists-reachable-pos-to-launch-attack-spell (strategy-expert entity)
+(defgoap-test exists-reachable-pos-to-launch-attack-spell (strategy-expert entity)
   (declare (ignore strategy-expert))
   (let ((res (ai-utils:reachable-attackable-opponents-attack-spell entity)))
-    #+ (and debug-mode debug-ai)
-    (misc:dbg "spell to attack exists? ~a"
-              (multiple-value-list (ai-utils:reachable-attackable-opponents-attack-spell entity)))
     res))
 
-(defun exists-reachable-pos-to-launch-heal-spell (strategy-expert entity)
+(defgoap-test exists-reachable-pos-to-launch-heal-spell (strategy-expert entity)
   (declare (ignore strategy-expert))
   (let ((res (ai-utils:reachable-healing-friend-heal-spell entity)))
-    #+ (and debug-mode debug-ai)
-    (misc:dbg " exists-reachable-pos-to-launch-heal-spell ~a" res)
     res))
 
-(defun exists-reachable-pos-to-launch-damage-spell (strategy-expert entity)
+(defgoap-test exists-reachable-pos-to-launch-damage-spell (strategy-expert entity)
   (declare (ignore strategy-expert))
   (let ((res (ai-utils:reachable-attackable-opponents-damage-spell entity)))
-    #+ (and debug-mode debug-ai)
-    (misc:dbg " exists-reachable-pos-to-launch-damage-spell ~a" res)
     res))
 
+(defmacro with-ensure-available-spells ((available-spells entity selector) &body body)
+  `(when-let ((,available-spells (,selector ,entity)))
+     ,@body))
+
+(defgoap-test can-launch-attack-spell-current-pos-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (with-ensure-available-spells (available-spells
+                                 entity
+                                 ai-utils:available-attack-spells)
+    (ai-utils:attackable-opponents-attack-spell available-spells entity)))
+
+(defgoap-test can-launch-damage-spell-current-pos-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (with-ensure-available-spells (available-spells
+                                 entity
+                                 ai-utils:available-damage-spells)
+    (ai-utils:attackable-opponents-damage-spell available-spells entity)))
+
+(defgoap-test can-launch-heal-spell-current-pos-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+  (with-ensure-available-spells (available-spells
+                                 entity
+                                 ai-utils:available-heal-spells)
+    (ai-utils:exists-entity-receive-heal-spell-p available-spells entity)))
+
 (defun invalidate-tests-cache ()
+  (none-needs-help-p-clear-cache)
+  (has-weapon-inventory-or-worn-p-clear-cache)
+  (has-enough-sp-heal-p-clear-cache)
+  (has-enough-sp-damage-p-clear-cache)
+  (has-enough-sp-attack-p-clear-cache)
+  (has-enough-sp-break-wall-p-clear-cache)
+  (has-enough-sp-teleport-p-clear-cache)
+  (there-is-attackable-opponents-attack-spell-p-clear-cache)
+  (can-rotate-p-clear-cache)
+  (can-minimally-move-p-clear-cache)
+  (able-to-explore-p-clear-cache)
+  (has-wall-near-p-clear-cache)
+  (has-trap-p-clear-cache)
+  (can-place-trap-p-clear-cache)
+  (find-good-places-to-protect-clear-cache)
+  (is-near-weak-friend-p-clear-cache)
+  (can-attack-when-near-pos-p-clear-cache)
+  (enough-mp-to-attack-p-clear-cache)
+  (can-launch-heal-spell-current-pos-p-clear-cache)
+  (can-launch-damage-spell-current-pos-p-clear-cache)
+  (can-launch-attack-spell-current-pos-p-clear-cache)
+  (is-there-useful-reachable-fountain-p-clear-cache)
+  (exists-reachable-pos-to-launch-damage-spell-clear-cache)
+  (exists-reachable-pos-to-launch-heal-spell-clear-cache)
+  (exists-reachable-pos-to-launch-attack-spell-clear-cache)
   (exists-attack-goal-w-current-weapon-p-clear-cache)
   (exists-opt-attack-goal-w-current-weapon-p-clear-cache)
   (exists-insecure-attack-goal-w-current-weapon-p-clear-cache)

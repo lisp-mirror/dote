@@ -75,6 +75,11 @@
                                  someone-needs-help-p)
          :effects               ((:curb-threat t))
          :cost                  20)
+  (:name :heal-spell-current-pos
+         :preconditions         ()
+         :effects               ((:near-enemy-heal-spell t))
+         :context-preconditions (can-launch-heal-spell-current-pos-p)
+         :cost                  1)
   (:name :go-to-heal-spell-pos
          :preconditions         ()
          :effects               ((:near-enemy-heal-spell t))

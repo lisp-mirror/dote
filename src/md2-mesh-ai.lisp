@@ -806,6 +806,35 @@ attempts Note: all attackable position will be updated as well"
                          (action (eql ai-utils:+launch-heal-spell-action+)))
   (common-launch-spell object strategy action #'ai-utils:go-launch-spell*))
 
+(defun common-prepare-launch-spell-curr-pos (entity strategy action
+                                             spell-finder-fn
+                                             target-finder-fn)
+  (with-maybe-blacklist (entity strategy action)
+    (with-slots-for-reasoning (entity state ghost blackboard)
+      (let ((available-spells (funcall spell-finder-fn entity)))
+        #+debug-mode (assert available-spells)
+        (multiple-value-bind (target-entity spell)
+            (funcall target-finder-fn available-spells entity)
+          #+debug-mode (assert target-entity)
+          #+(and debug-mode debug-ai) (misc:dbg "path spell stay ~a" spell)
+          (put-in-working-memory entity +w-memory-target-id+ (id target-entity))
+          (put-in-working-memory entity +w-memory-spell+     spell)
+          (%rotate-until-visible state entity target-entity :decrement-movement-points nil))))))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+attack-spell-curr-pos-action+)))
+  (common-prepare-launch-spell-curr-pos object strategy action
+                                        #'ai-utils:available-attack-spells
+                                        #'ai-utils:attackable-opponents-attack-spell))
+
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+damage-spell-curr-pos-action+)))
+  (common-prepare-launch-spell-curr-pos object strategy action
+                                        #'ai-utils:available-damage-spells
+                                        #'ai-utils:attackable-opponents-damage-spell))
+
 ;;;; strategy
 (defun actuate-strategy (mesh)
   (with-slots-for-reasoning (mesh state ghost blackboard)

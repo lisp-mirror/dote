@@ -1661,13 +1661,13 @@ values nil, i. e. the ray is not blocked"
   (with-tiles-*-spell-around gen-valid-ring-box-position state entity range))
 
 (defun tiles-attack-spell-around-ai (state entity range)
-  (with-tiles-*-spell-around gen-valid-neighbour-position-in-box state entity range))
+  (with-tiles-*-spell-around gen-valid-ring-box-position state entity range))
 
 (defun tiles-heal-spell-around-ai (state entity range)
-  (with-tiles-*-spell-around gen-valid-neighbour-position-in-box state entity range))
+  (with-tiles-*-spell-around gen-valid-ring-box-position state entity range))
 
 (defun tiles-damage-spell-around-ai (state entity range)
-  (with-tiles-*-spell-around gen-valid-neighbour-position-in-box state entity range))
+  (with-tiles-*-spell-around gen-valid-ring-box-position state entity range))
 
 (defun remove-tile-empty-or-w/ignored-entities (state &rest ignored-entities)
   #'(lambda (a)
@@ -1739,7 +1739,7 @@ values nil, i. e. the ray is not blocked"
                   (reach-fn      (reachable-p-w/concening-tiles-fn blackboard
                                                                    :allow-path-length-1 t
                                                                    :cut-off-first-tile  nil)))
-        ;; remove tiles not empty and not occupied by attacker
+        ;; remove tiles not empty or not occupied by attacker
         (setf goal-tiles-pos (remove-if (remove-tile-empty-or-w/ignored-entities state attacker)
                                         goal-tiles-pos))
         ;; remove out of range
@@ -1747,6 +1747,14 @@ values nil, i. e. the ray is not blocked"
                                                 (< (manhattam-distance a defender-pos)
                                                    spell-range))
                                             goal-tiles-pos))
+        ;; if attack-spell, remove if enemy is not visible from tiles position
+        (when (spell:attack-spell-p spell)
+          (setf goal-tiles-pos
+                (remove-if-not #'(lambda (a)
+                                   (2d-utils:displace-2d-vector (a x y)
+                                     (able-to-see-mesh:placeholder-visible-p defender
+                                                                             x y)))
+                               goal-tiles-pos)))
         ;; (when (find spell-type (list :attack :damage) :test #'eq)
         ;;   ;; remove tiles from the target's point of view
         ;;   (setf goal-tiles-pos (remove-from-player-pov goal-tiles-pos
@@ -1758,13 +1766,6 @@ values nil, i. e. the ray is not blocked"
                                                                  attacker-ghost
                                                                  goal-tiles-pos
                                                                  :key #'identity))
-        ;; ;; remove is enemy is not visible from tiles position
-        (setf goal-tiles-pos
-               (remove-if-not #'(lambda (a)
-                                  (2d-utils:displace-2d-vector (a x y)
-                                    (able-to-see-mesh:placeholder-visible-p defender
-                                                                            x y)))
-                              goal-tiles-pos))
         (let ((goal-structs (map 'list
                                  (goal-pos->spell-struct-fn blackboard
                                                             concerning-smoothed

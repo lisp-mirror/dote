@@ -15,6 +15,21 @@
          :effects               ((:near-enemy-attack-spell t))
          :context-preconditions (exists-reachable-pos-to-launch-attack-spell)
          :cost                  1)
+  (:name :attack-spell-current-pos
+         :preconditions         ()
+         :effects               ((:near-enemy-attack-spell t))
+         :context-preconditions (can-launch-attack-spell-current-pos-p)
+         :cost                  1)
+  (:name :damage-spell-current-pos
+         :preconditions         ()
+         :effects               ((:near-enemy-damage-spell t))
+         :context-preconditions (can-launch-damage-spell-current-pos-p)
+         :cost                  1)
+  (:name :heal-spell-current-pos
+         :preconditions         ()
+         :effects               ((:near-enemy-heal-spell t))
+         :context-preconditions (can-launch-heal-spell-current-pos-p)
+         :cost                  1)
   (:name :launch-heal-spell
          :preconditions         ((:near-enemy-heal-spell t))
          :context-preconditions (has-enough-sp-heal-p
@@ -52,6 +67,8 @@
                                  !is-in-attack-pos-p
                                  exists-visible-enemy
                                  !probably-stronger-than-enemy-p
+                                 !can-launch-attack-spell-current-pos-p
+                                 !can-launch-damage-spell-current-pos-p
                                  can-move-near-enemy-pos)
          :cost                  5)
   (:name :go-near-to-enemy-insecure

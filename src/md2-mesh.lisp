@@ -318,6 +318,9 @@
                                register-for-end-attack-fn
                                send-end-attack-event-fn
                                weapon)
+  #+(and debug-mode god-mode)
+  (when (faction-player-p (state entity) (id entity))
+    (setf damage nil))
   (when ambushp
     (billboard:enqueue-tooltip entity
                              billboard:+tooltip-surprise-attack-char+
@@ -1742,7 +1745,8 @@ to take care of that"
 (defun %calculate-move-ai (state entity dt dir current-path end)
   (declare (ignore dt))
   (with-common-calc-move (entity end)
-    (if (game-state:invalicable-in-next-path-tile-p state entity current-path 1)
+    (if (and (game-state:invalicable-in-next-path-tile-p state entity current-path 1)
+             (game-state:door-in-next-path-tile-p        state current-path        1))
         (%stop-movement entity :decrement-movement-points t :interrupt-plan-if-ai t)
         ;; open door if any and if closed
         (let ((door-opened-p (manage-door-ai state entity current-path 1)))

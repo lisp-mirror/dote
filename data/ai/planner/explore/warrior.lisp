@@ -10,6 +10,11 @@
          :context-preconditions (pass-1d4 has-enough-sp-teleport-p)
          :effects               ((:curb-threat t))
          :cost                  80)
+  (:name :heal-spell-current-pos
+         :preconditions         ()
+         :effects               ((:near-enemy-heal-spell t))
+         :context-preconditions (can-launch-heal-spell-current-pos-p)
+         :cost                  1)
   (:name :launch-heal-spell
          :preconditions         ((:near-enemy-heal-spell t))
          :context-preconditions (has-enough-sp-heal-p
