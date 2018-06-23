@@ -195,14 +195,14 @@
   (ldb (byte +lcg-good-bit-size+ +lcg-good-bit-starts+) *lcg-seed*))
 
 (defun lcg-next01 ()
-    (/ (lcg-next) +lcg-max+))
+  (d (/ (lcg-next) +lcg-max+)))
 
 (defgeneric lcg-next-upto (max))
 
 (defmethod lcg-next-upto ((max float))
   (multiple-value-bind (integer-part remainder)
       (truncate max)
-    (+ (* (lcg-next01) integer-part) (* (lcg-next01) remainder))))
+    (d (+ (* (lcg-next01) integer-part) (* (lcg-next01) remainder)))))
 
 (defmethod lcg-next-upto ((max integer))
   (mod (lcg-next) max))

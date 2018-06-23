@@ -743,7 +743,7 @@
 
 (defun calc-danger-zone-size (difficult-level)
   "The size of the concerning zone when when some concerning event occurs"
-  (ceiling (dlerp (smoothstep-interpolate 2.0 5.0 difficult-level)
+  (ceiling (dlerp (smoothstep-interpolate 2.0 5.0 (d difficult-level))
                   4.0
                   8.0)))
 

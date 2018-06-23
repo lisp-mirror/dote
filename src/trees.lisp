@@ -1165,8 +1165,6 @@
 (defmacro gen-process-opcode (&rest var-compare-body)
   `(defun ,(alexandria:format-symbol t "PROCESS-OPCODE") (opcode &optional arg)
      (declare (ignorable arg))
-     (declare (optimize (speed 3) (debug 0) (safety 0)))
-     (declare (base-string opcode))
      (cond
        ,@(loop for i in var-compare-body collect
               `((,(second i) ,(first i) opcode)
@@ -1177,7 +1175,6 @@
   (rotate-turtle *current-direction* angle :axe *current-rotation-axe*))
 
 (defun draw-section ()
-  (declare (optimize (speed 3) (debug 0) (safety 0)))
   (let* ((tropism-torsion-vector (cross-product (direction *current-direction*)
                                                 *current-tropism*))
          (alpha (d* *current-bending-factor* (rad->deg
@@ -1198,11 +1195,10 @@
                                                        (direction *current-direction*))
                                         +zero-vec+))
                              (reorient +y-axe+ (direction *current-direction*))
-                             (if (d< (svref (direction *current-direction*) 1) 0.0)
+                             (if (d< (aref (direction *current-direction*) 1) 0.0)
                                  (rotate-around +z-axe+ +pi+)
                                  (identity-matrix))))
            (translation-mat (translate *current-position*)))
-
       (draw-tree-section actual-length (matrix* translation-mat rotation-mat))
       (setf *current-position* new-position))))
 

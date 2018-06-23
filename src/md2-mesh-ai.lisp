@@ -835,6 +835,13 @@ attempts Note: all attackable position will be updated as well"
                                         #'ai-utils:available-damage-spells
                                         #'ai-utils:attackable-opponents-damage-spell))
 
+(defmethod actuate-plan ((object md2-mesh)
+                         strategy
+                         (action (eql ai-utils:+heal-spell-curr-pos-action+)))
+  (common-prepare-launch-spell-curr-pos object strategy action
+                                        #'ai-utils:available-heal-spells
+                                        #'ai-utils:healable-friend-heal-spell))
+
 ;;;; strategy
 (defun actuate-strategy (mesh)
   (with-slots-for-reasoning (mesh state ghost blackboard)

@@ -251,6 +251,20 @@ Return the entity attackable and the best attack-spell available"
           (values target-entity spell)
           (values nil nil)))))
 
+(defun healable-friend-heal-spell (available-spells launcher-entity)
+  "can the launcher heal with an healing spell from the current position?
+Return the entity healable and the best heale-spell available"
+   (with-slots-for-reasoning (launcher-entity state ghost blackboard)
+    (when-let* ((target-entity (friend-who-needs-help blackboard launcher-entity
+                                                      :exclude-me nil))
+                (spell         (find-best-heal-spell state
+                                                     available-spells
+                                                     target-entity)))
+      (if (battle-utils:range-spell-valid-p launcher-entity target-entity spell)
+          (values target-entity spell)
+          (values nil nil)))))
+
+
 (defun reachable-attackable-opponents-attack-spell (launcher-entity
                                                     &key
                                                       (available-spells

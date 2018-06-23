@@ -330,7 +330,7 @@
                                                                       x-origin)))
                (row                (map-utils:coord-chunk->matrix (d- (elt raw-position 2)
                                                                       z-origin)))
-               (matrix-position (uivec2 column row)))
+               (matrix-position (ivec2 column row)))
           (handler-bind ((pickable-mesh:null-tile-element
                           #'(lambda(e)
                               (declare (ignore e))
@@ -357,15 +357,15 @@
     (let* ((x-origin (elt origin-offset 0))
            (z-origin (elt origin-offset 2)))
       (declare (desired-type x-origin z-origin))
-      (uivec2 (f+ column (the fixnum (map-utils:coord-chunk->matrix x-origin)))
-              (f+ row    (the fixnum (map-utils:coord-chunk->matrix z-origin)))))))
+      (ivec2 (f+ column (the fixnum (map-utils:coord-chunk->matrix x-origin)))
+             (f+ row    (the fixnum (map-utils:coord-chunk->matrix z-origin)))))))
 
 (defmethod cost-coord->lookup-tile ((object pickable-mesh) row column)
   (with-accessors ((origin-offset origin-offset)) object
     (let* ((x-origin (elt origin-offset 0))
            (z-origin (elt origin-offset 2)))
-      (uivec2 (f- column (map-utils:coord-chunk->matrix x-origin))
-              (f- row    (map-utils:coord-chunk->matrix z-origin))))))
+      (ivec2 (f- column (map-utils:coord-chunk->matrix x-origin))
+             (f- row    (map-utils:coord-chunk->matrix z-origin))))))
 
 (defmethod set-tile-highlight ((object pickable-mesh) row column
                                &key

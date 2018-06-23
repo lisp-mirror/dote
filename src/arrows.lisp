@@ -37,11 +37,10 @@
     :initform nil
     :initarg  :attack-event-fn
     :accessor attack-event-fn)
-   (hitted
+   (hitted-entity
     :initform nil
-    :initarg  :hitted
-    :reader   hittedp
-    :writer   (setf hitted))))
+    :initarg  :hitted-entity
+    :accessor hitted-entity)))
 
 (defun arrowp (a)
   (typep a 'arrow))
@@ -50,7 +49,7 @@
   (setf (trajectory      to) (clone (trajectory from))
         (launcher-entity to) (launcher-entity   from)
         (attack-event-fn to) (attack-event-fn   from)
-        (hitted          to) (hittedp           from))
+        (hitted-entity   to) (hitted-entity     from))
   to)
 
 (defmethod clone ((object arrow))
@@ -60,7 +59,7 @@
   (setf (trajectory      to) (trajectory        from)
         (launcher-entity to) (launcher-entity   from)
         (attack-event-fn to) (attack-event-fn   from)
-        (hitted          to) (hittedp           from))
+        (hitted-entity   to) (hitted-entity     from))
   to)
 
 (defmethod copy-flat ((object arrow))
@@ -154,10 +153,10 @@
   (with-accessors ((trajectory trajectory)
                    (pos pos)
                    (state state)
-                   (hittedp hittedp)
+                   (hitted-entity hitted-entity)
                    (launcher-entity launcher-entity)
                    (attack-event-fn attack-event-fn)) object
-    (when (not hittedp)
+    (when (not hitted-entity)
       (with-world (world state)
         (let ((camera (world:camera world)))
           (if (or (not (3d-utils:insidep (world:world-aabb world)
@@ -170,7 +169,7 @@
                   (world (type-current-action-scheduler object))
                 ;; remove from world
                 (remove-entity-by-id world (id object))
-                (setf (hitted object) nil)
+                (setf (hitted-entity object) nil)
                 (setf (camera:followed-entity camera) nil)
                 (setf (camera:mode camera) :fp))
               (let ((intersected-entity (arrow-collision-p object)))
@@ -184,7 +183,7 @@
                       (funcall attack-event-fn launcher-entity intersected-entity)
                       ;; remove from world
                       (remove-entity-by-id world (id object))
-                      (setf (hitted object) t)
+                      (setf (hitted-entity object) intersected-entity)
                       (setf (camera:followed-entity camera) nil)
                       (setf (camera:mode camera) :fp))
                     (progn
@@ -237,10 +236,10 @@
   (with-accessors ((trajectory trajectory)
                    (pos pos)
                    (state state)
-                   (hittedp hittedp)
+                   (hitted-entity hitted-entity)
                    (launcher-entity launcher-entity)
                    (attack-event-fn attack-event-fn)) object
-    (when (not hittedp)
+    (when (not hitted-entity)
       (with-world (world state)
         (let ((camera (world:camera world)))
           (if (or (not (3d-utils:insidep (world:world-aabb world)
@@ -252,7 +251,7 @@
               (game-event:with-send-action-terminated
                 ;; remove from world
                 (remove-entity-by-id world (id object))
-                (setf (hitted object) nil)
+                (setf (hitted-entity object) nil)
                 (setf (camera:followed-entity camera) nil)
                 (setf (camera:mode camera) :fp))
               (let ((intersected-entity (arrow-collision-p object)))
@@ -265,7 +264,7 @@
                       (particles::set-respawn (elt (mtree:children object) 0) nil)
                       (setf (renderp (elt (mtree:children object) 0)) nil)
                       (remove-entity-by-id world (id object))
-                      (setf (hitted object) t)
+                      (setf (hitted-entity object) intersected-entity)
                       (setf (camera:followed-entity camera) nil)
                       (setf (camera:mode camera) :fp))
                     (progn
@@ -345,7 +344,7 @@
     (if ray
         (progn
           (setf (renderp mesh) t)
-          (setf (hitted mesh) nil)
+          (setf (hitted-entity mesh) nil)
           (setf (attack-event-fn mesh) attack-event-fn)
           (setf (pos mesh) position)
           (setf (trajectory mesh) ray)
@@ -439,11 +438,11 @@
           (mtree:add-child mesh bullet)
           (with-enqueue-action
               (world action-scheduler:particle-effect-action)
-            (when (and (hittedp mesh)
+            (when (and (hitted-entity mesh)
                        (spell:tremor-fn spell))
               (funcall (spell:tremor-fn spell) world))
-            (if (hittedp mesh)
-                (setf (pos target-effect) (pos defender))
+            (if (hitted-entity mesh)
+                (setf (pos target-effect) (pos (hitted-entity mesh)))
                 (setf (pos target-effect) (pos mesh)))
             (play-sound-effect (spell:sound-effect-target spell))
             (world:push-entity world target-effect))

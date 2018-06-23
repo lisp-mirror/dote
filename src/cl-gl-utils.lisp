@@ -83,15 +83,12 @@
 (defgeneric seq->gl-array (seq))
 
 (defmethod seq->gl-array ((seq vector))
-  (declare (optimize (debug 0) (safety 0) (speed 1)))
-  (declare ((array desired-type (*)) seq))
   (let ((results (gl:alloc-gl-array :float (length seq))))
     (loop for i fixnum from 0 below (length seq) do
-         (setf (fast-glaref results i) (aref seq i)))
+         (setf (fast-glaref results i) (d (aref seq i))))
     results))
 
 (defmethod seq->gl-array ((seq list))
-  (declare (optimize (debug 0) (safety 0) (speed 3)))
   (let ((results (gl:alloc-gl-array :float (length seq))))
     (loop for i fixnum from 0 below (length seq) do
          (setf (fast-glaref results i) (elt seq i)))

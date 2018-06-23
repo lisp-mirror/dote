@@ -229,33 +229,29 @@
           (no-more-token-error (alexandria:format-symbol t "NO-MORE-TOKEN-ERROR")))
       `(let ((,scanner (cl-ppcre:create-scanner ,(concatenate-regexps regexps))))
          (defmethod next-token-simple ((object ,class-name) &key (,no-more-token-error t))
-           (declare (optimize (speed 3) (debug 0) (safety 0)))
            (multiple-value-bind (,register-number ,line-start ,line-length ,match ,start-re
                                                   ,end-re)
                (regex-scan-line-simple object ,scanner)
              (declare (ignore ,line-start))
-             (declare ((signed-byte 64) ,register-number ,line-start ,line-length
-                       ,start-re ,end-re))
-             (declare (simple-string ,match))
-               (if (>= ,register-number 0)
-                   (progn
-                     (seek *file* ,end-re)
-                     (values ,match ,start-re))
-                   (if (peek-end-stream :pos-offset 0)
-                          (if ,no-more-token-error
-                              (progn
-                                (setf *has-errors* t)
-                                (push "Error: stream ended without valid token found"
-                                      *parsing-errors*))
-                              nil)
-                          (handler-bind ((conditions:out-of-bounds
-                                          #'(lambda (c)
-                                              (declare (ignore c))
-                                              (invoke-restart 'ignore-error))))
-                            (seek *file* ,line-length)
-                            (char@1+)
-                            (next-token-simple object
-                                               :no-more-token-error ,no-more-token-error))))))))))
+             (if (>= ,register-number 0)
+                 (progn
+                   (seek *file* ,end-re)
+                   (values ,match ,start-re))
+                 (if (peek-end-stream :pos-offset 0)
+                     (if ,no-more-token-error
+                         (progn
+                           (setf *has-errors* t)
+                           (push "Error: stream ended without valid token found"
+                                 *parsing-errors*))
+                         nil)
+                     (handler-bind ((conditions:out-of-bounds
+                                     #'(lambda (c)
+                                         (declare (ignore c))
+                                         (invoke-restart 'ignore-error))))
+                       (seek *file* ,line-length)
+                       (char@1+)
+                       (next-token-simple object
+                                          :no-more-token-error ,no-more-token-error))))))))))
 
 (defmacro define-tokenizer ((classname &rest regexps) &body other-cond-clause)
   (alexandria:with-gensyms (scan tokens sorted-matches max-match)

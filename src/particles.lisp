@@ -68,7 +68,7 @@
             (declare (ignore particle))
             (prog1
                 (color-utils:pick-color gradient
-                                        (dlerp (smoothstep-interpolate 0 duration time)
+                                        (dlerp (smoothstep-interpolate 0.0 duration time)
                                                0.0 1.0))
               (incf time dt))))))
 

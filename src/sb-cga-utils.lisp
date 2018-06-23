@@ -307,7 +307,7 @@
       (let* ((apex->point  (vec- point cone-apex))
              (cone-dir     (normalize cone-height))
              (cosine-point (dot-product (safe-normalize apex->point) cone-dir))
-             (angle-point   (dacos cosine-point)))
+             (angle-point  (dacos (dmin cosine-point 1.0))))
         (if (and (d>= angle-point half-angle)
                  (not (epsilon= angle-point half-angle)))
             nil

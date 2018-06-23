@@ -3343,6 +3343,7 @@
    :exists-entity-receive-heal-spell-p
    :attackable-opponents-attack-spell
    :attackable-opponents-damage-spell
+   :healable-friend-heal-spell
    :reachable-attackable-opponents-attack-spell
    :reachable-attackable-opponents-damage-spell
    :reachable-healing-friend-heal-spell
@@ -4303,6 +4304,7 @@
         :transformable
         :identificable
         :num
+        :ivec2
         :vec2
         :vec4
         :uivec
