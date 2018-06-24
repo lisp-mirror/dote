@@ -203,7 +203,7 @@
 
   generate map
   ;;with size                        (random (micro tiny small medium large))
-  with size                         (random (small))
+  with size                         (random (micro))
   with mountain-rate                (random (0.1 0.2))
   ;; from load "radial-mountain-function.lisp"
   with mountain-z-height-function   radial-mountain-z-height-function

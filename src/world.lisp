@@ -437,7 +437,13 @@
 
 (defgeneric push-entity-always-rendered (object entity))
 
-(defgeneric push-terrain-chunk (object entity aabb))
+(defgeneric push-terrain-chunk (object entity))
+
+(defgeneric push-arrow         (object entity))
+
+(defgeneric push-spell         (object entity))
+
+(defgeneric push-spell-fx      (object entity))
 
 (defgeneric setup-map-state-tile (object x y type id occlusion-value))
 
@@ -750,6 +756,18 @@
   (bubbleup-modelmatrix entity)
   (quad-tree:push-down (entities object) entity :add-to-root t))
 
+(defmethod push-terrain-chunk ((object world) entity)
+  (push-entity object entity))
+
+(defmethod push-arrow ((object world) entity)
+  (push-entity-always-rendered object entity))
+
+(defmethod push-spell ((object world) entity)
+  (push-entity-always-rendered object entity))
+
+(defmethod push-spell-fx ((object world) entity)
+  (push-entity-always-rendered object entity))
+
 (defmethod get-camera-pos ((object world))
   (pos (camera object)))
 
@@ -1025,7 +1043,7 @@
   (game-state:place-player-on-map (main-state object)         player faction
                                   :position         position
                                   :force-position-p force-position-p)
-  (push-interactive-entity object                             player faction :occlude))
+  (push-character-entity   object                             player faction :occlude))
 
 (defmethod push-labyrinth-entity ((object world) labyrinth)
   (game-state:push-labyrinth-entity (main-state object) labyrinth)

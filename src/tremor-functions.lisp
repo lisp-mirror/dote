@@ -20,48 +20,55 @@
 
 (define-constant +tree-shake-duration+               20.0   :test #'=)
 
-(define-constant +explosion-level-0-shake-duration+   0.5   :test #'=)
+(define-constant +explosion-level-0-shake-duration+   0.2   :test #'=)
 
-(define-constant +explosion-level-0-shake-power+      0.05  :test #'=)
+(define-constant +explosion-level-0-shake-power+      0.08  :test #'=)
 
-(define-constant +explosion-level-1-shake-duration+   1.0   :test #'=)
+(define-constant +explosion-level-1-shake-duration+  12.0   :test #'=)
 
-(define-constant +explosion-level-1-shake-power+      0.1   :test #'=)
+(define-constant +explosion-level-1-shake-power+      0.2   :test #'=)
 
-(define-constant +explosion-level-2-shake-duration+   8.0   :test #'=)
+(define-constant +explosion-level-2-shake-duration+ 100.0   :test #'=)
 
-(define-constant +explosion-level-2-shake-power+      0.2   :test #'=)
+(define-constant +explosion-level-2-shake-power+      1.0   :test #'=)
 
-(define-constant +explosion-level-3-shake-duration+  10.0   :test #'=)
+(define-constant +explosion-level-3-shake-duration+ 400.0   :test #'=)
 
-(define-constant +explosion-level-3-shake-power+      0.4   :test #'=)
+(define-constant +explosion-level-3-shake-power+      4.0   :test #'=)
 
-(defun standard-tremor-fn (duration &key (power (num:d/ +terrain-chunk-tile-size+ 30.0)))
+(defun standard-tremor-fn (duration &key (power (d/ +terrain-chunk-tile-size+ 30.0)))
+  (let ((duration     duration)
+        (actual-power power)
+        (decay        (d/ power duration)))
+    #'(lambda (entity dt)
+        (declare (ignore entity))
+        (if (d< duration 0.0)
+            (values (sb-cga:translate +zero-vec+)
+                    duration)
+            (progn
+              (when dt
+                (setf duration (d- duration dt)))
+              (let ((delta (if (d< duration 0.0)
+                               0.0
+                               actual-power)))
+                (decf actual-power (d* actual-power decay))
+                (values
+                 (sb-cga:translate (sb-cga:vec (lcg-next-in-range (d- delta) delta)
+                                               (lcg-next-in-range (d- delta) delta)
+                                               (lcg-next-in-range (d- delta) delta)))
+                 duration)))))))
+
+(defun tree-tremor-fn (duration &key (power (d/ +terrain-chunk-tile-size+ 30.0)))
   (let ((duration duration))
     #'(lambda (entity dt)
         (declare (ignore entity))
         (when dt
-          (setf duration (num:d- duration dt)))
-        (let ((delta (if (num:d< duration 0.0)
+          (setf duration (d- duration dt)))
+        (let ((delta (if (d< duration 0.0)
                          0.0
                          power)))
           (values
-           (sb-cga:translate (sb-cga:vec (num:lcg-next-in-range (num:d- delta) delta)
-                                         (num:lcg-next-in-range (num:d- delta) delta)
-                                         (num:lcg-next-in-range (num:d- delta) delta)))
-           duration)))))
-
-(defun tree-tremor-fn (duration &key (power (num:d/ +terrain-chunk-tile-size+ 30.0)))
-  (let ((duration duration))
-    #'(lambda (entity dt)
-        (declare (ignore entity))
-        (when dt
-          (setf duration (num:d- duration dt)))
-        (let ((delta (if (num:d< duration 0.0)
-                         0.0
-                         power)))
-          (values
-           (sb-cga:translate (sb-cga:vec (num:lcg-next-in-range (num:d- delta) delta)
+           (sb-cga:translate (sb-cga:vec (lcg-next-in-range (d- delta) delta)
                                          0.0
                                          0.0))
            duration)))))

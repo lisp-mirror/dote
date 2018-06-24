@@ -3973,7 +3973,8 @@
   (:use :cl
         :alexandria
         :constants
-        :misc)
+        :misc
+        :num)
   (:nicknames :tremor)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
@@ -5096,6 +5097,10 @@
    :render-for-reflection
    :push-entity
    :push-trap-entity
+   :push-terrain-chunk
+   :push-arrow
+   :push-spell
+   :push-spell-fx
    :type-influence->pixmap
    :get-window-size
    :main-light-pos

@@ -369,7 +369,7 @@
                                               imprecision-increase
                                               :camera-follow-p t)))
     (when successp
-      (world:push-entity world mesh))))
+      (world:push-arrow world mesh))))
 
 (defun send-attack-spell-events-fn (spell)
   #'(lambda (attacker defender)
@@ -445,12 +445,12 @@
                 (setf (pos target-effect) (pos (hitted-entity mesh)))
                 (setf (pos target-effect) (pos mesh)))
             (play-sound-effect (spell:sound-effect-target spell))
-            (world:push-entity world target-effect))
+            (world:push-spell-fx world target-effect))
           (with-enqueue-action-and-send-remove-after
               (world action-scheduler:end-attack-spell-action)
             (game-event:send-end-attack-spell-event attacker)
             (game-event:send-end-defend-from-attack-spell-event defender))))
-      (world:push-entity world mesh))))
+      (world:push-spell world mesh))))
 
 (defun launch-attack-spell-trap (spell world attacker defender)
   (let* ((shaders       (compiled-shaders world))
@@ -467,7 +467,7 @@
       (when (spell:tremor-fn spell)
         (funcall (spell:tremor-fn spell) world))
       (play-sound-effect (spell:sound-effect-target spell))
-      (world:push-entity world target-effect))
+      (world:push-spell-fx world target-effect))
     (with-enqueue-action-and-send-remove-after
         (world action-scheduler:send-spell-fx-action)
       (battle-utils:send-attack-spell-event attacker defender :assume-visible t))
@@ -533,7 +533,7 @@
                                                           action-scheduler:particle-effect-action)
                 (with-enqueue-action (world action-scheduler:particle-effect-action)
                   (play-sound-effect (spell:sound-effect-target spell))
-                  (world:push-entity world target-effect)))
+                  (world:push-spell-fx world target-effect)))
               (with-enqueue-action-and-send-remove-after
                   (world action-scheduler:send-spell-fx-action)
                 (funcall (send-spell-events-fn spell attacker defender)))
