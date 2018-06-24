@@ -175,9 +175,9 @@
     `(defun ,(format-symbol t "~:@(get-stat-~a~)" slot-name) (file)
        (restart-case
            (let ((,stat (nix:stat file)))
-             (if ,stat
-                 (,(format-symbol :nix "~:@(stat-~a~)" slot-name)
-                   ,stat)))
+             (when ,stat
+               (misc:time-unix->universal (,(format-symbol :nix "~:@(stat-~a~)" slot-name)
+                                            ,stat))))
          (use-value (value) value)))))
 
 (define-stat-time mtime)

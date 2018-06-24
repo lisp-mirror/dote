@@ -327,7 +327,8 @@
    :gen-trivial-plist-gets
    :gen-vec-comp
    :make-null-pointer
-   :with-load-forms-in-var))
+   :with-load-forms-in-var
+   :time-unix->universal))
 
 (defpackage :base64
   (:use :cl

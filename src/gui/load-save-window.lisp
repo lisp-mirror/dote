@@ -80,7 +80,15 @@
 
       (if (not file)
           (append-error-box-to-window  win (_ "No game is saved here"))
-          (progn
+          (let* ((mtime         (fs:get-stat-mtime file))
+                 (decoded-mtime (multiple-value-list (decode-universal-time mtime))))
+            (setf (label (text-mtime win))
+                  (format nil (_ "saved at: ~a-~a-~a ~a:~a")
+                          (elt decoded-mtime 5)
+                          (elt decoded-mtime 4)
+                          (elt decoded-mtime 3)
+                          (elt decoded-mtime 2)
+                          (elt decoded-mtime 1)))
             (setf (res-action win) slot)
             (update-window-appereance win file))))))
 
@@ -233,20 +241,34 @@
                              :callback               #'load-game-cb
                              :label                  (_ "Load"))
     :initarg :b-action
-    :accessor b-action)))
+    :accessor b-action)
+   (text-mtime
+    :initform (make-instance 'simple-label
+                             :label     ""
+                             :font-size (h1-font-size *reference-sizes*)
+                             :width     (d- (load-save-window-w)
+                                            (load-save-button-w))
+                             :height    (load-save-button-h)
+                             :x         (load-save-button-w)
+                             :y         (d- (load-save-window-h)
+                                            (load-save-button-h)))
+    :initarg :text-mtime
+    :accessor text-mtime)))
 
 (defmethod initialize-instance :after ((object load-save-window)
                                        &key (action :load)  &allow-other-keys)
   (with-accessors ((s-preview s-preview)
-                   (b-1       b-1)
-                   (b-2       b-2)
-                   (b-3       b-3)
-                   (b-action  b-action)) object
+                   (b-1        b-1)
+                   (b-2        b-2)
+                   (b-3        b-3)
+                   (b-action   b-action)
+                   (text-mtime text-mtime)) object
     (add-child object s-preview)
     (add-child object b-1)
     (add-child object b-2)
     (add-child object b-3)
     (add-child object b-action)
+    (add-child object text-mtime)
     (when (not (eq action :load))
       (setf (label b-action) (_ "Save"))
       (setf (callback b-action) #'save-game-cb)

@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dote 0.0.1\n"
 "Report-Msgid-Bugs-To: cage@katamail.com\n"
-"POT-Creation-Date: 2018-06-24 17:24+0200\n"
-"PO-Revision-Date: 2018-06-24 17:24+0200\n"
+"POT-Creation-Date: 2018-06-24 18:13+0200\n"
+"PO-Revision-Date: 2018-06-24 18:14+0200\n"
 "Last-Translator: cage <cage@katamail.com>\n"
 "Language-Team: Italian\n"
 "Language: it\n"
@@ -442,7 +442,7 @@ msgid "Trap found! deactivate (chance ~a)?"
 msgstr "Attivata una trappola! Provare a disinnescarla (possibilita' ~a)"
 
 #: src/md2-mesh.lisp:559 src/saved-game.lisp:643 src/world.lisp:1072
-#: src/gui/load-save-window.lisp:155 src/gui/widget.lisp:4518
+#: src/gui/load-save-window.lisp:164 src/gui/widget.lisp:4518
 #: src/gui/widget.lisp:5017
 msgid "OK"
 msgstr "OK"
@@ -585,7 +585,7 @@ msgstr "Trappola disinnescata!"
 msgid "Message"
 msgstr "Messaggio"
 
-#: src/gui/configuration-windows.lisp:276 src/gui/load-save-window.lisp:251
+#: src/gui/configuration-windows.lisp:276 src/gui/load-save-window.lisp:274
 #: src/gui/widget.lisp:3592
 msgid "Save"
 msgstr "Salva"
@@ -708,32 +708,37 @@ msgstr "Inventario"
 msgid "No game is saved here"
 msgstr "Nessuna partita e' stata salvata in questa posizione"
 
-#: src/gui/load-save-window.lisp:151
+#: src/gui/load-save-window.lisp:87
+#, lisp-format
+msgid "saved at: ~a-~a-~a ~a:~a"
+msgstr "Salvato il: ~a-~a-~a ~a:~a"
+
+#: src/gui/load-save-window.lisp:160
 #, lisp-format
 msgid "Game saved in ~a"
 msgstr "Partita salvata in ~a"
 
-#: src/gui/load-save-window.lisp:153
+#: src/gui/load-save-window.lisp:162
 msgid "Success"
 msgstr "Successo"
 
-#: src/gui/load-save-window.lisp:195
+#: src/gui/load-save-window.lisp:204
 msgid "Slot 1"
 msgstr "Posizione 1"
 
-#: src/gui/load-save-window.lisp:208
+#: src/gui/load-save-window.lisp:217
 msgid "Slot 2"
 msgstr "Posizione 2"
 
-#: src/gui/load-save-window.lisp:221
+#: src/gui/load-save-window.lisp:230
 msgid "Slot 3"
 msgstr "Posizione 3"
 
-#: src/gui/load-save-window.lisp:234 src/gui/widget.lisp:3603
+#: src/gui/load-save-window.lisp:243 src/gui/widget.lisp:3603
 msgid "Load"
 msgstr "Carica"
 
-#: src/gui/load-save-window.lisp:259 src/gui/opening-sequence.lisp:252
+#: src/gui/load-save-window.lisp:282 src/gui/opening-sequence.lisp:252
 msgid "Load game"
 msgstr "Carica la partita"
 

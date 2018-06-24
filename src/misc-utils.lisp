@@ -695,3 +695,14 @@ Name from Emacs Lisp."
      (load ,file)
      (let ((,output-var ,special-var))
        ,@body)))
+
+;;;; derived from local-time library
+
+(alexandria:define-constant +unix-epoch+ (encode-universal-time 0 0 0 1 1 1970 0)
+  :test #'=)
+
+(defun time-unix->universal (unix-timestamp)
+  "Return the UNIVERSAL-TIME corresponding to the TIMESTAMP"
+  ;; universal time is seconds from 1900-01-01T00:00:00Z
+  ;; unix timestamp is seconds from 1970-01-01T00:00:00Z
+  (+ unix-timestamp +unix-epoch+))
