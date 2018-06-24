@@ -693,7 +693,7 @@
 
 (defmethod game-event:on-game-event :after ((object player-character) (event game-event:end-turn))
   ;;(misc:dbg " end turn character ~a(~a) ~a" (type-of object) (id object) (type-of event))
-  (remove-decayed-items object (game-event:end-turn-count event))
+  (remove-decayed-items object (game-event:turn-count event))
   nil)
 
 (defgeneric random-fill-slots (object capital characteristics))

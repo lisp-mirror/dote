@@ -1066,15 +1066,16 @@ to take care of that"
       (let* ((trap (game-state:find-entity-by-id state (id-origin event))))
         (battle-utils:trigger-trap-attack trap object)))))
 
-(defmethod on-game-event :after ((object md2-mesh) (event end-turn))
-  (with-accessors ((ghost ghost)
-                   (state state)) object
+(defmethod on-game-event :after ((object md2-mesh) (event start-turn))
+  (with-accessors ((state state)
+                   (ghost ghost)) object
     (game-state:with-world (world state)
-      (when ghost
+      (when (eq (game-state:faction-turn state)
+                (my-faction              object))
         (reset-spell-points    ghost)
         (reset-movement-points ghost)
         (traverse-recurrent-effects      object)
-        (let ((decayed-items (remove-decayed-items ghost (end-turn-count event))))
+        (let ((decayed-items (remove-decayed-items ghost (turn-count event))))
           (dolist (item decayed-items)
             (remove-from-modifiers ghost (id item))
             (world:post-entity-message world object
@@ -1083,11 +1084,16 @@ to take care of that"
                                                (description-type item))
                                        nil
                                        (cons (_ "Move to")
-                                             (world:point-to-entity-and-hide-cb world object)))))
-        ;; clear blacklisted actions for planner
-        (character:clear-blacklist ghost)
-        (send-refresh-toolbar-event)
-        nil))))
+                                             (world:point-to-entity-and-hide-cb world object))))))
+        nil)))
+
+(defmethod on-game-event :after ((object md2-mesh) (event end-turn))
+  (with-accessors ((ghost ghost)
+                   (state state)) object
+    ;; clear blacklisted actions for planner
+    (character:clear-blacklist ghost)
+    ;; (send-refresh-toolbar-event)
+    nil))
 
 (defmethod my-faction ((object md2-mesh))
   (with-accessors ((state state)

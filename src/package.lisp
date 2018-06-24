@@ -2610,8 +2610,8 @@
    :trigger-turn
    :on-game-event
    :end-turn
-   :end-turn-count
-   :end-turn-faction
+   :turn-count
+   :turn-faction
    :register-for-end-turn
    :unregister-for-end-turn
    :propagate-end-turn

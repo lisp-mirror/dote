@@ -985,6 +985,7 @@
                                 &key (position #(0 0)) (force-position-p nil))
   ;; events
   (game-event:register-for-end-turn                           player)
+  (game-event:register-for-start-turn                         player)
   ;; movement
   (game-event:register-for-move-entity-along-path-event       player)
   (game-event:register-for-move-entity-along-path-end-event   player)

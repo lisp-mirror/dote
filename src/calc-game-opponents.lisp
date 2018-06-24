@@ -37,8 +37,7 @@
                                   +maximum-level-difficult+)))
          (number (gaussian-probability (elt +number-opponents-sigma+ (1- difficult-level))
                                        average)))
-    (max 3 (ceiling number))
-    3))
+    (max 3 (ceiling number))))
 
 (defun type-of-opponents (no-of-opponents)
   (let ((excess   (- no-of-opponents (length +opponents-type+)))

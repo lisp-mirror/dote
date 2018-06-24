@@ -83,16 +83,16 @@
          nil))))
 
 (defevent end-turn ()
-  ((end-turn-count
+  ((turn-count
     :initform 0
-    :initarg  :end-turn-count
-    :accessor end-turn-count)
-   (end-turn-faction
+    :initarg  :turn-count
+    :accessor turn-count)
+   (turn-faction
     :initform nil
-    :initarg  :end-turn-faction
-    :accessor end-turn-faction)))
+    :initarg  :turn-faction
+    :accessor turn-faction)))
 
-(defevent start-turn () ())
+(defevent start-turn (end-turn) ())
 
 (defevent update-visibility ()
   ((from-event
