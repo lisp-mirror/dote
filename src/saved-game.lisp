@@ -527,6 +527,8 @@
     (setf window-game-state (make-instance 'game-state:game-state))
     (setf (game-state:window-id window-game-state)
           (sdl2.kit-utils:fetch-window-id window))
+    (when (gconf:config-tree-clip)
+      (mesh:set-tree-clip))
     (game-event:register-for-window-accept-input-event window)
     (gl:front-face :ccw)
     (gl:enable :depth-test :cull-face)

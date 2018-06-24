@@ -365,6 +365,7 @@ active program (set by sdk2.kit:use-program)."
                 :kd
                 :ks
                 :shine
+                :clip-plane
                 :time
                 :fog-density
                 :model-matrix

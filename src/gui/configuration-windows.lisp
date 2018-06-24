@@ -420,10 +420,22 @@
           (gconf:dump))
         nil)))
 
+(defmacro with-config-checkbutton ((button config-fn) &body body)
+  `(progn
+     ,@body
+     (,config-fn (button-state ,button))
+     (gconf:dump)))
+
 (defun update-config-fullscreen-cb (button event)
   (declare (ignore event))
-  (gconf:set-fullscreen (button-state button))
-  (gconf:dump))
+  (with-config-checkbutton (button gconf:set-fullscreen)))
+
+(defun update-config-clip-trees-cb (button event)
+  (declare (ignore event))
+  (with-config-checkbutton (button gconf:set-tree-clip)
+    (if (button-state button)
+        (mesh:set-tree-clip)
+        (mesh:unset-tree-clip))))
 
 (defclass gui-window (window)
   ((l-scale-fp-speed
@@ -475,7 +487,23 @@
                              :initial-state      (gconf:config-fullscreen)
                              :color              :green)
     :initarg  :checkb-fullscreen
-    :accessor checkb-fullscreen)))
+    :accessor checkb-fullscreen)
+   (checkb-clip-trees
+    :initform (make-instance 'labeled-check-button
+                             :button-toggle-type t
+                             :height             (gui-scaling-camera-text-entry-h)
+                             :width              (gui-window-w)
+                             :x                  0.0
+                             :y
+                             (add-epsilon-rel (d* 4.0
+                                                  (gui-scaling-scaling-camera-label-h))
+                                              (spacing-rel *reference-sizes*))
+                             :label              (_ "Clip trees")
+                             :callback           #'update-config-clip-trees-cb
+                             :initial-state      (gconf:config-tree-clip)
+                             :color              :green)
+    :initarg  :checkb-clip-trees
+    :accessor checkb-clip-trees)))
 
 (defmacro with-set-volume-and-dump-config (&body body)
   `(progn
@@ -498,7 +526,8 @@
   (with-accessors ((l-scale-fp-speed                 l-scale-fp-speed)
                    (input-camera-fp-scaling-movement input-camera-fp-scaling-movement)
                    (s-sound-volume                   s-sound-volume)
-                   (checkb-fullscreen                checkb-fullscreen)) object
+                   (checkb-fullscreen                checkb-fullscreen)
+                   (checkb-clip-trees                checkb-clip-trees)) object
     (setf (callback-plus  s-sound-volume) (make-simple-scale-cb #'increase-volume-cb))
     (setf (callback-minus s-sound-volume) (make-simple-scale-cb #'decrease-volume-cb))
     (setf (val->string-fn s-sound-volume)
@@ -509,7 +538,8 @@
                    l-scale-fp-speed
                    input-camera-fp-scaling-movement
                    s-sound-volume
-                   checkb-fullscreen)))
+                   checkb-fullscreen
+                   checkb-clip-trees)))
 
 (defun make-gui-window (compiled-shaders)
   (let ((w (make-instance 'gui-window

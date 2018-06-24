@@ -109,6 +109,10 @@
     :initform 68
     :initarg  :sound-volume
     :accessor sound-volume)
+   (tree-clip
+    :initform nil
+    :initarg  :tree-clip
+    :accessor tree-clip)
    (fullscreen
     :initform t
     :initarg  :fullscreen
@@ -132,6 +136,7 @@
       camera-fp-scaling-movement
       train-ai
       sound-volume
+      tree-clip
       fullscreen))
 
 (defun make-default-config ()
@@ -217,5 +222,7 @@
 (gen-acc-fn train-ai)
 
 (gen-acc-fn sound-volume)
+
+(gen-acc-fn tree-clip)
 
 (gen-acc-fn fullscreen)

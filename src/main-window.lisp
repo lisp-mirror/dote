@@ -302,25 +302,25 @@
 (defun %change-ai-layer (window scancode)
   (flet ((%change-layer (type)
            (setf (world:influence-map-type (world window)) type)))
-    (when (eq :scancode-f3 scancode)
+    (when (eq :scancode-3 scancode)
       (%change-layer :influence-map))
-    (when (eq :scancode-f4 scancode)
+    (when (eq :scancode-4 scancode)
       (%change-layer :concerning-invalicables))
-    (when (eq :scancode-f5 scancode)
+    (when (eq :scancode-5 scancode)
       (%change-layer :concerning-facing))
-    (when (eq :scancode-f6 scancode)
+    (when (eq :scancode-6 scancode)
       (%change-layer :smoothed-concerning-layer))
-    (when (eq :scancode-f7 scancode)
+    (when (eq :scancode-7 scancode)
       (%change-layer :concerning-layer))
-    (when (eq :scancode-f8 scancode)
+    (when (eq :scancode-8 scancode)
       (%change-layer :unexplored-layer))
-    (when (eq :scancode-f9 scancode)
+    (when (eq :scancode-9 scancode)
       (%change-layer :attack-enemy-melee-layer))
-    (when (eq :scancode-f10 scancode)
+    (when (eq :scancode-10 scancode)
       (%change-layer :attack-enemy-pole-layer))
-    (when (eq :scancode-f11 scancode)
+    (when (eq :scancode-11 scancode)
       (%change-layer :attack-enemy-bow-layer))
-    (when (eq :scancode-f12 scancode)
+    (when (eq :scancode-12 scancode)
       (%change-layer :attack-enemy-crossbow-layer))))
 
 (defun skip-opening (world)
@@ -342,8 +342,16 @@
             (when (world:opening-mode world)
               (skip-opening world))
             #+debug-mode (close-window object))
+          (when (eq :scancode-f1 scancode)
+            (mesh:flip-tree-clip))
+          (when (eq :scancode-f2 scancode)
+            (make-screenshot world)
+            #+ (and debug-mode debug-ai)
+            (pixmap:save-pixmap (world:type-influence->pixmap world)
+                                (fs:file-in-package "ai-layer.tga")))
           #+debug-mode
-          (when (eq :scancode-4 scancode)
+          (progn
+            (when (eq :scancode-4 scancode)
             (with-accessors ((world world) (mesh mesh)) object
               (let* ((game-state         (window-game-state object)))
                 (with-accessors ((selected-pc selected-pc)) world
@@ -355,90 +363,86 @@
                                (ivec2 16 16)
                                :heuristic-cost-function
                                (game-state:heuristic-alt-pc game-state))))))))
-          #+debug-mode
-          (when (eq :scancode-3 scancode)
-            (with-accessors ((world world) (mesh mesh)) object
-              (let* ((game-state         (window-game-state object))
-                     (blackboard         (blackboard game-state)))
-                (with-accessors ((selected-pc selected-pc)) world
-                  (let ((pos (mesh:calculate-cost-position selected-pc)))
-                    (misc:dbg "w conc ~a"
-                              (blackboard:path-with-concerning-tiles blackboard
-                                                                      pos
-                                                                      (ivec2 3 1)))
-                    (misc:dbg "w conc ~a"
-                              (game-state:build-movement-path-pc (main-state world)
-                                                                 pos
-                                                                 (ivec2 16 16)
-                                                                 :heuristic-cost-function
-                                                                  (heuristic-alt-pc game-state))))))))
-          (when (eq :scancode-2 scancode)
-            (make-screenshot world)
-            #+ (and debug-mode debug-ai)
-            (pixmap:save-pixmap (world:type-influence->pixmap world)
-                                (fs:file-in-package "ai-layer.tga")))
-          (when *placeholder*
-            (let* ((old-pos (entity:pos *placeholder*)))
-              (when (eq :scancode-1 scancode)
-                (let* ((window-game-state  (window-game-state object))
-                       (blackboard         (blackboard window-game-state))
-                       (concerning-matrix  (blackboard:concerning-tiles->costs-matrix blackboard))
-                       (x-cost            (map-utils:coord-chunk->costs (elt old-pos 0)))
-                       (y-cost            (map-utils:coord-chunk->costs (elt old-pos 2))))
-                  (misc:dbg "position ~a costs ~a, ~a cost: ~a what ~a id ~a~% approx h ~a facing ~a occlude? ~a inside-room ~a concerning cost ~a ai-entitites ~a"
-                            old-pos
-                            (map-utils:coord-chunk->costs (elt old-pos 0))
-                            (map-utils:coord-chunk->costs (elt old-pos 2))
-                            (get-cost       (window-game-state object)
-                                            (map-utils:coord-chunk->costs (elt old-pos 0))
-                                            (map-utils:coord-chunk->costs (elt old-pos 2)))
-                            (el-type-in-pos   (window-game-state object)
+            (when (eq :scancode-3 scancode)
+              (with-accessors ((world world) (mesh mesh)) object
+                (let* ((game-state         (window-game-state object))
+                       (blackboard         (blackboard game-state)))
+                  (with-accessors ((selected-pc selected-pc)) world
+                    (let ((pos (mesh:calculate-cost-position selected-pc)))
+                      (misc:dbg "w conc ~a"
+                                (blackboard:path-with-concerning-tiles blackboard
+                                                                       pos
+                                                                       (ivec2 3 1)))
+                      (misc:dbg "w conc ~a"
+                                (game-state:build-movement-path-pc
+                                 (main-state world)
+                                 pos
+                                 (ivec2 16 16)
+                                 :heuristic-cost-function
+                                 (heuristic-alt-pc game-state))))))))
+            (when *placeholder*
+              (let* ((old-pos (entity:pos *placeholder*)))
+                (when (eq :scancode-1 scancode)
+                  (let* ((window-game-state  (window-game-state object))
+                         (blackboard         (blackboard window-game-state))
+                         (concerning-matrix  (blackboard:concerning-tiles->costs-matrix blackboard))
+                         (x-cost            (map-utils:coord-chunk->costs (elt old-pos 0)))
+                         (y-cost            (map-utils:coord-chunk->costs (elt old-pos 2))))
+                    (misc:dbg "position ~a costs ~a, ~a cost: ~a what ~a id ~a~%
+approx h ~a facing ~a occlude? ~a inside-room ~a concerning cost ~a ai-entitites ~a"
+                              old-pos
+                              (map-utils:coord-chunk->costs (elt old-pos 0))
+                              (map-utils:coord-chunk->costs (elt old-pos 2))
+                              (get-cost       (window-game-state object)
                                               (map-utils:coord-chunk->costs (elt old-pos 0))
                                               (map-utils:coord-chunk->costs (elt old-pos 2)))
-                            (entity-id-in-pos (window-game-state object)
-                                              (map-utils:coord-chunk->costs (elt old-pos 0))
-                                              (map-utils:coord-chunk->costs (elt old-pos 2)))
-                            (approx-terrain-height@pos (window-game-state object)
-                                                       (elt old-pos 0)
-                                                       (elt old-pos 2))
-                            (map-utils:facing-pos old-pos (entity:dir *placeholder*))
-                            (game-state:occludep-in-pos (window-game-state object)
-                                                        (map-utils:coord-chunk->costs (elt old-pos
-                                                                                           0))
-                                                        (map-utils:coord-chunk->costs (elt old-pos
-                                                                                           2)))
-                            (mesh:inside-room-p *placeholder*)
-                            (matrix:matrix-elt concerning-matrix y-cost x-cost)
-                            (game-state:ai-entities window-game-state))))
-              (when (and (eq :scancode-up scancode))
-                (setf (entity:pos *placeholder*)
-                      (vec (elt old-pos 0)
-                           0.0
-                           (num:d+ (elt old-pos 2) +terrain-chunk-tile-size+)))
-                (world:move-entity world *placeholder* nil :update-costs nil))
-              (when (eq :scancode-down scancode)
-                (setf (entity:pos *placeholder*)
-                      (vec (elt old-pos 0)
-                           0.0
-                           (num:d- (elt old-pos 2) +terrain-chunk-tile-size+)))
-                (world:move-entity world *placeholder* nil :update-costs nil))
-              (when (eq :scancode-left scancode)
-                (setf (entity:pos *placeholder*)
-                      (vec (num:d+ (elt old-pos 0) +terrain-chunk-tile-size+)
-                           0.0
-                           (elt old-pos 2)))
-                (world:move-entity world *placeholder* nil :update-costs nil))
-              (when (eq :scancode-right scancode)
-                (setf (entity:pos *placeholder*)
-                      (vec (num:d- (elt old-pos 0) +terrain-chunk-tile-size+)
-                           0.0
-                           (elt old-pos 2)))
-                (world:move-entity world *placeholder* nil :update-costs nil)))
-            (let ((height-terrain (world:pick-height-terrain world
-                                                              (elt (entity:pos *placeholder*) 0)
-                                                              (elt (entity:pos *placeholder*) 2))))
-              (when height-terrain
-                (setf (elt (entity:pos *placeholder*) 1) height-terrain)))))))))
+                              (el-type-in-pos   (window-game-state object)
+                                                (map-utils:coord-chunk->costs (elt old-pos 0))
+                                                (map-utils:coord-chunk->costs (elt old-pos 2)))
+                              (entity-id-in-pos (window-game-state object)
+                                                (map-utils:coord-chunk->costs (elt old-pos 0))
+                                                (map-utils:coord-chunk->costs (elt old-pos 2)))
+                              (approx-terrain-height@pos (window-game-state object)
+                                                         (elt old-pos 0)
+                                                         (elt old-pos 2))
+                              (map-utils:facing-pos old-pos (entity:dir *placeholder*))
+                              (game-state:occludep-in-pos (window-game-state object)
+                                                          (map-utils:coord-chunk->costs (elt old-pos
+                                                                                             0))
+                                                          (map-utils:coord-chunk->costs (elt old-pos
+                                                                                             2)))
+                              (mesh:inside-room-p *placeholder*)
+                              (matrix:matrix-elt concerning-matrix y-cost x-cost)
+                              (game-state:ai-entities window-game-state))))
+                (when (and (eq :scancode-up scancode))
+                  (setf (entity:pos *placeholder*)
+                        (vec (elt old-pos 0)
+                             0.0
+                             (num:d+ (elt old-pos 2) +terrain-chunk-tile-size+)))
+                  (world:move-entity world *placeholder* nil :update-costs nil))
+                (when (eq :scancode-down scancode)
+                  (setf (entity:pos *placeholder*)
+                        (vec (elt old-pos 0)
+                             0.0
+                             (num:d- (elt old-pos 2) +terrain-chunk-tile-size+)))
+                  (world:move-entity world *placeholder* nil :update-costs nil))
+                (when (eq :scancode-left scancode)
+                  (setf (entity:pos *placeholder*)
+                        (vec (num:d+ (elt old-pos 0) +terrain-chunk-tile-size+)
+                             0.0
+                             (elt old-pos 2)))
+                  (world:move-entity world *placeholder* nil :update-costs nil))
+                (when (eq :scancode-right scancode)
+                  (setf (entity:pos *placeholder*)
+                        (vec (num:d- (elt old-pos 0) +terrain-chunk-tile-size+)
+                             0.0
+                             (elt old-pos 2)))
+                  (world:move-entity world *placeholder* nil :update-costs nil)))
+              (let ((height-terrain (world:pick-height-terrain world
+                                                               (elt (entity:pos *placeholder*) 0)
+                                                               (elt (entity:pos *placeholder*) 2))))
+                (when height-terrain
+                  (setf (elt (entity:pos *placeholder*) 1) height-terrain))))))))))
 
 (defmethod keyboard-event ((object test-window) state ts repeat-p keysym)
   (when (eq state :keydown)

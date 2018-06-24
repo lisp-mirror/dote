@@ -230,6 +230,10 @@
     :initform 12.0
     :initarg  :h4-font-size
     :accessor h4-font-size)
+   (h5-font-size
+    :initform 10.0
+    :initarg  :h5-font-size
+    :accessor h5-font-size)
    (standard-font-size
     :initform 10.0
     :initarg  :standard-font-size

@@ -1747,6 +1747,9 @@
    :config-inhibit-planner
    :config-camera-fp-scaling-movement
    :config-train-ai
+   :config-tree-clip
+   :config-sound-volume
+   :config-fullscreen
    :set-forward
    :set-back
    :set-left
@@ -1763,9 +1766,8 @@
    :set-inhibit-planner
    :set-camera-fp-scaling-movement
    :set-train-ai
-   :config-sound-volume
+   :set-tree-clip
    :set-sound-volume
-   :config-fullscreen
    :set-fullscreen
    :*game-config*
    :dump
@@ -4148,6 +4150,9 @@
    :use-lod-p
    :triangle
    :triangle-mesh-shell
+   :flip-tree-clip
+   :set-tree-clip
+   :unset-tree-clip
    :tree-mesh-shell
    :tree-mesh-shell-p
    :tree-trunk-aabb
@@ -4643,6 +4648,7 @@
    :h2-font-size
    :h3-font-size
    :h4-font-size
+   :h5-font-size
    :standard-font-size
    :title-font-color
    :button-text-offset-x

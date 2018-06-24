@@ -22,6 +22,11 @@ out vec3 N;
 out vec3 V;
 out vec3 L;
 
+// clipping
+
+uniform vec4  clip_plane = vec4(0.0, 1.0, 0.0, -9.0);
+
+
 mat3 normal_matrix = mat3(modelview_matrix);
 
 void ADS(in vec4 pos, in vec3 normal, in vec4 light, in mat3 normal_matrix,
@@ -37,5 +42,6 @@ void main () {
   frag_text_coord        = texture_coord;
   eye_position           = modelview_matrix * position;
   world_position         = model_matrix * position;
+  gl_ClipDistance[0]     = dot(position, clip_plane);
   gl_Position            = proj_matrix *  modelview_matrix * actual_position;
 }

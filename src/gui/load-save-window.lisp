@@ -185,8 +185,8 @@
     :accessor s-preview)
    (b-1
     :initform (make-instance 'button
-                             :use-label-global-style t
-                             :label-font-size        (h3-font-size *reference-sizes*)
+                             :use-label-global-style nil
+                             :label-font-size        (h5-font-size *reference-sizes*)
                              :width                  (load-save-button-w)
                              :height                 (load-save-button-h)
                              :x                      0.0
@@ -197,8 +197,8 @@
     :accessor b-1)
     (b-2
      :initform (make-instance 'button
-                              :use-label-global-style t
-                              :label-font-size        (h3-font-size *reference-sizes*)
+                              :use-label-global-style nil
+                              :label-font-size        (h5-font-size *reference-sizes*)
                               :width                  (load-save-button-w)
                               :height                 (load-save-button-h)
                               :x                      0.0
@@ -210,8 +210,8 @@
     :accessor b-2)
    (b-3
     :initform (make-instance 'button
-                             :use-label-global-style t
-                             :label-font-size        (h3-font-size *reference-sizes*)
+                             :use-label-global-style nil
+                             :label-font-size        (h5-font-size *reference-sizes*)
                              :width                  (load-save-button-w)
                              :height                 (load-save-button-h)
                              :x                      0.0
@@ -223,8 +223,8 @@
     :accessor b-3)
    (b-action
     :initform (make-instance 'button
-                             :use-label-global-style t
-                             :label-font-size        (h3-font-size *reference-sizes*)
+                             :use-label-global-style nil
+                             :label-font-size        (h5-font-size *reference-sizes*)
                              :width                  (load-save-button-w)
                              :height                 (load-save-button-h)
                              :x                      0.0
