@@ -328,7 +328,16 @@
    :gen-vec-comp
    :make-null-pointer
    :with-load-forms-in-var
-   :time-unix->universal))
+   :time-unix->universal
+   :time-second-of
+   :time-minutes-of
+   :time-hour-of
+   :time-date-of
+   :time-month-of
+   :time-year-of
+   :time-day-of
+   :time-daylight-p-of
+   :time-zone-of))
 
 (defpackage :base64
   (:use :cl

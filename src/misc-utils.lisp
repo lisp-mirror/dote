@@ -706,3 +706,22 @@ Name from Emacs Lisp."
   ;; universal time is seconds from 1900-01-01T00:00:00Z
   ;; unix timestamp is seconds from 1970-01-01T00:00:00Z
   (+ unix-timestamp +unix-epoch+))
+
+(defmacro gen-time-access (name pos)
+  `(defun ,(format-fn-symbol t "time-~a-of" name) (time-list)
+     (elt time-list ,pos)))
+
+(defmacro gen-all-time-access (&rest name-pos)
+  `(progn
+     ,@(loop for i in name-pos collect
+            `(gen-time-access ,(car i) ,(cdr i)))))
+
+(gen-all-time-access (second     . 0)
+                     (minutes    . 1)
+                     (hour       . 2)
+                     (date       . 3)
+                     (month      . 4)
+                     (year       . 5)
+                     (day        . 6)
+                     (daylight-p . 7)
+                     (zone       . 8))

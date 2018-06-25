@@ -1,10 +1,10 @@
 (asdf:defsystem :dote
   :description "Dawn of the Era: A tactical game"
-  :author "cage <cage@katamail.com>"
-  :license "GPLv3"
-  :version "0.0.1"
-  :pathname "src"
-  :serial t
+  :author      "cage <cage@katamail.com>"
+  :license     "GPLv3"
+  :version     "0.0.1"
+  :pathname    "src"
+  :serial      t
   :depends-on (:swank
                :clunit2
                :alexandria
@@ -122,6 +122,7 @@
                (:file "gpu-array-lerp")
                (:file "tremor-functions")
                (:file "mesh")
+               (:file "tree-mesh-shell")
                (:file "wall-mesh-shell")
                (:file "window-mesh-shell")
                (:file "door-mesh-shell")
