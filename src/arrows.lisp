@@ -190,7 +190,7 @@
                       (incf (displacement trajectory) +arrow-speed+)
                       (setf pos (ray-ends trajectory pos))
                       ;; update quadtree
-                      (world:move-entity world object nil :update-costs nil))))))))))
+                      (world:move-arrow world object nil :update-costs nil))))))))))
 
 (defclass arrow-attack-spell-mesh (triangle-mesh arrow)
   ((aabb-size
@@ -271,7 +271,7 @@
                       (incf (displacement trajectory) +arrow-speed+)
                       (setf pos (ray-ends trajectory pos))
                       ;; update quadtree
-                      (world:move-entity world object nil :update-costs nil))))))))))
+                      (world:move-spell world object nil :update-costs nil))))))))))
 
 (defstruct arrow-db-entry id mesh)
 

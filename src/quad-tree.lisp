@@ -100,6 +100,8 @@
 
 (defgeneric query-leaf-in-point (object probe))
 
+(defgeneric query-data-path-to-point (object probe))
+
 (defgeneric path-to (object &optional path))
 
 (defgeneric node-quadrant (object))
@@ -170,6 +172,28 @@
                          (and intersect-ne (%query ne))
                          (and intersect-sw (%query sw))
                          (and intersect-se (%query se))))))))
+      (%query object)
+      results)))
+
+(defmethod query-data-path-to-point ((object quad-tree) probe)
+  "collect all the  data following the path from the  root to the leaf
+where the probe belong"
+  (let ((results #()))
+    (labels ((%query (node)
+               (with-accessors ((aabb aabb) (nw nw) (ne ne) (sw sw) (se se)
+                                (data data)) node
+                 (when (inside-iaabb2-p aabb (elt probe 0) (elt probe 1))
+                   (when (not (leafp node))
+                     (setf results
+                           (concatenate 'vector results (data node)))
+                     (let ((intersect-nw (inside-aabb2-p (aabb nw) (elt probe 0) (elt probe 1)))
+                           (intersect-ne (inside-aabb2-p (aabb ne) (elt probe 0) (elt probe 1)))
+                           (intersect-sw (inside-aabb2-p (aabb sw) (elt probe 0) (elt probe 1)))
+                           (intersect-se (inside-aabb2-p (aabb se) (elt probe 0) (elt probe 1))))
+                       (and intersect-nw (%query nw))
+                       (and intersect-ne (%query ne))
+                       (and intersect-sw (%query sw))
+                       (and intersect-se (%query se))))))))
       (%query object)
       results)))
 

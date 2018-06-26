@@ -451,6 +451,16 @@
 
 (defgeneric move-entity (object entity from &key update-costs))
 
+(defgeneric move-entity-always-rendered (object entity from &key update-costs))
+
+(defgeneric move-arrow         (object entity from &key update-costs))
+
+(defgeneric move-character     (object entity from &key update-costs))
+
+(defgeneric move-spell         (object entity from &key update-costs))
+
+(defgeneric move-spell-fx      (object entity from &key update-costs))
+
 (defgeneric toolbar-selected-action (object))
 
 (defgeneric (setf toolbar-selected-action) (val object))
@@ -953,7 +963,7 @@
     ;; update quadtree
     ;; remove entity from quad tree and game state
     (remove-entity-by-id entities (id entity))
-    ;; re-add to quad-tre (updating leaf it belong, if needed)
+    ;; re-add to quad-tree (updating leaf it belong, if needed)
     (push-entity object entity)
     ;; re-add to game-state
     (push-entity main-state entity)
@@ -966,6 +976,38 @@
                                                        (elt cost-pos-target 0)
                                                        (elt cost-pos-target 1)))
       (game-state:move-map-state-entity object entity from))))
+
+(defmethod move-entity-always-rendered ((object world) entity from &key (update-costs t))
+  (with-accessors ((entities entities)
+                   (main-state main-state)) object
+    ;; update quadtree
+    ;; remove entity from quad tree and game state
+    (remove-entity-by-id entities (id entity))
+    ;; re-add to the root of the quad-tree
+    (push-entity-always-rendered object entity)
+    ;; re-add to game-state
+    (push-entity main-state entity)
+    (when update-costs
+      ;; set minimum cost for leaved tile
+      (game-state:set-minimum-cost-player-layer@ main-state (elt from 0) (elt from 1))
+      ;; set maximum cost for entered tile
+      (let ((cost-pos-target (mesh:calculate-cost-position entity)))
+        (game-state:set-invalicable-cost-player-layer@ main-state
+                                                       (elt cost-pos-target 0)
+                                                       (elt cost-pos-target 1)))
+      (game-state:move-map-state-entity object entity from))))
+
+(defmethod move-character ((object world) entity from &key (update-costs t))
+  (move-entity-always-rendered object entity from :update-costs update-costs))
+
+(defmethod move-arrow ((object world) entity from &key (update-costs t))
+  (move-entity-always-rendered object entity from :update-costs update-costs))
+
+(defmethod move-spell ((object world) entity from &key (update-costs t))
+  (move-entity-always-rendered object entity from :update-costs update-costs))
+
+(defmethod move-spell-fx ((object world) entity from &key (update-costs t))
+  (move-entity-always-rendered object entity from :update-costs update-costs))
 
 (defmethod toolbar-selected-action ((object world))
   (widget:selected-action (toolbar object)))

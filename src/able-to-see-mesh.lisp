@@ -459,18 +459,20 @@ Also note that that ray is long as much as the height of the visibility cone of 
   (absee-mesh:update-visibility-cone       object)
   (game-event:send-update-visibility-event object nil))
 
-
 (defmethod nonlabyrinth-element-hitted-by-ray ((object able-to-see-mesh) (target triangle-mesh))
   (with-accessors ((dir dir)
                    (pos pos)
                    (state state)
                    (visibility-cone visibility-cone)) object
     ;; launch a ray
-    (let* ((center-target (aabb-center (actual-aabb-for-visibility target)))
+    (let* ((actual-aabb-target (actual-aabb-for-visibility target))
+           (actual-aabb-object (actual-aabb-for-visibility object))
+           (center-target (aabb-center actual-aabb-target))
+           (center-object (aabb-center actual-aabb-object))
            (ray           (make-instance 'ray
                                          :ray-direction
                                          (normalize (vec- center-target
-                                                          (aabb-center (actual-aabb-for-visibility object))))))
+                                                          center-object))))
            (world-ref     (game-state:fetch-world (state object)))
            (quad-tree     (world:entities world-ref)))
       (loop
@@ -479,50 +481,49 @@ Also note that that ray is long as much as the height of the visibility cone of 
          by +visibility-ray-displ-incr+ do
            (incf (displacement ray) dt)
            (let* ((ends (ray-ends ray pos))
-                  (leaf (quad-tree:query-leaf-in-point quad-tree
-                                                       (vec2 (elt ends 0)
-                                                             (elt ends 2)))))
-             (when leaf
-               (loop for d across (quad-tree:data leaf)
-                  ;; check if this entity should be ignored
-                  when (not (find (id d) *ray-test-id-entities-ignored* :test #'=))
-                  do
-                    (cond
-                      ((terrain-chunk:terrain-chunk-p d)
-                       (let* ((x-chunk (elt ends 0))
-                              (z-chunk (elt ends 2))
-                              (y   (game-state:approx-terrain-height@pos state
-                                                                         x-chunk
-                                                                         z-chunk)))
-                         (when (and y (< (elt ends 1) y))
+                  (entities (quad-tree:query-data-path-to-point quad-tree
+                                                                (vec2 (elt ends 0)
+                                                                      (elt ends 2)))))
+             (loop for d across entities
+                ;; check if this entity should be ignored
+                when (not (find (id d) *ray-test-id-entities-ignored* :test #'=))
+                do
+                  (cond
+                    ((terrain-chunk:terrain-chunk-p d)
+                     (let* ((x-chunk (elt ends 0))
+                            (z-chunk (elt ends 2))
+                            (y   (game-state:approx-terrain-height@pos state
+                                                                       x-chunk
+                                                                       z-chunk)))
+                       (when (and y (< (elt ends 1) y))
+                         (return-from nonlabyrinth-element-hitted-by-ray nil))))
+                    ((labyrinth-mesh-p d)
+                     ;;does nothing, continue to the next iteration
+                     )
+                    ((arrows:arrowp d)
+                     ;;does nothing, continue to the next iteration
+                     )
+                    ((trap-mesh-shell-p d)
+                     ;;does nothing, continue to the next iteration
+                     )
+                    ((tree-mesh-shell-p d)
+                     ;;(misc:dbg "tree trunk ~%~a ~a -> ~a" (tree-trunk-aabb d)
+                     ;;        ends (insidep (tree-trunk-aabb d) ends))
+                     (when (and (insidep (aabb d) ends)
+                                (insidep (actual-aabb-for-visibility d) ends))
+                       (if (= (id d) (id target))
+                           (return-from nonlabyrinth-element-hitted-by-ray (values ray d))
                            (return-from nonlabyrinth-element-hitted-by-ray nil))))
-                      ((labyrinth-mesh-p d)
-                       ;;does nothing, continue to the next iteration
-                       )
-                      ((arrows:arrowp d)
-                       ;;does nothing, continue to the next iteration
-                       )
-                      ((trap-mesh-shell-p d)
-                       ;;does nothing, continue to the next iteration
-                       )
-                      ((tree-mesh-shell-p d)
-                       ;;(misc:dbg "tree trunk ~%~a ~a -> ~a" (tree-trunk-aabb d)
-                       ;;        ends (insidep (tree-trunk-aabb d) ends))
-                       (when (and (insidep (aabb d) ends)
-                                  (insidep (actual-aabb-for-visibility d) ends))
-                         (if (= (id d) (id target))
-                             (return-from nonlabyrinth-element-hitted-by-ray (values ray d))
-                             (return-from nonlabyrinth-element-hitted-by-ray nil))))
-                      (t
-                       (when (ensure-not-dead (d)
-                               (insidep (actual-aabb-for-visibility d)
-                                        (ray-ends ray pos))) ;; O_O
-                         (if (= (id d) (id target))
-                             (return-from nonlabyrinth-element-hitted-by-ray (values ray d))
-                             (when (not (= (id d) (id object)))
-                               ;; (misc:dbg "hitted?? ~a" d)
-                               (return-from
-                                nonlabyrinth-element-hitted-by-ray (values nil d))))))))))))))
+                    (t
+                     (when (ensure-not-dead (d)
+                             (insidep (actual-aabb-for-visibility d)
+                                      (ray-ends ray pos))) ;; O_O
+                       (if (= (id d) (id target))
+                           (return-from nonlabyrinth-element-hitted-by-ray (values ray d))
+                           (when (not (= (id d) (id object)))
+                             ;; (misc:dbg "hitted?? ~a" d)
+                             (return-from
+                              nonlabyrinth-element-hitted-by-ray (values nil d)))))))))))))
 
 (defun %blocked-by-ray-p (ray-ends vec-object)
   (loop for a across vec-object do

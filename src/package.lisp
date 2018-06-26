@@ -1374,6 +1374,7 @@
    :subdivide
    :query-smallest-intersect-aabb
    :query-leaf-in-point
+   :query-data-path-to-point
    :calculate-subaabb
    :iterate-nodes-intersect
    :iterate-nodes
@@ -5144,6 +5145,10 @@
    :setup-map-state-entity
    :move-map-state-entity
    :move-entity
+   :move-character
+   :move-arrow
+   :move-spell
+   :move-spell-fx
    :toolbar-selected-action
    :reset-toolbar-selected-action
    :post-entity-message

@@ -596,7 +596,7 @@ to take care of that"
               (setf dir (path->dir current-path :start-index 0))))
         (game-state:with-world (world state)
           ;; update state matrix and quadtree
-          (world:move-entity world player leaving-tile)
+          (world:move-character world player leaving-tile)
           #+ (and debug-mode debug-ai)
           (propagate-update-highlight-path (make-instance 'update-highlight-path
                                                           :tile-pos current-path))
@@ -634,7 +634,7 @@ to take care of that"
                     (setf dir (path->dir current-path :start-index 0))))
               (game-state:with-world (world state)
                 ;; update state matrix and quadtree
-                (world:move-entity world object leaving-tile)
+                (world:move-character world object leaving-tile)
                 (propagate-update-highlight-path (make-instance 'update-highlight-path
                                                                 :tile-pos current-path))
                 ;; update-cone for ai visibility check below
