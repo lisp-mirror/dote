@@ -358,6 +358,7 @@
             (loop-player-entities main-state #'%process-postponed-messages)
             (loop-ai-entities     main-state #'%process-postponed-messages))
           (calc-ai-entities-action-order main-state)
+          (clear-all-memoized-function-cache)
           (add-start-turn-billboard object)
           (when (game-state:faction-turn-human-p main-state)
             (setup-orbs-active object)))
@@ -367,7 +368,6 @@
   (with-accessors ((main-state main-state)) object
     ;; (tg:gc :full t)
     ;; (misc:dbg " end turn ~a" (game-turn (main-state object)))
-    (clear-all-memoized-function-cache)
     (md2-mesh:blacklist-clear-id)
     (rebuild-all-ai-planners        object)
     (remove-all-tooltips            object)

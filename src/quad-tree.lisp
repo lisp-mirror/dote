@@ -183,9 +183,9 @@ where the probe belong"
                (with-accessors ((aabb aabb) (nw nw) (ne ne) (sw sw) (se se)
                                 (data data)) node
                  (when (inside-iaabb2-p aabb (elt probe 0) (elt probe 1))
+                   (setf results
+                         (concatenate 'vector results (data node)))
                    (when (not (leafp node))
-                     (setf results
-                           (concatenate 'vector results (data node)))
                      (let ((intersect-nw (inside-aabb2-p (aabb nw) (elt probe 0) (elt probe 1)))
                            (intersect-ne (inside-aabb2-p (aabb ne) (elt probe 0) (elt probe 1)))
                            (intersect-sw (inside-aabb2-p (aabb sw) (elt probe 0) (elt probe 1)))

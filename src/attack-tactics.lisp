@@ -405,12 +405,58 @@ path is removed
                  (values nil nil nil)))
               (values nil nil nil)))))))
 
-(defun path-with-concerning-tiles (blackboard ai-position
-                                   defender-position
-                                   &key
-                                     (cut-off-first-tile t)
-                                     (allow-path-length-1 nil))
-  "return three values: the path (taking into account concerning tiles),
+(defstruct %path-cache
+  (from)
+  (to)
+  (cut-off-first-p)
+  (allow-length-1-p)
+  (path)
+  (cumulative-cost)
+  (costs-terrain))
+
+(defun %path-eq (a b)
+  (and (ivec2= (%path-cache-from a)
+               (%path-cache-from b))
+       (ivec2= (%path-cache-to a)
+               (%path-cache-to b))
+       (eq     (%path-cache-cut-off-first-p a)
+               (%path-cache-cut-off-first-p b))
+       (eq     (%path-cache-allow-length-1-p a)
+               (%path-cache-allow-length-1-p b))))
+
+(defmacro with-cache-path-skel ((search-cache-fn insert-cache-fn) &body body)
+  `(labels ((make-cache-key (from to cut-first allow-1
+                                  &optional
+                                  (path nil) (cumulative-cost 0.0)
+                                  (costs-terrain nil))
+              (make-%path-cache :from             from
+                                :to               to
+                                :cut-off-first-p  cut-first
+                                :allow-length-1-p allow-1
+                                :path             path
+                                :cumulative-cost  cumulative-cost
+                                :costs-terrain    costs-terrain))
+             (get-from-cache (from to cut-first allow-1)
+               (,search-cache-fn (make-cache-key from to
+                                                 cut-first
+                                                 allow-1)))
+             (put-in-cache (from to cut-first allow-1
+                                 path cumulative-cost costs-terrain)
+               (,insert-cache-fn (make-cache-key from
+                                                 to
+                                                 cut-first allow-1
+                                                 path
+                                                 cumulative-cost
+                                                 costs-terrain))))
+     ,@body))
+
+(defcached-list path-with-concerning-tiles ((blackboard ai-position
+                                                       defender-position
+                                                       &key
+                                                       (cut-off-first-tile t)
+                                                       (allow-path-length-1 nil))
+                                            :equal-fn #'%path-eq)
+    "return three values: the path (taking into account concerning tiles),
 the  total cost of (taking  into account terrain and other objects,
 like building  or players *but NOT  the doors*) and the cost of each move of
 the path, again only with map cost (i.e. no concerning tiles).
@@ -418,27 +464,75 @@ the path, again only with map cost (i.e. no concerning tiles).
 If cut-off-first-tile is  not nil the first element  of the calculated
 path is removed
 "
-  (let* ((concerning-tiles (concerning-tiles->costs-matrix blackboard))
-         (others-costs     (list concerning-tiles))
-         (heuristic (heuristic-alt (landmarks-w/concenring-no-doors-dists blackboard))))
-    (calc-path-tiles-no-doors blackboard ai-position defender-position
-                              heuristic
-                              :cut-off-first-tile  cut-off-first-tile
-                              :other-costs         others-costs
-                              :allow-path-length-1 allow-path-length-1)))
+    (with-cache-path-skel (path-with-concerning-tiles-search-cache
+                           path-with-concerning-tiles-insert-cache)
+      (let ((found (get-from-cache ai-position
+                                   defender-position
+                                   cut-off-first-tile
+                                   allow-path-length-1)))
+        (if found
+            (values (%path-cache-path            found)
+                    (%path-cache-cumulative-cost found)
+                    (%path-cache-costs-terrain   found))
+            (let* ((concerning-tiles (concerning-tiles->costs-matrix blackboard))
+                   (others-costs     (list concerning-tiles))
+                   (heuristic (heuristic-alt (landmarks-w/concenring-no-doors-dists
+                                              blackboard))))
+              (multiple-value-bind (path cumulative-cost terrain-costs)
+                  (calc-path-tiles-no-doors blackboard ai-position defender-position
+                                            heuristic
+                                            :cut-off-first-tile  cut-off-first-tile
+                                            :other-costs         others-costs
+                                            :allow-path-length-1 allow-path-length-1)
+                (put-in-cache ai-position
+                              defender-position
+                              cut-off-first-tile
+                              allow-path-length-1
+                              path
+                              cumulative-cost
+                              terrain-costs)
+                (path-with-concerning-tiles blackboard
+                                            ai-position
+                                            defender-position
+                                            :cut-off-first-tile cut-off-first-tile
+                                            :allow-path-length-1 allow-path-length-1)))))))
 
-(defun path-w/o-concerning-tiles (blackboard ai-position
-                                  defender-position
-                                  &key
-                                    (cut-off-first-tile t)
-                                    (allow-path-length-1 nil))
+(defcached-list path-w/o-concerning-tiles ((blackboard ai-position
+                                                       defender-position
+                                                       &key
+                                                       (cut-off-first-tile t)
+                                                       (allow-path-length-1 nil))
+                                           :equal-fn #'%path-eq)
   "see calc-path-tiles-no-doors"
-  (let ((heuristic (heuristic-alt (landmarks-w/o-concenring-no-doors-dists blackboard))))
-    (calc-path-tiles-no-doors blackboard ai-position defender-position
-                              heuristic
-                              :cut-off-first-tile cut-off-first-tile
-                              :other-costs        '()
-                              :allow-path-length-1 allow-path-length-1)))
+  (with-cache-path-skel (path-w/o-concerning-tiles-search-cache
+                         path-w/o-concerning-tiles-insert-cache)
+      (let ((found (get-from-cache ai-position
+                                   defender-position
+                                   cut-off-first-tile
+                                   allow-path-length-1)))
+        (if found
+            (values (%path-cache-path            found)
+                    (%path-cache-cumulative-cost found)
+                    (%path-cache-costs-terrain   found))
+            (let* ((heuristic (heuristic-alt (landmarks-w/o-concenring-no-doors-dists blackboard))))
+              (multiple-value-bind (path cumulative-cost terrain-costs)
+                  (calc-path-tiles-no-doors blackboard ai-position defender-position
+                                            heuristic
+                                            :cut-off-first-tile cut-off-first-tile
+                                            :other-costs        '()
+                                            :allow-path-length-1 allow-path-length-1)
+                (put-in-cache ai-position
+                              defender-position
+                              cut-off-first-tile
+                              allow-path-length-1
+                              path
+                              cumulative-cost
+                              terrain-costs)
+                (path-w/o-concerning-tiles blackboard
+                                           ai-position
+                                           defender-position
+                                           :cut-off-first-tile cut-off-first-tile
+                                           :allow-path-length-1 allow-path-length-1)))))))
 
 (defun pos-longest-reachable-path (entity costs)
   (do ((accum 0.0)
