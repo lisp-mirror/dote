@@ -28,6 +28,8 @@
 
 (define-constant +attack-least-powerful-low-level-chance+ 50.0 :test #'=)
 
+(define-constant +hiding-place-subseq-length+             10   :test #'=)
+
 (defun gen-neigh-costs (entity cost-map-fn)
   (with-accessors ((state entity:state)) entity
     (with-accessors ((map-state game-state:map-state)) state
@@ -934,77 +936,87 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
   (cost)
   (average-cost-opponents))
 
-(defcached go-find-hiding-place ((entity opponents-can-see-entity) :test eq)
-  (declare (optimize (speed 0) (safety 0) (debug 3)))
+(defun trivial-unreachable-fn (entity)
+  (with-accessors ((ghost ghost)
+                   (state state)) entity
+    (let ((mp         (character:current-movement-points ghost))
+          (entity-pos (calculate-cost-position entity)))
+      #'(lambda (a)
+          (let ((cost@pos (game-state:get-cost state (2d-utils:seq-x a) (2d-utils:seq-y a))))
+            (or (< mp cost@pos)
+                (< mp (map-utils:map-manhattam-distance a entity-pos))))))))
+
+(defun go-find-hiding-place-no-cache (entity opponents-can-see-entity)
   (flet ((get-path-cost (blackboard from to)
            (multiple-value-bind (path total-cost costs)
                (blackboard:path-with-concerning-tiles blackboard from to)
              (declare (ignore path costs))
-             total-cost))
-         (put-in-cache (a)
-           (setf (gethash entity cache) a)
+             total-cost)))
+    (with-slots-for-reasoning (entity state ghost blackboard)
+      (let* ((difficult         (level-difficult state))
+             (box-size          (* difficult 5))
+             (internal-box-size (* difficult 2))
+             (player-position   (mesh:calculate-cost-position entity))
+             (player-x          (elt player-position 0))
+             (player-y          (elt player-position 1))
+             (all-hiding-pos
+              (absee-mesh:tiles-placeholder-visibility-in-ring-by-faction state
+                                                                          player-x
+                                                                          player-y
+                                                                          box-size
+                                                                          internal-box-size
+                                                                          +pc-type+
+                                                                          opponents-can-see-entity))
+             (all-hiding-pos-trivial-reach (remove-if (trivial-unreachable-fn entity)
+                                                      all-hiding-pos))
+             (all-hiding-places (loop for hiding-pos in all-hiding-pos-trivial-reach collect
+                                     (make-hiding-place :pos hiding-pos))))
+        (when all-hiding-places
+          ;; calculate average
+          (loop for hiding-place in all-hiding-places do
+               (let ((sum 0)
+                     (ct  0))
+                 (loop-player-entities state
+                      #'(lambda (player-ent)
+                          (let ((from         (calculate-cost-position player-ent))
+                                (hiding-place (hiding-place-pos hiding-place)))
+                            (incf sum
+                                  (map-utils:map-manhattam-distance from hiding-place))
+                            (incf ct 1))))
+                 (setf (hiding-place-average-cost-opponents hiding-place)
+                       (d (/ sum ct)))))
+          ;; sort
+          (setf all-hiding-places (shellsort all-hiding-places
+                                             #'(lambda (a b)
+                                                 (d> (hiding-place-average-cost-opponents a)
+                                                     (hiding-place-average-cost-opponents b)))))
+          (setf all-hiding-places (safe-subseq all-hiding-places 0 +hiding-place-subseq-length+))
+          (setf all-hiding-places (shellsort all-hiding-places
+                                             #'(lambda (a b)
+                                                 (let ((pos-a (hiding-place-pos a))
+                                                       (pos-b (hiding-place-pos b)))
+                                                   (d< (get-path-cost blackboard
+                                                                      player-position
+                                                                      pos-a)
+                                                       (get-path-cost blackboard
+                                                                      player-position
+                                                                      pos-b))))))
+          (loop for i in all-hiding-places do
+               (let ((pos (hiding-place-pos i)))
+                 (when (<= (character:current-movement-points ghost)
+                           (get-path-cost blackboard player-position pos))
+                   (return-from go-find-hiding-place-no-cache pos)))))))))
+
+(defcached go-find-hiding-place ((entity opponents-can-see-entity) :test eq)
+  (declare (optimize (speed 0) (safety 0) (debug 3)))
+  (flet ((put-in-cache (a)
+           (setf (gethash entity cache) (cons a :found))
            (go-find-hiding-place entity opponents-can-see-entity)))
-    (or (gethash entity cache)
-        (with-slots-for-reasoning (entity state ghost blackboard)
-          (with-predictable-for-turn-random-sequence (state)
-            (let* ((difficult         (level-difficult state))
-                   (box-size          (* difficult 5))
-                   (internal-box-size (* difficult 2))
-                   (player-position   (mesh:calculate-cost-position entity))
-                   (player-x          (elt player-position 0))
-                   (player-y          (elt player-position 1))
-                   (all-hiding-pos
-                    (absee-mesh:tiles-placeholder-visibility-in-ring-by-faction state
-                                                                                player-x
-                                                                                player-y
-                                                                                box-size
-                                                                                internal-box-size
-                                                                                +pc-type+
-                                                                                opponents-can-see-entity))
-                   (all-hiding-places (loop for hiding-pos in all-hiding-pos collect
-                                           (let ((cost (get-path-cost  blackboard
-                                                                       player-position
-                                                                       hiding-pos)))
-                                             (make-hiding-place :pos  hiding-pos
-                                                                :cost cost)))))
-              ;; remove not reachable pos
-              (setf all-hiding-places
-                    (remove-if #'(lambda (h)
-                                   (let ((cost (get-path-cost blackboard
-                                                              player-position
-                                                              (hiding-place-pos h))))
-                                     (> cost (character:current-movement-points ghost))))
-                               all-hiding-places))
-              (when all-hiding-places
-                ;; calculate average
-                (loop for hiding-place in all-hiding-places do
-                     (let ((sum 0)
-                           (ct  0))
-                       (loop-player-entities state
-                            #'(lambda (player-ent)
-                                (let ((from     (calculate-cost-position player-ent))
-                                      (hiding-place (hiding-place-pos hiding-place)))
-                                  (incf sum
-                                        (get-path-cost blackboard
-                                                       from
-                                                       hiding-place))
-                                  (incf ct 1))))
-                       (setf (hiding-place-average-cost-opponents hiding-place)
-                             (d (/ sum ct)))))
-                ;; sort
-                (setf all-hiding-places (shellsort all-hiding-places
-                                                   #'(lambda (a b)
-                                                       (d> (hiding-place-average-cost-opponents a)
-                                                           (hiding-place-average-cost-opponents b)))))
-                ;; (dbg "all hiding places~%~a" all-hiding-places)
-                (if-difficult-level>medium (state)
-                  (let* ((difficult-scaling (* difficult 2))
-                         (max-lenght (max 1 (lcg-next-upto (ceiling (/ (length all-hiding-places)
-                                                                       difficult-scaling))))))
-                    (put-in-cache (hiding-place-pos (random-elt (subseq all-hiding-places
-                                                                        0
-                                                                        max-lenght)))))
-                  (put-in-cache (hiding-place-pos (random-elt all-hiding-places)))))))))))
+    (let ((cache (gethash entity cache)))
+      (if (cdr cache)
+          (car cache)
+          (let ((nocache-value (go-find-hiding-place-no-cache entity opponents-can-see-entity)))
+            (put-in-cache nocache-value))))))
 
 (defun go-launch-teleport-spell (entity)
   (with-slots-for-reasoning (entity state ghost blackboard)

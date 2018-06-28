@@ -404,7 +404,7 @@ Name from Emacs Lisp."
 ;; sequence utils
 
 (defun safe-subseq (sequence start &optional (end nil))
-  "return the whole sequence if end is beyond ythe legth of the sequence"
+  "return the whole sequence if end is beyond the length of the sequence"
   (subseq sequence
           start
           (and end (min end (length sequence)))))
