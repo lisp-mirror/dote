@@ -2147,6 +2147,7 @@ effective range.  I think this is safe to assume. ;)"
 
 (defun invalidate-blackboard-cache ()
   (path-with-concerning-tiles-clear-cache)
+  (path-w/o-concerning-tiles-clear-cache)
   (attack-spell-goal-pos-around-friend-clear-cache)
   (attack-spell-goal-pos-around-me-clear-cache)
   (heal-spell-goal-pos-around-friend-clear-cache)

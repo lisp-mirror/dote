@@ -479,13 +479,14 @@ else
     results))
 
 (defun gen-cross-near (x y offset &key (add-center t))
-  (let ((res '()))
-    (when add-center
-      (push (ivec2 x y) res))
+  (let ((res    '())
+        (center (ivec2 x y)))
     (loop for h from (- x (truncate offset)) to (+ x (truncate offset)) do
          (push (ivec2 h y) res))
     (loop for v from (- y (truncate offset)) to (+ y (truncate offset)) do
-         (push (ivec2 x v) res))
+         (pushnew (ivec2 x v) res :test #'ivec2=))
+    (when (not add-center)
+      (setf res (remove center res :test #'ivec2=)))
     res))
 
 (defun gen-valid-cross-near (matrix x y offset &key (add-center t))
