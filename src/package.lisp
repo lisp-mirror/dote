@@ -302,6 +302,7 @@
    :+cache-invalid-value+
    :defcached
    :defcached-list
+   :fn-delay
    :unsplice
    :defalias
    :defun-inline-function

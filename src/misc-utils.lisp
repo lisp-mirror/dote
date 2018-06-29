@@ -74,6 +74,11 @@
 
 ;; functions utils
 
+(defmacro fn-delay (a)
+  (if (symbolp a)
+      `(lambda (&rest p) (apply (function ,a) p))
+      `(lambda (&rest p) (apply ,a p))))
+
 (defun unsplice (form)
   (and form
        (list form)))

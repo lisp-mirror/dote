@@ -946,6 +946,47 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
             (or (< mp cost@pos)
                 (< mp (map-utils:map-manhattam-distance a entity-pos))))))))
 
+(defun multisort-hiding-dist> (a b)
+  (d> (hiding-place-average-cost-opponents a)
+      (hiding-place-average-cost-opponents b)))
+
+(defun multisort-hiding-dist< (a b)
+  (d< (hiding-place-average-cost-opponents a)
+      (hiding-place-average-cost-opponents b)))
+
+(defun multisort-counts-obstacles (game-state x y)
+  (with-accessors ((map-state map-state)) game-state
+    (let ((obstacles (remove-if #'(lambda (p)
+                                    (d< (get-cost game-state
+                                                  (2d-utils:seq-x p)
+                                                  (2d-utils:seq-y p))
+                                        (d/ +invalicable-element-cost+ 4.0)))
+                                (matrix:gen-valid-neighbour-position map-state x y
+                                                                     :add-center nil))))
+      (length obstacles))))
+
+(defmacro with-counts-obstacles ((game-state a b counts-a counts-b) &body body)
+  (with-gensyms (pos-a pos-b)
+    `(let* ((,pos-a    (hiding-place-pos          ,a))
+            (,pos-b    (hiding-place-pos          ,b))
+            (,counts-a (multisort-counts-obstacles ,game-state
+                                                   (2d-utils:seq-x ,pos-a)
+                                                   (2d-utils:seq-y ,pos-a)))
+            (,counts-b (multisort-counts-obstacles ,game-state
+                                                   (2d-utils:seq-x ,pos-b)
+                                                   (2d-utils:seq-y ,pos-b))))
+       ,@body)))
+
+(defun multisort-obstacles-clsr> (game-state)
+  #'(lambda (a b)
+      (with-counts-obstacles (game-state a b counts-a counts-b)
+        (> counts-a counts-b))))
+
+(defun multisort-obstacles-clsr< (game-state)
+  #'(lambda (a b)
+      (with-counts-obstacles (game-state a b counts-a counts-b)
+        (< counts-a counts-b))))
+
 (defun go-find-hiding-place-no-cache (entity opponents-can-see-entity)
   (flet ((get-path-cost (blackboard from to)
            (multiple-value-bind (path total-cost costs)
@@ -990,7 +1031,19 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
                                              #'(lambda (a b)
                                                  (d> (hiding-place-average-cost-opponents a)
                                                      (hiding-place-average-cost-opponents b)))))
-          (setf all-hiding-places (safe-subseq all-hiding-places 0 +hiding-place-subseq-length+))
+          (setf all-hiding-places
+                (num:multisort* all-hiding-places
+                                (num:gen-multisort-test (multisort-obstacles-clsr> state)
+                                                        (multisort-obstacles-clsr< state)
+                                                        identity)
+                                (num:gen-multisort-test multisort-hiding-dist>
+                                                        multisort-hiding-dist<
+                                                        identity)))
+          ;; cut a slice
+          (setf all-hiding-places (safe-subseq all-hiding-places 0
+                                               (+ +hiding-place-subseq-length+
+                                                  (truncate difficult))))
+          ;; sort, reachable first
           (setf all-hiding-places (shellsort all-hiding-places
                                              #'(lambda (a b)
                                                  (let ((pos-a (hiding-place-pos a))

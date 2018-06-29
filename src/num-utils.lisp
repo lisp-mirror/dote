@@ -324,12 +324,12 @@
 (defmacro gen-multisort-test (fn-< fn-> fn-access)
   (alexandria:with-gensyms (a b access-a access-b)
     `(lambda (,a ,b)
-       (let ((,access-a (,fn-access ,a))
-             (,access-b (,fn-access ,b)))
+       (let ((,access-a (funcall (misc:fn-delay ,fn-access) ,a))
+             (,access-b (funcall (misc:fn-delay ,fn-access) ,b)))
          (cond
-           ((,fn-< ,access-a ,access-b)
+           ((funcall (misc:fn-delay ,fn-<) ,access-a ,access-b)
             -1)
-           ((,fn-> ,access-a ,access-b)
+           ((funcall (misc:fn-delay ,fn->) ,access-a ,access-b)
             1)
            (t 0))))))
 

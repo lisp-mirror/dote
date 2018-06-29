@@ -420,10 +420,11 @@
                                      positions))
            (not-starved      (remove-if #'(lambda (a) (<= (age a) 0)) ;; remove starved
                                         age-updated)))
-      ;; remove death
+      ;; remove death or non existents
       (remove-if #'(lambda (a)
                      (let ((ent (game-state:find-entity-by-id main-state (entity-id a))))
-                       (entity:entity-dead-p ent)))
+                       (or (null ent)
+                           (entity:entity-dead-p ent))))
                  not-starved))))
 
 (defun someone-ai-carry-weapon-fn (blackboard probe-fn)
@@ -834,7 +835,7 @@
                               (* 2 +weapon-crossbow-range+))
                              (otherwise
                               (* 2 +weapon-melee-range+))))
-           (movement-weight (if (> level 1)
+           (movement-weight (if (> level +difficult-medium+)
                                 (/ level 25)
                                 0)))
       (floor (+ range
