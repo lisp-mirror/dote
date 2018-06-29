@@ -377,22 +377,24 @@
                        (id id)) object
         (multiple-value-bind (damage ambush)
             (battle-utils:defend-from-attack-spell event)
-          (when (and damage
-                     ;; ignore  spell if  launched  by friends  that's
-                     ;; concerning but from another point of view! :)
-                     (not (eq (my-faction object)
-                              (my-faction (find-entity-by-id state (id-origin event))))))
-            (update-concernining-tiles-on-event event))
-          #+debug-mode (misc:dbg "apply ~a" damage)
-          (manage-occurred-damage object
-                                  event
-                                  damage
-                                  ambush
-                                  #'register-for-end-attack-spell-event
-                                  #'send-end-attack-spell-event
-                                  (game-event:spell event))
-          (battle-utils:reward-exp-launch-attack-spell event damage) ; damage can have null value
-          t))))
+          (let ((faction-launcher (my-faction (find-entity-by-id state (id-origin event)))))
+            (when (and damage
+                       (faction-player-p faction-launcher)
+                       ;; ignore  spell if  launched  by friends  that's
+                       ;; concerning but from another point of view! :)
+                       (not (eq (my-faction object)
+                                faction-launcher)))
+              (update-concernining-tiles-on-event event))
+            #+debug-mode (misc:dbg "apply ~a" damage)
+            (manage-occurred-damage object
+                                    event
+                                    damage
+                                    ambush
+                                    #'register-for-end-attack-spell-event
+                                    #'send-end-attack-spell-event
+                                    (game-event:spell event))
+            (battle-utils:reward-exp-launch-attack-spell event damage) ; damage can have null value
+            t)))))
 
 (defmethod on-game-event ((object md2-mesh) (event spell-event))
   (check-event-targeted-to-me (object event)
