@@ -3391,6 +3391,7 @@
    :most-powerful-visible-opponents
    :least-powerful-visible-opponents
    :attackable-opponents-id
+   :trivial-unreachable-fn
    :cost-to-reach-w/o-concerning-place
    :attack-when-near-pos-long-range-p
    :attack-when-near-pos-short-range-p

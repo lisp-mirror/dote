@@ -51,7 +51,7 @@
        ,@body)))
 
 (defun reachablep (atk-pos def-pos mp)
-  (<= (map-manhattam-distance atk-pos def-pos)
+  (<= (map-manhattam-distance-cost atk-pos def-pos)
       mp))
 
 (defun reachable-constantly-t (atk-pos def-pos mp)
@@ -1743,11 +1743,14 @@ values nil, i. e. the ray is not blocked"
         ;; remove tiles not empty or not occupied by attacker
         (setf goal-tiles-pos (remove-if (remove-tile-empty-or-w/ignored-entities state attacker)
                                         goal-tiles-pos))
-        ;; remove out of range
+        ;; remove out of spell range
         (setf goal-tiles-pos (remove-if-not #'(lambda (a)
                                                 (< (manhattam-distance a defender-pos)
                                                    spell-range))
                                             goal-tiles-pos))
+        ;; remove out of range
+        (setf goal-tiles-pos (remove-if (ai-utils:trivial-unreachable-fn attacker)
+                                        goal-tiles-pos))
         ;; if attack-spell, remove if enemy is not visible from tiles position
         (when (spell:attack-spell-p spell)
           (setf goal-tiles-pos
@@ -1756,11 +1759,6 @@ values nil, i. e. the ray is not blocked"
                                      (able-to-see-mesh:placeholder-visible-p defender
                                                                              x y)))
                                goal-tiles-pos)))
-        ;; (when (find spell-type (list :attack :damage) :test #'eq)
-        ;;   ;; remove tiles from the target's point of view
-        ;;   (setf goal-tiles-pos (remove-from-player-pov goal-tiles-pos
-        ;;                                                defender
-        ;;                                                use-enemy-fov-when-attacking-p)))
         ;; remove non reachables
         (setf goal-tiles-pos (ai-utils:remove-non-reachables-pos reach-fn
                                                                  attacker-pos

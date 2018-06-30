@@ -944,7 +944,7 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
       #'(lambda (a)
           (let ((cost@pos (game-state:get-cost state (2d-utils:seq-x a) (2d-utils:seq-y a))))
             (or (< mp cost@pos)
-                (< mp (map-utils:map-manhattam-distance a entity-pos))))))))
+                (< mp (map-utils:map-manhattam-distance-cost a entity-pos))))))))
 
 (defun multisort-hiding-dist> (a b)
   (d> (hiding-place-average-cost-opponents a)
