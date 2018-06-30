@@ -38,6 +38,12 @@
 (defun preview-size ()
   (d* (square-button-size *reference-sizes*) 3.0))
 
+(defun notes-entry-w ()
+  (preview-size))
+
+(defun notes-entry-h ()
+  (d* 0.05 (load-save-window-h)))
+
 (defun make-preview-config (x y texture-name)
   (make-instance 'signalling-light
                  :width         (preview-size)
@@ -47,12 +53,26 @@
                  :texture-name  texture-name
                  :button-status t))
 
-(defun update-window-appereance (window file)
-  (with-accessors ((s-preview  s-preview)
-                   (res-action res-action)) window
+(defun update-window-appereance (window slot file)
+  (with-accessors ((s-preview   s-preview)
+                   (res-action  res-action)
+                   (text-mtime  text-mtime)
+                   (input-notes input-notes)) window
     (let ((texture (texture:get-texture +load-save-preview-texture-name+)))
       (if file
-          (let ((new-preview (pixmap:slurp-pixmap 'pixmap:tga file)))
+          (let* ((new-preview   (pixmap:slurp-pixmap 'pixmap:tga file))
+                 (mtime         (fs:get-stat-mtime file))
+                 (decoded-mtime (multiple-value-list (decode-universal-time mtime)))
+                 (notes         (slurp-notes-file slot)))
+            (setf (label input-notes) notes)
+            (setf (label text-mtime)
+                  (format nil
+                          (_ "saved at: ~d-~2,'0d-~2,'0d ~2,'0d:~2,'0d")
+                          (misc:time-year-of    decoded-mtime)
+                          (misc:time-month-of   decoded-mtime)
+                          (misc:time-date-of    decoded-mtime)
+                          (misc:time-hour-of    decoded-mtime)
+                          (misc:time-minutes-of decoded-mtime)))
             (setf (pixmap:data texture) (pixmap:data new-preview))
             (pixmap:sync-data-to-bits texture))
           (let ((aabb (ivec4:ivec4 0 0
@@ -72,33 +92,31 @@
             (pixmap:sync-data-to-bits texture)))
       (update-for-rendering texture))))
 
+(defun slurp-notes-file (slot)
+  (when-let* ((file  (res:get-resource-file +save-game-notes-name+
+                                            slot
+                                            :if-does-not-exists nil))
+              (notes (fs:slurp-file file)))
+    notes))
+
 (defun update-window-for-load (button slot)
   (with-parent-widget (win) button
     (let ((file (res:get-resource-file +save-game-screenshot-name+
                                        slot
                                        :if-does-not-exists nil)))
-
       (if (not file)
           (append-error-box-to-window  win (_ "No game is saved here"))
-          (let* ((mtime         (fs:get-stat-mtime file))
-                 (decoded-mtime (multiple-value-list (decode-universal-time mtime))))
-            (setf (label (text-mtime win))
-                  (format nil (_ "saved at: ~d-~2,'0d-~2,'0d ~2,'0d:~2,'0d")
-                          (misc:time-year-of    decoded-mtime)
-                          (misc:time-month-of   decoded-mtime)
-                          (misc:time-date-of    decoded-mtime)
-                          (misc:time-hour-of    decoded-mtime)
-                          (misc:time-minutes-of decoded-mtime)))
+          (progn
             (setf (res-action win) slot)
-            (update-window-appereance win file))))))
+            (update-window-appereance win slot file))))))
 
 (defun update-window-for-save (button slot)
   (with-parent-widget (win) button
-    (let ((file (res:get-resource-file +save-game-screenshot-name+
-                                       slot
-                                       :if-does-not-exists nil)))
+    (let ((screenshot-file (res:get-resource-file +save-game-screenshot-name+
+                                                  slot
+                                                  :if-does-not-exists nil)))
       (setf (res-action win) slot)
-      (update-window-appereance win file))))
+      (update-window-appereance win slot screenshot-file))))
 
 (defun %update-cb-for-load (w e slot)
   (declare (ignore e))
@@ -127,8 +145,7 @@
               (progn
                 (saved-game:load-players render-window res-action)
                 (widget:hide-and-remove-parent-cb w e))
-              (progn
-                (saved-game:load-game    render-window res-action)))
+              (saved-game:load-game    render-window res-action))
           ;; select a player
           (game-state:with-world (world state)
             (with-accessors ((player-entities game-state:player-entities)) state
@@ -147,11 +164,30 @@
                                                                  *window-h*))))
     (pixmap:save-pixmap pixmap filename)))
 
+(defun save-a-screenshot (win world action)
+  (let ((image-file (res:get-resource-file +save-game-screenshot-name+
+                                           action
+                                           :if-does-not-exists :create)))
+    (setf (shown win) nil) ; without the window ;)
+    (gl:clear :color-buffer :depth-buffer)
+    (interfaces:render world world)
+    (world:render-gui world)
+    (write-screenshot-for-saving world image-file)
+    (setf (shown win) t)))
+
+(defun save-notes (action notes)
+  (let ((notes-file (res:get-resource-file +save-game-notes-name+
+                                           action
+                                           :if-does-not-exists :create)))
+    (with-open-file (stream notes-file :direction :output :if-exists :supersede)
+      (format stream "~a" notes))))
+
 (defun save-game-cb (w e)
   (declare (ignore e))
   (with-parent-widget (win) w
-    (with-accessors ((state      state)
-                     (res-action res-action)) win
+    (with-accessors ((state       state)
+                     (res-action  res-action)
+                     (input-notes input-notes)) win
       (game-state:with-world (world state)
         (when res-action
           (saved-game:save-game res-action state)
@@ -163,16 +199,8 @@
                                                     (cons (_ "OK")
                                                           #'hide-and-remove-parent-cb))))
             (setf (compiled-shaders success-message) (compiled-shaders w))
-            ;; save a screenshot
-            (let ((image-file (res:get-resource-file +save-game-screenshot-name+
-                                                     res-action
-                                                     :if-does-not-exists :create)))
-              (setf (shown win) nil) ; without the window ;)
-              (gl:clear :color-buffer :depth-buffer)
-              (interfaces:render world world)
-              (world:render-gui world)
-              (write-screenshot-for-saving world image-file)
-              (setf (shown win) t))
+            (save-a-screenshot win world res-action)
+            (save-notes res-action (label input-notes))
             (add-child (world:gui world) success-message)))))))
 
 (defclass load-save-window (window)
@@ -242,6 +270,17 @@
                              :label                  (_ "Load"))
     :initarg :b-action
     :accessor b-action)
+   (input-notes
+    :initform (make-instance 'text-field
+                             :width  (notes-entry-w)
+                             :height (notes-entry-h)
+                             :x      (d+ (load-save-button-w)
+                                         (spacing *reference-sizes*))
+                             :y      (add-epsilon-rel (preview-size)
+                                                      0.01)
+                             :label "")
+    :initarg :input-notes
+    :accessor input-notes)
    (text-mtime
     :initform (make-instance 'simple-label
                              :label     ""
@@ -258,17 +297,21 @@
 (defmethod initialize-instance :after ((object load-save-window)
                                        &key (action :load)  &allow-other-keys)
   (with-accessors ((s-preview s-preview)
-                   (b-1        b-1)
-                   (b-2        b-2)
-                   (b-3        b-3)
-                   (b-action   b-action)
-                   (text-mtime text-mtime)) object
-    (add-child object s-preview)
-    (add-child object b-1)
-    (add-child object b-2)
-    (add-child object b-3)
-    (add-child object b-action)
-    (add-child object text-mtime)
+                   (b-1         b-1)
+                   (b-2         b-2)
+                   (b-3         b-3)
+                   (b-action    b-action)
+                   (input-notes input-notes)
+                   (text-mtime  text-mtime)) object
+    (misc:dbg "iii ~a" input-notes)
+    (add-children* object
+                   s-preview
+                   b-1
+                   b-2
+                   b-3
+                   b-action
+                   input-notes
+                   text-mtime)
     (when (not (eq action :load))
       (setf (label b-action) (_ "Save"))
       (setf (callback b-action) #'save-game-cb)

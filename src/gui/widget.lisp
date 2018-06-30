@@ -1228,7 +1228,7 @@
             (old-label
              (setf (label object) (subseq old-label 0 (max 0 (f- (length old-label) 1))))))
           t)
-      nil)))
+        nil)))
 
 (defclass char-field (text-field) ())
 

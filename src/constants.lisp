@@ -276,6 +276,8 @@
 
 (define-constant +save-game-screenshot-name+       "screenshot.tga"               :test #'equalp)
 
+(define-constant +save-game-notes-name+            "notes"                        :test #'equalp)
+
 (define-constant +mesh-placeholder-file+           "placeholder.lsys"             :test #'string=)
 
 (define-constant +gui-static-text-delim+           "§"                            :test #'string=)

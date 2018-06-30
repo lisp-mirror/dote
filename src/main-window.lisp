@@ -203,24 +203,16 @@
 
 (defmethod textinput-event ((object test-window) ts text)
   (with-accessors ((world world)) object
-    (with-accessors ((selected-pc selected-pc)) world
-    (if (string= text "S")
-        (progn
-          (game-state:setup-game-hour (window-game-state object)
-                                      (mod (1+ (game-hour (window-game-state object))) 24)))
-        (progn
-          (when (string= text "P")
-            (let ((camera (world:camera world)))
-              (misc:dbg "~a ~a
-                       up ~a
-                       ~a"
-                        (entity:pos    camera)
-                        (camera:target camera)
-                        (entity:up     camera)
-                        (entity:dir    camera))))
+    (let ((gui-event (make-instance 'gui-events:key-pressed
+                                    :char-event (elt text 0))))
+      (when (not (widget:on-key-pressed (world:gui world) gui-event))
+        (with-accessors ((selected-pc selected-pc)) world
           (when (find text (list (gconf:config-forward)
-                                 (gconf:config-back) (gconf:config-left) (gconf:config-right)
-                                 (gconf:config-upward) (gconf:config-downward)
+                                 (gconf:config-back)
+                                 (gconf:config-left)
+                                 (gconf:config-right)
+                                 (gconf:config-upward)
+                                 (gconf:config-downward)
                                  (gconf:config-go-to-active-character)
                                  (gconf:config-rotate-camera-cw)
                                  (gconf:config-rotate-camera-ccw)
@@ -332,10 +324,12 @@
 
 (defmethod keydown-event ((object test-window) ts repeat-p keysym)
   (with-accessors ((world world)) object
-    (let ((gui-event (make-instance 'gui-events:key-pressed
-                                    :char-event (misc:code->char (sdl2:sym-value keysym)
-                                                                 :limit-to-ascii t))))
-      (when (not (widget:on-key-pressed (world:gui world) gui-event))
+    (let* ((char      (misc:code->char (sdl2:sym-value keysym)
+                                       :limit-to-ascii t))
+           (gui-event (make-instance 'gui-events:key-pressed
+                                     :char-event char)))
+      (when (or (gui:gui-printable-p char)
+                (not (widget:on-key-pressed (world:gui world) gui-event)))
         (let ((scancode (sdl2:scancode keysym)))
           #+(and debug-mode debug-ai)   (%change-ai-layer object scancode)
           (when (eq :scancode-escape scancode)
