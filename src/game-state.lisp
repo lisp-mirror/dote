@@ -493,6 +493,8 @@
 
 (defgeneric position-inside-room-p (object position))
 
+(defgeneric position-confined-in-labyrinth-p (object position))
+
 (defgeneric calc-ai-entities-action-order (object))
 
 (defgeneric door-in-next-path-tile-p (object path idx-pos-maybe-door))
@@ -622,11 +624,15 @@
 
 (defgeneric empty@pos-p (object x y))
 
+(defgeneric open-terrain@pos-p (object x y))
+
 (defgeneric trap@pos-p (object x y))
 
 (defgeneric container@pos-p (object x y))
 
 (defgeneric magic-forniture@pos-p (object x y))
+
+(defgeneric floor@pos-p (object x y))
 
 (defmethod pawn@pos-p ((object game-state) x y)
   (let ((entity (entity-in-pos object x y)))
@@ -658,6 +664,12 @@
 (defmethod empty@pos-p ((object matrix) (x fixnum) (y fixnum))
   (map-element-empty-p (matrix-elt object y x)))
 
+(defmethod open-terrain@pos-p ((object game-state) (x fixnum) (y fixnum))
+  (open-terrain@pos-p  (map-state object) x y))
+
+(defmethod open-terrain@pos-p ((object matrix) (x fixnum) (y fixnum))
+  (%eq-type object x y +empty-type+))
+
 (defun %eq-type (matrix x y type)
   (eq (el-type (matrix-elt matrix y x))
       type))
@@ -671,6 +683,7 @@
 (def-*@pos-p-matrix
     (trap@pos-p          .  +trap-type+)
     (container@pos-p     .  +container-type+)
+  (floor@pos-p           .  +floor-type+)
   (magic-furniture@pos-p .  +magic-furniture-type+))
 
 (defmethod prepare-map-state ((object game-state) (map random-terrain))
@@ -1213,6 +1226,42 @@
                           all)))
            (escapedp (node) (if (matrix:pos@border-p map-state node)
                                 (return-from position-inside-room-p nil)
+                                node)))
+      (let ((element (element-mapstate@ object (elt position 0) (elt position 1))))
+        (if (eq (game-state:el-type element) +floor-type+)
+            (graph:gen-bfs-visit-block (map-state position
+                                                  node-equals
+                                                  key-fn escapedp
+                                                  gen-first-near
+                                                  res)
+              t)
+            nil)))))
+
+(defmethod position-confined-in-labyrinth-p ((object game-state) position)
+  (with-accessors ((map-state map-state)) object
+    (flet ((node-equals    (a b) (ivec2:ivec2= a b))
+           (key-fn         (a)   (identity a))
+           (gen-first-near (g visited-node)
+             (let ((all (map 'list
+                             #'ivec2:sequence->ivec2
+                             (matrix:gen-4-neighbour-counterclockwise (elt visited-node 0)
+                                                                      (elt visited-node 1)
+                                                                      :add-center nil))))
+               (remove-if #'(lambda (pos)
+                              (2d-utils:displace-2d-vector (pos x y)
+                                (or (game-state:map-element-occupied-by-invalicable-p
+                                     (matrix:matrix-elt g
+                                                        (elt pos 1)
+                                                        (elt pos 0))
+                                     :include-door nil)
+                                    (and (door@pos-p object x y)
+                                         (let ((door (entity-in-pos object x y)))
+                                           (mesh:door-closed-p door))))))
+                          all)))
+           (escapedp (node) (if (open-terrain@pos-p object
+                                                        (2d-utils:seq-x node)
+                                                        (2d-utils:seq-y node))
+                                (return-from position-confined-in-labyrinth-p nil)
                                 node)))
       (let ((element (element-mapstate@ object (elt position 0) (elt position 1))))
         (if (eq (game-state:el-type element) +floor-type+)

@@ -2585,6 +2585,7 @@
    :set-concerning-tile-fn
    :max-ai-movement-points
    :position-inside-room-p
+   :position-confined-in-labyrinth-p
    :calc-ai-entities-action-order
    :door-in-next-path-tile-p
    :invalicable-in-next-path-tile-p
@@ -4209,6 +4210,8 @@
    :window-mesh-shell
    :decorated-wall-mesh-shell
    :door-mesh-shell
+   :door-opened-p
+   :door-closed-p
    :trap-mesh-shell
    :trap-mesh-shell-p
    :build-and-place-trap-on-map

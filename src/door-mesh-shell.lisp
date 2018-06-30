@@ -22,6 +22,12 @@
     :initarg  :openp
     :accessor openp)))
 
+(defun door-opened-p (door-mesh)
+  (openp door-mesh))
+
+(defun door-closed-p (door-mesh)
+  (not (door-opened-p door-mesh)))
+
 (defmethod rendering-needed-p ((object door-mesh-shell) renderer)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (with-camera (camera renderer)
