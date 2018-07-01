@@ -75,6 +75,8 @@
             up)
           (call-next-method)))
 
+(defgeneric side-dir (object))
+
 (defgeneric aabb-2d (object))
 
 (defgeneric find-entity-by-id (object id))
@@ -86,6 +88,20 @@
 (defgeneric entity-dead-p (object))
 
 (defgeneric calculate-cost-position (object))
+
+(defmethod side-dir ((object entity))
+  (with-accessors ((dir dir)) object
+    (cond
+      ((vec~ dir +x-axe+)
+       (copy-vec (vec-negate +z-axe+)))
+      ((vec~ dir (vec-negate +z-axe+))
+       (copy-vec (vec-negate +x-axe+)))
+      ((vec~ dir (vec-negate +x-axe+))
+       (copy-vec +z-axe+))
+      ((vec~ dir +z-axe+)
+       (copy-vec +x-axe+))
+      (t
+       (error "invalid direction")))))
 
 (defmacro with-slots-for-reasoning ((mesh state ghost blackboard) &body body)
   `(with-accessors ((,state state)

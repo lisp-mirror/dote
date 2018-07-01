@@ -1251,6 +1251,7 @@
    :remove-entity-if
    :entity-dead-p
    :calculate-cost-position
+   :side-dir
    :with-slots-for-reasoning
    :with-player-cost-pos
    :with-player-cost-pos-ivec2))
