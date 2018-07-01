@@ -87,7 +87,7 @@
   (let ((all-dist (map-ai-entities (state entity)
                                    #'(lambda (a)
                                        (cons a (funcall dist-fn entity a))))))
-    (mapcar  #'map-utils:coord-chunk->matrix
+    (mapcar  #'(lambda (a) (map-utils:coord-chunk->matrix (cdr a)))
              (remove-if #'(lambda (a) (= (id (car a)) (id entity)))
                         all-dist))))
 
@@ -103,7 +103,7 @@
                                                 (mesh:calculate-cost-position target-entity)))
         (side-signed-dists (all-side-signed-dist launcher-entity))
         (signed-dists      (all-signed-dist launcher-entity)))
-    ;; remove entity behind
+    ;; remove entities behind
     (loop for i from 0 below (length side-signed-dists) do
          (when (< (elt signed-dists i) 0)
            (setf (elt side-signed-dists i) nil)))

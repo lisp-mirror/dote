@@ -836,7 +836,7 @@
                              (otherwise
                               (* 2 +weapon-melee-range+))))
            (movement-weight (if (> level +difficult-medium+)
-                                (/ level 25)
+                                (/ level 100)
                                 0)))
       (floor (+ range
                 (* movement-weight

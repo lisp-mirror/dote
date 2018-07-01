@@ -856,8 +856,7 @@ attempts Note: all attackable position will be updated as well"
               (when   (and (= (id mesh)
                               (id (first-elt ai-entities-action-order)))) ;; ensure it's my turn
                 (flet ((spawn-planner-task ()
-                         #+ (and debug-mode debug-ai)
-                         (misc:dbg "spawn planner for ~a" (id mesh))
+                         #+ (and debug-mode debug-ai) (misc:dbg "spawn planner for ~a" mesh)
                          (world:toolbar-selected-action world)
                          (widget:activate-planner-icon  world)
                          (setf *planner-channel* (lparallel:make-channel))

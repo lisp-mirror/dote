@@ -239,7 +239,9 @@
   (with-accessors ((id    id)
                    (ghost ghost)) object
     (print-unreadable-object (object stream :type t :identity nil)
-      (format stream "~a ~a ~a" id  (my-faction object) (character:player-class ghost)))))
+      (if ghost
+          (format stream "~a ~a ~a" id        (my-faction object) (character:player-class ghost))
+          (format stream "~a ~a no-class" id  (my-faction object))))))
 
 (defmethod character:pclass-of-useful-in-attack-tactic-p ((object md2-mesh))
   (character:pclass-of-useful-in-attack-tactic-p (ghost object)))
@@ -325,10 +327,10 @@
     (setf damage nil))
   (when ambushp
     (billboard:enqueue-tooltip entity
-                             billboard:+tooltip-surprise-attack-char+
-                             :color                 billboard:+damage-color+
-                             :font-type             gui:+tooltip-font-handle+
-                             :add-only-if-renderd-p t))
+                               billboard:+tooltip-surprise-attack-char+
+                               :color                 billboard:+damage-color+
+                               :font-type             gui:+tooltip-font-handle+
+                               :add-only-if-renderd-p t))
   (apply-damage entity damage) ;; it is ok for damage to be nil.
   (setf (attacked-by-entity entity) (attacker-entity event))
   (funcall register-for-end-attack-fn entity)
@@ -740,6 +742,9 @@ to take care of that"
                 (billboard:enqueue-tooltip object
                                            billboard:+tooltip-poison-char+
                                            :color                 billboard:+poison-damage-color+
+                                           :duration              billboard:+tooltip-slow-duration+
+                                           :animation-speed
+                                           billboard:+tooltip-slow-anim-speed+
                                            :font-type             gui:+tooltip-font-handle+
                                            :add-only-if-renderd-p t)
                 (send-refresh-toolbar-event :reset-health-status-animation t))
@@ -756,6 +761,8 @@ to take care of that"
            (setf status ,new-status)
            (billboard:enqueue-tooltip ,mesh
                                       ,tooltip
+                                      :duration              billboard:+tooltip-slow-duration+
+                                      :animation-speed       billboard:+tooltip-slow-anim-speed+
                                       :color                 billboard:+poison-damage-color+
                                       :font-type             gui:+tooltip-font-handle+
                                       :add-only-if-renderd-p t)
@@ -925,6 +932,8 @@ to take care of that"
                                       ,tooltip
                                       :color                 billboard:+poison-damage-color+
                                       :font-type             gui:+tooltip-font-handle+
+                                      :duration              billboard:+tooltip-slow-duration+
+                                      :animation-speed       billboard:+tooltip-slow-anim-speed+
                                       :add-only-if-renderd-p t)
            (send-refresh-toolbar-event :reset-health-status-animation t))
          ,@body))))

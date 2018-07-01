@@ -28,7 +28,15 @@
 
 (define-constant +default-tooltip-h+        +terrain-chunk-tile-size+ :test #'=)
 
-(define-constant +tooltip-v-speed+           0.06                     :test #'=)
+(define-constant +tooltip-v-speed+             0.06                   :test #'=)
+
+(define-constant +tooltip-default-duration+    2.0                    :test #'=)
+
+(define-constant +tooltip-slow-duration+       3.0                    :test #'=)
+
+(define-constant +tooltip-default-anim-speed+  2.0                    :test #'=)
+
+(define-constant +tooltip-slow-anim-speed+     1.0                    :test #'=)
 
 (define-constant +tooltip-poison-char+          "#"                   :test #'string=)
 
@@ -188,15 +196,18 @@
 
 (defun make-tooltip (label pos shaders
                      &key
-                       (color     +damage-color+)
-                       (font-type gui:+default-font-handle+)
-                       (gravity   (num:lcg-next-in-range 1.0 24.0))
-                       (activep   t)
-                       (width     +default-tooltip-w+)
-                       (height    +default-tooltip-h+)
-                       (enqueuedp nil))
+                       (color           +damage-color+)
+                       (font-type       gui:+default-font-handle+)
+                       (gravity         (num:lcg-next-in-range 1.0 24.0))
+                       (activep         t)
+                       (width           +default-tooltip-w+)
+                       (height          +default-tooltip-h+)
+                       (enqueuedp       nil)
+                       (duration        +tooltip-default-duration+)
+                       (animation-speed +tooltip-default-anim-speed+))
   (let ((tooltip (make-instance 'billboard:tooltip
-                                :animation-speed 1.0
+                                :animation-speed animation-speed
+                                :duration/2      (d* 0.5 duration)
                                 :font-color      color
                                 :font-type       font-type
                                 :width           width
@@ -216,23 +227,30 @@
                                           font-type
                                           gravity
                                           activep
+                                          duration
+                                          animation-speed
                                           enqueuedp))
 
 (defgeneric enqueue-tooltip (object label &key
                                             color
                                             font-type
                                             gravity
+                                            duration
+                                            animation-speed
                                             additional-action-enqueued-fn
+                                            add-only-if-renderd-p
                                             activep))
 
 (defmethod apply-tooltip ((object mesh:triangle-mesh) label
                           &key
-                            (color     +damage-color+)
-                            (font-type gui:+default-font-handle+)
-                            (width     +default-tooltip-w+)
-                            (height    +default-tooltip-h+)
-                            (gravity   1.0)
-                            (activep   t)
+                            (color           +damage-color+)
+                            (font-type       gui:+default-font-handle+)
+                            (width           +default-tooltip-w+)
+                            (height          +default-tooltip-h+)
+                            (gravity         1.0)
+                            (activep         t)
+                            (duration        +tooltip-default-duration+)
+                            (animation-speed +tooltip-default-anim-speed+)
                             (enqueuedp nil))
   (with-accessors ((ghost ghost)
                    (id id)
@@ -248,13 +266,15 @@
                                                         (d* 0.5 +default-tooltip-h+)
                                                         0.0))
                                              (compiled-shaders object)
-                                             :color      color
-                                             :font-type  font-type
-                                             :width      width
-                                             :height     height
-                                             :gravity    gravity
-                                             :activep    activep
-                                             :enqueuedp  enqueuedp)))
+                                             :animation-speed animation-speed
+                                             :duration        duration
+                                             :color           color
+                                             :font-type       font-type
+                                             :width           width
+                                             :height          height
+                                             :gravity         gravity
+                                             :activep         activep
+                                             :enqueuedp       enqueuedp)))
           (world:push-entity world tooltip))))))
 
 (defmethod enqueue-tooltip ((object mesh:triangle-mesh) label
@@ -265,6 +285,8 @@
                               (height                        +default-tooltip-h+)
                               (gravity                       1.0)
                               (additional-action-enqueued-fn nil)
+                              (duration                      +tooltip-default-duration+)
+                              (animation-speed               +tooltip-default-anim-speed+)
                               (activep                       t)
                               (add-only-if-renderd-p         nil))
   (when (or (not add-only-if-renderd-p)
@@ -273,13 +295,15 @@
       (game-state:with-world (world state)
         (action-scheduler:with-enqueue-action (world action-scheduler:tooltip-show-action)
           (apply-tooltip object label
-                         :color     color
-                         :font-type font-type
-                         :width      width
-                         :height     height
-                         :gravity   gravity
-                         :activep   activep
-                         :enqueuedp t)
+                         :duration        duration
+                         :animation-speed animation-speed
+                         :color           color
+                         :font-type       font-type
+                         :width           width
+                         :height          height
+                         :gravity         gravity
+                         :activep         activep
+                         :enqueuedp       t)
           (when additional-action-enqueued-fn
             (funcall additional-action-enqueued-fn)))))))
 

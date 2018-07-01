@@ -5013,6 +5013,10 @@
    :+tooltip-revive-char+
    :+tooltip-exp-char+
    :+tooltip-surprise-attack-char+
+   :+tooltip-default-duration+
+   :+tooltip-slow-duration+
+   :+tooltip-default-anim-speed+
+   :+tooltip-slow-anim-speed+
    :tooltip
    :activate-tooltip
    :duration

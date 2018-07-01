@@ -3159,7 +3159,6 @@
     (setf (global-life spark) 200)
     spark))
 
-
 (defun make-heal-level-2 (pos compiled-shaders)
   (let* ((actual-pos (vec (elt pos 0)
                           (d+ (elt pos 1)
