@@ -236,8 +236,10 @@
   (setf (orb mesh) nil))
 
 (defmethod print-object ((object md2-mesh) stream)
-  (print-unreadable-object (object stream :type t :identity t)
-    (format stream "~a" (id object))))
+  (with-accessors ((id    id)
+                   (ghost ghost)) object
+    (print-unreadable-object (object stream :type t :identity nil)
+      (format stream "~a ~a ~a" id  (my-faction object) (character:player-class ghost)))))
 
 (defmethod character:pclass-of-useful-in-attack-tactic-p ((object md2-mesh))
   (character:pclass-of-useful-in-attack-tactic-p (ghost object)))

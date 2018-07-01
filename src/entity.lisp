@@ -77,6 +77,10 @@
 
 (defgeneric side-dir (object))
 
+(defgeneric side-signed-dist (object target))
+
+(defgeneric signed-dist (object target))
+
 (defgeneric aabb-2d (object))
 
 (defgeneric find-entity-by-id (object id))
@@ -102,6 +106,23 @@
        (copy-vec +x-axe+))
       (t
        (error "invalid direction")))))
+
+(defun %project-on-dir (dir pos position-target)
+  (let* ((diff        (vec- position-target pos))
+         (dot-product (dot-product diff dir)))
+    dot-product))
+
+(defmethod side-signed-dist ((object entity) (target entity))
+  (with-accessors ((side-dir        side-dir)
+                   (position-object pos)) object
+    (with-accessors ((position-target pos)) target
+      (%project-on-dir side-dir position-object position-target))))
+
+(defmethod signed-dist ((object entity) (target entity))
+  (with-accessors ((dir             dir)
+                   (position-object pos)) object
+    (with-accessors ((position-target pos)) target
+      (%project-on-dir dir position-object position-target))))
 
 (defmacro with-slots-for-reasoning ((mesh state ghost blackboard) &body body)
   `(with-accessors ((,state state)

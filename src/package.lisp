@@ -1252,6 +1252,8 @@
    :entity-dead-p
    :calculate-cost-position
    :side-dir
+   :side-signed-dist
+   :signed-dist
    :with-slots-for-reasoning
    :with-player-cost-pos
    :with-player-cost-pos-ivec2))

@@ -83,15 +83,38 @@
         (>= (points heal-fx)
             (character:actual-damage-points (ghost entity))))))
 
+(defun %all-signed-dists (entity dist-fn)
+  (let ((all-dist (map-ai-entities (state entity)
+                                   #'(lambda (a)
+                                       (cons a (funcall dist-fn entity a))))))
+    (mapcar  #'map-utils:coord-chunk->matrix
+             (remove-if #'(lambda (a) (= (id (car a)) (id entity)))
+                        all-dist))))
+
+(defun all-signed-dist (entity)
+  (%all-signed-dists entity #'entity:signed-dist))
+
+(defun all-side-signed-dist (entity)
+  (%all-signed-dists entity #'entity:side-signed-dist))
+
 (defun find-best-attack-spell-clever-predicate (launcher-entity target-entity
                                                 &key (safe-zone-dist 0.0))
   (let ((dist (map-utils:map-manhattam-distance (mesh:calculate-cost-position launcher-entity)
-                                                (mesh:calculate-cost-position target-entity))))
+                                                (mesh:calculate-cost-position target-entity)))
+        (side-signed-dists (all-side-signed-dist launcher-entity))
+        (signed-dists      (all-signed-dist launcher-entity)))
+    ;; remove entity behind
+    (loop for i from 0 below (length side-signed-dists) do
+         (when (< (elt signed-dists i) 0)
+           (setf (elt side-signed-dists i) nil)))
+    (setf side-signed-dists (remove-if-null side-signed-dists))
     #'(lambda (s)
         (let ((damage-spell          (spell:damage-inflicted s))
               (effective-range-spell (spell:effective-range s))
               (damage-points-target  (character:current-damage-points (ghost target-entity))))
-          (and (< (+ effective-range-spell safe-zone-dist)
+          (and (every #'(lambda (a) (> (abs a) effective-range-spell))
+                      side-signed-dists)
+               (< (+ effective-range-spell safe-zone-dist)
                   dist)
                (>= damage-spell
                    (d* +scaling-target-damage-best-attack-spell+
