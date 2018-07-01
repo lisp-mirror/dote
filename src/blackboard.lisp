@@ -409,10 +409,8 @@
            (age-updated      (mapcar #'(lambda (a) ;; decrease age of non visible pos
                                          (if (not (find (entity-id a) all-visibles-ids
                                                         :test #'=))
-                                             ;; not visible
-                                             (setf (age a) (1- (age a)))
-                                             ;; visible
-                                             (progn
+                                             (setf (age a) (1- (age a))) ; not visible
+                                             (progn                      ; visible
                                                (setf (age a)
                                                      (calc-def-target-age main-state))
                                                (setf (goal-pos a) nil)))

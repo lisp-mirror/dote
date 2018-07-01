@@ -30,7 +30,7 @@
 
 (define-constant +tooltip-v-speed+             0.06                   :test #'=)
 
-(define-constant +tooltip-default-duration+    2.0                    :test #'=)
+(define-constant +tooltip-default-duration+    2.2                    :test #'=)
 
 (define-constant +tooltip-slow-duration+       3.0                    :test #'=)
 

@@ -128,8 +128,11 @@
         (let ((effective-range-spell (spell:effective-range s)))
           (< effective-range-spell (+ dist safe-zone-dist))))))
 
-(defun find-best-spell-clever (spell-db predicate &key (use-best-if-not-found t))
-  (let* ((sorted-spell-db (shellsort spell-db (spell:sort-spells-by-level-fn nil)))
+(defun find-best-spell-clever (spell-db predicate
+                               &key
+                                 (use-best-if-not-found t)
+                                 (sort-spells-desc nil))
+  (let* ((sorted-spell-db (shellsort spell-db (spell:sort-spells-by-level-fn sort-spells-desc)))
          (spell (find-if predicate
                          sorted-spell-db)))
     (or spell
@@ -140,20 +143,29 @@
   (find-best-spell-clever spell-db (find-best-heal-spell-clever-predicate entity)
                           :use-best-if-not-found t))
 
+(defun only-one-opponents-remains-p (npc)
+  (with-accessors ((state state)) npc
+      (= (length (player-entities state))
+         1)))
+
 (defun find-best-attack-spell-clever (spell-db launcher-entity target-entity
                                       &key (safe-zone-dist 0.0))
-  (or (find-best-spell-clever spell-db
-                              (find-best-attack-spell-clever-predicate launcher-entity
-                                                                       target-entity
-                                                                       :safe-zone-dist
-                                                                       safe-zone-dist)
-                              :use-best-if-not-found nil)
+  (if (only-one-opponents-remains-p launcher-entity)
       (find-best-spell-clever spell-db
                               (find-best-attack-spell-harmless-to-launcher-clrs launcher-entity
                                                                                 target-entity
                                                                                 :safe-zone-dist
                                                                                 safe-zone-dist)
-                              :use-best-if-not-found nil)))
+                              ;; sometimes makes a very cruel choice...
+                              :use-best-if-not-found (dice:pass-d100.0 1.0)
+                              :sort-spells-desc t)
+      (find-best-spell-clever spell-db
+                              (find-best-attack-spell-clever-predicate launcher-entity
+                                                                       target-entity
+                                                                       :safe-zone-dist
+                                                                       safe-zone-dist)
+                              :use-best-if-not-found nil
+                              :sort-spells-desc nil)))
 
 (defmacro if-difficult-level>medium ((game-state) if-more if-less)
   `(if (> (level-difficult ,game-state)

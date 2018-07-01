@@ -3442,9 +3442,11 @@
                           (d* 0.3 (d (length value-label))))))
     (billboard:enqueue-tooltip entity
                                (text-utils:strcat billboard:+tooltip-exp-char+ value-label)
-                               :width     label-width
-                               :color     billboard:+blessing-color+
-                               :font-type gui:+tooltip-font-handle+)))
+                               :duration        billboard:+tooltip-slow-duration+
+                               :animation-speed billboard:+tooltip-slow-anim-speed+
+                               :width           label-width
+                               :color           billboard:+blessing-color+
+                               :font-type       gui:+tooltip-font-handle+)))
 
 (defun make-exp-increase-particles (pos compiled-shaders
                                     &key
