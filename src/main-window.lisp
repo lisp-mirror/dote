@@ -266,12 +266,16 @@
               (incf *near* -.1))
             (when (string= text "p")
               ;;(closing-sequence:start-victory-sequence world)
-              (let ((target (first (player-entities (window-game-state object))))
-                    (x      6)
-                    (y      17))
-                (misc:dbg "placeholder see ~a? ~a ~a" target
-                          (absee-mesh:placeholder-visible-p target x y)
-                          (absee-mesh:placeholder-able-to-see-p x y target))))
+              (let* ((ai-check (first (ai-entities (window-game-state object)))))
+                (billboard:enqueue-tooltip ai-check
+                                           billboard:+tooltip-surprise-attack-char+
+                                           :duration
+                                           billboard:+tooltip-slow-duration+
+                                           :animation-speed
+                                           billboard:+tooltip-slow-anim-speed+
+                                           :color                 billboard:+damage-color+
+                                           :font-type             gui:+tooltip-font-handle+
+                                           :add-only-if-renderd-p t)))
             (when (string= text "D")
               (world:apply-tremor-0 world))
             (when (string= text "L")

@@ -411,11 +411,12 @@
 (defmethod on-game-event ((object md2-mesh) (event update-visibility))
   (with-accessors ((state state)
                    (id id)) object
-    (labels ((stop-movements (already-stopped interrupt-if-ai)
+    (labels ((stop-movements (already-stopped interrupt-if-ai interrupting-id)
                (when (not already-stopped)
                  (%stop-movement object
                                  :decrement-movement-points t
-                                 :interrupt-plan-if-ai      interrupt-if-ai)))
+                                 :interrupt-plan-if-ai      interrupt-if-ai
+                                 :interrupting-id           interrupting-id)))
              (seenp (entity &key
                             (saved-render-p nil)
                             (maintain-render nil)
@@ -430,17 +431,16 @@
                               (not (eq (my-faction object) (my-faction entity))))
                      (when (not saved-render-p)
                        (setf already-stopped t)
-                       (stop-movements nil interrupt-plan-if-ai))
-                     ;;;;; TEST;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                       (stop-movements nil interrupt-plan-if-ai (id entity)))
                      (when (dice:pass-d100.0 (actual-ambush-attack-chance (ghost entity)))
                        (cond
                          ((battle-utils:long-range-attack-possible-p entity object)
                           (game-state:with-world (world state)
-                            (stop-movements already-stopped t)
+                            (stop-movements already-stopped t (id entity))
                             (battle-utils:attack-long-range world entity object)))
                          ((battle-utils:short-range-attack-possible-p entity object)
                           (game-state:with-world (world state)
-                            (stop-movements already-stopped t)
+                            (stop-movements already-stopped t (id entity))
                             (battle-utils:attack-short-range world entity object))))))
                    t)
                  nil))
@@ -523,7 +523,8 @@ to take care of that"
 
 (defun %stop-movement (player &key
                                 (decrement-movement-points t)
-                                (interrupt-plan-if-ai      t))
+                                (interrupt-plan-if-ai      t)
+                                (interrupting-id           nil))
   (with-accessors ((ghost ghost)
                    (dir dir)
                    (id id)
@@ -537,6 +538,7 @@ to take care of that"
           (maybe-set-inactive-orb player))
         (when (and interrupt-plan-if-ai
                    (faction-ai-p state (id player)))
+          (put-in-working-memory player +w-memory-interrupting-by-id+ interrupting-id)
           (set-interrupt-plan ghost))
         (propagate-move-entity-along-path-end-event end-event)
         player))))
@@ -581,7 +583,8 @@ to take care of that"
           (game-event:propagate-open-door-event door-event)
           (%stop-movement player
                           :decrement-movement-points t
-                          :interrupt-plan-if-ai      t))))))
+                          :interrupt-plan-if-ai      t
+                          :interrupting-id           :door))))))
 
 (defun %on-move-entity-entered-in-tile-event-ai (player event)
   (with-accessors ((ghost ghost)
@@ -616,7 +619,8 @@ to take care of that"
               (setf step-on-trap-p t)
               (%stop-movement player
                               :decrement-movement-points t
-                              :interrupt-plan-if-ai      t)
+                              :interrupt-plan-if-ai      t
+                              :interrupting-id           :trap)
               (%try-deactivate-trap-from-ai world player trap-ostile)))
           (send-update-visibility-event player event)
           (send-refresh-toolbar-event))))))
@@ -1766,7 +1770,10 @@ to take care of that"
   (with-common-calc-move (entity end)
     (if (and (game-state:invalicable-in-next-path-tile-p state entity current-path 1)
              (not (game-state:door-in-next-path-tile-p        state current-path        1)))
-        (%stop-movement entity :decrement-movement-points t :interrupt-plan-if-ai t)
+        (%stop-movement entity
+                        :decrement-movement-points t
+                        :interrupt-plan-if-ai      t
+                        :interrupting-id           :wall)
         ;; open door if any and if closed
         (let ((door-opened-p (manage-door-ai state entity current-path 1)))
           (when (not door-opened-p) ;; door was open, the plan has not been interrupted

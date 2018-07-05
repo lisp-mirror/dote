@@ -17,16 +17,6 @@
 
 (in-package :md2-mesh)
 
-(define-constant +w-memory-target-id+             :target-id           :test #'eq)
-
-(define-constant +w-memory-path-struct+           :path-struct         :test #'eq)
-
-(define-constant +w-memory-action-did-costs+      :action-did-cost     :test #'eq)
-
-(define-constant +w-memory-spell+                 :spell               :test #'eq)
-
-(define-constant +channel-planner-timeout+   0.001                     :test #'=)
-
 (defparameter    *planner-channel*           nil)
 
 (defparameter    *update-infos-channel*      nil)
@@ -287,8 +277,40 @@
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+interrupt-action+)))
-  (with-spawn-if-presence-diff (object 'update-all-blackboard-infos)
-    (%clean-plan-and-blacklist object)))
+    (with-accessors ((state state)
+                     (ghost ghost)) object
+      (flet ((get-interrupt-entity (id)
+               (and id
+                    (numberp id)
+                    (find-entity-by-id state id))))
+        (let* ((interrupting-id     (get-from-working-memory object
+                                                             +w-memory-interrupting-by-id+))
+               (interrupting-entity (get-interrupt-entity interrupting-id))
+               (saved-interrupt-id  (get-from-working-memory object
+                                                             +w-memory-saved-interrupting-id+))
+               (saved-interrupt-entity  (get-interrupt-entity saved-interrupt-id)))
+          #+ (and debug-mode debug-ai) (misc:dbg "interrupted by ~a ~a -> ~a ~a"
+                                                 interrupting-id
+                                                 interrupting-entity
+                                                 saved-interrupt-id
+                                                 saved-interrupt-entity)
+          (cond
+            ((and (null interrupting-entity)
+                  (null saved-interrupt-entity))
+             (with-spawn-if-presence-diff (object 'update-all-blackboard-infos)
+               (%clean-plan-and-blacklist object)))
+            ((or (null interrupting-entity)
+                 (null saved-interrupt-entity))
+             (with-spawn-if-presence-diff (object 'update-all-blackboard-infos)
+               (%clean-plan-and-blacklist object)))
+            ((/= interrupting-entity
+                 saved-interrupt-entity)
+             (with-spawn-if-presence-diff (object 'update-all-blackboard-infos)
+               (%clean-plan-and-blacklist object)))
+            #+(and debug-mode debug-ai)
+            (t
+             (misc:dbg "no updating interrupt")))
+          (put-in-working-memory object +w-memory-saved-interrupting-id+ interrupting-id)))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy

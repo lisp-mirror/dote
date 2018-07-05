@@ -645,6 +645,12 @@ reach the enemy with optimal path?"
     (and res
          (> (length res) 1))))
 
+(defgoap-test can-move-near-enemy-pos-insecure (strategy-expert entity)
+  (let* ((res (blackboard::insecure-path-near-enemy-pos-w-current-weapon strategy-expert
+                                                                    entity
+                                                                    :cut-off-first-tile nil)))
+    (and res
+         (> (length res) 1))))
 
 (defgoap-test exists-attack-goal-w-current-weapon-p (strategy-expert entity)
   "check the mere existence"
@@ -696,6 +702,7 @@ composed by just one tile, see 'attackable-position-exists-path'"
   (let* ((reachable-fn (reachable-p-w/o-concening-tiles-fn strategy-expert)))
     (multiple-value-bind (reachablep cost)
         (insecure-attackable-position-exists-path strategy-expert entity reachable-fn)
+      (misc:dbg "path insecure ~a" reachablep cost)
       (let ((attack-cost (battle-utils:cost-attack-w-current-weapon entity)))
         (and reachablep
              attack-cost ;; attack-cost is nil if no weapon is carried
@@ -990,4 +997,5 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
   (reachable-opt/path-current-weapon-and-mp-clear-cache)
   (is-in-attack-pos-p-clear-cache)
   (can-move-near-attack-pos-clear-cache)
-  (can-move-near-enemy-pos-clear-cache))
+  (can-move-near-enemy-pos-clear-cache)
+  (can-move-near-enemy-pos-insecure-clear-cache))

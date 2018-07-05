@@ -80,7 +80,7 @@
                                  !is-status-terror-p
                                  !is-in-attack-pos-p
                                  exists-visible-enemy
-                                 can-move-near-enemy-pos)
+                                 can-move-near-enemy-pos-insecure)
          :cost                  8)
   (:name :use-fountain
          :preconditions         ((:has-fountain-facing t))
