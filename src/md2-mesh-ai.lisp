@@ -335,7 +335,9 @@
                          (action (eql ai-utils:+rotate-action+)))
   (with-maybe-blacklist (object strategy action :ignore-points-difference t)
     (with-accessors ((state state)) object
-      (%rotate-until-someone-visible state object :decrement-movement-points t))))
+      (let ((decrement-points-p (ai-utils:if-difficult-level>medium (state) nil t)))
+        (%rotate-until-someone-visible state object
+                                       :decrement-movement-points decrement-points-p)))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
