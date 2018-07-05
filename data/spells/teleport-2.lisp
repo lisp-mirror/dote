@@ -61,4 +61,5 @@
                                                           :loop-p                    t))
                   (setf (pos defender) displacement)
                   ;; update state matrix and quadtree
-                  (world:move-entity world defender old-tile)))))))))
+                  (world:move-entity world defender old-tile)
+                  (game-event:send-update-visibility-event defender nil)))))))))
