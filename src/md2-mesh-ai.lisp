@@ -334,10 +334,18 @@
                          strategy
                          (action (eql ai-utils:+rotate-action+)))
   (with-maybe-blacklist (object strategy action :ignore-points-difference t)
-    (with-accessors ((state state)) object
-      (let ((decrement-points-p (ai-utils:if-difficult-level>medium (state) nil t)))
-        (%rotate-until-someone-visible state object
-                                       :decrement-movement-points decrement-points-p)))))
+    (with-accessors ((state state)
+                     (ghost ghost)) object
+      (ai-utils:if-difficult-level>medium (state)
+          (let ((help-rotating-needed-p (< (character:current-movement-points ghost)
+                                           (d* 4.0 +rotate-entity-cost-cost+))))
+            (when help-rotating-needed-p
+              (setf (character:current-movement-points ghost)
+                    (d* 4.0 +rotate-entity-cost-cost+)))
+            (%rotate-until-someone-visible state object :decrement-movement-points t)
+            (when help-rotating-needed-p
+              (setf (character:current-movement-points ghost) 0.0)))
+        (%rotate-until-someone-visible state object :decrement-movement-points t)))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
