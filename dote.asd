@@ -157,6 +157,7 @@
                (:file "particles")
                (:file "arrows")
                (:file "md2-mesh-normal-lut")
+               (:file "md2-mesh-ai-const")
                (:file "md2-mesh")
                (:file "md2-mesh-ai")
                (:file "obj-mesh")
