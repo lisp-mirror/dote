@@ -50,7 +50,7 @@
 (defun set-memory-seen-before-door (npc)
   (put-in-working-memory npc
                          +w-memory-opponents-before-open-door+
-                         (all-visible-opponents-id npc)))
+                         (absee-mesh:all-visible-opponents-id npc)))
 
 (defun get-memory-seen-before-door (npc)
   (get-from-working-memory npc +w-memory-opponents-before-open-door+))
@@ -308,7 +308,7 @@
                (saved-interrupt-entity (get-interrupt-entity saved-interrupt-id)))
           (cond
             ((eq interrupting-id +w-memory-interrupt-id-door+)
-             (let* ((all-visible-now    (all-visible-opponents-id object))
+             (let* ((all-visible-now    (absee-mesh:all-visible-opponents-id object))
                     (all-visible-before (get-memory-seen-before-door object)))
                (if (visible-more-p all-visible-before
                                    all-visible-now)
