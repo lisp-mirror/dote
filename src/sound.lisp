@@ -48,6 +48,10 @@
 
 (define-constant +level-up+      "level-up.ogg"      :test #'string=)
 
+(define-constant +door-open+     "door-01.ogg"       :test #'string=)
+
+(define-constant +door-close+    "door-01.ogg"       :test #'string=)
+
 (define-constant +max-volume+  255                   :test #'=)
 
 (define-constant +min-volume+    0                   :test #'=)
@@ -129,7 +133,9 @@
   (add-fx +teleport+)
   (add-fx +heal-1+)
   (add-fx +heal-2+)
-  (add-fx +heal-3+))
+  (add-fx +heal-3+)
+  (add-fx +door-open+)
+  (add-fx +door-close+))
 
 (defun close-sound-system ()
   (sdl2-mixer:halt-music)

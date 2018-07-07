@@ -47,7 +47,7 @@
 (defmethod on-game-event ((object door-mesh-shell) (event game-event:open-door-event))
     (if (= (id object) (game-event:id-destination event))
         (let ((pos (mesh:calculate-cost-position object)))
-          ;; TODO here enemies could spot you
+          (sound:play-fx sound:+door-open+)
           (set-minimum-cost-map-layer@ (state object) (elt pos 0) (elt pos 1))
           (setf (renderp object) nil)
           (setf (openp   object) t)
@@ -59,6 +59,7 @@
 (defmethod on-game-event ((object door-mesh-shell) (event game-event:close-door-event))
   (if (= (id object) (game-event:id-destination event))
       (let ((pos (mesh:calculate-cost-position object)))
+        (sound:play-fx sound:+door-close+)
         (set-invalicable-cost-map-layer@ (state object) (elt pos 0) (elt pos 1))
         (setf (renderp object) t)
         (setf (openp   object) nil)

@@ -301,7 +301,7 @@
         (elaborate-current-tactical-plan object strategy-expert player-entity nil)))))
 
 (defmethod set-interrupt-plan ((object planner-character))
-  #+ (and debug-mode debug-ai)(misc:dbg "set interrupt plan")
+  #+ (and debug-mode debug-ai) (misc:dbg "set interrupt plan")
   (setf (current-plan object) (list ai-utils:+interrupt-action+)))
 
 (defmethod unset-interrupt-plan ((object planner-character))

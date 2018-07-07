@@ -1665,9 +1665,9 @@
                                   (d* (label-font-size object)
                                       (d/ buttons-cumulative-w ;; checkbox is square
                                           (label-width object))))))
-        (setf b-plus  (make-button buttons-cumulative-w
+        (setf b-plus  (make-button (d- buttons-cumulative-w (d* 2.0 height))
                                    +plus-overlay-texture-name+))
-        (setf b-minus (make-button (d- buttons-cumulative-w height)
+        (setf b-minus (make-button buttons-cumulative-w
                                    +minus-overlay-texture-name+))
         (setf label "")
         (setf text (make-instance 'simple-label
@@ -1898,8 +1898,8 @@
                      (new-label-width    (d- width
                                              (d* 2.0 (max new-b-plus-width
                                                           new-b-plus-height)))))
-                (setf x-b-plus      new-label-width
-                      x-b-minus     (d+ new-label-width new-b-plus-width)
+                (setf x-b-plus      (d+ new-label-width new-b-plus-width)
+                      x-b-minus     new-label-width
                       b-plus-width  new-b-plus-width
                       b-plus-height new-b-plus-height
                       b-minus-width  new-b-plus-width
@@ -2525,7 +2525,8 @@
                      (door-event (game-event:make-simple-event-w-dest 'game-event:open-door-event
                                                                       (id bound-player)
                                                                       id-door)))
-                (game-event:propagate-open-door-event door-event))))))))
+                (game-event:propagate-open-door-event door-event)
+                (game-event:send-update-visibility-event bound-player door-event))))))))
   t)
 
 (defun close-cb (w e)

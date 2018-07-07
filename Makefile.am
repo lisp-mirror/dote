@@ -1757,6 +1757,7 @@ data/furniture-templates/wall-n.tga                      \
 data/furniture-templates/wall-s.tga                      \
 data/furniture-templates/wall-w.tga                      \
 data/music/bg-battle-1.ogg                               \
+data/music/door-01.ogg                                   \
 data/music/explosion-3.ogg                               \
 data/music/fireball-1.ogg                                \
 data/music/generic-spell.ogg                             \

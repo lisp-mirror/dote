@@ -408,6 +408,11 @@
       (battle-utils:reward-exp-launch-spell (attacker-entity event) object (spell event))
       t)))
 
+(defun event-can-render-character-seen-p (event)
+  (find event (list 'game-event:open-door-event
+                    'game-event:move-entity-entered-in-tile-event)
+        :test #'(lambda (a b) (typep a b))))
+
 (defmethod on-game-event ((object md2-mesh) (event update-visibility))
   (with-accessors ((state state)
                    (id id)) object
@@ -425,8 +430,7 @@
                  (when (find-if #'(lambda (a) (= id (id a))) (visible-players entity))
                    (when (not maintain-render)
                      (setf (renderp object) t))
-                   (when (and (typep (from-event event)
-                                     'move-entity-entered-in-tile-event)
+                   (when (and (event-can-render-character-seen-p (from-event event))
                               (current-path (ghost object))
                               (not (eq (my-faction object) (my-faction entity))))
                      (when (not saved-render-p)
@@ -582,10 +586,7 @@ to take care of that"
                                                                id-door)))
           (set-memory-seen-before-door player)
           (game-event:propagate-open-door-event door-event)
-          (%stop-movement player
-                          :decrement-movement-points t
-                          :interrupt-plan-if-ai      t
-                          :interrupting-id           +w-memory-interrupt-id-door+))))))
+          (send-update-visibility-event player door-event))))))
 
 (defun %on-move-entity-entered-in-tile-event-ai (player event)
   (with-accessors ((ghost ghost)

@@ -2355,6 +2355,8 @@
    :+heal-3+
    :+generic-spell+
    :+level-up+
+   :+door-open+
+   :+door-close+
    :music-resource
    :file
    :chunk

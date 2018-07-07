@@ -299,7 +299,9 @@
                     (find-entity-by-id state id)))
              (clean-all ()
                (with-spawn-if-presence-diff (object 'update-all-blackboard-infos)
-                 (%clean-plan-and-blacklist object))))
+                 (%clean-plan-and-blacklist object)))
+             (clean-minimal ()
+               (character:clear-blacklist ghost)))
         (let* ((interrupting-id        (get-from-working-memory object
                                                                 +w-memory-interrupting-by-id+))
                (interrupting-entity    (get-interrupt-entity interrupting-id))
@@ -307,6 +309,7 @@
                                                                 +w-memory-saved-interrupting-id+))
                (saved-interrupt-entity (get-interrupt-entity saved-interrupt-id)))
           (cond
+            ;; TODO check: all this stuff related to door is probably useless
             ((eq interrupting-id +w-memory-interrupt-id-door+)
              (let* ((all-visible-now    (ai-utils:all-visible-opponents-id object))
                     (all-visible-before (get-memory-seen-before-door object)))
@@ -316,13 +319,13 @@
                    (progn
                      #+(and debug-mode debug-ai)
                      (misc:dbg "interrupt: ignoring cleaning cache after opening door")
-                     (character:clear-blacklist ghost)))))
+                     (clean-minimal)))))
             ((and (get-memory-ignore-interrupt-from object)
                   (= (get-memory-ignore-interrupt-from object)
                      interrupting-id))
              #+(and debug-mode debug-ai)
              (misc:dbg "interrupt: ignoring cleaning cache")
-             (character:clear-blacklist ghost))
+             (clean-minimal))
             ((and (null interrupting-entity)
                   (null saved-interrupt-entity))
              (clean-all))
@@ -335,7 +338,7 @@
             (t
              #+(and debug-mode debug-ai)
              (misc:dbg "interrupt: no cleaning cache")
-             (character:clear-blacklist ghost)))
+             (clean-minimal)))
           (put-in-working-memory object +w-memory-saved-interrupting-id+ interrupting-id)))))
 
 (defmethod actuate-plan ((object md2-mesh)
