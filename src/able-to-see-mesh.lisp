@@ -589,3 +589,10 @@ Also note that that ray is long as much as the height of the visibility cone of 
 (defun calc-angle-sight (player)
   (with-accessors ((visibility-cone able-to-see-mesh:visibility-cone)) player
     (d* 2.0 (half-angle visibility-cone))))
+
+(defun visible-more-p (ids-visible-a ids-visible-b)
+  (or (< (length ids-visible-a)
+         (length ids-visible-b))
+      (set-difference ids-visible-b
+                      ids-visible-a
+                      :test #'=)))

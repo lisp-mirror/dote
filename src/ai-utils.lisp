@@ -239,6 +239,11 @@
                         #'faction-visible-opponents-sorted
                         #'faction-least-powerful-visible-opponents))
 
+(defun all-visible-opponents-id (player &key (alive-only t))
+  (map 'list #'id
+       (absee-mesh:other-faction-visible-players player
+                                                 :alive-only alive-only)))
+
 (defun target-attack/damage-spell (entity)
   (faction-best-visible-target entity))
 

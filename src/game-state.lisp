@@ -1269,8 +1269,7 @@
                                                   node-equals
                                                   key-fn escapedp
                                                   gen-first-near
-                                                  res)
-              t)
+                                                  res))
             nil)))))
 
 (defmethod calc-ai-entities-action-order ((object game-state))

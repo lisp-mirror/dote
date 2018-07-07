@@ -41,6 +41,20 @@
   (with-accessors ((planner-working-memory planner-working-memory)) object
     (getf planner-working-memory key nil)))
 
+(defun set-memory-ignore-interrupt-from (npc ignored-entity-id)
+  (put-in-working-memory npc +w-memory-ignore-interrupt-id+ ignored-entity-id))
+
+(defun get-memory-ignore-interrupt-from (npc)
+  (get-from-working-memory npc +w-memory-ignore-interrupt-id+))
+
+(defun set-memory-seen-before-door (npc)
+  (put-in-working-memory npc
+                         +w-memory-opponents-before-open-door+
+                         (all-visible-opponents-id npc)))
+
+(defun get-memory-seen-before-door (npc)
+  (get-from-working-memory npc +w-memory-opponents-before-open-door+))
+
 (defun set-cost-occurred (entity)
   (put-in-working-memory entity +w-memory-action-did-costs+ t))
 
@@ -282,34 +296,46 @@
       (flet ((get-interrupt-entity (id)
                (and id
                     (numberp id)
-                    (find-entity-by-id state id))))
-        (let* ((interrupting-id     (get-from-working-memory object
-                                                             +w-memory-interrupting-by-id+))
-               (interrupting-entity (get-interrupt-entity interrupting-id))
-               (saved-interrupt-id  (get-from-working-memory object
-                                                             +w-memory-saved-interrupting-id+))
-               (saved-interrupt-entity  (get-interrupt-entity saved-interrupt-id)))
-          #+ (and debug-mode debug-ai) (misc:dbg "interrupted by ~a ~a -> ~a ~a"
-                                                 interrupting-id
-                                                 interrupting-entity
-                                                 saved-interrupt-id
-                                                 saved-interrupt-entity)
+                    (find-entity-by-id state id)))
+             (clean-all ()
+               (with-spawn-if-presence-diff (object 'update-all-blackboard-infos)
+                 (%clean-plan-and-blacklist object))))
+        (let* ((interrupting-id        (get-from-working-memory object
+                                                                +w-memory-interrupting-by-id+))
+               (interrupting-entity    (get-interrupt-entity interrupting-id))
+               (saved-interrupt-id     (get-from-working-memory object
+                                                                +w-memory-saved-interrupting-id+))
+               (saved-interrupt-entity (get-interrupt-entity saved-interrupt-id)))
           (cond
+            ((eq interrupting-id +w-memory-interrupt-id-door+)
+             (let* ((all-visible-now    (all-visible-opponents-id object))
+                    (all-visible-before (get-memory-seen-before-door object)))
+               (if (visible-more-p all-visible-before
+                                   all-visible-now)
+                   (clean-all)
+                   (progn
+                     #+(and debug-mode debug-ai)
+                     (misc:dbg "interrupt: ignoring cleaning cache after opening door")
+                     (character:clear-blacklist ghost)))))
+            ((and (get-memory-ignore-interrupt-from object)
+                  (= (get-memory-ignore-interrupt-from object)
+                     interrupting-id))
+             #+(and debug-mode debug-ai)
+             (misc:dbg "interrupt: ignoring cleaning cache")
+             (character:clear-blacklist ghost))
             ((and (null interrupting-entity)
                   (null saved-interrupt-entity))
-             (with-spawn-if-presence-diff (object 'update-all-blackboard-infos)
-               (%clean-plan-and-blacklist object)))
+             (clean-all))
             ((or (null interrupting-entity)
                  (null saved-interrupt-entity))
-             (with-spawn-if-presence-diff (object 'update-all-blackboard-infos)
-               (%clean-plan-and-blacklist object)))
+             (clean-all))
             ((/= interrupting-entity
                  saved-interrupt-entity)
-             (with-spawn-if-presence-diff (object 'update-all-blackboard-infos)
-               (%clean-plan-and-blacklist object)))
-            #+(and debug-mode debug-ai)
+             (clean-all))
             (t
-             (misc:dbg "no updating interrupt")))
+             #+(and debug-mode debug-ai)
+             (misc:dbg "interrupt: no cleaning cache")
+             (character:clear-blacklist ghost)))
           (put-in-working-memory object +w-memory-saved-interrupting-id+ interrupting-id)))))
 
 (defmethod actuate-plan ((object md2-mesh)
@@ -533,11 +559,17 @@
   (with-maybe-blacklist (object strategy action)
     (with-slots-for-reasoning (object state ghost blackboard)
       (game-state:with-world (world state)
-        (multiple-value-bind (path total-cost)
+        (multiple-value-bind (path total-cost costs id-target)
             (blackboard:best-path-near-enemy-pos-w-current-weapon blackboard
                                                                   object
                                                                   :cut-off-first-tile nil)
+          (declare (ignore costs))
           #+(and debug-mode debug-ai) (assert path)
+          #+(and debug-mode debug-ai)
+          (misc:dbg "interrupt from ~a will be ignored"
+                    (find-entity-by-id state id-target))
+          (set-memory-ignore-interrupt-from object id-target)
+
           (when path
             (let* ((path-struct (game-state:make-movement-path path total-cost)))
               (%do-simple-move object path-struct state world))))))))
@@ -548,11 +580,16 @@
   (with-maybe-blacklist (object strategy action)
     (with-slots-for-reasoning (object state ghost blackboard)
       (game-state:with-world (world state)
-        (multiple-value-bind (path total-cost)
+        (multiple-value-bind (path total-cost costs id-target)
             (blackboard:insecure-path-near-enemy-pos-w-current-weapon blackboard
                                                                       object
                                                                       :cut-off-first-tile nil)
+          (declare (ignore costs))
           #+(and debug-mode debug-ai) (assert path)
+          #+(and debug-mode debug-ai)
+          (misc:dbg "interrupt from ~a will be ignored"
+                    (find-entity-by-id state id-target))
+          (set-memory-ignore-interrupt-from object id-target)
           (when path
             (let* ((path-struct (game-state:make-movement-path path total-cost)))
               (%do-simple-move object path-struct state world))))))))
@@ -766,6 +803,10 @@ attempts Note: all attackable position will be updated as well"
               (declare (ignore costs))
               #+ (and debug-mode debug-ai)
               (misc:dbg "path attack optimal ~a ~a" path total-cost)
+              #+(and debug-mode debug-ai)
+              (misc:dbg "interrupt from ~a will be ignored"
+                        (find-entity-by-id state target-id-move))
+              (set-memory-ignore-interrupt-from object target-id-move)
               (let* ((path-struct (game-state:make-movement-path path total-cost)))
                 (put-in-memory target-id-move path-struct))))))))
 
@@ -801,6 +842,10 @@ attempts Note: all attackable position will be updated as well"
               (declare (ignore costs))
               #+ (and debug-mode debug-ai)
               (misc:dbg "path attack insecure ~a ~a" path total-cost)
+              #+(and debug-mode debug-ai)
+              (misc:dbg "interrupt from ~a will be ignored"
+                        (find-entity-by-id state target-id-move))
+              (set-memory-ignore-interrupt-from object target-id-move)
               (let* ((path-struct (game-state:make-movement-path path total-cost)))
                 (put-in-memory target-id-move path-struct))))))))
 

@@ -3353,6 +3353,7 @@
    :available-damage-spells
    :best-visible-target
    :faction-best-visible-target
+   :all-visible-opponents-id
    :target-attack/damage-spell
    :best-attackable-position-exists-path
    :insecure-attackable-position-exists-path
@@ -4313,7 +4314,8 @@
    :other-visible-ray-p
    :update-visibles-state
    :calc-end-line-sight
-   :calc-angle-sight))
+   :calc-angle-sight
+   :visible-more-p))
 
 (defpackage :pickable-mesh
   (:use :cl

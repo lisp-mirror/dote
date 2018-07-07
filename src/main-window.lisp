@@ -526,25 +526,27 @@ approx h ~a facing ~a occlude? ~a inside-room ~a concerning cost ~a ai-entitites
               (when (not (path-same-ends-p main-state
                                            cost-player-position
                                            cost-pointer-position))
-                (let ((min-cost      (map-utils:map-manhattam-distance-cost cost-pointer-position
-                                                                            cost-player-position))
+                (let ((min-cost (map-utils:map-manhattam-distance-cost cost-pointer-position
+                                                                       cost-player-position))
                       (player-movement-points (character:current-movement-points ghost)))
                   (when (and (>= player-movement-points +open-terrain-cost+)
                              (<= min-cost player-movement-points)
-                             (<= cost-pointer player-movement-points)
-                             (not (position-confined-in-labyrinth-p main-state
+                             (<= cost-pointer player-movement-points))
+                    (let ((island (position-confined-in-labyrinth-p main-state
                                                                     cost-pointer-position)))
-                    (multiple-value-bind (path cost)
-                        (game-state:build-movement-path-pc main-state
-                                                           cost-player-position
-                                                           cost-pointer-position
-                                                           :heuristic-cost-function
-                                                           (heuristic-alt-pc main-state))
-                      (when (and path
-                                 (<= cost player-movement-points))
-                        (setf (game-state:selected-path main-state)
-                              (game-state:make-movement-path path cost))
-                        (world:highlight-path-costs-space world world path)))))))))))))
+                      (when (or (null island)
+                                (find cost-player-position island :test #'ivec2=))
+                        (multiple-value-bind (path cost)
+                            (game-state:build-movement-path-pc main-state
+                                                               cost-player-position
+                                                               cost-pointer-position
+                                                               :heuristic-cost-function
+                                                               (heuristic-alt-pc main-state))
+                          (when (and path
+                                     (<= cost player-movement-points))
+                            (setf (game-state:selected-path main-state)
+                                  (game-state:make-movement-path path cost))
+                            (world:highlight-path-costs-space world world path)))))))))))))))
 
 (defmethod mousemotion-event ((object test-window) ts mask x y xr yr)
   (with-accessors ((world world)) object

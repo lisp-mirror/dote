@@ -580,11 +580,12 @@ to take care of that"
         (let ((door-event (game-event:make-simple-event-w-dest 'game-event:open-door-event
                                                                (id player)
                                                                id-door)))
+          (set-memory-seen-before-door player)
           (game-event:propagate-open-door-event door-event)
           (%stop-movement player
                           :decrement-movement-points t
                           :interrupt-plan-if-ai      t
-                          :interrupting-id           :door))))))
+                          :interrupting-id           +w-memory-interrupt-id-door+))))))
 
 (defun %on-move-entity-entered-in-tile-event-ai (player event)
   (with-accessors ((ghost ghost)
@@ -620,7 +621,7 @@ to take care of that"
               (%stop-movement player
                               :decrement-movement-points t
                               :interrupt-plan-if-ai      t
-                              :interrupting-id           :trap)
+                              :interrupting-id            +w-memory-interrupt-id-trap+)
               (%try-deactivate-trap-from-ai world player trap-ostile)))
           (send-update-visibility-event player event)
           (send-refresh-toolbar-event))))))
