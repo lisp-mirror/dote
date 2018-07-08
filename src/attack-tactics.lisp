@@ -305,20 +305,20 @@ returns four values:
         (cond
           ((character:weapon-type-pole-p ghost)
            (funcall path-builder-fn blackboard ai-player +pole-key-tactics+
-                                      :cut-off-first-tile cut-off-first-tile
-                                      :reachable-fn-p reachable-fn-p))
+                    :cut-off-first-tile cut-off-first-tile
+                    :reachable-fn-p reachable-fn-p))
           ((character:weapon-type-bow-p ghost)
            (funcall path-builder-fn blackboard ai-player +bow-key-tactics+
-                                      :cut-off-first-tile cut-off-first-tile
-                                      :reachable-fn-p reachable-fn-p))
+                    :cut-off-first-tile cut-off-first-tile
+                    :reachable-fn-p reachable-fn-p))
           ((character:weapon-type-crossbow-p ghost)
            (funcall path-builder-fn blackboard ai-player +crossbow-key-tactics+
-                                      :cut-off-first-tile cut-off-first-tile
-                                      :reachable-fn-p reachable-fn-p))
+                    :cut-off-first-tile cut-off-first-tile
+                    :reachable-fn-p reachable-fn-p))
           (t ;; any other melee weapon
            (funcall path-builder-fn blackboard ai-player +melee-key-tactics+
-                                      :cut-off-first-tile cut-off-first-tile
-                                      :reachable-fn-p reachable-fn-p)))))))
+                    :cut-off-first-tile cut-off-first-tile
+                    :reachable-fn-p reachable-fn-p)))))))
 
 (defun best-path-to-reach-attack-pos-w-current-weapon (blackboard ai-player
                                                   &key

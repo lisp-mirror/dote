@@ -17,26 +17,27 @@
 
 (in-package :md2-mesh)
 
-(define-constant +w-memory-target-id+             :target-id              :test #'eq)
+(define-constant +w-memory-target-id+                 :target-id              :test #'eq)
 
-(define-constant +w-memory-path-struct+           :path-struct            :test #'eq)
+(define-constant +w-memory-path-struct+               :path-struct            :test #'eq)
 
-(define-constant +w-memory-action-did-costs+      :action-did-cost        :test #'eq)
+(define-constant +w-memory-action-did-costs+          :action-did-cost        :test #'eq)
 
-(define-constant +w-memory-spell+                 :spell                  :test #'eq)
+(define-constant +w-memory-spell+                     :spell                  :test #'eq)
 
-(define-constant +w-memory-interrupting-by-id+    :interrupting-by-id     :test #'eq)
+(define-constant +w-memory-interrupting-by-id+        :interrupting-by-id     :test #'eq)
 
-(define-constant +w-memory-saved-interrupting-id+ :saved-interrupting-id  :test #'eq)
+(define-constant +w-memory-saved-interrupting-id+     :saved-interrupting-id  :test #'eq)
 
-(define-constant +w-memory-ignore-interrupt-id+   :ignore-interrupt-id    :test #'eq)
+(define-constant +w-memory-ignore-interrupt-id+       :ignore-interrupt-id    :test #'eq)
 
-(define-constant +w-memory-interrupt-id-door+     :door                   :test #'eq)
+(define-constant +w-memory-interrupt-id-door+         :door                   :test #'eq)
 
-(define-constant +w-memory-interrupt-id-trap+     :trap                   :test #'eq)
+(define-constant +w-memory-interrupt-id-trap+         :trap                   :test #'eq)
 
 (define-constant +w-memory-opponents-before-open-door+
     :opponents-before-open-door  :test #'eq)
 
+(define-constant +w-memory-opponents-entity-vanished+ :opponent-vanished      :test #'eq)
 
 (define-constant +channel-planner-timeout+        0.001                   :test #'=)

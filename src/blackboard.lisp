@@ -418,12 +418,33 @@
                                      positions))
            (not-starved      (remove-if #'(lambda (a) (<= (age a) 0)) ;; remove starved
                                         age-updated)))
-      ;; remove death or non existents
+      ;; remove death
       (remove-if #'(lambda (a)
                      (let ((ent (game-state:find-entity-by-id main-state (entity-id a))))
-                       (or (null ent)
-                           (entity:entity-dead-p ent))))
+                       (and ent
+                            (entity:entity-dead-p ent))))
                  not-starved))))
+
+(defun remove-attacks-with-id (id attack-positions)
+  "attack-position is a list of def-target"
+  (remove-if #'(lambda (a) (= (entity-id a) id))
+             attack-positions))
+
+(defun remove-all-attacks-with-id (blackboard id)
+  (with-accessors ((main-state main-state)
+                   (attack-enemy-melee-positions    attack-enemy-melee-positions)
+                   (attack-enemy-pole-positions     attack-enemy-pole-positions)
+                   (attack-enemy-bow-positions      attack-enemy-bow-positions)
+                   (attack-enemy-crossbow-positions attack-enemy-crossbow-positions)) blackboard
+    (setf attack-enemy-melee-positions
+          (remove-attacks-with-id id attack-enemy-melee-positions))
+    (setf attack-enemy-pole-positions
+          (remove-attacks-with-id id attack-enemy-pole-positions))
+    (setf attack-enemy-bow-positions
+          (remove-attacks-with-id id attack-enemy-bow-positions))
+    (setf attack-enemy-crossbow-positions
+          (remove-attacks-with-id id attack-enemy-crossbow-positions))
+    blackboard))
 
 (defun someone-ai-carry-weapon-fn (blackboard probe-fn)
   (with-accessors ((main-state main-state)) blackboard

@@ -55,6 +55,14 @@
 (defun get-memory-seen-before-door (npc)
   (get-from-working-memory npc +w-memory-opponents-before-open-door+))
 
+(defun set-memory-entity-goal-vanished (npc)
+  (put-in-working-memory npc
+                         +w-memory-opponents-entity-vanished+
+                         t))
+
+(defun get-memory-entity-goal-vanished (npc)
+  (get-from-working-memory npc +w-memory-opponents-entity-vanished+))
+
 (defun set-cost-occurred (entity)
   (put-in-working-memory entity +w-memory-action-did-costs+ t))
 
@@ -694,14 +702,15 @@ attempts Note: all attackable position will be updated as well"
                          strategy
                          (action (eql ai-utils:+attack-action+)))
   (with-maybe-blacklist (object strategy action)
-    (with-slots-for-reasoning (object state ghost blackboard)
-      (let* ((id-defender (get-from-working-memory object +w-memory-target-id+))
-             (defender    (find-entity-by-id state id-defender)))
-        #+(and debug-mode debug-ai) (misc:dbg "atk id ~a" id-defender)
-        (%rotate-until-visible state object defender)
-        (battle-utils:attack-w-current-weapon object
-                                              (find-entity-by-id state
-                                                                 id-defender))))))
+    (when (not (get-memory-entity-goal-vanished object))
+      (with-slots-for-reasoning (object state ghost blackboard)
+        (let* ((id-defender (get-from-working-memory object +w-memory-target-id+))
+               (defender    (find-entity-by-id state id-defender)))
+          #+(and debug-mode debug-ai) (misc:dbg "atk id ~a" id-defender)
+          (%rotate-until-visible state object defender)
+          (battle-utils:attack-w-current-weapon object
+                                                (find-entity-by-id state
+                                                                   id-defender)))))))
 
 (defun %do-simple-move (mesh path-struct state world)
   (action-scheduler:with-enqueue-action (world action-scheduler:tactical-plane-action)
@@ -788,30 +797,42 @@ attempts Note: all attackable position will be updated as well"
               (%do-simple-move object path-struct state world)
               (%rotate-until-visible state object defender))))))))
 
+(defun %common-find-attack-pos (npc path-building-fn)
+  (flet ((put-path-in-memory (target-id path-struct)
+           (put-in-working-memory npc +w-memory-path-struct+ path-struct)
+           (put-in-working-memory npc +w-memory-target-id+   target-id)))
+    (with-slots-for-reasoning (npc state ghost blackboard)
+      (let* ((target-next  (blackboard:entity-in-valid-attackable-pos-p npc))
+             (reachable-fn (blackboard:reachable-p-w/o-concening-tiles-fn blackboard)))
+        (if target-next ;; if non nil we are in an attack position
+            (put-path-in-memory (id target-next) nil)
+            (multiple-value-bind (path total-cost costs target-id-move)
+                (funcall path-building-fn blackboard
+                         npc
+                         :cut-off-first-tile nil
+                         :reachable-fn-p     reachable-fn)
+              (declare (ignore costs))
+              (let ((entity-attacked (find-entity-by-id state target-id-move)))
+                ;; entity-attacked is nil the attack position is valid no more
+                ;; this could happens if attacked PC moved from there
+                ;; or the game has been reloaded :(
+                (when (null entity-attacked)
+                  (set-memory-entity-goal-vanished npc)
+                  (blackboard:remove-all-attacks-with-id blackboard target-id-move))
+                #+ (and debug-mode debug-ai)
+                (misc:dbg "path attack insecure ~a ~a" path total-cost)
+                #+(and debug-mode debug-ai)
+                (misc:dbg "interrupt from ~a will be ignored"
+                          (find-entity-by-id state target-id-move))
+                (set-memory-ignore-interrupt-from npc target-id-move)
+                (let* ((path-struct (game-state:make-movement-path path total-cost)))
+                  (put-path-in-memory target-id-move path-struct)))))))))
+
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+find-attack-pos-action+)))
-  (flet ((put-in-memory (target-id path-struct)
-           (put-in-working-memory object +w-memory-path-struct+ path-struct)
-           (put-in-working-memory object +w-memory-target-id+   target-id)))
-    (with-slots-for-reasoning (object state ghost blackboard)
-      (let* ((target-next (blackboard:entity-in-valid-attackable-pos-p object)))
-        (if target-next ;; if non nil we are in an attack position
-            (put-in-memory (id target-next) nil)
-            (multiple-value-bind (path total-cost costs target-id-move)
-                (blackboard:best-path-to-reach-attack-pos-w-current-weapon blackboard
-                                                                           object
-                                                                           :cut-off-first-tile
-                                                                           nil)
-              (declare (ignore costs))
-              #+ (and debug-mode debug-ai)
-              (misc:dbg "path attack optimal ~a ~a" path total-cost)
-              #+(and debug-mode debug-ai)
-              (misc:dbg "interrupt from ~a will be ignored"
-                        (find-entity-by-id state target-id-move))
-              (set-memory-ignore-interrupt-from object target-id-move)
-              (let* ((path-struct (game-state:make-movement-path path total-cost)))
-                (put-in-memory target-id-move path-struct))))))))
+  (%common-find-attack-pos object
+                           #'blackboard:best-path-to-reach-attack-pos-w-current-weapon))
 
 (defun insecure-path-to-reach-attack-pos (blackboard
                                           player
@@ -825,32 +846,10 @@ attempts Note: all attackable position will be updated as well"
                                                                  :reachable-fn-p
                                                                  reachable-fn-p))
 
-
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+find-attack-pos-insecure-action+)))
-  (flet ((put-in-memory (target-id path-struct)
-           (put-in-working-memory object +w-memory-path-struct+ path-struct)
-           (put-in-working-memory object +w-memory-target-id+   target-id)))
-    (with-slots-for-reasoning (object state ghost blackboard)
-      (let* ((target-next  (blackboard:entity-in-valid-attackable-pos-p object))
-             (reachable-fn (blackboard:reachable-p-w/o-concening-tiles-fn blackboard)))
-        (if target-next ;; if non nil we are in an attack position
-            (put-in-memory (id target-next) nil)
-            (multiple-value-bind (path total-cost costs target-id-move)
-                (insecure-path-to-reach-attack-pos blackboard
-                                                   object
-                                                   :cut-off-first-tile nil
-                                                   :reachable-fn-p     reachable-fn)
-              (declare (ignore costs))
-              #+ (and debug-mode debug-ai)
-              (misc:dbg "path attack insecure ~a ~a" path total-cost)
-              #+(and debug-mode debug-ai)
-              (misc:dbg "interrupt from ~a will be ignored"
-                        (find-entity-by-id state target-id-move))
-              (set-memory-ignore-interrupt-from object target-id-move)
-              (let* ((path-struct (game-state:make-movement-path path total-cost)))
-                (put-in-memory target-id-move path-struct))))))))
+  (%common-find-attack-pos object #'insecure-path-to-reach-attack-pos))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy

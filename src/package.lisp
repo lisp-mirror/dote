@@ -5725,6 +5725,8 @@
    :all-player-ray-visibles-by-entity
    :all-visibles-by-entity
    :all-visibles-ray-by-entity
+   :remove-attacks-with-id
+   :remove-all-attacks-with-id
    :update-w-concerning-landmarks
    :update-pc-landmarks
    :update-w/o-concerning-landmarks
