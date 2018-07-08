@@ -350,10 +350,11 @@
           #+debug-mode
           (progn
             (when (eq :scancode-4 scancode)
-            (with-accessors ((world world) (mesh mesh)) object
-              (let* ((game-state         (window-game-state object)))
+              (with-accessors ((world world) (mesh mesh)) object
                 (with-accessors ((selected-pc selected-pc)) world
-                  (let ((pos (mesh:calculate-cost-position selected-pc)))
+                  (let* ((game-state (window-game-state object))
+                         (ai (first (game-state:ai-entities game-state)))
+                         (pos (mesh:calculate-cost-position selected-pc)))
                     (misc:dbg "cost ~a" pos)
                     (misc:dbg "w conc ~a"
                               (game-state:build-movement-path-pc
@@ -361,7 +362,7 @@
                                pos
                                (ivec2 16 16)
                                :heuristic-cost-function
-                               (game-state:heuristic-alt-pc game-state))))))))
+                               (game-state:heuristic-manhattam)))))))
             (when (eq :scancode-3 scancode)
               (with-accessors ((world world) (mesh mesh)) object
                 (let* ((game-state         (window-game-state object))

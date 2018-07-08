@@ -16,9 +16,11 @@
 
 (in-package :goap)
 
-(define-constant +ultimate-goal+   :curb-threat :test #'eq)
+(define-constant +ultimate-goal+                  :curb-threat :test #'eq)
 
-(define-constant +action-max-cost+ 1000000      :test #'eq)
+(define-constant +action-max-cost+                1000000      :test #'eq)
+
+(define-constant +simulated-attack-sample-number+      50      :test #'=)
 
 (defstruct action
   (name                   :idle :type symbol)
@@ -672,15 +674,33 @@ reach the enemy with optimal path?"
   (let ((res (ai-utils:target-attack/damage-spell entity)))
     res))
 
+(defun simulated-weapon-damage-average (attacker defender)
+  (let ((sum (loop repeat +simulated-attack-sample-number+ sum
+                  (battle-utils:simulate-attack-w-current-weapon attacker defender))))
+    (num:d/ sum
+            (num:d +simulated-attack-sample-number+))))
+
 (defun probably-stronger-than-enemy-p (strategy-expert entity)
   (declare (ignore strategy-expert))
-  (with-accessors ((entity-ghost ghost)) entity
-    (let* ((target       (ai-utils:target-attack/damage-spell entity))
-           (target-ghost (ghost target)))
-      (and target
-           (< (num:d/ (character:combined-power target-ghost)
-                      (character:combined-power entity-ghost))
-              0.5)))))
+  (with-accessors ((state        state)
+                   (entity-ghost ghost)) entity
+    (if (or (character:pclass-wizard-p entity-ghost)
+            (character:pclass-healer-p entity-ghost))
+        (if (and (pass-1d10 nil nil)
+                 (= (length (player-entities state))
+                    1))
+            :only-one-opponent
+            (let* ((target       (ai-utils:target-attack/damage-spell entity))
+                   (target-ghost (ghost target)))
+              (and target
+                   (< (num:d/ (character:combined-power target-ghost)
+                              (character:combined-power entity-ghost))
+                      0.5))))
+        (let* ((target       (ai-utils:target-attack/damage-spell entity))
+               (target-ghost (ghost target))
+               (simulated-damage (simulated-weapon-damage-average entity target)))
+          (>= simulated-damage
+              (num:d* 0.5 (character:current-damage-points target-ghost)))))))
 
 (defgoap-test reachable-opt/path-attack-current-weapon-and-mp (strategy-expert entity)
     "using the  current movement points  of the entity is  possible to

@@ -35,8 +35,9 @@
                                  !is-in-attack-pos-p
                                  exists-visible-enemy
                                  !probably-stronger-than-enemy-p
+                                 !reachable-insecure/path-attack-current-weapon-and-mp
                                  can-move-near-enemy-pos)
-         :cost                  6)
+         :cost                  5)
   (:name :go-near-to-enemy-insecure
          :preconditions         ()
          :effects               ((:curb-threat    t))
@@ -46,8 +47,10 @@
                                  !is-status-terror-p
                                  !is-in-attack-pos-p
                                  exists-visible-enemy
+                                 probably-stronger-than-enemy-p
+                                 !reachable-insecure/path-attack-current-weapon-and-mp
                                  can-move-near-enemy-pos-insecure)
-         :cost                  7)
+         :cost                  5)
   (:name :find-attack-position
          :preconditions         ((:weapon-loaded             t))
          :context-preconditions (exists-attack-goal-w-current-weapon-p

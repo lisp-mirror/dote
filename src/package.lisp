@@ -4477,7 +4477,8 @@
    :all-death-p
    :victoryp
    :defeatedp
-   :someone-won-p))
+   :someone-won-p
+   :simulate-attack-w-current-weapon))
 
 ;; UI
 

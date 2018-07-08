@@ -933,6 +933,33 @@
   (or (battle-utils:victoryp  state)
       (battle-utils:defeatedp state)))
 
+(defun simulate-attack-w-current-weapon (attacker defender)
+  (character:weapon-case (attacker)
+    :pole
+    (let ((event (make-instance 'game-event:attack-melee-event
+                                :id-origin       (identificable:id attacker)
+                                :id-destination  (identificable:id defender)
+                                :attacker-entity attacker)))
+      (defend-from-attack-short-range event))
+    :melee
+    (let ((event (make-instance 'game-event:attack-melee-event
+                                :id-origin       (identificable:id attacker)
+                                :id-destination  (identificable:id defender)
+                                :attacker-entity attacker)))
+      (defend-from-attack-short-range event))
+    :bow
+    (let ((event (make-instance 'game-event:attack-long-range-event
+                                :id-origin       (identificable:id attacker)
+                                :id-destination  (identificable:id defender)
+                                :attacker-entity attacker)))
+      (defend-from-attack-long-range event))
+    :crossbow
+    (let ((event (make-instance 'game-event:attack-long-range-event
+                                :id-origin       (identificable:id attacker)
+                                :id-destination  (identificable:id defender)
+                                :attacker-entity attacker)))
+      (defend-from-attack-long-range event))))
+
 (defun attack-statistics (weapon-level attack-dmg shield-level armor-level
                            &optional (count 10000))
   (macrolet ((fmt-comment (a fmt-params)

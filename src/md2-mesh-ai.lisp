@@ -820,7 +820,7 @@ attempts Note: all attackable position will be updated as well"
                   (set-memory-entity-goal-vanished npc)
                   (blackboard:remove-all-attacks-with-id blackboard target-id-move))
                 #+ (and debug-mode debug-ai)
-                (misc:dbg "path attack insecure ~a ~a" path total-cost)
+                (misc:dbg "path attack ~a ~a" path total-cost)
                 #+(and debug-mode debug-ai)
                 (misc:dbg "interrupt from ~a will be ignored"
                           (find-entity-by-id state target-id-move))

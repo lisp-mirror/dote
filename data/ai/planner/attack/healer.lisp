@@ -80,6 +80,7 @@
                                  !is-status-terror-p
                                  !is-in-attack-pos-p
                                  exists-visible-enemy
+                                 probably-stronger-than-enemy-p
                                  can-move-near-enemy-pos-insecure)
          :cost                  8)
   (:name :use-fountain

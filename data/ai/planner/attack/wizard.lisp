@@ -80,8 +80,9 @@
                                  !is-status-terror-p
                                  !is-in-attack-pos-p
                                  exists-visible-enemy
+                                 probably-stronger-than-enemy-p
                                  can-move-near-enemy-pos-insecure)
-         :cost                  8)
+         :cost                  5)
   (:name :use-fountain
          :preconditions         ((:has-fountain-facing t))
          :context-preconditions (!enough-health-p pass-1d4)
