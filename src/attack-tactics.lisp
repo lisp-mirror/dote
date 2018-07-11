@@ -476,8 +476,7 @@ path is removed
                     (%path-cache-costs-terrain   found))
             (let* ((concerning-tiles (concerning-tiles->costs-matrix blackboard))
                    (others-costs     (list concerning-tiles))
-                   (heuristic (heuristic-alt (landmarks-w/concenring-no-doors-dists
-                                              blackboard))))
+                   (heuristic        (heuristic-manhattam)))
               (multiple-value-bind (path cumulative-cost terrain-costs)
                   (calc-path-tiles-no-doors blackboard ai-position defender-position
                                             heuristic
@@ -514,7 +513,7 @@ path is removed
             (values (%path-cache-path            found)
                     (%path-cache-cumulative-cost found)
                     (%path-cache-costs-terrain   found))
-            (let* ((heuristic (heuristic-alt (landmarks-w/o-concenring-no-doors-dists blackboard))))
+            (let* ((heuristic (heuristic-manhattam)))
               (multiple-value-bind (path cumulative-cost terrain-costs)
                   (calc-path-tiles-no-doors blackboard ai-position defender-position
                                             heuristic

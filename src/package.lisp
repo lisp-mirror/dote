@@ -5682,9 +5682,6 @@
    :number-pc@start-turn
    :number-npc@start-turn
    :main-influence-map
-   :landmarks-dists
-   :landmarks-w/concenring-no-doors-dists
-   :landmarks-w/o-concenring-no-doors-dists
    :exhausted-fountains-ids
    :concerning-tiles
    :concerning-tiles-invalicables
@@ -5728,9 +5725,6 @@
    :all-visibles-ray-by-entity
    :remove-attacks-with-id
    :remove-all-attacks-with-id
-   :update-w-concerning-landmarks
-   :update-pc-landmarks
-   :update-w/o-concerning-landmarks
    :update-unexplored-layer
    :update-unreachable-layer
    :update-all-attacking-pos

@@ -40,7 +40,7 @@
 
 (alexandria:define-constant +pc-a*-cross-weight+        4.05       :test #'=)
 
-(alexandria:define-constant  +default-a*-cost-scaling+  1.001      :test #'=)
+(alexandria:define-constant  +default-a*-cost-scaling+  1.01       :test #'=)
 
 (defun hour->light-color (h)
   (cond
@@ -703,24 +703,7 @@
              (b-y   (d (elt b 1)))
              (cost  (d+ (dabs (d- b-x a-x))
                         (dabs (d- b-y a-y)))))
-        (d* cost cost-scaling))))
-
-(defun heuristic-alt (landmarks)
-  #'(lambda (graph goal-node next-node start-node)
-      (declare (ignore graph start-node))
-      (loop for mat across landmarks maximize
-           (let ((min-cost-next (matrix-elt mat
-                                            (2d-utils:seq-y next-node)
-                                            (2d-utils:seq-x next-node)))
-                 (min-cost-goal (matrix-elt mat
-                                            (2d-utils:seq-y goal-node)
-                                            (2d-utils:seq-x goal-node))))
-             (dabs (d- (d min-cost-next) (d min-cost-goal)))))))
-
-(defun heuristic-alt-pc (game-state)
-  (with-accessors ((blackboard blackboard)) game-state
-    (with-accessors ((landmarks-dists blackboard:landmarks-dists)) blackboard
-      (heuristic-alt landmarks-dists))))
+        (d* +open-terrain-cost+ cost cost-scaling))))
 
 (defun %build-movement-path (graph start end other-costs-layer
                              &key (heuristic-cost-function (heuristic-manhattam)))
@@ -747,7 +730,7 @@
 (defmethod build-movement-path-pc ((object game-state) start end
                                    &key
                                      (other-costs-layer '())
-                                     (heuristic-cost-function (heuristic-alt-pc object)))
+                                     (heuristic-cost-function (heuristic-manhattam)))
   (with-accessors ((movement-costs-pc movement-costs-pc)) object
     (%build-movement-path movement-costs-pc start end other-costs-layer
                          :heuristic-cost-function heuristic-cost-function)))

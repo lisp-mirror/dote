@@ -353,16 +353,16 @@
               (with-accessors ((world world) (mesh mesh)) object
                 (with-accessors ((selected-pc selected-pc)) world
                   (let* ((game-state (window-game-state object))
-                         (ai (first (game-state:ai-entities game-state)))
+                         ;;(ai (first (game-state:ai-entities game-state)))
                          (pos (mesh:calculate-cost-position selected-pc)))
                     (misc:dbg "cost ~a" pos)
                     (misc:dbg "w conc ~a"
-                              (game-state:build-movement-path-pc
-                               game-state
-                               pos
-                               (ivec2 16 16)
-                               :heuristic-cost-function
-                               (game-state:heuristic-manhattam)))))))
+                              (time (game-state:build-movement-path-pc
+                                     game-state
+                                     pos
+                                     (ivec2 0 0)
+                                     :heuristic-cost-function
+                                     (game-state:heuristic-manhattam))))))))
             (when (eq :scancode-3 scancode)
               (with-accessors ((world world) (mesh mesh)) object
                 (let* ((game-state         (window-game-state object))
@@ -379,7 +379,7 @@
                                  pos
                                  (ivec2 16 16)
                                  :heuristic-cost-function
-                                 (heuristic-alt-pc game-state))))))))
+                                 (heuristic-manhattam))))))))
             (when *placeholder*
               (let* ((old-pos (entity:pos *placeholder*)))
                 (when (eq :scancode-1 scancode)
@@ -542,7 +542,7 @@ approx h ~a facing ~a occlude? ~a inside-room ~a concerning cost ~a ai-entitites
                                                                cost-player-position
                                                                cost-pointer-position
                                                                :heuristic-cost-function
-                                                               (heuristic-alt-pc main-state))
+                                                               (heuristic-manhattam))
                           (when (and path
                                      (<= cost player-movement-points))
                             (setf (game-state:selected-path main-state)

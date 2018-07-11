@@ -452,11 +452,6 @@
     (place-opponents world difficult-level)
     ;; play bg music
     (sound:play-music sound:+bg-battle-1+)
-    ;; precalculate graph
-    (with-accessors ((blackboard blackboard)) window-game-state
-      (blackboard:update-pc-landmarks  blackboard)
-      (blackboard:update-w-concerning-landmarks   blackboard)
-      (blackboard:update-w/o-concerning-landmarks blackboard))
     (setf (main-window::delta-time-elapsed window) (sdl2:get-ticks))
     ;; bg color
     (let ((color (skydome-bottom-color (main-window:window-game-state window))))
@@ -894,10 +889,6 @@
                 (update-rendering-needed-ai window-game-state)
                 ;; update all visibility
                 (update-all-visibility-state window-game-state)
-                ;; precalculate graph
-                (update-pc-landmarks             blackboard)
-                (update-w-concerning-landmarks   blackboard)
-                (update-w/o-concerning-landmarks blackboard)
                 ;; start a new turn
                 (let ((start-event (make-instance 'game-event:start-turn)))
                   (game-event:propagate-start-turn start-event)))))

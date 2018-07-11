@@ -211,17 +211,10 @@
       (game-state:with-world (world state)
         (world::render-influence-map world))
       (blackboard::%update-all-infos blackboard)
-      (update-landmarks-infos entity)
-      entity)))
-
-(defun update-landmarks-infos (entity)
-  (with-accessors ((state state)) entity
-    (with-accessors ((blackboard game-state:blackboard)) state
-      (blackboard:update-w-concerning-landmarks blackboard)
       entity)))
 
 ;; used as parallel thread
-;; does not update landmarks
+;; yes it is the same as above...
 (defun update-blackboard-infos (entity)
   (with-accessors ((state state)) entity
     (with-accessors ((blackboard game-state:blackboard)) state
