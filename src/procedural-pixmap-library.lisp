@@ -2480,7 +2480,7 @@
     (setf turtle-pos (vec2 (fract x) (fract y)))
     (when pen-down-p
       (assert *pixmap*)
-      (setf (sample@ *pixmap* (elt turtle-pos 0) (elt turtle-pos 1))
+      (setf (sample@ *pixmap* (vec2-x turtle-pos) (vec2-y turtle-pos))
             (color-utils:vec4->ubvec4 turtle-color)))))
 
 (defun turtle-push ()

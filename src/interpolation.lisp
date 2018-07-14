@@ -46,7 +46,7 @@
                              :width 1
                              :height 4
                              :data (vector 1.0 time (d* time time) (d* time time time)))))
-    (declare (matrix ctrl tmat))
+    (declare (matrix:matrix ctrl tmat))
     (loop for i from 0 below 3 do
          (setf (matrix:matrix-elt ctrl i 0) (elt k0 i)
                (matrix:matrix-elt ctrl i 1) (elt v0 i)

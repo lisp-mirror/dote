@@ -135,8 +135,8 @@
                                 p)))))
 
 (defun build-separation (a m parx pary width inc divisions)
-  (let* ((x   (vec-x a))
-         (y   (vec-y a))
+  (let* ((x   (vec2-x a))
+         (y   (vec2-y a))
          (res (cond
                 (pary
                  (let* ((lx (- x (/ width 2))))
@@ -152,7 +152,7 @@
                         (vec2 x (d i)))))
                 (t
                  (let* ((m1 (- (/ 1 m)))
-                        (q1 (- (vec-y a) (* m1 (vec-x a))))
+                        (q1 (- (vec2-y a) (* m1 (vec2-x a))))
                         (lx (- x (/ width 2))))
                    (loop
                       repeat (truncate divisions)
@@ -292,8 +292,8 @@
         path))))
 
 (defun vec->ivec2 (v)
-  (let ((x (vec-x v))
-        (y (vec-y v)))
+  (let ((x (seq-x v))
+        (y (seq-y v)))
     (ivec2 (round x) (round y))))
 
 ;; TODO build skeleton in normalized coordinates
@@ -343,16 +343,16 @@
     (loop repeat 5 do
          (let* ((perturbed (loop for path in spline-paths collect
                                 (loop for p in path collect
-                                     (if (and (< (vec-x p) (d (* size 3/8)))
-                                              (> (vec-y p) (d (* size 1/2))))
+                                     (if (and (< (vec2-x p) (d (* size 3/8)))
+                                              (> (vec2-y p) (d (* size 1/2))))
                                          (vec+ p (vec (num:lcg-next-upto 10.0)
                                                       (num:lcg-next-upto 10.0)
                                                       0.0))
                                          (vec+ p (vec (num:lcg-next-upto 2.0)
                                                       (num:lcg-next-upto 2.0)
                                                       0.0))))))
-                (splines      (loop for knots in perturbed collect
-                                   (interpolation:catmul-roll-interpolation* knots))))
+                (splines   (loop for knots in perturbed collect
+                                (interpolation:catmul-roll-interpolation* knots))))
            (loop for spline in splines do
                 (loop for i from 0.0 below 10.0 by 0.01 do
                      (let ((res (funcall spline i)))
