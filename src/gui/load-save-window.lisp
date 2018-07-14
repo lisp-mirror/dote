@@ -303,7 +303,6 @@
                    (b-action    b-action)
                    (input-notes input-notes)
                    (text-mtime  text-mtime)) object
-    (misc:dbg "iii ~a" input-notes)
     (add-children* object
                    s-preview
                    b-1
