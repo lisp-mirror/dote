@@ -267,18 +267,27 @@ Return the entity target and the best spell available"
            (values target-entity spell)
            (values nil nil)))))
 
-(defun attackable-opponents-attack-spell (available-spells launcher-entity)
+(defun attackable-opponents-attack-spell (available-spells launcher-entity
+                                          &key (assume-visible-p t))
   "can the launcher attack with an attack-spell from the current position?
 Return the entity attackable and the best attack-spell available"
    (with-slots-for-reasoning (launcher-entity state ghost blackboard)
-    (when-let* ((target-entity (target-attack-spell launcher-entity))
-                (spell         (find-best-attack-spell state
-                                                       available-spells
-                                                       launcher-entity
-                                                       target-entity)))
-      (if (battle-utils:range-spell-valid-p launcher-entity target-entity spell)
-          (values target-entity spell)
-          (values nil nil)))))
+     (when-let* ((target-entity   (target-attack-spell launcher-entity))
+                 (target-cost-pos (calculate-cost-position target-entity))
+                 (target-x        (ivec2:ivec2-x target-cost-pos))
+                 (target-y        (ivec2:ivec2-y target-cost-pos))
+                 (spell           (find-best-attack-spell state
+                                                          available-spells
+                                                          launcher-entity
+                                                          target-entity))
+                 (visiblep        (or assume-visible-p
+                                      (absee-mesh:placeholder-visible-ray-p launcher-entity
+                                                                            target-x
+                                                                            target-y))))
+       (if (and visiblep
+                (battle-utils:range-spell-valid-p launcher-entity target-entity spell))
+           (values target-entity spell)
+           (values nil nil)))))
 
 (defun attackable-opponents-damage-spell (available-spells launcher-entity)
   "can the launcher attack with an damage-spell from the current position?
