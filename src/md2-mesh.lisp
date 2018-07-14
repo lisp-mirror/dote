@@ -1264,6 +1264,8 @@ to take care of that"
           (when (faction-player-p state id)
             (orb-remove object)
             (blackboard:remove-entity-from-all-attack-pos blackboard object))
+          (setf (renderp object) t)
+          (set-interrupt-plan ghost)
           (particles:add-blood-death object (aabb-center aabb) +y-axe+)
           (when (battle-utils:victoryp state)
             (closing-sequence:start-victory-sequence world))

@@ -24,7 +24,7 @@
                                  exists-attack-goal-w-current-weapon-p
                                  !reachable-opt/path-attack-current-weapon-and-mp
                                  can-move-near-attack-pos)
-         :cost                  5)
+         :cost                  6)
   (:name :go-near-to-enemy
          :preconditions         ()
          :effects               ((:curb-threat    t))

@@ -790,13 +790,12 @@ attempts Note: all attackable position will be updated as well"
               (%do-simple-move object path-struct state world)
               (%rotate-until-visible state object defender))))))))
 
-(defun %common-find-attack-pos (npc path-building-fn)
+(defun %common-find-attack-pos (npc path-building-fn reachable-fn)
   (flet ((put-path-in-memory (target-id path-struct)
            (put-in-working-memory npc +w-memory-path-struct+ path-struct)
            (put-in-working-memory npc +w-memory-target-id+   target-id)))
     (with-slots-for-reasoning (npc state ghost blackboard)
-      (let* ((target-next  (blackboard:entity-in-valid-attackable-pos-p npc))
-             (reachable-fn (blackboard:reachable-p-w/o-concening-tiles-fn blackboard)))
+      (let* ((target-next  (blackboard:entity-in-valid-attackable-pos-p npc)))
         (if target-next ;; if non nil we are in an attack position
             (put-path-in-memory (id target-next) nil)
             (multiple-value-bind (path total-cost costs target-id-move)
@@ -824,8 +823,11 @@ attempts Note: all attackable position will be updated as well"
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+find-attack-pos-action+)))
-  (%common-find-attack-pos object
-                           #'blackboard:best-path-to-reach-attack-pos-w-current-weapon))
+  (with-accessors ((state state)) object
+    (with-accessors ((blackboard game-state:blackboard)) state
+      (%common-find-attack-pos object
+                               #'blackboard:best-path-to-reach-attack-pos-w-current-weapon
+                               (blackboard:reachable-p-w/concening-tiles-fn blackboard)))))
 
 (defun insecure-path-to-reach-attack-pos (blackboard
                                           player
@@ -842,7 +844,11 @@ attempts Note: all attackable position will be updated as well"
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+find-attack-pos-insecure-action+)))
-  (%common-find-attack-pos object #'insecure-path-to-reach-attack-pos))
+  (with-accessors ((state state)) object
+    (with-accessors ((blackboard game-state:blackboard)) state
+      (%common-find-attack-pos object
+                               #'insecure-path-to-reach-attack-pos
+                               (blackboard:reachable-p-w/o-concening-tiles-fn blackboard)))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
@@ -919,8 +925,9 @@ attempts Note: all attackable position will be updated as well"
   (with-slots-for-reasoning (mesh state ghost blackboard)
     (game-state:with-world (world state)
       (with-accessors ((ai-entities-action-order game-state:ai-entities-action-order)) state
-        (when (and (eq  (my-faction mesh) game-state:+npc-type+)
-                   (eq  (my-faction mesh) (game-state:faction-turn state))
+        (when (and (eq  (my-faction    mesh) game-state:+npc-type+)
+                   (eq  (my-faction    mesh) (game-state:faction-turn state))
+                   (not (entity-dead-p mesh))
                    (world:actions-queue-empty-p world) ; ensure one action at time
                    ghost)
           (if (null ai-entities-action-order)       ; if nil all ai players made a move

@@ -7,14 +7,14 @@
                                  none-needs-help-p
                                  ;; "!is-status-terror-p"  is implicitly
                                  ;; managed by has-enough-sp-attack-p
-                                 has-enough-sp-attack-p )
+                                 has-enough-sp-attack-p)
          :effects               ((:curb-threat t))
          :cost                  15)
   (:name :go-to-attack-spell-pos
          :preconditions         ()
          :effects               ((:near-enemy-attack-spell t))
          :context-preconditions (exists-reachable-pos-to-launch-attack-spell)
-         :cost                  1)
+         :cost                  2)
   (:name :attack-spell-current-pos
          :preconditions         ()
          :effects               ((:near-enemy-attack-spell t))
@@ -37,12 +37,12 @@
                                  ;; managed by has-enough-sp-heal-p
                                  someone-needs-help-p)
          :effects               ((:curb-threat t))
-         :cost                  2)
+         :cost                  1)
   (:name :go-to-heal-spell-pos
          :preconditions         ()
          :effects               ((:near-enemy-heal-spell t))
          :context-preconditions (exists-reachable-pos-to-launch-heal-spell)
-         :cost                  1)
+         :cost                  2)
   (:name :launch-damage-spell
          :preconditions         ((:near-enemy-damage-spell t))
          :context-preconditions (!disobey-1-out-100
@@ -81,6 +81,8 @@
                                  !is-in-attack-pos-p
                                  exists-visible-enemy
                                  probably-stronger-than-enemy-p
+                                 !can-launch-attack-spell-current-pos-p
+                                 !can-launch-damage-spell-current-pos-p
                                  can-move-near-enemy-pos-insecure)
          :cost                  8)
   (:name :use-fountain

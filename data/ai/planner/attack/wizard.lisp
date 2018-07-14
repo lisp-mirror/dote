@@ -42,7 +42,7 @@
          :preconditions         ()
          :effects               ((:near-enemy-heal-spell t))
          :context-preconditions (exists-reachable-pos-to-launch-heal-spell)
-         :cost                  1)
+         :cost                  2)
   (:name :launch-damage-spell
          :preconditions         ((:near-enemy-damage-spell t))
          :context-preconditions (!disobey-1-out-100
@@ -81,6 +81,8 @@
                                  !is-in-attack-pos-p
                                  exists-visible-enemy
                                  probably-stronger-than-enemy-p
+                                 !can-launch-attack-spell-current-pos-p
+                                 !can-launch-damage-spell-current-pos-p
                                  can-move-near-enemy-pos-insecure)
          :cost                  5)
   (:name :use-fountain

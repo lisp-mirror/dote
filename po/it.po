@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dote 0.0.1\n"
 "Report-Msgid-Bugs-To: cage@katamail.com\n"
-"POT-Creation-Date: 2018-06-24 18:13+0200\n"
-"PO-Revision-Date: 2018-06-24 18:14+0200\n"
+"POT-Creation-Date: 2018-07-14 12:18+0200\n"
+"PO-Revision-Date: 2018-07-14 12:20+0200\n"
 "Last-Translator: cage <cage@katamail.com>\n"
 "Language-Team: Italian\n"
 "Language: it\n"
@@ -17,11 +17,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/arrows.lisp:543
+#: src/arrows.lisp:545
 msgid "fail"
 msgstr "fallito"
 
-#: src/arrows.lisp:544
+#: src/arrows.lisp:546
 msgid "too far"
 msgstr "lontano"
 
@@ -436,36 +436,36 @@ msgstr "~a causa berserk"
 msgid "launchs ~a"
 msgstr "lancia ~a"
 
-#: src/md2-mesh.lisp:555
+#: src/md2-mesh.lisp:567
 #, lisp-format
 msgid "Trap found! deactivate (chance ~a)?"
 msgstr "Attivata una trappola! Provare a disinnescarla (possibilita' ~a)"
 
-#: src/md2-mesh.lisp:559 src/saved-game.lisp:643 src/world.lisp:1072
-#: src/gui/load-save-window.lisp:164 src/gui/widget.lisp:4518
-#: src/gui/widget.lisp:5017
+#: src/md2-mesh.lisp:571 src/saved-game.lisp:638 src/world.lisp:1114
+#: src/gui/load-save-window.lisp:199 src/gui/widget.lisp:4519
+#: src/gui/widget.lisp:5018
 msgid "OK"
 msgstr "OK"
 
-#: src/md2-mesh.lisp:561 src/saved-game.lisp:417 src/gui/widget.lisp:2698
+#: src/md2-mesh.lisp:573 src/saved-game.lisp:417 src/gui/widget.lisp:2699
 msgid "No"
 msgstr "No"
 
-#: src/md2-mesh.lisp:851 src/md2-mesh.lisp:876 src/md2-mesh.lisp:1086
+#: src/md2-mesh.lisp:868 src/md2-mesh.lisp:893 src/md2-mesh.lisp:1105
 msgid "Move to"
 msgstr "Spostati"
 
-#: src/md2-mesh.lisp:1037
+#: src/md2-mesh.lisp:1056
 #, lisp-format
 msgid "You can cast ~a!"
 msgstr "Adesso puoi lanciare ~a!"
 
-#: src/md2-mesh.lisp:1083
+#: src/md2-mesh.lisp:1102
 #, lisp-format
 msgid "~a broken"
 msgstr "~a rotto/a"
 
-#: src/md2-mesh.lisp:1144
+#: src/md2-mesh.lisp:1163
 msgid "miss"
 msgstr "mancato"
 
@@ -549,17 +549,17 @@ msgstr "Caricare i personaggi da una precedente sessione di gioco?"
 msgid "Choose characters"
 msgstr "Scegli personaggi"
 
-#: src/saved-game.lisp:419 src/gui/widget.lisp:2697
+#: src/saved-game.lisp:419 src/gui/widget.lisp:2698
 msgid "Yes"
 msgstr "Si'"
 
-#: src/saved-game.lisp:639
+#: src/saved-game.lisp:634
 msgid "The map file of this level has been modified after the game was saved."
 msgstr ""
 "Il file della mappa di questo livello e' stato modificato dopo li "
 "salvataggio di questa partita."
 
-#: src/saved-game.lisp:641
+#: src/saved-game.lisp:636
 msgid "Saved game is outdated"
 msgstr "Il gioco salvato e' scaduto."
 
@@ -581,12 +581,12 @@ msgstr "Nessuna descrizione disponibile"
 msgid "Trap deactivated!"
 msgstr "Trappola disinnescata!"
 
-#: src/world.lisp:1079
+#: src/world.lisp:1121
 msgid "Message"
 msgstr "Messaggio"
 
-#: src/gui/configuration-windows.lisp:276 src/gui/load-save-window.lisp:274
-#: src/gui/widget.lisp:3592
+#: src/gui/configuration-windows.lisp:276 src/gui/load-save-window.lisp:315
+#: src/gui/widget.lisp:3593
 msgid "Save"
 msgstr "Salva"
 
@@ -704,41 +704,41 @@ msgstr "ordina"
 msgid "Inventory"
 msgstr "Inventario"
 
-#: src/gui/load-save-window.lisp:82
+#: src/gui/load-save-window.lisp:70
+#, lisp-format
+msgid "saved at: ~d-~2,'0d-~2,'0d ~2,'0d:~2,'0d"
+msgstr "Salavataggio del: ~d-~2,'0d-~2,'0d ~2,'0d:~2,'0d"
+
+#: src/gui/load-save-window.lisp:108
 msgid "No game is saved here"
 msgstr "Nessuna partita e' stata salvata in questa posizione"
 
-#: src/gui/load-save-window.lisp:87
-#, lisp-format
-msgid "saved at: ~a-~a-~a ~a:~a"
-msgstr "Salvato il: ~a-~a-~a ~a:~a"
-
-#: src/gui/load-save-window.lisp:160
+#: src/gui/load-save-window.lisp:195
 #, lisp-format
 msgid "Game saved in ~a"
 msgstr "Partita salvata in ~a"
 
-#: src/gui/load-save-window.lisp:162
+#: src/gui/load-save-window.lisp:197
 msgid "Success"
 msgstr "Successo"
 
-#: src/gui/load-save-window.lisp:204
+#: src/gui/load-save-window.lisp:231
 msgid "Slot 1"
 msgstr "Posizione 1"
 
-#: src/gui/load-save-window.lisp:217
+#: src/gui/load-save-window.lisp:244
 msgid "Slot 2"
 msgstr "Posizione 2"
 
-#: src/gui/load-save-window.lisp:230
+#: src/gui/load-save-window.lisp:257
 msgid "Slot 3"
 msgstr "Posizione 3"
 
-#: src/gui/load-save-window.lisp:243 src/gui/widget.lisp:3603
+#: src/gui/load-save-window.lisp:270 src/gui/widget.lisp:3604
 msgid "Load"
 msgstr "Carica"
 
-#: src/gui/load-save-window.lisp:282 src/gui/opening-sequence.lisp:252
+#: src/gui/load-save-window.lisp:323 src/gui/opening-sequence.lisp:252
 msgid "Load game"
 msgstr "Carica la partita"
 
@@ -763,7 +763,7 @@ msgstr "Scegli una mappa"
 msgid "New Game"
 msgstr "Nuova Partita"
 
-#: src/gui/opening-sequence.lisp:290 src/gui/widget.lisp:2680
+#: src/gui/opening-sequence.lisp:290 src/gui/widget.lisp:2681
 msgid "Load Game"
 msgstr "Carica Partita"
 
@@ -779,119 +779,119 @@ msgstr "Classe: "
 msgid "Gender: "
 msgstr "Genere: "
 
-#: src/gui/player-report-window.lisp:104 src/gui/widget.lisp:3633
+#: src/gui/player-report-window.lisp:104 src/gui/widget.lisp:3634
 msgid "Damage points: "
 msgstr "Punti danno: "
 
-#: src/gui/player-report-window.lisp:114 src/gui/widget.lisp:3655
+#: src/gui/player-report-window.lisp:114 src/gui/widget.lisp:3656
 msgid "Movement points: "
 msgstr "Punti movimento: "
 
-#: src/gui/player-report-window.lisp:124 src/gui/widget.lisp:3677
+#: src/gui/player-report-window.lisp:124 src/gui/widget.lisp:3678
 msgid "Magic points: "
 msgstr "Punti magia: "
 
-#: src/gui/player-report-window.lisp:134 src/gui/widget.lisp:3699
+#: src/gui/player-report-window.lisp:134 src/gui/widget.lisp:3700
 msgid "Dodge chance: "
 msgstr "Probabilita' di schivare: "
 
-#: src/gui/player-report-window.lisp:144 src/gui/widget.lisp:3721
+#: src/gui/player-report-window.lisp:144 src/gui/widget.lisp:3722
 msgid "Short range attack chance: "
 msgstr "Probabilita' attacchi a corto raggio: "
 
-#: src/gui/player-report-window.lisp:154 src/gui/widget.lisp:3743
+#: src/gui/player-report-window.lisp:154 src/gui/widget.lisp:3744
 msgid "Long range attack chance: "
 msgstr "Probabilita' attacchi a lungo raggio: "
 
-#: src/gui/player-report-window.lisp:164 src/gui/widget.lisp:3765
+#: src/gui/player-report-window.lisp:164 src/gui/widget.lisp:3766
 msgid "Short Range attack damage: "
 msgstr "Danno con attacchi a corto raggio: "
 
-#: src/gui/player-report-window.lisp:174 src/gui/widget.lisp:3787
+#: src/gui/player-report-window.lisp:174 src/gui/widget.lisp:3788
 msgid "Long Range attack damage: "
 msgstr "Danni con attacchi a lungo raggio:"
 
-#: src/gui/player-report-window.lisp:184 src/gui/widget.lisp:3809
+#: src/gui/player-report-window.lisp:184 src/gui/widget.lisp:3810
 msgid "Edge weapon chance bonus: "
 msgstr "Bonus probabilita' attacchi armi da taglio: "
 
-#: src/gui/player-report-window.lisp:194 src/gui/widget.lisp:3831
+#: src/gui/player-report-window.lisp:194 src/gui/widget.lisp:3832
 msgid "Edge weapon damage bonus: "
 msgstr "Bonus danni armi da taglio: "
 
-#: src/gui/player-report-window.lisp:204 src/gui/widget.lisp:3853
+#: src/gui/player-report-window.lisp:204 src/gui/widget.lisp:3854
 msgid "Impact weapon chance bonus: "
 msgstr "Bonus probabilita' attacchi armi ad impatto: "
 
-#: src/gui/player-report-window.lisp:214 src/gui/widget.lisp:3875
+#: src/gui/player-report-window.lisp:214 src/gui/widget.lisp:3876
 msgid "Impact weapon damage bonus: "
 msgstr "Bonus attacchi armi ad impatto: "
 
-#: src/gui/player-report-window.lisp:224 src/gui/widget.lisp:3897
+#: src/gui/player-report-window.lisp:224 src/gui/widget.lisp:3898
 msgid "Pole weapon chance bonus: "
 msgstr "Bonus probabilita' attacchi con lance: "
 
-#: src/gui/player-report-window.lisp:234 src/gui/widget.lisp:3919
+#: src/gui/player-report-window.lisp:234 src/gui/widget.lisp:3920
 msgid "Pole weapon damage bonus: "
 msgstr "Bonus danni attacchi con lance: "
 
-#: src/gui/player-report-window.lisp:244 src/gui/widget.lisp:3941
+#: src/gui/player-report-window.lisp:244 src/gui/widget.lisp:3942
 msgid "Unlock chance: "
 msgstr "Probabilita' scassinamento serrature: "
 
-#: src/gui/player-report-window.lisp:254 src/gui/widget.lisp:3963
+#: src/gui/player-report-window.lisp:254 src/gui/widget.lisp:3964
 msgid "Deactivate trap chance: "
 msgstr "Probabilita' disattiva trappole: "
 
-#: src/gui/player-report-window.lisp:264 src/gui/widget.lisp:3985
+#: src/gui/player-report-window.lisp:264 src/gui/widget.lisp:3986
 msgid "Reply to attack chance: "
 msgstr "Probabilita contrattacco: "
 
-#: src/gui/player-report-window.lisp:274 src/gui/widget.lisp:4007
+#: src/gui/player-report-window.lisp:274 src/gui/widget.lisp:4008
 msgid "Ambush attack chance: "
 msgstr "Probabilita' attacco di sorpresa: "
 
-#: src/gui/player-report-window.lisp:284 src/gui/widget.lisp:4029
+#: src/gui/player-report-window.lisp:284 src/gui/widget.lisp:4030
 msgid "Spell chance: "
 msgstr "Probabilita' incantesimo: "
 
-#: src/gui/player-report-window.lisp:294 src/gui/widget.lisp:4051
+#: src/gui/player-report-window.lisp:294 src/gui/widget.lisp:4052
 msgid "Attack spell chance: "
 msgstr "Probabilita incantesimo d'attacco: "
 
-#: src/gui/player-report-window.lisp:304 src/gui/widget.lisp:4073
+#: src/gui/player-report-window.lisp:304 src/gui/widget.lisp:4074
 msgid "Level: "
 msgstr "Livello: "
 
-#: src/gui/player-report-window.lisp:314 src/gui/widget.lisp:4083
+#: src/gui/player-report-window.lisp:314 src/gui/widget.lisp:4084
 msgid "Experience points: "
 msgstr "Punti esperienza: "
 
-#: src/gui/player-report-window.lisp:334 src/gui/widget.lisp:4115
+#: src/gui/player-report-window.lisp:334 src/gui/widget.lisp:4116
 msgid "STR: "
 msgstr "STR: "
 
-#: src/gui/player-report-window.lisp:346 src/gui/widget.lisp:4125
+#: src/gui/player-report-window.lisp:346 src/gui/widget.lisp:4126
 msgid "ST:  "
 msgstr "ST:  "
 
-#: src/gui/player-report-window.lisp:356 src/gui/widget.lisp:4135
+#: src/gui/player-report-window.lisp:356 src/gui/widget.lisp:4136
 msgid "DX:  "
 msgstr "DX:  "
 
-#: src/gui/player-report-window.lisp:366 src/gui/widget.lisp:4145
+#: src/gui/player-report-window.lisp:366 src/gui/widget.lisp:4146
 msgid "AG:  "
 msgstr "AG:  "
 
-#: src/gui/player-report-window.lisp:376 src/gui/widget.lisp:4155
+#: src/gui/player-report-window.lisp:376 src/gui/widget.lisp:4156
 msgid "SM:  "
 msgstr "SM:  "
 
-#: src/gui/player-report-window.lisp:386 src/gui/widget.lisp:4165
+#: src/gui/player-report-window.lisp:386 src/gui/widget.lisp:4166
 msgid "EM:  "
 msgstr "EM:  "
 
-#: src/gui/player-report-window.lisp:396 src/gui/widget.lisp:4175
+#: src/gui/player-report-window.lisp:396 src/gui/widget.lisp:4176
 msgid "WG:  "
 msgstr "WG:  "
 
@@ -933,85 +933,85 @@ msgstr "Addestra l'IA"
 msgid "Choose file"
 msgstr "Scegli un file"
 
-#: src/gui/widget.lisp:2669
+#: src/gui/widget.lisp:2670
 msgid "Save Game"
 msgstr "Salva la Partita"
 
-#: src/gui/widget.lisp:2694
+#: src/gui/widget.lisp:2695
 msgid "Are you sure you want to quit?"
 msgstr "Sei sicuro di voler uscire?"
 
-#: src/gui/widget.lisp:3481
+#: src/gui/widget.lisp:3482
 msgid "Class"
 msgstr "Classe"
 
-#: src/gui/widget.lisp:3494
+#: src/gui/widget.lisp:3495
 msgid "Warrior "
 msgstr "Guerriero "
 
-#: src/gui/widget.lisp:3505
+#: src/gui/widget.lisp:3506
 msgid "Wizard "
 msgstr "Mago "
 
-#: src/gui/widget.lisp:3516
+#: src/gui/widget.lisp:3517
 msgid "Healer "
 msgstr "Guaritore "
 
-#: src/gui/widget.lisp:3527
+#: src/gui/widget.lisp:3528
 msgid "Archer "
 msgstr "Arciere "
 
-#: src/gui/widget.lisp:3538
+#: src/gui/widget.lisp:3539
 msgid "Ranger "
 msgstr "Ranger "
 
-#: src/gui/widget.lisp:3545
+#: src/gui/widget.lisp:3546
 msgid "Gender"
 msgstr "Genere"
 
-#: src/gui/widget.lisp:3558
+#: src/gui/widget.lisp:3559
 msgid "Male "
 msgstr "Maschile "
 
-#: src/gui/widget.lisp:3569
+#: src/gui/widget.lisp:3570
 msgid "Female "
 msgstr "Femminile "
 
-#: src/gui/widget.lisp:3581
+#: src/gui/widget.lisp:3582
 msgid "Generate"
 msgstr "Genera"
 
-#: src/gui/widget.lisp:3614
+#: src/gui/widget.lisp:3615
 msgid "Accept"
 msgstr "Accetta"
 
-#: src/gui/widget.lisp:4095
+#: src/gui/widget.lisp:4096
 msgid "Name"
 msgstr "Nome"
 
-#: src/gui/widget.lisp:4106
+#: src/gui/widget.lisp:4107
 msgid "Last name"
 msgstr "Cognome"
 
-#: src/gui/widget.lisp:4197
+#: src/gui/widget.lisp:4198
 msgid "Next"
 msgstr "Successivo"
 
-#: src/gui/widget.lisp:4516 src/gui/widget.lisp:5015
+#: src/gui/widget.lisp:4517 src/gui/widget.lisp:5016
 msgid "Error"
 msgstr "Errore"
 
-#: src/gui/widget.lisp:4523
+#: src/gui/widget.lisp:4524
 msgid "Limit of available player reached!"
 msgstr ""
 "Raggiunto il limite massimo di personaggi che possono essere disposti sulla "
 "mappa!"
 
-#: src/gui/widget.lisp:4526
+#: src/gui/widget.lisp:4527
 msgid "Mesh not specified"
 msgstr "Modello non indicato"
 
-#: src/gui/widget.lisp:4894
+#: src/gui/widget.lisp:4895
 msgid "Generate character"
 msgstr "Genera personaggio"
 
@@ -1046,6 +1046,9 @@ msgid ""
 msgstr ""
 "Ruba un massimo di 30 DMG e avvelena il nemico (per infliggere danno deve "
 "essere indossata un'arma a corto raggio)"
+
+#~ msgid "saved at: ~a-~a-~a ~a:~a"
+#~ msgstr "Salvato il: ~a-~a-~a ~a:~a"
 
 #~ msgid "Notes"
 #~ msgstr "Note"

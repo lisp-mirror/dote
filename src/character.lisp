@@ -297,7 +297,7 @@
       (let ((planner (find-plan object strategy-decision)))
         (set-plan object (goap:build-plan planner strategy-expert player-entity))
         #+(and debug-mode debug-ai)
-        (misc:dbg "NEW current new plan (~a) ~a" (id player-entity) current-plan)
+        (misc:dbg "NEW current new plan (~a) ~a" player-entity current-plan)
         (elaborate-current-tactical-plan object strategy-expert player-entity nil)))))
 
 (defmethod set-interrupt-plan ((object planner-character))

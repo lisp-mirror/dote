@@ -325,9 +325,7 @@ Return the entity attackable, the best attack-spell available and the position t
                   (position         (if-difficult-level>medium (state)
                                       (first-elt sorted-positions)
                                       (random-elt sorted-positions))))
-        (if (battle-utils:range-spell-valid-p launcher-entity target-entity spell) ;; useless?
-            (values target-entity spell position)
-            (values nil nil nil))))))
+        (values target-entity spell position)))))
 
 (defun reachable-healing-friend-heal-spell (launcher-entity
                                                     &key
@@ -348,9 +346,7 @@ Return the target entity, the best attack-spell available and the position to re
                   (position         (if-difficult-level>medium (state)
                                       (first-elt sorted-positions)
                                       (random-elt sorted-positions))))
-        (if (battle-utils:range-spell-valid-p launcher-entity target-entity spell) ;; useless?
-            (values target-entity spell position)
-            (values nil nil nil))))))
+        (values target-entity spell position)))))
 
 (defun reachable-attackable-opponents-damage-spell (launcher-entity
                                                     &key
@@ -370,9 +366,7 @@ Return the entity attackable, the best attack-spell available and the position t
                   (position         (if-difficult-level>medium (state)
                                       (first-elt sorted-positions)
                                       (random-elt sorted-positions))))
-        (if (battle-utils:range-spell-valid-p launcher-entity target-entity spell) ;; useless?
-            (values target-entity spell position)
-            (values nil nil nil))))))
+        (values target-entity spell position)))))
 
 (defun at-least-n-teleport-chain-p (ghost spell n)
   (< (* n (spell:cost spell))

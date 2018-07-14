@@ -311,7 +311,7 @@
 (define-constant +visibility-cone-height+          (sb-cga:vec 0.0 0.0 40.0)
   :test #'sb-cga:vec~)
 
-(define-constant +visibility-ray-displ-incr+       0.01                           :test #'=)
+(define-constant +visibility-ray-displ-incr+       0.1                            :test #'=)
 
 (define-constant +camera-drag-spring-k+           10.0                            :test #'=)
 

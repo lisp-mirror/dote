@@ -495,20 +495,21 @@
     (with-world (world main-state)
       (action-scheduler:with-enqueued-bg-process (world action-scheduler:bg-process-action)
         (widget:activate-planner-icon world)
-        (%update-all-infos            object)
-        (reset-per-turn-visited-tiles object)
-        #+ (and debug-mode debug-ai)
-        (progn
-          (dbg "pole  ~a"      (attack-enemy-pole-positions     object))
-          (dbg "melee ~a"      (attack-enemy-melee-positions    object))
-          (dbg "bow   ~a"      (attack-enemy-bow-positions      object))
-          (dbg "crossbow   ~a" (attack-enemy-crossbow-positions object))
-          (dbg "def-pos ~a"    (fetch-defender-positions        object))
-          (dbg "atk-pos(melee) ~a"
-               (fetch-attacker-positions object
-                                         :filter-fn
-                                         (filter-attack-pos-by-weapon
-                                          #'character:weapon-type-minimum-range-p))))
+        (when (faction-turn-human-p world)
+          (%update-all-infos            object)
+          (reset-per-turn-visited-tiles object)
+          #+ (and debug-mode debug-ai)
+          (progn
+            (dbg "pole  ~a"      (attack-enemy-pole-positions     object))
+            (dbg "melee ~a"      (attack-enemy-melee-positions    object))
+            (dbg "bow   ~a"      (attack-enemy-bow-positions      object))
+            (dbg "crossbow   ~a" (attack-enemy-crossbow-positions object))
+            (dbg "def-pos ~a"    (fetch-defender-positions        object))
+            (dbg "atk-pos(melee) ~a"
+                 (fetch-attacker-positions object
+                                           :filter-fn
+                                           (filter-attack-pos-by-weapon
+                                            #'character:weapon-type-minimum-range-p)))))
         (widget:deactivate-planner-icon world)))
     nil))
 

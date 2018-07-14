@@ -686,7 +686,7 @@ reach the enemy with optimal path?"
                    (entity-ghost ghost)) entity
     (if (or (character:pclass-wizard-p entity-ghost)
             (character:pclass-healer-p entity-ghost))
-        (if (and (pass-1d10 nil nil)
+        (if (and ;; (dice:pass-d6 4)
                  (= (length (player-entities state))
                     1))
             :only-one-opponent
@@ -777,6 +777,7 @@ composed by just one tile, see 'attackable-position-exists-path'"
   (declare (ignore strategy-expert))
   (%has-enough-sp-p entity spell:+spell-tag-teleport+))
 
+;; unused
 (defgoap-test there-is-reachable-help-needed-friend-heal-spell-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (when-let ((available-spells (ai-utils:available-heal-spells entity)))
