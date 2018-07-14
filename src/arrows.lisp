@@ -506,11 +506,15 @@
         (battle-utils:send-spell-event attacker defender :assume-visible nil))))
 
 (defun %enqueue-tooltip (entity message)
-  (billboard:enqueue-tooltip entity
-                             message
-                             :color     billboard:+damage-color+
-                             :font-type gui:+tooltip-font-handle+
-                             :activep   t))
+  #+ debug-mode (misc:dbg "arrow.lisp: showing tooltip ~a" message)
+  (when (renderp entity)
+    (billboard:enqueue-tooltip entity
+                               message
+                               :duration        billboard:+tooltip-slow-duration+
+                               :animation-speed billboard:+tooltip-slow-anim-speed+
+                               :color           billboard:+damage-color+
+                               :font-type       gui:+tooltip-font-handle+
+                               :activep         t)))
 
 (defun launch-spell (spell world attacker defender)
   (let* ((range        (spell:range spell))

@@ -686,7 +686,7 @@ reach the enemy with optimal path?"
                    (entity-ghost ghost)) entity
     (if (or (character:pclass-wizard-p entity-ghost)
             (character:pclass-healer-p entity-ghost))
-        (if (and ;; (dice:pass-d6 4)
+        (if (and (dice:pass-d6 4)
                  (= (length (player-entities state))
                     1))
             :only-one-opponent
@@ -961,7 +961,8 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
   (with-ensure-available-spells (available-spells
                                  entity
                                  ai-utils:available-attack-spells)
-    (ai-utils:attackable-opponents-attack-spell available-spells entity)))
+    (ai-utils:attackable-opponents-attack-spell available-spells entity
+                                                :assume-visible-p nil)))
 
 (defgoap-test can-launch-damage-spell-current-pos-p (strategy-expert entity)
   (declare (ignore strategy-expert))
