@@ -1698,8 +1698,7 @@ values nil, i. e. the ray is not blocked"
           (setf goal-tiles-pos
                 (remove-if-not #'(lambda (a)
                                    (2d-utils:displace-2d-vector (a x y)
-                                     (able-to-see-mesh:placeholder-visible-p defender
-                                                                             x y)))
+                                     (absee-mesh:placeholder-visible-ray-p defender x y)))
                                goal-tiles-pos)))
         ;; remove non reachables
         (setf goal-tiles-pos (ai-utils:remove-non-reachables-pos reach-fn

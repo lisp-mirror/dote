@@ -10,11 +10,28 @@
                                  has-enough-sp-attack-p)
          :effects               ((:curb-threat t))
          :cost                  1)
+  (:name :launch-damage-spell
+         :preconditions         ((:near-enemy-damage-spell t))
+         :context-preconditions (!disobey-1-out-100
+                                 none-needs-help-p
+                                 ;; "!is-status-terror-p"  is implicitly
+                                 ;; managed by has-enough-sp-damage-p
+                                 has-enough-sp-damage-p)
+         :effects               ((:curb-threat t))
+         :cost                  3)
+  (:name :launch-heal-spell
+         :preconditions         ((:near-enemy-heal-spell t))
+         :context-preconditions (has-enough-sp-heal-p
+                                 ;; "!is-status-terror-p"  is implicitly
+                                 ;; managed by has-enough-sp-heal-p
+                                 someone-needs-help-p)
+         :effects               ((:curb-threat t))
+         :cost                  15)
   (:name :go-to-attack-spell-pos
          :preconditions         ()
          :effects               ((:near-enemy-attack-spell t))
          :context-preconditions (exists-reachable-pos-to-launch-attack-spell)
-         :cost                  2)
+         :cost                  1)
   (:name :attack-spell-current-pos
          :preconditions         ()
          :effects               ((:near-enemy-attack-spell t))
@@ -30,28 +47,11 @@
          :effects               ((:near-enemy-heal-spell t))
          :context-preconditions (can-launch-heal-spell-current-pos-p)
          :cost                  1)
-  (:name :launch-heal-spell
-         :preconditions         ((:near-enemy-heal-spell t))
-         :context-preconditions (has-enough-sp-heal-p
-                                 ;; "!is-status-terror-p"  is implicitly
-                                 ;; managed by has-enough-sp-heal-p
-                                 someone-needs-help-p)
-         :effects               ((:curb-threat t))
-         :cost                  15)
   (:name :go-to-heal-spell-pos
          :preconditions         ()
          :effects               ((:near-enemy-heal-spell t))
          :context-preconditions (exists-reachable-pos-to-launch-heal-spell)
          :cost                  2)
-  (:name :launch-damage-spell
-         :preconditions         ((:near-enemy-damage-spell t))
-         :context-preconditions (!disobey-1-out-100
-                                 none-needs-help-p
-                                 ;; "!is-status-terror-p"  is implicitly
-                                 ;; managed by has-enough-sp-damage-p
-                                 has-enough-sp-damage-p)
-         :effects               ((:curb-threat t))
-         :cost                  3)
   (:name :go-to-damage-spell-pos
          :preconditions         ()
          :effects               ((:near-enemy-damage-spell t))

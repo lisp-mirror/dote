@@ -40,7 +40,7 @@
 
 (alexandria:define-constant +pc-a*-cross-weight+        4.05       :test #'=)
 
-(alexandria:define-constant  +default-a*-cost-scaling+ 10.0        :test #'=)
+(alexandria:define-constant  +default-a*-cost-scaling+  2.0        :test #'=)
 
 (defun hour->light-color (h)
   (cond
