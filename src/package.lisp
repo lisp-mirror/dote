@@ -5672,6 +5672,7 @@
    :ghost->weapon-tactics
    :find-defender-id-by-goal-position
    :build-all-attack-tactics
+   :calc-path-tiles-no-doors
    :path-with-concerning-tiles
    :path-w/o-concerning-tiles
    :path-near-goal-w/o-concerning-tiles

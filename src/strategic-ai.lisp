@@ -34,6 +34,8 @@
 
 (define-constant +min-facts-to-build-tree+    150               :test #'=)
 
+(define-constant +scaling-heuristic-cost+     1000.0            :test #'=)
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun fallback-decision-tree ()
     (labels ((make-tree (data &optional (path nil) (children nil))
@@ -238,11 +240,9 @@
            (let* ((pos-a (calculate-cost-position a))
                   (pos-b (calculate-cost-position b)))
              (multiple-value-bind (path total-cost costs)
-                 (blackboard:path-w/o-concerning-tiles blackboard
-                                                       pos-a
-                                                       pos-b
-                                                       :cut-off-first-tile  nil
-                                                       :allow-path-length-1 t)
+                 (calc-path-tiles-no-doors blackboard
+                                           pos-a pos-b
+                                           (heuristic-manhattam +scaling-heuristic-cost+))
                (declare (ignore path costs))
                  total-cost))))
   (let ((all-pairs (ordered-pairs-no-twins entities entities)))
