@@ -768,17 +768,15 @@
            (weapon-type    (character:weapon-type (ghost player)))
            (range          (case weapon-type
                              ((:edge :impact)
-                              (+ 1 level +weapon-melee-range+))
+                              (+ level +weapon-melee-range+))
                              (:pole
-                              (+ 1 level +weapon-pole-range+))
-                             (:bow
-                              (* 2 +weapon-bow-range+))
-                             (:crossbow
-                              (* 2 +weapon-crossbow-range+))
+                              (+ level +weapon-pole-range+))
+                             ((:bow :crossbow)
+                              +weapon-bow-range+)
                              (otherwise
                               (* 2 +weapon-melee-range+))))
            (movement-weight (if (> level +difficult-medium+)
-                                (/ level 100)
+                                (/ level 300)
                                 0)))
       (floor (+ range
                 (* movement-weight
@@ -957,6 +955,10 @@
                       +concerning-tile-value+))
              +concerning-tile-value+))))
 
+(defun concerning-value-set-p (matrix x y)
+  (d> (matrix-elt matrix y x)
+      +concerning-tiles-min-value+))
+
 (defmethod update-concerning-tiles-player ((object blackboard) (player md2-mesh:md2-mesh)
                                            &key
                                              (all-visibles-from-ai
@@ -975,13 +977,32 @@
                                 x y
                                 (matrix-elt concerning-matrix y x)
                                 0.0))) ; ignored
-               (update-single-pass (dangerous-tiles-pos concerning-fn)
+               (clamp-coordinates (coords)
+                 (let* ((matrix (map-state main-state))
+                        (w      (1- (width     matrix)))
+                        (h      (1- (height    matrix))))
+                   (map 'vector #'(lambda (p) (ivec2 (clamp (ivec2-x p) 0 w)
+                                                     (clamp (ivec2-y p) 0 h)))
+                        coords)))
+               (update-single-pass (dangerous-tiles-pos concerning-fn
+                                                        &optional (excluded-id nil))
+                 ;; note:  it is  bugged a  bit because  we are  using
+                 ;; discrete coordinates (so it will miss some tiles);
+                 ;; but *probably** the effect is negligible
                  (loop for point across dangerous-tiles-pos do
-                      (displace-2d-vector (point x y)
-                        (with-check-matrix-borders (concerning-tiles x y)
-                          (when (not (%2d-ray-stopper player x y
-                                                      use-enemy-fov-when-exploring-p))
-                            (update-single-tile concerning-tiles x y concerning-fn)))))))
+                      (let* ((player-pos (calculate-cost-position player))
+                             (segment    (map 'list #'first
+                                              (segment player-pos point
+                                                       :antialiasp nil :width 1))))
+                        ;; we   use  'rest'   to  skip   the  player's
+                        ;; (i.e. the origin) position
+                        (loop named inner for i in (rest segment) do
+                             (displace-2d-vector (i x y)
+                               (if (or (empty@pos-p main-state x y)
+                                       (find (entity-id-in-pos main-state x y)
+                                             excluded-id :test #'=))
+                                   (update-single-tile concerning-tiles x y concerning-fn)
+                                   (return-from inner nil))))))))
         (cond
           ((faction-player-p main-state (id player))
            (when (find (id player) all-visibles-from-ai :test #'=)
@@ -989,20 +1010,22 @@
                     (x-player            (elt position 0))
                     (y-player            (elt position 1))
                     (danger-zone-size    (calc-enemy-danger-zone-size player))
-                    (dangerous-tiles-pos (gen-neighbour-position-in-box x-player
-                                                                        y-player
-                                                                        danger-zone-size
-                                                                        danger-zone-size
-                                                                        :add-center t))
+                    (dangerous-tiles-pos (gen-ring-box-position x-player
+                                                                y-player
+                                                                danger-zone-size
+                                                                danger-zone-size))
                     (concerning-fn (concerning-tile-default-mapping-clsr x-player
                                                                          y-player
-                                                                         danger-zone-size)))
+                                                                         danger-zone-size))
+                    (clamped-danger-tiles (clamp-coordinates dangerous-tiles-pos)))
                (let* ((all-visibles     (if use-enemy-fov-when-exploring-p
                                             (all-visibles-by-entity main-state player)
                                             (all-visibles-ray-by-entity main-state player)))
                       (all-visibles-ids (mapcar #'identificable:id all-visibles)))
-                 (update-single-pass dangerous-tiles-pos concerning-fn)
-                 ;; 1st pass
+                 ;; first pass
+                 (update-single-pass clamped-danger-tiles concerning-fn)
+                 ;; marks   occupied   by   character   positions   as
+                 ;; concerning
                  (map nil #'(lambda (a)
                               (let ((pos (calculate-cost-position a)))
                                 (when (find pos dangerous-tiles-pos :test #'ivec2=)
@@ -1010,13 +1033,13 @@
                                     (update-single-tile concerning-tiles x y concerning-fn)))))
                       all-visibles)
                  ;; 2nd pass
-                 ;; we are going to ignore in %2d-ray-stopper all characters (for ray test)
-                 (let ((absee-mesh:*ray-test-id-entities-ignored* all-visibles-ids))
-                   (update-single-pass dangerous-tiles-pos concerning-fn)))
+                 ;; we  are going  to ignore  all characters  (for ray
+                 ;; test)
+                 (update-single-pass clamped-danger-tiles concerning-fn all-visibles-ids))
                ;; add the player (human) position
                (setf (matrix-elt concerning-tiles y-player x-player)
                      +concerning-tile-value+)
-               ;; increase the  tile the player  is facing based  on the
+               ;; increase the tile the player  is facing based on the
                ;; weapon they are carrying
                (when increase-facing-p
                  (increase-concerning-tile-facing-player object
