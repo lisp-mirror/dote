@@ -193,10 +193,10 @@
   (handler-bind ((nix:enoent #'(lambda (c)
                                  (declare (ignore c))
                                  (invoke-restart 'use-value nil))))
-    (let ((atime-file  (get-stat-atime file))
+    (let ((mtime-file  (get-stat-mtime file))
           (mtimes-deps (remove-if #'null (mapcar #'get-stat-mtime dependencies))))
-      (if atime-file
-          (remove-if #'(lambda (mtime) (<= mtime atime-file)) mtimes-deps)
+      (if mtime-file
+          (remove-if #'(lambda (mtime) (<= mtime mtime-file)) mtimes-deps)
           t))))
 
 (defun file-exists-p (f)

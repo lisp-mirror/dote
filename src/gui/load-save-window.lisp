@@ -140,18 +140,19 @@
                      (res-action     res-action)
                      (players-only-p players-only-p)) win
       (when res-action
-        (let ((render-window (game-state:fetch-render-window state)))
-          (if players-only-p
-              (progn
-                (saved-game:load-players render-window res-action)
-                (widget:hide-and-remove-parent-cb w e))
-              (saved-game:load-game    render-window res-action))
+        (let* ((render-window (game-state:fetch-render-window state))
+               (file-valid-p  (if players-only-p
+                                  (progn
+                                    (saved-game:load-players render-window res-action)
+                                    (widget:hide-and-remove-parent-cb w e))
+                                  (saved-game:load-game render-window res-action))))
           ;; select a player
-          (game-state:with-world (world state)
-            (with-accessors ((player-entities game-state:player-entities)) state
-              (let* ((selected     (first-elt player-entities)))
-                (world:bind-entity-to-world world selected)
-                (keyboard-world-navigation:slide-to-active-player world)))))))))
+          (when file-valid-p
+            (game-state:with-world (world state)
+              (with-accessors ((player-entities game-state:player-entities)) state
+                (let* ((selected     (first-elt player-entities)))
+                  (world:bind-entity-to-world world selected)
+                  (keyboard-world-navigation:slide-to-active-player world))))))))))
 
 (defun write-screenshot-for-saving (world filename)
   (let* ((pixmap (cl-gl-utils:with-render-to-pixmap (*window-w* *window-h*)

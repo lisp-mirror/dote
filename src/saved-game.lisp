@@ -891,9 +891,11 @@
                 (update-all-visibility-state window-game-state)
                 ;; start a new turn
                 (let ((start-event (make-instance 'game-event:start-turn)))
-                  (game-event:propagate-start-turn start-event)))))
-          (error-message-save-game-outdated window))))
-  window)
+                  (game-event:propagate-start-turn start-event))))
+            window)
+          (progn
+            (error-message-save-game-outdated window)
+            nil)))))
 
 (defun load-players (window resource-dir)
   (let ((saved-dump (make-instance 'saved-game))
@@ -922,6 +924,8 @@
                do
                  (place-player-in-map-destination* world player 0 0 +pc-type+
                                                    root-compiled-shaders
-                                                   :force-position nil)))
-          (error-message-save-game-outdated window))))
-  window))
+                                                   :force-position nil))
+            window)
+          (progn
+            (error-message-save-game-outdated window)
+            nil))))))
