@@ -54,7 +54,7 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
 ** Dependency
 
    Of course a Common lisp  compiler is mandatory, the compilation has
-   been  tested only  with  SBCL version  1.4.7  on Debian  GNU/Linux
+   been  tested only  with  SBCL version  1.4.9  on Debian  GNU/Linux
    (testing).
 
    dote depends on the following lisp libraries:
@@ -93,7 +93,7 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
 
 * BUGS
 
-  Please send bug report to cage at katamail dot com
+  Please send bug report to cage-dev at twistfold dot it
   or point your browser to the [[https://notabug.org/cage/dote/][notabug repository]].
 
 * License
@@ -106,13 +106,14 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
 
   Altough  any efforts  has  been  put to  make  the  list of  credits
   exaustive,  errors are  always possible.  Please send  correction to
-  cage at katamail dot com.
+  cage-dev at twistfold dot it.
 
 * Contributing
   Any  help  is  appreciated.   Artists, translators  and  coders  are
-  needed. If you intend to contribute please send a message to cage at
-  katamail  dot  com or,  alternatively,  point  your browser  to  the
-  [[https://notabug.org/cage/dote/issues][issue tracker]]
+  needed.  If  you intend  to  contribute  please  send a  message  to
+  cage-dev  at twistfold  dot  it com  or,  alternatively, point  your
+  browser    to   the
+  [[https://notabug.org/cage/dote/issues][issue tracker]].
 
 * NO WARRANTY
 

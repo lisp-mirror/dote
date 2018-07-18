@@ -1,6 +1,6 @@
 (asdf:defsystem :dote
   :description "Dawn of the Era: A tactical game"
-  :author      "cage <cage@katamail.com>"
+  :author      "cage"
   :license     "GPLv3"
   :version     "0.0.1"
   :pathname    "src"
