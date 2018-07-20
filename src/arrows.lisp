@@ -86,6 +86,7 @@
    (not (particles:particles-cluster-p             entity))
    (not (water-mesh-p                              entity))
    (not (arrowp                                    entity))
+   (not (entity-dead-p                             entity))
    (renderp                                        entity)))
 
 (defun %overlap-labyrints-p (aabb-arrow vec-object)

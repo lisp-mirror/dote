@@ -91,6 +91,10 @@
 
 (defgeneric entity-dead-p (object))
 
+(defmethod entity-dead-p (object)
+  (declare (ignore object))
+  nil)
+
 (defgeneric calculate-cost-position (object))
 
 (defmethod side-dir ((object entity))
