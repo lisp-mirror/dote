@@ -92,7 +92,12 @@
     :initarg  :turn-faction
     :accessor turn-faction)))
 
-(defevent start-turn (end-turn) ())
+(defevent start-turn (end-turn)
+  ((increment-turn-count
+    :initarg  :increment-turn-count
+    :initform t
+    :reader   increment-turn-count-p
+    :writer   (setf increment-turn-count))))
 
 (defevent update-visibility ()
   ((from-event

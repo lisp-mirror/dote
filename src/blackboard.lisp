@@ -67,10 +67,15 @@
   ((entity-id
     :initform nil
     :initarg :entity-id
-    :accessor entity-id)))
+    :accessor entity-id)
+   (fingerprint
+    :initform ""
+    :initarg :fingerprint
+    :accessor fingerprint)))
 
 (defmethod marshal:class-persistant-slots ((object entity-taker))
-  '(entity-id))
+  '(entity-id
+    fingerprint))
 
 (defclass def-target (entity-taker)
   ((goal-pos
@@ -95,8 +100,12 @@
 (defmethod print-object ((object def-target) stream)
   (format stream "~a[~a] age ~a" (entity-id object) (goal-pos object) (age object)))
 
-(defun make-defender-target (id age &optional (goal-pos '()))
-  (make-instance 'def-target :entity-id id :goal-pos goal-pos :age age))
+(defun make-defender-target (id age fingerprint &optional (goal-pos '()))
+  (make-instance 'def-target
+                 :entity-id   id
+                 :goal-pos    goal-pos
+                 :age         age
+                 :fingerprint fingerprint))
 
 (defclass attacker (entity-taker)
   ((target-id
@@ -382,15 +391,25 @@
 
 (defun remove-attack-starved (blackboard positions)
   (with-accessors ((main-state main-state)) blackboard
-    (let* ((all-visibles-ids (all-player-id-visible-from-ai main-state))
+    (let* ((all-visibles-ids          (all-player-id-visible-from-ai main-state))
+           (all-visibles-entities     (map 'list #'(lambda (id)
+                                                     (find-entity-by-id main-state id))
+                                           all-visibles-ids))
+           (all-visibles-fingerptints (map 'list
+                                           #'(lambda (e)
+                                               (character:calc-fingerprint (ghost e)))
+                                           all-visibles-entities))
            (age-updated      (mapcar #'(lambda (a) ;; decrease age of non visible pos
-                                         (if (not (find (entity-id a) all-visibles-ids
-                                                        :test #'=))
-                                             (setf (age a) (1- (age a))) ; not visible
+                                         (if (or (find (fingerprint a)
+                                                       all-visibles-fingerptints
+                                                       :test #'string=)
+                                                 (find (entity-id a) all-visibles-ids
+                                                       :test #'=))
                                              (progn                      ; visible
                                                (setf (age a)
                                                      (calc-def-target-age main-state))
-                                               (setf (goal-pos a) nil)))
+                                               (setf (goal-pos a) nil))
+                                             (setf (age a) (1- (age a)))) ; not visible
                                          a)
                                      positions))
            (not-starved      (remove-if #'(lambda (a) (<= (age a) 0)) ;; remove starved
@@ -812,13 +831,17 @@
 
 (defun all-player-id-visible-from-ai (game-state)
   "Note: loop-ai-entities will skip death characters"
+    (map 'list #'id (all-players-visible-from-ai game-state)))
+
+(defun all-players-visible-from-ai (game-state)
+  "Note: loop-ai-entities will skip death characters"
   (let ((all-visibles '()))
     (loop-ai-entities game-state
                      #'(lambda (v)
                          (let ((visibles (able-to-see-mesh:other-faction-visible-players v)))
                            (loop for visible in visibles do
                                 (pushnew visible all-visibles :key #'id :test #'=)))))
-    (map 'list #'id all-visibles)))
+    all-visibles))
 
 (defun all-other-factions-can-see-entity (game-state entity)
   "Note: map-fn will skip death characters"
@@ -1232,45 +1255,54 @@ values nil, i. e. the ray is not blocked"
      (%update-attack-layer ,pos ,layer)))
 
 (defun push-target-position (bag player target-pos)
-  (let* ((id-player (id player))
-         (game-state (state player))
-         (blackboard (blackboard game-state)))
-    (labels ((%push ()
-               (let ((target-found (find-if #'(lambda (a) (= (entity-id a) id-player)) bag)))
-                 (if target-found
-                     (pushnew target-pos (goal-pos target-found) :test #'ivec2=)
-                     (push (make-defender-target id-player
-                                                 (calc-def-target-age game-state)
-                                                 (list target-pos))
-                           bag)))
-               bag)
-             (%find-maybe-remove-pos (target-pos bag)
-               "if nil it is safe to add the position"
-               (let ((target-with-pos (find-if #'(lambda (a) (find target-pos a :test #'ivec2=))
-                                               bag
-                                               :key #'goal-pos))
-                     (removep         (die-utils:pass-d2 1))) ; roll a die
-                 (if target-with-pos ; another target has the same slot
-                     (if removep
-                         (progn
-                           (setf (goal-pos target-with-pos)  ; remove the old slot
-                                 (remove target-pos (goal-pos target-with-pos) :test #'ivec2=))
-                           nil)
-                         t)
-                     nil)))
-             (%find-pos (blackboard target-pos)
-               (with-accessors ((attack-enemy-pole-positions     attack-enemy-pole-positions)
-                                (attack-enemy-melee-positions    attack-enemy-melee-positions)
-                                (attack-enemy-bow-positions      attack-enemy-bow-positions)
-                                (attack-enemy-crossbow-positions attack-enemy-crossbow-positions))
-                   blackboard
-                 (or (%find-maybe-remove-pos target-pos attack-enemy-pole-positions)
-                     (%find-maybe-remove-pos target-pos attack-enemy-melee-positions)
-                     (%find-maybe-remove-pos target-pos attack-enemy-bow-positions)
-                     (%find-maybe-remove-pos target-pos attack-enemy-crossbow-positions)))))
-      (if (not (%find-pos blackboard target-pos))
-          (%push)
-          bag))))
+  (with-accessors ((id-player  id)
+                   (ghost      ghost)
+                   (game-state state)) player
+    (with-accessors ((blackboard blackboard)) game-state
+      (labels ((%push ()
+                 (let ((target-found (find-if #'(lambda (a) (= (entity-id a) id-player))
+                                              bag)))
+                   (if target-found
+                       (pushnew target-pos (goal-pos target-found) :test #'ivec2=)
+                       (push (make-defender-target id-player
+                                                   (calc-def-target-age game-state)
+                                                   (character:calc-fingerprint ghost)
+                                                   (list target-pos))
+                             bag)))
+                 bag)
+               (%find-maybe-remove-pos (target-pos bag)
+                 "if nil it is safe to add the position"
+                 (let ((target-with-pos (find-if #'(lambda (a) (find target-pos a
+                                                                     :test #'ivec2=))
+                                                 bag
+                                                 :key #'goal-pos))
+                       (removep         (die-utils:pass-d2 1))) ; roll a die
+                   (if target-with-pos ; another target has the same slot
+                       (if removep
+                           (progn
+                             (setf (goal-pos target-with-pos)  ; remove the old slot
+                                   (remove target-pos (goal-pos target-with-pos)
+                                           :test #'ivec2=))
+                             nil)
+                           t)
+                       nil)))
+               (%find-pos (blackboard target-pos)
+                 (with-accessors ((attack-enemy-pole-positions
+                                   attack-enemy-pole-positions)
+                                  (attack-enemy-melee-positions
+                                   attack-enemy-melee-positions)
+                                  (attack-enemy-bow-positions
+                                   attack-enemy-bow-positions)
+                                  (attack-enemy-crossbow-positions
+                                   attack-enemy-crossbow-positions))
+                     blackboard
+                   (or (%find-maybe-remove-pos target-pos attack-enemy-pole-positions)
+                       (%find-maybe-remove-pos target-pos attack-enemy-melee-positions)
+                       (%find-maybe-remove-pos target-pos attack-enemy-bow-positions)
+                       (%find-maybe-remove-pos target-pos attack-enemy-crossbow-positions)))))
+        (if (not (%find-pos blackboard target-pos))
+            (%push)
+            bag)))))
 
 (defun %calc-new-goal-attack-position-bag (player new-valid-positions old-position-bag)
   (loop for position in new-valid-positions do

@@ -442,7 +442,7 @@
        (multiple-value-bind (n d)
            (plane-equation (first vertex) (second vertex) (third vertex))
          (every #'identity
-                (mapcar #'(lambda(a) (epsilon= (dot-product a n) d))
+                (mapcar #'(lambda (a) (epsilon= (dot-product a n) d))
                         vertex)))))))
 
 (defun same-plane-p* (&rest vertex)

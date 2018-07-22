@@ -344,6 +344,8 @@
       (with-accessors ((number-pc@start-turn  blackboard:number-pc@start-turn)
                        (number-npc@start-turn blackboard:number-npc@start-turn)) blackboard
         ;;(tg:gc :full t)
+        (when (game-event:increment-turn-count-p event)
+          (incf (game-turn (main-state object))))
         (when (not (battle-utils:someone-won-p main-state))
           (strategic-ai:save-ai-tree-data object)
           (strategic-ai:register-strategy-from-human object)
@@ -376,7 +378,6 @@
     (remove-all-removeable-from-gui object)
     (clean-characters-logs          object ai-logger:+ai-log-clean-end-turn+)
     ;;(remove-entity-if (gui object) #'(lambda (a) (typep a 'widget:message-window)))
-    (incf (game-turn (main-state object))) ;; new turn starts here!
     nil))
 
 (defmethod remove-entity-by-id ((object world) id)

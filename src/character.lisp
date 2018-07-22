@@ -82,6 +82,7 @@
              level
              age)
            (call-next-method)))
+
 ;;;; interaction
 
 (defmethod print-object ((object np-character) stream)
@@ -94,11 +95,30 @@
           (last-name  object)
           +gui-static-text-delim+))
 
+(defgeneric calc-fingerprint (object))
+
 (defgeneric age-object-for-humans (object))
 
 (defun get-decay-points (a-character)
   (let* ((decay-params (interaction-get-decay a-character)))
     (and decay-params (interaction:points decay-params))))
+
+(defmethod calc-fingerprint ((object np-character))
+  (with-accessors ((first-name     first-name)
+                   (last-name      last-name)
+                   (description    description)
+                   (weight         weight)
+                   (damage-points  damage-points)
+                   (level          level)
+                   (age            age)) object
+      (format nil "~a ~a ~a ~,2f ~,2f ~,2f ~,2f"
+              first-name
+              last-name
+              description
+              weight
+              damage-points
+              level
+              age)))
 
 (defmethod age-object-for-humans ((object np-character))
   (if (decay-prevented-p object)

@@ -2637,7 +2637,8 @@
    :unregister-for-end-turn
    :propagate-end-turn
    :start-turn
-   :start-turn-count
+   :increment-turn-count
+   :increment-turn-count-p
    :register-for-start-turn
    :unregister-for-start-turn
    :propagate-start-turn
@@ -3485,6 +3486,7 @@
    :portrait
    :first-name
    :last-name
+   :calc-fingerprint
    :model-origin-dir
    :current-path
    :current-plan

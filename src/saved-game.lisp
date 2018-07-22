@@ -890,7 +890,8 @@
                 ;; update all visibility
                 (update-all-visibility-state window-game-state)
                 ;; start a new turn
-                (let ((start-event (make-instance 'game-event:start-turn)))
+                (let ((start-event (make-instance 'game-event:start-turn
+                                                  :increment-turn-count nil)))
                   (game-event:propagate-start-turn start-event))))
             window)
           (progn
