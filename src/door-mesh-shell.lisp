@@ -22,6 +22,8 @@
     :initarg  :openp
     :accessor openp)))
 
+(gen-type-p door-mesh-shell)
+
 (defun door-opened-p (door-mesh)
   (openp door-mesh))
 

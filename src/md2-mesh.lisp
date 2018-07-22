@@ -525,6 +525,23 @@ to take care of that"
              +open-terrain-cost+)
       (orb-inactive player))))
 
+(defun %stop-movement-ai (player end-event interrupting-id interrupt-plan-if-ai-p)
+
+  (with-accessors ((ghost ghost)
+                   (state state)) player
+    (declare (ignorable state))
+    #+debug-mode (assert (faction-ai-p state (id player)))
+    (if interrupt-plan-if-ai-p
+        (progn
+          (put-in-working-memory player +w-memory-interrupting-by-id+ interrupting-id)
+          (misc:dbg "stop movement from ~a" interrupting-id)
+          (when (not (ignore-interrupt-p player))
+            (misc:dbg "interrupt from ~a" interrupting-id)
+            (set-interrupt-plan ghost)
+            (propagate-move-entity-along-path-end-event end-event)))
+        (propagate-move-entity-along-path-end-event end-event))
+    player))
+
 (defun %stop-movement (player &key
                                 (decrement-movement-points t)
                                 (interrupt-plan-if-ai      t)
@@ -540,11 +557,9 @@ to take care of that"
         (when decrement-movement-points
           (decrement-move-points-entering-tile player)
           (maybe-set-inactive-orb player))
-        (when (and interrupt-plan-if-ai
-                   (faction-ai-p state (id player)))
-          (put-in-working-memory player +w-memory-interrupting-by-id+ interrupting-id)
-          (set-interrupt-plan ghost))
-        (propagate-move-entity-along-path-end-event end-event)
+        (if (faction-ai-p state (id player))
+            (%stop-movement-ai player end-event interrupting-id interrupt-plan-if-ai)
+            (propagate-move-entity-along-path-end-event end-event))
         player))))
 
 (defun %try-deactivate-trap-cb (world player trap)
@@ -622,7 +637,7 @@ to take care of that"
               (%stop-movement player
                               :decrement-movement-points t
                               :interrupt-plan-if-ai      t
-                              :interrupting-id            +w-memory-interrupt-id-trap+)
+                              :interrupting-id           trap-ostile)
               (%try-deactivate-trap-from-ai world player trap-ostile)))
           (send-update-visibility-event player event)
           (send-refresh-toolbar-event))))))
@@ -2391,7 +2406,8 @@ to take care of that"
           (and trap
                (not (eq (my-faction object)
                         (my-faction trap)))
-               trap)))))
+               trap))
+        nil)))
 
 (defmethod place-trap ((object md2-mesh-shell) trap-ghost)
   (with-accessors ((state            state)

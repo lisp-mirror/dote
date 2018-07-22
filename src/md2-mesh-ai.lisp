@@ -289,58 +289,63 @@
   (with-spawn-if-presence-diff (object 'update-blackboard-infos)
     (%clean-plan object (list :ai-tree))))
 
+
+(defun %get-interrupt-entity (state id)
+  (and id
+       (numberp id)
+       (find-entity-by-id state id)))
+
+(defun ignore-interrupt-p (npc)
+  (with-accessors ((state state)
+                   (ghost ghost)) npc
+    (let* ((interrupting-id        (get-from-working-memory npc
+                                                            +w-memory-interrupting-by-id+))
+           (interrupting-entity    (%get-interrupt-entity state interrupting-id))
+           (saved-interrupt-id     (get-from-working-memory npc
+                                                            +w-memory-saved-interrupting-id+))
+           (saved-interrupt-entity (%get-interrupt-entity state saved-interrupt-id)))
+      (cond
+        ((null interrupting-entity)
+         nil)
+        ((door-mesh-shell-p interrupting-entity) ;; opening a door
+         (let* ((all-visible-now    (ai-utils:all-visible-opponents-id npc))
+                (all-visible-before (get-memory-seen-before-door npc)))
+           (if (visible-more-p all-visible-before
+                               all-visible-now)
+               nil
+               (progn
+                 #+(and debug-mode debug-ai)
+                 (misc:dbg "interrupt: ignoring opening door")
+                 t))))
+        ((trap-mesh-shell-p interrupting-entity)
+         #+(and debug-mode debug-ai)
+         (misc:dbg "interrupt: ignoring after trap")
+         t)
+        ((and (get-memory-ignore-interrupt-from npc)
+              (= (get-memory-ignore-interrupt-from npc)
+                 interrupting-id))
+         #+(and debug-mode debug-ai)
+         (misc:dbg "interrupt: ignoring as the same character is met")
+         t)
+        ((null saved-interrupt-entity)
+         nil)
+        ((/= interrupting-entity
+             saved-interrupt-entity)
+         nil)
+        (t
+         #+(and debug-mode debug-ai)
+         (misc:dbg "interrupt: ignored")
+         t)))))
+
 (defmethod actuate-plan ((object md2-mesh)
                          strategy
                          (action (eql ai-utils:+interrupt-action+)))
-    (with-accessors ((state state)
-                     (ghost ghost)) object
-      (flet ((get-interrupt-entity (id)
-               (and id
-                    (numberp id)
-                    (find-entity-by-id state id)))
-             (clean-all ()
-               (with-spawn-if-presence-diff (object 'update-all-blackboard-infos)
-                 (%clean-plan-and-blacklist object)))
-             (clean-minimal ()
-               (character:clear-blacklist ghost)))
-        (let* ((interrupting-id        (get-from-working-memory object
-                                                                +w-memory-interrupting-by-id+))
-               (interrupting-entity    (get-interrupt-entity interrupting-id))
-               (saved-interrupt-id     (get-from-working-memory object
-                                                                +w-memory-saved-interrupting-id+))
-               (saved-interrupt-entity (get-interrupt-entity saved-interrupt-id)))
-          (cond
-            ;; TODO check: all this stuff related to door is probably useless
-            ((eq interrupting-id +w-memory-interrupt-id-door+)
-             (let* ((all-visible-now    (ai-utils:all-visible-opponents-id object))
-                    (all-visible-before (get-memory-seen-before-door object)))
-               (if (visible-more-p all-visible-before
-                                   all-visible-now)
-                   (clean-all)
-                   (progn
-                     #+(and debug-mode debug-ai)
-                     (misc:dbg "interrupt: ignoring cleaning cache after opening door")
-                     (clean-minimal)))))
-            ((and (get-memory-ignore-interrupt-from object)
-                  (= (get-memory-ignore-interrupt-from object)
-                     interrupting-id))
-             #+(and debug-mode debug-ai)
-             (misc:dbg "interrupt: ignoring cleaning cache")
-             (clean-minimal))
-            ((and (null interrupting-entity)
-                  (null saved-interrupt-entity))
-             (clean-all))
-            ((or (null interrupting-entity)
-                 (null saved-interrupt-entity))
-             (clean-all))
-            ((/= interrupting-entity
-                 saved-interrupt-entity)
-             (clean-all))
-            (t
-             #+(and debug-mode debug-ai)
-             (misc:dbg "interrupt: no cleaning cache")
-             (clean-minimal)))
-          (put-in-working-memory object +w-memory-saved-interrupting-id+ interrupting-id)))))
+  (with-accessors ((state state)
+                   (ghost ghost)) object
+    (let ((interrupting-id (get-from-working-memory object +w-memory-interrupting-by-id+)))
+      (with-spawn-if-presence-diff (object 'update-all-blackboard-infos)
+        (%clean-plan-and-blacklist object))
+      (put-in-working-memory object +w-memory-saved-interrupting-id+ interrupting-id))))
 
 (defmethod actuate-plan ((object md2-mesh)
                          strategy

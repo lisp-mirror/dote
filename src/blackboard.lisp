@@ -1197,8 +1197,6 @@ values nil, i. e. the ray is not blocked"
                                                                                (elt a 1))
                                                                nil)))
                                            goal-tiles-pos))
-           (setf goal-tiles-pos (remove-if (trivial-unreachable-fn player)
-                                           goal-tiles-pos))
            ;; remove tiles from the target's point of view
            (setf goal-tiles-pos (remove-from-player-pov goal-tiles-pos
                                                         player

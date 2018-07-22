@@ -584,6 +584,15 @@ path is removed
                                                            :mp      ai-movement-points))))
      ,@body))
 
+(defun trivial-unreachable-p (blackboard start-pos end-pos ai-movement-points)
+  (with-accessors ((main-state main-state)) blackboard
+    (let ((cost@pos (game-state:get-cost main-state
+                                         (2d-utils:seq-x end-pos)
+                                         (2d-utils:seq-y end-pos))))
+      (or (< ai-movement-points cost@pos)
+          (< ai-movement-points
+             (map-utils:map-manhattam-distance-cost end-pos start-pos))))))
+
 (defcached-list reachable-p-w/concening-tiles-fn ((blackboard
                                                    &key
                                                    (cut-off-first-tile t)
@@ -596,18 +605,21 @@ path is removed
         (let ((cached (get-from-cache ai-position defender-position ai-movement-points)))
           (if cached
               (reachable-cache-value-res cached)
-              (multiple-value-bind (path cumulative-cost costs)
-                  (path-with-concerning-tiles blackboard
-                                              ai-position
-                                              defender-position
-                                              :cut-off-first-tile  cut-off-first-tile
-                                              :allow-path-length-1 allow-path-length-1)
-                (declare (ignore costs))
-                (let ((res (and path (<= cumulative-cost ai-movement-points))))
-                  (put-in-cache ai-position defender-position ai-movement-points res)
-                  (reachable-cache-value-res (get-from-cache ai-position
-                                                             defender-position
-                                                             ai-movement-points)))))))))
+              (if (trivial-unreachable-p blackboard ai-position defender-position
+                                         ai-movement-points)
+                  (put-in-cache ai-position defender-position ai-movement-points nil)
+                  (multiple-value-bind (path cumulative-cost costs)
+                      (path-with-concerning-tiles blackboard
+                                                  ai-position
+                                                  defender-position
+                                                  :cut-off-first-tile  cut-off-first-tile
+                                                  :allow-path-length-1 allow-path-length-1)
+                    (declare (ignore costs))
+                    (let ((res (and path (<= cumulative-cost ai-movement-points))))
+                      (put-in-cache ai-position defender-position ai-movement-points res)
+                      (reachable-cache-value-res (get-from-cache ai-position
+                                                                 defender-position
+                                                                 ai-movement-points))))))))))
 
 (defcached-list reachable-p-w/concening-tiles-unlimited-cost-fn
     ((blackboard) :equal-fn #'%reach-cache-value-eq)
@@ -640,14 +652,17 @@ path is removed
 
 (defun reachable-p-w/o-concening-tiles-fn (blackboard)
   #'(lambda (ai-position defender-position ai-movement-points)
-      (multiple-value-bind (path cumulative-cost costs)
-          (path-w/o-concerning-tiles blackboard ai-position defender-position)
-        (declare (ignore costs))
-        (and path (<= cumulative-cost ai-movement-points)))))
+      (if (trivial-unreachable-p blackboard ai-position defender-position
+                               ai-movement-points)
+          nil
+          (multiple-value-bind (path cumulative-cost costs)
+              (path-w/o-concerning-tiles blackboard ai-position defender-position)
+            (declare (ignore costs))
+            (and path (<= cumulative-cost ai-movement-points))))))
 
 (defun attacker-class->attacker (game-state atk)
   (let* ((entity (entity:find-entity-by-id game-state (blackboard:entity-id atk)))
-         (mp     (character:current-movement-points    (entity:ghost entity)))
+         (mp     (character:current-movement-points   (entity:ghost entity)))
          (pos    (mesh:calculate-cost-position entity)))
     (cons pos mp)))
 

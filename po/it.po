@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: dote 0.0.1\n"
 "Report-Msgid-Bugs-To: cage@katamail.com\n"
 "POT-Creation-Date: 2018-07-14 12:18+0200\n"
-"PO-Revision-Date: 2018-07-14 12:20+0200\n"
+"PO-Revision-Date: 2018-07-21 13:19+0200\n"
 "Last-Translator: cage <cage@katamail.com>\n"
 "Language-Team: Italian\n"
 "Language: it\n"
@@ -707,7 +707,7 @@ msgstr "Inventario"
 #: src/gui/load-save-window.lisp:70
 #, lisp-format
 msgid "saved at: ~d-~2,'0d-~2,'0d ~2,'0d:~2,'0d"
-msgstr "Salavataggio del: ~d-~2,'0d-~2,'0d ~2,'0d:~2,'0d"
+msgstr "Salvataggio del: ~d-~2,'0d-~2,'0d ~2,'0d:~2,'0d"
 
 #: src/gui/load-save-window.lisp:108
 msgid "No game is saved here"

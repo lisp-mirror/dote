@@ -4217,6 +4217,7 @@
    :window-mesh-shell
    :decorated-wall-mesh-shell
    :door-mesh-shell
+   :door-mesh-shell-p
    :door-opened-p
    :door-closed-p
    :trap-mesh-shell

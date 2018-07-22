@@ -31,10 +31,6 @@
 
 (define-constant +w-memory-ignore-interrupt-id+       :ignore-interrupt-id    :test #'eq)
 
-(define-constant +w-memory-interrupt-id-door+         :door                   :test #'eq)
-
-(define-constant +w-memory-interrupt-id-trap+         :trap                   :test #'eq)
-
 (define-constant +w-memory-opponents-before-open-door+
     :opponents-before-open-door  :test #'eq)
 
