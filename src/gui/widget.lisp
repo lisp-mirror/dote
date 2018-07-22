@@ -2543,7 +2543,8 @@
                      (door-event (game-event:make-simple-event-w-dest 'game-event:close-door-event
                                                                       (id bound-player)
                                                                       id-door)))
-                (game-event:propagate-close-door-event door-event))))))))
+                (game-event:propagate-close-door-event door-event)
+                (game-event:send-update-visibility-event bound-player door-event))))))))
   t)
 
 (defun %find-entity (state pos)

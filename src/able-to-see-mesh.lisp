@@ -527,7 +527,7 @@ Also note that that ray is long as much as the height of the visibility cone of 
 
 (defun %blocked-by-ray-p (ray-ends vec-object)
   (loop for a across vec-object do
-       (when (insidep (aabb a) ray-ends)
+       (when (insidep (actual-aabb-for-visibility a) ray-ends)
          (return-from %blocked-by-ray-p a)))
   nil)
 

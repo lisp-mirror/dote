@@ -30,6 +30,12 @@
 (defun door-closed-p (door-mesh)
   (not (door-opened-p door-mesh)))
 
+(defmethod actual-aabb-for-bullets ((object door-mesh-shell))
+  (standard-aabb object))
+
+(defmethod actual-aabb-for-visibility ((object door-mesh-shell))
+  (standard-aabb object))
+
 (defmethod rendering-needed-p ((object door-mesh-shell) renderer)
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (with-camera (camera renderer)
