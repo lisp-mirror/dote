@@ -241,7 +241,8 @@
    :*parallel-setf-queue*
    :with-mutex
    :parallel-setf
-   :build-bg-process))
+   :build-bg-process
+   :abort-all))
 
 (defpackage :misc-utils
   (:use :cl

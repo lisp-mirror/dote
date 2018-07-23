@@ -75,3 +75,6 @@
              (and  (functionp cleanup-fn)
                    (funcall cleanup-fn))
              results))))))
+
+(defun abort-all ()
+  (lparallel:kill-tasks :default :dry-run nil))

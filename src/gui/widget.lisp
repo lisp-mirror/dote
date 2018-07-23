@@ -2690,6 +2690,7 @@
       (with-accessors ((main-state main-state)) bound-world
         (flet ((quit-cb (a b)
                  (declare (ignore a b))
+                 (parallel-utils:abort-all)
                  (sdl2.kit-utils:close-game (game-state:fetch-render-window main-state)))
                (close-cb (w e)
                  (hide-and-remove-parent-cb w e)))
