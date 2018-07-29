@@ -181,6 +181,13 @@
     :documentation "An alist of current planners, key is a strategy as in contsnt.lisp (i.e)
                     +explore-strategy+, +attack-strategy+, +defend-strategy+
                     +retreat-strategy+")
+   (original-planners
+    :initform '()
+    :initarg  :original-planners
+    :accessor original-planners
+    :documentation "An alist of current planners, key is a strategy as in contsnt.lisp (i.e)
+                    +explore-strategy+, +attack-strategy+, +defend-strategy+
+                    +retreat-strategy+, this slots act as acache when planner is rebuilt")
    (thinker
     :initform nil
     :initarg  :thinkerp
@@ -277,7 +284,13 @@
        (cons strategy (build-planner object strategy))))
 
 (defmethod setup-planners ((object planner-character))
-  (setf (planners object) (build-planners object)))
+  (with-accessors ((planners          planners)
+                   (original-planners original-planners)) object
+    (when (null original-planners)
+      (setf original-planners (build-planners object)))
+    (setf planners (mapcar #'(lambda (p) (cons (car p) (clone (cdr p))))
+                           original-planners)))
+  object)
 
 (defmethod clear-blacklist ((object planner-character))
   (setup-planners object))
