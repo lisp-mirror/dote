@@ -1124,8 +1124,10 @@ to take care of that"
 (defmethod on-game-event :after ((object md2-mesh) (event end-turn))
   (with-accessors ((ghost ghost)
                    (state state)) object
+    ;; REMOVED:
+    ;; moved to "game-event:on-game-event ((object world) (event end-turn))"
     ;; clear blacklisted actions for planner
-    (character:clear-blacklist ghost)
+    ;;(character:clear-blacklist ghost)
     ;; (send-refresh-toolbar-event)
     nil))
 
