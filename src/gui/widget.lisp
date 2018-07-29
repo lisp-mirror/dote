@@ -1523,9 +1523,12 @@
     :initarg  :actual-bar
     :accessor actual-bar)
    (label-shells
-    :initform (make-fresh-array 0 nil 'font-mesh-shell nil)
+    :initform (init-h-bar-labels-array)
     :initarg  :labels-shells
     :accessor label-shells)))
+
+(defun init-h-bar-labels-array ()
+  (make-fresh-array 0 nil 'font-mesh-shell nil))
 
 (defmethod initialize-instance :after ((object h-bar) &key (color :blue) &allow-other-keys)
   (with-accessors ((actual-bar actual-bar)
@@ -1570,6 +1573,9 @@
     (declare ((array font-mesh-shell (*)) label-shells))
     (with-slots (label) object
       (declare (simple-string label))
+      (mtree:remove-child-if object
+                             #'(lambda (a) (typep a 'font-mesh-shell)))
+      (setf label-shells (init-h-bar-labels-array))
       (when reset-label-slot
         (setf label new-label))
       (loop for c across label do

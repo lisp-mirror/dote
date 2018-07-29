@@ -43,15 +43,16 @@
       (2d-gaussian x y sigma height)))
 
 (defun calc-attack-sigma (weapon-level attack-dmg &optional (shield-level nil) (armour-level nil))
-  (d+ (dlerp (smoothstep-interpolate 0.0 1.0 (d/ (d+ weapon-level (d* attack-dmg 0.06))
-                                                 10.0))
-             +attack-min-sigma+ +attack-max-sigma+)
-      (d- (if shield-level
-              (d* 4.0 shield-level)
-              0.0))
-      (d- (if armour-level
-              (d* 4.0 armour-level)
-              0.0))))
+  (let ((raw (d+ (dlerp (smoothstep-interpolate 0.0 1.0 (d/ (d+ weapon-level (d* attack-dmg 0.06))
+                                                            10.0))
+                        +attack-min-sigma+ +attack-max-sigma+)
+                 (d- (if shield-level
+                         (d* 4.0 shield-level)
+                         0.0))
+                 (d- (if armour-level
+                         (d* 4.0 armour-level)
+                         0.0)))))
+    (max 1.0 raw)))
 
 (defun attack-gaussian-fn (attack-dmg bonus-attack-dmg weapon-level
                            &optional (shield-level nil) (armor-level nil))
@@ -89,7 +90,7 @@
                                               actual-armor-level)))
         (funcall gaussian-fn
                  (d- 100.0 (lcg-next-upto 100.0))   ; attacker
-                 (d- 100.0 (lcg-next-upto 100.0)))) ; defender
+                 (lcg-next-upto 100.0))) ; defender
       nil))
 
 (defun attack-spell-damage (attack-dmg dodge-chance
@@ -959,6 +960,25 @@
                                 :id-destination  (identificable:id defender)
                                 :attacker-entity attacker)))
       (defend-from-attack-long-range event))))
+
+(defun trivial-simulate-attack (ghost shield-level armour-level)
+  (let* ((class        (character:player-class ghost))
+         (damage       (if (eq class :archer)
+                           (character:range-attack-damage ghost)
+                           (character:melee-attack-damage ghost)))
+         (damage-bonus (if (eq class :archer)
+                           0.0
+                           (num:find-max (list (character:edge-weapons-damage-bonus   ghost)
+                                               (character:impact-weapons-damage-bonus ghost)
+                                               (character:pole-weapons-damage-bonus ghost))))))
+    (attack-damage damage
+                   damage-bonus
+                   100.0
+                   0.0
+                   1.0
+                   0.0
+                   (d shield-level)
+                   (d armour-level))))
 
 (defun attack-statistics (weapon-level attack-dmg shield-level armor-level
                            &optional (count 10000))

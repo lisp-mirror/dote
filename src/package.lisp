@@ -4482,7 +4482,8 @@
    :victoryp
    :defeatedp
    :someone-won-p
-   :simulate-attack-w-current-weapon))
+   :simulate-attack-w-current-weapon
+   :trivial-simulate-attack))
 
 ;; UI
 
@@ -4786,7 +4787,8 @@
    :add-quad-for-widget
    :progress-gauge
    :progress
-   :make-splash-progress-gauge))
+   :make-splash-progress-gauge
+   :sync-bar-with-player))
 
 (defpackage :configuration-windows
   (:use :cl
@@ -4823,7 +4825,9 @@
         :game-configuration)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
-   :make-window))
+   :make-window
+   :add-all-fetch-player-windows
+   :make-fetch-player-window))
 
 (defpackage :new-game-window
   (:use :cl

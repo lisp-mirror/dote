@@ -898,6 +898,24 @@
             (error-message-save-game-outdated window)
             nil)))))
 
+(defun add-all-fetch-player-windows (npcs compiled-shaders world)
+  (let ((callbacks
+         (loop for npc in npcs collect
+              #'(lambda (w e)
+                  (place-player-in-map-destination* world npc 0 0 +pc-type+
+                                                    compiled-shaders
+                                                    :force-position nil)
+                  (with-accessors ((main-state main-state)) world
+                    (with-accessors ((player-entities game-state:player-entities)) main-state
+                      (let* ((selected     (first-elt player-entities)))
+                        (world:bind-entity-to-world world selected)
+                        (keyboard-world-navigation:slide-to-active-player world))))
+                  (widget:hide-and-remove-parent w e)))))
+    (load-save-window:add-all-fetch-player-windows (mapcar #'player-ghost npcs)
+                                                   callbacks
+                                                   compiled-shaders
+                                                   world)))
+
 (defun load-players (window resource-dir)
   (let ((saved-dump (make-instance 'saved-game))
         (saved-file (res:get-resource-file +map-saved-filename+
@@ -919,13 +937,12 @@
             ;; refresh all ids
             (fix-id-carryed-items-players saved-dump)
             ;; restore entitites
-            (loop
-               for player in saved-players when (eq (original-faction player)
-                                                    +pc-type+)
-               do
-                 (place-player-in-map-destination* world player 0 0 +pc-type+
-                                                   root-compiled-shaders
-                                                   :force-position nil))
+            (let ((npcs (remove-if-not #'(lambda (a) (eq (original-faction a)
+                                                         +pc-type+))
+                                       saved-players)))
+              (add-all-fetch-player-windows npcs
+                                            root-compiled-shaders
+                                            world))
             window)
           (progn
             (error-message-save-game-outdated window)

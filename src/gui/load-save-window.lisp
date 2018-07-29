@@ -140,19 +140,12 @@
                      (res-action     res-action)
                      (players-only-p players-only-p)) win
       (when res-action
-        (let* ((render-window (game-state:fetch-render-window state))
-               (file-valid-p  (if players-only-p
-                                  (progn
-                                    (saved-game:load-players render-window res-action)
-                                    (widget:hide-and-remove-parent-cb w e))
-                                  (saved-game:load-game render-window res-action))))
-          ;; select a player
-          (when file-valid-p
-            (game-state:with-world (world state)
-              (with-accessors ((player-entities game-state:player-entities)) state
-                (let* ((selected     (first-elt player-entities)))
-                  (world:bind-entity-to-world world selected)
-                  (keyboard-world-navigation:slide-to-active-player world))))))))))
+        (let* ((render-window (game-state:fetch-render-window state)))
+          (if players-only-p
+              (progn
+                (saved-game:load-players render-window res-action)
+                (widget:hide-and-remove-parent-cb w e))
+              (saved-game:load-game render-window res-action)))))))
 
 (defun write-screenshot-for-saving (world filename)
   (let* ((pixmap (cl-gl-utils:with-render-to-pixmap (*window-w* *window-h*)
@@ -334,5 +327,300 @@
                           :height         (load-save-window-h)
                           :label          title)))
     (add-window-button-cb-hide-remove w)
+    (setf (compiled-shaders w) compiled-shaders)
+    w))
+
+(defun fetch-player-window-w ()
+  (let ((frame (d* 0.33 (d *window-w*))))
+    frame))
+
+(defun fetch-player-window-h ()
+  (let ((frame (d* 0.33 (d *window-h*))))
+    frame))
+
+(defun portrait-size ()
+  (d* 0.25 (fetch-player-window-w)))
+
+(defun fetch-label-w ()
+  (fetch-player-window-w))
+
+(defun fetch-label-h ()
+  (d* 0.05 (fetch-player-window-h)))
+
+(defun fetch-bar-h ()
+  (fetch-label-h))
+
+(defun fetch-bar-w ()
+  (d* 2.0 (portrait-size)))
+
+(defun fetch-ok-button-size ()
+  (d* 0.5 (portrait-size)))
+
+(defun calc-fetch-label-y (ct)
+  (d+ (add-epsilon-rel (portrait-size)
+                       0.01)
+      (d* (d ct)
+          (fetch-label-h))))
+
+(defun text-simlu-atk-h ()
+  (d* 5.0 (fetch-label-h)))
+
+(defclass fetch-player-window (window)
+  ((s-portrait
+    :initform (make-instance 'signalling-light
+                             :width  (portrait-size)
+                             :height (portrait-size)
+                             :x      0.0
+                             :y      0.0)
+
+    :initarg  :s-portrait
+    :accessor s-portrait)
+   (l-name
+    :initform (make-instance 'simple-label
+                             :font-size 20.0
+                             :width     (fetch-label-w)
+                             :height    (fetch-label-h)
+                             :x         0.0
+                             :y         (calc-fetch-label-y 0)
+                             :label     "")
+    :initarg :l-name
+    :accessor l-name)
+   (l-class
+    :initform (make-instance 'simple-label
+                             :font-size (fetch-label-h)
+                             :width     (fetch-label-w)
+                             :height    (fetch-label-h)
+                             :x         0.0
+                             :y         (calc-fetch-label-y 1)
+                             :label     (_ "class"))
+    :initarg :l-class
+    :accessor l-class)
+   (l-level
+    :initform (make-instance 'simple-label
+                             :font-size (fetch-label-h)
+                             :width     (fetch-label-w)
+                             :height    (fetch-label-h)
+                             :x         0.0
+                             :y         (calc-fetch-label-y 2)
+                             :label     (_ "level"))
+    :initarg :l-level
+    :accessor l-level)
+   (text-simul-atk
+    :initform (make-instance 'widget:static-text
+                             :height    (text-simlu-atk-h)
+                             :width     (fetch-label-w)
+                             :x         0.0
+                             :y         (calc-fetch-label-y 4)
+                             :font-size (fetch-label-h)
+                             :label     ""
+                             :justified t
+                             :label-font-color (title-font-color *reference-sizes*))
+    :initarg :text-simul-atk
+    :accessor text-simul-atk)
+   (bar-simul-atk
+    :initform (loop for i from 0 below 10 collect
+                   (make-instance 'widget:h-bar
+                                  :height (d/ (fetch-bar-h) 3.0)
+                                  :width  (fetch-bar-w)
+                                  :x      0.0
+                                  :y      (d+ (d* (d i)
+                                                  (d/ (fetch-bar-h) 3.0))
+                                              (calc-fetch-label-y 4)
+                                              (text-simlu-atk-h))
+                                  :label ""
+                                  :color :blue
+                                  :fill-level 1.0))
+    :initarg  :bar-simul-atk
+    :accessor bar-simul-atk)
+   (bar-mp
+    :initform (make-instance 'widget:h-bar
+                             :height (fetch-bar-h)
+                             :width  (fetch-bar-w)
+                             :x      (portrait-size)
+                             :y      0.0
+                             :label  "MP: "
+                             :color  :green)
+    :initarg  :bar-mp
+    :accessor bar-mp)
+   (bar-dmg
+    :initform (make-instance 'widget:h-bar
+                             :height    (fetch-bar-h)
+                             :width     (fetch-bar-w)
+                             :x         (portrait-size)
+                             :y         (fetch-bar-h)
+                             :label     "DMG:"
+                             :color     :red
+                             :fill-level 0.5)
+    :initarg  :bar-dmg
+    :accessor bar-dmg)
+   (bar-sp
+    :initform (make-instance 'widget:h-bar
+                             :height (fetch-bar-h)
+                             :width  (fetch-bar-w)
+                             :x      (portrait-size)
+                             :y      (d* 2.0 (fetch-bar-h))
+                             :label "SP: "
+                             :color :blue
+                             :fill-level 1.0)
+    :initarg  :bar-sp
+    :accessor bar-sp)
+   (text-mp
+    :initform (make-instance 'widget:static-text
+                             :height (fetch-bar-h)
+                             :width  (fetch-bar-w)
+                             :x      (d+ (portrait-size)
+                                         (fetch-bar-w))
+                             :y      0.0
+                             :font-size (fetch-label-h)
+                             :label "-"
+                             :justified nil)
+    :initarg  :text-mp
+    :accessor text-mp)
+   (text-dmg
+    :initform (make-instance 'widget:static-text
+                             :height  (fetch-bar-h)
+                             :width   (fetch-bar-w)
+                             :x       (d+ (portrait-size)
+                                          (fetch-bar-w))
+                             :y       (fetch-bar-h)
+                             :font-size (fetch-label-h)
+                             :label "-"
+                             :justified nil)
+    :initarg  :text-dmg
+    :accessor text-dmg)
+   (text-sp
+    :initform (make-instance 'widget:static-text
+                             :height (fetch-label-h)
+                             :width  (fetch-label-w)
+                             :x      (d+ (portrait-size)
+                                         (fetch-bar-w))
+                             :y      (d* 2.0 (fetch-bar-h))
+                             :font-size (fetch-label-h)
+                             :label "-"
+                             :justified nil)
+    :initarg  :text-sp
+    :accessor text-sp)
+   (b-ok
+    :initform (make-instance 'naked-button
+                             :x               (d- (fetch-player-window-w)
+                                                  (fetch-ok-button-size))
+                             :y               (d- (fetch-player-window-h)
+                                                  (fetch-ok-button-size))
+                             :width           (fetch-ok-button-size)
+                             :height          (fetch-ok-button-size)
+                             :texture-object
+                             (texture:get-texture +square-button-texture-name+)
+                             :texture-pressed
+                             (texture:get-texture +square-button-pressed-texture-name+)
+                             :texture-overlay
+                             (texture:get-texture +button-ok-texture-name+)
+                             :callback        nil)
+    :initarg  :b-ok
+    :accessor b-ok)))
+
+(defmethod initialize-instance :after ((object fetch-player-window)
+                                       &key
+                                       (npc nil) (ok-callback nil) &allow-other-keys)
+  (with-accessors ((s-portrait s-portrait)
+                   (l-name         l-name)
+                   (l-class        l-class)
+                   (l-level        l-level)
+                   (text-simul-atk text-simul-atk)
+                   (bar-simul-atk  bar-simul-atk)
+                   (bar-mp         bar-mp)
+                   (bar-sp         bar-sp)
+                   (bar-dmg        bar-dmg)
+                   (text-mp        text-mp)
+                   (text-sp        text-sp)
+                   (text-dmg       text-dmg)
+                   (b-ok           b-ok))  object
+    (add-children* object
+                   s-portrait
+                   l-name
+                   l-class
+                   l-level
+                   text-simul-atk
+                   bar-mp
+                   bar-sp
+                   bar-dmg
+                   text-mp
+                   text-sp
+                   text-dmg
+                   b-ok)
+    (add-children object bar-simul-atk)
+    (setf (label l-name)
+          (format nil (_ "Name: ~a ~a")
+                  (character:first-name npc)
+                  (character:last-name npc)))
+    (setf (mesh:texture-object s-portrait)
+          (character:portrait npc))
+    (setf (label l-class)
+          (format nil (_ "Class: ~a") (character:player-class->class-description npc)))
+    (setf (label l-level)
+          (format nil (_ "Level: ~a") (character:level npc)))
+    (let* ((all-simul-damages (loop for i from 0 below (length bar-simul-atk) collect
+                                   (d (/ (loop repeat 1000 sum
+                                              (battle-utils:trivial-simulate-attack npc
+                                                                                    i
+                                                                                    i))
+                                         1000))))
+           (max-simul-damage  (num:find-max all-simul-damages)))
+      (setf (label text-simul-atk)
+            (format nil
+                    (_ "Simulated damage with increasing shield level (max is ~a)")
+                    (truncate max-simul-damage)))
+      (loop for i from 0 below (length bar-simul-atk)  do
+           (let ((bar (elt bar-simul-atk i))
+                 (dmg (elt all-simul-damages i)))
+             (setf (fill-level bar) (d/ dmg max-simul-damage)))))
+    (sync-bar-with-player bar-sp
+                          text-sp
+                          #'character:actual-spell-points
+                          #'character:current-spell-points npc)
+    (sync-bar-with-player bar-dmg
+                          text-dmg
+                          #'character:actual-damage-points
+                          #'character:current-damage-points npc)
+    (sync-bar-with-player bar-mp
+                          text-mp
+                          #'character:actual-movement-points
+                          #'character:current-movement-points npc)
+    (setf (callback b-ok) ok-callback)))
+
+(defun add-all-fetch-player-windows (npcs callbacks compiled-shaders world)
+  (let ((x     0.0)
+        (y     (d- (d *window-h*)
+                   (fetch-player-window-h)))
+        (xincr (fetch-player-window-w))
+        (yincr (fetch-player-window-h)))
+    (loop
+       for npc in npcs
+       for callback in callbacks  do
+         (when (epsilon= (d+ x (fetch-player-window-w))
+                         (d *window-w*))
+           (setf x 0.0)
+           (decf y yincr))
+         (let ((w (load-save-window:make-fetch-player-window compiled-shaders
+                                                             npc
+                                                             :ok-callback callback
+                                                             :x x
+                                                             :y y)))
+           (mtree:add-child (world:gui world) w)
+           (incf x xincr)))))
+
+(defun make-fetch-player-window (compiled-shaders npc
+                                 &key
+                                   (ok-callback  nil)
+                                   (title        (_ "Choose player"))
+                                   (x            50.0)
+                                   (y            (d (- *window-h* (load-save-window-h)))))
+  (let ((w (make-instance 'fetch-player-window
+                          :ok-callback ok-callback
+                          :x           x
+                          :y           y
+                          :width       (fetch-player-window-w)
+                          :height      (fetch-player-window-h)
+                          :label       title
+                          :npc         npc)))
     (setf (compiled-shaders w) compiled-shaders)
     w))
