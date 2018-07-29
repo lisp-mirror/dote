@@ -934,7 +934,7 @@
   (or (battle-utils:victoryp  state)
       (battle-utils:defeatedp state)))
 
-(defun simulate-attack-w-current-weapon (attacker defender)
+(defun %simulate-attack-w-current-weapon (attacker defender)
   (character:weapon-case (attacker)
     :pole
     (let ((event (make-instance 'game-event:attack-melee-event
@@ -960,6 +960,12 @@
                                 :id-destination  (identificable:id defender)
                                 :attacker-entity attacker)))
       (defend-from-attack-long-range event))))
+
+(defun simulate-attack-w-current-weapon (attacker defender &key (nil-attack-became-0 nil))
+  (let ((raw (%simulate-attack-w-current-weapon attacker defender)))
+    (if nil-attack-became-0
+        (or raw 0.0)
+        raw)))
 
 (defun trivial-simulate-attack (ghost shield-level armour-level)
   (let* ((class        (character:player-class ghost))

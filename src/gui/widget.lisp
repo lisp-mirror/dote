@@ -3466,7 +3466,7 @@
     :initarg  :world
     :accessor world)
    (max-player-count
-    :initform 10
+    :initform +max-number-player-deployed+
     :initarg  :max-player-count
     :accessor max-player-count)
    (player

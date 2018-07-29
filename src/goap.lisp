@@ -676,7 +676,9 @@ reach the enemy with optimal path?"
 
 (defun simulated-weapon-damage-average (attacker defender)
   (let ((sum (loop repeat +simulated-attack-sample-number+ sum
-                  (battle-utils:simulate-attack-w-current-weapon attacker defender))))
+                  (battle-utils:simulate-attack-w-current-weapon attacker
+                                                                 defender
+                                                                 :nil-attack-became-0 t))))
     (num:d/ sum
             (num:d +simulated-attack-sample-number+))))
 

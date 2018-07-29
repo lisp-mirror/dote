@@ -16,7 +16,7 @@
 
 (in-package :saved-game)
 
-(define-constant +number-opponents-sigma+  #(1.0 1.0 1.1 1.1 2.0 2.2 2.3 2.5 2.7 2.7)
+(define-constant +number-opponents-sigma+ #(1.0 1.0 1.1 1.1 2.0 2.2 2.3 2.5 2.7 2.7)
   :test #'equalp)
 
 (define-constant +opponents-type+ '(:wizard
@@ -37,7 +37,7 @@
                                   +maximum-level-difficult+)))
          (number (gaussian-probability (elt +number-opponents-sigma+ (1- difficult-level))
                                        average)))
-    (max 3 (ceiling number))))
+    (clamp (ceiling number) 3 +max-number-player-deployed+)))
 
 (defun type-of-opponents (no-of-opponents)
   (let ((excess   (- no-of-opponents (length +opponents-type+)))

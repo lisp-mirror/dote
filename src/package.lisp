@@ -68,6 +68,7 @@
    :+minimum-mountain-height+
    :+invalicable-element-cost+
    :+minimum-player-layer-cost+
+   :+max-number-player-deployed+
    :+open-terrain-cost+
    :+rotate-entity-cost-cost+
    :+wear-object-entity-cost-cost+

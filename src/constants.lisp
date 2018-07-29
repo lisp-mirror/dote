@@ -70,6 +70,8 @@
 
 (define-constant +minimum-player-layer-cost+          0.0              :test #'=)
 
+(define-constant +max-number-player-deployed+         8                :test #'=)
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (define-constant +open-terrain-cost+                2.0              :test #'=))
 
