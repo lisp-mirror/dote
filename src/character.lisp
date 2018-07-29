@@ -172,22 +172,25 @@
     :initform nil
     :initarg  :original-current-plan
     :accessor original-current-plan
-    :documentation "A list with the original current plan sorted from the first
-                    to accomplish to the last")
+    :documentation "A list with the  original current plan sorted from
+                    the first to accomplish to the last")
    (planners
     :initform '()
     :initarg  :planners
     :accessor planners
-    :documentation "An alist of current planners, key is a strategy as in contsnt.lisp (i.e)
-                    +explore-strategy+, +attack-strategy+, +defend-strategy+
-                    +retreat-strategy+")
+    :documentation "An alist of current planners, key is a strategy as
+                    in    constants.lisp   (i.e    +explore-strategy+,
+                    +attack-strategy+,               +defend-strategy+
+                    +retreat-strategy+)")
    (original-planners
     :initform '()
     :initarg  :original-planners
     :accessor original-planners
-    :documentation "An alist of current planners, key is a strategy as in contsnt.lisp (i.e)
-                    +explore-strategy+, +attack-strategy+, +defend-strategy+
-                    +retreat-strategy+, this slots act as acache when planner is rebuilt")
+    :documentation "An alist of current planners, key is a strategy as
+                    in    constants.lisp   (i.e    +explore-strategy+,
+                    +attack-strategy+,               +defend-strategy+
+                    +retreat-strategy+),  this slots  act  as a  cache
+                    when planner is rebuilt")
    (thinker
     :initform nil
     :initarg  :thinkerp
