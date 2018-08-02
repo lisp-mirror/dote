@@ -99,17 +99,18 @@
 
 (defmethod side-dir ((object entity))
   (with-accessors ((dir dir)) object
-    (cond
-      ((vec~ dir +x-axe+)
-       (copy-vec (vec-negate +z-axe+)))
-      ((vec~ dir (vec-negate +z-axe+))
-       (copy-vec (vec-negate +x-axe+)))
-      ((vec~ dir (vec-negate +x-axe+))
-       (copy-vec +z-axe+))
-      ((vec~ dir +z-axe+)
-       (copy-vec +x-axe+))
-      (t
-       (error "invalid direction")))))
+    (with-epsilon ((num:d* 10.0 sb-cga:+default-epsilon+))
+      (cond
+        ((vec~ dir +x-axe+ *default-epsilon*)
+         (copy-vec (vec-negate +z-axe+)))
+        ((vec~ dir (vec-negate +z-axe+) *default-epsilon*)
+         (copy-vec (vec-negate +x-axe+)))
+        ((vec~ dir (vec-negate +x-axe+) *default-epsilon*)
+         (copy-vec +z-axe+))
+        ((vec~ dir +z-axe+ *default-epsilon*)
+         (copy-vec +x-axe+))
+        (t
+         (error "invalid direction"))))))
 
 (defun %project-on-dir (dir pos position-target)
   (let* ((diff        (vec- position-target pos))

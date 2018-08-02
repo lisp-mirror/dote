@@ -554,7 +554,7 @@ character is. In this case its cost is 0.0"
                       (x-weak      (elt pos-weak 0))
                       (y-weak      (elt pos-weak 1))
                       (size        (if-difficult-level>medium (main-state)
-                                     (truncate (/ +weapon-bow-range+ 3))
+                                       (truncate (/ +weapon-bow-range+ 3))
                                      (truncate (/ +weapon-bow-range+ 4))))
                       (neighs      (matrix:gen-valid-neighbour-position-in-box map-state
                                                                                x-weak
@@ -591,10 +591,13 @@ character is. In this case its cost is 0.0"
                           (incf (protect-place-points increase) +inc-point-attackable+)
                           (setf (protect-place-attack-pos-p increase) t))))
               ;; the same as above for current-position
-              (when (faction-attackable-opponents-id strategy-expert entity)
-                (let ((place-entity (find-pos-in-place places pos-entity)))
-                  (incf (protect-place-points       place-entity) (d* +inc-point-attackable+ 2.0))
-                  (setf (protect-place-attack-pos-p place-entity) t)))
+              (let ((place-entity (find-pos-in-place places pos-entity)))
+                (if (faction-attackable-opponents-id strategy-expert entity)
+                    (progn
+                      (incf (protect-place-points       place-entity) (d* +inc-point-attackable+
+                                                                          2.0))
+                      (setf (protect-place-attack-pos-p place-entity) t))
+                    (decf (protect-place-points         place-entity) +inc-point-attackable+)))
               ;; remove non reachable places
               (remove-if-not #'(lambda (p)
                                  (funcall reach-fn

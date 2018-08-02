@@ -817,7 +817,8 @@ to take care of that"
 (defmethod on-game-event ((object md2-mesh) (event cause-faint-event))
   (with-simple-cause-status (object event immune-berserk-status +status-berserk+
                                     billboard:+tooltip-faint-char+)
-    (set-death-status object)))
+    (check-event-targeted-to-me (object event)
+      (set-death-status object))))
 
 (defun %common-cure-status-events (mesh event
                                    &optional (action-fn #'(lambda (a b)

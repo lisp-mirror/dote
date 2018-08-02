@@ -329,8 +329,8 @@
          t)
         ((null saved-interrupt-entity)
          nil)
-        ((/= interrupting-entity
-             saved-interrupt-entity)
+        ((/= (id interrupting-entity)
+             (id saved-interrupt-entity))
          nil)
         (t
          #+(and debug-mode debug-ai)

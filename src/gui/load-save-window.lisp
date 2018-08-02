@@ -93,11 +93,12 @@
       (update-for-rendering texture))))
 
 (defun slurp-notes-file (slot)
-  (when-let* ((file  (res:get-resource-file +save-game-notes-name+
-                                            slot
-                                            :if-does-not-exists nil))
-              (notes (fs:slurp-file file)))
-    notes))
+  (let* ((file  (res:get-resource-file +save-game-notes-name+
+                                       slot
+                                       :if-does-not-exists nil))
+         (notes (and file (fs:slurp-file file))))
+    (or notes
+        "")))
 
 (defun update-window-for-load (button slot)
   (with-parent-widget (win) button

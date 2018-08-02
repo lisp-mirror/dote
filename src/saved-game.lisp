@@ -901,16 +901,17 @@
 (defun add-all-fetch-player-windows (npcs compiled-shaders world)
   (let ((callbacks
          (loop for npc in npcs collect
-              #'(lambda (w e)
-                  (place-player-in-map-destination* world npc 0 0 +pc-type+
-                                                    compiled-shaders
-                                                    :force-position nil)
-                  (with-accessors ((main-state main-state)) world
-                    (with-accessors ((player-entities game-state:player-entities)) main-state
-                      (let* ((selected     (first-elt player-entities)))
-                        (world:bind-entity-to-world world selected)
-                        (keyboard-world-navigation:slide-to-active-player world))))
-                  (widget:hide-and-remove-parent w e)))))
+              (let ((local-npc npc))
+                #'(lambda (w e)
+                    (place-player-in-map-destination* world local-npc 0 0 +pc-type+
+                                                      compiled-shaders
+                                                      :force-position nil)
+                    (with-accessors ((main-state main-state)) world
+                      (with-accessors ((player-entities game-state:player-entities)) main-state
+                        (let* ((selected     (first-elt player-entities)))
+                          (world:bind-entity-to-world world selected)
+                          (keyboard-world-navigation:slide-to-active-player world))))
+                    (widget:hide-and-remove-parent w e))))))
     (load-save-window:add-all-fetch-player-windows (mapcar #'player-ghost npcs)
                                                    callbacks
                                                    compiled-shaders
