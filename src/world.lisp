@@ -1323,3 +1323,10 @@
   (with-accessors ((main-state main-state)) world
     (and (game-state:faction-turn-human-p main-state)
          (world:actions-queue-empty-p world))))
+
+(defun select-and-slide-to-first-pc (world &optional (pc nil))
+  (with-accessors ((main-state main-state)) world
+    (with-accessors ((player-entities game-state:player-entities)) main-state
+      (let* ((selected (or pc (alexandria:first-elt player-entities))))
+        (world:bind-entity-to-world world selected)
+        (keyboard-world-navigation:slide-to-active-player world)))))

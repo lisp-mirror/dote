@@ -4559,6 +4559,7 @@
                     (world:build-inventory model +pc-type+ (character:player-class player))
                     (world:place-player-on-map world model game-state:+pc-type+
                                                :position #(0 0))
+                    (world:select-and-slide-to-first-pc world model)
                     #+ (and debug-mode god-mode)
                     (progn
                       (setf (character:movement-points (ghost model)) 100.0)

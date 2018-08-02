@@ -889,6 +889,8 @@
                 (update-rendering-needed-ai window-game-state)
                 ;; update all visibility
                 (update-all-visibility-state window-game-state)
+                ;; select a pc
+                (select-and-slide-to-first-pc world)
                 ;; start a new turn
                 (let ((start-event (make-instance 'game-event:start-turn
                                                   :increment-turn-count nil)))
@@ -906,11 +908,7 @@
                     (place-player-in-map-destination* world local-npc 0 0 +pc-type+
                                                       compiled-shaders
                                                       :force-position nil)
-                    (with-accessors ((main-state main-state)) world
-                      (with-accessors ((player-entities game-state:player-entities)) main-state
-                        (let* ((selected     (first-elt player-entities)))
-                          (world:bind-entity-to-world world selected)
-                          (keyboard-world-navigation:slide-to-active-player world))))
+                    (select-and-slide-to-first-pc world)
                     (widget:hide-and-remove-parent w e))))))
     (load-save-window:add-all-fetch-player-windows (mapcar #'player-ghost npcs)
                                                    callbacks

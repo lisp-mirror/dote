@@ -5200,6 +5200,7 @@
    :clear-all-memoized-function-cache
    :clear-all-memoized-function-cache*
    :human-interaction-allowed-p
+   :select-and-slide-to-first-pc
    ;; inventory
    :build-inventory))
 
