@@ -246,14 +246,15 @@
   nil)
 
 (defun action-context-preconditions-satisfied-p (action strategy-expert player-entity)
-  (misc:dbg "testing action ~a" action)
+  #+ (and debug-mode debug-ai) (misc:dbg "testing action ~a" action)
   (loop for precondition in (action-context-preconditions action) do
+       #+ (and debug-mode debug-ai)
        (misc:dbg "testing precondition ~a -> ~a" precondition
                  (and (funcall precondition strategy-expert player-entity)
                       t))
        (when (not (funcall precondition strategy-expert player-entity))
          (return-from action-context-preconditions-satisfied-p nil)))
-  (misc:dbg "choosen!")
+  #+ (and debug-mode debug-ai) (misc:dbg "choosen!")
   t)
 
 (defun %apply-action (state goal-state action)
@@ -599,7 +600,7 @@
 (defun enough-health-p (strategy-expert entity)
   (declare (ignore strategy-expert))
   (let ((res (not (ai-utils:too-low-health-p entity))))
-    (misc:dbg "not too low health ~a" res)
+    #+ (and debug-mode debug-ai) (misc:dbg "not too low health ~a" res)
     res))
 
 (defun near-to-death-p (strategy-expert entity)
@@ -724,7 +725,7 @@ composed by just one tile, see 'attackable-position-exists-path'"
   (let* ((reachable-fn (reachable-p-w/o-concening-tiles-fn strategy-expert)))
     (multiple-value-bind (reachablep cost)
         (insecure-attackable-position-exists-path strategy-expert entity reachable-fn)
-      (misc:dbg "path insecure ~a" reachablep cost)
+      #+ (and debug-mode debug-ai) (misc:dbg "path insecure ~a" reachablep cost)
       (let ((attack-cost (battle-utils:cost-attack-w-current-weapon entity)))
         (and reachablep
              attack-cost ;; attack-cost is nil if no weapon is carried
@@ -789,8 +790,7 @@ composed by just one tile, see 'attackable-position-exists-path'"
   (declare (ignore strategy-expert))
   (when-let ((available-spells (ai-utils:available-attack-spells entity)))
     (let ((res (ai-utils:attackable-opponents-attack-spell available-spells entity)))
-      (dbg "there-is-attackable-opponents-attack-spell-p ~a"
-           res)
+      #+ (and debug-mode debug-ai) (dbg "there-is-attackable-opponents-attack-spell-p ~a" res)
       res)))
 
 (defmacro gen-is-status-tests (status)
@@ -855,7 +855,7 @@ composed by just one tile, see 'attackable-position-exists-path'"
       (let* ((res (and path
                        (<= cost
                            (character:current-movement-points ghost)))))
-        (misc:dbg "able-to-explore cost ~a -> ~a" cost res)
+        #+ (and debug-mode debug-ai) (misc:dbg "able-to-explore cost ~a -> ~a" cost res)
         res))))
 
 (defgoap-test is-able-to-flee-p (strategy-expert entity)

@@ -699,7 +699,7 @@
           (setf (matrix-elt per-turn-tiles y x) t))
         ;; update character's log of movement
         (character:append-to-last-pos-occupied ghost pos))
-      (misc:dbg "log pos ~a" (character:last-pos-occupied ghost)))
+      #+(and debug-mode debug-ai) (misc:dbg "log pos ~a" (character:last-pos-occupied ghost)))
     (when update-infos
       (%update-all-infos object)))))
 
