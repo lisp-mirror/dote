@@ -194,8 +194,15 @@
                                   :chunk   chunk)))
     (push db-entry *fx-db*)))
 
-(defun play-music (key &key (loops t))
-  (sdl2-mixer:play-music (mix-obj (get-music key)) (if loops -1 1)))
+(defun play-music (key &key (loops t) (check-inhibit-from-config nil))
+  (let ((loops-value (if loops -1 1)))
+    (if check-inhibit-from-config
+        (when (not (gconf:config-inhibit-bgm))
+          (sdl2-mixer:play-music (mix-obj (get-music key)) loops-value))
+        (sdl2-mixer:play-music (mix-obj (get-music key)) (if loops -1 1)))))
+
+(defun stop-music ()
+  (sdl2-mixer:halt-music))
 
 (defun play-fx (key &key (loops 0))
   (sdl2-mixer:play-channel -1 (chunk (get-fx key)) loops))

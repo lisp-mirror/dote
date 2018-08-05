@@ -109,6 +109,10 @@
     :initform 68
     :initarg  :sound-volume
     :accessor sound-volume)
+   (inhibit-bgm
+    :initform nil
+    :initarg  :inhibit-bgm
+    :accessor inhibit-bgm)
    (tree-clip
     :initform nil
     :initarg  :tree-clip
@@ -136,6 +140,7 @@
       camera-fp-scaling-movement
       train-ai
       sound-volume
+      inhibit-bgm
       tree-clip
       fullscreen))
 
@@ -222,6 +227,8 @@
 (gen-acc-fn train-ai)
 
 (gen-acc-fn sound-volume)
+
+(gen-acc-fn inhibit-bgm)
 
 (gen-acc-fn tree-clip)
 

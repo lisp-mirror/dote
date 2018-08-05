@@ -1767,6 +1767,7 @@
    :config-train-ai
    :config-tree-clip
    :config-sound-volume
+   :config-inhibit-bgm
    :config-fullscreen
    :set-forward
    :set-back
@@ -1786,6 +1787,7 @@
    :set-train-ai
    :set-tree-clip
    :set-sound-volume
+   :set-inhibit-bgm
    :set-fullscreen
    :*game-config*
    :dump
@@ -2374,6 +2376,7 @@
    :remove-music
    :add-music
    :play-music
+   :stop-music
    :play-fx))
 
 ;; game

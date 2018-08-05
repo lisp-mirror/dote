@@ -430,6 +430,16 @@
   (declare (ignore event))
   (with-config-checkbutton (button gconf:set-fullscreen)))
 
+(defun update-config-inhibit-bgm-cb (button event)
+  (declare (ignore event))
+  (with-accessors ((button-state button-state)) button
+    (let ((old-config (gconf:config-inhibit-bgm)))
+      (if (button-state button)
+          (sound:stop-music)
+          (when old-config
+            (sound:play-music sound:+bg-battle-1+))))
+    (with-config-checkbutton (button gconf:set-inhibit-bgm))))
+
 (defun update-config-clip-trees-cb (button event)
   (declare (ignore event))
   (with-config-checkbutton (button gconf:set-tree-clip)
@@ -472,7 +482,7 @@
                              :justified       t)
     :initarg  :s-sound-volume
     :accessor s-sound-volume)
-   (checkb-fullscreen
+   (checkb-inhibit-bgm
     :initform (make-instance 'labeled-check-button
                              :button-toggle-type t
                              :height             (gui-scaling-camera-text-entry-h)
@@ -480,6 +490,22 @@
                              :x                  0.0
                              :y
                              (add-epsilon-rel (d* 3.0
+                                                  (gui-scaling-scaling-camera-label-h))
+                                              (spacing-rel *reference-sizes*))
+                             :label              (_ "Inhibit background music")
+                             :callback           #'update-config-inhibit-bgm-cb
+                             :initial-state      (gconf:config-inhibit-bgm)
+                             :color              :green)
+    :initarg  :checkb-inhibit-bgm
+    :accessor checkb-inhibit-bgm)
+   (checkb-fullscreen
+    :initform (make-instance 'labeled-check-button
+                             :button-toggle-type t
+                             :height             (gui-scaling-camera-text-entry-h)
+                             :width              (gui-window-w)
+                             :x                  0.0
+                             :y
+                             (add-epsilon-rel (d* 4.0
                                                   (gui-scaling-scaling-camera-label-h))
                                               (spacing-rel *reference-sizes*))
                              :label              (_ "Fullscreen (requires restart)")
@@ -495,7 +521,7 @@
                              :width              (gui-window-w)
                              :x                  0.0
                              :y
-                             (add-epsilon-rel (d* 4.0
+                             (add-epsilon-rel (d* 5.0
                                                   (gui-scaling-scaling-camera-label-h))
                                               (spacing-rel *reference-sizes*))
                              :label              (_ "Clip trees")
@@ -526,6 +552,7 @@
   (with-accessors ((l-scale-fp-speed                 l-scale-fp-speed)
                    (input-camera-fp-scaling-movement input-camera-fp-scaling-movement)
                    (s-sound-volume                   s-sound-volume)
+                   (checkb-inhibit-bgm               checkb-inhibit-bgm)
                    (checkb-fullscreen                checkb-fullscreen)
                    (checkb-clip-trees                checkb-clip-trees)) object
     (setf (callback-plus  s-sound-volume) (make-simple-scale-cb #'increase-volume-cb))
@@ -538,6 +565,7 @@
                    l-scale-fp-speed
                    input-camera-fp-scaling-movement
                    s-sound-volume
+                   checkb-inhibit-bgm
                    checkb-fullscreen
                    checkb-clip-trees)))
 

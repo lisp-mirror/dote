@@ -451,7 +451,7 @@
     (interfaces:calculate  world 0.0)
     (place-opponents world difficult-level)
     ;; play bg music
-    (sound:play-music sound:+bg-battle-1+)
+    (sound:play-music sound:+bg-battle-1+ :check-inhibit-from-config t)
     (setf (main-window::delta-time-elapsed window) (sdl2:get-ticks))
     ;; bg color
     (let ((color (skydome-bottom-color (main-window:window-game-state window))))
@@ -504,7 +504,7 @@
     (setf (main-window::delta-time-elapsed window) (sdl2:get-ticks))
     (setf saved-game:*map-loaded-p* t)
     ;; play bg music
-    (sound:play-music sound:+bg-battle-1+)
+    (sound:play-music sound:+bg-battle-1+ :check-inhibit-from-config t)
     ;; bg color
     (let ((color (skydome-bottom-color (main-window:window-game-state window))))
       (gl:clear-color (elt color 0)
