@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dote 0.0.1\n"
 "Report-Msgid-Bugs-To: cage@katamail.com\n"
-"POT-Creation-Date: 2018-07-29 13:14+0200\n"
-"PO-Revision-Date: 2018-07-29 13:16+0200\n"
+"POT-Creation-Date: 2018-08-05 17:55+0200\n"
+"PO-Revision-Date: 2018-08-05 17:59+0200\n"
 "Last-Translator: cage <cage@katamail.com>\n"
 "Language-Team: Italian\n"
 "Language: it\n"
@@ -442,8 +442,8 @@ msgid "Trap found! deactivate (chance ~a)?"
 msgstr "Attivata una trappola! Provare a disinnescarla (possibilita' ~a)"
 
 #: src/md2-mesh.lisp:586 src/saved-game.lisp:638 src/world.lisp:1115
-#: src/gui/load-save-window.lisp:193 src/gui/widget.lisp:4527
-#: src/gui/widget.lisp:5026
+#: src/gui/load-save-window.lisp:194 src/gui/widget.lisp:4527
+#: src/gui/widget.lisp:5027
 msgid "OK"
 msgstr "OK"
 
@@ -451,21 +451,21 @@ msgstr "OK"
 msgid "No"
 msgstr "No"
 
-#: src/md2-mesh.lisp:883 src/md2-mesh.lisp:908 src/md2-mesh.lisp:1120
+#: src/md2-mesh.lisp:884 src/md2-mesh.lisp:909 src/md2-mesh.lisp:1121
 msgid "Move to"
 msgstr "Spostati"
 
-#: src/md2-mesh.lisp:1071
+#: src/md2-mesh.lisp:1072
 #, lisp-format
 msgid "You can cast ~a!"
 msgstr "Adesso puoi lanciare ~a!"
 
-#: src/md2-mesh.lisp:1117
+#: src/md2-mesh.lisp:1118
 #, lisp-format
 msgid "~a broken"
 msgstr "~a rotto/a"
 
-#: src/md2-mesh.lisp:1180
+#: src/md2-mesh.lisp:1181
 msgid "miss"
 msgstr "mancato"
 
@@ -573,7 +573,7 @@ msgstr "~a~agittata: ~a raggio efficace: ~a costo: ~a~a"
 msgid "element: ~a~adamage: ~a~a"
 msgstr "elemento: ~a~adanno: ~a~a"
 
-#: src/spell.lisp:393
+#: src/spell.lisp:392
 msgid "No description available"
 msgstr "Nessuna descrizione disponibile"
 
@@ -585,7 +585,7 @@ msgstr "Trappola disinnescata!"
 msgid "Message"
 msgstr "Messaggio"
 
-#: src/gui/configuration-windows.lisp:276 src/gui/load-save-window.lisp:309
+#: src/gui/configuration-windows.lisp:276 src/gui/load-save-window.lisp:310
 #: src/gui/widget.lisp:3601
 msgid "Save"
 msgstr "Salva"
@@ -606,64 +606,68 @@ msgstr "Movimenti fluido del personaggio"
 msgid "Appearance Configuration"
 msgstr "Aspetto"
 
-#: src/gui/configuration-windows.lisp:443
+#: src/gui/configuration-windows.lisp:453
 msgid "Speed for \"look around\" camera."
 msgstr "Velocita di \"spazzamento\" della telecamera."
 
-#: src/gui/configuration-windows.lisp:485
+#: src/gui/configuration-windows.lisp:495
+msgid "Inhibit background music"
+msgstr "Non riprodurre la musica"
+
+#: src/gui/configuration-windows.lisp:511
 msgid "Fullscreen (requires restart)"
 msgstr "Schermo pieno (richiede il riavvio)"
 
-#: src/gui/configuration-windows.lisp:501
+#: src/gui/configuration-windows.lisp:527
 msgid "Clip trees"
 msgstr "Taglia gli alberi"
 
-#: src/gui/configuration-windows.lisp:535
+#: src/gui/configuration-windows.lisp:562
 #, lisp-format
 msgid "Music volume: ~a"
 msgstr "Volume della musica: ~a"
 
-#: src/gui/configuration-windows.lisp:550
+#: src/gui/configuration-windows.lisp:578
 msgid "GUI Configuration"
 msgstr "Configurazione dell'interfaccia"
 
-#: src/gui/configuration-windows.lisp:582
+#: src/gui/configuration-windows.lisp:610
 msgid "Inhibit AI planner"
 msgstr "Inibisci la pianificazione"
 
-#: src/gui/configuration-windows.lisp:599
+#: src/gui/configuration-windows.lisp:627
 msgid "Debug Configuration"
 msgstr "Configurazione della modalita' debug"
 
-#: src/gui/configuration-windows.lisp:631
+#: src/gui/configuration-windows.lisp:659
 msgid "Train computer opponent"
 msgstr "Addestra l'avversario non umano"
 
-#: src/gui/configuration-windows.lisp:648
+#: src/gui/configuration-windows.lisp:676
 msgid "AI Configuration"
 msgstr "Configurazione dell'IA"
 
-#: src/gui/configuration-windows.lisp:702
+#: src/gui/configuration-windows.lisp:730
 msgid "Keyboard"
 msgstr "Tastiera"
 
-#: src/gui/configuration-windows.lisp:713
+#: src/gui/configuration-windows.lisp:741
 msgid "Appearance"
 msgstr "Aspetto"
 
-#: src/gui/configuration-windows.lisp:724
+#: src/gui/configuration-windows.lisp:752
 msgid "GUI"
 msgstr "GUI"
 
-#: src/gui/configuration-windows.lisp:735
+#: src/gui/configuration-windows.lisp:763
 msgid "Computer opponent"
 msgstr "Avversario non umano"
 
-#: src/gui/configuration-windows.lisp:748
+#: src/gui/configuration-windows.lisp:776
 msgid "Debug"
 msgstr "Debug"
 
-#: src/gui/configuration-windows.lisp:769
+#: src/gui/configuration-windows.lisp:797
 msgid "Game Configuration"
 msgstr "Configurazione del Gioco"
 
@@ -709,68 +713,69 @@ msgstr "Inventario"
 msgid "saved at: ~d-~2,'0d-~2,'0d ~2,'0d:~2,'0d"
 msgstr "Salvataggio del: ~d-~2,'0d-~2,'0d ~2,'0d:~2,'0d"
 
-#: src/gui/load-save-window.lisp:108
+#: src/gui/load-save-window.lisp:109
 msgid "No game is saved here"
 msgstr "Nessuna partita e' stata salvata in questa posizione"
 
-#: src/gui/load-save-window.lisp:189
+#: src/gui/load-save-window.lisp:190
 #, lisp-format
 msgid "Game saved in ~a"
 msgstr "Partita salvata in ~a"
 
-#: src/gui/load-save-window.lisp:191
+#: src/gui/load-save-window.lisp:192
 msgid "Success"
 msgstr "Successo"
 
-#: src/gui/load-save-window.lisp:225
+#: src/gui/load-save-window.lisp:226
 msgid "Slot 1"
 msgstr "Posizione 1"
 
-#: src/gui/load-save-window.lisp:238
+#: src/gui/load-save-window.lisp:239
 msgid "Slot 2"
 msgstr "Posizione 2"
 
-#: src/gui/load-save-window.lisp:251
+#: src/gui/load-save-window.lisp:252
 msgid "Slot 3"
 msgstr "Posizione 3"
 
-#: src/gui/load-save-window.lisp:264 src/gui/widget.lisp:3612
+#: src/gui/load-save-window.lisp:265 src/gui/widget.lisp:3612
 msgid "Load"
 msgstr "Carica"
 
-#: src/gui/load-save-window.lisp:317 src/gui/opening-sequence.lisp:252
+#: src/gui/load-save-window.lisp:318 src/gui/opening-sequence.lisp:252
 msgid "Load game"
 msgstr "Carica la partita"
 
-#: src/gui/load-save-window.lisp:395
+#: src/gui/load-save-window.lisp:396
 msgid "class"
 msgstr "classe"
 
-#: src/gui/load-save-window.lisp:405
+#: src/gui/load-save-window.lisp:406
 msgid "level"
 msgstr "livello"
 
-#: src/gui/load-save-window.lisp:552
+#: src/gui/load-save-window.lisp:553
 #, lisp-format
 msgid "Name: ~a ~a"
 msgstr "Nome: ~a ~a"
 
-#: src/gui/load-save-window.lisp:558
+#: src/gui/load-save-window.lisp:559
 #, lisp-format
 msgid "Class: ~a"
 msgstr "Classe: ~a"
 
-#: src/gui/load-save-window.lisp:560
+#: src/gui/load-save-window.lisp:561
 #, lisp-format
 msgid "Level: ~a"
 msgstr "Livello: ~a"
 
-#: src/gui/load-save-window.lisp:570
+#: src/gui/load-save-window.lisp:571
 #, lisp-format
 msgid "Simulated damage with increasing shield level (max is ~a)"
-msgstr "Danno simulato con incremento della protezione (massimo valore ottenuto ~a)"
+msgstr ""
+"Danno simulato con incremento della protezione (massimo valore ottenuto ~a)"
 
-#: src/gui/load-save-window.lisp:614
+#: src/gui/load-save-window.lisp:615
 msgid "Choose player"
 msgstr "Scegli un personaggio"
 
@@ -1029,7 +1034,7 @@ msgstr "Cognome"
 msgid "Next"
 msgstr "Successivo"
 
-#: src/gui/widget.lisp:4525 src/gui/widget.lisp:5024
+#: src/gui/widget.lisp:4525 src/gui/widget.lisp:5025
 msgid "Error"
 msgstr "Errore"
 
@@ -1043,7 +1048,7 @@ msgstr ""
 msgid "Mesh not specified"
 msgstr "Modello non indicato"
 
-#: src/gui/widget.lisp:4903
+#: src/gui/widget.lisp:4904
 msgid "Generate character"
 msgstr "Genera personaggio"
 
