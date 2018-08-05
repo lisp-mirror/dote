@@ -57,6 +57,14 @@
          :effects               ((:near-enemy-damage-spell t))
          :context-preconditions (exists-reachable-pos-to-launch-damage-spell)
          :cost                  1)
+  (:name :go-near-weak-friend
+         :preconditions         ()
+         :context-preconditions (can-minimally-move-p
+                                 friend-needs-help-p
+                                 !can-launch-attack-spell-current-pos-p
+                                 !can-launch-damage-spell-current-pos-p)
+         :effects               ((:curb-threat t))
+         :cost                  5)
   (:name :go-near-to-enemy
          :preconditions         ()
          :effects               ((:curb-threat    t))
