@@ -14,8 +14,9 @@
   :effects (define-interaction
 	     effects         (define-effects)
 	     healing-effects (define-healing-effects
-				 heal-damage-points  (define-heal-dmg-effect (duration unlimited
-									      points   1000.0
-									      trigger  when-used
-									      chance   0.8
-									      target other)))))
+				 heal-damage-points  (define-heal-dmg-effect
+                                                         (duration unlimited
+                                                          points   1000.0
+                                                          trigger  when-used
+                                                          chance   0.8
+                                                          target   other)))))

@@ -246,7 +246,7 @@
   nil)
 
 (defun action-context-preconditions-satisfied-p (action strategy-expert player-entity)
-  #+ (and debug-mode debug-ai) (misc:dbg "testing action ~a" action)
+  #+ (and debug-mode debug-ai) (misc:dbg "testing action ~a ~a" player-entity action)
   (loop for precondition in (action-context-preconditions action) do
        #+ (and debug-mode debug-ai)
        (misc:dbg "testing precondition ~a -> ~a" precondition
@@ -738,6 +738,13 @@ composed by just one tile, see 'attackable-position-exists-path'"
 (defun no-friend-needs-help-p (strategy-expert entity)
   (not (friend-needs-help-p strategy-expert entity)))
 
+(defgoap-test someone-dying-or-i-need-help (strategy-expert entity)
+  (or (not (enough-health-p strategy-expert entity))
+      (ai-utils:friend-who-is-dying strategy-expert entity :exclude-me t)))
+
+(defun noone-dying-and-i-do-not-need-help (strategy-expert entity)
+  (not (someone-dying-or-i-need-help strategy-expert entity)))
+
 (defgoap-test someone-needs-help-p (strategy-expert entity)
   (ai-utils:friend-who-needs-help strategy-expert entity :exclude-me nil))
 
@@ -1013,6 +1020,7 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
   (reachable-opt/path-attack-current-weapon-and-mp-clear-cache)
   (reachable-insecure/path-attack-current-weapon-and-mp-clear-cache)
   (friend-needs-help-p-clear-cache)
+  (someone-dying-or-i-need-help-clear-cache)
   (someone-needs-help-p-clear-cache)
   (there-is-reachable-help-needed-friend-heal-spell-p-clear-cache)
   (is-there-hiding-place-p-clear-cache)

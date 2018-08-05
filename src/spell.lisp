@@ -288,9 +288,8 @@
   (let ((effect-object  (if (eq-generate-p (plist-path-value interaction path))
                             (make-instance 'heal-damage-points-effect-parameters
                                            :trigger +effect-when-used+
-                                           :points  (calculate-modifier level)
-                                           :chance  (calculate-healing-fx-params-chance
-                                                     level)
+                                           :points  (d+ (d level) (calculate-modifier level))
+                                           :chance  (calculate-healing-fx-params-chance level)
                                            :target  +target-other+)
                             (plist-path-value interaction path))))
     (n-setf-path-value interaction path effect-object)))

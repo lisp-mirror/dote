@@ -3,7 +3,8 @@
 (define-planner
   (:name :flee
          :preconditions         ()
-         :context-preconditions (!is-visible-p is-able-to-flee-p)
+         :context-preconditions (!is-visible-p
+                                 is-able-to-flee-p)
          :effects               ((:curb-threat t))
          :cost                  5)
   (:name :hide

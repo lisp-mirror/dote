@@ -4,7 +4,7 @@
   (:name :launch-attack-spell
          :preconditions         ((:near-enemy-attack-spell t))
          :context-preconditions (!disobey-1-out-100
-                                 none-needs-help-p
+                                 noone-dying-and-i-do-not-need-help
                                  ;; "!is-status-terror-p"  is implicitly
                                  ;; managed by has-enough-sp-attack-p
                                  has-enough-sp-attack-p)
@@ -13,7 +13,7 @@
   (:name :launch-damage-spell
          :preconditions         ((:near-enemy-damage-spell t))
          :context-preconditions (!disobey-1-out-100
-                                 none-needs-help-p
+                                 noone-dying-and-i-do-not-need-help
                                  ;; "!is-status-terror-p"  is implicitly
                                  ;; managed by has-enough-sp-damage-p
                                  has-enough-sp-damage-p)
@@ -62,7 +62,7 @@
          :effects               ((:curb-threat    t))
          :context-preconditions (can-minimally-move-p
                                  enough-health-p
-                                 none-needs-help-p
+                                 noone-dying-and-i-do-not-need-help
                                  !is-status-terror-p
                                  !is-in-attack-pos-p
                                  exists-visible-enemy
@@ -76,7 +76,7 @@
          :effects               ((:curb-threat    t))
          :context-preconditions (can-minimally-move-p
                                  enough-health-p
-                                 none-needs-help-p
+                                 noone-dying-and-i-do-not-need-help
                                  !is-status-terror-p
                                  !is-in-attack-pos-p
                                  exists-visible-enemy

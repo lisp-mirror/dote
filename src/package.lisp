@@ -3346,6 +3346,7 @@
    :gen-neigh-costs
    :gen-neigh
    :friend-who-needs-help
+   :friend-who-is-dying
    :too-low-health-p
    :near-to-death-health-p
    :if-difficult-level>medium

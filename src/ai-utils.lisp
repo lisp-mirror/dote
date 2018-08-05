@@ -63,13 +63,25 @@
 (defun near-to-death-health-p (entity)
   (health-under-threshold-p entity 0.1))
 
+(defmacro gen-check-low-health-fn (caller-symbol check-threshold-fn exclude-me)
+  `(lambda (v)
+     (when (and (,check-threshold-fn v)
+                (or (not ,exclude-me)
+                    (/= (identificable:id v) (identificable:id entity))))
+        (return-from ,caller-symbol v))))
+
+(defun friend-who-is-dying (strategy-expert entity &key (exclude-me nil))
+  (loop-ai-entities (interfaces:main-state strategy-expert)
+     (gen-check-low-health-fn friend-who-is-dying
+                              near-to-death-health-p
+                              exclude-me))
+  nil)
+
 (defun friend-who-needs-help (strategy-expert entity &key (exclude-me nil))
   (loop-ai-entities (interfaces:main-state strategy-expert)
-                   #'(lambda (v)
-                       (when (and (too-low-health-p v)
-                                  (or (not exclude-me)
-                                      (/= (identificable:id v) (identificable:id entity))))
-                           (return-from friend-who-needs-help v))))
+     (gen-check-low-health-fn friend-who-needs-help
+                              too-low-health-p
+                              exclude-me))
   nil)
 
 (defun find-best-spell-most-powerful (spell-db)
@@ -1114,7 +1126,8 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
     (let ((cache (gethash entity cache)))
       (if (cdr cache)
           (car cache)
-          (let ((nocache-value (go-find-hiding-place-no-cache entity opponents-can-see-entity)))
+          (let ((nocache-value (go-find-hiding-place-no-cache entity
+                                                              opponents-can-see-entity)))
             (put-in-cache nocache-value))))))
 
 (defun go-launch-teleport-spell (entity)
