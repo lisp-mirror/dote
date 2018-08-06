@@ -219,17 +219,17 @@
       (end-time object)))
 
 (defun op-button-h ()
-  (d* 5.0 (h1-font-size *reference-sizes*)))
+  (d* 0.125 (d *window-h*)))
 
 (defun op-button-w ()
-  (d* 2.0 (op-button-h)))
+  (d* 0.25 (d *window-w*)))
 
 (defun make-opening-button (x y label callback)
   (let* ((h (op-button-h))
          (w (op-button-w)))
     (make-instance 'button
                    :use-label-global-style nil
-                   :label-font-size        (h4-font-size *reference-sizes*)
+                   :label-font-size        (h3-font-size *reference-sizes*)
                    :x                      x
                    :y                      y
                    :width                  w

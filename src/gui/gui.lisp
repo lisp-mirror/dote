@@ -108,6 +108,9 @@
                                                           :if-does-not-exists :error)))
         (map          (make-hash-table :test 'eql)))
     (setf (texture:interpolation-type font-texture) :nearest)
+    (setf (texture:s-wrap-mode  font-texture) :clamp-to-border)
+    (setf (texture:t-wrap-mode  font-texture) :clamp-to-border)
+    (setf (texture:border-color font-texture) §c00000000)
     (prepare-for-rendering font-texture)
     (loop for i from 0 below +ascii-size+ do
          (let ((texture-coords (char->quad-texture (code-char i)))
