@@ -4618,6 +4618,7 @@
    :+default-font-handle+
    :join-lines-for-static-text
    :join-lines-for-static-text*
+   :char-code-backspace-p
    :gui-printable-p
    :get-font
    :get-char-mesh

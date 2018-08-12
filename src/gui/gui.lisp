@@ -30,6 +30,11 @@
 
 (alexandria:define-constant +tooltip-font-handle+         1 :test #'=)
 
+(alexandria:define-constant +char-code-backspace+         8 :test #'=)
+
+(defun char-code-backspace-p (char)
+  (= (char->code char) +char-code-backspace+))
+
 (defun join-lines-for-static-text (lines)
   (join-with-strings lines +gui-static-text-delim+))
 
