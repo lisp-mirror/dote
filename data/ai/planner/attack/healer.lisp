@@ -68,7 +68,8 @@
   (:name :go-near-to-enemy
          :preconditions         ()
          :effects               ((:curb-threat    t))
-         :context-preconditions (can-minimally-move-p
+         :context-preconditions (has-any-sp-p
+                                 can-minimally-move-p
                                  enough-health-p
                                  none-needs-help-p
                                  !is-status-terror-p

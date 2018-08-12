@@ -757,6 +757,11 @@ composed by just one tile, see 'attackable-position-exists-path'"
     (or (character:weapon-type ghost)
         (character:find-item-in-inventory-if ghost #'interactive-entity:weaponp))))
 
+(defun has-any-sp-p (strategy-expert entity)
+  (declare (ignore strategy-expert))
+    (num:d> (character:current-spell-points (ghost entity))
+            1.0))
+
 (defun %has-enough-sp-if (entity predicate)
   (character:with-no-terror-status (entity)
     (with-accessors ((ghost ghost)) entity
