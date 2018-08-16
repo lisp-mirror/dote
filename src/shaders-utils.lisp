@@ -299,6 +299,7 @@ active program (set by sdk2.kit:use-program)."
       :texture-muddy-soil-decal
       :texture-roads-decal
       :texture-building-decal
+      :texture-fow
       :scale-building-text-coord
       :scale-road-text-coord
       :scale-soil-text-coord

@@ -554,6 +554,12 @@
           depth depth-pix)
     object))
 
+(defun nscale-pixmap (pixmap scale-x scale-y)
+  (ncopy-matrix-into-pixmap pixmap (scale-matrix pixmap scale-x scale-y)))
+
+(defun nscale-pixmap-nearest (pixmap scale-x scale-y)
+  (ncopy-matrix-into-pixmap pixmap (scale-matrix-nearest pixmap scale-x scale-y)))
+
 (defun blit-blend-replace-float-fn ()
   #'(lambda (src dest x-src y-src x-dst y-dst)
       (declare (ignore dest x-dst y-dst))

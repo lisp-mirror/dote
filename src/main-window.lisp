@@ -265,7 +265,7 @@
               (misc:dbg "n ~a" *near*)
               (incf *near* -.1))
             (when (string= text "p")
-              ;;(closing-sequence:start-victory-sequence world)
+              (entity:popup-from-fow (window-game-state object) :x 31 :y 31)
               (let* ((ai-check (first (ai-entities (window-game-state object)))))
                 (billboard:enqueue-tooltip ai-check
                                            billboard:+tooltip-surprise-attack-char+

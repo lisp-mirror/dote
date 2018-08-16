@@ -233,7 +233,7 @@
 (defun make-movement-path (tiles cost)
   (make-instance 'movement-path :tiles tiles :cost cost))
 
-(defclass game-state ()
+(defclass game-state (affected-by-fow)
   ((game-map-file
     :accessor game-map-file
     :initarg  :game-map-file
@@ -1338,6 +1338,18 @@
                                    (find-entity-by-id object (entity-id a)))
                          all-ids)))
       res)))
+
+(defmethod popup-from-fow ((object game-state) &key (x 0) (y 0) (size 0) &allow-other-keys)
+  (with-accessors ((map-state   map-state)
+                   (texture-fow texture-fow)) object
+    (let ((tiles (gen-valid-neighbour-position-in-box map-state x y size size)))
+      (loop for tile across tiles do
+           (2d-utils:displace-2d-vector (tile x-tile y-tile)
+             (setf (elt (pixel@ texture-fow x-tile (- (matrix:height map-state) y-tile 1))
+                        3)
+                   0)))
+      (pixmap:sync-data-to-bits texture-fow)
+      (update-for-rendering texture-fow))))
 
 (defun increase-game-turn (state)
   (let* ((turn-count (game-turn state))

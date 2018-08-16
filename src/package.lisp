@@ -746,7 +746,8 @@
    :faction-player-p
    :faction-ai-p
    :my-faction
-   :pawnp))
+   :pawnp
+   :force-reinitialize))
 
 (defpackage :ivec2
   (:use :cl
@@ -1258,7 +1259,12 @@
    :signed-dist
    :with-slots-for-reasoning
    :with-player-cost-pos
-   :with-player-cost-pos-ivec2))
+   :with-player-cost-pos-ivec2
+   :init-fow-texture
+   :adjust-fow-texture
+   :affected-by-fow
+   :texture-fow
+   :popup-from-fow))
 
 (defpackage :bs-tree
   (:use
@@ -1837,6 +1843,8 @@
    :clear-to-color
    :to-grayscale
    :ncopy-matrix-into-pixmap
+   :nscale-pixmap
+   :nscale-pixmap-nearest
    :save-pixmap
    :blit
    :pblit
@@ -2249,6 +2257,7 @@
    :+sand+
    :+grass+
    :+snow+
+   :+fow+
    :+repair-texture-1-fx+
    :+influence-map+
    :+influence-map-w+

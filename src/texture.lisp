@@ -68,6 +68,8 @@
 
 (alexandria:define-constant +snow+                             "snow"               :test #'string=)
 
+(alexandria:define-constant +fow+                              "fow.tga"            :test #'string=)
+
 (alexandria:define-constant +white+                            "white"              :test #'string=)
 
 (alexandria:define-constant +repair-texture-1-fx+              "hammer.tga"         :test #'string=)
@@ -260,6 +262,9 @@
 
 (defmethod initializedp ((object texture))
   (prepared-for-rendering object))
+
+(defmethod force-reinitialize ((object texture))
+  (setf (prepared-for-rendering object) nil))
 
 (defmethod destroy :after ((object texture))
   (when (and (initializedp object)

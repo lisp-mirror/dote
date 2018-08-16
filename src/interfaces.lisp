@@ -434,3 +434,5 @@
   nil)
 
 (defgeneric (setf my-faction) (object value))
+
+(defgeneric force-reinitialize (object))

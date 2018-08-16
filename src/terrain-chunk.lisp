@@ -45,7 +45,7 @@
         (elt l (lcg-next-upto (length l)))
         nil)))
 
-(defclass terrain-chunk (pickable-mesh)
+(defclass terrain-chunk (pickable-mesh affected-by-fow)
   ((el-time
     :initform 0.0
     :initarg :el-time
@@ -98,6 +98,10 @@
     :initform (initform-terrain texture:+texture-tag-building-decal+)
     :initarg  :texture-building-decal
     :accessor texture-building-decal)
+   (texture-fow
+    :initform (init-fow-texture)
+    :initarg  :texture-fow
+    :accessor texture-fow)
    (map-border-color
     :initform (vec4 1.0 0.0 1.0 1.0)
     :initarg  :map-border-color
@@ -284,22 +288,23 @@
   (with-accessors ((el-time el-time)
                    (vbo vbo)
                    (vao vao)
-                   (map-border-color map-border-color)
-                   (texture-shore texture-shore)
-                   (texture-grass texture-grass)
-                   (texture-snow texture-snow)
-                   (texture-soil-level-1 texture-soil-level-1)
-                   (texture-soil-level-2 texture-soil-level-2)
+                   (map-border-color         map-border-color)
+                   (texture-shore            texture-shore)
+                   (texture-grass            texture-grass)
+                   (texture-snow             texture-snow)
+                   (texture-soil-level-1     texture-soil-level-1)
+                   (texture-soil-level-2     texture-soil-level-2)
                    (texture-muddy-soil-decal texture-muddy-soil-decal)
-                   (texture-road-decal texture-road-decal)
-                   (texture-building-decal texture-building-decal)
-                   (decal-weights decal-weights)
-                   (projection-matrix projection-matrix)
-                   (model-matrix model-matrix)
-                   (view-matrix view-matrix)
-                   (compiled-shaders compiled-shaders)
-                   (triangles triangles)
-                   (fog-density fog-density)) object
+                   (texture-road-decal       texture-road-decal)
+                   (texture-building-decal   texture-building-decal)
+                   (texture-fow              texture-fow)
+                   (decal-weights            decal-weights)
+                   (projection-matrix        projection-matrix)
+                   (model-matrix             model-matrix)
+                   (view-matrix              view-matrix)
+                   (compiled-shaders         compiled-shaders)
+                   (triangles                triangles)
+                   (fog-density              fog-density)) object
     (declare (texture:texture texture-shore texture-grass texture-snow
                               texture-soil-level-1   texture-soil-level-2
                               texture-muddy-soil-decal texture-road-decal
@@ -336,8 +341,11 @@
             (texture:bind-texture texture-building-decal)
             (uniformi compiled-shaders :texture-building-decal 7)
             (gl:active-texture :texture8)
+            (texture:bind-texture texture-fow)
+            (uniformi  compiled-shaders :texture-fow 8)
+            (gl:active-texture :texture9)
             (texture:bind-texture decal-weights)
-            (uniformi  compiled-shaders :decals-weights 8)
+            (uniformi  compiled-shaders :decals-weights 9)
             (uniformf  compiled-shaders :time  el-time)
             (uniformf  compiled-shaders :fog-density fog-density)
             (uniformfv compiled-shaders :color-border (the vec4 map-border-color))

@@ -91,6 +91,8 @@
 
 (defgeneric entity-dead-p (object))
 
+(defgeneric popup-from-fow (object &key &allow-other-keys))
+
 (defmethod entity-dead-p (object)
   (declare (ignore object))
   nil)
@@ -147,3 +149,31 @@
     `(with-player-cost-pos (,entity ,x ,y)
        (let ((,v (ivec2:ivec2 ,x ,y)))
          ,@body))))
+
+(defun init-fow-texture ()
+  (texture:with-prepared-texture (tex (res:get-resource-file texture:+fow+
+                                                             +animation-texture-dir+))
+    tex))
+
+(defun adjust-fow-texture (world)
+  (with-accessors ((main-state main-state)) world
+    (let* ((size-map-state   (matrix:width (game-state:map-state main-state)))
+           (size-world       size-map-state)
+           (texture          (init-fow-texture))
+           (new-texure-size  size-world)
+           (old-texture-size (matrix:width texture))
+           (scale            (d (/ new-texure-size old-texture-size))))
+      (pixmap:nscale-pixmap-nearest texture scale scale)
+      (pixmap:sync-data-to-bits texture)
+      ;; force the substitution of the whole bitmap
+      (force-reinitialize texture)
+      (prepare-for-rendering texture)
+      (setf (texture-fow main-state) texture)
+      texture)))
+
+(defclass affected-by-fow ()
+  ((texture-fow
+    :initform   (init-fow-texture)
+    :initarg    :texture-fow
+    :accessor   texture-fow
+    :allocation :class)))

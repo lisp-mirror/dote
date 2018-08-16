@@ -666,6 +666,8 @@ to take care of that"
                                                                 :tile-pos current-path))
                 ;; update-cone for ai visibility check below
                 (update-visibility-cone object)
+                ;; remove fow
+                (popup-from-fow object)
                 ;; traps
                 (let ((trap-ostile (trap-ostile-p object)))
                   (when trap-ostile
@@ -674,6 +676,14 @@ to take care of that"
                 (send-update-visibility-event object event)
                 (send-refresh-toolbar-event)))))))
   nil)
+
+(defmethod popup-from-fow ((object md2-mesh) &key &allow-other-keys)
+  (with-accessors ((state state)
+                   (id    id)) object
+    (when (faction-player-p state id)
+      (with-player-cost-pos-ivec2 (object pos)
+        ;; TODO make size dynamic (check for helm, for example)
+        (popup-from-fow state :size 2 :x (ivec2-x pos) :y (ivec2-y pos))))))
 
 (defmethod on-game-event ((object md2-mesh) (event move-entity-along-path-end-event))
   (with-accessors ((id id)

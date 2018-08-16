@@ -12,6 +12,7 @@ in float height;
 
 in float slope;
 
+//used for decals (roads, swamp, etc) and for fog of war too.
 in vec2 frag_text_coord_decals;
 
 in float pick_weight;
@@ -47,6 +48,8 @@ uniform sampler2D texture_muddy_soil_decal;
 uniform sampler2D texture_roads_decal;
 // buildings
 uniform sampler2D texture_building_decal;
+// fow
+uniform sampler2D texture_fow;
 
 // channel 0 road, channel 1 building, channel 2 muddy muddy_soil, channel 3 border
 uniform sampler2D decals_weights;
@@ -165,21 +168,24 @@ vec4 terrain_color (){
 }
 
 void main () {
-  vec3 N = normalize(N);
-  vec3 V = normalize(V);
-  vec3 L = normalize(L);
-  vec3 R = reflect(-L, N);
-  vec4 texel = terrain_color();
+  vec3 N              = normalize(N);
+  vec3 V              = normalize(V);
+  vec3 L              = normalize(L);
+  vec3 R              = reflect(-L, N);
+  vec4 texel          = terrain_color();
   vec3 amb_diff_color = ka * ia + kd * (max(dot(N , L),0.0) * id);
+
   vec3 spec_color;
   vec4 decals = sample_decal_weigths();
 
-  spec_color = ks * (pow(max(dot(R, V),0.0),shine) * is);
-  spec_color *=  smoothstep(0.0, 1.0, decals[idx_decal_road]);
+  spec_color       = ks * (pow(max(dot(R, V),0.0),shine) * is);
+  spec_color      *=  smoothstep(0.0, 1.0, decals[idx_decal_road]);
 
-  color = mix(vec4(amb_diff_color,1.0) * texel + vec4(spec_color,1.0),
-	      pick_color,
-	      pick_weight);
+  color            = vec4(amb_diff_color,1.0) * texel + vec4(spec_color,1.0);
+
   float fog_factor = calc_fog_factor(eye_position, world_position, time);
-  color      = mix(color, fog_color, fog_factor);
+  vec4  fow_color  = texture2D(texture_fow, frag_text_coord_decals);
+
+  color            = mix(mix(color, fog_color, fog_factor), fow_color, fow_color.a);
+  color            = mix(color, pick_color, pick_weight);
 }
