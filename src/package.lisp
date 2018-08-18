@@ -1264,7 +1264,9 @@
    :adjust-fow-texture
    :affected-by-fow
    :texture-fow
-   :popup-from-fow))
+   :popup-from-fow
+   :throw-down-in-fow
+   :thrown-down-in-fow-p))
 
 (defpackage :bs-tree
   (:use
@@ -4122,6 +4124,8 @@
    :actual-aabb-for-visibility
    :reset-aabb
    :renderp
+   :thrown-in-fow
+   :thrown-in-fow-p
    :calculatep
    :use-blending-p
    :bounding-sphere

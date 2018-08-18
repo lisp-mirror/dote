@@ -1339,17 +1339,27 @@
                          all-ids)))
       res)))
 
-(defmethod popup-from-fow ((object game-state) &key (x 0) (y 0) (size 0) &allow-other-keys)
-  (with-accessors ((map-state   map-state)
-                   (texture-fow texture-fow)) object
-    (let ((tiles (gen-valid-neighbour-position-in-box map-state x y size size)))
-      (loop for tile across tiles do
-           (2d-utils:displace-2d-vector (tile x-tile y-tile)
-             (setf (elt (pixel@ texture-fow x-tile (- (matrix:height map-state) y-tile 1))
-                        3)
-                   0)))
-      (pixmap:sync-data-to-bits texture-fow)
-      (update-for-rendering texture-fow))))
+(defun fow-remap-y (y max)
+  (- max y 1))
+
+(defun fow-set-texture (texture-fow x y alpha-value)
+  (let ((pixel (pixel@ texture-fow x (fow-remap-y y (matrix:height texture-fow)))))
+    (setf (elt pixel 3) alpha-value)
+    (pixmap:sync-data-to-bits texture-fow)
+    (update-for-rendering     texture-fow)))
+
+(defmethod popup-from-fow ((object game-state) &key (x 0) (y 0) &allow-other-keys)
+  (with-accessors ((texture-fow texture-fow)) object
+    (fow-set-texture texture-fow x y 0)))
+
+(defmethod throw-down-in-fow ((object game-state) &key (x 0) (y 0) &allow-other-keys)
+  (with-accessors ((texture-fow texture-fow)) object
+    (fow-set-texture texture-fow x y 255)))
+
+(defmethod thrown-down-in-fow-p ((object game-state) &key (x 0) (y 0) &allow-other-keys)
+  (with-accessors ((texture-fow texture-fow)) object
+    (let ((pixel (pixel@ texture-fow x (fow-remap-y y (matrix:height texture-fow)))))
+      (= (elt pixel 3) 0))))
 
 (defun increase-game-turn (state)
   (let* ((turn-count (game-turn state))

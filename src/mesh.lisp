@@ -485,6 +485,10 @@
     :initform t
     :initarg :renderp
     :accessor renderp)
+   (thrown-in-fow
+    :initform t
+    :initarg :thrown-in-fow
+    :writer  (setf thrown-in-fow))
    (calculatep
     :initform t
     :initarg :calculatep
@@ -586,6 +590,15 @@
     (setf compiled-shaders new-value)
     (do-children-mesh (i object)
       (setf (compiled-shaders i) new-value))))
+
+(defmethod throw-down-in-fow ((object triangle-mesh) &key &allow-other-keys)
+  (setf (thrown-in-fow object) t))
+
+(defmethod popup-from-fow ((object triangle-mesh) &key &allow-other-keys)
+  (setf (thrown-in-fow object) nil))
+
+(defmethod thrown-down-in-fow-p ((object triangle-mesh) &key &allow-other-keys)
+  (slot-value object 'thrown-in-fow))
 
 (defmethod marshal:class-persistant-slots ((object triangle-mesh))
   (append  '(normals

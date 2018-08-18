@@ -677,13 +677,37 @@ to take care of that"
                 (send-refresh-toolbar-event)))))))
   nil)
 
-(defmethod popup-from-fow ((object md2-mesh) &key &allow-other-keys)
+(defun fow-affected-tiles (game-state x y size)
+  (matrix:gen-valid-neighbour-position-in-box (game-state:map-state game-state)
+                                              x y size size :add-center nil))
+
+(defmethod popup-from-fow :before ((object md2-mesh) &key &allow-other-keys)
   (with-accessors ((state state)
                    (id    id)) object
     (when (faction-player-p state id)
       (with-player-cost-pos-ivec2 (object pos)
         ;; TODO make size dynamic (check for helm, for example)
-        (popup-from-fow state :size 2 :x (ivec2-x pos) :y (ivec2-y pos))))))
+        (let ((size 3))
+          (2d-utils:displace-2d-vector (pos x y)
+            (let ((tiles (fow-affected-tiles state x y size)))
+              (loop for tile across tiles do
+                   (2d-utils:displace-2d-vector (tile tile-x tile-y)
+                     (popup-from-fow state :size 0 :x tile-x :y tile-y)
+                     (when-let ((entity (game-state:entity-in-pos state tile-x tile-y)))
+                       (when (and (/= id (id entity))
+                                  (thrown-down-in-fow-p state :x tile-x :y tile-y))
+                         (popup-from-fow entity))))))  ; nil  (i.e. no
+                                                      ; entity)     is
+                                                      ; managed     by
+                                                      ; methods
+                                                      ; dispatch
+            (popup-from-fow state :size 0 :x x :y y)))))))
+
+(defmethod throw-down-in-fow ((object md2-mesh) &key &allow-other-keys)
+  (with-accessors ((state state)
+                   (id    id)) object
+    (when (faction-ai-p state id)
+      (call-next-method))))
 
 (defmethod on-game-event ((object md2-mesh) (event move-entity-along-path-end-event))
   (with-accessors ((id id)

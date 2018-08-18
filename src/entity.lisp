@@ -93,6 +93,22 @@
 
 (defgeneric popup-from-fow (object &key &allow-other-keys))
 
+(defgeneric throw-down-in-fow (object &key &allow-other-keys))
+
+(defgeneric thrown-down-in-fow-p (object &key &allow-other-keys))
+
+(defmethod popup-from-fow ((object (eql nil)) &key &allow-other-keys)
+  ;; nothing to do
+  )
+
+(defmethod throw-down-in-fow ((object (eql nil)) &key &allow-other-keys)
+  ;; nothing to do
+  )
+
+(defmethod thrown-down-in-fow-p ((object (eql nil)) &key &allow-other-keys)
+  ;; nothing to do
+  )
+
 (defmethod entity-dead-p (object)
   (declare (ignore object))
   nil)
