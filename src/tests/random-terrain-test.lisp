@@ -32,11 +32,20 @@
 (deftest generate-map-test-256-2-height (random-terrain-suite)
   (with-kernel
     (assert-true
-        (let ((map (test-make-map 256 256 2))
+        (let ((map    (test-make-map 256 256 2))
               (height (make-instance 'pixmap:pgm)))
           (pixmap:load height (concatenate 'string  +terrain-dir+ "terrain-256-2.pgm"))
-          (equalp (matrix:data (matrix:map-matrix (matrix map) #'round))
-                  (matrix:data height))))))
+          (if (equalp (matrix:data (matrix:map-matrix (matrix map) #'round))
+                      (matrix:data height))
+              t
+              (with-open-file (stream (format nil "~a~a" +tmp-dir+ "terrain-height.pgm")
+                                      :direction :output)
+                (format stream "~a"
+                        (pixmap::matrix->pgm-less-mem (matrix:map-matrix (matrix map)
+                                                                         #'round)
+                                                      "dump"
+                                                      255))
+                nil))))))
 
 (deftest generate-map-test-256-2-layer (random-terrain-suite)
   (with-kernel

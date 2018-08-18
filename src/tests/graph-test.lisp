@@ -33,7 +33,8 @@
       (let ((tree (graph:astar-search (testing-layer-graph)
                                       (graph:node->node-id (testing-layer-graph) #(1 0))
                                       (graph:node->node-id (testing-layer-graph) #(1 2))
-                                      :heuristic-cost-function (heuristic-manhattam))))
+                                      :heuristic-cost-function
+                                      (game-state::heuristic-manhattam 1.0))))
         (multiple-value-bind (raw-path cost)
             (graph:graph->path tree (graph:node->node-id (testing-layer-graph)  #(1 2)))
           (let ((path (map 'vector

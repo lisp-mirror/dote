@@ -18,6 +18,9 @@
 
 (defsuite attack-tactics-suite (all-suite))
 
+(defmethod character:calc-fingerprint ((object (eql nil)))
+  "")
+
 (deftest test-attack-tactic-no-superimpose (attack-tactics-suite)
   (num:with-lcg-seed (1)
     (let* ((state      (make-instance 'game-state:game-state
@@ -25,8 +28,8 @@
            (blackboard (make-instance 'blackboard :main-state state))
            (player     (make-instance 'md2-mesh:md2-mesh :state state)))
       (setf (game-state:blackboard state) blackboard)
-      (with-accessors ((attack-enemy-pole-positions     attack-enemy-pole-positions)
-                       (attack-enemy-melee-positions    attack-enemy-melee-positions)) blackboard
+      (with-accessors ((attack-enemy-pole-positions  attack-enemy-pole-positions)
+                       (attack-enemy-melee-positions attack-enemy-melee-positions)) blackboard
         (setf attack-enemy-pole-positions
               (blackboard::push-target-position attack-enemy-pole-positions
                                                 player
@@ -53,21 +56,21 @@
   (let* ((def (list (cons (ivec2 1  0) nil)
                     (cons (ivec2 18 0) nil)
                     (cons (ivec2 19 0) nil)))
-          (atk (list (cons (ivec2 20 0) 30)
-                     (cons (ivec2 21 0) 31)
-                     (cons (ivec2 11 0) 7)
-                     (cons (ivec2 11 1) 8)
-                     (cons (ivec2 11 2) 9)
-                     (cons (ivec2 14 0) 7)
-                     (cons (ivec2 15 0) 7)
-                     (cons (ivec2 16 0) 7))))
+          (atk (list (cons (ivec2 20 0) 60)
+                     (cons (ivec2 21 0) 62)
+                     (cons (ivec2 11 0) 14)
+                     (cons (ivec2 11 1) 16)
+                     (cons (ivec2 11 2) 18)
+                     (cons (ivec2 14 0) 14)
+                     (cons (ivec2 15 0) 14)
+                     (cons (ivec2 16 0) 14))))
     (blackboard::%build-single-attack-tactics def (rest atk) (first atk) nil)))
 
 (defun make-tactics-compete ()
   (let* ((def (list (cons (ivec2 10 0) nil)
                     (cons (ivec2 10 1) nil)))
-         (atk (list (cons (ivec2 9 0) 1)
-                    (cons (ivec2 11 0) 1))))
+         (atk (list (cons (ivec2 9 0)  2)
+                    (cons (ivec2 11 0) 2))))
     (blackboard::%build-single-attack-tactics def (rest atk) (first atk) nil)))
 
 (defun make-tactics-random ()
@@ -91,10 +94,10 @@
   (let ((*reachable-p-fn* #'blackboard:reachablep))
     (assert-true
         (%comp-tactics (make-tactics-3-9)
-                       '((#(1 0) #(20 0) 30) (#(18 0) #(16 0) 7) (#(19 0) #(21 0) 31))))
+                       '((#(1 0) #(20 0) 60) (#(18 0) #(16 0) 14) (#(19 0) #(21 0) 62))))
     (assert-true
         (%comp-tactics (make-tactics-compete)
-                       '((#(10 0) #(11 0) 1) (#(10 1)))))
+                       '((#(10 0) #(11 0) 2) (#(10 1)))))
     (assert-true
         (%comp-tactics (make-tactics-3-2)
                        '((#(6 10) #(0 0) 150) (#(5 9) #(0 1) 150) (#(7 9)))))))
