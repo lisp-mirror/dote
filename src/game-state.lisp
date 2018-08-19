@@ -1359,7 +1359,7 @@
 
 (defmethod thrown-down-in-fow-p ((object game-state) &key (x 0) (y 0) &allow-other-keys)
   (with-accessors ((texture-fow texture-fow)) object
-    (let ((pixel (pixel@ texture-fow x (fow-remap-y y (matrix:height texture-fow)))))
+    (let ((pixel (pixmap:bits-pixel@ texture-fow x y)))
       (= (elt pixel 3) 255))))
 
 (defun increase-game-turn (state)

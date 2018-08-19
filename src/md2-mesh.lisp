@@ -640,6 +640,10 @@ to take care of that"
                               :interrupting-id           trap-ostile)
               (%try-deactivate-trap-from-ai world player trap-ostile)))
           (send-update-visibility-event player event)
+          ;; FOW
+          (if (thrown-down-in-fow-p state :x (ivec2-x pos-entity) :y (ivec2-y pos-entity))
+              (throw-down-in-fow player)
+              (popup-from-fow    player))
           (send-refresh-toolbar-event))))))
 
 (defmethod on-game-event ((object md2-mesh) (event move-entity-entered-in-tile-event))
