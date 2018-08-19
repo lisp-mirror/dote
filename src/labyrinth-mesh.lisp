@@ -284,7 +284,8 @@
 (defmethod all-position ((object instanced-mesh))
   (let ((res (make-fresh-array 0 nil 'vec nil)))
     (loop for a across (children object) do
-         (when (renderp a)
+         (when (and (not (thrown-down-in-fow-p a))
+                    (renderp a))
            (vector-push-extend (pos a) res)))
     res))
 

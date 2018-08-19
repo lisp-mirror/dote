@@ -426,6 +426,7 @@ active program (set by sdk2.kit:use-program)."
                 :ks
                 :shine
                 :fog-density
+                :thrown-in-fow
                 :pick-color
                 :modelview-matrix
                 :proj-matrix
@@ -445,6 +446,7 @@ active program (set by sdk2.kit:use-program)."
                 :ks
                 :shine
                 :fog-density
+                :thrown-in-fow
                 :pick-color
                 :modelview-matrix
                 :proj-matrix

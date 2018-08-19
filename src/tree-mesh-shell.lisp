@@ -84,8 +84,7 @@
     (declare (desired-type animation-speed el-time))
     (if (use-lod-p object 2.0 renderer)
         (render impostor renderer)
-        (when (and (not (thrown-down-in-fow-p object))
-                   (> (length triangles) 0))
+        (when (> (length triangles) 0)
           (with-clip-plane
             (with-camera-view-matrix (camera-vw-matrix renderer)
               (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
@@ -119,6 +118,12 @@
                   (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
                   (gl:draw-arrays :triangles 0 (f* 3 (length triangles)))))))
           (render-debug object renderer)))))
+
+(defmethod popup-from-fow :after ((object tree-mesh-shell) &key &allow-other-keys)
+  (setf (thrown-in-fow (impostor object)) nil))
+
+(defmethod throw-down-in-fow :after ((object tree-mesh-shell) &key &allow-other-keys)
+  (setf (thrown-in-fow (impostor object)) t))
 
 (defgeneric tree-trunk-aabb (object))
 

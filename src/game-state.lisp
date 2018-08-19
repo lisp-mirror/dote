@@ -1342,24 +1342,25 @@
 (defun fow-remap-y (y max)
   (- max y 1))
 
-(defun fow-set-texture (texture-fow x y alpha-value)
-  (let ((pixel (pixel@ texture-fow x (fow-remap-y y (matrix:height texture-fow)))))
-    (setf (elt pixel 3) alpha-value)
-    (pixmap:sync-data-to-bits texture-fow)
-    (update-for-rendering     texture-fow)))
+(defun fow-set-texture (texture-fow x y alpha-value update-gpu-texture)
+  (setf (pixmap:alpha-bits@ texture-fow x y) alpha-value)
+  (when update-gpu-texture
+    (update-for-rendering texture-fow)))
 
-(defmethod popup-from-fow ((object game-state) &key (x 0) (y 0) &allow-other-keys)
+(defmethod popup-from-fow ((object game-state)
+                           &key (x 0) (y 0) (update-gpu-texture t) &allow-other-keys)
   (with-accessors ((texture-fow texture-fow)) object
-    (fow-set-texture texture-fow x y 0)))
+    (fow-set-texture texture-fow x y 0 update-gpu-texture)))
 
-(defmethod throw-down-in-fow ((object game-state) &key (x 0) (y 0) &allow-other-keys)
+(defmethod throw-down-in-fow ((object game-state)
+                              &key (x 0) (y 0) (update-gpu-texture t) &allow-other-keys)
   (with-accessors ((texture-fow texture-fow)) object
-    (fow-set-texture texture-fow x y 255)))
+    (fow-set-texture texture-fow x y 255 update-gpu-texture)))
 
 (defmethod thrown-down-in-fow-p ((object game-state) &key (x 0) (y 0) &allow-other-keys)
   (with-accessors ((texture-fow texture-fow)) object
     (let ((pixel (pixel@ texture-fow x (fow-remap-y y (matrix:height texture-fow)))))
-      (= (elt pixel 3) 0))))
+      (= (elt pixel 3) 255))))
 
 (defun increase-game-turn (state)
   (let* ((turn-count (game-turn state))

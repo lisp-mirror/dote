@@ -1835,6 +1835,7 @@
    :data
    :bits
    :bits-pixel@
+   :alpha-bits@
    :sync-data-to-bits
    :sync-bits-to-data
    :cristallize-bits
@@ -4421,6 +4422,7 @@
         :uivec
         :2d-utils
         :mtree-utils
+        :entity
         :mesh
         :mesh-material
         :pickable-mesh)

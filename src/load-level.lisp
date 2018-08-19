@@ -111,6 +111,7 @@
              (game-event:register-for-attack-long-range-event tree)
              ;; attack-spell
              (game-event:register-for-attack-spell-event tree)
+             (thrown-down-shell-in-fow tree)
              (setf (mesh:aabb tree) saved-aabb)
              (setf (entity:ghost tree)
                    (random-inert-object:generate-inert-object (height-tree->level tree))))))))
@@ -167,7 +168,8 @@
       ((eq door-type +door-e-type+)
        (mtree:add-child (mesh:door-e-instanced labyrinth-mesh) door-shell))
       ((eq door-type +door-w-type+)
-       (mtree:add-child (mesh:door-w-instanced labyrinth-mesh) door-shell)))))
+       (mtree:add-child (mesh:door-w-instanced labyrinth-mesh) door-shell)))
+    door-shell))
 
 (defun calculate-furnitures-shares (level)
   (let* ((normal-share    (d+ 0.66 (d* (d- (d level) 1.0) 0.01)))
@@ -246,7 +248,8 @@
       ;; if magic-furniture other interactions are possibles
       (when (eq furniture-type +magic-furniture-type+)
         (tune-magic-furniture world shell))
-      (push-interactive-entity world shell furniture-type nil))))
+      (push-interactive-entity world shell furniture-type nil)
+      shell)))
 
 (defun %relative-coord-furniture->cood-mat-state (min rel-coord)
   (truncate (+ (map-utils:coord-layer->map-state min) rel-coord)))
@@ -277,7 +280,8 @@
       (game-event:register-for-attack-long-range-event shell)
       ;; attack-spell
       (game-event:register-for-attack-spell-event shell)
-      (mtree:add-child (mesh:pillar-instanced labyrinth-mesh) shell))))
+      (mtree:add-child (mesh:pillar-instanced labyrinth-mesh) shell)
+      shell)))
 
 (defun setup-walkable (world min-x min-y x y)
   (when (walkable-bag world)
@@ -285,7 +289,8 @@
       (setf (entity:scaling shell) (vec (num:lcg-next-in-range 1.0 3.0)
                                         1.0
                                         (num:lcg-next-in-range 1.0 3.0)))
-      (push-interactive-entity world shell +walkable-type+ nil)))) ;; does not occlude
+      (push-interactive-entity world shell +walkable-type+ nil) ;; does not occlude
+      shell)))
 
 (defun state-type (state-matrix x y)
   (game-state:el-type (matrix-elt state-matrix y x)))
@@ -352,7 +357,8 @@
         (:e (mtree:add-child (mesh:chair-e-instanced labyrinth-mesh) shell))
         (:w (mtree:add-child (mesh:chair-w-instanced labyrinth-mesh) shell))
         (otherwise
-         (mtree:add-child (mesh:chair-n-instanced labyrinth-mesh) shell))))))
+         (mtree:add-child (mesh:chair-n-instanced labyrinth-mesh) shell)))
+      shell)))
 
 (defun setup-table (world min-x min-y x y labyrinth-mesh)
   (when (tables-bag world)
@@ -366,7 +372,8 @@
       (game-event:register-for-attack-long-range-event shell)
       ;; attack-spell
       (game-event:register-for-attack-spell-event shell)
-      (mtree:add-child (mesh:table-instanced labyrinth-mesh) shell))))
+      (mtree:add-child (mesh:table-instanced labyrinth-mesh) shell)
+      shell)))
 
 (defun setup-wall-decoration (world min-x min-y x y)
   (when (wall-decorations-bag world)
@@ -387,7 +394,8 @@
                                                   +wall-decoration-y+
                                                   (d* (d (- (elt wall-near 1) y-world))
                                                       (d* 0.5 +terrain-chunk-tile-size+)))))
-        (push-interactive-entity world shell +wall-decoration-type+ nil)))))
+        (push-interactive-entity world shell +wall-decoration-type+ nil))
+      shell)))
 
 (defun %wall-position (min-x min-y x y)
   "note we have to take into account  the fact that whe have two tiles
@@ -666,6 +674,10 @@ wall's    coordinates    as    they   are    already    scaled:    see
                  (game-event:register-for-end-turn obj)
                  (mtree:add-child (entity:ghost container) obj))))))))
 
+(defun thrown-down-shell-in-fow (s)
+  (and s
+       (setf (mesh:thrown-in-fow s) t)))
+
 (defun setup-labyrinths (world map)
   (let ((keychain (make-fresh-array 0 nil t nil)))
     (loop
@@ -679,41 +691,45 @@ wall's    coordinates    as    they   are    already    scaled:    see
                 (min-y   (aabb2-min-y aabb))
                 (labyrinth-mesh (make-instance 'mesh:labyrinth-mesh)))
            (loop-matrix (bmp x y)
-              (cond
-                ((wallp (matrix-elt bmp y x))
-                 (setup-wall world bmp min-x min-y x y labyrinth-mesh))
-                ((windowp (matrix-elt bmp y x))
-                 (setup-window world min-x min-y x y labyrinth-mesh))
-                ((door-n-p (matrix-elt bmp y x))
-                 (setup-door world :door-s min-x min-y x y labyrinth-mesh))
-                ((door-s-p (matrix-elt bmp y x))
-                 (setup-door world :door-n min-x min-y x y labyrinth-mesh))
-                ((door-e-p (matrix-elt bmp y x))
-                 (setup-door world :door-e min-x min-y x y labyrinth-mesh))
-                ((door-w-p (matrix-elt bmp y x))
-                 (setup-door world :door-w min-x min-y x y labyrinth-mesh))
-                ((furniture-pillar-p  (matrix-elt bmp y x))
-                 (setup-pillar world min-x min-y x y labyrinth-mesh))
-                ((furniture-walkable-p  (matrix-elt bmp y x))
-                 (setup-walkable world min-x min-y x y))
-                ((furniture-table-p  (matrix-elt bmp y x))
-                 (setup-table world min-x min-y x y labyrinth-mesh))
-                ((furniture-other-p (matrix-elt bmp y x))
-                 (setup-furnitures world min-x min-y x y
-                                   (sort (calculate-furnitures-shares (game-state:level-difficult
-                                                                       (main-state world)))
-                                         #'<
-                                         :key #'car)
-                                   keychain))))
+              (let ((new-shell (cond
+                                 ((wallp (matrix-elt bmp y x))
+                                  (setup-wall world bmp min-x min-y x y labyrinth-mesh))
+                                 ((windowp (matrix-elt bmp y x))
+                                  (setup-window world min-x min-y x y labyrinth-mesh))
+                                 ((door-n-p (matrix-elt bmp y x))
+                                  (setup-door world :door-s min-x min-y x y labyrinth-mesh))
+                                 ((door-s-p (matrix-elt bmp y x))
+                                  (setup-door world :door-n min-x min-y x y labyrinth-mesh))
+                                 ((door-e-p (matrix-elt bmp y x))
+                                  (setup-door world :door-e min-x min-y x y labyrinth-mesh))
+                                 ((door-w-p (matrix-elt bmp y x))
+                                  (setup-door world :door-w min-x min-y x y labyrinth-mesh))
+                                 ((furniture-pillar-p  (matrix-elt bmp y x))
+                                  (setup-pillar world min-x min-y x y labyrinth-mesh))
+                                 ((furniture-walkable-p  (matrix-elt bmp y x))
+                                  (setup-walkable world min-x min-y x y))
+                                 ((furniture-table-p  (matrix-elt bmp y x))
+                                  (setup-table world min-x min-y x y labyrinth-mesh))
+                                 ((furniture-other-p (matrix-elt bmp y x))
+                                  (let ((shares
+                                         (calculate-furnitures-shares
+                                          (game-state:level-difficult (main-state world)))))
+                                    (setup-furnitures world min-x min-y x y
+                                                      (sort shares
+                                                            #'<
+                                                            :key #'car)
+                                                      keychain))))))
+                (thrown-down-shell-in-fow new-shell)))
            ;; we  can setup  wall decorations  and chair  only after  we
            ;; arranged  the  other furnitures  as  the  first two  do  a
            ;; look-up on game state matrix.
            (loop-matrix (bmp x y)
-              (cond
-                ((furniture-chair-p  (matrix-elt bmp y x))
-                 (setup-chair world min-x min-y x y labyrinth-mesh))
-                ((furniture-wall-decoration-p  (matrix-elt bmp y x))
-                 (setup-wall-decoration world min-x min-y x y))))
+              (let ((new-shell (cond
+                                 ((furniture-chair-p  (matrix-elt bmp y x))
+                                  (setup-chair world min-x min-y x y labyrinth-mesh))
+                                 ((furniture-wall-decoration-p  (matrix-elt bmp y x))
+                                  (setup-wall-decoration world min-x min-y x y)))))
+                (thrown-down-shell-in-fow new-shell)))
            (setf (compiled-shaders labyrinth-mesh) (compiled-shaders world))
            (prepare-for-rendering labyrinth-mesh)
            (push-labyrinth-entity world labyrinth-mesh)))
@@ -753,6 +769,7 @@ wall's    coordinates    as    they   are    already    scaled:    see
                                     +zero-height+
                                     (3d-utils:min-z (mesh:aabb mesh))))
     (building-floor-mesh:setup-texture-coord-scaling mesh)
+    (setf (mesh:thrown-in-fow mesh) t)
     ;;for each tile
     (loop for x from 0.0 below (d/ w +terrain-chunk-size-scale+) do
          (loop for y from 0.0 below (d/ h +terrain-chunk-size-scale+) do

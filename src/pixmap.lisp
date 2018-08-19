@@ -147,6 +147,8 @@
 
 (defgeneric (setf bits-pixel@) (color object x y))
 
+(defgeneric (setf alpha-bits@) (alpha-value object x y))
+
 (defgeneric load-from-vector (object data))
 
 (defgeneric papply-kernel-ubvec4 (object kernel &key round-fn))
@@ -321,6 +323,7 @@
     (h-mirror-matrix object)))
 
 (defun cristallize-bits (pixmap)
+  "ensure the slot bits is a symple-array of fixnum"
   (with-accessors ((bits bits)) pixmap
     (let ((v (misc:make-array-frame (length (bits pixmap))
                                     0
@@ -480,7 +483,8 @@
   "Color is an ubvec4"
   (declare (optimize (safety 0) (debug 0) (speed 3)))
   (declare (fixnum x y))
-  (with-accessors ((bits pixmap:bits) (width pixmap:width)) object
+  (with-accessors ((bits  bits)
+                   (width width)) object
     (declare (fixnum width))
     (declare ((simple-array fixnum) bits))
     (let* ((offset (%offset-bits width x y)))
@@ -495,7 +499,8 @@
   (declare (optimize (safety 0) (debug 0) (speed 3)))
   (declare (fixnum x y))
   (declare (ubvec4 color))
-  (with-accessors ((bits pixmap:bits) (width pixmap:width)) object
+  (with-accessors ((bits  bits)
+                   (width width)) object
     (declare (fixnum width))
     (declare ((simple-array fixnum) bits))
     (let* ((offset (%offset-bits width x y)))
@@ -504,6 +509,21 @@
             (elt bits (+ 1 offset)) (elt color 1)
             (elt bits (+ 2 offset)) (elt color 2)
             (elt bits (+ 3 offset)) (elt color 3)))
+    object))
+
+(defmethod (setf alpha-bits@) (alpha-value (object pixmap) x y)
+  "value is an  unsigned byte (octect), please ensure  the slot 'bits'
+of the pixmap is a symple-array of fixnum (see: cristallize-bits)"
+  (declare (optimize (safety 0) (debug 0) (speed 3)))
+  (declare (fixnum x y))
+  (declare ((unsigned-byte 8) alpha-value))
+  (with-accessors ((bits  bits)
+                   (width width)) object
+    (declare (fixnum width))
+    (declare ((simple-array fixnum) bits))
+    (let* ((offset (%offset-bits width x y)))
+      (declare (fixnum offset))
+      (setf (elt bits (+ 3 offset)) alpha-value))
     object))
 
 (defmethod draw-normalized-coord-custom-conversion ((object pixmap) x y function conversion-fn)

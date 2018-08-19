@@ -29,20 +29,36 @@
   (with-accessors ((vbo vbo)) object
     (alexandria:last-elt vbo)))
 
+(defmethod render ((object building-floor-mesh) renderer)
+  (with-accessors ((normal-map normal-map)
+                   (renderp renderp))      object
+    (when (and renderp
+               (rendering-needed-p object renderer))
+      (if normal-map
+          (render-normalmap object renderer)
+          (render-phong object renderer))
+      (do-children-mesh (c object)
+        (render c renderer)))))
+
+(defun in-fow->weight (mesh)
+  (if (entity:thrown-down-in-fow-p mesh)
+      1.0
+      0.0))
+
 (defmethod render-phong ((object building-floor-mesh) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
-  (with-accessors ((vbo vbo)
-                   (vao vao)
-                   (texture-object texture-object)
-                   (projection-matrix projection-matrix)
-                   (model-matrix model-matrix)
-                   (view-matrix view-matrix)
-                   (compiled-shaders compiled-shaders)
-                   (triangles triangles)
-                   (material-params material-params)
+  (with-accessors ((vbo                   vbo)
+                   (vao                   vao)
+                   (texture-object        texture-object)
+                   (projection-matrix     projection-matrix)
+                   (model-matrix          model-matrix)
+                   (view-matrix           view-matrix)
+                   (compiled-shaders      compiled-shaders)
+                   (triangles             triangles)
+                   (material-params       material-params)
                    (texture-coord-scaling texture-coord-scaling)
-                   (current-time current-time)
-                   (fog-density fog-density)) object
+                   (current-time          current-time)
+                   (fog-density           fog-density)) object
     (declare (texture:texture texture-object))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
@@ -57,6 +73,7 @@
           (uniformfv compiled-shaders
                      :light-pos
                      (the vec (main-light-pos-eye-space renderer)))
+          (uniformf  compiled-shaders :thrown-in-fow    (in-fow->weight object))
           (uniformf  compiled-shaders :scale-text-coord texture-coord-scaling)
           (uniformfv compiled-shaders :ia    #(1.0 1.0 1.0))
           (uniformfv compiled-shaders :id    (the vec (main-light-color renderer)))
@@ -80,18 +97,18 @@
 
 (defmethod render-normalmap ((object building-floor-mesh) renderer)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
-  (with-accessors ((vbo vbo)
-                   (vao vao)
-                   (texture-object texture-object)
-                   (normal-map normal-map)
-                   (projection-matrix projection-matrix)
-                   (model-matrix model-matrix)
-                   (view-matrix view-matrix)
-                   (compiled-shaders compiled-shaders)
-                   (triangles triangles)
-                   (material-params material-params)
+  (with-accessors ((vbo                   vbo)
+                   (vao                   vao)
+                   (texture-object        texture-object)
+                   (normal-map            normal-map)
+                   (projection-matrix     projection-matrix)
+                   (model-matrix          model-matrix)
+                   (view-matrix           view-matrix)
+                   (compiled-shaders      compiled-shaders)
+                   (triangles             triangles)
+                   (material-params       material-params)
                    (texture-coord-scaling texture-coord-scaling)
-                   (fog-density fog-density)) object
+                   (fog-density           fog-density)) object
     (declare (texture:texture texture-object normal-map))
     (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
     (declare (list triangles vao vbo))
@@ -105,6 +122,7 @@
           (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
           (gl:active-texture :texture1)
           (texture:bind-texture normal-map)
+          (uniformf  compiled-shaders :thrown-in-fow    (in-fow->weight object))
           (uniformf  compiled-shaders :scale-text-coord texture-coord-scaling)
           (uniformi  compiled-shaders :normal-map +texture-unit-normalmap+)
           (uniformfv compiled-shaders :light-pos

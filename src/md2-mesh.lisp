@@ -692,16 +692,19 @@ to take care of that"
             (let ((tiles (fow-affected-tiles state x y size)))
               (loop for tile across tiles do
                    (2d-utils:displace-2d-vector (tile tile-x tile-y)
-                     (popup-from-fow state :size 0 :x tile-x :y tile-y)
-                     (when-let ((entity (game-state:entity-in-pos state tile-x tile-y)))
-                       (when (and (/= id (id entity))
-                                  (thrown-down-in-fow-p state :x tile-x :y tile-y))
-                         (popup-from-fow entity))))))  ; nil  (i.e. no
-                                                      ; entity)     is
-                                                      ; managed     by
-                                                      ; methods
-                                                      ; dispatch
-            (popup-from-fow state :size 0 :x x :y y)))))))
+                     (when (thrown-down-in-fow-p state :x tile-x :y tile-y)
+                       (popup-from-fow state
+                                       :size 0
+                                       :x tile-x
+                                       :y tile-y
+                                       :update-gpu-texture nil)
+                       (when-let ((entity (game-state:entity-in-pos state tile-x tile-y)))
+                         (when (/= id (id entity))
+                           (popup-from-fow  entity)
+                           (when (parent-labyrinth entity)
+                             (prepare-for-rendering (parent-labyrinth entity)))))))))
+            (popup-from-fow state :size 0 :x x :y y :update-gpu-texture nil)))
+        (update-for-rendering (texture-fow state))))))
 
 (defmethod throw-down-in-fow ((object md2-mesh) &key &allow-other-keys)
   (with-accessors ((state state)

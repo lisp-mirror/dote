@@ -106,8 +106,7 @@
   )
 
 (defmethod thrown-down-in-fow-p ((object (eql nil)) &key &allow-other-keys)
-  ;; nothing to do
-  )
+  nil)
 
 (defmethod entity-dead-p (object)
   (declare (ignore object))
@@ -181,6 +180,7 @@
            (scale            (d (/ new-texure-size old-texture-size))))
       (pixmap:nscale-pixmap-nearest texture scale scale)
       (pixmap:sync-data-to-bits texture)
+      (pixmap:cristallize-bits texture)
       ;; force the substitution of the whole bitmap
       (force-reinitialize texture)
       (prepare-for-rendering texture)

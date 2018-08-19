@@ -486,7 +486,7 @@
     :initarg :renderp
     :accessor renderp)
    (thrown-in-fow
-    :initform t
+    :initform nil
     :initarg :thrown-in-fow
     :writer  (setf thrown-in-fow))
    (calculatep
@@ -1799,7 +1799,9 @@
 (defmethod render ((object triangle-mesh) renderer)
   (with-accessors ((normal-map normal-map)
                    (renderp renderp))      object
-    (when (and renderp (rendering-needed-p object renderer))
+    (when (and (not (thrown-down-in-fow-p object))
+               renderp
+               (rendering-needed-p object renderer))
       (if normal-map
           (render-normalmap object renderer)
           (render-phong object renderer))

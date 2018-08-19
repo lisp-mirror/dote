@@ -26,6 +26,10 @@ uniform float shine = 12.0;
 
 uniform vec4 pick_color         = vec4(0.0, 0.0, 1.0, 1.0);
 
+uniform vec4 fow_color         = vec4(0.0, 0.0, 0.0, 1.0);
+
+uniform float thrown_in_fow     = 1.0;
+
 uniform float scale_text_coord  = 1.0;
 
 out vec4 color;
@@ -44,5 +48,5 @@ void main () {
   color               = vec4(amb_diff_color,1.0) * texel + vec4(spec_color,1.0);
   color               = mix(color, pick_color, pick_weight);
   float fog_factor = calc_fog_factor(eye_position, world_position, time);
-  color      = mix(color, fog_color, fog_factor);
+  color            = mix(mix(color, fog_color, fog_factor), fow_color, thrown_in_fow);
 }

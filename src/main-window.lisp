@@ -265,7 +265,7 @@
               (misc:dbg "n ~a" *near*)
               (incf *near* -.1))
             (when (string= text "p")
-              (entity:popup-from-fow (window-game-state object) :x 10 :y 10 :size 3)
+              (entity:popup-from-fow (window-game-state object) :x 10 :y 10 :size 5)
               (let* ((ai-check (first (ai-entities (window-game-state object)))))
                 (billboard:enqueue-tooltip ai-check
                                            billboard:+tooltip-surprise-attack-char+
@@ -277,7 +277,7 @@
                                            :font-type             gui:+tooltip-font-handle+
                                            :add-only-if-renderd-p t)))
             (when (string= text "D")
-              (entity:throw-down-in-fow (window-game-state object) :x 10 :y 10 :size 3)
+              (entity:throw-down-in-fow (window-game-state object) :x 10 :y 10 :size 5)
               (world:apply-tremor-0 world))
             (when (string= text "L")
               (setf (world:opening-mode world) nil)
