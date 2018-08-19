@@ -44,8 +44,8 @@ void main () {
   vec3 amb_diff_color = ka * ia + kd * (max(dot(N , L),0.0) * texel.rgb);
   vec3 spec_color     = ks * (pow(max(dot(R, V),0.0),shine) * is);
 
-  color = mix(vec4(amb_diff_color,1.0) + vec4(spec_color,1.0), pick_color, pick_weight);
+  color =             vec4(amb_diff_color,1.0) + vec4(spec_color,1.0);
   float fog_factor    = calc_fog_factor(eye_position, world_position, 0.0);
   color               = mix(mix(color, fog_color, fog_factor), fow_color, thrown_in_fow);
-
+  color               = mix(color, pick_color, pick_weight);
 }
