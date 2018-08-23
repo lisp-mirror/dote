@@ -98,10 +98,6 @@
     :initform (initform-terrain texture:+texture-tag-building-decal+)
     :initarg  :texture-building-decal
     :accessor texture-building-decal)
-   (texture-fow
-    :initform (init-fow-texture)
-    :initarg  :texture-fow
-    :accessor texture-fow)
    (map-border-color
     :initform (vec4 1.0 0.0 1.0 1.0)
     :initarg  :map-border-color

@@ -146,6 +146,12 @@
     (with-accessors ((position-target pos)) target
       (%project-on-dir dir position-object position-target))))
 
+(defmacro end-of-life-remove-from-world (entity)
+  `(game-state:with-world (world (entity:state ,entity))
+     (setf (end-of-life-callback ,entity)
+           #'(lambda ()
+               (entity:remove-entity-by-id world (identificable:id ,entity))))))
+
 (defmacro with-slots-for-reasoning ((mesh state ghost blackboard) &body body)
   `(with-accessors ((,state state)
                     (,ghost ghost)) ,mesh

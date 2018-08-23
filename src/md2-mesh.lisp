@@ -702,7 +702,10 @@ to take care of that"
                                        :x tile-x
                                        :y tile-y
                                        :update-gpu-texture nil)
-                       (when-let ((entity (game-state:entity-in-pos state tile-x tile-y)))
+                       (when-let ((entity (and (valid-id-p (game-state:entity-id-in-pos state
+                                                                                        tile-x
+                                                                                        tile-y))
+                                               (game-state:entity-in-pos state tile-x tile-y))))
                          (when (/= id (id entity))
                            (popup-from-fow  entity)
                            (when (parent-labyrinth entity)
@@ -714,7 +717,8 @@ to take care of that"
   (with-accessors ((state state)
                    (id    id)) object
     (when (faction-ai-p state id)
-      (call-next-method))))
+      (call-next-method))
+    object))
 
 (defmethod on-game-event ((object md2-mesh) (event move-entity-along-path-end-event))
   (with-accessors ((id id)

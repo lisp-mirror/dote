@@ -623,6 +623,7 @@
              parent-mesh
              aabb
              renderp
+             thrown-in-fow
              use-blending-p
              render-aabb
              render-normals

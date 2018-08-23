@@ -35,7 +35,8 @@
             (ghost            shell) trap-ghost
             (compiled-shaders shell) shaders)
       (game-event:register-for-deactivate-trap-event shell)
-      (world:push-trap-entity world shell))))
+      (world:push-trap-entity world shell)
+      shell)))
 
 (defmethod my-faction ((object trap-mesh-shell))
   (slot-value object 'faction ))

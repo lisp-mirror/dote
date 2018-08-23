@@ -117,8 +117,8 @@
     (setf renderer-data-position nil)
     (make-data-for-opengl object)
     ;; update positions buffer
-    (gl:bind-buffer     :array-buffer (vbo-pos-vertex-buffer-handle vbo))
-    (gl:buffer-sub-data :array-buffer renderer-data-position)))
+    (gl:bind-buffer :array-buffer (vbo-pos-vertex-buffer-handle vbo))
+    (gl:buffer-data :array-buffer :static-draw renderer-data-position)))
 
 (defmethod prepare-for-rendering ((object instanced-mesh))
   (with-accessors ((vbo vbo)

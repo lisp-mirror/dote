@@ -231,7 +231,12 @@
     :accessor saved-attack-enemy-crossbow-positions
     :documentation "This  holds the positions AI  with crossbow weapon
     should  reach to  attack the  enemy (it  is a  list of  def-target
-    instances)")))
+    instances)")
+   (saved-fow-texture
+    :initform nil
+    :initarg  :saved-fow-texture
+    :accessor saved-fow-texture
+    :type     texture)))
 
 (defmethod marshal:class-persistant-slots ((object saved-game))
   '(original-map-file
@@ -252,7 +257,8 @@
     saved-attack-enemy-melee-positions
     saved-attack-enemy-pole-positions
     saved-attack-enemy-bow-positions
-    saved-attack-enemy-crossbow-positions))
+    saved-attack-enemy-crossbow-positions
+    saved-fow-texture))
 
 (defmethod el-type-in-pos ((object saved-game) (x fixnum) (y fixnum))
   (el-type (matrix-elt (delta-tiles object) y x)))
@@ -359,6 +365,7 @@
            (attack-enemy-pole-positions           (attack-enemy-pole-positions     blackboard))
            (attack-enemy-bow-positions            (attack-enemy-bow-positions      blackboard))
            (attack-enemy-crossbow-positions       (attack-enemy-crossbow-positions blackboard))
+           (fow-texture                           (texture-fow                     game-state))
            (to-save                 (make-instance 'saved-game
                                                    :saved-doors            saved-doors
                                                    :saved-containers       saved-containers
@@ -389,7 +396,21 @@
                                                    :saved-attack-enemy-bow-positions
                                                    attack-enemy-bow-positions
                                                    :saved-attack-enemy-crossbow-positions
-                                                   attack-enemy-crossbow-positions)))
+                                                   attack-enemy-crossbow-positions
+                                                   :saved-fow-texture
+                                                   ;; during  the game
+                                                   ;;(for   efficience
+                                                   ;;purposes)    only
+                                                   ;;the   "bits"   of
+                                                   ;;this  texture are
+                                                   ;;modified;     but
+                                                   ;;only  the  "data"
+                                                   ;;slots          is
+                                                   ;;serialized: so we
+                                                   ;;need to  sync the
+                                                   ;;first    to   the
+                                                   ;;latter
+                                                   (pixmap:sync-bits-to-data fow-texture))))
       (fs:dump-sequence-to-file (serialize to-save) saved-file)
       saved-file)))
 
@@ -700,8 +721,11 @@
                                #'(lambda (n) (clean-handle n))))))
 
 (defun fix-texture-handles (dump)
-  (fix-texture-handlers-players    dump)
-  (fix-texture-handlers-containers dump))
+  (with-accessors ((saved-fow-texture saved-fow-texture)) dump
+    (destroy                  saved-fow-texture)
+    (post-deserialization-fix saved-fow-texture)
+    (fix-texture-handlers-players    dump)
+    (fix-texture-handlers-containers dump)))
 
 (defun find-by-pos (needle)
   #'(lambda (a)
@@ -857,6 +881,15 @@
           (attack-enemy-bow-positions      blackboard) saved-attack-enemy-bow-positions
           (attack-enemy-crossbow-positions blackboard) saved-attack-enemy-crossbow-positions)))
 
+(defun restore-fow (window saved-dump)
+  (with-accessors ((window-game-state main-window:window-game-state)) window
+      ;; restore FOW texture
+    (setf (entity:texture-fow window-game-state) (saved-fow-texture saved-dump))
+    ;; ensure a  simple array for 'bits'  slot otherwise a
+    ;; kraken will be released
+    (pixmap:cristallize-bits (entity:texture-fow window-game-state))
+    window))
+
 (defun load-game (window resource-dir)
   (let ((saved-dump (make-instance 'saved-game))
         (saved-file (res:get-resource-file +map-saved-filename+
@@ -874,20 +907,38 @@
             (fix-texture-handles          saved-dump)
             ;; refresh all ids
             (fix-id-carryed-items-players saved-dump)
-            ;; restore entitites
             (with-accessors ((window-game-state     main-window:window-game-state)
                              (root-compiled-shaders main-window:root-compiled-shaders)
                              (world                 main-window:world)) window
               (with-accessors ((map-state  map-state)
                                (blackboard blackboard)) window-game-state
+                ;; restore entities
                 (restore-entities window saved-dump)
                 ;; restore dmg points for wall and like
                 (restore-damage window saved-dump)
+                ;; restore FOW
+                (restore-fow window saved-dump)
+                ;; ensure a  simple array for 'bits'  slot otherwise a
+                ;; kraken will be released
+                (pixmap:cristallize-bits (entity:texture-fow window-game-state))
+                (loop-matrix ((entity:texture-fow window-game-state) x y)
+                   (when-let ((entity (entity-in-pos window-game-state x y)))
+                     (if (thrown-down-in-fow-p window-game-state :x x :y y)
+                         (throw-down-in-fow entity)
+                         (popup-from-fow    entity))))
                 ;; restore blackboard
                 (restore-blackboard blackboard saved-dump)
-                ;; some enemy (AI) need to be rendered
+                ;; update all labyrinths (instanced meshes)
+                (maphash #'(lambda (k v)
+                             (declare (ignore k))
+                             (update-for-rendering v))
+                         (labyrinth-entities window-game-state))
+                ;; some enemy  (AI) need  to be rendered  because they
+                ;; was  visibles  when  the   game  was  saved  (note:
+                ;; probably useless)
                 (update-rendering-needed-ai window-game-state)
-                ;; update all visibility
+                ;; update  all visibility,  check  if  this makes  the
+                ;; above function call useless
                 (update-all-visibility-state window-game-state)
                 ;; select a pc
                 (select-and-slide-to-first-pc world)

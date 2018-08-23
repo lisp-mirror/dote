@@ -254,12 +254,6 @@
          (setf (triggered ,object) t)
          ,@body))))
 
-(defmacro end-of-life-remove-from-world (entity)
-  `(game-state:with-world (world (entity:state ,entity))
-     (setf (end-of-life-callback ,entity)
-           #'(lambda ()
-               (entity:remove-entity-by-id world (identificable:id ,entity))))))
-
 (defun remove-end-of-life-callback (object)
   "First value is t if slot exists the second is the old value of the slot"
   (if (slot-exists-p object 'end-of-life-callback)

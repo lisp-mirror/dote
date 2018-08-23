@@ -595,8 +595,11 @@
                     (gl:clear-color 0 0 0 1)
                     (gl:clear :color-buffer)
                     (gl:clear :depth-buffer)
-                    (interfaces:calculate mesh 0.0)
-                    (interfaces:render mesh renderer)
+                    (let ((saved-fow-status (thrown-down-in-fow-p mesh)))
+                      (setf (thrown-in-fow mesh) nil) ; FOW prevent rendering, disable.
+                      (interfaces:calculate mesh 0.0)
+                      (interfaces:render mesh renderer)
+                      (setf (thrown-in-fow mesh) saved-fow-status)) ; restore
                     (gl:viewport 0.0 0.0 *window-w* *window-h*)))))
     ;; set alpha to zero where pixel color is black
     (matrix:ploop-matrix (pixmap x y)
