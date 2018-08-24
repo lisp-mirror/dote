@@ -17,27 +17,29 @@
 
 (in-package :md2-mesh)
 
-(define-constant +attribute-position-location-next+   1                  :test #'=)
+(define-constant +attribute-position-location-next+     1                  :test #'=)
 
-(alexandria:define-constant +magic-number+            "IDP2"             :test #'string=)
+(alexandria:define-constant +magic-number+              "IDP2"             :test #'string=)
 
-(alexandria:define-constant +version+                 8                  :test #'=)
+(alexandria:define-constant +version+                   8                  :test #'=)
 
-(alexandria:define-constant +element-type+            '(unsigned-byte 8) :test 'equalp)
+(alexandria:define-constant +element-type+              '(unsigned-byte 8) :test 'equalp)
 
-(alexandria:define-constant +size-elem-texture-coord+ 2                  :test #'=)
+(alexandria:define-constant +size-elem-texture-coord+   2                  :test #'=)
 
-(alexandria:define-constant +size-textures-struct+    4                  :test #'=)
+(alexandria:define-constant +size-textures-struct+      4                  :test #'=)
 
-(alexandria:define-constant +size-elem-triangles+     2                  :test #'=)
+(alexandria:define-constant +size-elem-triangles+       2                  :test #'=)
 
-(alexandria:define-constant +size-triangles-struct+  12                  :test #'=)
+(alexandria:define-constant +size-triangles-struct+    12                  :test #'=)
 
-(alexandria:define-constant +size-triangles-chunk+    6                  :test #'=)
+(alexandria:define-constant +size-triangles-chunk+      6                  :test #'=)
 
-(alexandria:define-constant +size-frame-name+        16                  :test #'=)
+(alexandria:define-constant +size-frame-name+          16                  :test #'=)
 
-(alexandria:define-constant +size-vertex-struct+      4                  :test #'=)
+(alexandria:define-constant +size-vertex-struct+        4                  :test #'=)
+
+(alexandria:define-constant +fow-standard-dispel-size+  4                  :test #'=)
 
 (alexandria:define-constant +default-animation-table+
     '((:stand          0  39 20) ; name starting-frame ending-frame fps
@@ -685,32 +687,40 @@ to take care of that"
   (matrix:gen-valid-neighbour-position-in-box (game-state:map-state game-state)
                                               x y size size :add-center nil))
 
-(defmethod popup-from-fow :before ((object md2-mesh) &key &allow-other-keys)
+(defun calculate-dispel-fow-size (mesh)
+  (with-accessors ((ghost ghost)) mesh
+    (if (elm-worn-p ghost)
+        (truncate (/ +fow-standard-dispel-size+ 2))
+        +fow-standard-dispel-size+)))
+
+(defmethod popup-from-fow :before ((object md2-mesh)
+                                   &key
+                                   (size (calculate-dispel-fow-size object))
+                                     &allow-other-keys)
   (with-accessors ((state state)
                    (id    id)) object
     (when (faction-player-p state id)
       (with-player-cost-pos-ivec2 (object pos)
-        ;; TODO make size dynamic (check for helm, for example)
-        (let ((size 3))
-          (2d-utils:displace-2d-vector (pos x y)
-            (let ((tiles (fow-affected-tiles state x y size)))
-              (loop for tile across tiles do
-                   (2d-utils:displace-2d-vector (tile tile-x tile-y)
-                     (when (thrown-down-in-fow-p state :x tile-x :y tile-y)
-                       (popup-from-fow state
-                                       :size 0
-                                       :x tile-x
-                                       :y tile-y
-                                       :update-gpu-texture nil)
-                       (when-let ((entity (and (valid-id-p (game-state:entity-id-in-pos state
-                                                                                        tile-x
-                                                                                        tile-y))
-                                               (game-state:entity-in-pos state tile-x tile-y))))
-                         (when (/= id (id entity))
-                           (popup-from-fow  entity)
-                           (when (parent-labyrinth entity)
-                             (prepare-for-rendering (parent-labyrinth entity)))))))))
-            (popup-from-fow state :size 0 :x x :y y :update-gpu-texture nil)))
+
+        (2d-utils:displace-2d-vector (pos x y)
+          (let ((tiles (fow-affected-tiles state x y size)))
+            (loop for tile across tiles do
+                 (2d-utils:displace-2d-vector (tile tile-x tile-y)
+                   (when (thrown-down-in-fow-p state :x tile-x :y tile-y)
+                     (popup-from-fow state
+                                     :size 0
+                                     :x tile-x
+                                     :y tile-y
+                                     :update-gpu-texture nil)
+                     (when-let ((entity (and (valid-id-p (game-state:entity-id-in-pos state
+                                                                                      tile-x
+                                                                                      tile-y))
+                                             (game-state:entity-in-pos state tile-x tile-y))))
+                       (when (/= id (id entity))
+                         (popup-from-fow  entity)
+                         (when (parent-labyrinth entity)
+                           (prepare-for-rendering (parent-labyrinth entity)))))))))
+            (popup-from-fow state :size 0 :x x :y y :update-gpu-texture nil))
         (update-for-rendering (texture-fow state))))))
 
 (defmethod throw-down-in-fow ((object md2-mesh) &key &allow-other-keys)

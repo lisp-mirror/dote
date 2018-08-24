@@ -762,6 +762,23 @@
   https://creativecommons.org/licenses/by/3.0/
   Downloaded from: http://game-icons.net/
 
+- data/textures/spells/misc/dispel-fow-1.tga
+- data/textures/spells/misc/dispel-fow-2.tga
+- data/textures/spells/misc/dispel-fow-3.tga
+  derived from © 2018 Delapouite  and Lorc
+
+  released under released under Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+  https://creativecommons.org/licenses/by/3.0/
+  Downloaded from: http://game-icons.net/
+
+- data/textures/spells/misc/fog-fx.tga
+  derived from © 2018 Delapouite
+
+  released under released under Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+  https://creativecommons.org/licenses/by/3.0/
+  Downloaded from: http://game-icons.net/
+
+
 - data/textures/spells/cure/immune-berserk-1.tga
 - data/textures/spells/cure/immune-poison-1.tga
 - data/textures/spells/cure/immune-terror-1.tga

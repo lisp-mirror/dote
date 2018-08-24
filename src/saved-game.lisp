@@ -888,6 +888,11 @@
     ;; ensure a  simple array for 'bits'  slot otherwise a
     ;; kraken will be released
     (pixmap:cristallize-bits (entity:texture-fow window-game-state))
+    (loop-matrix ((entity:texture-fow window-game-state) x y)
+       (when-let ((entity (entity-in-pos window-game-state x y)))
+         (if (thrown-down-in-fow-p window-game-state :x x :y y)
+             (throw-down-in-fow entity)
+             (popup-from-fow    entity))))
     window))
 
 (defun load-game (window resource-dir)
@@ -918,14 +923,6 @@
                 (restore-damage window saved-dump)
                 ;; restore FOW
                 (restore-fow window saved-dump)
-                ;; ensure a  simple array for 'bits'  slot otherwise a
-                ;; kraken will be released
-                (pixmap:cristallize-bits (entity:texture-fow window-game-state))
-                (loop-matrix ((entity:texture-fow window-game-state) x y)
-                   (when-let ((entity (entity-in-pos window-game-state x y)))
-                     (if (thrown-down-in-fow-p window-game-state :x x :y y)
-                         (throw-down-in-fow entity)
-                         (popup-from-fow    entity))))
                 ;; restore blackboard
                 (restore-blackboard blackboard saved-dump)
                 ;; update all labyrinths (instanced meshes)

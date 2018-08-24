@@ -1722,6 +1722,10 @@ data/textures/spells/misc/teleport-3.tga                 \
 data/textures/spells/misc/alarm-clock.tga                \
 data/textures/spells/misc/hammer.tga                     \
 data/textures/spells/misc/repair-weapon-1.tga            \
+data/textures/spells/misc/dispel-fow-1.tga               \
+data/textures/spells/misc/dispel-fow-2.tga               \
+data/textures/spells/misc/dispel-fow-3.tga               \
+data/textures/spells/misc/fog-fx.tga                     \
 data/textures/animation/bat.tga                          \
 data/textures/animation/vampire-bite.tga                 \
 data/textures/animation/flash-1.tga                      \

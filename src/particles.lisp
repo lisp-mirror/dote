@@ -1490,6 +1490,32 @@
     (setf (global-life fx) 100)
     fx))
 
+(defun make-dispel-fow-1-fx (pos compiled-shaders)
+  (let* ((tex-res  (append +spell-texture-dir+ (list "misc")))
+         (tex-file (res:get-resource-file texture:+dispel-fow-texture-1-fx+
+                                          tex-res))
+         (fx (make-particles-cluster 'summon-particles
+                          1
+                          compiled-shaders
+                          :texture    (with-prepared-texture (texture tex-file)
+                                        (setf (texture:interpolation-type texture) :linear))
+                          :pos        pos
+                          :min-y      (d- +zero-height+ (elt pos 1))
+                          :v0-fn      #'(lambda () +zero-vec+)
+                          :mass-fn    #'(lambda () 1.0)
+                          :life-fn    (gaussian-distribution-fn 3.0 .1)
+                          :delay-fn   (gaussian-distribution-fn 0.0 .0001)
+                          :scaling-fn (%uniform-scaling-clsr 10.6)
+                          :color-fn   (%gradient-color-clsr color-utils:+rainbow-gradient+
+                                                            .5)
+                          :alpha-fn   (%smooth-alpha-fading-clsr 4.0)
+                          :gravity    +zero-vec+
+                          :width      1.1
+                          :height     1.1
+                          :respawn    nil)))
+    (setf (global-life fx) 100)
+    fx))
+
 (defclass smoke-puff (cluster-w-gravity) ())
 
 (defmethod initialize-instance :after ((object smoke-puff)

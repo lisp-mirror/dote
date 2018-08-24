@@ -3,7 +3,7 @@
 (define-level
   set name "This is Just a Map for Testing" cffff00f9
   set notes "A simple map. Useful as a starting point to build yours."
-  set seed "hello-world"
+  set seed "hello-world2"
   set clouds random (clear cloudy covered)
   set buildings-level (random (0 1 2))
 

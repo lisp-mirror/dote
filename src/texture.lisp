@@ -74,6 +74,8 @@
 
 (alexandria:define-constant +repair-texture-1-fx+              "hammer.tga"         :test #'string=)
 
+(alexandria:define-constant +dispel-fow-texture-1-fx+          "fog-fx.tga"         :test #'string=)
+
 (alexandria:define-constant +influence-map+                    "influence-maps"     :test #'string=)
 
 (alexandria:define-constant +influence-map-w+                  256                  :test #'=)

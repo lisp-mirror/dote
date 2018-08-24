@@ -322,9 +322,13 @@
                                         0.0)))))
     (cond
       ((typep (entity:ghost defender) 'character:player-character)
-       (let* ((armor-level  (cond
+       (let* ((elm-level    (if (character:elm-worn-p ghost-defend)
+                                1
+                                0))
+              (armor-level  (cond
                              ((interactive-entity:armorp (character:armor ghost-defend))
-                              (character:level  (character:armor ghost-defend)))
+                              (+ (character:level  (character:armor ghost-defend))
+                                 elm-level))
                              (t
                               nil)))
               (shield-level (cond

@@ -2262,6 +2262,7 @@
    :+snow+
    :+fow+
    :+repair-texture-1-fx+
+   :+dispel-fow-texture-1-fx+
    :+influence-map+
    :+influence-map-w+
    :+influence-map-h+
@@ -3640,6 +3641,7 @@
    :weapon-type-bow-p
    :weapon-type-crossbow-p
    :weapon-type-minimum-range-p
+   :elm-worn-p
    :available-spells-list
    :available-spells-list-by-tag
    :castable-spells-list-by-tag
@@ -5306,6 +5308,7 @@
    :make-debris
    :make-summon-player-fx
    :make-repair-1-fx
+   :make-dispel-fow-1-fx
    :make-fire-dart-level-0
    :make-fire-dart-level-1
    :make-fire-dart-level-2
