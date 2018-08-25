@@ -176,21 +176,32 @@
                                                              +animation-texture-dir+))
     tex))
 
-(defun adjust-fow-texture (world)
+(defun adjust-fow-texture (world heights-matrix)
   (with-accessors ((main-state main-state)) world
     (let* ((size-map-state   (matrix:width (game-state:map-state main-state)))
            (size-world       size-map-state)
            (texture          (init-fow-texture))
            (new-texure-size  size-world)
            (old-texture-size (matrix:width texture))
-           (scale            (d (/ new-texure-size old-texture-size))))
+           (scale            (d (/ new-texure-size old-texture-size)))
+           (scaled-heights   (matrix:scale-matrix heights-matrix
+                                                  +terrain-chunk-size-scale+
+                                                  +terrain-chunk-size-scale+)))
       (pixmap:nscale-pixmap-nearest texture scale scale)
       (pixmap:sync-data-to-bits texture)
       (pixmap:cristallize-bits texture)
       ;; force the substitution of the whole bitmap
       (force-reinitialize texture)
       (prepare-for-rendering texture)
+      (assert (= (matrix:width scaled-heights)
+                 (matrix:width texture)))
+      (assert (= (matrix:width  scaled-heights)
+                 (matrix:height scaled-heights)))
       (setf (texture-fow main-state) texture)
+      (matrix:loop-matrix (scaled-heights x y)
+         (when (< (matrix:matrix-elt scaled-heights y x)
+                  +zero-height+)
+           (popup-from-fow main-state :x x :y y :update-gpu-texture t)))
       texture)))
 
 (defclass affected-by-fow ()

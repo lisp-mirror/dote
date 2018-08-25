@@ -1036,7 +1036,7 @@ wall's    coordinates    as    they   are    already    scaled:    see
       (setup-water                 world  *map*)
       (update-progress 1.0)
       ;; init fow texture
-      (entity:adjust-fow-texture world)
+      (entity:adjust-fow-texture world (random-terrain:matrix *map*))
       ;; free memory associated with *map*, *wall* etc.
       (clean-global-vars)
       #+debug-mode (misc:dbg "aabb world ~a" (world:world-aabb world))
