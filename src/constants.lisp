@@ -30,19 +30,19 @@
 
 (define-constant +gravity+                            9.81             :test #'=)
 
-(define-constant +maximum-map-size+                 256.0              :test #'=)
+(define-constant +maximum-map-size+                  64.0              :test #'=)
 
 (define-constant +debug-map-size+                    16.0              :test #'=)
 
-(define-constant +minimum-map-size+                  32.0              :test #'=)
+(define-constant +minimum-map-size+      +debug-map-size+              :test #'=)
 
 (define-constant +tiny-map-size+       +minimum-map-size+              :test #'=)
 
-(define-constant +small-map-size+                    48.0              :test #'=)
+(define-constant +small-map-size+                    32.0              :test #'=)
 
-(define-constant +medium-map-size+                   64.0              :test #'=)
+(define-constant +medium-map-size+                   48.0              :test #'=)
 
-(define-constant +large-map-size+                    96.0              :test #'=)
+(define-constant +large-map-size+      +maximum-map-size+              :test #'=)
 
 (define-constant +quad-tree-leaf-size+               64.0              :test #'=)
 
