@@ -206,7 +206,7 @@
 
 (defclass affected-by-fow ()
   ((texture-fow
-    :initform   (init-fow-texture)
+    :initform   nil ;; will be initialized by adjust-fow-texture when level is loaded
     :initarg    :texture-fow
     :accessor   texture-fow
     :allocation :class)))
