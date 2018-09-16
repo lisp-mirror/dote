@@ -1,0 +1,116 @@
+#! /bin/bash
+
+# quick_quicklisp.sh
+# Copyright (C) 2016-2018 cage
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free  Software Foundation, either  version 3 of the  License, or
+# (at your option) any later version.
+
+# This program is distributed in the  hope that it will be useful, but
+# WITHOUT  ANY   WARRANTY;  without  even  the   implied  warranty  of
+# MERCHANTABILITY or  FITNESS FOR A  PARTICULAR PURPOSE.  See  the GNU
+# General Public License for more details.
+
+# You should  have received a copy  of the GNU General  Public License
+# along      with      this       program.       If      not,      see
+# <http://www.gnu.org/licenses/>.
+
+QUICKLISP_INSTALL_DIR=$HOME/quicklisp/
+
+QUICKLISP_URL="https://beta.quicklisp.org/quicklisp.lisp"
+QUICKLISP_SIG_URL="https://beta.quicklisp.org/quicklisp.lisp.asc"
+QUICKLISP_KEY_URL="https://beta.quicklisp.org/release-key.txt"
+
+QUICKLISP="quicklisp.lisp"
+QUICKLISP_SIG="quicklisp.lisp.asc"
+QUICKLISP_KEY="release-key"
+
+QUICKLISP_SIGNATURE="D7A3 \+489D \+DEFE \+32B7 \+D0E7 \+CC61 \+3079 \+65AB \+028B \+5FF7";
+
+LISP_SOURCE_REGISTRY_DIR="$HOME/.config/common-lisp/"
+
+LISP_SOURCE_REGISTRY_FILE="$LISP_SOURCE_REGISTRY_DIR/source-registry.conf"
+
+BOLD_TEXT="\033[1m"
+
+NORMAL_TEXT="\033[0m"
+
+function echo_bold {
+    echo -e "${BOLD_TEXT}${1}${NORMAL_TEXT}";
+}
+
+function check_quicklisp {
+    if [ -d $QUICKLISP_INSTALL_DIR ]; then
+        echo 0;
+    else
+        echo 1;
+    fi
+}
+
+function install_quicklisp {
+    echo_bold "Downloading quicklisp...";
+    @CURL@ "$QUICKLISP_URL"     > $QUICKLISP;
+    @CURL@ "$QUICKLISP_SIG_URL" > $QUICKLISP_SIG;
+    @CURL@ "$QUICKLISP_KEY_URL" > $QUICKLISP_KEY;
+    echo_bold "Importing gpg key.";
+    @GPG@ --import $QUICKLISP_KEY;
+    echo_bold "Verifing key";
+    res=$(gpg --verify quicklisp.lisp.asc quicklisp.lisp 2> >(grep "$QUICKLISP_SIGNATURE"))
+
+    if [[ -z $res ]]; then
+        echo_bold "Key verification failed!"
+        exit 1;
+    else
+        echo_bold "Key sucessfully verified.";
+        @LISP_COMPILER@ --load $QUICKLISP            \
+          --eval "(quicklisp-quickstart:install)"    \
+          --eval "(ql:add-to-init-file)"             \
+          --eval "(sb-ext:quit)";
+        @MKDIR_P@ -p $LISP_SOURCE_REGISTRY_DIR;
+        PAR_PWD="$(dirname "$PWD")";
+        echo "(:source-registry"       >  $LISP_SOURCE_REGISTRY_FILE;
+        echo "  (:tree \"$PAR_PWD\")"  >> $LISP_SOURCE_REGISTRY_FILE;
+        echo ":inherit-configuration)" >> $LISP_SOURCE_REGISTRY_FILE;
+        echo "quicklisp installed";
+    fi
+}
+
+function install_dependency {
+    @LISP_COMPILER@  \
+     --eval "(ql:quickload \"swank\")" \
+     --eval "(ql:quickload \"clunit2\")" \
+     --eval "(ql:quickload \"alexandria\")" \
+     --eval "(ql:quickload \"lparallel\")" \
+     --eval "(ql:quickload \"parse-number\")" \
+     --eval "(ql:quickload \"ieee-floats\")" \
+     --eval "(ql:quickload \"flexi-streams\")" \
+     --eval "(ql:quickload \"cl-ppcre-unicode\")" \
+     --eval "(ql:quickload \"osicat\")" \
+     --eval "(ql:quickload \"babel\")" \
+     --eval "(ql:quickload \"trivial-garbage\")" \
+     --eval "(ql:quickload \"xmls\")" \
+     --eval "(ql:quickload \"cl-i18n\")" \
+     --eval "(ql:quickload \"marshal\")" \
+     --eval "(ql:quickload \"log4cl\")" \
+     --eval "(ql:quickload \"sb-cga\")" \
+     --eval "(ql:quickload \"cl-opengl\")" \
+     --eval "(ql:quickload \"sdl2kit\")" \
+     --eval "(ql:quickload \"sdl2-mixer\")" \
+     --eval "(ql:quickload \"cl-kanren\")" \
+     --eval "(ql:quickload \"s-dot2\")" \
+     --eval "(sb-ext:quit)";
+}
+
+quicklisp_installed_p=$(check_quicklisp);
+
+if [ $quicklisp_installed_p -eq "0" ]; then
+    echo_bold "Quicklisp already installed; fetching libraries...";
+    install_dependency;
+else
+    install_quicklisp;
+    install_dependency;
+fi
+
+echo_bold "Finished."

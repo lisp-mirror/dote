@@ -34,5 +34,7 @@ po/remove-potcdate.sed
 /*.tga
 
 *.diff
+*.patch
 
 src/config.lisp
+quick_quicklisp.sh

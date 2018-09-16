@@ -22,9 +22,14 @@ AM_GNU_GETTEXT([external])
 
 AC_PATH_PROGS([LISP_COMPILER],[sbcl],[AC_MSG_ERROR([Can not find a Common Lisp compiler.])])
 
-AC_PATH_PROGS([sdl_config],[sdl2-config],
-        [AC_MSG_ERROR([Can not find the sdl configuration script.])])
+AC_PATH_PROGS([CURL],[curl],[AC_MSG_ERROR([Can not find curl.])])
 
+AC_PATH_PROGS([GPG],[gpg],[AC_MSG_ERROR([Can not find gpg.])])
+
+AC_PATH_PROGS([sdl_config],[sdl2-config],
+              [AC_MSG_ERROR([Can not find the sdl configuration script.])])
+
+AC_PROG_MKDIR_P
 
 AC_SUBST([CFLAGS],[$CFLAGS\ `sdl2-config --cflags`])
 
@@ -36,5 +41,5 @@ AC_CHECK_HEADER("SDL_mixer.h", [],[AC_MSG_ERROR([Can not find developement heade
 
 AC_CHECK_HEADER("gl.h", [],[AC_MSG_ERROR([Can not find developement header.])], [])
 
-AC_CONFIG_FILES([Makefile po/Makefile.in])
+AC_CONFIG_FILES([Makefile quick_quicklisp.sh po/Makefile.in])
 AC_OUTPUT

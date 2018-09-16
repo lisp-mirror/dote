@@ -21,41 +21,73 @@ tactical game.
 
 * Current status
 
-The game  is *not playable* and  many things are missing  (most of the
-audio  and  video).    Please  send  me  an  email  if   you  want  to
+The game  is *playable* but full  of bugs and many  things are missing
+(most of the audio and video).  Please send me an email if you want to
 [[Contributing][help]].
 
 * Building
 
-  A primitive building  method using autotools is  supported.  For the
-  moment just run =./configure= and then edit the file src/config.lisp
-  and  modify the  constants =+sys-data-dir+=  and =+catalog-dir+=  to
-  match the path where the sources are.
+  A primitive building  method using autotools is  supported.
 
-For example
+  1. run
+     #+BEGIN_SRC sh
+     ./configure
+     #+END_SRC
+     this  script will  check all  the system  dependency (compiler,  C
+     libraries etc.) are met (see [[C libraries]], [[External programs]]).
+     And, if not, will print an error.
 
-#+BEGIN_SRC common-lisp
-(alexandria:define-constant +sys-data-dir+
-  "/home/username/lisp/dote/data/" :test #'string=)
+  2. if =configure= passed in the previous step run:
+     #+BEGIN_SRC sh
+     bash quick_quicklisp.sh
+     #+END_SRC
 
-(alexandria:define-constant +catalog-dir+
-"/home/username/lisp/dote/po" :test #'string=)
+     this  command will  download quicklisp,  check the  signature and
+     install all the lisp dependencies.
 
-#+END_SRC
+  3. finally
+     #+BEGIN_SRC sh
+     make && make install
+     #+END_SRC
 
-then open  emacs and  slime load  dote and finally,  on the  REPL type
-(main-window::main).
+You should be now able to run the game typing =dote= on the terminal.
 
+** If you plan to contribute to the development of this game
+  1. edit   the  file   src/config.lisp  and  modify   the  constants
+     =+sys-data-dir+= and =+catalog-dir+= to match the path where the
+     sources are.
+
+     For example:
+
+     #+BEGIN_SRC common-lisp
+     (alexandria:define-constant +sys-data-dir+
+     "/home/username/lisp/dote/data/" :test #'string=)
+
+     (alexandria:define-constant +catalog-dir+
+     "/home/username/lisp/dote/po" :test #'string=)
+
+     #+END_SRC
+
+  2. edit the file =dote.asd=
+     and uncomment the line:
+    #+BEGIN_SRC common-lisp
+    ;;(pushnew :debug-mode                        *features*)
+    #+END_SRC
+  3. open  emacs and  slime, load  dote and finally,  on the  REPL type
+     (main-window::main-debug).
 
 ** Hardware requisite
    - 8 Gb of RAM;
-   - Accelerated GPU.
+   - Accelerated GPU. Tested  only with Mesa library  with Intel(R) HD
+     Graphics 2500 GPU.
 
 ** Dependency
 
    Of course a Common lisp  compiler is mandatory, the compilation has
-   been  tested only  with  SBCL version  1.4.9  on Debian  GNU/Linux
+   been  tested only  with  SBCL version  1.4.10  on Debian  GNU/Linux
    (testing).
+
+** Lisp libraries
 
    dote depends on the following lisp libraries:
    - uiop (bundled with ASDF3);
@@ -81,15 +113,31 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
    - s-dot2;
    - cl-kanren.
 
-   Moreover  you  will need  a  OpenGL  (>= 3.3)  implementation  with
-   hardware acceleration.  Tested only with Mesa library with Intel(R)
-   HD Graphics 2500 GPU.
+** C libraries
+There are others native (in C) libraries used, the configure script will
+warn if they are missing:
+
+- libsdl2;
+- sdl2-mixer;
+- An OpenGL implementation (>= 3.3).
+
+on my system (debian testing) the packages names are:
+
+- libsdl2-dev;
+- libsdl2-mixer-dev;
+- libgl1-mesa-dev.
+
+* External programs
+
+- gpg;
+- sbcl (lisp compiler)
+- curl.
 
 * Issues
 
   I strongly  recommend you to compile  and run the demo  in a testing
   environment as  it is  unstable (i.  e. frequently  crash), remember
-  also that there is [[NO WARRANTY]].
+  also that there is [[NO WARRANTY][NO WARRANTY]].
 
 * BUGS
 
@@ -109,9 +157,9 @@ then open  emacs and  slime load  dote and finally,  on the  REPL type
   cage-dev at twistfold dot it.
 
 * Contributing
-  Any  help  is  appreciated.   Artists, translators  and  coders  are
+  Any  help  is  appreciated.   artists, translators  and  coders  are
   needed.  If  you intend  to  contribute  please  send a  message  to
-  cage-dev  at twistfold  dot  it com  or,  alternatively, point  your
+  cage-dev  at twistfold  dot  it or,  alternatively, point  your
   browser    to   the
   [[https://notabug.org/cage/dote/issues][issue tracker]].
 
