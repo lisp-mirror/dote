@@ -22,28 +22,28 @@ AM_GNU_GETTEXT([external])
 
 AC_PATH_PROG([LISP_COMPILER],[sbcl],[no])
 
-if [[ "$LISP_COMPILER" = "no" ]]; then
+if test "$LISP_COMPILER" = "no" ; then
    AC_MSG_ERROR([Can not find SBCL, Common Lisp compiler.])
 
 fi
 
 AC_PATH_PROG([CURL],[curl],[no])
 
-if [[ "$CURL" = "no" ]]; then
+if test "$CURL" = "no" ; then
    AC_MSG_ERROR([Can not find curl.])
    exit 1;
 fi
 
 AC_PATH_PROG([GPG],[gpg],[no])
 
-if [[ "$GPG" = "no" ]]; then
+if test "$GPG" = "no" ; then
    AC_MSG_ERROR([Can not find gpg, crypto software.])
    exit 1;
 fi
 
 AC_PATH_PROG([SDL_CONFIG],[sdl2-config],[no])
 
-if [[ "$SDL_CONFIG" = "no" ]]; then
+if test "$SDL_CONFIG" = "no" ; then
    AC_MSG_ERROR([Can not find the sdl2 configuration script.])
    exit 1;
 fi
