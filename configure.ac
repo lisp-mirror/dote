@@ -20,14 +20,33 @@ AM_INIT_AUTOMAKE([-Wall foreign])
 
 AM_GNU_GETTEXT([external])
 
-AC_PATH_PROGS([LISP_COMPILER],[sbcl],[AC_MSG_ERROR([Can not find a Common Lisp compiler.])])
+AC_PATH_PROG([LISP_COMPILER],[sbcl],[no])
 
-AC_PATH_PROGS([CURL],[curl],[AC_MSG_ERROR([Can not find curl.])])
+if [[ "$LISP_COMPILER" = "no" ]]; then
+   AC_MSG_ERROR([Can not find SBCL, Common Lisp compiler.])
 
-AC_PATH_PROGS([GPG],[gpg],[AC_MSG_ERROR([Can not find gpg.])])
+fi
 
-AC_PATH_PROGS([sdl_config],[sdl2-config],
-              [AC_MSG_ERROR([Can not find the sdl configuration script.])])
+AC_PATH_PROG([CURL],[curl],[no])
+
+if [[ "$CURL" = "no" ]]; then
+   AC_MSG_ERROR([Can not find curl.])
+   exit 1;
+fi
+
+AC_PATH_PROG([GPG],[gpg],[no])
+
+if [[ "$GPG" = "no" ]]; then
+   AC_MSG_ERROR([Can not find gpg, crypto software.])
+   exit 1;
+fi
+
+AC_PATH_PROG([SDL_CONFIG],[sdl2-config],[no])
+
+if [[ "$SDL_CONFIG" = "no" ]]; then
+   AC_MSG_ERROR([Can not find the sdl2 configuration script.])
+   exit 1;
+fi
 
 AC_PROG_MKDIR_P
 
