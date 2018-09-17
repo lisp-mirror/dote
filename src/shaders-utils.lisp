@@ -736,7 +736,7 @@ active program (set by sdk2.kit:use-program)."
                       :time)
            (:shaders :vertex-shader   ,(get-shader-source "generic-particle-cyl.vert")
                      :fragment-shader ,(get-shader-source "aerial-explosion.frag")))
-    ;;;;; transform feedback
+          ;; transform feedback
           (:array-lerp
            (:uniforms :w)
            (:feedback-lerp-shaders :vertex-shader
