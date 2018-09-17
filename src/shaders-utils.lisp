@@ -282,479 +282,484 @@ active program (set by sdk2.kit:use-program)."
   (with-uniform-location (u name) dict
     (gl:uniform-matrix u dim matrices transpose)))
 
-(defparameter *shaders-library*
-  `((:terrain
-     (:uniforms
-      ;; fragment
-      :color-border
-      :height-texture-thrs
-      :pick-color
-      :fog-density
-      :time
-      :texture-terrain-level-1
-      :texture-terrain-level-2
-      :texture-terrain-level-3
-      :texture-terrain-rock-level-1
-      :texture-terrain-rock-level-2
-      :texture-muddy-soil-decal
-      :texture-roads-decal
-      :texture-building-decal
-      :texture-fow
-      :scale-building-text-coord
-      :scale-road-text-coord
-      :scale-soil-text-coord
-      :decals-weights
-      :light-pos
-      :ia
-      :id
-      :is
-      :ka
-      :kd
-      :ks
-      :shine
-      ;; vertex
-      :terrain-size
-      :clip-plane
-      :modelview-matrix
-      :proj-matrix)
-     (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
-               :vertex-shader   ,(get-shader-source "terrain.vert")
-               :fragment-shader ,(get-shader-source "terrain.frag")))
-    (:water
-     (:uniforms :light-pos
-                :ia
-                :id
-                :is
-                :ka
-                :kd
-                :ks
-                :shine
-                :time
-                :wave-ampl
-                :wave-freq
-                :modelview-matrix
-                :proj-matrix
-                :proj-texture-matrix
-                :texture-object)
-     (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
-               :vertex-shader   ,(get-shader-source "water.vert")
-               :fragment-shader ,(get-shader-source "water.frag")))
-    (:water-no-texture
-     (:uniforms :light-pos
-                :ia
-                :id
-                :is
-                :ka
-                :kd
-                :ks
-                :shine
-                :time
-                :wave-ampl
-                :wave-freq
-                :modelview-matrix
-                :proj-matrix
-                :proj-texture-matrix)
-     (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
-               :vertex-shader   ,(get-shader-source "water-no-texture.vert")
-               :fragment-shader ,(get-shader-source "water-no-texture.frag")))
-    (:tree
-     (:uniforms :light-pos
-                :ia
-                :id
-                :is
-                :ka
-                :kd
-                :ks
-                :shine
-                :clip-plane
-                :time
-                :fog-density
-                :model-matrix
-                :modelview-matrix
-                :proj-matrix
-                :texture-object)
-     (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
-               :vertex-shader   ,(get-shader-source "tree.vert")
-               :fragment-shader ,(get-shader-source "tree.frag")))
-    (:mesh-bump
-     (:uniforms :light-pos
-                :ia
-                :id
-                :is
-                :ka
-                :kd
-                :ks
-                :shine
-                :time
-                :fog-density
-                :model-matrix
-                :model-matrix
-                :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :normal-map)
-     (:shaders :vertex-shader   ,(get-shader-source "bump.vert")
-               :vertex-shader   ,(get-shader-source "mesh-bump.vert")
-               :fragment-shader ,(get-shader-source "mesh-bump.frag")))
-    (:mesh-bump-inst
-     (:uniforms :light-pos
-                :ia
-                :id
-                :is
-                :ka
-                :kd
-                :ks
-                :shine
-                :time
-                :fog-density
-                :model-matrix
-                :model-matrix
-                :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :normal-map)
-     (:shaders :vertex-shader   ,(get-shader-source "bump.vert")
-               :vertex-shader   ,(get-shader-source "mesh-bump-inst.vert")
-               :fragment-shader ,(get-shader-source "mesh-bump.frag")))
-    (:building-floor-bump
-     (:uniforms :light-pos
-                :ia
-                :id
-                :is
-                :ka
-                :kd
-                :ks
-                :shine
-                :fog-density
-                :thrown-in-fow
-                :pick-color
-                :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :normal-map
-                :scale-text-coord)
-     (:shaders :vertex-shader   ,(get-shader-source "bump.vert")
-               :vertex-shader   ,(get-shader-source "building-floor-bump.vert")
-               :fragment-shader ,(get-shader-source "building-floor-bump.frag")))
-    (:building-floor-ads
-     (:uniforms :light-pos
-                :ia
-                :id
-                :is
-                :ka
-                :kd
-                :ks
-                :shine
-                :fog-density
-                :thrown-in-fow
-                :pick-color
-                :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :scale-text-coord)
-     (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
-               :vertex-shader   ,(get-shader-source "building-floor-ads.vert")
-               :fragment-shader ,(get-shader-source "building-floor-ads.frag")))
-    (:mesh-ads
-     (:uniforms :light-pos
-                :ia
-                :id
-                :is
-                :ka
-                :kd
-                :ks
-                :shine
-                :modelview-matrix
-                :model-matrix
-                :time
-                :fog-density
-                :proj-matrix
-                :texture-object
-                :scale-text-coord)
-     (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
-               :vertex-shader   ,(get-shader-source "mesh-ads.vert")
-               :fragment-shader ,(get-shader-source "mesh-ads.frag")))
-    (:mesh-ads-inst
-     (:uniforms :light-pos
-                :ia
-                :id
-                :is
-                :ka
-                :kd
-                :ks
-                :shine
-                :modelview-matrix
-                :model-matrix
-                :time
-                :fog-density
-                :proj-matrix
-                :texture-object
-                :scale-text-coord)
-     (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
-               :vertex-shader   ,(get-shader-source "mesh-ads-inst.vert")
-               :fragment-shader ,(get-shader-source "mesh-ads.frag")))
-    (:mesh-debug
-     (:uniforms :out-color
-                :modelview-matrix
-                :proj-matrix)
-     (:shaders :vertex-shader   ,(get-shader-source "mesh-debug.vert")
-               :fragment-shader ,(get-shader-source "mesh-debug.frag")))
-    (:md2-ads
-     (:uniforms :light-pos
-                :ia
-                :id
-                :is
-                :ka
-                :kd
-                :ks
-                :shine
-                :modelview-matrix
-                :model-matrix
-                :keyframe-interpolation
-                :time
-                :fog-density
-                :proj-matrix
-                :texture-object
-                :scale-text-coord)
-     (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
-               :vertex-shader   ,(get-shader-source "md2-ads.vert")
-               :fragment-shader ,(get-shader-source "mesh-ads.frag")))
-    (:md2-bump
-     (:uniforms :light-pos
-                :ia
-                :id
-                :is
-                :ka
-                :kd
-                :ks
-                :shine
-                :time
-                :keyframe-interpolation
-                :fog-density
-                :model-matrix
-                :model-matrix
-                :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :normal-map)
-     (:shaders :vertex-shader   ,(get-shader-source "bump.vert")
-               :vertex-shader   ,(get-shader-source "md2-bump.vert")
-               :fragment-shader ,(get-shader-source "mesh-bump.frag")))
-    (:wall-decorated
-     (:uniforms :light-pos
-                :ia
-                :id
-                :is
-                :ka
-                :kd
-                :ks
-                :shine
-                :fog-density
-                :modelview-matrix
-                :model-matrix
-                :time
-                :proj-matrix
-                :proj-texture-matrix
-                :texture-object
-                :texture-projector)
-     (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
-               :vertex-shader   ,(get-shader-source "wall-decorated.vert")
-               :fragment-shader ,(get-shader-source "wall-decorated.frag")))
-    (:skydome
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :proj-texture-matrix
-                :texture-object
-                :texture-clouds-1
-                :texture-clouds-2
-                :texture-clouds-3
-                :texture-smoke
-                :traslation-clouds-speed
-                :weather-type
-                :sky-color
-                :ia
-                :ka)
-     (:shaders :vertex-shader   ,(get-shader-source "skydome.vert")
-               :fragment-shader ,(get-shader-source "skydome.frag")))
-    (:gui
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :ia)
-     (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
-               :fragment-shader ,(get-shader-source "gui.frag")))
-    (:gui-splash-progress
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :progress)
-     (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
-               :fragment-shader ,(get-shader-source "splash-progress-gauge.frag")))
-    (:gui-fonts
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :mult-color)
-     (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
-               :fragment-shader ,(get-shader-source "gui-fonts.frag")))
-    (:gui-naked-button
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :texture-overlay
-                :ia)
-     (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
-               :fragment-shader ,(get-shader-source "gui-naked-button.frag")))
-    (:gui-animated-icon
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :texture-window-width
-                :frame-idx)
-     (:shaders :vertex-shader   ,(get-shader-source "animated-icon.vert")
-               :fragment-shader ,(get-shader-source "animated-icon.frag")))
-    (:fade
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :fade-color
-                :texture-object
-                :alpha
-                :time)
-     (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
-               :fragment-shader ,(get-shader-source "fade.frag")))
-    (:fade-flash
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :fade-color
-                :texture-object
-                :alpha
-                :time)
-     (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
-               :fragment-shader ,(get-shader-source "fade-flash.frag")))
-    (:fade-lava
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :fade-color
-                :texture-object
-                :alpha
-                :time)
-     (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
-               :fragment-shader ,(get-shader-source "fade-lava.frag")))
-    (:spark
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :fade-color
-                :texture-object
-                :alpha
-                :time)
-     (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
-               :fragment-shader ,(get-shader-source "spark.frag")))
-    (:tree-impostor
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :time)
-     (:shaders :vertex-shader   ,(get-shader-source "tree-impostor.vert")
-               :fragment-shader ,(get-shader-source "tree-impostor.frag")))
+(defparameter *shaders-library* nil)
 
-    (:tooltip
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :post-scaling
-                :vert-displacement-speed
-                :duration
-                :mult-color
-                :gravity
-                :time)
-      (:shaders :vertex-shader   ,(get-shader-source "tooltip.vert")
-                :fragment-shader ,(get-shader-source "tooltip.frag")))
-    (:animated-billboard
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :post-scaling
-                :vert-displacement-speed
-                :duration
-                :texture-window-width
-                :frame-idx
-                :gravity
-                :time)
-     (:shaders :vertex-shader   ,(get-shader-source "animated-billboard.vert")
-               :fragment-shader ,(get-shader-source "animated-billboard.frag")))
-    (:status-orb
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :post-scaling
-                :texture-window-width
-                :frame-idx)
-     (:shaders :vertex-shader   ,(get-shader-source "status-orb.vert")
-               :fragment-shader ,(get-shader-source "status-orb.frag")))
-    (:closing-curtain
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :alpha)
-     (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
-               :fragment-shader ,(get-shader-source "closing-curtain.frag")))
-    (:particles-blood
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :time)
-      (:shaders :vertex-shader   ,(get-shader-source "generic-particle.vert")
-                :fragment-shader ,(get-shader-source "particle-blood.frag")))
-    (:particles-fire-dart
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :time)
-      (:shaders :vertex-shader   ,(get-shader-source "generic-particle.vert")
-                :fragment-shader ,(get-shader-source "particle-fire-dart.frag")))
-    (:particles-spell-decals
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :time)
-      (:shaders :vertex-shader   ,(get-shader-source "spell-decal.vert")
-                :fragment-shader ,(get-shader-source "spell-decal.frag")))
-    (:particles-aerial-explosion
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :time)
-      (:shaders :vertex-shader   ,(get-shader-source "generic-particle.vert")
-                :fragment-shader ,(get-shader-source "aerial-explosion.frag")))
-    (:particles-up-spark
-     (:uniforms :modelview-matrix
-                :proj-matrix
-                :texture-object
-                :time)
-      (:shaders :vertex-shader   ,(get-shader-source "generic-particle-cyl.vert")
-                :fragment-shader ,(get-shader-source "aerial-explosion.frag")))
+(defun initialize-shader-library ()
+  (setf *shaders-library*
+        `((:terrain
+           (:uniforms
+            ;; fragment
+            :color-border
+            :height-texture-thrs
+            :pick-color
+            :fog-density
+            :time
+            :texture-terrain-level-1
+            :texture-terrain-level-2
+            :texture-terrain-level-3
+            :texture-terrain-rock-level-1
+            :texture-terrain-rock-level-2
+            :texture-muddy-soil-decal
+            :texture-roads-decal
+            :texture-building-decal
+            :texture-fow
+            :scale-building-text-coord
+            :scale-road-text-coord
+            :scale-soil-text-coord
+            :decals-weights
+            :light-pos
+            :ia
+            :id
+            :is
+            :ka
+            :kd
+            :ks
+            :shine
+            ;; vertex
+            :terrain-size
+            :clip-plane
+            :modelview-matrix
+            :proj-matrix)
+           (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
+                     :vertex-shader   ,(get-shader-source "terrain.vert")
+                     :fragment-shader ,(get-shader-source "terrain.frag")))
+          (:water
+           (:uniforms :light-pos
+                      :ia
+                      :id
+                      :is
+                      :ka
+                      :kd
+                      :ks
+                      :shine
+                      :time
+                      :wave-ampl
+                      :wave-freq
+                      :modelview-matrix
+                      :proj-matrix
+                      :proj-texture-matrix
+                      :texture-object)
+           (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
+                     :vertex-shader   ,(get-shader-source "water.vert")
+                     :fragment-shader ,(get-shader-source "water.frag")))
+          (:water-no-texture
+           (:uniforms :light-pos
+                      :ia
+                      :id
+                      :is
+                      :ka
+                      :kd
+                      :ks
+                      :shine
+                      :time
+                      :wave-ampl
+                      :wave-freq
+                      :modelview-matrix
+                      :proj-matrix
+                      :proj-texture-matrix)
+           (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
+                     :vertex-shader   ,(get-shader-source "water-no-texture.vert")
+                     :fragment-shader ,(get-shader-source "water-no-texture.frag")))
+          (:tree
+           (:uniforms :light-pos
+                      :ia
+                      :id
+                      :is
+                      :ka
+                      :kd
+                      :ks
+                      :shine
+                      :clip-plane
+                      :time
+                      :fog-density
+                      :model-matrix
+                      :modelview-matrix
+                      :proj-matrix
+                      :texture-object)
+           (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
+                     :vertex-shader   ,(get-shader-source "tree.vert")
+                     :fragment-shader ,(get-shader-source "tree.frag")))
+          (:mesh-bump
+           (:uniforms :light-pos
+                      :ia
+                      :id
+                      :is
+                      :ka
+                      :kd
+                      :ks
+                      :shine
+                      :time
+                      :fog-density
+                      :model-matrix
+                      :model-matrix
+                      :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :normal-map)
+           (:shaders :vertex-shader   ,(get-shader-source "bump.vert")
+                     :vertex-shader   ,(get-shader-source "mesh-bump.vert")
+                     :fragment-shader ,(get-shader-source "mesh-bump.frag")))
+          (:mesh-bump-inst
+           (:uniforms :light-pos
+                      :ia
+                      :id
+                      :is
+                      :ka
+                      :kd
+                      :ks
+                      :shine
+                      :time
+                      :fog-density
+                      :model-matrix
+                      :model-matrix
+                      :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :normal-map)
+           (:shaders :vertex-shader   ,(get-shader-source "bump.vert")
+                     :vertex-shader   ,(get-shader-source "mesh-bump-inst.vert")
+                     :fragment-shader ,(get-shader-source "mesh-bump.frag")))
+          (:building-floor-bump
+           (:uniforms :light-pos
+                      :ia
+                      :id
+                      :is
+                      :ka
+                      :kd
+                      :ks
+                      :shine
+                      :fog-density
+                      :thrown-in-fow
+                      :pick-color
+                      :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :normal-map
+                      :scale-text-coord)
+           (:shaders :vertex-shader   ,(get-shader-source "bump.vert")
+                     :vertex-shader   ,(get-shader-source "building-floor-bump.vert")
+                     :fragment-shader ,(get-shader-source "building-floor-bump.frag")))
+          (:building-floor-ads
+           (:uniforms :light-pos
+                      :ia
+                      :id
+                      :is
+                      :ka
+                      :kd
+                      :ks
+                      :shine
+                      :fog-density
+                      :thrown-in-fow
+                      :pick-color
+                      :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :scale-text-coord)
+           (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
+                     :vertex-shader   ,(get-shader-source "building-floor-ads.vert")
+                     :fragment-shader ,(get-shader-source "building-floor-ads.frag")))
+          (:mesh-ads
+           (:uniforms :light-pos
+                      :ia
+                      :id
+                      :is
+                      :ka
+                      :kd
+                      :ks
+                      :shine
+                      :modelview-matrix
+                      :model-matrix
+                      :time
+                      :fog-density
+                      :proj-matrix
+                      :texture-object
+                      :scale-text-coord)
+           (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
+                     :vertex-shader   ,(get-shader-source "mesh-ads.vert")
+                     :fragment-shader ,(get-shader-source "mesh-ads.frag")))
+          (:mesh-ads-inst
+           (:uniforms :light-pos
+                      :ia
+                      :id
+                      :is
+                      :ka
+                      :kd
+                      :ks
+                      :shine
+                      :modelview-matrix
+                      :model-matrix
+                      :time
+                      :fog-density
+                      :proj-matrix
+                      :texture-object
+                      :scale-text-coord)
+           (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
+                     :vertex-shader   ,(get-shader-source "mesh-ads-inst.vert")
+                     :fragment-shader ,(get-shader-source "mesh-ads.frag")))
+          (:mesh-debug
+           (:uniforms :out-color
+                      :modelview-matrix
+                      :proj-matrix)
+           (:shaders :vertex-shader   ,(get-shader-source "mesh-debug.vert")
+                     :fragment-shader ,(get-shader-source "mesh-debug.frag")))
+          (:md2-ads
+           (:uniforms :light-pos
+                      :ia
+                      :id
+                      :is
+                      :ka
+                      :kd
+                      :ks
+                      :shine
+                      :modelview-matrix
+                      :model-matrix
+                      :keyframe-interpolation
+                      :time
+                      :fog-density
+                      :proj-matrix
+                      :texture-object
+                      :scale-text-coord)
+           (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
+                     :vertex-shader   ,(get-shader-source "md2-ads.vert")
+                     :fragment-shader ,(get-shader-source "mesh-ads.frag")))
+          (:md2-bump
+           (:uniforms :light-pos
+                      :ia
+                      :id
+                      :is
+                      :ka
+                      :kd
+                      :ks
+                      :shine
+                      :time
+                      :keyframe-interpolation
+                      :fog-density
+                      :model-matrix
+                      :model-matrix
+                      :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :normal-map)
+           (:shaders :vertex-shader   ,(get-shader-source "bump.vert")
+                     :vertex-shader   ,(get-shader-source "md2-bump.vert")
+                     :fragment-shader ,(get-shader-source "mesh-bump.frag")))
+          (:wall-decorated
+           (:uniforms :light-pos
+                      :ia
+                      :id
+                      :is
+                      :ka
+                      :kd
+                      :ks
+                      :shine
+                      :fog-density
+                      :modelview-matrix
+                      :model-matrix
+                      :time
+                      :proj-matrix
+                      :proj-texture-matrix
+                      :texture-object
+                      :texture-projector)
+           (:shaders :vertex-shader   ,(get-shader-source "ads.vert")
+                     :vertex-shader   ,(get-shader-source "wall-decorated.vert")
+                     :fragment-shader ,(get-shader-source "wall-decorated.frag")))
+          (:skydome
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :proj-texture-matrix
+                      :texture-object
+                      :texture-clouds-1
+                      :texture-clouds-2
+                      :texture-clouds-3
+                      :texture-smoke
+                      :traslation-clouds-speed
+                      :weather-type
+                      :sky-color
+                      :ia
+                      :ka)
+           (:shaders :vertex-shader   ,(get-shader-source "skydome.vert")
+                     :fragment-shader ,(get-shader-source "skydome.frag")))
+          (:gui
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :ia)
+           (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
+                     :fragment-shader ,(get-shader-source "gui.frag")))
+          (:gui-splash-progress
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :progress)
+           (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
+                     :fragment-shader ,(get-shader-source "splash-progress-gauge.frag")))
+          (:gui-fonts
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :mult-color)
+           (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
+                     :fragment-shader ,(get-shader-source "gui-fonts.frag")))
+          (:gui-naked-button
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :texture-overlay
+                      :ia)
+           (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
+                     :fragment-shader ,(get-shader-source "gui-naked-button.frag")))
+          (:gui-animated-icon
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :texture-window-width
+                      :frame-idx)
+           (:shaders :vertex-shader   ,(get-shader-source "animated-icon.vert")
+                     :fragment-shader ,(get-shader-source "animated-icon.frag")))
+          (:fade
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :fade-color
+                      :texture-object
+                      :alpha
+                      :time)
+           (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
+                     :fragment-shader ,(get-shader-source "fade.frag")))
+          (:fade-flash
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :fade-color
+                      :texture-object
+                      :alpha
+                      :time)
+           (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
+                     :fragment-shader ,(get-shader-source "fade-flash.frag")))
+          (:fade-lava
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :fade-color
+                      :texture-object
+                      :alpha
+                      :time)
+           (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
+                     :fragment-shader ,(get-shader-source "fade-lava.frag")))
+          (:spark
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :fade-color
+                      :texture-object
+                      :alpha
+                      :time)
+           (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
+                     :fragment-shader ,(get-shader-source "spark.frag")))
+          (:tree-impostor
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :time)
+           (:shaders :vertex-shader   ,(get-shader-source "tree-impostor.vert")
+                     :fragment-shader ,(get-shader-source "tree-impostor.frag")))
+
+          (:tooltip
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :post-scaling
+                      :vert-displacement-speed
+                      :duration
+                      :mult-color
+                      :gravity
+                      :time)
+           (:shaders :vertex-shader   ,(get-shader-source "tooltip.vert")
+                     :fragment-shader ,(get-shader-source "tooltip.frag")))
+          (:animated-billboard
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :post-scaling
+                      :vert-displacement-speed
+                      :duration
+                      :texture-window-width
+                      :frame-idx
+                      :gravity
+                      :time)
+           (:shaders :vertex-shader   ,(get-shader-source "animated-billboard.vert")
+                     :fragment-shader ,(get-shader-source "animated-billboard.frag")))
+          (:status-orb
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :post-scaling
+                      :texture-window-width
+                      :frame-idx)
+           (:shaders :vertex-shader   ,(get-shader-source "status-orb.vert")
+                     :fragment-shader ,(get-shader-source "status-orb.frag")))
+          (:closing-curtain
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :alpha)
+           (:shaders :vertex-shader   ,(get-shader-source "gui.vert")
+                     :fragment-shader ,(get-shader-source "closing-curtain.frag")))
+          (:particles-blood
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :time)
+           (:shaders :vertex-shader   ,(get-shader-source "generic-particle.vert")
+                     :fragment-shader ,(get-shader-source "particle-blood.frag")))
+          (:particles-fire-dart
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :time)
+           (:shaders :vertex-shader   ,(get-shader-source "generic-particle.vert")
+                     :fragment-shader ,(get-shader-source "particle-fire-dart.frag")))
+          (:particles-spell-decals
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :time)
+           (:shaders :vertex-shader   ,(get-shader-source "spell-decal.vert")
+                     :fragment-shader ,(get-shader-source "spell-decal.frag")))
+          (:particles-aerial-explosion
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :time)
+           (:shaders :vertex-shader   ,(get-shader-source "generic-particle.vert")
+                     :fragment-shader ,(get-shader-source "aerial-explosion.frag")))
+          (:particles-up-spark
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :time)
+           (:shaders :vertex-shader   ,(get-shader-source "generic-particle-cyl.vert")
+                     :fragment-shader ,(get-shader-source "aerial-explosion.frag")))
     ;;;;; transform feedback
-    (:array-lerp
-     (:uniforms :w)
-     (:feedback-lerp-shaders :vertex-shader
-                             ,(get-shader-source "lerp-feedback.vert")))
-    (:blood-integrator
-     (:uniforms :dt
-                :noise-scale
-                :gravity
-                :min-y)
-     (:feedback-particles-shaders :vertex-shader
-                                  ,(get-shader-source "particle-blood-feedback.vert")))
-    (:fire-dart-integrator
-     (:uniforms :dt
-                :gravity)
-     (:feedback-particles-shaders :vertex-shader
-                                  ,(get-shader-source "particle-fire-dart-feedback.vert")))))
+          (:array-lerp
+           (:uniforms :w)
+           (:feedback-lerp-shaders :vertex-shader
+                                   ,(get-shader-source "lerp-feedback.vert")))
+          (:blood-integrator
+           (:uniforms :dt
+                      :noise-scale
+                      :gravity
+                      :min-y)
+           (:feedback-particles-shaders :vertex-shader
+                                        ,(get-shader-source "particle-blood-feedback.vert")))
+          (:fire-dart-integrator
+           (:uniforms :dt
+                      :gravity)
+           (:feedback-particles-shaders :vertex-shader
+                                        ,(get-shader-source "particle-fire-dart-feedback.vert"))))))
 
 (defun compile-library ()
   (let ((*error-output* (make-string-output-stream)))
     (handler-case
-        (compile-shader-dictionary *shaders-library*)
+        (progn
+          (initialize-shader-library)
+          (compile-shader-dictionary *shaders-library*))
       (error ()
         (progn
           (misc:dbg "error compiling shaders ~a" (get-output-stream-string *error-output*))
