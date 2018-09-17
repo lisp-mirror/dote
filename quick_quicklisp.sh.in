@@ -42,7 +42,7 @@ echo_bold () {
 }
 
 check_quicklisp () {
-    if [ -d $QUICKLISP_INSTALL_DIR ]; then
+    if [ -d "$QUICKLISP_INSTALL_DIR" ]; then
         echo 0;
     else
         echo 1;
@@ -59,7 +59,7 @@ install_quicklisp () {
     echo_bold "Verifing key";
     res=$(gpg --verify quicklisp.lisp.asc quicklisp.lisp 2> >(grep "$QUICKLISP_SIGNATURE"))
 
-    if [[ -z $res ]]; then
+    if [ -z "$res" ]; then
         echo_bold "Key verification failed!"
         exit 1;
     else
@@ -69,7 +69,7 @@ install_quicklisp () {
           --eval "(ql:add-to-init-file)"             \
           --eval "(sb-ext:quit)";
         @MKDIR_P@ -p $LISP_SOURCE_REGISTRY_DIR;
-        PAR_PWD="$(dirname "$PWD")";
+        PAR_PWD="${PWD%/*}";
         echo "(:source-registry"       >  $LISP_SOURCE_REGISTRY_FILE;
         echo "  (:tree \"$PAR_PWD\")"  >> $LISP_SOURCE_REGISTRY_FILE;
         echo ":inherit-configuration)" >> $LISP_SOURCE_REGISTRY_FILE;
@@ -105,7 +105,7 @@ install_dependency () {
 
 quicklisp_installed_p=$(check_quicklisp);
 
-if [ $quicklisp_installed_p -eq "0" ]; then
+if [ $quicklisp_installed_p -eq 0 ]; then
     echo_bold "Quicklisp already installed; fetching libraries...";
     install_dependency;
 else
