@@ -50,6 +50,8 @@ fi
 
 AC_PROG_MKDIR_P
 
+AC_PROG_AWK
+
 AC_SUBST([CFLAGS],[$CFLAGS\ `sdl2-config --cflags`])
 
 AC_SUBST([CFLAGS],[$CFLAGS\ -I/usr/include/GL])

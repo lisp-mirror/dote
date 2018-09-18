@@ -27,7 +27,7 @@ QUICKLISP="quicklisp.lisp"
 QUICKLISP_SIG="quicklisp.lisp.asc"
 QUICKLISP_KEY="release-key"
 
-QUICKLISP_SIGNATURE="D7A3 \+489D \+DEFE \+32B7 \+D0E7 \+CC61 \+3079 \+65AB \+028B \+5FF7";
+QUICKLISP_SIGNATURE="D7A3 +489D +DEFE +32B7 +D0E7 +CC61 +3079 +65AB +028B +5FF7";
 
 LISP_SOURCE_REGISTRY_DIR="$HOME/.config/common-lisp/"
 
@@ -36,6 +36,8 @@ LISP_SOURCE_REGISTRY_FILE="$LISP_SOURCE_REGISTRY_DIR/source-registry.conf"
 BOLD_TEXT="\033[1m"
 
 NORMAL_TEXT="\033[0m"
+
+VERIFY_OK_RES=2
 
 echo_bold () {
     echo -e "${BOLD_TEXT}${1}${NORMAL_TEXT}";
@@ -49,6 +51,15 @@ check_quicklisp () {
     fi
 }
 
+check_quicklisp_signature () {
+    chk1_prog='BEGIN {res=0} /Good signature.*release@quicklisp.org/ {res++; print res}'
+    chk2_prog="BEGIN {res=0} /${QUICKLISP_SIGNATURE}/ {res++; print res}"
+    res1=$(@GPG@ --verify quicklisp.lisp.asc quicklisp.lisp 2> >(@AWK@  -- "${chk1_prog}"))
+    res2=$(@GPG@ --verify quicklisp.lisp.asc quicklisp.lisp 2> >(@AWK@  -- "${chk2_prog}"))
+    res=$(expr $res1 + $res2)
+    echo -n "$res"
+}
+
 install_quicklisp () {
     echo_bold "Downloading quicklisp...";
     @CURL@ "$QUICKLISP_URL"     > $QUICKLISP;
@@ -57,11 +68,10 @@ install_quicklisp () {
     echo_bold "Importing gpg key.";
     @GPG@ --import $QUICKLISP_KEY;
     echo_bold "Verifing key";
-    res=$(gpg --verify quicklisp.lisp.asc quicklisp.lisp 2> >(grep "$QUICKLISP_SIGNATURE"))
-
-    if [ -z "$res" ]; then
-        echo_bold "Key verification failed!"
-        exit 1;
+    signature_verified=$(check_quicklisp_signature);
+    if [ "$signature_verified" -ne $VERIFY_OK_RES ]; then
+         echo_bold "Key verification failed!"
+         exit 1;
     else
         echo_bold "Key sucessfully verified.";
         @LISP_COMPILER@ --load $QUICKLISP            \
