@@ -637,6 +637,20 @@
   https://creativecommons.org/licenses/by/4.0/
   according to https://opengameart.org/content/a-good-bounty
 
+- data/gui/default/credits/bg-1.tga
+  data/gui/default/credits/bg-2.tga
+  data/gui/default/credits/bg-3.tga
+  data/gui/default/credits/bg-4.tga
+
+  Artwork created by Luis Zuno (@ansimuz)
+
+  License (CC0) You can copy, modify, distribute and perform the work,
+  even  for  commercial  purposes,   all  without  asking  permission:
+  http://creativecommons.org/publicdomain/zero/1.0/
+
+  see:
+  https://opengameart.org/content/forest-background
+
 
 - src/test/data/avatars/avatar0.tga
   derived from

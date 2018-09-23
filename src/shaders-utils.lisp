@@ -579,6 +579,21 @@ active program (set by sdk2.kit:use-program)."
                       :ka)
            (:shaders :vertex-shader   ,(get-shader-source "skydome.vert")
                      :fragment-shader ,(get-shader-source "skydome.frag")))
+          (:credit-item
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :pixel-size)
+           (:shaders :vertex-shader   ,(get-shader-source "credit-item.vert")
+                     :fragment-shader ,(get-shader-source "credit-item.frag")))
+          (:scrolling-bg
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :dx
+                      :dy)
+           (:shaders :vertex-shader   ,(get-shader-source "credit-item.vert")
+                     :fragment-shader ,(get-shader-source "scrolling-quad.frag")))
           (:gui
            (:uniforms :modelview-matrix
                       :proj-matrix

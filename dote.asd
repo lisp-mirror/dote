@@ -147,6 +147,7 @@
                                      (:file "new-game-window")
                                      (:file "splash-screen-progress-gauge")
                                      (:file "full-screen-masks")
+                                     (:file "credits")
                                      (:file "opening-sequence")
                                      (:file "closing-sequence")))
                (:file "billboard")

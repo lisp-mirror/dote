@@ -1469,7 +1469,8 @@
                           5
                           compiled-shaders
                           :texture    (with-prepared-texture (texture tex-file)
-                                        (setf (texture:interpolation-type texture) :linear))
+                                        (setf (texture:interpolation-type texture) :linear)
+                                        texture)
                           :pos        pos
                           :min-y      (d- +zero-height+ (elt pos 1))
                           :v0-fn      (gaussian-velocity-distribution-fn +y-axe+
@@ -1498,7 +1499,8 @@
                           1
                           compiled-shaders
                           :texture    (with-prepared-texture (texture tex-file)
-                                        (setf (texture:interpolation-type texture) :linear))
+                                        (setf (texture:interpolation-type texture) :linear)
+                                        texture)
                           :pos        pos
                           :min-y      (d- +zero-height+ (elt pos 1))
                           :v0-fn      #'(lambda () +zero-vec+)

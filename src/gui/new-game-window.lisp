@@ -208,6 +208,7 @@
                    (children chooser))))
 
 (defun all-maps-filenames ()
+  ;; TODO use fs:eq-filename
   (labels ((strip (a)
              (strip-dirs-from-path (pathname->namestring a)))
            (eq-filename (a b)

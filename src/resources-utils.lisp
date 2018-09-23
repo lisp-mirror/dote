@@ -136,7 +136,7 @@
 
 (defun get-resource-files-merge (resource predicate)
   "home wins"
-  (let* ((home-path  (find-in-home-datadir   (construct-resource-path resource ".")))
+  (let* ((home-path   (find-in-home-datadir   (construct-resource-path resource ".")))
          (shared-path (find-in-shared-datadir (construct-resource-path resource ".")))
          (res         (directory-files        home-path)))
     (loop for i in (directory-files shared-path) do

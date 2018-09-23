@@ -307,6 +307,9 @@ data/shaders/water.frag                                  \
 data/shaders/water-no-texture.frag                       \
 data/shaders/water-no-texture.vert                       \
 data/shaders/water.vert                                  \
+data/shaders/credit-item.vert                            \
+data/shaders/credit-item.frag                            \
+data/shaders/scrolling-quad.frag                         \
 data/img/avatar-portrait/avatar_head_f3.tga              \
 data/img/avatar-portrait/avatar_eye_m3.tga               \
 data/img/avatar-portrait/avatar_mouth_m2.tga             \
@@ -1675,6 +1678,13 @@ data/gui/default/burn-mask.tga                           \
 data/gui/default/opening/logo-mask.tga                   \
 data/gui/default/opening/logo.tga                        \
 data/gui/default/opening/bg-start.tga                    \
+data/gui/default/credits/0-coding.tga                    \
+data/gui/default/credits/1-test.tga                      \
+data/gui/default/credits/2-music.tga                     \
+data/gui/default/credits/bg-1.tga                        \
+data/gui/default/credits/bg-2.tga                        \
+data/gui/default/credits/bg-3.tga                        \
+data/gui/default/credits/bg-4.tga                        \
 data/spells/heal-1.lisp                                  \
 data/spells/heal-2.lisp                                  \
 data/spells/heal-3.lisp                                  \

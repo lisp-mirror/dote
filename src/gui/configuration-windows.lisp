@@ -719,6 +719,12 @@
   (declare (ignore event))
   (%open-conf-window widget #'make-ai-window))
 
+(defun open-credits-cb (widget event)
+  (declare (ignore event))
+    (with-accessors ((state entity:state)) widget
+      (game-state:with-world (world state)
+        (credits:make-credits world))))
+
 (defclass main-window (window)
   ((b-keyboard
     :initform (make-instance 'button
@@ -763,14 +769,24 @@
                              :label (_ "Computer opponent"))
     :initarg  b-ai
     :accessor b-ai)
-
+   (b-credits
+    :initform (make-instance 'button
+                             :width    (main-window-button-w)
+                             :height   (main-window-button-h)
+                             :x        0.0
+                             :y        (d+ (d* 4.0 (main-window-button-h))
+                                           (spacing *reference-sizes*))
+                             :callback #'open-credits-cb
+                             :label (_ "Credits"))
+    :initarg  b-credits
+    :accessor b-credits)
    #+debug-mode
    (b-debug
     :initform (make-instance 'button
                              :width    (main-window-button-w)
                              :height   (main-window-button-h)
                              :x        0.0
-                             :y        (d+ (d* 4.0 (main-window-button-h))
+                             :y        (d+ (d* 5.0 (main-window-button-h))
                                            (spacing *reference-sizes*))
                              :callback #'open-debug-window-cb
                              :label (_ "Debug"))
@@ -781,11 +797,13 @@
   (with-accessors ((b-keyboard   b-keyboard)
                    (b-gui        b-gui)
                    (b-ai         b-ai)
+                   (b-credits    b-credits)
                    (b-appearance b-appearance)) object
     (add-child object b-keyboard)
     (add-child object b-gui)
     (add-child object b-ai)
     (add-child object b-appearance)
+    (add-child object b-credits)
     #+debug-mode (add-child object (b-debug object))))
 
 (defun make-main-window (compiled-shaders)

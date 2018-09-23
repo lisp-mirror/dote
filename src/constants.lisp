@@ -198,7 +198,9 @@
 
 (define-constant +default-gui-inventory-items+    '("gui" "default" "inventory")  :test #'equalp)
 
-(define-constant +default-gui-opening+            '("gui" "default" "opening")     :test #'equalp)
+(define-constant +default-gui-opening+            '("gui" "default" "opening")    :test #'equalp)
+
+(define-constant +default-credit-items+           '("gui" "default" "credits")    :test #'equalp)
 
 (define-constant +default-character-weapon-dir+    '("characters" "weapons")      :test #'equalp)
 

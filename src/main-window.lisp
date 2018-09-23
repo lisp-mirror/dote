@@ -265,10 +265,9 @@
               (misc:dbg "n ~a" *near*)
               (incf *near* -.1))
             (when (string= text "p")
-              (entity:popup-from-fow (window-game-state object) :x 10 :y 10)
-              (misc:dbg "tt ~a" (entity:thrown-down-in-fow-p (window-game-state object)
-                                                             :x 10 :y 10))
-
+              ;; (entity:popup-from-fow (window-game-state object) :x 10 :y 10)
+              ;; (misc:dbg "tt ~a" (entity:thrown-down-in-fow-p (window-game-state object)
+              ;;                                                :x 10 :y 10))
               (let* ((ai-check (first (ai-entities (window-game-state object)))))
                 (billboard:enqueue-tooltip ai-check
                                            billboard:+tooltip-surprise-attack-char+

@@ -382,8 +382,7 @@
        (when (not (initializedp ,texture))
          (prepare-for-rendering ,texture))
        (progn
-          ,@body)
-       ,texture)))
+          ,@body))))
 
 (defun replace-texture (old-texture new-texture)
   (let ((pos (position-if #'(lambda (texture) (= (handle texture)

@@ -16,6 +16,18 @@
 
 (in-package :num-utils)
 
+(defun safe-parse-number (number &key (fix-fn #'(lambda (e) (declare (ignore e)) nil)))
+  (handler-bind ((parse-error
+                  #'(lambda(e)
+                      (return-from safe-parse-number (funcall fix-fn e))))
+                 (parse-number:invalid-number
+                  #'(lambda(e)
+                      (return-from safe-parse-number (funcall fix-fn e)))))
+    (if (or (not (stringp number))
+            (string= number "-"))
+        nil
+        (parse-number:parse-number number))))
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun primes-list (primes &optional (pos 0))
     (declare (optimize (debug 0) (safety 0) (speed 3)))

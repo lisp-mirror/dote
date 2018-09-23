@@ -129,6 +129,7 @@
    :+spell-dir+
    :+default-gui-inventory-items+
    :+default-gui-opening+
+   :+default-credit-items+
    :+default-gui-resource+
    :+default-character-weapon-dir+
    :+default-character-bow-dir+
@@ -356,6 +357,7 @@
         :constants)
   (:nicknames :num)
   (:export
+   :safe-parse-number
    :primes-list
    :make-primes-array
    :*array-primes*
@@ -566,7 +568,8 @@
    :link-file-path
    :file-is-link-if-else
    :pathname->namestring
-   :read-single-form))
+   :read-single-form
+   :eq-filename))
 
 (defpackage :os-utils
   (:use :cl)
@@ -4933,6 +4936,36 @@
    :enqueue-turn-billboard-human
    :make-fade-curtain
    :make-fade-out-flash))
+
+(defpackage :credits
+  (:use
+   :cl
+   :alexandria
+   :config
+   :constants
+   :ubvec4
+   :vec4
+   :misc
+   :num
+   :fs
+   :3d-utils
+   :static-queue
+   :shaders-utils
+   :cl-gl-utils
+   :interfaces
+   :mesh-material
+   :identificable
+   :transformable
+   :entity
+   :camera
+   :game-state
+   :mesh
+   :gui-events
+   :gui
+   :widget)
+  (:shadowing-import-from :misc :shuffle :random-elt)
+  (:export
+   :make-credits))
 
 (defpackage :opening-sequence
   (:use

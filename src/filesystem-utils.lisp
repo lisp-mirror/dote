@@ -339,3 +339,8 @@
   (with-open-file (stream file :direction :input :if-does-not-exist nil)
     (when stream
       (read stream))))
+
+(defun eq-filename (a b)
+  (flet ((strip (a) (strip-dirs-from-path (pathname->namestring a))))
+    (string= (strip a)
+             (strip b))))
