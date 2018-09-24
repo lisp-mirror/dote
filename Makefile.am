@@ -1711,9 +1711,6 @@ data/spells/cure-terror-3.lisp				 \
 data/spells/dispel-fow-1.lisp				 \
 data/spells/dispel-fow-2.lisp				 \
 data/spells/dispel-fow-3.lisp				 \
-data/spells/heal-1.lisp					 \
-data/spells/heal-2.lisp					 \
-data/spells/heal-3.lisp					 \
 data/spells/immune-berserk-1.lisp			 \
 data/spells/immune-poison-1.lisp			 \
 data/spells/immune-terror-1.lisp			 \
