@@ -50,17 +50,17 @@
                    (pixel-size         pixel-size)) object
     (declare (optimize (debug 0) (speed 3) (safety 0)))
     (declare (desired-type dt el-time animation-speed))
-    (let* ((scaling-thrs-scaling 0.4)
+    (let* ((scaling-thrs-scaling 0.3)
            (scaling-thrs (d* end-time scaling-thrs-scaling)))
       (cond
         ((d< el-time scaling-thrs)
          (setf pixel-size (dlerp (d- 1.0 (smoothstep-interpolate 0.0 scaling-thrs el-time))
-                                 1.0
-                                 50.0)))
+                                 200.0
+                                 0.0)))
         ((d> el-time (d* end-time (d- 1.0 scaling-thrs)))
          (setf pixel-size (dlerp (smoothstep-interpolate (d- 1.0 scaling-thrs) end-time el-time)
-                                 1.0
-                                 50.0)))))
+                                 150.0
+                                 0.0)))))
     (setf el-time (d+ el-time (d* animation-speed dt)))
     (with-maybe-trigger-end-of-life (object (removeable-from-world-p object)))))
 
