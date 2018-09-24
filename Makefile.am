@@ -21,6 +21,8 @@ ACLOCAL_AMFLAGS = -I m4
 EXTRA_DIST = config.rpath m4/ChangeLog ChangeLog dote.asd NOTES README.org src \
 LICENSES.org COPYING
 
+bin_SCRIPTS = dote
+
 nobase_dist_pkgdata_DATA = data/scripts/radial-mountain-function.lisp \
 data/names/surnames.lisp                                 \
 data/names/names.lisp                                    \
