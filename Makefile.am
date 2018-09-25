@@ -1816,14 +1816,18 @@ CONF_PATH_FILE = src/config.lisp
 
 BUILT_SOURCES  = src/config.lisp
 
-all-local:
+CLEANFILES = $(bin_SCRIPTS)
+
+clean-local:
+	$(RM) $(CONF_PATH_FILE);
+
+dote: $(CONF_PATH_FILE)
 	$(LISP_COMPILER) "--dynamic-space-size" "8192" \
 	--eval "(asdf:load-system '$(PACKAGE))" \
 	--eval "(in-package main-window)" \
 	--eval "(sb-ext:save-lisp-and-die \"$(PACKAGE)\" :toplevel 'main-window::main :executable t :purify t :save-runtime-options t)"
 
-clean-local:
-	$(RM) $(CONF_PATH_FILE);
+
 
 $(CONF_PATH_FILE):
 	grep "^;" src/config.lisp.in                            >  $(CONF_PATH_FILE);

@@ -21,8 +21,6 @@ src/character.lisp
 src/cl-gl-utils.lisp
 src/color-utils.lisp
 src/conditions.lisp
-src/config.lisp
-src/config.lisp.in
 src/constants.lisp
 src/container-mesh-shell.lisp
 src/die-utils.lisp
