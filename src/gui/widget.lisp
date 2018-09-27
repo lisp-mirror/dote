@@ -4539,6 +4539,8 @@
                   (setf (current-damage-points   player) (damage-points player))
                   (setf (current-movement-points player) (movement-points player))
                   (setf (current-spell-points    player) (spell-points player))
+                  ;; remove experience points left
+                  #-debug-mode (setf (character:exp-points player) 0.0)
                   ;; setup model
                   (let* ((dir (strcat (fs:path-first-element (first model-preview-paths))
                                       fs:*directory-sep*))
