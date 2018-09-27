@@ -118,7 +118,7 @@
     :initarg  :tree-clip
     :accessor tree-clip)
    (fullscreen
-    :initform t
+    :initform nil
     :initarg  :fullscreen
     :accessor fullscreen)))
 
