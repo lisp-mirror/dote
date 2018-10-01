@@ -41,16 +41,23 @@ if test "$GPG" = "no" ; then
    exit 1;
 fi
 
-AC_PATH_PROG([SDL_CONFIG],[sdl2-config],[no])
+AC_PATH_PROG([BASH],[bash],[no])
 
-if test "$SDL_CONFIG" = "no" ; then
-   AC_MSG_ERROR([Can not find the sdl2 configuration script.])
+if test "$BASH" = "no" ; then
+   AC_MSG_ERROR([Can not find bash shell.])
    exit 1;
 fi
 
 AC_PROG_MKDIR_P
 
 AC_PROG_AWK
+
+AC_PATH_PROG([SDL_CONFIG],[sdl2-config],[no])
+
+if test "$SDL_CONFIG" = "no" ; then
+   AC_MSG_ERROR([Can not find the sdl2 configuration script.])
+   exit 1;
+fi
 
 AC_SUBST([CFLAGS],[$CFLAGS\ `sdl2-config --cflags`])
 

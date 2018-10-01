@@ -1,4 +1,4 @@
-#! /bin/bash
+#! @BASH@
 
 # quick_quicklisp.sh
 # Copyright (C) 2016-2018 cage
