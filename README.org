@@ -45,7 +45,7 @@ The game  is *playable* but full  of bugs and many  things are missing
      this  command will  download quicklisp,  check the  signature and
      install all the lisp dependencies.
 
-  3. finally
+  3. finally:
      #+BEGIN_SRC sh
      make && make install
      #+END_SRC
@@ -115,7 +115,7 @@ You should be now able to run the game typing =dote= on the terminal.
 
 ** C libraries
 There are others native (in C) libraries used, the configure script will
-warn if they are missing:
+warn if some of them are missing:
 
 - libsdl2;
 - sdl2-mixer;
