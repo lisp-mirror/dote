@@ -131,8 +131,8 @@ on my system (debian testing) the packages names are:
 - bash;
 - curl.
 - gpg;
-- sbcl (lisp compiler);
-
+- GNU AWK (gawk);
+- sbcl (lisp compiler).
 * Issues
 
   I strongly  recommend you to compile  and run the demo  in a testing

@@ -156,7 +156,8 @@
   • bash;
   • curl.
   • gpg;
-  • sbcl (lisp compiler);
+  • GNU AWK (gawk);
+  • sbcl (lisp compiler).
 
 
 5 Issues

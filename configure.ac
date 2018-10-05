@@ -48,9 +48,23 @@ if test "$BASH" = "no" ; then
    exit 1;
 fi
 
-AC_PROG_MKDIR_P
+AC_PATH_PROG([GAWK],[gawk],[no])
 
-AC_PROG_AWK
+if test "$GAWK" = "no" ; then
+   AC_MSG_ERROR([Can not find GNU AWK (gawk).])
+   exit 1;
+fi
+
+SBCL_MIN_VERSION="1.4.11";
+SBCL_VERSION=`${LISP_COMPILER} --version | ${GAWK} -- '// {print $2}'`
+SBCL_VERSION_OK=`echo "$SBCL_VERSION $SBCL_MIN_VERSION" | awk -f compare_version.awk`
+
+if test "$SBCL_VERSION_OK" = "1" ; then
+   AC_MSG_ERROR([Lisp compiler too old, $SBCL_MIN_VERSION is the oldest supported.])
+   exit 1;
+fi
+
+AC_PROG_MKDIR_P
 
 AC_PATH_PROG([SDL_CONFIG],[sdl2-config],[no])
 
