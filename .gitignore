@@ -18,7 +18,6 @@ missing
 po/Makefile
 po/Makefile.in
 po/POTFILES
-po/dote.pot
 po/en@boldquot.gmo
 po/en@boldquot.insert-header
 po/en@boldquot.po
