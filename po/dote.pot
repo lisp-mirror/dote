@@ -7,9 +7,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: dote 0.0.1\n"
-"Report-Msgid-Bugs-To: cage\n"
-"POT-Creation-Date: 2018-10-18 17:38+0200\n"
-"PO-Revision-Date: 2018-10-18 17:42+0200\n"
+"Report-Msgid-Bugs-To: cage@katamail.com\n"
+"POT-Creation-Date: 2018-10-18 18:08+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
@@ -432,7 +432,7 @@ msgstr ""
 
 #: src/md2-mesh.lisp:588 src/saved-game.lisp:659 src/world.lisp:1115
 #: src/gui/load-save-window.lisp:194 src/gui/widget.lisp:4528
-#: src/gui/widget.lisp:5030
+#: src/gui/widget.lisp:5032
 msgid "OK"
 msgstr ""
 
@@ -1022,19 +1022,23 @@ msgstr ""
 msgid "Next"
 msgstr ""
 
-#: src/gui/widget.lisp:4526 src/gui/widget.lisp:5028
+#: src/gui/widget.lisp:4526 src/gui/widget.lisp:5030
 msgid "Error"
 msgstr ""
 
 #: src/gui/widget.lisp:4533
+msgid "You supposed to generate a character before accepting it."
+msgstr ""
+
+#: src/gui/widget.lisp:4535
 msgid "Limit of available player reached!"
 msgstr ""
 
-#: src/gui/widget.lisp:4536
+#: src/gui/widget.lisp:4538
 msgid "Mesh not specified"
 msgstr ""
 
-#: src/gui/widget.lisp:4907
+#: src/gui/widget.lisp:4909
 msgid "Generate character"
 msgstr ""
 

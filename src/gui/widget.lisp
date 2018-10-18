@@ -4529,53 +4529,55 @@
                                                             #'player-accept-error-message-cb))))
                  (setf (compiled-shaders error-message) (compiled-shaders win))
                  (add-child win error-message))))
-      (if (<= max-player-count 0)
-          (show-error-message (_ "Limit of available player reached!"))
-          (with-accessors ((main-state main-state)) world
-            (if (null model-preview-paths)
-                (show-error-message (_ "Mesh not specified"))
-                (progn
-                  ;; copy some new points to current
-                  (setf (current-damage-points   player) (damage-points player))
-                  (setf (current-movement-points player) (movement-points player))
-                  (setf (current-spell-points    player) (spell-points player))
-                  ;; remove experience points left
-                  #-debug-mode (setf (character:exp-points player) 0.0)
-                  ;; setup model
-                  (let* ((dir (strcat (fs:path-first-element (first model-preview-paths))
-                                      fs:*directory-sep*))
-                         (model            (md2:load-md2-player player
-                                                                dir
-                                                                (compiled-shaders world)
-                                                                +human-player-models-resource+))
-                         (original-texture (get-texture +portrait-unknown-texture-name+))
-                         (portrait-texture (texture:gen-name-and-inject-in-database
-                                            (texture:clone original-texture))))
-                    (pixmap:sync-data-to-bits portrait-texture)
-                    (texture:prepare-for-rendering portrait-texture)
-                    (setf (character:first-name player) (label input-name))
-                    (setf (character:last-name  player) (label input-last-name))
-                    (setf (character:model-origin-dir player) dir)
-                    ;;(setf (entity:ghost model) player)
-                    (setf (portrait (entity:ghost model)) portrait-texture)
-                    (decf max-player-count)
-                    (world:build-inventory model +pc-type+ (character:player-class player))
-                    (world:place-player-on-map world model game-state:+pc-type+
-                                               :position #(0 0))
-                    (world:select-and-slide-to-first-pc world model)
-                    #+ (and debug-mode god-mode)
-                    (progn
-                      (setf (character:movement-points (ghost model)) 100.0)
-                      (setf (character:spell-points    (ghost model)) 100.0)))
-                  ;; restore preview
-                  (setf (pixmap:data (get-texture +preview-unknown-texture-name+))
-                        backup-data-texture-preview)
-                  (pixmap:sync-data-to-bits (get-texture +preview-unknown-texture-name+))
-                  (setf (pixmap:data (get-texture +portrait-unknown-texture-name+))
-                        backup-data-texture-portrait)
-                  (pixmap:sync-data-to-bits (get-texture +portrait-unknown-texture-name+))
-                  (update-for-rendering (get-texture +portrait-unknown-texture-name+))
-                  (update-for-rendering (get-texture +preview-unknown-texture-name+)))))))))
+        (if (not player)
+            (show-error-message (_ "You supposed to generate a character before accepting it."))
+            (if (<= max-player-count 0)
+                (show-error-message (_ "Limit of available player reached!"))
+                (with-accessors ((main-state main-state)) world
+                  (if (null model-preview-paths)
+                      (show-error-message (_ "Mesh not specified"))
+                      (progn
+                        ;; copy some new points to current
+                        (setf (current-damage-points   player) (damage-points player))
+                        (setf (current-movement-points player) (movement-points player))
+                        (setf (current-spell-points    player) (spell-points player))
+                        ;; remove experience points left
+                        #-debug-mode (setf (character:exp-points player) 0.0)
+                        ;; setup model
+                        (let* ((dir   (strcat (fs:path-first-element (first model-preview-paths))
+                                              fs:*directory-sep*))
+                               (model (md2:load-md2-player player
+                                                           dir
+                                                           (compiled-shaders world)
+                                                           +human-player-models-resource+))
+                               (original-texture (get-texture +portrait-unknown-texture-name+))
+                               (portrait-texture (texture:gen-name-and-inject-in-database
+                                                  (texture:clone original-texture))))
+                          (pixmap:sync-data-to-bits portrait-texture)
+                          (texture:prepare-for-rendering portrait-texture)
+                          (setf (character:first-name player) (label input-name))
+                          (setf (character:last-name  player) (label input-last-name))
+                          (setf (character:model-origin-dir player) dir)
+                          ;;(setf (entity:ghost model) player)
+                          (setf (portrait (entity:ghost model)) portrait-texture)
+                          (decf max-player-count)
+                          (world:build-inventory model +pc-type+ (character:player-class player))
+                          (world:place-player-on-map world model game-state:+pc-type+
+                                                     :position #(0 0))
+                          (world:select-and-slide-to-first-pc world model)
+                          #+ (and debug-mode god-mode)
+                          (progn
+                            (setf (character:movement-points (ghost model)) 100.0)
+                            (setf (character:spell-points    (ghost model)) 100.0)))
+                        ;; restore preview
+                        (setf (pixmap:data (get-texture +preview-unknown-texture-name+))
+                              backup-data-texture-preview)
+                        (pixmap:sync-data-to-bits (get-texture +preview-unknown-texture-name+))
+                        (setf (pixmap:data (get-texture +portrait-unknown-texture-name+))
+                              backup-data-texture-portrait)
+                        (pixmap:sync-data-to-bits (get-texture +portrait-unknown-texture-name+))
+                        (update-for-rendering (get-texture +portrait-unknown-texture-name+))
+                        (update-for-rendering (get-texture +preview-unknown-texture-name+))))))))))
   t)
 
 (defun %find-max-lenght-ability-prefix (win)
