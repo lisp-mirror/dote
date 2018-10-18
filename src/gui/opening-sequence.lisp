@@ -392,7 +392,10 @@
                                           #+ (and debug-mode
                                                   fast-opening)
                                           3000.0
-                                          #+ (not debug-mode)
+                                          #+ (and debug-mode
+                                                  (not fast-opening))
+                                          30.0
+                                          #- debug-mode
                                           30.0
                                           :compiled-shaders compiled-shaders
                                           :x                0.0
