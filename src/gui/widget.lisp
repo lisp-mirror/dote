@@ -735,12 +735,17 @@
                      (setf (button-state a) (not (button-state object)))))
            group))))
 
+(defgeneric fire-button-pressed (object event))
+
+(defmethod fire-button-pressed ((object toggle-button) event)
+  (flip-state object)
+  (when (callback object)
+    (funcall (callback object) object event)))
+
 (defmethod on-mouse-pressed ((object toggle-button) event)
   (if (mouse-over object (x-event event) (y-event event))
       (progn
-        (flip-state object)
-        (when (callback object)
-            (funcall (callback object) object event))
+        (fire-button-pressed object event)
         t)
       nil))
 
@@ -840,7 +845,12 @@
   (setf (callback (button object)) value))
 
 (defmethod on-mouse-pressed ((object labeled-check-button) event)
-  (on-mouse-pressed (button object) event))
+  (if (or (mouse-over (text   object) (x-event event) (y-event event))
+          (mouse-over (button object) (x-event event) (y-event event)))
+      (progn
+        (fire-button-pressed (button object) event)
+        t)
+      nil))
 
 (defmethod on-mouse-released ((object labeled-check-button) event)
   (on-mouse-released (button object) event))
