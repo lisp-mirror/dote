@@ -1687,6 +1687,7 @@ data/gui/default/credits/bg-1.tga                        \
 data/gui/default/credits/bg-2.tga                        \
 data/gui/default/credits/bg-3.tga                        \
 data/gui/default/credits/bg-4.tga                        \
+data/gui/default/warning-circle.tga                      \
 data/spells/heal-1.lisp                                  \
 data/spells/heal-2.lisp                                  \
 data/spells/heal-3.lisp                                  \

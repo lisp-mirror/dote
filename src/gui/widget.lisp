@@ -2863,7 +2863,18 @@
                                   :modal t)
     :initarg  :b-move
     :accessor b-move)
-
+   (img-warning
+    :initform (make-instance 'signalling-light
+                             :width         *small-square-button-size*
+                             :height        *small-square-button-size*
+                             :x            (d+ (d* 3.0 *square-button-size*)
+                                               (d* 5.0 *small-square-button-size*))
+                             :y            *small-square-button-size*
+                             :texture-name +warning-circle-texture-name+
+                             :shown        nil
+                             :button-status t)
+    :initarg  :img-warning
+    :accessor img-warning)
    (text-communication
     :initform (make-instance 'widget:static-text
                              :height    *square-button-size*
@@ -3111,6 +3122,7 @@
   (add-child object (b-attack-long-imprecise object))
   (add-child object (b-activation            object))
   (add-child object (b-move                  object))
+  (add-child object (img-warning             object))
   (add-child object (text-communication      object))
   ;; second row
   (add-child object (b-save       object))
@@ -3190,6 +3202,10 @@
                               text-sp
                               #'actual-spell-points
                               #'current-spell-points ghost)
+        (if (remove-if #'thrown-down-in-fow-p
+                       (absee-mesh:all-visibles-opponents bound-player))
+            (setf (shown (img-warning object)) t)
+            (setf (shown (img-warning object)) nil))
         (case (status ghost)
           (:faint
            (setf (button-state s-faint)      t)

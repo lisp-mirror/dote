@@ -651,6 +651,13 @@
   see:
   https://opengameart.org/content/forest-background
 
+- data/gui/default/warning-circle.tga
+
+  derived from © qubodup
+  Licensed     under    CC0 1.0 Universal (CC0 1.0)
+  (https://creativecommons.org/publicdomain/zero/1.0/)
+
+  according to: https://opengameart.org/content/health-orb-icon-32px
 
 - src/test/data/avatars/avatar0.tga
   derived from

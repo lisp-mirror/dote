@@ -255,6 +255,7 @@
                    inventory-slot-selected.tga
                    transparent.tga
                    silhouette.tga
+                   warning-circle.tga
                    (drop-overlay.tga
                     +default-gui-resource+
                     (setf (s-wrap-mode  bg) :clamp-to-border)
@@ -590,6 +591,7 @@
   (setup-tex-inventory-slot-selected)
   (setup-tex-transparent)
   (setup-tex-silhouette)
+  (setup-tex-warning-circle)
   (setup-tex-bag)
   (setup-tex-add-to-bag)
   (setup-tex-blue-h-bar)

@@ -472,14 +472,14 @@
                                                   #'(lambda (v)
                                                       (seenp v
                                                              :maintain-render nil
-                                                             :saved-render-p   saved-renderp)))
+                                                             :saved-render-p  saved-renderp)))
                   (seep object))
                 (progn
                   (game-state:loop-ai-entities state
                                               #'(lambda (v)
                                                   (seenp v
                                                          :maintain-render t
-                                                         :saved-render-p   saved-renderp)))
+                                                         :saved-render-p  saved-renderp)))
                   (game-state:loop-ai-entities state
                                               #'(lambda (v)
                                                   (setf (renderp v) nil)))

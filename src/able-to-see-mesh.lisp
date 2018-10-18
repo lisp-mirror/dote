@@ -352,6 +352,16 @@ If direction is nil the placeholder turn around and test for visibility until sw
                         (pushnew visible res :test #'test-id=)))))
     res))
 
+(defun all-visibles-opponents (entity &key (alive-only t))
+  "the visible opponents of AI entity, if exist."
+  (with-accessors ((state state)) entity
+    (let ((opposite-faction (faction->opposite-faction entity)))
+      (absee-mesh:visible-players entity
+                                  :alive-only alive-only
+                                  :predicate  #'(lambda (a)
+                                                  (eq (my-faction a)
+                                                      opposite-faction))))))
+
 (defmacro with-test-me-visible ((a b should-be-visible-p) &body body)
   `(if (and ,should-be-visible-p
             (= (id ,a) (id ,b)))

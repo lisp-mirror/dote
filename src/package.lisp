@@ -4339,6 +4339,7 @@
    :visible-players
    :other-faction-visible-players
    :visible-players-in-state-from-faction
+   :all-visibles-opponents
    :other-visible-p
    :other-visible-cone-p
    :other-visible-ray-p
@@ -4614,6 +4615,7 @@
    :+preview-unknown-texture-name+
    :+load-save-preview-texture-name+
    :+silhouette-texture-name+
+   :+warning-circle-texture-name+
    :+bag-texture-name+
    :+add-to-bag-texture-name+
    :+berserk-texture-name+
