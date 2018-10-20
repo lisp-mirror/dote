@@ -928,17 +928,25 @@
 (defmethod on-mouse-released ((object signalling-light) event)
   nil)
 
-(defclass health-status-icon (signalling-light inner-animation) ())
+(defclass scaling-bouncing-icon (signalling-light inner-animation)
+  ((max-scaling
+    :initform 10.0
+    :initarg  :max-scaling
+    :accessor max-scaling)))
 
-(defmethod calculate :before ((object health-status-icon) dt)
+(defmethod calculate :before ((object scaling-bouncing-icon) dt)
   (declare (optimize (debug 0) (speed 3) (safety 0)))
-  (with-accessors ((el-time el-time)
-                   (scaling scaling)) object
-    (let ((scale-factor (d+ 1.0 (num:bounce-step-interpolate-rev 0.0 10.0 el-time))))
+  (with-accessors ((el-time     el-time)
+                   (scaling     scaling)
+                   (max-scaling max-scaling)) object
+    (let ((scale-factor (d+ 1.0
+                            (num:bounce-step-interpolate-rev 0.0 max-scaling el-time))))
       (setf scaling (sb-cga:vec scale-factor scale-factor scale-factor))
       (setf el-time
             (d+ el-time
                 (d* (animation-speed object) dt))))))
+
+(defclass health-status-icon (scaling-bouncing-icon) ())
 
 (defclass animated-icon (signalling-light inner-animation animated-spritesheet)
   ())
@@ -2864,15 +2872,17 @@
     :initarg  :b-move
     :accessor b-move)
    (img-warning
-    :initform (make-instance 'signalling-light
-                             :width         *small-square-button-size*
-                             :height        *small-square-button-size*
-                             :x            (d+ (d* 3.0 *square-button-size*)
-                                               (d* 5.0 *small-square-button-size*))
-                             :y            *small-square-button-size*
-                             :texture-name +warning-circle-texture-name+
-                             :shown        nil
-                             :button-status t)
+    :initform (make-instance 'scaling-bouncing-icon
+                             :max-scaling     2.0
+                             :animation-speed 1.0
+                             :width           *small-square-button-size*
+                             :height          *small-square-button-size*
+                             :x               (d+ (d* 3.0 *square-button-size*)
+                                                  (d* 5.0 *small-square-button-size*))
+                             :y               *small-square-button-size*
+                             :texture-name    +warning-circle-texture-name+
+                             :shown           nil
+                             :button-status   t)
     :initarg  :img-warning
     :accessor img-warning)
    (text-communication
@@ -3187,6 +3197,7 @@
                    (s-immune-poisoned   s-immune-poisoned)
                    (s-immune-terrorized s-immune-terrorized)
                    (s-immune-berserk    s-immune-berserk)
+                   (img-warning         img-warning)
                    (b-portrait          b-portrait)) object
     (when bound-player
       (with-accessors ((ghost ghost)) bound-player
@@ -3204,7 +3215,9 @@
                               #'current-spell-points ghost)
         (if (remove-if #'thrown-down-in-fow-p
                        (absee-mesh:all-visibles-opponents bound-player))
-            (setf (shown (img-warning object)) t)
+            (progn
+              (setf (el-time img-warning) 0.0)
+              (setf (shown   img-warning) t))
             (setf (shown (img-warning object)) nil))
         (case (status ghost)
           (:faint
