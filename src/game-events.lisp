@@ -173,12 +173,19 @@
    (reset-health-status-animation-p
     :initform nil
     :initarg  :reset-health-status-animation-p
-    :accessor reset-health-status-animation-p)))
+    :accessor reset-health-status-animation-p)
+   (reset-time-warning-enemy-met-p
+    :initarg  :reset-time-warning-enemy-met-p
+    :accessor reset-time-warning-enemy-met-p)))
 
-(defun send-refresh-toolbar-event (&key (reset-health-status-animation nil))
+(defun send-refresh-toolbar-event (&key
+                                     (reset-health-status-animation nil)
+                                     (reset-time-warning-enemy-met     nil))
   (let ((refresh-toolbar-event (make-instance 'game-event:refresh-toolbar-event
                                               :reset-health-status-animation-p
-                                              reset-health-status-animation)))
+                                              reset-health-status-animation
+                                              :reset-time-warning-enemy-met-p
+                                              reset-time-warning-enemy-met)))
     (propagate-refresh-toolbar-event refresh-toolbar-event)))
 
 (defevent update-highlight-path ()

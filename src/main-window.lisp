@@ -468,15 +468,16 @@ approx h ~a facing ~a occlude? ~a inside-room ~a concerning cost ~a ai-entitites
                    (when (not (world:pick-player-entity world world x y :bind t))
                      (let* ((selected-path (game-state:selected-path main-state)))
                        (when selected-path
-                         (let ((movement-event (make-instance 'game-event:move-entity-along-path-event
-                                                              :path
-                                                              (game-state:tiles selected-path)
-                                                              :cost
-                                                              (game-state:cost  selected-path)
-                                                              :id-destination
-                                                              (id selected-pc))))
-                           (game-event:propagate-move-entity-along-path-event movement-event)
-                           (world:reset-toolbar-selected-action world))))))
+                         (let ((movement-event
+                                (make-instance 'game-event:move-entity-along-path-event
+                                               :path
+                                               (game-state:tiles selected-path)
+                                               :cost
+                                               (game-state:cost  selected-path)
+                                               :id-destination
+                                               (id selected-pc))))
+                           (game-event:propagate-move-entity-along-path-event movement-event))))))
+                           ;;(world:reset-toolbar-selected-action world))))))
                   ((eq (world:toolbar-selected-action world)
                        widget:+action-attack-short-range+)
                    (let ((attacked (world:pick-any-entity world world x y)))

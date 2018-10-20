@@ -2713,6 +2713,7 @@
    :propagate-window-accept-input-event
    :refresh-toolbar-event
    :reset-health-status-animation-p
+   :reset-time-warning-enemy-met-p
    :register-for-refresh-toolbar-event
    :unregister-for-refresh-toolbar-event
    :propagate-refresh-toolbar-event

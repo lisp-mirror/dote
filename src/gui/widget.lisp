@@ -3163,7 +3163,9 @@
 (defmethod destroy :after ((object main-toolbar))
    (setf (bound-player object) nil))
 
-(defgeneric sync-with-player (object &key reset-health-animation))
+(defgeneric sync-with-player (object &key
+                                       reset-health-animation
+                                       reset-time-warning-enemy-met))
 
 (defgeneric sync-influence-map (object map))
 
@@ -3184,7 +3186,9 @@
                                          +standard-float-print-format+
                                          current-slots-value))))
 
-(defmethod sync-with-player ((object main-toolbar) &key (reset-health-animation nil))
+(defmethod sync-with-player ((object main-toolbar)
+                             &key (reset-health-animation nil)
+                                  (reset-time-warning-enemy-met t))
   (with-accessors ((bound-player bound-player)
                    (bar-mp bar-mp)      (text-mp text-mp)
                    (bar-dmg bar-dmg)    (text-dmg text-dmg)
@@ -3216,7 +3220,8 @@
         (if (remove-if #'thrown-down-in-fow-p
                        (absee-mesh:all-visibles-opponents bound-player))
             (progn
-              (setf (el-time img-warning) 0.0)
+              (when reset-time-warning-enemy-met
+                (setf (el-time img-warning) 0.0))
               (setf (shown   img-warning) t))
             (setf (shown (img-warning object)) nil))
         (case (status ghost)

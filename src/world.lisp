@@ -293,7 +293,9 @@
   (with-accessors ((toolbar toolbar)) object
     (widget:sync-with-player toolbar
                              :reset-health-animation
-                             (game-event:reset-health-status-animation-p event)))
+                             (game-event:reset-health-status-animation-p event)
+                             :reset-time-warning-enemy-met
+                             (game-event:reset-time-warning-enemy-met-p event)))
   #+ (and debug-mode debug-ai) (render-influence-map object))
 
 (defmethod game-event:on-game-event ((object world)

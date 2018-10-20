@@ -680,7 +680,7 @@ to take care of that"
                     (%stop-movement object :decrement-movement-points t)
                     (%try-deactivate-trap world object trap-ostile)))
                 (send-update-visibility-event object event)
-                (send-refresh-toolbar-event)))))))
+                (send-refresh-toolbar-event :reset-time-warning-enemy-met t)))))))
   nil)
 
 (defun fow-affected-tiles (game-state x y size)
@@ -758,7 +758,7 @@ to take care of that"
           ;; test
           ;;(misc:dbg "visibility test: ~a" (mapcar #'id (visible-players object)))
           (send-update-visibility-event object event)
-          (send-refresh-toolbar-event)
+          (send-refresh-toolbar-event :reset-time-warning-enemy-met t)
           t)
         nil)))
 
@@ -776,7 +776,7 @@ to take care of that"
           (update-visibility-cone object)
           ;;(misc:dbg "visibility test: ~a" (visible-players object))
           (send-update-visibility-event object event)
-          (send-refresh-toolbar-event)
+          (send-refresh-toolbar-event :reset-time-warning-enemy-met t)
           t)
         nil)))
 

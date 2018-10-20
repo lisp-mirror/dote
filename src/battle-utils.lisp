@@ -670,8 +670,8 @@
           (action-scheduler:with-enqueue-action-and-send-remove-after
               (world action-scheduler:attack-short-range-action)
             (battle-utils:send-attack-melee-event attacker defender)))
-        (make-attacker-message-gui-no-weapon-error world attacker))
-    (world:reset-toolbar-selected-action world)))
+        (make-attacker-message-gui-no-weapon-error world attacker))))
+;    (world:reset-toolbar-selected-action world)))
 
 (defun imprecision-change-by-dmg (attacker)
   (with-accessors ((ghost entity:ghost)) attacker
@@ -721,7 +721,7 @@
                                        imprecision))))
             (make-attacker-message-gui-out-range-error world attacker))
         (make-attacker-message-gui-no-weapon-error world attacker)))
-  (world:reset-toolbar-selected-action world)
+  ;;(world:reset-toolbar-selected-action world)
   (game-event:send-refresh-toolbar-event))
 
 (defun attack-long-range-imprecise (world attacker defender)
@@ -810,7 +810,7 @@
                                                   defender))))
                 (make-attacker-message-gui-out-range-error world attacker))
             (make-attacker-message-gui-no-spell-error world attacker))))
-    (world:reset-toolbar-selected-action world)
+    ;;(world:reset-toolbar-selected-action world)
     (game-event:send-refresh-toolbar-event)))
 
 (defun launch-spell (world attacker defender)
@@ -829,7 +829,7 @@
                                        defender)))
               (make-attacker-message-gui-out-range-error world attacker))
           (make-attacker-message-gui-no-spell-error world attacker))
-      (world:reset-toolbar-selected-action world)
+      ;;(world:reset-toolbar-selected-action world)
       (game-event:send-refresh-toolbar-event))))
 
 (defun launch-spell-from-npc (world attacker defender)
@@ -844,7 +844,7 @@
                                  world
                                  attacker
                                  defender)))
-      (world:reset-toolbar-selected-action world)
+      ;;(world:reset-toolbar-selected-action world)
       (game-event:send-refresh-toolbar-event))))
 
 (defun maybe-start-gui-increase-level (entity)
