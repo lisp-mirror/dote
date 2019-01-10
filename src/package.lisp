@@ -593,6 +593,7 @@
    :split-lines
    :strip-prefix
    :strip-withespaces
+   :common-prefix
    :basename
    :wrap-with
    :right-padding
