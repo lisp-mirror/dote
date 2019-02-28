@@ -357,24 +357,16 @@
 
 
 - data/gui/default/victory.tga
-  derived fron © bevouliin.com
-  released under: CC BY 3.0
+  data/gui/default/game-over.tga
+  data/textures/turn-transition/ai.tga
+  data/textures/turn-transition/human.tga
 
-  https://creativecommons.org/licenses/by/3.0/
+  derived from © 2019 Paolo Loletto
 
-  according to:
+  Creative commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
 
-  https://opengameart.org/content/golden-trophy-game-ornament
+  https://creativecommons.org/licenses/by-sa/4.0/
 
-- data/gui/default/game-over.tga
-  derived fron © Angry Amish
-  released under: CC0 1.0 Universal (CC0 1.0)
-
-  https://creativecommons.org/publicdomain/zero/1.0/
-
-  according to:
-
-  https://opengameart.org/content/game-over-screen
 
 - data/gui/default/attack-short-range-overlay.tga
   data/gui/default/basic-frame.tga

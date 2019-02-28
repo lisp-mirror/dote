@@ -299,10 +299,10 @@
   (declare (optimize (debug 0) (speed 3) (safety 0)))
   (declare (desired-type time))
   (let* ((actual-time (clamp time 0.0001 0.9999))
-         (v (d (dexpt (log (d/ actual-time
-                             (d- 1.0 actual-time))
-                          10)
-                     2.0))))
+         (v           (d (dexpt (log (d/ actual-time
+                                         (d- 1.0 actual-time))
+                                     10)
+                                2.0))))
     (d* 20.8 v)))
 
 (defclass turn-billboard (widget inner-animation end-life-trigger)
@@ -398,9 +398,9 @@
 (defun make-turn-billboard (texture-filename compiled-shaders
                             &key (resource-path +turn-transition-billboard-dir+))
   (make-instance 'turn-billboard
-                 :animation-speed  70.0
+                 :animation-speed  90.0
                  :offset           (d- (turn-billboard-w))
-                 :width            (turn-billboard-w)
+                 :width            (/ (turn-billboard-w) 2.0)
                  :height           (d/ (d *window-h*) 3.0)
                  :y                (d/ (d *window-h*) 2.0)
                  :compiled-shaders compiled-shaders
