@@ -337,11 +337,11 @@
                    (pos                  pos)
                    (end-of-life-callback end-of-life-callback)) object
     (declare (optimize (debug 0) (speed 3) (safety 0)))
-    (declare (desired-type dt el-time offset animation-speed start-time))
-    (setf el-time (d+ el-time dt))
+    (declare (desired-type el-time offset animation-speed start-time))
+    (setf el-time (d+ el-time animation-speed))
     (let ((p (normalize-value-in-range el-time start-time end-time)))
       (setf offset
-            (d+ offset (d* (turn-billboard-v-fn p) animation-speed dt)))
+            (d+ offset (turn-billboard-v-fn p)))
       (setf (vec-x pos) offset)
       (with-maybe-trigger-end-of-life (object (removeable-from-world-p object))))))
 
@@ -398,7 +398,7 @@
 (defun make-turn-billboard (texture-filename compiled-shaders
                             &key (resource-path +turn-transition-billboard-dir+))
   (make-instance 'turn-billboard
-                 :animation-speed  90.0
+                 :animation-speed  .0115
                  :offset           (d- (turn-billboard-w))
                  :width            (/ (turn-billboard-w) 2.0)
                  :height           (d/ (d *window-h*) 3.0)
