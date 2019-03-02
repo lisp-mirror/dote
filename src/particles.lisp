@@ -144,6 +144,12 @@
             (incf time dt)
             (dsin (d* freq time))))))
 
+(defun %constant-alpha-clsr (alpha-value)
+  #'(lambda ()
+      #'(lambda (p dt)
+          (declare (ignore p dt))
+          alpha-value)))
+
 (defun %uniform-from-clsr (lower-treshold starting-time m)
   #'(lambda ()
       (let ((time        0.0)
@@ -3200,7 +3206,7 @@
          (gradient (color-utils:make-gradient
                     (color-utils:make-gradient-color 0.0 billboard:+blessing-color+)
                     (color-utils:make-gradient-color 1.0 §cffffff)))
-                 (spark (make-particles-cluster 'cure-spark
+         (spark (make-particles-cluster 'cure-spark
                                         400
                                         compiled-shaders
                                         :remove-starting-delay t
@@ -3532,3 +3538,34 @@
          (action-scheduler:with-enqueue-action (world action-scheduler:particle-effect-action)
            (world:push-entity world sparks)
            (enqueue-exp-inc-tooltip entity value)))))))
+
+(defclass visual-hint-selected (spell-decal end-life-trigger) ())
+
+(defmethod initialize-instance :after ((object visual-hint-selected) &key &allow-other-keys)
+  (end-of-life-remove-from-world object))
+
+(defmethod calculate :after ((object blood) dt)
+  (with-maybe-trigger-end-of-life (object (removeable-from-world-p object))))
+
+(defun add-visual-hint-player-selected (entity
+                                         &key
+                                           (texture (random-elt (list-of-texture-by-tag +texture-tag-decals-circular-wave+))))
+  (let ((fx (make-particles-cluster 'visual-hint-selected
+                                    1
+                                    (compiled-shaders entity)
+                                    :texture     texture
+                                    :pos         (aabb-bottom-center (aabb entity))
+                                    :v0-fn       (constantly +zero-vec+)
+                                    :mass-fn     (gaussian-distribution-fn 1.0 .1)
+                                    :life-fn     (constantly 1.0)
+                                    :delay-fn    (constantly 0.0)
+                                    :gravity     (vec 0.0 -1e-5 0.0)
+                                    :rotation-fn (%no-rotation-clrs)
+                                    :scaling-fn  (%no-scaling-clsr)
+                                    :alpha-fn    (%exp-alpha-fading-clsr 10.0)
+                                    :color-fn    (%constant-color-clsr §cff00ffff)
+                                    :width       5.0
+                                    :height      5.0
+                                    :respawn     nil)))
+    (game-state:with-world (world (state entity))
+      (world:push-entity world fx))))

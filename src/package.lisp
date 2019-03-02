@@ -1159,6 +1159,7 @@
    :reset
    :aabb-center
    :aabb-top-center
+   :aabb-bottom-center
    :aabb-height
    :aabb-width
    :min-x
@@ -5387,7 +5388,8 @@
    :add-hit-1-effect-billboard
    :add-hit-2-effect-billboard
    :add-hit-3-effect-billboard
-   :add-exp-increase))
+   :add-exp-increase
+   :add-visual-hint-player-selected))
 
 (defpackage :arrows
   (:use :cl
@@ -5989,6 +5991,7 @@
 
 (defpackage :main-window
   (:use :cl
+        :alexandria
         :config
         :constants
         :sb-cga
@@ -6007,6 +6010,8 @@
         :shaders-utils
         :identificable
         :load-level)
+  (:shadowing-import-from :sb-cga :rotate)
+  (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
    :*placeholder*
    :clean-up-placeholder

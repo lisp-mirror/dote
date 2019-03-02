@@ -97,6 +97,8 @@
 
 (defgeneric aabb-top-center (object))
 
+(defgeneric aabb-bottom-center (object))
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defmacro %with-optimized-vector ((aabb p accessor) &body body)
     `(let ((,p (,accessor ,aabb)))
@@ -210,6 +212,13 @@
     (let ((res (copy-vec (aabb-center object))))
       (setf (elt res 1) (elt aabb-p2 1))
       res)))
+
+(defmethod aabb-bottom-center ((object aabb))
+  (declare (optimize (debug 0) (safety 0) (speed 3)))
+  (let ((top-center (aabb-top-center object))
+        (center     (aabb-center     object)))
+    (vec+ (vec- center top-center)
+          center)))
 
 (defmethod aabb-height ((object aabb))
   (declare (optimize (debug 0) (safety 0) (speed 3)))

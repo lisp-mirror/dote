@@ -265,19 +265,21 @@
               (misc:dbg "n ~a" *near*)
               (incf *near* -.1))
             (when (string= text "p")
-              ;; (entity:popup-from-fow (window-game-state object) :x 10 :y 10)
-              ;; (misc:dbg "tt ~a" (entity:thrown-down-in-fow-p (window-game-state object)
-              ;;                                                :x 10 :y 10))
-              (let* ((ai-check (first (ai-entities (window-game-state object)))))
-                (billboard:enqueue-tooltip ai-check
-                                           billboard:+tooltip-surprise-attack-char+
-                                           :duration
-                                           billboard:+tooltip-slow-duration+
-                                           :animation-speed
-                                           billboard:+tooltip-slow-anim-speed+
-                                           :color                 billboard:+damage-color+
-                                           :font-type             gui:+tooltip-font-handle+
-                                           :add-only-if-renderd-p t)))
+              (and selected-pc
+                   (particles:add-visual-hint-player-selected selected-pc)))
+              ;; ;; (entity:popup-from-fow (window-game-state object) :x 10 :y 10)
+              ;; ;; (misc:dbg "tt ~a" (entity:thrown-down-in-fow-p (window-game-state object)
+              ;; ;;                                                :x 10 :y 10))
+              ;; (let* ((ai-check (first (ai-entities (window-game-state object)))))
+              ;;   (billboard:enqueue-tooltip ai-check
+              ;;                              billboard:+tooltip-surprise-attack-char+
+              ;;                              :duration
+              ;;                              billboard:+tooltip-slow-duration+
+              ;;                              :animation-speed
+              ;;                              billboard:+tooltip-slow-anim-speed+
+              ;;                              :color                 billboard:+damage-color+
+              ;;                              :font-type             gui:+tooltip-font-handle+
+              ;;                              :add-only-if-renderd-p t)))
             (when (string= text "D")
               (entity:throw-down-in-fow (window-game-state object) :x 10 :y 10)
               (world:apply-tremor-0 world))
@@ -501,7 +503,8 @@ approx h ~a facing ~a occlude? ~a inside-room ~a concerning cost ~a ai-entitites
                      (when attacked
                        (battle-utils:attack-long-range-imprecise world selected-pc attacked))))
                   ((world:human-interaction-allowed-p world)
-                   (world:pick-player-entity world world x y :bind t))))
+                   (when-let ((selected-player (world:pick-player-entity world world x y :bind t)))
+                     (particles:add-visual-hint-player-selected selected-player)))))
               (when (not (widget:on-mouse-released (world:gui world) gui-event))
                 (misc:dbg "~s button: ~A at ~A, ~A" state b x y))))))))
 
