@@ -1,6 +1,7 @@
+**.gmo
 **-noshare.*
 Makefile
-Makefile.in
+
 aclocal.m4
 autom4te.cache/
 compile
@@ -8,25 +9,25 @@ config.guess
 config.log
 config.status
 config.sub
-configure
+
 costs.pgm
 data/trees/s.lsys
-dote
-install-sh
-missing
+
 
 po/Makefile
 po/Makefile.in
 po/POTFILES
 po/en@boldquot.gmo
 po/en@boldquot.insert-header
-po/en@boldquot.po
+
 po/en@quot.gmo
 po/en@quot.insert-header
 po/en@quot.po
+
+po/remove-potcdate.sed
 po/it.gmo
 po/it/
-po/remove-potcdate.sed
+
 
 /*.pgm
 /*.ppm
@@ -37,3 +38,5 @@ po/remove-potcdate.sed
 
 src/config.lisp
 quick_quicklisp.sh
+
+dote
