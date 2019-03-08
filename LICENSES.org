@@ -103,14 +103,14 @@
   released under a Creative Commons Attribution 3.0 Unported license
 
 - data/trees/texture/fern/texture.tga
-  Provided by Nobiax.
 
-  Absolutely free to  use or to modify in any  kind of work (personal,
-  commercial or else).
+  derived from © 2011
+  released under CC0 1.0
+  https://creativecommons.org/publicdomain/zero/1.0/
 
-  Give me  a link of the  result at nobiax.deviantart.com  or my other
-  account  on OpenGameArt.com  or ShareCG.com  ( watch  my  journal on
-  deviantart ) ;)
+  download from
+
+  https://opengameart.org/content/fern-pack
 
 - data/trees/texture/oak/texture.tga
   is based on the work Copyright (C) 2009  Julius Krischan Makowka
