@@ -371,9 +371,9 @@
     :accessor blackboard
     :type blackboard:blackboard)))
 
-(defgeneric select-next-pc (object))
+(defgeneric select-next-pc (object &optional count))
 
-(defgeneric select-prev-pc (object))
+(defgeneric select-prev-pc (object &optional count))
 
 (defgeneric fetch-render-window (object))
 
@@ -532,22 +532,28 @@
       (setf index-selected-pc pos-found)
       (setf (slot-value object 'selected-pc) entity))))
 
-(defmethod select-next-pc ((object game-state))
+(defmethod select-next-pc ((object game-state) &optional (count 0))
   (with-accessors ((index-selected-pc index-selected-pc)
                    (player-entities   player-entities)
                    (selected-pc selected-pc)) object
-    (setf index-selected-pc (rem (1+ index-selected-pc)
-                                 (length player-entities)))
-    (setf selected-pc (elt player-entities index-selected-pc))
+    (when (< count (length player-entities))
+      (setf index-selected-pc (rem (1+ index-selected-pc)
+                                   (length player-entities)))
+      (if (not (entity-dead-p (elt player-entities index-selected-pc)))
+          (setf selected-pc (elt player-entities index-selected-pc))
+          (select-next-pc object (1+ count))))
     object))
 
-(defmethod select-prev-pc ((object game-state))
+(defmethod select-prev-pc ((object game-state) &optional (count 0))
   (with-accessors ((index-selected-pc index-selected-pc)
                    (player-entities   player-entities)
                    (selected-pc selected-pc)) object
-    (setf index-selected-pc (mod (1- index-selected-pc)
-                                 (length player-entities)))
-    (setf selected-pc (elt player-entities index-selected-pc))
+    (when (< count (length player-entities))
+      (setf index-selected-pc (mod (1- index-selected-pc)
+                                   (length player-entities)))
+      (if (not (entity-dead-p (elt player-entities index-selected-pc)))
+          (setf selected-pc (elt player-entities index-selected-pc))
+          (select-prev-pc object (1+ count))))
     object))
 
 (defmethod fetch-render-window ((object game-state))

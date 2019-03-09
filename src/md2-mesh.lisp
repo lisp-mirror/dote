@@ -1327,6 +1327,7 @@ to take care of that"
       (with-accessors ((status                status)
                        (current-damage-points current-damage-points)) ghost
         (game-state:with-world (world state)
+          (game-state:select-next-pc state)
           (setf (status ghost) +status-faint+)
           (setf current-action  :death)
           (set-animation object :death :recalculate t)

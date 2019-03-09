@@ -704,7 +704,8 @@
                 (let ((entity #+ debug-mode (or (fetch-from-player-entities main-state entity-id)
                                                 (fetch-from-ai-entities main-state entity-id))
                               #- debug-mode (fetch-from-player-entities main-state entity-id)))
-                  (when entity
+                  (when (and entity
+                             (not (entity-dead-p entity)))
                     (when bind
                       (bind-entity-to-world object entity))
                     (return-from pick-player-entity entity)))))))))
