@@ -1854,7 +1854,8 @@ to take care of that"
         ;; open door if any and if closed
         (let ((door-opened-p (manage-door-ai state entity current-path 1)))
           (when (not door-opened-p) ;; door was open, the plan has not been interrupted
-            (if (gconf:config-smooth-movements)
+            (if (and (gconf:config-smooth-movements)
+                     (renderp entity))
                 (setf (pos entity)
                       (vec+ (pos entity) (vec* dir +model-move-speed+)))
                 (setf (pos entity) end)))))))
