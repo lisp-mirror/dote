@@ -2,10 +2,9 @@
 **-noshare.*
 Makefile
 
-aclocal.m4
+
+
 autom4te.cache/
-compile
-config.guess
 config.log
 config.status
 config.sub
@@ -22,9 +21,10 @@ po/en@boldquot.insert-header
 
 po/en@quot.gmo
 po/en@quot.insert-header
-po/en@quot.po
+
 
 po/remove-potcdate.sed
+po/stamp-po
 po/it.gmo
 po/it/
 
