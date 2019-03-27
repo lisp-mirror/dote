@@ -25,13 +25,15 @@
 
 (alexandria:define-constant +sprite-default-animation-speed+  0.5 :test #'=)
 
-(alexandria:define-constant +sprite-anim-north-dir+           0 :test #'=)
+(alexandria:define-constant +sprite-anim-north-dir+           0   :test #'=)
 
-(alexandria:define-constant +sprite-anim-west-dir+            1 :test #'=)
+(alexandria:define-constant +sprite-anim-west-dir+            1   :test #'=)
 
-(alexandria:define-constant +sprite-anim-south-dir+           2 :test #'=)
+(alexandria:define-constant +sprite-anim-south-dir+           2   :test #'=)
 
-(alexandria:define-constant +sprite-anim-east-dir+            3 :test #'=)
+(alexandria:define-constant +sprite-anim-east-dir+            3   :test #'=)
+
+(alexandria:define-constant +orientation-threshold+           0.2 :test #'=)
 
 (alexandria:define-constant +default-animation-table+
     '((:stand        ((8  9)
@@ -1535,7 +1537,7 @@ to take care of that"
         (flet ((%set-animation (dir)
                  (setf active-animation-row   (animation-starting-row anim-spec dir))
                  (setf active-animation-count (animation-row-count anim-spec dir))))
-          (with-epsilon (2e-1)
+          (with-epsilon (+orientation-threshold+)
             (cond
               ((epsilon= dot  1.0)
                (%set-animation +sprite-anim-north-dir+))
