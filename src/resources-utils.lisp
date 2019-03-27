@@ -121,7 +121,8 @@
            (create-home-resource path resource)
            home-path))
       ((eq if-does-not-exists :error)
-       (or (or home-path shared-path)
+       (or home-path
+           shared-path
            (error 'resource-not-found-error :pathname path :resource resource)))
       ((eq if-does-not-exists :return-writable)
        (cond

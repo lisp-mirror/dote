@@ -116,9 +116,12 @@
    :+shaders-resource+
    :+models-resource+
    :+model-objects-resource+
+   :+model-spritesheet+
    :+arrows-resource+
    :+human-player-models-resource+
    :+ai-player-models-resource+
+   :+human-player-sprite-resource+
+   :+ai-player-sprite-resource+
    :+textures-resource+
    :+scripts-resource+
    :+furnitures-resource+
@@ -4087,6 +4090,7 @@
    :texture-index
    :get-custom-attribute
    :set-custom-attribute
+   :with-camera
    :with-camera-projection-matrix
    :with-camera-view-matrix
    :with-modelview-matrix
@@ -5548,6 +5552,55 @@
    :clean-db
    :blacklist-clear-id
    :md2-mesh-shell
+   :wear-item
+   :add-to-inventory))
+
+(defpackage :sprite-character
+  (:use :cl
+        :alexandria
+        :sb-cga
+        :sb-cga-utils
+        :constants
+        :config
+        :conditions
+        :shaders-utils
+        :cl-gl-utils
+        :interfaces
+        :transformable
+        :identificable
+        :entity
+        :texture
+        :num
+        :game-event
+        :misc
+        :vec2
+        :ivec2
+        :player-messages-text
+        :interactive-entity
+        :character
+        :mesh-material
+        :mesh
+        :able-to-see-mesh)
+  (:nicknames :sprite)
+  (:shadowing-import-from :misc :random-elt :shuffle)
+  (:shadowing-import-from :sb-cga :rotate)
+  (:export
+   :setup-orb
+   :attach-orb
+   :setup-orb-texture
+   :orb-active
+   :orb-inactive
+   :orb-remove
+   :sprite-mesh
+   :fs-resources
+   :load-sprite-model
+   :load-sprite-player
+   :set-animation
+   :my-faction
+   :place-trap
+   :clean-sprite-db
+   :blacklist-clear-id
+   :sprite-mesh-shell
    :wear-item
    :add-to-inventory))
 

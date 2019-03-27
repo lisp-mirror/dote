@@ -265,21 +265,16 @@
               (misc:dbg "n ~a" *near*)
               (incf *near* -.1))
             (when (string= text "p")
-              (and selected-pc
-                   (particles:add-visual-hint-player-selected selected-pc)))
-              ;; ;; (entity:popup-from-fow (window-game-state object) :x 10 :y 10)
-              ;; ;; (misc:dbg "tt ~a" (entity:thrown-down-in-fow-p (window-game-state object)
-              ;; ;;                                                :x 10 :y 10))
-              ;; (let* ((ai-check (first (ai-entities (window-game-state object)))))
-              ;;   (billboard:enqueue-tooltip ai-check
-              ;;                              billboard:+tooltip-surprise-attack-char+
-              ;;                              :duration
-              ;;                              billboard:+tooltip-slow-duration+
-              ;;                              :animation-speed
-              ;;                              billboard:+tooltip-slow-anim-speed+
-              ;;                              :color                 billboard:+damage-color+
-              ;;                              :font-type             gui:+tooltip-font-handle+
-              ;;                              :add-only-if-renderd-p t)))
+              (let* ((model (sprite::load-sprite-model "warrior/female/1/"
+                                                       (compiled-shaders world)
+                                                       :resource-path +ai-player-sprite-resource+)))
+                (setf (entity:pos model)
+                      (sb-cga:vec (map-utils:coord-map->chunk 0.0)
+                                  +zero-height+
+                                  (map-utils:coord-map->chunk 0.0)))
+                (setf (entity:dir model)
+                      (vec -1.0 0.0 0.0))
+                (world:push-entity world model)))
             (when (string= text "D")
               (entity:throw-down-in-fow (window-game-state object) :x 10 :y 10)
               (world:apply-tremor-0 world))

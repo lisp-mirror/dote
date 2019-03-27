@@ -3507,10 +3507,10 @@ possible)."
                                          (manifold t)
                                          (compact-vertices t))
   (let* ((*default-epsilon* 1e-3)
-         (a (copy-vec origin))
-         (b (vec+ a (vec   w 0.0 0.0)))
-         (c (vec+ a (vec 0.0   h 0.0)))
-         (d (vec+ a (vec   w   h 0.0)))
+         (a      (copy-vec origin))
+         (b      (vec+ a (vec   w 0.0 0.0)))
+         (c      (vec+ a (vec 0.0   h 0.0)))
+         (d      (vec+ a (vec   w   h 0.0)))
          (normal (triangle-normal a b c)))
     ;;  - c +-------+ d
     ;;  |   |\      |

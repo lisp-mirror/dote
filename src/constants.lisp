@@ -172,6 +172,8 @@
 
 (define-constant +model-objects-resource+        '("models" "objects")            :test #'equalp)
 
+(define-constant +model-spritesheet+             "base.tga"                       :test #'string=)
+
 (define-constant +textures-resource+             "textures"                       :test #'string=)
 
 (define-constant +scripts-resource+              "scripts"                        :test #'string=)
@@ -183,6 +185,14 @@
 (define-constant +human-player-models-resource+  '("models" "human-player")       :test #'equalp)
 
 (define-constant +ai-player-models-resource+      '("models" "ai")                :test #'equalp)
+
+(define-constant +human-player-sprite-resource+  '("models"
+                                                   "character"
+                                                   "human-player")                :test #'equalp)
+
+(define-constant +ai-player-sprite-resource+      '("models"
+                                                    "characters"
+                                                    "ai")                         :test #'equalp)
 
 (define-constant +fonts-resource+                 "fonts"                         :test #'string=)
 

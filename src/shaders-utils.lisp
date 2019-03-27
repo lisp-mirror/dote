@@ -543,6 +543,15 @@ active program (set by sdk2.kit:use-program)."
            (:shaders :vertex-shader   ,(get-shader-source "bump.vert")
                      :vertex-shader   ,(get-shader-source "md2-bump.vert")
                      :fragment-shader ,(get-shader-source "mesh-bump.frag")))
+          (:sprite-character
+           (:uniforms :modelview-matrix
+                      :proj-matrix
+                      :texture-object
+                      :post-scaling
+                      :texel-s-offset
+                      :texel-t-offset)
+           (:shaders :vertex-shader   ,(get-shader-source "sprite-character.vert")
+                     :fragment-shader ,(get-shader-source "sprite-character.frag")))
           (:wall-decorated
            (:uniforms :light-pos
                       :ia
@@ -674,7 +683,6 @@ active program (set by sdk2.kit:use-program)."
                       :time)
            (:shaders :vertex-shader   ,(get-shader-source "tree-impostor.vert")
                      :fragment-shader ,(get-shader-source "tree-impostor.frag")))
-
           (:tooltip
            (:uniforms :modelview-matrix
                       :proj-matrix
