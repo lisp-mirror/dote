@@ -239,6 +239,16 @@
   GNU General Public License 2.0 (see UFO Alien invasion sources)
   [[http://ufoai.org/wiki/News][http://ufoai.org/wiki/News]])
 
+- data/models/characters/*
+  derived from:
+
+  CC-BY-SA 3.0:
+
+  http://creativecommons.org/licenses/by-sa/3.0/
+  See the file: cc-by-sa-3.0.txt
+
+  authors: https://github.com/makrohn/Universal-LPC-spritesheet/blob/master/AUTHORS.txt
+
 - data/models/models/objects/weapon/arrow/model.mtl
   data/models/models/objects/weapon/arrow/model.obj
   data/models/models/objects/weapon/arrow/texture.tga

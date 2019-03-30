@@ -338,7 +338,7 @@
 (defun setup-orbs-active (world)
   (with-accessors ((main-state main-state)) world
     ;; skip dead players
-    (loop-player-entities main-state #'(lambda (m) (md2:orb-active m)))))
+    (loop-player-entities main-state #'(lambda (m) (sprite:orb-active m)))))
 
 (defmethod game-event:on-game-event ((object world) (event game-event:start-turn))
   (with-accessors ((main-state main-state)) object
@@ -1149,29 +1149,30 @@
           (setf (elt destination 1) (elt (pos camera) 1))
           (drag-camera-to camera destination))))))
 
-(defun previews-path (type gender)
-  (let ((re (text-utils:strcat
-             (ecase type
-               (:warrior
-                +model-preview-warrior-re+)
-               (:archer
-                +model-preview-archer-re+)
-               (:wizard
-                +model-preview-wizard-re+)
-               (:healer
-                +model-preview-healer-re+)
-               (:ranger
-                +model-preview-ranger-re+))
-             (ecase gender
-               (:male
-                "-male")
-               (:female
-                "-female"))
-             +model-preview-ext-re+)))
+(defun previews-path (type gender resource filename-regex)
+  (let ((res resource))
+    (flet ((%append (e)
+             (setf res (append res (list e)))))
+    (ecase type
+      (:warrior
+       (%append +sprite-preview-warrior+))
+      (:archer
+       (%append +sprite-preview-archer+))
+      (:wizard
+       (%append +sprite-preview-wizard+))
+      (:healer
+       (%append +sprite-preview-healer+))
+      (:ranger
+       (%append +sprite-preview-ranger+)))
+    (ecase gender
+      (:male
+       (%append "male"))
+      (:female
+       (%append "female")))
     (mapcar #'(lambda (a)
-                (res:strip-off-resource-path +ai-player-models-resource+ a))
-            (fs:search-matching-file (res:get-resource-file "" +ai-player-models-resource+)
-                                     :name re))))
+                (res:strip-off-resource-path resource a))
+            (fs:search-matching-file (res:get-resource-file "" res)
+                                     :name filename-regex)))))
 
 (defun calc-capital (default level-difficult)
   (truncate (max (* (* 3/4 default)
@@ -1182,7 +1183,10 @@
   (with-accessors ((main-state main-state)) object
     (let* ((*standard-capital-characteristic* (calc-capital *standard-capital-characteristic*
                                                             (level-difficult (main-state object))))
-           (preview-paths  (previews-path type gender))
+           (preview-paths  (previews-path type
+                                          gender
+                                          +ai-player-sprite-resource+
+                                          +sprite-sheet-ext-re+))
            (ghost          (ecase type
                             (:warrior
                              (make-warrior :human))
@@ -1202,12 +1206,12 @@
       (setf (current-movement-points ghost) (movement-points ghost))
       (setf (current-spell-points    ghost) (spell-points    ghost))
       ;; setup model
-      (let* ((dir (text-utils:strcat (fs:path-first-element (first preview-paths))
-                                     fs:*directory-sep*))
-             (model (md2:load-md2-player ghost
-                                         dir
-                                         (compiled-shaders object)
-                                         +ai-player-models-resource+))
+      (let* ((dir   (text-utils:strcat (fs:parent-dir-path (first preview-paths))
+                                       fs:*directory-sep*))
+             (model (sprite:load-sprite-player ghost
+                                               dir
+                                               (compiled-shaders object)
+                                               +ai-player-sprite-resource+))
              (portrait-texture (texture:get-texture gui:+portrait-unknown-texture-name+))
              (portrait-texture (texture:gen-name-and-inject-in-database
                                 (texture:clone portrait-texture))))

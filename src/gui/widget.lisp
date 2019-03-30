@@ -2748,7 +2748,7 @@
     :initform nil
     :initarg  :bound-player
     :accessor bound-player
-    :type md2::md2-mesh)
+    :type     sprite:sprite-mesh)
    (bound-world
     :initform nil
     :initarg  :bound-world
@@ -3428,11 +3428,11 @@
     (with-accessors ((model-preview-paths model-preview-paths)) win
       (when model-preview-paths
         (setf model-preview-paths (alexandria:rotate model-preview-paths 1))
-        (let ((new-preview (pixmap:slurp-pixmap 'pixmap:tga
-                                                (res:get-resource-file (elt model-preview-paths 0)
-                                                                       +human-player-models-resource+
-                                                                       :if-does-not-exists :error)))
-              (texture     (get-texture +preview-unknown-texture-name+)))
+        (let* ((preview-file (res:get-resource-file (elt model-preview-paths 0)
+                                                    +human-player-sprite-resource+
+                                                    :if-does-not-exists :error))
+               (new-preview  (pixmap:slurp-pixmap 'pixmap:tga preview-file))
+               (texture      (get-texture +preview-unknown-texture-name+)))
           (setf (pixmap:data texture) (pixmap:data new-preview))
           (pixmap:sync-data-to-bits texture)
           (update-for-rendering texture)))
@@ -3477,29 +3477,7 @@
             t)))))
 
 (defun previews-path (type gender)
-  (let ((re (text-utils:strcat
-             (ecase type
-               (:warrior
-                +model-preview-warrior-re+)
-               (:archer
-                +model-preview-archer-re+)
-               (:wizard
-                +model-preview-wizard-re+)
-               (:healer
-                +model-preview-healer-re+)
-               (:ranger
-                +model-preview-ranger-re+))
-             (ecase gender
-               (:male
-                "-male")
-               (:female
-                "-female"))
-             +model-preview-ext-re+)))
-    (mapcar #'(lambda (a)
-                (res:strip-off-resource-path +human-player-models-resource+ a))
-            (fs:search-matching-file (res:get-resource-file ""
-                                                            +human-player-models-resource+)
-                                     :name re))))
+  (world:previews-path type gender +human-player-sprite-resource+ +sprite-preview-ext-re+))
 
 (defun pad-ability-label (l max)
   (setf (prefix l)
@@ -4588,12 +4566,12 @@
                         ;; remove experience points left
                         #-debug-mode (setf (character:exp-points player) 0.0)
                         ;; setup model
-                        (let* ((dir   (strcat (fs:path-first-element (first model-preview-paths))
+                        (let* ((dir   (strcat (fs:parent-dir-path (first model-preview-paths))
                                               fs:*directory-sep*))
-                               (model (md2:load-md2-player player
-                                                           dir
-                                                           (compiled-shaders world)
-                                                           +human-player-models-resource+))
+                               (model (sprite:load-sprite-player player
+                                                                 dir
+                                                                 (compiled-shaders world)
+                                                                 +human-player-sprite-resource+))
                                (original-texture (get-texture +portrait-unknown-texture-name+))
                                (portrait-texture (texture:gen-name-and-inject-in-database
                                                   (texture:clone original-texture))))

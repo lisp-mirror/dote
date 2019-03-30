@@ -996,19 +996,18 @@
           (%place-player position))
         (setf (entity:pos player)
               (sb-cga:vec (map-utils:coord-map->chunk (d (elt player-coordinates 0)))
-                          (num:d+ 1.5 ; hardcoded :(  to be removed soon
-                                  (approx-terrain-height@pos object
-                                                             (map-utils:coord-map->chunk
-                                                              (d (elt player-coordinates 0)))
-                                                             (map-utils:coord-map->chunk
-                                                              (d (elt player-coordinates 1)))))
+                          (approx-terrain-height@pos object
+                                                     (map-utils:coord-map->chunk
+                                                      (d (elt player-coordinates 0)))
+                                                     (map-utils:coord-map->chunk
+                                                      (d (elt player-coordinates 1))))
                           (map-utils:coord-map->chunk (d (elt player-coordinates 1)))))
         (set-invalicable-cost-player-layer@ object
                                             (elt player-coordinates 0)
                                             (elt player-coordinates 1))
         (if (eq faction +pc-type+)
             (progn
-              (md2:attach-orb player)
+              (sprite:attach-orb player)
               (add-to-player-entities object player))
             (let ((pos-entity (mesh:calculate-cost-position player)))
               (add-to-ai-entities     object player)

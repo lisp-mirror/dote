@@ -31,6 +31,7 @@
 (alexandria:define-constant +tag-right-weapon-key+ "tag_rweapon" :test #'string=)
 
 (defun standard-aabb (mesh)
+  "world space!"
   (with-accessors ((state state)) mesh
     (let* ((pos      (calculate-cost-position mesh))
            (x-chunk  (map-utils:coord-map->chunk (ivec2:ivec2-x pos)))
@@ -1638,15 +1639,16 @@
                    (renderer-data-tangents-obj-space renderer-data-tangents-obj-space)
                    (renderer-data-normals-obj-space renderer-data-normals-obj-space)
                    (renderer-data-aabb-obj-space renderer-data-aabb-obj-space)
-                   (vbo vbo) (vao vao)) object
+                   (vbo vbo)
+                   (vao vao)) object
     #+debug-mode (misc:dbg "destroy triangle mesh ~a" (id object))
-    (setf vbo nil
-          vao nil
-          renderer-data-vertices nil
-          renderer-data-texture nil
-          renderer-data-normals nil
-          renderer-data-normals-obj-space nil
-          renderer-data-tangents nil
+    (setf vbo                              nil
+          vao                              nil
+          renderer-data-vertices           nil
+          renderer-data-texture            nil
+          renderer-data-normals            nil
+          renderer-data-normals-obj-space  nil
+          renderer-data-tangents           nil
           renderer-data-tangents-obj-space nil
           renderer-data-aabb-obj-space     nil)
     (do-children-mesh (i object)

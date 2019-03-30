@@ -185,6 +185,14 @@
    :+model-preview-ranger-re+
    :+model-preview-ext-re+
    :+model-move-speed+
+   :+sprite-preview-warrior+
+   :+sprite-preview-archer+
+   :+sprite-preview-wizard+
+   :+sprite-preview-healer+
+   :+sprite-preview-ranger+
+   :+sprite-preview-ext-re+
+   :+sprite-sheet-ext-re+
+   :+sprite-move-speed+
    :+gui-zoom-entity+
    :+visibility-cone-tolerance+
    :+visibility-cone-half-hangle+
@@ -5249,6 +5257,7 @@
    :post-entity-message
    :point-to-entity-and-hide-cb
    :point-camera-to-entity
+   :previews-path
    :add-ai-opponent
    :world-aabb
    :remove-all-tooltips
@@ -5535,12 +5544,12 @@
    :+tag-left-weapon-key+
    :+tag-right-weapon-key+
    :find-tag
-   :setup-orb
-   :attach-orb
-   :setup-orb-texture
-   :orb-active
-   :orb-inactive
-   :orb-remove
+   ;; :setup-orb
+   ;; :attach-orb
+   ;; :setup-orb-texture
+   ;; :orb-active
+   ;; :orb-inactive
+   ;; :orb-remove
    :md2-mesh
    :fs-resources
    :load-md2-model
@@ -5552,7 +5561,7 @@
    :clean-db
    :blacklist-clear-id
    :md2-mesh-shell
-   :wear-item
+   ;:wear-item
    :add-to-inventory))
 
 (defpackage :sprite-character

@@ -78,12 +78,12 @@
 (defun maybe-add-to-inventory (entity item)
   (and entity
        item
-       (md2:add-to-inventory entity item)))
+       (sprite:add-to-inventory entity item)))
 
 (defun maybe-wear (entity item)
   (and entity
        item
-       (md2:wear-item entity item)))
+       (sprite:wear-item entity item)))
 
 (defun wear-all (entity &rest objects)
   (loop for object in objects do

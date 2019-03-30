@@ -623,6 +623,7 @@
   (spell:clean-spell-db)
   (gui:clean-font-db)
   (md2:clean-db)
+  (sprite:clean-sprite-db)
   (game-event:clean-all-events-vectors)
   (setf (main-window:world window) nil)
   (tg:gc :full t))

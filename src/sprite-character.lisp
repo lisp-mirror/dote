@@ -21,7 +21,7 @@
 
 (alexandria:define-constant +sprite-window-size+             64   :test #'=)
 
-(alexandria:define-constant +sprite-world-size+              10.0 :test #'=)
+(alexandria:define-constant +sprite-world-size+               2.0 :test #'=)
 
 (alexandria:define-constant +sprite-default-animation-speed+  0.5 :test #'=)
 
@@ -178,14 +178,14 @@
     :accessor orb)))
 
 (defun setup-orb (mesh)
-  (with-slots (aabb) mesh
-    (with-accessors ((orb              orb)
-                     (compiled-shaders compiled-shaders)) mesh
-      (with-accessors ((aabb-p2 aabb-p2)) aabb
-        (setf orb (status-orb:get-orb aabb-p2
-                                      compiled-shaders
-                                      status-orb:+texture-active+ t t))
-        (mtree:add-child mesh orb)))))
+  (with-accessors ((orb             orb)
+                   (compiled-shaders compiled-shaders)) mesh
+    (setf orb (status-orb:get-orb (vec (d- (d/ +terrain-chunk-tile-size+ 3.0))
+                                       +terrain-chunk-tile-size+
+                                       (d/ +terrain-chunk-tile-size+ 3.0))
+                                  compiled-shaders
+                                  status-orb:+texture-active+ t t))
+    (mtree:add-child mesh orb)))
 
 (defalias attach-orb #'setup-orb)
 
@@ -202,39 +202,6 @@
 
 (defun orb-remove (mesh)
   (setf (orb mesh) nil))
-
-(defmethod initialize-instance :after ((object sprite-mesh) &key &allow-other-keys)
-  (with-accessors ((texture-object        texture-object)
-                   (texture-window-width  texture-window-width)
-                   (texture-window-height texture-window-height)
-                   (animation-rows-count  animation-rows-count)) object
-    (let ((texture-height (pixmap:height texture-object))
-          (texture-width  (pixmap:width  texture-object)))
-      (setf texture-window-height (d (/ +sprite-window-size+ texture-height)))
-      (setf texture-window-width  (d (/ +sprite-window-size+ texture-width)))
-      (setf animation-rows-count  (/ texture-height +sprite-window-size+))
-      ;;  - c +-------+ d
-      ;;  |   |\      |     c has coordinates (s, 1.0)
-      ;;  |   | \ T2  |
-      ;;h |   |  \    |
-      ;;  |   |   \   |
-      ;;  |   |    \  |      ^ t
-      ;;  |   | T1  \ |      |
-      ;;  |   |      \|      |    s
-      ;;  -   +-------+      +---->
-      ;;      a        b
-      (let ((tex-w texture-window-width)
-            (tex-h texture-window-height))
-        (quad-w-explicit-texture-coords object
-                                        +sprite-world-size+
-                                        +sprite-world-size+
-                                        (vector (vec2 0.0   0.0)    ; a
-                                                (vec2 tex-w 0.0)    ; b
-                                                (vec2 0.0   tex-h)  ; c
-                                                (vec2 tex-w 0.0)    ; b
-                                                (vec2 tex-w tex-h)  ; d
-                                                (vec2 0.0   tex-h)) ; c
-                                        +zero-vec+ nil t)))))
 
 (defmethod print-object ((object sprite-mesh) stream)
   (with-accessors ((id    id)
@@ -1401,6 +1368,9 @@ to take care of that"
       (setf stop-animation nil)
       (setf cycle-animation nil))))
 
+(defmethod aabb ((object sprite-mesh))
+  (mesh:standard-aabb object))
+
 (defmethod actual-aabb-for-bullets ((object sprite-mesh))
   (mesh:standard-aabb object))
 
@@ -1487,10 +1457,9 @@ to take care of that"
     (with-accessors ((current-path current-path)) ghost
       (let* ((x-chunk (map-utils:coord-map->chunk (elt (elt current-path 1) 0)))
              (z-chunk (map-utils:coord-map->chunk (elt (elt current-path 1) 1)))
-             (y       (d+ 1.5 ; hardcoded :(  to be removed soon
-                          (game-state:approx-terrain-height@pos (state object)
-                                                                x-chunk
-                                                                z-chunk)))
+             (y       (game-state:approx-terrain-height@pos (state object)
+                                                            x-chunk
+                                                            z-chunk))
              (end (vec x-chunk y z-chunk))
              (dir (let ((new-dir (vec- end (pos object))))
                     (if (vec~ new-dir +zero-vec+)
@@ -1534,9 +1503,9 @@ to take care of that"
              (cross       (cross-product camera->pos dir))
              (dot         (dot-product   camera->pos dir))
              (anim-spec   (animation-specs animation-table current-action)))
-        (flet ((%set-animation (dir)
-                 (setf active-animation-row   (animation-starting-row anim-spec dir))
-                 (setf active-animation-count (animation-row-count anim-spec dir))))
+        (flet ((%set-animation (index-dir)
+                 (setf active-animation-row   (animation-starting-row anim-spec index-dir))
+                 (setf active-animation-count (animation-row-count anim-spec index-dir))))
           (with-epsilon (+orientation-threshold+)
             (cond
               ((epsilon= dot  1.0)
@@ -1638,7 +1607,7 @@ to take care of that"
           (calculate i dt))))))
 
 (defmethod render ((object sprite-mesh) renderer)
-  ;; (declare (optimize (debug 0) (speed 3) (safety 0)))
+  (declare (optimize (debug 0) (speed 3)))
   (with-accessors ((projection-matrix        projection-matrix)
                    (compiled-shaders         compiled-shaders)
                    (model-matrix             model-matrix)
@@ -1653,9 +1622,9 @@ to take care of that"
                    (texture-window-height    texture-window-height)
                    (animation-rows-count     animation-rows-count)
                    (renderp                  renderp)) object
-    ;; (declare (vec4 font-color))
-    ;; (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
-    ;; (declare (list triangles))
+    (declare (fixnum animation-rows-count active-animation-column active-animation-row))
+    (declare ((simple-array simple-array (1)) projection-matrix model-matrix view-matrix))
+    (declare (list triangles))
     (when renderp
       (with-camera-view-matrix (camera-vw-matrix renderer)
         (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
@@ -1666,9 +1635,8 @@ to take care of that"
           (uniformf compiled-shaders :texel-t-offset (d* (d- (d (1- animation-rows-count))
                                                               (d active-animation-row))
                                                          texture-window-height))
-          (uniformf compiled-shaders :texel-s-offset
-                    (d* (d active-animation-column)
-                        texture-window-width))
+          (uniformf compiled-shaders :texel-s-offset (d* (d active-animation-column)
+                                                         texture-window-width))
           (uniform-matrix compiled-shaders
                           :post-scaling 4
                           (vector (scale scaling))
@@ -1681,7 +1649,9 @@ to take care of that"
                           nil)
           (uniform-matrix compiled-shaders :proj-matrix 4 camera-proj-matrix nil)
           (gl:bind-vertex-array (vao-vertex-buffer-handle vao))
-          (gl:draw-arrays :triangles 0 (* 3 (length triangles))))))))
+          (gl:draw-arrays :triangles 0 (* 3 (length triangles)))))
+      (do-children-mesh (i object)
+          (render i renderer)))))
 
 (defun animation-starting-row (anim-spec-row facing)
   (let ((all (cadr anim-spec-row)))
@@ -1691,8 +1661,12 @@ to take care of that"
   (let ((all (cadr anim-spec-row)))
     (cadr (elt all facing))))
 
-(defun animation-specs (animation-table animation-type)
-  (assoc animation-type animation-table :test #'eql))
+(defun animation-specs (animation-table action)
+  (let ((actual-action action))
+    (cond
+      ((eq action :rotate)
+       (setf actual-action :stand)))
+    (assoc actual-action animation-table :test #'eql)))
 
 (defmethod set-animation ((object sprite-mesh) animation &key (recalculate t))
   (with-accessors ((fps fps)
@@ -1742,7 +1716,7 @@ to take care of that"
     (setf (thinker (ghost shell)) t)
     shell))
 
-(defclass sprite-mesh-shell (sprite-mesh) ())
+(defclass sprite-mesh-shell (sprite-mesh triangle-mesh-shell) ())
 
 (defmethod destroy ((object sprite-mesh-shell))
   #+debug-mode (misc:dbg "destroy sprite mesh shell ~a" (id object))
@@ -1771,28 +1745,42 @@ to take care of that"
         (destroy child))
       object)))
 
-;; (defmethod prepare-for-rendering ((object sprite-mesh-shell))
-;;   (common-sprite-prepare-for-rendering object))
-
-(defmethod fill-mesh-data ((object sprite-mesh-shell) (source sprite-mesh))
-  (with-accessors ((vao-host vao) (vbo-host vbo)
-                   (texture-host texture-object)
-                   (normal-map-host normal-map)
-                   (triangles-host triangles)
-                   (children-host children)
-                   (material-params-host material-params)
-                   (compiled-shaders-host compiled-shaders)
-                   (frames frames)
-                   (animation-table animation-table)
-                   (material-params material-params)
-                   (aabb-host aabb)
-                   (tags-table     tags-table)
-                   (tags-matrices  tags-matrices)
-                   (tag-key-parent tag-key-parent)) object
-    (setf texture-host          (texture-object   source)
-          triangles-host        (triangles        source)
-          compiled-shaders-host (compiled-shaders source))
-    object))
+(defmethod prepare-for-rendering :before ((object sprite-mesh))
+  (with-accessors ((texture-object        texture-object)
+                   (texture-window-width  texture-window-width)
+                   (texture-window-height texture-window-height)
+                   (animation-rows-count  animation-rows-count)) object
+    (let ((texture-height (pixmap:height texture-object))
+          (texture-width  (pixmap:width  texture-object)))
+      (setf texture-window-height (d (/ +sprite-window-size+ texture-height)))
+      (setf texture-window-width  (d (/ +sprite-window-size+ texture-width)))
+      (setf animation-rows-count  (/ texture-height +sprite-window-size+))
+      ;;  - c +-------+ d
+      ;;  |   |\      |     c has coordinates (s, 1.0)
+      ;;  |   | \ T2  |
+      ;;h |   |  \    |
+      ;;  |   |   \   |
+      ;;  |   |    \  |      ^ t
+      ;;  |   | T1  \ |      |
+      ;;  |   |      \|      |    s
+      ;;  -   +-------+      +---->
+      ;;      a        b
+      (let ((tex-w texture-window-width)
+            (tex-h texture-window-height))
+        (quad-w-explicit-texture-coords object
+                                        +sprite-world-size+
+                                        +sprite-world-size+
+                                        (vector (vec2 0.0   0.0)    ; a
+                                                (vec2 tex-w 0.0)    ; b
+                                                (vec2 0.0   tex-h)  ; c
+                                                (vec2 tex-w 0.0)    ; b
+                                                (vec2 tex-w tex-h)  ; d
+                                                (vec2 0.0   tex-h)) ; c
+                                        (vec (d- (d/ +terrain-chunk-tile-size+ 2.0))
+                                             0.0
+                                             0.0)
+                                        nil
+                                        t)))))
 
 (defmethod fill-mesh-data-w-renderer-data ((object sprite-mesh-shell) (source sprite-mesh))
   ;; sprite-mesh has not rendering data on its own, in a sense.

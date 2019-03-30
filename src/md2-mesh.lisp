@@ -211,31 +211,42 @@
     :initarg  :orb
     :accessor  orb)))
 
-(defun setup-orb (mesh)
-  (with-slots (aabb) mesh
-    (with-accessors ((orb              orb)
-                     (compiled-shaders compiled-shaders)) mesh
-      (with-accessors ((aabb-p2 aabb-p2)) aabb
-        (setf orb (status-orb:get-orb aabb-p2
-                                      compiled-shaders
-                                      status-orb:+texture-active+ t t))
-        (mtree:add-child mesh orb)))))
+;; (defun setup-orb (mesh)
+;;   (with-accessors ((aabb            aabb)
+;;                    (orb             orb)
+;;                    (compiled-shaders compiled-shaders)) mesh
+;;     (misc:dbg "aabb ~a" aabb)
+;;     (with-accessors ((aabb-p2 aabb-p2)) aabb
+;;       (setf orb (status-orb:get-orb aabb-p2
+;;                                     compiled-shaders
+;;                                     status-orb:+texture-active+ t t))
+;;       (mtree:add-child mesh orb))))
 
-(defalias attach-orb #'setup-orb)
+;; ;; (defun setup-orb (mesh)
+;; ;;   (with-slots (aabb) mesh
+;; ;;     (with-accessors ((orb              orb)
+;; ;;                      (compiled-shaders compiled-shaders)) mesh
+;; ;;       (with-accessors ((aabb-p2 aabb-p2)) aabb
+;; ;;         (setf orb (status-orb:get-orb aabb-p2
+;; ;;                                       compiled-shaders
+;; ;;                                       status-orb:+texture-active+ t t))
+;; ;;         (mtree:add-child mesh orb)))))
 
-(defun setup-orb-texture (mesh texture-name)
-  (with-accessors ((orb orb)) mesh
-    (when orb
-      (setf (texture-object orb) (texture:get-texture texture-name)))))
+;; (defalias attach-orb #'setup-orb)
 
-(defun orb-active (mesh)
-  (setup-orb-texture mesh status-orb:+texture-active+))
+;; (defun setup-orb-texture (mesh texture-name)
+;;   (with-accessors ((orb orb)) mesh
+;;     (when orb
+;;       (setf (texture-object orb) (texture:get-texture texture-name)))))
 
-(defun orb-inactive (mesh)
-  (setup-orb-texture mesh status-orb:+texture-inactive+))
+;; (defun orb-active (mesh)
+;;   (setup-orb-texture mesh status-orb:+texture-active+))
 
-(defun orb-remove (mesh)
-  (setf (orb mesh) nil))
+;; (defun orb-inactive (mesh)
+;;   (setup-orb-texture mesh status-orb:+texture-inactive+))
+
+;; (defun orb-remove (mesh)
+;;   (setf (orb mesh) nil))
 
 (defmethod print-object ((object md2-mesh) stream)
   (with-accessors ((id    id)
@@ -525,7 +536,7 @@ to take care of that"
   (with-accessors ((ghost ghost)) player
     (when (< (current-movement-points ghost)
              +open-terrain-cost+)
-      (orb-inactive player))))
+      (sprite:orb-inactive player))))
 
 (defun %stop-movement-ai (player end-event interrupting-id interrupt-plan-if-ai-p)
 
@@ -1336,7 +1347,7 @@ to take care of that"
           (setf current-damage-points (d 0.0))
           ;; also make the blackboard "forget" about this character if is from human side
           (when (faction-player-p state id)
-            (orb-remove object)
+            (sprite:orb-remove object)
             (blackboard:remove-entity-from-all-attack-pos blackboard object))
           (setf (renderp object) t)
           (set-interrupt-plan ghost)
@@ -1359,7 +1370,7 @@ to take care of that"
     (with-accessors ((status                status)
                      (current-damage-points current-damage-points)) ghost
       (when (faction-player-p state id)
-        (setup-orb object))
+        (sprite:setup-orb object))
       (setf (status ghost) nil)
       (setf current-action  :stand)
       (set-animation object :stand :recalculate t)
@@ -1424,7 +1435,7 @@ to take care of that"
 
 (defgeneric calculate-move (object dt))
 
-(defgeneric wear-item      (object item))
+;(defgeneric wear-item      (object item))
 
 (defgeneric step-in-trap-p (object))
 
@@ -1894,19 +1905,19 @@ to take care of that"
             (%calculate-move-ai state object dt dir current-path end)
             (%calculate-move-pc state object dt dir current-path end))))))
 
-(defmethod wear-item ((object md2-mesh) item)
-  (with-accessors ((ghost ghost)
-                   (id id)) object
-    (let ((c-slot (item->available-player-character-slot ghost item)))
-      (when c-slot
-        (setf (slot-value ghost c-slot) item)
-        (remove-from-inventory ghost item)
-        (let* ((messages (random-object-messages:params->effects-messages item))
-               (event    (make-instance 'game-event:wear-object-event
-                                        :id-origin      (id item)
-                                        :id-destination id
-                                        :event-data     messages)))
-          (game-event:propagate-wear-object-event event))))))
+;; (defmethod wear-item ((object md2-mesh) item)
+;;   (with-accessors ((ghost ghost)
+;;                    (id id)) object
+;;     (let ((c-slot (item->available-player-character-slot ghost item)))
+;;       (when c-slot
+;;         (setf (slot-value ghost c-slot) item)
+;;         (remove-from-inventory ghost item)
+;;         (let* ((messages (random-object-messages:params->effects-messages item))
+;;                (event    (make-instance 'game-event:wear-object-event
+;;                                         :id-origin      (id item)
+;;                                         :id-destination id
+;;                                         :event-data     messages)))
+;;           (game-event:propagate-wear-object-event event))))))
 
 (defmethod add-to-inventory ((object md2-mesh) item)
   (add-to-inventory (ghost object) item))

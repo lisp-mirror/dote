@@ -187,7 +187,7 @@
 (define-constant +ai-player-models-resource+      '("models" "ai")                :test #'equalp)
 
 (define-constant +human-player-sprite-resource+  '("models"
-                                                   "character"
+                                                   "characters"
                                                    "human-player")                :test #'equalp)
 
 (define-constant +ai-player-sprite-resource+      '("models"
@@ -314,7 +314,23 @@
 
 (define-constant +model-preview-ext-re+            "\\.tga$"                      :test #'string=)
 
+(define-constant +sprite-preview-warrior+           "warrior"                     :test #'string=)
+
+(define-constant +sprite-preview-archer+            "archer"                      :test #'string=)
+
+(define-constant +sprite-preview-wizard+            "wizard"                      :test #'string=)
+
+(define-constant +sprite-preview-healer+            "healer"                      :test #'string=)
+
+(define-constant +sprite-preview-ranger+            "ranger"                      :test #'string=)
+
+(define-constant +sprite-preview-ext-re+            "preview.tga$"                :test #'string=)
+
+(define-constant +sprite-sheet-ext-re+              "base.tga$"                   :test #'string=)
+
 (define-constant +model-move-speed+                0.022                          :test #'=)
+
+(define-constant +sprite-move-speed+               0.022                          :test #'=)
 
 (define-constant +gui-zoom-entity+                15.0                            :test #'=)
 
