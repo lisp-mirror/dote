@@ -448,16 +448,18 @@ approx h ~a facing ~a occlude? ~a inside-room ~a concerning cost ~a ai-entitites
   (when (eq state :keydown)
     (keydown-event object ts repeat-p keysym)))
 
-(defmethod mousebutton-event ((object test-window) state ts b x y)
+(defmethod mousebutton-event ((object test-window) state ts button-code x y)
   (with-accessors ((world world)) object
     (with-accessors ((selected-pc selected-pc)
                      (main-state main-state)) world
       (with-accept-input (object)
-        (let ((gui-event (make-instance 'gui-events:mouse-pressed
-                                        :button-event (gui-events:mouse-button->code b)
-                                        :x-event (num:d x)
-                                        :y-event (num:d (- *window-h* y)))))
-          (if (eq state :mousebuttondown)
+        (let* ((button-pressed (gui-events:mouse-button->code button-code))
+               (gui-event (make-instance 'gui-events:mouse-pressed
+                                        :button-event button-pressed
+                                        :x-event      (num:d x)
+                                        :y-event      (num:d (- *window-h* y)))))
+          (if (and (eq state :mousebuttondown)
+                   (eq button-pressed :left))
               (when (not (widget:on-mouse-pressed (world:gui world) gui-event))
                 (cond
                   ((eq (world:toolbar-selected-action world)
@@ -502,7 +504,7 @@ approx h ~a facing ~a occlude? ~a inside-room ~a concerning cost ~a ai-entitites
                    (when-let ((selected-player (world:pick-player-entity world world x y :bind t)))
                      (particles:add-visual-hint-player-selected selected-player)))))
               (when (not (widget:on-mouse-released (world:gui world) gui-event))
-                (misc:dbg "~s button: ~A at ~A, ~A" state b x y))))))))
+                (misc:dbg "~s button: ~A at ~A, ~A" state button-code x y))))))))
 
 (let ((old-tile-position nil)
       (old-timestamp     0))

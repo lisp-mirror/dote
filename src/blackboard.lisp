@@ -982,7 +982,8 @@
   (d> (matrix-elt matrix y x)
       +concerning-tiles-min-value+))
 
-(defmethod update-concerning-tiles-player ((object blackboard) (player md2-mesh:md2-mesh)
+
+(defmethod update-concerning-tiles-player ((object blackboard) (player sprite:sprite-mesh)
                                            &key
                                              (all-visibles-from-ai
                                               (all-player-id-visible-from-ai (state player))))
@@ -1121,7 +1122,7 @@
                                                 (ivec2-x coord)
                                                 (ivec2-y coord)))
 
-(defmethod next-actual-unexplored-position ((object blackboard) (player md2-mesh:md2-mesh)
+(defmethod next-actual-unexplored-position ((object blackboard) (player sprite:sprite-mesh)
                                      &key (scale-factor-cost-concern 1.0))
   (with-accessors ((unexplored-layer              unexplored-layer)
                    (concerning-tiles-invalicables concerning-tiles-invalicables)) object
@@ -1333,7 +1334,7 @@ values nil, i. e. the ray is not blocked"
                                                          point)))
            collect point)))))
 
-(defmethod update-melee-attackable-pos-player ((object blackboard) (player md2-mesh:md2-mesh)
+(defmethod update-melee-attackable-pos-player ((object blackboard) (player sprite:sprite-mesh)
                                                &key
                                                  (all-visibles-from-ai
                                                   (all-player-id-visible-from-ai (state player))))
@@ -1437,7 +1438,7 @@ values nil, i. e. the ray is not blocked"
                                                          point)))
            collect point)))))
 
-(defmethod update-pole-attackable-pos-player ((object blackboard) (player md2-mesh:md2-mesh)
+(defmethod update-pole-attackable-pos-player ((object blackboard) (player sprite:sprite-mesh)
                                               &key
                                                 (all-visibles-from-ai
                                                  (all-player-id-visible-from-ai (state player))))
@@ -1513,7 +1514,7 @@ values nil, i. e. the ray is not blocked"
 (defun bow-range-for-attack-goal ()
   (floor (d/ (d +weapon-bow-range+) 2.0)))
 
-(defmethod update-bow-attackable-pos-player ((object blackboard) (player md2-mesh:md2-mesh)
+(defmethod update-bow-attackable-pos-player ((object blackboard) (player sprite:sprite-mesh)
                                              &key
                                                (all-visibles-from-ai
                                                 (all-player-id-visible-from-ai (state player))))
@@ -1530,7 +1531,7 @@ values nil, i. e. the ray is not blocked"
 (defun crossbow-range-for-attack-goal ()
   (floor (d/ (d +weapon-crossbow-range+) 2.0)))
 
-(defmethod update-crossbow-attackable-pos-player ((object blackboard) (player md2-mesh:md2-mesh)
+(defmethod update-crossbow-attackable-pos-player ((object blackboard) (player sprite:sprite-mesh)
                                                   &key
                                                     (all-visibles-from-ai
                                                      (all-player-id-visible-from-ai (state player))))

@@ -539,9 +539,9 @@
                   (data node))
                 (let* ((res (example-get-by-attribute-value example attributes (data node)))
                        (res-path (if (numberp res)
-                                     (if (<= res (first (path node)))
-                                         0
-                                         1)
+                                       (if (> res (first (path node)))
+                                           1
+                                           0)
                                      (position res (path node)))))
                   (%test-example (elt (children node) res-path) attributes example)))))
     (%test-example object attributes example)))
