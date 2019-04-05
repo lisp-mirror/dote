@@ -78,20 +78,20 @@
           (call-next-method)))
 
 (defclass saved-player (saved-entity-w-faction)
-  ((mesh-infos
+  ((sprite-infos
     :initform nil
-    :initarg  :mesh-infos
-    :accessor mesh-infos
+    :initarg  :sprite-infos
+    :accessor sprite-infos
     :type     md2-fs-res)
-   (original-mesh-id
+   (original-sprite-id
     :initform nil
-    :initarg  :original-mesh-id
-    :accessor original-mesh-id
+    :initarg  :original-sprite-id
+    :accessor original-sprite-id
     :type     fixnum)))
 
 (defmethod marshal:class-persistant-slots ((object saved-player))
-  (append '(mesh-infos
-            original-mesh-id
+  (append '(sprite-infos
+            original-sprite-id
             original-faction)
           (call-next-method)))
 
@@ -291,14 +291,14 @@
   (let ((entity-type (el-type-in-pos object x y)))
     (eq entity-type +pc-type+)))
 
-(defun mesh->saved-entity (mesh)
+(defun sprite->saved-entity (sprite)
   (make-instance 'saved-player
-                 :mesh-infos       (fs-resources            mesh)
-                 :player-ghost     (ghost                   mesh)
-                 :original-faction (my-faction              mesh)
-                 :original-dir     (dir                     mesh)
-                 :original-map-pos (calculate-cost-position mesh)
-                 :original-mesh-id (id                      mesh)))
+                 :sprite-infos       (sprite:fs-resources     sprite)
+                 :player-ghost       (ghost                   sprite)
+                 :original-faction   (my-faction              sprite)
+                 :original-dir       (dir                     sprite)
+                 :original-map-pos   (calculate-cost-position sprite)
+                 :original-sprite-id (id                      sprite)))
 
 (defun trap->saved-entity (mesh)
   (make-instance 'saved-entity-w-faction
@@ -343,9 +343,9 @@
            (saved-difficult               (level-difficult              game-state))
            (current-map-state             (map-state                    game-state))
            (saved-players                 (append (map-ai-entities      game-state
-                                                                        #'mesh->saved-entity)
+                                                                        #'sprite->saved-entity)
                                                   (map-player-entities  game-state
-                                                                        #'mesh->saved-entity)))
+                                                                        #'sprite->saved-entity)))
            (saved-traps                   (mapcar #'trap->saved-entity
                                                   (fetch-all-traps      game-state)))
            (saved-containers              (mapcar #'container->saved-entity
@@ -743,28 +743,28 @@
 (defun place-player-in-map-destination* (world saved-player x y faction shaders
                                         &key (force-position t))
   (let* ((resource-data (if (faction-player-p faction)
-                            +human-player-models-resource+
-                            +ai-player-models-resource+))
+                            +human-player-sprite-resource+
+                            +ai-player-sprite-resource+))
          (map-pos       (ivec2:ivec2 x y))
-         (mesh-info     (mesh-infos saved-player))
+         (sprite-info   (sprite-infos saved-player))
          (new-ghost     (player-ghost saved-player))
-         (mesh          (md2:load-md2-player new-ghost
-                                             (dir mesh-info)
-                                             shaders
-                                             resource-data)))
+         (sprite        (sprite:load-sprite-player new-ghost
+                                                   (dir sprite-info)
+                                                   shaders
+                                                   resource-data)))
     (character::init-logs new-ghost)
     (world:place-player-on-map world
-                               mesh
+                               sprite
                                faction
                                :position         map-pos
                                :force-position-p force-position)
-    (setf (dir mesh) (original-dir saved-player))
+    (setf (dir sprite) (original-dir saved-player))
     (when (faction-ai-p faction)
-      (setf (renderp mesh) nil)
-      (let ((position (calculate-cost-position mesh)))
+      (setf (renderp sprite) nil)
+      (let ((position (calculate-cost-position sprite)))
         (2d-utils:displace-2d-vector (position x y)
-          (blackboard:reset-per-turn-visited-tiles (blackboard (state mesh)))
-          (set-tile-visited (state mesh) mesh x y))))))
+          (blackboard:reset-per-turn-visited-tiles (blackboard (state sprite)))
+          (set-tile-visited (state sprite) sprite x y))))))
 
 (defun place-trap-in-map-destination (game-state dump x y shaders)
   (let* ((map-pos    (ivec2:ivec2 x y))

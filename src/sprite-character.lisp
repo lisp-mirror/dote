@@ -415,13 +415,15 @@
                             (game-state:with-world (world state)
                               (stop-movements already-stopped t (id entity))
                               (battle-utils:attack-short-range world entity object))))))))))
-             (seep (entity)
+             (seep (entity stop-movement-p)
                (loop
                   for seen in (visible-players entity
                                                :predicate #'(lambda (a)
                                                               (not (eq (my-faction object)
                                                                        (my-faction a))))) do
                     (when (not (thrown-down-in-fow-p seen))
+                      (when stop-movement-p
+                        (stop-movements nil t (id seen)))
                       (setf (renderp seen) t)))))
       (if (= (id object) (id-origin event))
           (let ((saved-renderp (renderp object)))
@@ -439,7 +441,7 @@
                                                       (seenp v
                                                              :maintain-render nil
                                                              :saved-render-p  saved-renderp)))
-                  (seep object))
+                  (seep object t))
                 (progn
                   (game-state:loop-ai-entities state
                                               #'(lambda (v)
@@ -451,7 +453,7 @@
                                                   (setf (renderp v) nil)))
                   (game-state:loop-player-entities state
                                                   #'(lambda (v)
-                                                      (seep v)))))
+                                                      (seep v nil)))))
             t)
           nil))))
 
@@ -1707,10 +1709,10 @@ to take care of that"
     model))
 
 (defun load-sprite-player (ghost dir compiled-shaders resource-path)
-  (let ((shell (get-sprite-shell :shaders        compiled-shaders
-                                 :dir            dir
-                                 :spritesheet-file   +model-spritesheet+
-                                 :resource-path      resource-path)))
+  (let ((shell (get-sprite-shell :shaders          compiled-shaders
+                                 :dir              dir
+                                 :spritesheet-file +model-spritesheet+
+                                 :resource-path    resource-path)))
     (setf (interfaces:compiled-shaders shell) compiled-shaders)
     (set-animation shell :stand :recalculate t)
     (setf (ghost shell) ghost)
