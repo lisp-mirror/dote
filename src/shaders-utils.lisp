@@ -547,6 +547,7 @@ active program (set by sdk2.kit:use-program)."
            (:uniforms :modelview-matrix
                       :proj-matrix
                       :texture-object
+                      :texture-weapon
                       :post-scaling
                       :texel-s-offset
                       :texel-t-offset)

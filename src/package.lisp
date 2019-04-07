@@ -122,6 +122,8 @@
    :+ai-player-models-resource+
    :+human-player-sprite-resource+
    :+ai-player-sprite-resource+
+   :+sprite-weapon-resource+
+   :+tga-file-extension+
    :+textures-resource+
    :+scripts-resource+
    :+furnitures-resource+
@@ -5257,6 +5259,7 @@
    :post-entity-message
    :point-to-entity-and-hide-cb
    :point-camera-to-entity
+   :weapon-sprite-path
    :previews-path
    :add-ai-opponent
    :world-aabb
@@ -5611,7 +5614,8 @@
    :blacklist-clear-id
    :sprite-mesh-shell
    :wear-item
-   :add-to-inventory))
+   :add-to-inventory
+   :initialize-texture-weapon))
 
 (defpackage :obj-mesh
   (:shadow :load)

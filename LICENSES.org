@@ -249,6 +249,18 @@
 
   authors: https://github.com/makrohn/Universal-LPC-spritesheet/blob/master/AUTHORS.txt
 
+- data/models/characters/weapons/*
+
+  derived from:
+
+  CC-BY-SA 3.0:
+
+  https://github.com/OpenGameArt/LiberatedPixelCup
+
+  and
+
+  https://opengameart.org/content/lpc-warhammer
+
 - data/models/models/objects/weapon/arrow/model.mtl
   data/models/models/objects/weapon/arrow/model.obj
   data/models/models/objects/weapon/arrow/texture.tga

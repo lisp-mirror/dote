@@ -1149,6 +1149,25 @@
           (setf (elt destination 1) (elt (pos camera) 1))
           (drag-camera-to camera destination))))))
 
+(defun weapon-sprite-path (ghost)
+  (weapon-sprite-path* (character:player-class ghost)
+                       (character:gender       ghost)
+                       (character:weapon-type  ghost)))
+
+(defun weapon-sprite-path* (type gender weapon-type)
+  (let ((res +sprite-weapon-resource+))
+    (labels ((%stringify (a)
+               (string-downcase (text-utils:to-s a)))
+             (%append (e)
+               (setf res (append res (list (%stringify e))))))
+      (%append weapon-type)
+      (%append gender)
+      (or (res:get-resource-file (text-utils:strcat (%stringify type) "." +tga-file-extension+)
+                                 res
+                                 :if-does-not-exists nil)
+          (first (fs:search-matching-file (res:get-resource-file "" res)
+                                          :name (text-utils:strcat +tga-file-extension+ "$")))))))
+
 (defun previews-path (type gender resource filename-regex)
   (let ((res resource))
     (flet ((%append (e)
@@ -1220,7 +1239,11 @@
         (setf (character:model-origin-dir ghost) dir)
         (setf (portrait (entity:ghost model)) portrait-texture)
         (setf (renderp  model) nil)
+        ;; intentionally   build  inventory   before
+        ;; placing on  map the players as  this will
+        ;; allow to skip all items effects
         (build-inventory model +npc-type+ (character:player-class ghost))
+        (sprite:initialize-texture-weapon model)
         ;; items owned by AI do not decay
         (character:prevent-decay-all-items ghost)
         (world:place-player-on-map object model game-state:+npc-type+ :position placing-pos)

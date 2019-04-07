@@ -4583,7 +4583,11 @@
                           ;;(setf (entity:ghost model) player)
                           (setf (portrait (entity:ghost model)) portrait-texture)
                           (decf max-player-count)
+                          ;; intentionally   build  inventory   before
+                          ;; placing on  map the players as  this will
+                          ;; allow to skip all items effects
                           (world:build-inventory model +pc-type+ (character:player-class player))
+                          (sprite:initialize-texture-weapon model)
                           (world:place-player-on-map world model game-state:+pc-type+
                                                      :position #(0 0))
                           (world:select-and-slide-to-first-pc world model)

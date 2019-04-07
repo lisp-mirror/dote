@@ -194,6 +194,10 @@
                                                     "characters"
                                                     "ai")                         :test #'equalp)
 
+(define-constant +sprite-weapon-resource+         '("models"
+                                                    "characters"
+                                                    "weapons")                    :test #'equalp)
+
 (define-constant +fonts-resource+                 "fonts"                         :test #'string=)
 
 (define-constant +gui-resource+                   "gui"                           :test #'string=)
@@ -327,6 +331,8 @@
 (define-constant +sprite-preview-ext-re+            "preview.tga$"                :test #'string=)
 
 (define-constant +sprite-sheet-ext-re+              "base.tga$"                   :test #'string=)
+
+(define-constant +tga-file-extension+               "tga"                         :test #'string=)
 
 (define-constant +model-move-speed+                0.022                          :test #'=)
 

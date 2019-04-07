@@ -150,6 +150,10 @@
     :initform +default-animation-table+
     :initarg :animation-table
     :accessor animation-table)
+   (texture-weapon
+    :initform (get-texture gui:+transparent-texture-name+)
+    :initarg :texture-weapon
+    :accessor texture-weapon)
    (stop-animation
     :initform nil
     :initarg :stop-animation
@@ -1060,7 +1064,10 @@ to take care of that"
             nil)))))
 
 (defmethod on-game-event ((object sprite-mesh) (event wear-object-event))
-  (with-accessors ((ghost ghost) (id id) (state state)) object
+  (with-accessors ((ghost          ghost)
+                   (id             id)
+                   (state          state)
+                   (texture-weapon texture-weapon)) object
     (with-accessors ((messages event-data)) event
       (with-accessors ((modifiers-effects modifiers-effects)) ghost
         (if (= id (id-destination event))
@@ -1096,6 +1103,8 @@ to take care of that"
                                                          ident)
                                                  nil)))))
               (send-refresh-toolbar-event :reset-health-status-animation t)
+              ;; set weapon spritesheet
+              (initialize-texture-weapon object)
               t)
             nil)))))
 
@@ -1399,6 +1408,8 @@ to take care of that"
 
 (defgeneric validate-player-path (object path))
 
+(defgeneric initialize-texture-weapon (object))
+
 (defmethod destroy ((object sprite-mesh))
   #+debug-mode (misc:dbg "destroy sprite mesh ~a" (id object))
   (do-children-mesh (child object)
@@ -1617,6 +1628,7 @@ to take care of that"
                    (triangles                triangles)
                    (scaling                  scaling)
                    (texture-object           texture-object)
+                   (texture-weapon           texture-weapon)
                    (vao                      vao)
                    (view-matrix              view-matrix)
                    (active-animation-row     active-animation-row)
@@ -1634,6 +1646,9 @@ to take care of that"
           (use-program compiled-shaders :sprite-character)
           (gl:active-texture            :texture0)
           (texture:bind-texture texture-object)
+          (gl:active-texture :texture1)
+          (texture:bind-texture texture-weapon)
+          (uniformi compiled-shaders :texture-weapon 1)
           (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
           (uniformf compiled-shaders :texel-t-offset (d* (d- (d (1- animation-rows-count))
                                                               (d active-animation-row))
@@ -1842,6 +1857,12 @@ to take care of that"
   (with-accessors ((state state)) object
     (with-accessors ((blackboard blackboard:blackboard)) state
         (ai-utils:next-explore-position blackboard object))))
+
+(defmethod initialize-texture-weapon ((object sprite-mesh))
+  (with-accessors ((texture-weapon texture-weapon)
+                   (ghost          ghost)) object
+    (with-prepared-texture (weapon (world:weapon-sprite-path ghost))
+      (setf texture-weapon weapon))))
 
 (defparameter *sprite-mesh-factory-db* '())
 
