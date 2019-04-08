@@ -753,6 +753,7 @@
                                                    shaders
                                                    resource-data)))
     (character::init-logs new-ghost)
+    (sprite:initialize-texture-weapon sprite)
     (world:place-player-on-map world
                                sprite
                                faction

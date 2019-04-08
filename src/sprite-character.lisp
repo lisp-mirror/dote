@@ -1861,8 +1861,11 @@ to take care of that"
 (defmethod initialize-texture-weapon ((object sprite-mesh))
   (with-accessors ((texture-weapon texture-weapon)
                    (ghost          ghost)) object
-    (with-prepared-texture (weapon (world:weapon-sprite-path ghost))
-      (setf texture-weapon weapon))))
+    (let ((worn-weapon (world:weapon-sprite-path ghost)))
+      (if worn-weapon
+          (with-prepared-texture (weapon worn-weapon)
+            (setf texture-weapon weapon))
+          (setf texture-weapon (get-texture gui:+transparent-texture-name+))))))
 
 (defparameter *sprite-mesh-factory-db* '())
 
