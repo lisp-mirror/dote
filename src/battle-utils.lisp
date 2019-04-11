@@ -851,7 +851,9 @@
   (with-accessors ((ghost entity:ghost)
                    (state entity:state)) entity
     (when (and (game-state:faction-turn-human-p state)
-               (>= (character:exp-points ghost) +exp-change-level-thrs+))
+               (>= (character:exp-points ghost) +exp-change-level-thrs+)
+               (<  (character:level ghost) +max-character-level+))
+      (character:increase-level ghost)
       (particles:add-level-up entity)
       (game-state:with-world (world state)
         (act-sched:with-enqueue-action-and-send-remove-after (world act-sched:gui-action)
@@ -859,7 +861,8 @@
             (widget::%setup-character window :new-player ghost)
             (setf (interfaces:compiled-shaders window)
                   (compiled-shaders entity))
-            (mtree:add-child (world:gui world) window)))))
+            (mtree:add-child (world:gui world) window)
+            (sprite:update-base-spritesheet entity)))))
     entity))
 
 (defgeneric reward-exp-dmg-points (object damage))

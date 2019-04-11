@@ -261,6 +261,10 @@
 
   https://opengameart.org/content/lpc-warhammer
 
+  and
+
+  https://opengameart.org/content/spear-walk
+
 - data/models/models/objects/weapon/arrow/model.mtl
   data/models/models/objects/weapon/arrow/model.obj
   data/models/models/objects/weapon/arrow/texture.tga

@@ -1104,7 +1104,7 @@ to take care of that"
                                                  nil)))))
               (send-refresh-toolbar-event :reset-health-status-animation t)
               ;; set weapon spritesheet
-              (initialize-texture-weapon object)
+              (update-weapon-spritesheet object)
               t)
             nil)))))
 
@@ -1408,7 +1408,9 @@ to take care of that"
 
 (defgeneric validate-player-path (object path))
 
-(defgeneric initialize-texture-weapon (object))
+(defgeneric update-weapon-spritesheet (object))
+
+(defgeneric update-base-spritesheet (object))
 
 (defmethod destroy ((object sprite-mesh))
   #+debug-mode (misc:dbg "destroy sprite mesh ~a" (id object))
@@ -1704,6 +1706,31 @@ to take care of that"
           (with-no-thinking (ghost)
             (calculate object 0.0)))))))
 
+(defmethod update-base-spritesheet ((object sprite-mesh))
+  (with-accessors ((ghost          ghost)
+                   (texture-object texture-object)) object
+    (with-accessors ((gender gender)
+                     (level  level)
+                     (player-class player-class)) ghost
+      (let* ((sprite-relativa-path (world:sprites-path player-class
+                                                gender
+                                                +human-player-sprite-resource+
+                                                +sprite-sheet-ext-re+
+                                                level))
+             (sprite-path          (res:get-resource-file (first sprite-relativa-path)
+                                                          +human-player-sprite-resource+)))
+        (with-prepared-texture (sheet-texture sprite-path)
+          (setf texture-object sheet-texture))))))
+
+(defmethod update-weapon-spritesheet ((object sprite-mesh))
+  (with-accessors ((texture-weapon texture-weapon)
+                   (ghost          ghost)) object
+    (let ((worn-weapon (world:weapon-sprite-path ghost)))
+      (if worn-weapon
+          (with-prepared-texture (weapon worn-weapon)
+            (setf texture-weapon weapon))
+          (setf texture-weapon (get-texture gui:+transparent-texture-name+))))))
+
 ;; used only in get-sprite-shell
 (defun load-sprite-model (sprite-dir shaders &key
                                                (spritesheet-file +model-spritesheet+)
@@ -1857,15 +1884,6 @@ to take care of that"
   (with-accessors ((state state)) object
     (with-accessors ((blackboard blackboard:blackboard)) state
         (ai-utils:next-explore-position blackboard object))))
-
-(defmethod initialize-texture-weapon ((object sprite-mesh))
-  (with-accessors ((texture-weapon texture-weapon)
-                   (ghost          ghost)) object
-    (let ((worn-weapon (world:weapon-sprite-path ghost)))
-      (if worn-weapon
-          (with-prepared-texture (weapon worn-weapon)
-            (setf texture-weapon weapon))
-          (setf texture-weapon (get-texture gui:+transparent-texture-name+))))))
 
 (defparameter *sprite-mesh-factory-db* '())
 

@@ -99,6 +99,8 @@
 
 (defgeneric age-object-for-humans (object))
 
+(defgeneric increase-level (object))
+
 (defun get-decay-points (a-character)
   (let* ((decay-params (interaction-get-decay a-character)))
     (and decay-params (interaction:points decay-params))))
@@ -128,6 +130,11 @@
               (truncate (age         object))
               (truncate (get-decay-points object))
               +gui-static-text-delim+)))
+
+(defmethod increase-level ((object np-character))
+  (with-accessors ((level level)) object
+    (when (< level +max-character-level+)
+      (incf level))))
 
 (defmethod description-for-humans :around ((object np-character))
   (strcat

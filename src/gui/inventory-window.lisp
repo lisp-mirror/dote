@@ -369,7 +369,7 @@
                (random-object-messages:propagate-effects-msg item owner all-effects)))
             ((trapp item)
              (when (mesh:trap-can-be-placed-p owner)
-               (md2-mesh:place-trap owner item)
+               (sprite:place-trap owner item)
                (remove-item-from-inventory owner slot item)))))))))
 
 (defclass table-paginated-window (window)

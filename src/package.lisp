@@ -215,6 +215,7 @@
    :+difficult-medium+
    :+exp-capital-delta+
    :+exp-change-level-thrs+
+   :+max-character-level+
    :+influence-ai-sign+
    :+influence-human-sign+
    :+ai-fact-map-under-control+
@@ -3525,6 +3526,7 @@
    :first-name
    :last-name
    :calc-fingerprint
+   :increase-level
    :model-origin-dir
    :current-path
    :current-plan
@@ -5260,7 +5262,7 @@
    :point-to-entity-and-hide-cb
    :point-camera-to-entity
    :weapon-sprite-path
-   :previews-path
+   :sprites-path
    :add-ai-opponent
    :world-aabb
    :remove-all-tooltips
@@ -5615,7 +5617,8 @@
    :sprite-mesh-shell
    :wear-item
    :add-to-inventory
-   :initialize-texture-weapon))
+   :update-weapon-spritesheet
+   :update-base-spritesheet))
 
 (defpackage :obj-mesh
   (:shadow :load)

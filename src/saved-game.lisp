@@ -82,7 +82,7 @@
     :initform nil
     :initarg  :sprite-infos
     :accessor sprite-infos
-    :type     md2-fs-res)
+    :type     sprite-fs-res)
    (original-sprite-id
     :initform nil
     :initarg  :original-sprite-id
@@ -622,7 +622,6 @@
   (arrows:clean-db)
   (spell:clean-spell-db)
   (gui:clean-font-db)
-  (md2:clean-db)
   (sprite:clean-sprite-db)
   (game-event:clean-all-events-vectors)
   (setf (main-window:world window) nil)
@@ -753,7 +752,7 @@
                                                    shaders
                                                    resource-data)))
     (character::init-logs new-ghost)
-    (sprite:initialize-texture-weapon sprite)
+    (sprite:update-weapon-spritesheet sprite)
     (world:place-player-on-map world
                                sprite
                                faction

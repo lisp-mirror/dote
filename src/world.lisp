@@ -372,7 +372,7 @@
   (with-accessors ((main-state main-state)) object
     ;; (tg:gc :full t)
     ;; (misc:dbg " end turn ~a" (game-turn (main-state object)))
-    (md2-mesh:blacklist-clear-id)
+    (sprite:blacklist-clear-id)
     (rebuild-all-ai-planners        object)
     (remove-all-tooltips            object)
     (remove-all-windows             object)
@@ -1168,7 +1168,7 @@
           (first (fs:search-matching-file (res:get-resource-file "" res)
                                           :name (text-utils:strcat +tga-file-extension+ "$")))))))
 
-(defun previews-path (type gender resource filename-regex)
+(defun sprites-path (type gender resource filename-regex level)
   (let ((res resource))
     (flet ((%append (e)
              (setf res (append res (list e)))))
@@ -1188,10 +1188,14 @@
        (%append "male"))
       (:female
        (%append "female")))
-    (mapcar #'(lambda (a)
-                (res:strip-off-resource-path resource a))
-            (fs:search-matching-file (res:get-resource-file "" res)
-                                     :name filename-regex)))))
+    (let ((all    (mapcar #'(lambda (a)
+                              (res:strip-off-resource-path resource a))
+                          (fs:search-matching-file (res:get-resource-file "" res)
+                                                   :name filename-regex)))
+          (lvl-re (text-utils:strcat (text-utils:to-s level)
+                                     fs:*directory-sep*
+                                     filename-regex)))
+      (remove-if-not (lambda (a) (cl-ppcre:scan lvl-re a)) all)))))
 
 (defun calc-capital (default level-difficult)
   (truncate (max (* (* 3/4 default)
@@ -1200,26 +1204,28 @@
 
 (defmethod add-ai-opponent ((object world) type gender)
   (with-accessors ((main-state main-state)) object
-    (let* ((*standard-capital-characteristic* (calc-capital *standard-capital-characteristic*
-                                                            (level-difficult (main-state object))))
-           (preview-paths  (previews-path type
-                                          gender
-                                          +ai-player-sprite-resource+
-                                          +sprite-sheet-ext-re+))
-           (ghost          (ecase type
-                            (:warrior
-                             (make-warrior :human))
-                            (:archer
-                             (make-archer  :human))
-                            (:ranger
-                             (make-ranger  :human))
-                            (:wizard
-                             (make-wizard  :human))
-                            (:healer
-                             (make-healer  :human))))
-           (map            (map-state main-state))
-           (placing-pos    (ivec2:ivec2 (1- (matrix:width  map))
-                                        (1- (matrix:height map)))))
+    (let* ((level                             (level-difficult (main-state object)))
+           (*standard-capital-characteristic* (calc-capital *standard-capital-characteristic*
+                                                            level))
+           (preview-paths                     (sprites-path type
+                                                            gender
+                                                            +ai-player-sprite-resource+
+                                                            +sprite-sheet-ext-re+
+                                                            level))
+           (ghost                             (ecase type
+                                                (:warrior
+                                                 (make-warrior :human))
+                                                (:archer
+                                                 (make-archer  :human))
+                                                (:ranger
+                                                 (make-ranger  :human))
+                                                (:wizard
+                                                 (make-wizard  :human))
+                                                (:healer
+                                                 (make-healer  :human))))
+           (map                                 (map-state main-state))
+           (placing-pos                       (ivec2:ivec2 (1- (matrix:width  map))
+                                                           (1- (matrix:height map)))))
       ;; copy some new points to current
       (setf (current-damage-points   ghost) (damage-points   ghost))
       (setf (current-movement-points ghost) (movement-points ghost))
@@ -1243,7 +1249,7 @@
         ;; placing on  map the players as  this will
         ;; allow to skip all items effects
         (build-inventory model +npc-type+ (character:player-class ghost))
-        (sprite:initialize-texture-weapon model)
+        (sprite:update-weapon-spritesheet model)
         ;; items owned by AI do not decay
         (character:prevent-decay-all-items ghost)
         (world:place-player-on-map object model game-state:+npc-type+ :position placing-pos)

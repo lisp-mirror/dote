@@ -3477,7 +3477,7 @@
             t)))))
 
 (defun previews-path (type gender)
-  (world:previews-path type gender +human-player-sprite-resource+ +sprite-preview-ext-re+))
+  (world:sprites-path type gender +human-player-sprite-resource+ +sprite-preview-ext-re+ 1))
 
 (defun pad-ability-label (l max)
   (setf (prefix l)
@@ -4587,7 +4587,7 @@
                           ;; placing on  map the players as  this will
                           ;; allow to skip all items effects
                           (world:build-inventory model +pc-type+ (character:player-class player))
-                          (sprite:initialize-texture-weapon model)
+                          (sprite:update-weapon-spritesheet model)
                           (world:place-player-on-map world model game-state:+pc-type+
                                                      :position #(0 0))
                           (world:select-and-slide-to-first-pc world model)

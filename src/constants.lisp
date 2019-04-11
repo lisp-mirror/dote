@@ -381,6 +381,8 @@
 
 (define-constant +exp-change-level-thrs+         1000.0                           :test #'=)
 
+(define-constant +max-character-level+             10                             :test #'=)
+
 (define-constant +influence-ai-sign+               -1.0                           :test #'=)
 
 (define-constant +influence-human-sign+             1.0                           :test #'=)
