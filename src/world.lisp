@@ -1168,6 +1168,22 @@
           (first (fs:search-matching-file (res:get-resource-file "" res)
                                           :name (text-utils:strcat +tga-file-extension+ "$")))))))
 
+(defun shield-sprite-path (ghost)
+  (alexandria:when-let ((shield (character:worn-shield ghost)))
+    (shield-sprite-path* (character:gender ghost)
+                         (character:level  shield))))
+
+(defun shield-sprite-path* (gender shield-level)
+  (let ((res +sprite-shields-resource+))
+    (labels ((%stringify (a)
+               (string-downcase (text-utils:to-s a)))
+             (%append (e)
+               (setf res (append res (list (%stringify e))))))
+      (%append gender)
+      (%append (truncate shield-level))
+      (first (fs:search-matching-file (res:get-resource-file "" res)
+                                      :name (text-utils:strcat +tga-file-extension+ "$"))))))
+
 (defun sprites-path (type gender resource filename-regex level)
   (let ((res resource))
     (flet ((%append (e)
@@ -1245,14 +1261,11 @@
         (setf (character:model-origin-dir ghost) dir)
         (setf (portrait (entity:ghost model)) portrait-texture)
         (setf (renderp  model) nil)
-        ;; intentionally   build  inventory   before
-        ;; placing on  map the players as  this will
-        ;; allow to skip all items effects
-        (build-inventory model +npc-type+ (character:player-class ghost))
-        (sprite:update-weapon-spritesheet model)
         ;; items owned by AI do not decay
         (character:prevent-decay-all-items ghost)
         (world:place-player-on-map object model game-state:+npc-type+ :position placing-pos)
+        (build-inventory model +npc-type+ (character:player-class ghost))
+        (sprite:update-wearable-spritesheet model)
         ;; initialize visited tiles per turn for new AI's pawn
         (let ((position (calculate-cost-position model)))
           (2d-utils:displace-2d-vector (position x y)

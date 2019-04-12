@@ -1219,7 +1219,7 @@ path-near-goal-w/o-concerning-tiles always returns a non nil value"
 (defun go-place-trap (entity)
   (with-accessors ((ghost entity:ghost)) entity
     (let ((trap (character:find-item-in-inventory-if ghost #'interactive-entity:trapp)))
-      (md2-mesh:place-trap entity trap))))
+      (sprite:place-trap entity trap))))
 
 (defun invalidate-ai-utils-cache ()
   (go-find-hiding-place-clear-cache)

@@ -773,6 +773,8 @@
 
 (defgeneric worn-weapon (object))
 
+(defgeneric worn-shield (object))
+
 (defgeneric weapon-type (object))
 
 (defgeneric weapon-type-short-range (object))
@@ -1082,6 +1084,15 @@
     ((weaponp (left-hand object))
      (left-hand object))
     ((weaponp (right-hand object))
+     (right-hand object))
+    (t
+     nil)))
+
+(defmethod worn-shield ((object player-character))
+  (cond
+    ((shieldp (left-hand object))
+     (left-hand object))
+    ((shieldp (right-hand object))
      (right-hand object))
     (t
      nil)))

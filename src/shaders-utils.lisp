@@ -548,6 +548,7 @@ active program (set by sdk2.kit:use-program)."
                       :proj-matrix
                       :texture-object
                       :texture-weapon
+                      :texture-shield
                       :post-scaling
                       :texel-s-offset
                       :texel-t-offset)

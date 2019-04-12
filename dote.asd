@@ -252,5 +252,4 @@
   ;(pushnew :debug-gui                         *features*)
   ;; do not push for release
   ;(pushnew :god-mode                          *features*)
-  ;; config
-  (pushnew :md2-gpu-lerp                      *features*))
+  )

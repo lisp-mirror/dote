@@ -198,6 +198,10 @@
                                                     "characters"
                                                     "weapons")                    :test #'equalp)
 
+(define-constant +sprite-shields-resource+        '("models"
+                                                    "characters"
+                                                    "shields")                    :test #'equalp)
+
 (define-constant +fonts-resource+                 "fonts"                         :test #'string=)
 
 (define-constant +gui-resource+                   "gui"                           :test #'string=)

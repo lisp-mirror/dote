@@ -752,7 +752,7 @@
                                                    shaders
                                                    resource-data)))
     (character::init-logs new-ghost)
-    (sprite:update-weapon-spritesheet sprite)
+    (sprite:update-wearable-spritesheet sprite)
     (world:place-player-on-map world
                                sprite
                                faction

@@ -123,6 +123,7 @@
    :+human-player-sprite-resource+
    :+ai-player-sprite-resource+
    :+sprite-weapon-resource+
+   :+sprite-shields-resource+
    :+tga-file-extension+
    :+textures-resource+
    :+scripts-resource+
@@ -3653,6 +3654,7 @@
    :item->player-character-slot
    :item->available-player-character-slot
    :worn-weapon
+   :worn-shield
    :weapon-type
    :weapon-type-long-range
    :weapon-type-short-range
@@ -5262,6 +5264,7 @@
    :point-to-entity-and-hide-cb
    :point-camera-to-entity
    :weapon-sprite-path
+   :shield-sprite-path
    :sprites-path
    :add-ai-opponent
    :world-aabb
@@ -5618,7 +5621,9 @@
    :wear-item
    :add-to-inventory
    :update-weapon-spritesheet
-   :update-base-spritesheet))
+   :update-base-spritesheet
+   :update-shield-spritesheet
+   :update-wearable-spritesheet))
 
 (defpackage :obj-mesh
   (:shadow :load)

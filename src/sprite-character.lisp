@@ -23,7 +23,7 @@
 
 (alexandria:define-constant +sprite-world-size+               2.0 :test #'=)
 
-(alexandria:define-constant +sprite-default-animation-speed+  0.5 :test #'=)
+(alexandria:define-constant +sprite-default-animation-speed+  1.0 :test #'=)
 
 (alexandria:define-constant +sprite-anim-north-dir+           0   :test #'=)
 
@@ -36,10 +36,10 @@
 (alexandria:define-constant +orientation-threshold+           0.2 :test #'=)
 
 (alexandria:define-constant +default-animation-table+
-    '((:stand        ((8  9)
-                      (9  9)
-                      (10 9)
-                      (11 9)))
+    '((:stand        ((8  2)
+                      (9  2)
+                      (10 2)
+                      (11 2)))
       (:move         ((8  9)
                       (9  9)
                       (10 9)
@@ -154,6 +154,10 @@
     :initform (get-texture gui:+transparent-texture-name+)
     :initarg :texture-weapon
     :accessor texture-weapon)
+   (texture-shield
+    :initform (get-texture gui:+transparent-texture-name+)
+    :initarg :texture-shield
+    :accessor texture-shield)
    (stop-animation
     :initform nil
     :initarg :stop-animation
@@ -1063,6 +1067,11 @@ to take care of that"
               t)
             nil)))))
 
+(defun update-wearable-spritesheet (mesh)
+  (with-accessors ((ghost ghost)) mesh
+    (update-weapon-spritesheet mesh)
+    (update-shield-spritesheet mesh)))
+
 (defmethod on-game-event ((object sprite-mesh) (event wear-object-event))
   (with-accessors ((ghost          ghost)
                    (id             id)
@@ -1103,8 +1112,8 @@ to take care of that"
                                                          ident)
                                                  nil)))))
               (send-refresh-toolbar-event :reset-health-status-animation t)
-              ;; set weapon spritesheet
-              (update-weapon-spritesheet object)
+              ;; set spritesheet
+              (update-wearable-spritesheet object)
               t)
             nil)))))
 
@@ -1410,6 +1419,8 @@ to take care of that"
 
 (defgeneric update-weapon-spritesheet (object))
 
+(defgeneric update-shield-spritesheet (object))
+
 (defgeneric update-base-spritesheet (object))
 
 (defmethod destroy ((object sprite-mesh))
@@ -1631,6 +1642,7 @@ to take care of that"
                    (scaling                  scaling)
                    (texture-object           texture-object)
                    (texture-weapon           texture-weapon)
+                   (texture-shield           texture-shield)
                    (vao                      vao)
                    (view-matrix              view-matrix)
                    (active-animation-row     active-animation-row)
@@ -1648,9 +1660,12 @@ to take care of that"
           (use-program compiled-shaders :sprite-character)
           (gl:active-texture            :texture0)
           (texture:bind-texture texture-object)
-          (gl:active-texture :texture1)
-          (texture:bind-texture texture-weapon)
+          (gl:active-texture         :texture1)
+          (texture:bind-texture      texture-weapon)
           (uniformi compiled-shaders :texture-weapon 1)
+          (gl:active-texture         :texture2)
+          (texture:bind-texture      texture-shield)
+          (uniformi compiled-shaders :texture-shield 2)
           (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
           (uniformf compiled-shaders :texel-t-offset (d* (d- (d (1- animation-rows-count))
                                                               (d active-animation-row))
@@ -1712,12 +1727,12 @@ to take care of that"
     (with-accessors ((gender gender)
                      (level  level)
                      (player-class player-class)) ghost
-      (let* ((sprite-relativa-path (world:sprites-path player-class
-                                                gender
-                                                +human-player-sprite-resource+
-                                                +sprite-sheet-ext-re+
-                                                level))
-             (sprite-path          (res:get-resource-file (first sprite-relativa-path)
+      (let* ((sprite-relative-path (world:sprites-path player-class
+                                                      gender
+                                                      +human-player-sprite-resource+
+                                                      +sprite-sheet-ext-re+
+                                                      level))
+             (sprite-path          (res:get-resource-file (first sprite-relative-path)
                                                           +human-player-sprite-resource+)))
         (with-prepared-texture (sheet-texture sprite-path)
           (setf texture-object sheet-texture))))))
@@ -1725,11 +1740,21 @@ to take care of that"
 (defmethod update-weapon-spritesheet ((object sprite-mesh))
   (with-accessors ((texture-weapon texture-weapon)
                    (ghost          ghost)) object
-    (let ((worn-weapon (world:weapon-sprite-path ghost)))
-      (if worn-weapon
-          (with-prepared-texture (weapon worn-weapon)
-            (setf texture-weapon weapon))
-          (setf texture-weapon (get-texture gui:+transparent-texture-name+))))))
+    (if (character:worn-weapon ghost)
+      (let ((worn-weapon (world:weapon-sprite-path ghost)))
+        (with-prepared-texture (weapon worn-weapon)
+          (setf texture-weapon weapon)))
+      (setf texture-weapon (get-texture gui:+transparent-texture-name+)))))
+
+(defmethod update-shield-spritesheet ((object sprite-mesh))
+  (with-accessors ((texture-shield texture-shield)
+                   (ghost          ghost)) object
+    (let ((worn-shield (character:worn-shield ghost)))
+      (if worn-shield
+          (let ((texture-path (world:shield-sprite-path ghost)))
+            (with-prepared-texture (shield texture-path)
+              (setf texture-shield shield)))
+          (setf texture-shield (get-texture gui:+transparent-texture-name+))))))
 
 ;; used only in get-sprite-shell
 (defun load-sprite-model (sprite-dir shaders &key
@@ -1767,25 +1792,21 @@ to take care of that"
   #+debug-mode (misc:dbg "destroy sprite mesh shell ~a" (id object))
   (with-accessors ((vao vao)
                    (vbo vbo)
-                   (texture texture-object)
+                   (texture-object texture-object)
+                   (texture-weapon texture-weapon)
+                   (texture-shield texture-shield)
                    (normal-map normal-map)
                    (triangles triangles)
-                   (children children)
-                   (frames frames)
-                   (animation-table animation-table)
-                   (material-params material-params)
-                   (aabb aabb)
-                   (tags-table     tags-table)
-                   (tags-matrices  tags-matrices)
-                   (tag-key-parent tag-key-parent)) object
+                   (children children)) object
     (with-slots (compiled-shaders) object
       (setf compiled-shaders nil)
       (setf vao              nil)
       (setf vbo              nil)
-      (setf texture          nil)
+      (setf texture-object   nil)
+      (setf texture-weapon   nil)
+      (setf texture-shield   nil)
       (setf normal-map       nil)
       (setf triangles        nil)
-      (setf aabb             nil)
       (do-children-mesh (child object)
         (destroy child))
       object)))
