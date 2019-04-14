@@ -281,6 +281,24 @@
   Modifications by Michael Whitlock, please credit me and the original
   artist.
 
+- data/models/characters/helmets/*
+
+  derived from © bluecarrot16
+  released under CC-BY 3.0
+  https://creativecommons.org/licenses/by/3.0/
+
+  according to:
+
+  https://opengameart.org/content/lpc-helmets
+
+  and © Shaun Williams
+
+  released under CC-BY 3.0
+  https://creativecommons.org/licenses/by/3.0/
+
+  according to:
+
+  https://opengameart.org/content/lpc-full-plate-golden-armor
 
 - data/models/models/objects/weapon/arrow/model.mtl
   data/models/models/objects/weapon/arrow/model.obj

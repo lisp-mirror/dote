@@ -158,6 +158,10 @@
     :initform (get-texture gui:+transparent-texture-name+)
     :initarg :texture-shield
     :accessor texture-shield)
+   (texture-helm
+    :initform (get-texture gui:+transparent-texture-name+)
+    :initarg :texture-helm
+    :accessor texture-helm)
    (stop-animation
     :initform nil
     :initarg :stop-animation
@@ -1070,7 +1074,8 @@ to take care of that"
 (defun update-wearable-spritesheet (mesh)
   (with-accessors ((ghost ghost)) mesh
     (update-weapon-spritesheet mesh)
-    (update-shield-spritesheet mesh)))
+    (update-shield-spritesheet mesh)
+    (update-helm-spritesheet mesh)))
 
 (defmethod on-game-event ((object sprite-mesh) (event wear-object-event))
   (with-accessors ((ghost          ghost)
@@ -1421,6 +1426,8 @@ to take care of that"
 
 (defgeneric update-shield-spritesheet (object))
 
+(defgeneric update-helm-spritesheet (object))
+
 (defgeneric update-base-spritesheet (object))
 
 (defmethod destroy ((object sprite-mesh))
@@ -1643,6 +1650,7 @@ to take care of that"
                    (texture-object           texture-object)
                    (texture-weapon           texture-weapon)
                    (texture-shield           texture-shield)
+                   (texture-helm             texture-helm)
                    (vao                      vao)
                    (view-matrix              view-matrix)
                    (active-animation-row     active-animation-row)
@@ -1659,13 +1667,16 @@ to take care of that"
         (with-camera-projection-matrix (camera-proj-matrix renderer :wrapped t)
           (use-program compiled-shaders :sprite-character)
           (gl:active-texture            :texture0)
-          (texture:bind-texture texture-object)
-          (gl:active-texture         :texture1)
-          (texture:bind-texture      texture-weapon)
-          (uniformi compiled-shaders :texture-weapon 1)
-          (gl:active-texture         :texture2)
-          (texture:bind-texture      texture-shield)
-          (uniformi compiled-shaders :texture-shield 2)
+          (texture:bind-texture         texture-object)
+          (gl:active-texture            :texture1)
+          (texture:bind-texture         texture-weapon)
+          (uniformi compiled-shaders    :texture-weapon 1)
+          (gl:active-texture            :texture2)
+          (texture:bind-texture         texture-shield)
+          (uniformi compiled-shaders    :texture-shield 2)
+          (gl:active-texture            :texture3)
+          (texture:bind-texture         texture-helm)
+          (uniformi compiled-shaders    :texture-helm 3)
           (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
           (uniformf compiled-shaders :texel-t-offset (d* (d- (d (1- animation-rows-count))
                                                               (d active-animation-row))
@@ -1755,6 +1766,16 @@ to take care of that"
             (with-prepared-texture (shield texture-path)
               (setf texture-shield shield)))
           (setf texture-shield (get-texture gui:+transparent-texture-name+))))))
+
+(defmethod update-helm-spritesheet ((object sprite-mesh))
+  (with-accessors ((texture-helm texture-helm)
+                   (ghost          ghost)) object
+    (let ((worn-helm (character:worn-helm ghost)))
+      (if worn-helm
+          (let ((texture-path (world:helm-sprite-path ghost)))
+            (with-prepared-texture (helm texture-path)
+              (setf texture-helm helm)))
+          (setf texture-helm (get-texture gui:+transparent-texture-name+))))))
 
 ;; used only in get-sprite-shell
 (defun load-sprite-model (sprite-dir shaders &key

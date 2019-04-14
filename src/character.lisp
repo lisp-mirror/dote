@@ -775,6 +775,8 @@
 
 (defgeneric worn-shield (object))
 
+(defgeneric worn-helm (object))
+
 (defgeneric weapon-type (object))
 
 (defgeneric weapon-type-short-range (object))
@@ -1096,6 +1098,9 @@
      (right-hand object))
     (t
      nil)))
+
+(defmethod worn-helm ((object player-character))
+  (elm object))
 
 (defmethod weapon-type ((object player-character))
   (or (weapon-type-long-range  object)

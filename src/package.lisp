@@ -124,6 +124,7 @@
    :+ai-player-sprite-resource+
    :+sprite-weapon-resource+
    :+sprite-shields-resource+
+   :+sprite-helms-resource+
    :+tga-file-extension+
    :+textures-resource+
    :+scripts-resource+
@@ -3655,6 +3656,7 @@
    :item->available-player-character-slot
    :worn-weapon
    :worn-shield
+   :worn-helm
    :weapon-type
    :weapon-type-long-range
    :weapon-type-short-range
@@ -5265,6 +5267,7 @@
    :point-camera-to-entity
    :weapon-sprite-path
    :shield-sprite-path
+   :helm-sprite-path
    :sprites-path
    :add-ai-opponent
    :world-aabb
