@@ -125,6 +125,7 @@
    :+sprite-weapon-resource+
    :+sprite-shields-resource+
    :+sprite-helms-resource+
+   :+sprite-armors-resource+
    :+tga-file-extension+
    :+textures-resource+
    :+scripts-resource+
@@ -3657,6 +3658,7 @@
    :worn-weapon
    :worn-shield
    :worn-helm
+   :worn-armor
    :weapon-type
    :weapon-type-long-range
    :weapon-type-short-range
@@ -5268,6 +5270,7 @@
    :weapon-sprite-path
    :shield-sprite-path
    :helm-sprite-path
+   :armor-sprite-path
    :sprites-path
    :add-ai-opponent
    :world-aabb

@@ -300,6 +300,35 @@
 
   https://opengameart.org/content/lpc-full-plate-golden-armor
 
+- data/models/characters/armors/*
+
+  derived from © makrohn
+
+  released under Creative  Commons Attribution-ShareAlike
+  3.0 Unported (CC BY-SA 3.0)
+
+  according to:
+
+  https://opengameart.org/content/lpc-full-plate-golden-armor-0
+
+  and © Nila122, JaidynReiman, Matthew Krohn, Johannes Sjölund
+
+  released under Creative  Commons Attribution-ShareAlike
+  3.0 Unported (CC BY-SA 3.0)
+
+  according to:
+
+  https://opengameart.org/content/lpc-roman-armor
+
+  and © wulax
+
+  released under Creative  Commons Attribution-ShareAlike
+  3.0 Unported (CC BY-SA 3.0)
+
+  according to:
+
+  https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+
 - data/models/models/objects/weapon/arrow/model.mtl
   data/models/models/objects/weapon/arrow/model.obj
   data/models/models/objects/weapon/arrow/texture.tga

@@ -550,6 +550,7 @@ active program (set by sdk2.kit:use-program)."
                       :texture-weapon
                       :texture-shield
                       :texture-helm
+                      :texture-armor
                       :post-scaling
                       :texel-s-offset
                       :texel-t-offset)

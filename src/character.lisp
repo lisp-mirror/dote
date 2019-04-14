@@ -777,6 +777,8 @@
 
 (defgeneric worn-helm (object))
 
+(defgeneric worn-armor (object))
+
 (defgeneric weapon-type (object))
 
 (defgeneric weapon-type-short-range (object))
@@ -1101,6 +1103,9 @@
 
 (defmethod worn-helm ((object player-character))
   (elm object))
+
+(defmethod worn-armor ((object player-character))
+  (armor object))
 
 (defmethod weapon-type ((object player-character))
   (or (weapon-type-long-range  object)

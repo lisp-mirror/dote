@@ -1194,6 +1194,14 @@
 (defun helm-sprite-path* (gender helm-level)
   (wearable-w-level-path gender helm-level +sprite-helms-resource+))
 
+(defun armor-sprite-path (ghost)
+  (alexandria:when-let ((armor (character:worn-armor ghost)))
+    (armor-sprite-path* (character:gender ghost)
+                        (character:level  armor))))
+
+(defun armor-sprite-path* (gender armor-level)
+  (wearable-w-level-path gender armor-level +sprite-armors-resource+))
+
 (defun sprites-path (type gender resource filename-regex level)
   (let ((res resource))
     (flet ((%append (e)

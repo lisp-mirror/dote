@@ -162,6 +162,10 @@
     :initform (get-texture gui:+transparent-texture-name+)
     :initarg :texture-helm
     :accessor texture-helm)
+   (texture-armor
+    :initform (get-texture gui:+transparent-texture-name+)
+    :initarg :texture-armor
+    :accessor texture-armor)
    (stop-animation
     :initform nil
     :initarg :stop-animation
@@ -1075,7 +1079,8 @@ to take care of that"
   (with-accessors ((ghost ghost)) mesh
     (update-weapon-spritesheet mesh)
     (update-shield-spritesheet mesh)
-    (update-helm-spritesheet mesh)))
+    (update-helm-spritesheet mesh)
+    (update-armor-spritesheet mesh)))
 
 (defmethod on-game-event ((object sprite-mesh) (event wear-object-event))
   (with-accessors ((ghost          ghost)
@@ -1126,6 +1131,7 @@ to take care of that"
   (with-accessors ((ghost ghost) (id id) (state state)) object
     (if (= id (id-destination event))
         (progn
+          (update-wearable-spritesheet object)
           (decrement-move-points-wear object)
           (remove-from-modifiers ghost (id-origin event))
           (send-refresh-toolbar-event)
@@ -1428,6 +1434,8 @@ to take care of that"
 
 (defgeneric update-helm-spritesheet (object))
 
+(defgeneric update-armor-spritesheet (object))
+
 (defgeneric update-base-spritesheet (object))
 
 (defmethod destroy ((object sprite-mesh))
@@ -1651,6 +1659,7 @@ to take care of that"
                    (texture-weapon           texture-weapon)
                    (texture-shield           texture-shield)
                    (texture-helm             texture-helm)
+                   (texture-armor            texture-armor)
                    (vao                      vao)
                    (view-matrix              view-matrix)
                    (active-animation-row     active-animation-row)
@@ -1677,6 +1686,9 @@ to take care of that"
           (gl:active-texture            :texture3)
           (texture:bind-texture         texture-helm)
           (uniformi compiled-shaders    :texture-helm 3)
+          (gl:active-texture            :texture4)
+          (texture:bind-texture         texture-armor)
+          (uniformi compiled-shaders    :texture-armor 4)
           (uniformi compiled-shaders :texture-object +texture-unit-diffuse+)
           (uniformf compiled-shaders :texel-t-offset (d* (d- (d (1- animation-rows-count))
                                                               (d active-animation-row))
@@ -1777,6 +1789,16 @@ to take care of that"
               (setf texture-helm helm)))
           (setf texture-helm (get-texture gui:+transparent-texture-name+))))))
 
+(defmethod update-armor-spritesheet ((object sprite-mesh))
+  (with-accessors ((texture-armor texture-armor)
+                   (ghost         ghost)) object
+    (let ((worn-armor (character:worn-armor ghost)))
+      (if worn-armor
+          (let ((texture-path (world:armor-sprite-path ghost)))
+            (with-prepared-texture (armor texture-path)
+              (setf texture-armor armor)))
+          (setf texture-armor (get-texture gui:+transparent-texture-name+))))))
+
 ;; used only in get-sprite-shell
 (defun load-sprite-model (sprite-dir shaders &key
                                                (spritesheet-file +model-spritesheet+)
@@ -1816,6 +1838,8 @@ to take care of that"
                    (texture-object texture-object)
                    (texture-weapon texture-weapon)
                    (texture-shield texture-shield)
+                   (texture-helm   texture-helm)
+                   (texture-armor  texture-armor)
                    (normal-map normal-map)
                    (triangles triangles)
                    (children children)) object
@@ -1826,6 +1850,8 @@ to take care of that"
       (setf texture-object   nil)
       (setf texture-weapon   nil)
       (setf texture-shield   nil)
+      (setf texture-helm     nil)
+      (setf texture-armor    nil)
       (setf normal-map       nil)
       (setf triangles        nil)
       (do-children-mesh (child object)
