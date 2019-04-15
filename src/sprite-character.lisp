@@ -1171,8 +1171,9 @@ to take care of that"
                                                (description-type item))
                                        nil
                                        (cons (_ "Move to")
-                                             (world:point-to-entity-and-hide-cb world object))))))
-        nil)))
+                                             (world:point-to-entity-and-hide-cb world object)))))
+        (update-wearable-spritesheet object))
+      nil)))
 
 (defmethod on-game-event :after ((object sprite-mesh) (event end-turn))
   (with-accessors ((ghost ghost)
@@ -1363,6 +1364,12 @@ to take care of that"
       (setf stop-animation nil)
       (setf cycle-animation t)))))
 
+(defun set-actual-action (entity original-action)
+  (with-accessors ((current-action current-action)) entity
+    (let ((actual-action (translate-action original-action entity)))
+      (setf current-action actual-action)
+      (set-animation entity actual-action :recalculate t))))
+
 (defmethod set-attack-status ((object sprite-mesh))
   (with-accessors ((ghost ghost)
                    (current-action current-action)
@@ -1370,8 +1377,7 @@ to take care of that"
                    (stop-animation stop-animation)) object
     (with-accessors ((status status)
                      (current-damage-points current-damage-points)) ghost
-      (setf current-action  :melee)
-      (set-animation object :melee :recalculate t)
+      (set-actual-action object :melee)
       (setf stop-animation nil)
       (setf cycle-animation nil))))
 
@@ -1382,8 +1388,7 @@ to take care of that"
                    (stop-animation stop-animation)) object
     (with-accessors ((status status)
                      (current-damage-points current-damage-points)) ghost
-      (setf current-action  :attack-spell)
-      (set-animation object :attack-spell :recalculate t)
+      (set-actual-action object :attack-spell)
       (setf stop-animation nil)
       (setf cycle-animation nil))))
 
@@ -1394,11 +1399,11 @@ to take care of that"
                    (stop-animation stop-animation)) object
     (with-accessors ((status status)
                      (current-damage-points current-damage-points)) ghost
-      (setf current-action  :spell)
-      (set-animation object :spell :recalculate t)
+      (set-actual-action object :spell)
       (setf stop-animation nil)
       (setf cycle-animation nil))))
 
+;; TODO mesh:standard-aabb ins in world space, must be in object space this one
 (defmethod aabb ((object sprite-mesh))
   (mesh:standard-aabb object))
 
@@ -1544,7 +1549,7 @@ to take care of that"
                             (normalize diff)))
              (cross       (cross-product camera-dir dir))
              (dot         (dot-product   camera-dir dir))
-             (anim-spec   (animation-specs animation-table current-action)))
+             (anim-spec   (animation-specs sprite current-action)))
         (flet ((%set-animation (index-dir)
                  (setf active-animation-row   (animation-starting-row anim-spec index-dir))
                  (setf active-animation-count (animation-row-count anim-spec index-dir))))
@@ -1719,12 +1724,24 @@ to take care of that"
   (let ((all (cadr anim-spec-row)))
     (cadr (elt all facing))))
 
-(defun animation-specs (animation-table action)
-  (let ((actual-action action))
-    (cond
-      ((eq action :rotate)
-       (setf actual-action :stand)))
-    (assoc actual-action animation-table :test #'eql)))
+(defun translate-action (from-action entity)
+  (cond
+    ((eq from-action :rotate)
+     :stand)
+    ((eq from-action :melee)
+     (character:weapon-case (entity)
+       :pole     :pole
+       :melee    :melee
+       :bow      :long-range
+       :crossbow :long-range
+       :none     (error "No weapon to attack.")))
+    (t
+     from-action)))
+
+(defun animation-specs (entity action)
+  (with-accessors ((animation-table animation-table)) entity
+    (let ((actual-action (translate-action action entity)))
+      (assoc actual-action animation-table :test #'eql))))
 
 (defmethod set-animation ((object sprite-mesh) animation &key (recalculate t))
   (with-accessors ((fps fps)
@@ -1734,7 +1751,7 @@ to take care of that"
                    (active-animation-row    active-animation-row)
                    (active-animation-count  active-animation-count)
                    (ghost                   ghost)) object
-    (let ((anim-spec (animation-specs animation-table animation)))
+    (let ((anim-spec (animation-specs object animation)))
       (when anim-spec
         (setf active-animation-column 0
               active-animation-row    (animation-starting-row anim-spec +sprite-anim-north-dir+)

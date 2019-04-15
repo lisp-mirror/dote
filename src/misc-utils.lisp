@@ -65,7 +65,11 @@
   (alexandria:make-keyword (format nil "~:@(~a~)" thing)))
 
 (defun check-body-keywords (body ammitted)
-  (let ((all-keywords (loop for i in body when (keywordp i) collect i)))
+  (let ((all-keywords (loop
+                         for ct from 1
+                         for i in body when (and (oddp ct)
+                                                 (keywordp i))
+                         collect i)))
     (loop for i in all-keywords do
          (when (not (find i ammitted :test #'eq))
            (error (format nil "keyword must be one of ~a, but ~a was found"
