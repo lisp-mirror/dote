@@ -182,10 +182,6 @@
 
 (define-constant +arrows-resource+               '("models" "weapons" "arrows")   :test #'equalp)
 
-(define-constant +human-player-models-resource+  '("models" "human-player")       :test #'equalp)
-
-(define-constant +ai-player-models-resource+      '("models" "ai")                :test #'equalp)
-
 (define-constant +human-player-sprite-resource+  '("models"
                                                    "characters"
                                                    "human-player")                :test #'equalp)
@@ -317,18 +313,6 @@
 (define-constant +standard-float-print-format+     "~,2@f"                        :test #'string=)
 
 (define-constant +container-capacity+              3                              :test #'=)
-
-(define-constant +model-preview-warrior-re+        "preview-warrior"              :test #'string=)
-
-(define-constant +model-preview-archer-re+         "preview-archer"               :test #'string=)
-
-(define-constant +model-preview-wizard-re+         "preview-wizard"               :test #'string=)
-
-(define-constant +model-preview-healer-re+         "preview-healer"               :test #'string=)
-
-(define-constant +model-preview-ranger-re+         "preview-healer"               :test #'string=)
-
-(define-constant +model-preview-ext-re+            "\\.tga$"                      :test #'string=)
 
 (define-constant +sprite-preview-warrior+           "warrior"                     :test #'string=)
 

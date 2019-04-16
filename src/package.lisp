@@ -118,8 +118,6 @@
    :+model-objects-resource+
    :+model-spritesheet+
    :+arrows-resource+
-   :+human-player-models-resource+
-   :+ai-player-models-resource+
    :+human-player-sprite-resource+
    :+ai-player-sprite-resource+
    :+sprite-weapon-resource+
@@ -183,12 +181,6 @@
    :+gui-static-text-nbsp+
    :+standard-float-print-format+
    :+container-capacity+
-   :+model-preview-warrior-re+
-   :+model-preview-archer-re+
-   :+model-preview-wizard-re+
-   :+model-preview-healer-re+
-   :+model-preview-ranger-re+
-   :+model-preview-ext-re+
    :+model-move-speed+
    :+sprite-preview-warrior+
    :+sprite-preview-archer+
