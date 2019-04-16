@@ -511,6 +511,7 @@
    :pass-d2
    :pass-d100.0
    :pass-d10.0
+   :pass-d10
    :pass-d20
    :pass-d6
    :pass-d4
@@ -3077,7 +3078,6 @@
    :+empaty+
    :+weight+
    :+damage-point+
-   :+movement-point+
    :+magic-point+
    :+dodge-chance+
    :+melee-attack-chance+

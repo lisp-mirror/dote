@@ -27,7 +27,7 @@
      ,@(loop for i in dice-max-values collect
             `(gen-pass-dice ,i))))
 
-(gen-pass-multiple-dice 2 1.0 100.0 10.0 20 6 4)
+(gen-pass-multiple-dice 2 10 1.0 100.0 10.0 20 6 4)
 
 (defmacro gen-pass-dice-if (max)
   "generate a function  that lauch a dice  if fn return true  (fn is a

@@ -124,6 +124,7 @@
              (shoes-decay (calculate-decay-points shoes-level))
              (effects-no  (number-of-effects shoes-level))
              (effects     (get-normal-fx-shuffled  template effects-no)))
+        (pushnew +movement-points+ effects :test #'eq)
         (n-setf-path-value char-template (list +level+) (d shoes-level))
         (n-setf-path-value char-template (list +description+) +type-name+)
         (n-setf-path-value template

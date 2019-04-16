@@ -288,8 +288,7 @@
         (matrix:h-mirror-matrix texture-map)
         (widget:sync-influence-map toolbar texture-map)))))
 
-(defmethod game-event:on-game-event ((object world)
-                                     (event game-event:refresh-toolbar-event))
+(defmethod game-event:on-game-event ((object world) (event game-event:refresh-toolbar-event))
   (with-accessors ((toolbar toolbar)) object
     (widget:sync-with-player toolbar
                              :reset-health-animation

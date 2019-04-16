@@ -114,8 +114,6 @@
 
 (define-constant +damage-point+                :damage-point                :test #'eq)
 
-(define-constant +movement-point+              :movement-point              :test #'eq)
-
 (define-constant +magic-point+                 :magic-point                 :test #'eq)
 
 (define-constant +dodge-chance+                :dodge-chance                :test #'eq)

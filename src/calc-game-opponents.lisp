@@ -48,6 +48,5 @@
 (defun place-opponents (world difficult)
   (let ((all-opponents (type-of-opponents (no-of-opponents difficult))))
     (loop for i in all-opponents do
-       ;; TODO change with (random-elt '(:male :female)
-         (let ((mesh (world:add-ai-opponent world i :male)))
+         (let ((mesh (world:add-ai-opponent world i (random-elt '(:male :female)))))
            (throw-down-in-fow mesh)))))

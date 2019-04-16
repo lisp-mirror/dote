@@ -89,7 +89,7 @@
   (loop for object in objects do
        (maybe-wear entity object)))
 
-(defun add-common-items (entity map-level)
+(defun add-and-wear-common-items (entity map-level)
   (let* ((ring   (make-ring   map-level))
          (armor  (make-armor  map-level))
          (shoes  (make-shoes  map-level))
@@ -97,6 +97,15 @@
          (elm    (make-elm    map-level))
          (trap   (make-trap   map-level)))
     (wear-all entity ring armor shoes shield elm)
+    (maybe-add-to-inventory entity trap)
+    entity))
+
+(defun add-and-wear-common-items-magic-user (entity map-level)
+  (let* ((ring   (make-ring   map-level))
+         (shoes  (make-shoes  map-level))
+         (shield (make-shield map-level))
+         (trap   (make-trap   map-level)))
+    (wear-all entity ring shoes shield)
     (maybe-add-to-inventory entity trap)
     entity))
 
@@ -130,7 +139,7 @@
                                (:pole
                                 (make-spear map-level)))))
       (increase-change-weapon ghost)
-      (add-common-items object map-level)
+      (add-and-wear-common-items object map-level)
       (wear-all object weapon)))
   object)
 
@@ -145,7 +154,7 @@
   (let* ((weapon           (if (die-utils:pass-d2 1)
                                (make-bow      map-level)
                                (make-crossbow map-level))))
-    (add-common-items object map-level)
+    (add-and-wear-common-items object map-level)
     (wear-all object weapon))
   object)
 
@@ -156,7 +165,20 @@
 (defmethod build-inventory* ((object entity) (faction (eql +npc-type+))
                              (player-class (eql :wizard))
                              map-level)
-  (build-inventory* object faction :warrior map-level))
+  (with-accessors ((ghost ghost)) object
+    (let* ((best-weapon-type  (best-weapon-type ghost))
+           (long-range-weapon   (and (die-utils:pass-d10 (max 1 (truncate (/ map-level 2))))
+                                     (make-bow      map-level)))
+           (weapon            (ecase best-weapon-type
+                                (:edge
+                                 (make-sword map-level))
+                                (:impact
+                                 (make-mace map-level))
+                                (:pole
+                                 (make-spear map-level)))))
+      (add-and-wear-common-items-magic-user object map-level)
+      (wear-all object (or long-range-weapon weapon))))
+  object)
 
 (defmethod build-inventory* ((object entity) (faction (eql +npc-type+))
                              (player-class (eql :healer))
@@ -173,7 +195,7 @@
                             (faction      (eql +npc-type+))
                             (player-class (eql :warrior)))
   (with-map-level (map-level object)
-    (build-inventory* object faction player-class map-level)))
+    (build-inventory* object faction (player-class (ghost object)) map-level)))
 
 (defmethod build-inventory (object
                             (faction      (eql +npc-type+))

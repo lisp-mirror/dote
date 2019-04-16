@@ -171,7 +171,7 @@
 
 (gen-trivial-interaction-path get-damage-points               +effects+ +damage-points+)
 
-(gen-trivial-interaction-path get-movement-points             +effects+ +movement-point+)
+(gen-trivial-interaction-path get-movement-points             +effects+ +movement-points+)
 
 (gen-trivial-interaction-path get-spell-points                +effects+ +magic-point+)
 
