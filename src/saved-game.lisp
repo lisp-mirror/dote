@@ -942,6 +942,7 @@
                 (select-and-slide-to-first-pc world)
                 ;; start a new turn
                 (let ((start-event (make-instance 'game-event:start-turn
+                                                  :reset-characters     nil
                                                   :increment-turn-count nil)))
                   (game-event:propagate-start-turn start-event
                                                    :function-after-propagation

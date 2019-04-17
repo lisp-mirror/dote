@@ -2672,6 +2672,8 @@
    :start-turn
    :increment-turn-count
    :increment-turn-count-p
+   :reset-characters
+   :reset-characters-p
    :register-for-start-turn
    :unregister-for-start-turn
    :propagate-start-turn

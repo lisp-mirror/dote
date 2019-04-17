@@ -1157,8 +1157,9 @@ to take care of that"
   (with-accessors ((state state)
                    (ghost ghost)) object
     (game-state:with-world (world state)
-      (when (eq (game-state:faction-turn state)
-                (my-faction              object))
+      (when (and (eq (game-state:faction-turn state)
+                     (my-faction              object))
+                 (reset-characters-p event))
         (reset-spell-points    ghost)
         (reset-movement-points ghost)
         (traverse-recurrent-effects      object)

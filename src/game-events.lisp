@@ -99,7 +99,12 @@
     :initarg  :increment-turn-count
     :initform t
     :reader   increment-turn-count-p
-    :writer   (setf increment-turn-count))))
+    :writer   (setf increment-turn-count))
+   (reset-characters
+    :initform t
+    :initarg  :reset-characters
+    :reader   reset-characters-p
+    :writer   (setf reset-characters))))
 
 (defevent update-visibility ()
   ((from-event
