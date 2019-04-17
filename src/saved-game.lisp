@@ -943,7 +943,9 @@
                 ;; start a new turn
                 (let ((start-event (make-instance 'game-event:start-turn
                                                   :increment-turn-count nil)))
-                  (game-event:propagate-start-turn start-event))))
+                  (game-event:propagate-start-turn start-event
+                                                   :function-after-propagation
+                                                   #'game-event:send-refresh-toolbar-event))))
             window)
           (progn
             (error-message-save-game-outdated window)

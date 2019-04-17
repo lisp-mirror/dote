@@ -1377,4 +1377,6 @@
                                     :turn-count   turn-count
                                     :turn-faction faction)))
     (game-event:propagate-end-turn   end-event)
-    (game-event:propagate-start-turn start-event)))
+    (game-event:propagate-start-turn start-event
+                                     :function-after-propagation
+                                     #'game-event:send-refresh-toolbar-event)))

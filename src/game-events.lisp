@@ -76,10 +76,12 @@
        (defun ,unregister-symbol (el)
          (setf (,get-vector-symbol)
                (delete (identificable:id el) (,get-vector-symbol) :test #'= :key #'identificable:id)))
-       (defun ,propagate-symbol (event)
+       (defun ,propagate-symbol (event &key (function-after-propagation (lambda () t)))
          (loop for ent across (,get-vector-symbol) do
               (when (on-game-event ent event)
+                (funcall function-after-propagation)
                 (return-from ,propagate-symbol t)))
+         (funcall function-after-propagation)
          nil))))
 
 (defevent end-turn ()
