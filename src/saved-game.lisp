@@ -343,9 +343,11 @@
            (saved-difficult               (level-difficult              game-state))
            (current-map-state             (map-state                    game-state))
            (saved-players                 (append (map-ai-entities      game-state
-                                                                        #'sprite->saved-entity)
+                                                                        #'sprite->saved-entity
+                                                                        :match-dead-characters t)
                                                   (map-player-entities  game-state
-                                                                        #'sprite->saved-entity)))
+                                                                        #'sprite->saved-entity
+                                                                        :match-dead-characters t)))
            (saved-traps                   (mapcar #'trap->saved-entity
                                                   (fetch-all-traps      game-state)))
            (saved-containers              (mapcar #'container->saved-entity
@@ -764,7 +766,9 @@
       (let ((position (calculate-cost-position sprite)))
         (2d-utils:displace-2d-vector (position x y)
           (blackboard:reset-per-turn-visited-tiles (blackboard (state sprite)))
-          (set-tile-visited (state sprite) sprite x y))))))
+          (set-tile-visited (state sprite) sprite x y))))
+    (when (status-faint-p (ghost sprite))
+      (set-death-status sprite))))
 
 (defun place-trap-in-map-destination (game-state dump x y shaders)
   (let* ((map-pos    (ivec2:ivec2 x y))

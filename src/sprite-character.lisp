@@ -1322,7 +1322,7 @@ to take care of that"
                    (current-action   current-action)
                    (cycle-animation  cycle-animation)
                    (stop-animation   stop-animation)) object
-    (with-accessors ((blackboard blackboard:blackboard)) state
+      (with-accessors ((blackboard blackboard:blackboard)) state
       (with-accessors ((status                status)
                        (current-damage-points current-damage-points)) ghost
         (game-state:with-world (world state)
@@ -1340,10 +1340,13 @@ to take care of that"
           (setf (renderp object) t)
           (set-interrupt-plan ghost)
           (particles:add-blood-death object (aabb-center aabb) +y-axe+)
-          (when (battle-utils:victoryp state)
-            (closing-sequence:start-victory-sequence world))
-          (when (battle-utils:defeatedp state)
-            (closing-sequence:start-game-over-sequence world)))))))
+          ;; you can not win or lose on first turn
+          (when (/= (game-state:game-turn state)
+                    game-state:+starting-turn-count+)
+            (when (battle-utils:victoryp state)
+              (closing-sequence:start-victory-sequence world))
+            (when (battle-utils:defeatedp state)
+              (closing-sequence:start-game-over-sequence world))))))))
 
 (defmethod unset-death-status ((object sprite-mesh))
   (with-accessors ((id               id)

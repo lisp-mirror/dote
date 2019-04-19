@@ -2472,6 +2472,7 @@
         :level-config
         :random-terrain)
   (:export
+   :+starting-turn-count+
    :+empty-type+
    :+unknown-type+
    :+door-n-type+

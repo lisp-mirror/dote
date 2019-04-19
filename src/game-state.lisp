@@ -40,7 +40,9 @@
 
 (alexandria:define-constant +pc-a*-cross-weight+        4.05       :test #'=)
 
-(alexandria:define-constant  +default-a*-cost-scaling+  2.0        :test #'=)
+(alexandria:define-constant +default-a*-cost-scaling+  2.0        :test #'=)
+
+(alexandria:define-constant +starting-turn-count+       0          :test #'=)
 
 (defun hour->light-color (h)
   (cond
@@ -249,7 +251,7 @@
    (game-turn
     :accessor game-turn
     :initarg :game-turn
-    :initform 0)
+    :initform +starting-turn-count+)
    (ai-entities-action-order
     :accessor ai-entities-action-order
     :initarg  :ai-entities-action-order
@@ -425,13 +427,13 @@
 
 (defgeneric fetch-from-ai-entities (object entity))
 
-(defgeneric map-player-entities (object function))
+(defgeneric map-player-entities (object function &key match-dead-characters))
 
-(defgeneric loop-player-entities (object function))
+(defgeneric loop-player-entities (object function &key match-dead-characters))
 
-(defgeneric map-ai-entities (object function))
+(defgeneric map-ai-entities (object function &key match-dead-characters))
 
-(defgeneric loop-ai-entities (object function))
+(defgeneric loop-ai-entities (object function &key match-dead-characters))
 
 (defgeneric all-player-id-by-faction (object faction))
 
@@ -863,33 +865,49 @@
       `(loop for ,entity in ,entities when (not (entity:entity-dead-p ,entity)) ,clause
             (funcall ,fn ,entity)))))
 
-(defmethod map-player-entities ((object game-state) function)
+(defmethod map-player-entities ((object game-state) function
+                                &key (match-dead-characters nil))
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (function function))
   (with-accessors ((player-entities player-entities)) object
     #+ keep-dead-player (mapcar function player-entities)
-    #- keep-dead-player (map-entities player-entities function :collect)))
+    #- keep-dead-player
+    (if match-dead-characters
+        (mapcar function player-entities)
+        (map-entities player-entities function :collect))))
 
-(defmethod loop-player-entities ((object game-state) function)
+(defmethod loop-player-entities ((object game-state) function
+                                 &key (match-dead-characters nil))
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (function function))
   (with-accessors ((player-entities player-entities)) object
     #+ keep-dead-player (mapcar function player-entities)
-    #- keep-dead-player (map-entities player-entities function :do)))
+    #- keep-dead-player
+    (if match-dead-characters
+        (map 'nil function player-entities)
+        (map-entities player-entities function :do))))
 
-(defmethod map-ai-entities ((object game-state) function)
+(defmethod map-ai-entities ((object game-state) function
+                            &key (match-dead-characters nil))
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (function function))
   (with-accessors ((ai-entities ai-entities)) object
     #+ keep-dead-player (mapcar function ai-entities)
-    #- keep-dead-player (map-entities ai-entities function :collect)))
+    #- keep-dead-player
+    (if match-dead-characters
+        (mapcar function ai-entities)
+        (map-entities ai-entities function :collect))))
 
-(defmethod loop-ai-entities ((object game-state) function)
+(defmethod loop-ai-entities ((object game-state) function
+                             &key (match-dead-characters nil))
   (declare (optimize (debug 0) (safety 0) (speed 3)))
   (declare (function function))
   (with-accessors ((ai-entities ai-entities)) object
     #+ keep-dead-player (mapcar function ai-entities)
-    #- keep-dead-player (map-entities ai-entities function :do)))
+    #- keep-dead-player
+    (if match-dead-characters
+        (mapcar function ai-entities)
+        (map-entities ai-entities function :do))))
 
 (defun faction->map-faction-fn (faction)
    (if (eq faction +npc-type+)
