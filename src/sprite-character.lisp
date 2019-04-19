@@ -1454,7 +1454,9 @@ to take care of that"
   (call-next-method))
 
 (defmethod load-sprite (spritesheet-file)
-  (texture:with-prepared-texture (spritesheet spritesheet-file)
+  (texture:with-prepared-texture (spritesheet
+                                  spritesheet-file
+                                  :linear-interpolation t)
     (let* ((mesh (make-instance 'sprite-mesh
                                 :texture-object  spritesheet
                                 :animation-speed +sprite-default-animation-speed+)))
@@ -1784,7 +1786,7 @@ to take care of that"
                                                       level))
              (sprite-path          (res:get-resource-file (first sprite-relative-path)
                                                           +human-player-sprite-resource+)))
-        (with-prepared-texture (sheet-texture sprite-path)
+        (with-prepared-texture (sheet-texture sprite-path :linear-interpolation t)
           (setf texture-object sheet-texture))))))
 
 (defmethod update-weapon-spritesheet ((object sprite-mesh))
@@ -1792,7 +1794,7 @@ to take care of that"
                    (ghost          ghost)) object
     (if (character:worn-weapon ghost)
       (let ((worn-weapon (world:weapon-sprite-path ghost)))
-        (with-prepared-texture (weapon worn-weapon)
+        (with-prepared-texture (weapon worn-weapon :linear-interpolation t)
           (setf texture-weapon weapon)))
       (setf texture-weapon (get-texture gui:+transparent-texture-name+)))))
 
@@ -1802,7 +1804,7 @@ to take care of that"
     (let ((worn-shield (character:worn-shield ghost)))
       (if worn-shield
           (let ((texture-path (world:shield-sprite-path ghost)))
-            (with-prepared-texture (shield texture-path)
+            (with-prepared-texture (shield texture-path :linear-interpolation t)
               (setf texture-shield shield)))
           (setf texture-shield (get-texture gui:+transparent-texture-name+))))))
 
@@ -1812,7 +1814,7 @@ to take care of that"
     (let ((worn-helm (character:worn-helm ghost)))
       (if worn-helm
           (let ((texture-path (world:helm-sprite-path ghost)))
-            (with-prepared-texture (helm texture-path)
+            (with-prepared-texture (helm texture-path :linear-interpolation t)
               (setf texture-helm helm)))
           (setf texture-helm (get-texture gui:+transparent-texture-name+))))))
 
@@ -1822,7 +1824,7 @@ to take care of that"
     (let ((worn-armor (character:worn-armor ghost)))
       (if worn-armor
           (let ((texture-path (world:armor-sprite-path ghost)))
-            (with-prepared-texture (armor texture-path)
+            (with-prepared-texture (armor texture-path :linear-interpolation t)
               (setf texture-armor armor)))
           (setf texture-armor (get-texture gui:+transparent-texture-name+))))))
 
