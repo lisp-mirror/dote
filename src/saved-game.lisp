@@ -992,9 +992,11 @@
             ;; refresh all ids
             (fix-id-carryed-items-players saved-dump)
             ;; restore entitites
-            (let ((npcs (remove-if-not #'(lambda (a) (eq (original-faction a)
-                                                         +pc-type+))
-                                       saved-players)))
+            (let ((npcs (remove-if #'(lambda (a)
+                                       (or (status-faint-p (player-ghost a))
+                                           (not (eq (original-faction a)
+                                                    +pc-type+))))
+                                   saved-players)))
               (add-all-fetch-player-windows npcs
                                             root-compiled-shaders
                                             world))
