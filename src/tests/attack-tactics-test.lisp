@@ -26,7 +26,12 @@
     (let* ((state      (make-instance 'game-state:game-state
                                       :map-state (matrix:make-matrix 8 8)))
            (blackboard (make-instance 'blackboard :main-state state))
-           (player     (make-instance 'md2-mesh:md2-mesh :state state)))
+           (player     (make-instance 'sprite-character:sprite-mesh
+                                         :texture-weapon nil
+                                         :texture-shield nil
+                                         :texture-helm   nil
+                                         :texture-armor  nil
+                                         :state state)))
       (setf (game-state:blackboard state) blackboard)
       (with-accessors ((attack-enemy-pole-positions  attack-enemy-pole-positions)
                        (attack-enemy-melee-positions attack-enemy-melee-positions)) blackboard
