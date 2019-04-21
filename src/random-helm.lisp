@@ -14,7 +14,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(in-package :random-elm)
+(in-package :random-helm)
 
 (define-constant +file-record-sep+ "-"  :test #'string=)
 
@@ -70,13 +70,13 @@
 
 (define-constant +maximum-num-healing-effects+           4.0        :test #'=)
 
-(define-constant +type-name+                             "elm"      :test #'string=)
+(define-constant +type-name+                             "helm"     :test #'string=)
 
 (define-constant +healing-target-self-chance+            3          :test #'=)
 
-(define-constant +minimum-damage-point+                   1.0          :test #'=)
+(define-constant +minimum-damage-point+                   1.0       :test #'=)
 
-(define-constant +maximum-damage-point+                 100.0          :test #'=)
+(define-constant +maximum-damage-point+                 100.0       :test #'=)
 
 (defun randomize-damage-points (character level)
   (setf (damage-points character)
@@ -87,13 +87,13 @@
                                             +maximum-damage-point+
                                              (d/ (d level) (d* 5.0 (d +maximum-level+))))))
 
-(defun decay-params (elm-level)
-  (values (elt +decay-sigma+ elm-level)
-          (elt +decay-mean+  elm-level)))
+(defun decay-params (helm-level)
+  (values (elt +decay-sigma+ helm-level)
+          (elt +decay-mean+  helm-level)))
 
-(defun calculate-decay-points (elm-level)
+(defun calculate-decay-points (helm-level)
   (multiple-value-bind (sigma mean)
-      (decay-params (1- elm-level))
+      (decay-params (1- helm-level))
     (truncate (max +minimum-decay+ (gaussian-probability sigma mean)))))
 
 
@@ -108,13 +108,13 @@
   (values (elt +level-sigma+ map-level)
           (elt +level-mean+  map-level)))
 
-(defun modifier-params (elm-level)
-  (values (elt +modifier-sigma+ elm-level)
-          (elt +modifier-mean+  elm-level)))
+(defun modifier-params (helm-level)
+  (values (elt +modifier-sigma+ helm-level)
+          (elt +modifier-mean+  helm-level)))
 
-(defun calculate-modifier (elm-level)
+(defun calculate-modifier (helm-level)
   (multiple-value-bind (sigma mean)
-      (modifier-params (1- elm-level))
+      (modifier-params (1- helm-level))
     (gaussian-probability sigma mean)))
 
 (defun calculate-level (map-level)
@@ -123,18 +123,18 @@
     (clamp (truncate (gaussian-probability sigma mean))
            +minimum-level+ +maximum-level+)))
 
-(defun number-of-effects (elm-level)
+(defun number-of-effects (helm-level)
   (let ((max (round (num:dlerp (num:smoothstep-interpolate 0.0
                                                            10.0
-                                                           (d (1- elm-level)))
+                                                           (d (1- helm-level)))
                                +minimum-chance-effects+
                                +maximum-chance-effects+))))
     (lcg-next-upto max)))
 
-(defun number-of-healing-effects (elm-level number-of-normal-effects)
+(defun number-of-healing-effects (helm-level number-of-normal-effects)
   (let ((max (round (- (num:dlerp (num:smoothstep-interpolate 0.0
                                                            10.0
-                                                           (d (1- elm-level)))
+                                                           (d (1- helm-level)))
                                   +minimum-num-healing-effects+
                                   +maximum-num-healing-effects+)
                        number-of-normal-effects))))
@@ -142,75 +142,75 @@
         0
         (lcg-next-upto (max 0.0 max)))))
 
-(defun generate-elm (map-level)
+(defun generate-helm (map-level)
   (clean-effects
-   (%generate-elm (res:get-resource-file +default-interaction-filename+
-                                         +default-character-elm-dir+
-                                         :if-does-not-exists :error)
-                  (res:get-resource-file +default-character-filename+
-                                         +default-character-elm-dir+
-                                         :if-does-not-exists :error)
-                  map-level)))
+   (%generate-helm (res:get-resource-file +default-interaction-filename+
+                                          +default-character-helm-dir+
+                                          :if-does-not-exists :error)
+                   (res:get-resource-file +default-character-filename+
+                                          +default-character-helm-dir+
+                                          :if-does-not-exists :error)
+                   map-level)))
 
-(defun %generate-elm (interaction-file character-file map-level)
+(defun %generate-helm (interaction-file character-file map-level)
   (validate-interaction-file interaction-file)
   (with-character-parameters (char-template character-file)
     (with-interaction-parameters-file (template interaction-file)
-      (let* ((elm-level       (calculate-level map-level))
-             (elm-decay       (calculate-decay-points elm-level))
-             (effects-no         (number-of-effects elm-level))
-             (healing-effects-no (number-of-healing-effects elm-level effects-no))
-             (effects         (get-normal-fx-shuffled  template effects-no))
-             (healing-effects (get-healing-fx-shuffled template healing-effects-no)))
-        (n-setf-path-value char-template (list +level+) (d elm-level))
+      (let* ((helm-level         (calculate-level map-level))
+             (helm-decay         (calculate-decay-points helm-level))
+             (effects-no         (number-of-effects helm-level))
+             (healing-effects-no (number-of-healing-effects helm-level effects-no))
+             (effects            (get-normal-fx-shuffled  template effects-no))
+             (healing-effects    (get-healing-fx-shuffled template healing-effects-no)))
+        (n-setf-path-value char-template (list +level+) (d helm-level))
         (n-setf-path-value char-template (list +description+) +type-name+)
         (n-setf-path-value template
                            (list +decay+)
-                           (calculate-decay elm-level elm-decay))
+                           (calculate-decay helm-level helm-decay))
         (loop for i in effects do
-             (set-effect (list +effects+ i) elm-level template))
+             (set-effect (list +effects+ i) helm-level template))
         (loop for i in healing-effects do
              (cond
                ((eq i +heal-damage-points+)
                 nil)
                ((eq i +cause-poison+)
-                (set-poison-effect (list +healing-effects+ i) elm-level template))
+                (set-poison-effect (list +healing-effects+ i) helm-level template))
                (t
-                (set-healing-effect (list +healing-effects+ i) elm-level template))))
+                (set-healing-effect (list +healing-effects+ i) helm-level template))))
         (n-setf-path-value template (list +magic-effects+) nil) ;; no magic effects
         (setf template (remove-generate-symbols template))
-        (fill-character-plist char-template template elm-level)
-        (let ((elm-character (params->np-character char-template)))
-          (setf (basic-interaction-params elm-character) template)
-          (randomize-damage-points elm-character elm-level)
-          elm-character)))))
+        (fill-character-plist char-template template helm-level)
+        (let ((helm-character (params->np-character char-template)))
+          (setf (basic-interaction-params helm-character) template)
+          (randomize-damage-points helm-character helm-level)
+          helm-character)))))
 
-(defun set-effect (effect-path elm-level interaction)
+(defun set-effect (effect-path helm-level interaction)
   (let ((effect-object (make-instance 'effect-parameters
-                                      :modifier (calculate-modifier elm-level)
+                                      :modifier (calculate-modifier helm-level)
                                       :trigger  +effect-when-worn+
                                        ;; effect lasting forever  for
-                                       ;; elms,  they   will  broke
+                                       ;; helms,  they   will  broke
                                        ;; anyway.
                                       :duration +duration-unlimited+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
-(defun healing-fx-params-duration (elm-level)
-  (values (elt +duration-healing-fx-sigma+ elm-level)
-          (elt +duration-healing-fx-mean+  elm-level)))
+(defun healing-fx-params-duration (helm-level)
+  (values (elt +duration-healing-fx-sigma+ helm-level)
+          (elt +duration-healing-fx-mean+  helm-level)))
 
-(defun calculate-healing-fx-params-duration (elm-level)
+(defun calculate-healing-fx-params-duration (helm-level)
   (multiple-value-bind (sigma mean)
-      (healing-fx-params-duration (1- elm-level))
+      (healing-fx-params-duration (1- helm-level))
     (truncate (max +minimum-duration-healing-fx+ (gaussian-probability sigma mean)))))
 
-(defun healing-fx-params-chance (elm-level)
-  (values (elt +chance-healing-fx-sigma+ elm-level)
-          (elt +chance-healing-fx-mean+  elm-level)))
+(defun healing-fx-params-chance (helm-level)
+  (values (elt +chance-healing-fx-sigma+ helm-level)
+          (elt +chance-healing-fx-mean+  helm-level)))
 
-(defun calculate-healing-fx-params-chance (elm-level)
+(defun calculate-healing-fx-params-chance (helm-level)
   (multiple-value-bind (sigma mean)
-      (healing-fx-params-chance (1- elm-level))
+      (healing-fx-params-chance (1- helm-level))
     (max +minimum-chance-healing-fx+ (dabs (gaussian-probability sigma mean)))))
 
 (defun healing-target ()
@@ -218,20 +218,20 @@
       +target-other+
       +target-self+))
 
-(defun set-healing-effect (effect-path elm-level interaction)
+(defun set-healing-effect (effect-path helm-level interaction)
   (let ((effect-object (make-instance 'healing-effect-parameters
                                       :trigger  +effect-when-worn+
                                        ;; effect lasting forever  for
-                                       ;; elms,  they   will  broke
+                                       ;; helms,  they   will  broke
                                        ;; anyway.
                                       :duration +duration-unlimited+
-                                      :chance (calculate-healing-fx-params-chance elm-level)
+                                      :chance (calculate-healing-fx-params-chance helm-level)
                                       :target +target-self+)))
     (n-setf-path-value interaction effect-path effect-object)))
 
-(defun set-poison-effect (effect-path elm-level interaction)
+(defun set-poison-effect (effect-path helm-level interaction)
   (let ((effect-object (make-instance 'poison-effect-parameters
-                                      :points-per-turn (calculate-modifier elm-level))))
+                                      :points-per-turn (calculate-modifier helm-level))))
     (n-setf-path-value interaction effect-path effect-object)))
 
 (defun filename-effects-string (interaction)
@@ -245,24 +245,24 @@
     (t
      "normal")))
 
-(defun regexp-file-portrait (interaction elm-name-type elm-level)
-  (strcat elm-name-type
+(defun regexp-file-portrait (interaction helm-name-type helm-level)
+  (strcat helm-name-type
           +file-record-sep+
           (filename-effects-string interaction)
           +file-record-sep+
-          (format nil "~2,'0d" elm-level)))
+          (format nil "~2,'0d" helm-level)))
 
-(defun build-file-names-db (elm-name-type elm-level)
-  (strcat elm-name-type
+(defun build-file-names-db (helm-name-type helm-level)
+  (strcat helm-name-type
           +file-record-sep+
-          (format nil "~2,'0d" elm-level)
+          (format nil "~2,'0d" helm-level)
           ".lisp"))
 
-(defun fill-character-plist (character interaction elm-level)
-  (let* ((regex          (regexp-file-portrait interaction +type-name+ elm-level))
-         (names-filename (build-file-names-db +type-name+ elm-level))
+(defun fill-character-plist (character interaction helm-level)
+  (let* ((regex          (regexp-file-portrait interaction +type-name+ helm-level))
+         (names-filename (build-file-names-db +type-name+ helm-level))
          (portrait-file  (find-object-portrait-filename regex)))
     (n-setf-path-value character (list +portrait+) (uiop:native-namestring portrait-file))
-    (random-names:load-db* +elms-names-resource+ names-filename)
+    (random-names:load-db* +helms-names-resource+ names-filename)
     (n-setf-path-value character (list +last-name+)  "")
     (n-setf-path-value character (list +first-name+) (random-names:generate))))

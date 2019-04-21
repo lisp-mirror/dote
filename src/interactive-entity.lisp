@@ -331,7 +331,7 @@
 (gen-interaction-predicate (shoes)
   (lookup-basic-interaction object +can-be-worn-feet+))
 
-(gen-interaction-predicate (elm)
+(gen-interaction-predicate (helm)
   (lookup-basic-interaction object +can-be-worn-head+))
 
 (gen-interaction-predicate (ring)
@@ -371,14 +371,14 @@
 
 (defmethod description-type ((object interactive-entity))
   (strcat
-   (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~]~:[~;Trap~] ")
+   (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Helm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~]~:[~;Trap~] ")
            (can-cut-p   object)
            (can-smash-p object)
            (can-launch-bolt-p object)
            (can-launch-arrow-p object)
            (fountainp  object)
            (potionp    object)
-           (elmp       object)
+           (helmp      object)
            (armorp     object)
            (ringp      object)
            (shoesp     object)

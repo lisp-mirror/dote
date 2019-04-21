@@ -271,7 +271,7 @@
     (update-page-counts window next-page-no)))
 
 (defun item->window-accessor (window item)
-  (with-accessors ((elm-slot        elm-slot)
+  (with-accessors ((helm-slot       helm-slot)
                    (shoes-slot      shoes-slot)
                    (armor-slot      armor-slot)
                    (left-hand-slot  left-hand-slot)
@@ -283,8 +283,8 @@
             ring-slot)
            ((interactive-entity:armorp item)
             armor-slot)
-           ((interactive-entity:elmp item)
-            elm-slot)
+           ((interactive-entity:helmp item)
+            helm-slot)
            ((interactive-entity:shoesp item)
             shoes-slot)
            ((or (interactive-entity:weaponp item)
@@ -335,7 +335,7 @@
      (nconc
       (remove-if #'(lambda (a) (not (interactive-entity:weaponp a))) all)
       (remove-if #'(lambda (a) (not (interactive-entity:shieldp a))) all)
-      (remove-if #'(lambda (a) (not (interactive-entity:elmp a))) all)
+      (remove-if #'(lambda (a) (not (interactive-entity:helmp a))) all)
       (remove-if #'(lambda (a) (not (interactive-entity:armorp a))) all)
       (remove-if #'(lambda (a) (not (interactive-entity:shoesp a))) all)
       (remove-if #'(lambda (a) (not (interactive-entity:potionp a))) all)
@@ -643,14 +643,14 @@
                              :button-status t)
     :initarg  :img-silhouette
     :accessor img-silhouette)
-   (elm-slot
+   (helm-slot
     :initform (make-inventory-slot-button (d- (d* 0.66 (inventory-window-width))
                                               (d/ (small-square-button-size *reference-sizes*)
                                                   2.0))
                                           (d* 0.12 (inventory-window-height))
                                           :callback #'inventory-update-description-cb)
-    :initarg  :elm-slot
-    :accessor elm-slot)
+    :initarg  :helm-slot
+    :accessor helm-slot)
    (shoes-slot
     :initform (make-inventory-slot-button (d- (d* 0.66 (inventory-window-width))
                                               (d/ (small-square-button-size *reference-sizes*)
@@ -725,7 +725,7 @@
                    (b-prev-page b-prev-page) (lb-page-count lb-page-count)
                    (chest-slots chest-slots)
                    (img-silhouette img-silhouette)
-                   (elm-slot elm-slot) (shoes-slot shoes-slot)
+                   (helm-slot helm-slot) (shoes-slot shoes-slot)
                    (armor-slot armor-slot) (left-hand-slot left-hand-slot)
                    (right-hand-slot right-hand-slot) (ring-slot ring-slot)
                    (b-remove-worn-item b-remove-worn-item))             object
@@ -748,19 +748,19 @@
       (add-child object b-spell-book)
       (add-child object b-chest)
       (add-child object img-silhouette)
-      (let ((group-worn (make-check-group* elm-slot
+      (let ((group-worn (make-check-group* helm-slot
                                            shoes-slot
                                            armor-slot
                                            left-hand-slot
                                            right-hand-slot
                                            ring-slot)))
-        (setf (group elm-slot) group-worn)
+        (setf (group helm-slot) group-worn)
         (setf (group shoes-slot) group-worn)
         (setf (group armor-slot) group-worn)
         (setf (group left-hand-slot) group-worn)
         (setf (group right-hand-slot) group-worn)
         (setf (group ring-slot) group-worn))
-      (add-child object elm-slot)
+      (add-child object helm-slot)
       (add-child object shoes-slot)
       (add-child object armor-slot)
       (add-child object left-hand-slot)
@@ -799,7 +799,7 @@
          (values selected (contained-entity selected)))))
 
 (gen-get-selected-item (worn)
-                       elm-slot
+                       helm-slot
                        armor-slot
                        shoes-slot
                        left-hand-slot
@@ -811,7 +811,7 @@
                    (owner           owner)
                    (chest           chest)
                    (chest-slots     chest-slots)
-                   (elm-slot        elm-slot)
+                   (helm-slot       helm-slot)
                    (shoes-slot      shoes-slot)
                    (armor-slot      armor-slot)
                    (right-hand-slot right-hand-slot)
@@ -821,7 +821,7 @@
       (assert (<= (length (character:inventory (ghost owner)))
                   (length (alexandria:flatten slots-pages))))
       (with-accessors ((ghost ghost)) owner
-        (with-accessors ((elm        elm)
+        (with-accessors ((helm       helm)
                          (shoes      shoes)
                          (armor      armor)
                          (left-hand  left-hand)
@@ -832,9 +832,9 @@
              for obj  in (character:inventory ghost) do
                (setf (contained-entity slot) obj
                      (texture-overlay  slot) (character:portrait obj)))
-          (when elm
-            (setf (contained-entity elm-slot) elm
-                  (texture-overlay  elm-slot) (character:portrait elm)))
+          (when helm
+            (setf (contained-entity helm-slot) helm
+                  (texture-overlay  helm-slot) (character:portrait helm)))
           (when shoes
             (setf (contained-entity shoes-slot) shoes
                   (texture-overlay  shoes-slot) (character:portrait shoes)))

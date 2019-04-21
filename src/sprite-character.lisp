@@ -673,7 +673,7 @@ to take care of that"
 
 (defun calculate-dispel-fow-size (mesh)
   (with-accessors ((ghost ghost)) mesh
-    (if (elm-worn-p ghost)
+    (if (helm-worn-p ghost)
         (truncate (/ +fow-standard-dispel-size+ 2))
         +fow-standard-dispel-size+)))
 

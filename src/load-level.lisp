@@ -30,7 +30,7 @@
               (list #'(lambda (map-level) (random-weapon:generate-weapon map-level :sword))))
         (list :clothes
               (list #'random-armor:generate-armor)
-              (list #'random-elm:generate-elm)
+              (list #'random-helm:generate-helm)
               (list #'random-ring:generate-ring)
               (list #'random-shield:generate-shield)
               (list #'random-shoes:generate-shoes))

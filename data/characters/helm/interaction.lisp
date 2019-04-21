@@ -1,4 +1,4 @@
-(in-package :random-elm)
+(in-package :random-helm)
 
 (define-interaction
     can-intercept-attacks true

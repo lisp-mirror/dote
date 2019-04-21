@@ -67,7 +67,7 @@
 
 (gen-make-item random-trap trap)
 
-(gen-make-item random-elm elm)
+(gen-make-item random-helm helm)
 
 (gen-make-item random-shoes shoes)
 
@@ -94,9 +94,9 @@
          (armor  (make-armor  map-level))
          (shoes  (make-shoes  map-level))
          (shield (make-shield map-level))
-         (elm    (make-elm    map-level))
+         (helm   (make-helm   map-level))
          (trap   (make-trap   map-level)))
-    (wear-all entity ring armor shoes shield elm)
+    (wear-all entity ring armor shoes shield helm)
     (maybe-add-to-inventory entity trap)
     entity))
 

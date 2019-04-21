@@ -138,14 +138,14 @@
 
 (defmethod description-for-humans :around ((object np-character))
   (strcat
-   (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Elm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~]~:[~;Trap~] ~a ~a~a~a~a")
+   (format nil (_ "~:[~;Edge weapon~]~:[~;Impact weapon~]~:[~;Range weapon~]~:[~;Range weapon~]~:[~;Fountain~]~:[~;Potion~]~:[~;Helm~]~:[~;Armor~]~:[~;Ring~]~:[~;Shoes~]~:[~;Trap~] ~a ~a~a~a~a")
            (can-cut-p   object)
            (can-smash-p object)
            (can-launch-bolt-p object)
            (can-launch-arrow-p object)
            (fountainp  object)
            (potionp    object)
-           (elmp       object)
+           (helmp      object)
            (armorp     object)
            (ringp      object)
            (shoesp     object)
@@ -587,10 +587,10 @@
     :initarg :exp-points
     :initform 0.0
     :accessor exp-points)
-   (elm
-    :initarg :elm
+   (helm
+    :initarg :helm
     :initform nil
-    :accessor elm)
+    :accessor helm)
    (shoes
     :initarg :shoes
     :initform nil
@@ -709,7 +709,7 @@
             recurrent-effects
             race
             exp-points
-            elm
+            helm
             shoes
             armor
             left-hand
@@ -787,7 +787,7 @@
 
 (defgeneric weapon-type-minimum-range-p (object))
 
-(defgeneric elm-worn-p (object))
+(defgeneric helm-worn-p (object))
 
 (defgeneric available-spells-list (object))
 
@@ -928,14 +928,14 @@
 
 (defmethod find-entity-by-id ((object player-character) id)
   "Search everywhere, in inventory!"
-  (with-accessors ((elm        elm)
+  (with-accessors ((helm       helm)
                    (shoes      shoes)
                    (armor      armor)
                    (left-hand  left-hand)
                    (right-hand right-hand)
                    (ring       ring)) object
     (or (find-item-in-inventory object id)
-        (and elm        (= (id elm)        id) elm)
+        (and helm       (= (id helm)       id) helm)
         (and shoes      (= (id shoes)      id) shoes)
         (and armor      (= (id armor)      id) armor)
         (and left-hand  (= (id left-hand)  id) left-hand)
@@ -949,8 +949,8 @@
   (find-if predicate (inventory object)))
 
 (defmethod prevent-decay-all-items ((object player-character))
-  (with-accessors ((inventory inventory)
-                   (elm        elm)
+  (with-accessors ((inventory  inventory)
+                   (helm       helm)
                    (shoes      shoes)
                    (armor      armor)
                    (left-hand  left-hand)
@@ -960,7 +960,7 @@
              (when a
                (prevent-decay a))))
       (map nil #'prevent-decay inventory)
-      (%prevent-decay elm)
+      (%prevent-decay helm)
       (%prevent-decay shoes)
       (%prevent-decay armor)
       (%prevent-decay left-hand)
@@ -968,8 +968,8 @@
       (%prevent-decay ring))))
 
 (defmethod remove-decayed-items ((object player-character) turn-count)
-  (with-accessors ((inventory inventory)
-                   (elm        elm)
+  (with-accessors ((inventory  inventory)
+                   (helm       helm)
                    (shoes      shoes)
                    (armor      armor)
                    (left-hand  left-hand)
@@ -982,10 +982,10 @@
       (when (not (decay-prevented-p object))
         (let* ((new-inventory (remove-if #'(lambda (a) (decayedp a)) inventory))
                (removed-items (remove-if #'(lambda (a) (not (decayedp a))) inventory)))
-          (when (and elm
-                     (decayedp elm))
-            (push elm removed-items)
-            (setf elm nil))
+          (when (and helm
+                     (decayedp helm))
+            (push helm removed-items)
+            (setf helm nil))
           (when (and shoes
                      (decayedp shoes))
             (push shoes removed-items)
@@ -1044,10 +1044,10 @@
                 (armor object)
                 (= item-id (id (armor object))))
            'character:armor)
-          ((and (interactive-entity:elmp item)
-                (elm object)
-                (= item-id (id (elm object))))
-           'character:elm)
+          ((and (interactive-entity:helmp item)
+                (helm object)
+                (= item-id (id (helm object))))
+           'character:helm)
           ((and (interactive-entity:shoesp item)
                 (shoes object)
                 (= item-id (id (shoes object))))
@@ -1071,8 +1071,8 @@
             'character:ring)
            ((interactive-entity:armorp item)
             'character:armor)
-           ((interactive-entity:elmp item)
-            'character:elm)
+           ((interactive-entity:helmp item)
+            'character:helm)
            ((interactive-entity:shoesp item)
             'character:shoes)
            ((or (interactive-entity:weaponp item)
@@ -1102,7 +1102,7 @@
      nil)))
 
 (defmethod worn-helm ((object player-character))
-  (elm object))
+  (helm object))
 
 (defmethod worn-armor ((object player-character))
   (armor object))
@@ -1144,8 +1144,8 @@
   (or (weapon-type-edge-p    object)
       (weapon-type-impact-p  object)))
 
-(defmethod elm-worn-p ((object player-character))
-  (elm object))
+(defmethod helm-worn-p ((object player-character))
+  (helm object))
 
 (defmacro gen-wear-weapon-of-type (&rest types)
   (with-gensyms (character weapon-type)

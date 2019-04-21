@@ -109,7 +109,7 @@
    :+weapons-names-resource+
    :+shields-names-resource+
    :+armors-names-resource+
-   :+elms-names-resource+
+   :+helms-names-resource+
    :+rings-names-resource+
    :+avatar-portrait-resource+
    :+maps-resource+
@@ -146,10 +146,10 @@
    :+default-character-sword+
    :+default-character-armor-dir+
    :+default-character-container-dir+
-   :+default-character-elm-dir+
+   :+default-character-helm-dir+
    :+default-character-fountain-dir+
    :+default-character-key-dir+
-   :+default-character-elm-dir+
+   :+default-character-helm-dir+
    :+default-character-potion-dir+
    :+default-character-ring-dir+
    :+default-character-trap-dir+
@@ -3260,7 +3260,7 @@
    :keyp
    :shieldp
    :shoesp
-   :elmp
+   :helmp
    :ringp
    :can-be-worn-p
    :lockedp
@@ -3616,7 +3616,7 @@
    :race
    :level
    :exp-points
-   :elm
+   :helm
    :shoes
    :armor
    :left-hand
@@ -3663,7 +3663,7 @@
    :weapon-type-bow-p
    :weapon-type-crossbow-p
    :weapon-type-minimum-range-p
-   :elm-worn-p
+   :helm-worn-p
    :available-spells-list
    :available-spells-list-by-tag
    :castable-spells-list-by-tag
@@ -3837,7 +3837,7 @@
   (:export
    :generate-fountain))
 
-(defpackage :random-elm
+(defpackage :random-helm
   (:use :cl
         :alexandria
         :constants
@@ -3853,7 +3853,7 @@
         :character)
   (:shadowing-import-from :misc :random-elt :shuffle)
   (:export
-   :generate-elm))
+   :generate-helm))
 
 (defpackage :random-ring
   (:use :cl

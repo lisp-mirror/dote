@@ -15,7 +15,7 @@
   (lambda (attacker defender)
     (declare (ignore attacker))
     (with-accessors ((ghost ghost)) defender
-      (with-accessors ((elm        elm)
+      (with-accessors ((helm       helm)
                        (shoes      shoes)
                        (armor      armor)
                        (left-hand  left-hand)
@@ -24,7 +24,7 @@
         (flet ((repair (o)
                  (when o
                    (character:restart-age o))))
-          (repair elm)
+          (repair helm)
           (repair shoes)
           (repair armor)
           (repair left-hand)

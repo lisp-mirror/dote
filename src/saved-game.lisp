@@ -676,14 +676,14 @@
          saved-players)
     (loop for player in saved-players do
          (let ((ghost (player-ghost player)))
-           (with-accessors ((elm        elm)
+           (with-accessors ((helm       helm)
                             (shoes      shoes)
                             (armor      armor)
                             (left-hand  left-hand)
                             (right-hand right-hand)
                             (ring       ring)) ghost
 
-             (clean-handle elm)
+             (clean-handle helm)
              (clean-handle shoes)
              (clean-handle armor)
              (clean-handle left-hand)
@@ -701,13 +701,13 @@
            saved-players)
       (loop for player in saved-players do
            (let ((ghost (player-ghost player)))
-             (with-accessors ((elm        elm)
+             (with-accessors ((helm       helm)
                               (shoes      shoes)
                               (armor      armor)
                               (left-hand  left-hand)
                               (right-hand right-hand)
                               (ring       ring)) ghost
-               (reset-id elm)
+               (reset-id helm)
                (reset-id shoes)
                (reset-id armor)
                (reset-id left-hand)

@@ -305,22 +305,26 @@
      object)))
 
 (defmethod sync-bits-to-data ((object pixmap))
-  (with-accessors ((data data) (bits bits) (depth depth) (width width) (height height)) object
-    (let ((pixel (make-fresh-ubvec4))
-          (data-size (* width height)))
+  (with-accessors ((data   data)
+                   (bits   bits)
+                   (depth  depth)
+                   (width  width)
+                   (height height)) object
+    (let* ((data-size (* width height)))
       (if (/= (length data) (* depth (length bits)))
-          (progn
-            (setf data (misc:make-array-frame data-size +ubvec4-zero+ 'ubvec4 t))
+          (let ((pixels (misc:make-fresh-array data-size +ubvec4-zero+ 'ubvec4 t)))
             (loop for i from 0 below (length bits) by depth do
-                 (loop for channel-count from 0 below depth do
-                      (setf (elt pixel channel-count) (elt bits (+ i channel-count))))
-                 (setf (elt data (truncate (/ i depth))) (alexandria:copy-array pixel))))
+                 (let ((pixel (elt pixels (truncate (/ i depth)))))
+                   (loop for channel-count from 0 below depth do
+                        (setf (elt pixel channel-count) (elt bits (+ i channel-count))))))
+            (setf data pixels))
           (loop for i from 0 below (length bits) by depth do
-               (loop for channel-count from 0 below depth do
-                    (setf (elt pixel channel-count)
-                          (elt bits (+ i channel-count))))
-               (setf (elt data (truncate (/ i depth))) (alexandria:copy-array pixel)))))
-    (h-mirror-matrix object)))
+               (let ((pixel (make-fresh-ubvec4)))
+                 (loop for channel-count from 0 below depth do
+                      (setf (elt pixel channel-count)
+                            (elt bits (+ i channel-count))))
+                 (setf (elt data (truncate (/ i depth))) pixel))))
+      (h-mirror-matrix object))))
 
 (defun cristallize-bits (pixmap)
   "ensure the slot bits is a symple-array of fixnum"

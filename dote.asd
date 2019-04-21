@@ -130,7 +130,7 @@
                (:file "random-shield")
                (:file "random-armor")
                (:file "random-shoes")
-               (:file "random-elm")
+               (:file "random-helm")
                (:file "random-ring")
                (:file "random-trap")
                (:file "random-inert-object")

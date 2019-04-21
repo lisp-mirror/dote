@@ -158,7 +158,7 @@
 
 (define-constant +armors-names-resource+         '("names" "armors")              :test #'equalp)
 
-(define-constant +elms-names-resource+           '("names" "elms")                :test #'equalp)
+(define-constant +helms-names-resource+          '("names" "helms")               :test #'equalp)
 
 (define-constant +rings-names-resource+          '("names" "rings")               :test #'equalp)
 
@@ -242,13 +242,13 @@
 
 (define-constant +default-character-container-dir+ '("characters" "container")    :test #'equalp)
 
-(define-constant +default-character-elm-dir+       '("characters" "elm")          :test #'equalp)
+(define-constant +default-character-helm-dir+       '("characters" "helm")        :test #'equalp)
 
 (define-constant +default-character-fountain-dir+  '("characters" "fountain")     :test #'equalp)
 
 (define-constant +default-character-key-dir+       '("characters" "key")          :test #'equalp)
 
-(define-constant +default-character-elm-dir+       '("characters" "elm")          :test #'equalp)
+(define-constant +default-character-helm-dir+      '("characters" "helm")         :test #'equalp)
 
 (define-constant +default-character-potion-dir+    '("characters" "potion")       :test #'equalp)
 
