@@ -26,6 +26,8 @@
 
 (alexandria:define-constant +targa-stream-element-type+ '(unsigned-byte 8) :test 'equalp)
 
+(defparameter *sync-tga-bits->data* t)
+
 (defclass pixmap (matrix)
   ((depth
     :initform 4
@@ -1350,7 +1352,8 @@ of the pixmap is a symple-array of fixnum (see: cristallize-bits)"
                                       (vector-push-extend a (bits object)))))
                            (incf i packet-count))))
                 (rearrange-scanline-by-pixmap-origin object scanline-origin)
-                (sync-bits-to-data object)
+                (when *sync-tga-bits->data*
+                  (sync-bits-to-data object))
                 object)))
         (push "Image type not supported: only rgba and compressed rgba allowed."
               (errors object)))))

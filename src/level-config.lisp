@@ -78,6 +78,10 @@
 
 (alexandria:define-constant +inc-progress-slot+    0.01 :test #'=)
 
+(defmacro with-no-sync-bits (&body body)
+  `(let ((pixmap:*sync-tga-bits->data* nil))
+     ,@body))
+
 (defmacro err (str &rest param)
   `(format nil ,str ,@param))
 
@@ -661,11 +665,12 @@
 (defun iterate-texture-from-function (target keyword body &key (offset 0) (just-consume-input nil))
   (need-keyword-if ((first body) keyword) ;; and with postprocess
      (need-keyword-if ((second body) :with)
-        (need-keyword-if ((third body) :postprocess)
-           (multiple-value-bind (tx error)
+       (need-keyword-if ((third body) :postprocess)
+         (multiple-value-bind (tx error)
                (texture:get-texture target)
              (if (not error)
                  (progn
+                   (pixmap:sync-bits-to-data tx)
                    (when (not just-consume-input)
                      (funcall (fourth body) tx)) ;; the function
                    (iterate-texture-from-function target :and
@@ -692,29 +697,31 @@
 
 (defun texture-from-file-as-resource (path target tags normalmap-parameters)
   (need-type (path 'string)
-    (multiple-value-bind (bg error)
-        (texture:get-texture (res:get-resource-file path +textures-resource+))
-      (if (not error)
-          (progn
-            (texture:prepare-for-rendering bg)
-            (setf (texture:filename bg) target)
-            (setf (texture:tags bg) (map 'vector #'identity tags))
-            (setf (texture:normalmap-params bg)
-                  (plist->normalmap-params (process-parameter-list normalmap-parameters))))
-          (first error)))))
+    (with-no-sync-bits
+      (multiple-value-bind (bg error)
+          (texture:get-texture (res:get-resource-file path +textures-resource+))
+        (if (not error)
+            (progn
+              (texture:prepare-for-rendering bg)
+              (setf (texture:filename bg) target)
+              (setf (texture:tags bg) (map 'vector #'identity tags))
+              (setf (texture:normalmap-params bg)
+                    (plist->normalmap-params (process-parameter-list normalmap-parameters))))
+            (first error))))))
 
 (defun texture-from-file-abs (path target tags normalmap-parameters)
   (need-type (path 'string)
-    (multiple-value-bind (bg error)
-        (texture:get-texture path)
-      (if (not error)
-          (progn
-            (texture:prepare-for-rendering bg)
-            (setf (texture:filename bg) target)
-            (setf (texture:tags bg) (map 'vector #'identity tags))
-            (setf (texture:normalmap-params bg)
-                  (plist->normalmap-params (process-parameter-list normalmap-parameters))))
-          (first error)))))
+    (with-no-sync-bits
+      (multiple-value-bind (bg error)
+          (texture:get-texture path)
+        (if (not error)
+            (progn
+              (texture:prepare-for-rendering bg)
+              (setf (texture:filename bg) target)
+              (setf (texture:tags bg) (map 'vector #'identity tags))
+              (setf (texture:normalmap-params bg)
+                    (plist->normalmap-params (process-parameter-list normalmap-parameters))))
+            (first error))))))
 
 (defun texture-from-function (function-name target args tags normalmap-parameters)
   (need-type (function-name 'symbol)

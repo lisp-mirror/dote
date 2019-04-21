@@ -1838,6 +1838,7 @@
    :+green-channel+
    :+blue-channel+
    :+alpha-channel+
+   :*sync-tga-bits->data*
    :make-pixmap-frame
    :make-pixmap-template
    :make-pixmap

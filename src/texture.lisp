@@ -372,19 +372,24 @@
     (or found
         (allocate-texture handle))))
 
-(defmacro with-prepared-texture ((texture handle &key (linear-interpolation nil)) &body body)
+(defmacro with-prepared-texture ((texture handle
+                                          &key
+                                          (linear-interpolation nil)
+                                          (sync-bits-to-data    t))
+                                 &body body)
   "prepare only if not already initialized"
   (alexandria:with-gensyms (error)
-    `(multiple-value-bind (,texture ,error)
-         (get-texture ,handle)
-       (when ,error
-         (error ,error))
-       (when (not (initializedp ,texture))
-         (when ,linear-interpolation
-           (setf (interpolation-type ,texture) :linear))
-         (prepare-for-rendering ,texture))
-       (progn
-          ,@body))))
+    `(let ((pixmap:*sync-tga-bits->data* ,sync-bits-to-data))
+       (multiple-value-bind (,texture ,error)
+           (get-texture ,handle)
+         (when ,error
+           (error ,error))
+         (when (not (initializedp ,texture))
+           (when ,linear-interpolation
+             (setf (interpolation-type ,texture) :linear))
+           (prepare-for-rendering ,texture))
+         (progn
+           ,@body)))))
 
 (defun replace-texture (old-texture new-texture)
   (let ((pos (position-if #'(lambda (texture) (= (handle texture)
