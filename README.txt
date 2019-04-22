@@ -1,3 +1,24 @@
+Table of Contents
+─────────────────
+
+1 Introduction
+.. 1.1 Features
+2 Current status
+3 Building
+.. 3.1 If you plan to contribute to the development of this game
+.. 3.2 Hardware requisite
+.. 3.3 Dependency
+.. 3.4 Lisp libraries
+.. 3.5 C libraries
+4 External programs
+5 Issues
+6 BUGS
+7 License
+8 Contributing
+9 NO WARRANTY
+10 Thanks
+
+
 1 Introduction
 ══════════════
 
@@ -17,8 +38,7 @@
     • game object (potions, weapons, etc..);
     • spells;
     • most of the textures.
-  • supported mesh in obj and MD2 file format, tags supported for the
-    latter;
+  • supported mesh in obj file format;
   • simple caching system for levels;
   • OpenGL GUI (minimal).
 

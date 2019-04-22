@@ -14,8 +14,7 @@ tactical game.
   - game object (potions, weapons, etc..);
   - spells;
   - most of the textures.
-- supported mesh  in obj and MD2  file format, tags supported  for the
-  latter;
+- supported mesh  in obj file format;
 - simple caching system for levels;
 - OpenGL GUI (minimal).
 
