@@ -16,9 +16,11 @@
 
 (in-package :arrows)
 
-(alexandria:define-constant +arrow-speed+        0.0005      :test #'=)
+(alexandria:define-constant +arrow-speed+                    0.0005      :test #'=)
 
-(alexandria:define-constant +arrow-model-name+   "model.obj" :test #'string=)
+(alexandria:define-constant +arrow-model-name+               "model.obj" :test #'string=)
+
+(alexandria:define-constant +scale-precision-when-helm-worn+ 0.75        :test #'=)
 
 (defclass arrow ()
   ((type-current-action-scheduler
@@ -298,8 +300,11 @@
           new-arrow))))
 
 (defun launch-ray (attacker defender imprecision-increase)
-  (flet ((decrease-atk (standard)
-           (dmax 0.0 (d- standard (d* imprecision-increase standard)))))
+  (flet ((decrease-atk (standard ghost)
+           (let ((helm (character:worn-helm ghost)))
+             (when helm
+               (setf standard (* standard +scale-precision-when-helm-worn+)))
+             (dmax 0.0 (d- standard (d* imprecision-increase standard))))))
     (let* ((ghost-atk     (entity:ghost attacker))
            (weapon        (character:worn-weapon ghost-atk))
            (weapon-type   (if weapon
@@ -313,7 +318,8 @@
                               :spell))
            (attack-chance (if (eq weapon-type :spell)
                               (character:actual-attack-spell-chance ghost-atk)
-                              (decrease-atk (character:actual-range-attack-chance ghost-atk))))
+                              (decrease-atk (character:actual-range-attack-chance ghost-atk)
+                                            ghost-atk)))
            (ray-dir       (normalize (vec- (aabb-center (actual-aabb-for-bullets defender))
                                            (aabb-center (actual-aabb-for-bullets attacker)))))
            (ray           (make-instance 'ray
