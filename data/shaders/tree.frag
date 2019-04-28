@@ -34,7 +34,7 @@ void main () {
   vec3 L              = normalize(L);
   vec3 R              = reflect(-L, N);
   vec3 amb_diff_color = ka * ia + kd * (max(dot(N , L),0.0) * id);
-  vec3 spec_color     =  ks * (pow(max(dot(R, V),0.0),shine) * is);
+  vec3 spec_color     = ks * (pow(max(dot(R, V),0.0),shine) * is);
 
   float fog_factor    = calc_fog_factor(eye_position, world_position, time);
 
