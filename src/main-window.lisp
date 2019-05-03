@@ -506,53 +506,52 @@ approx h ~a facing ~a occlude? ~a inside-room ~a concerning cost ~a ai-entitites
               (when (not (widget:on-mouse-released (world:gui world) gui-event))
                 (misc:dbg "~s button: ~A at ~A, ~A" state button-code x y))))))))
 
-(let ((old-tile-position nil)
-      (old-timestamp     0))
+(defun pointer-moved-enough-p (old new)
+  (some (lambda (a) (>= (abs a) 1))
+        (ivec2- old new)))
+
+(let ((old-tile-position nil))
   (defmethod set-player-path ((object test-window) x y timestamp)
-    (when (> (/ (- timestamp old-timestamp) 1000.0)
-             1/30)
-      (setf old-timestamp timestamp)
-      (with-accessors ((world world)
-                       (main-state main-state)) object
-        (with-accessors ((selected-pc selected-pc)
-                         (main-state main-state)) world
-          (alexandria:when-let* ((player-position       (entity:pos selected-pc))
-                                 (cost-player-position  (entity:calculate-cost-position selected-pc))
-                                 (cost-pointer-position (world:pick-pointer-position world world x y))
-                                 (cost-pointer-pos-x    (elt cost-pointer-position 0))
-                                 (cost-pointer-pos-y    (elt cost-pointer-position 1))
-                                 (cost-pointer          (or (get-cost main-state
-                                                                      cost-pointer-pos-x
-                                                                      cost-pointer-pos-y))
-                                                        +invalicable-element-cost+)
-                                 (ghost                 (entity:ghost selected-pc)))
-            (when (or (null old-tile-position)
-                      (not (ivec2= old-tile-position cost-pointer-position)))
-              (setf old-tile-position cost-pointer-position)
-              (when (not (path-same-ends-p main-state
-                                           cost-player-position
-                                           cost-pointer-position))
-                (let ((min-cost (map-utils:map-manhattam-distance-cost cost-pointer-position
-                                                                       cost-player-position))
-                      (player-movement-points (character:current-movement-points ghost)))
-                  (when (and (>= player-movement-points +open-terrain-cost+)
-                             (<= min-cost player-movement-points)
-                             (<= cost-pointer player-movement-points))
-                    (let ((island (position-confined-in-labyrinth-p main-state
-                                                                    cost-pointer-position)))
-                      (when (or (null island)
-                                (find cost-player-position island :test #'ivec2=))
-                        (multiple-value-bind (path cost)
-                            (game-state:build-movement-path-pc main-state
-                                                               cost-player-position
-                                                               cost-pointer-position
-                                                               :heuristic-cost-function
-                                                               (heuristic-manhattam))
-                          (when (and path
-                                     (<= cost player-movement-points))
-                            (setf (game-state:selected-path main-state)
-                                  (game-state:make-movement-path path cost))
-                            (world:highlight-path-costs-space world world path)))))))))))))))
+    (with-accessors ((world world)
+                     (main-state main-state)) object
+      (with-accessors ((selected-pc selected-pc)
+                       (main-state main-state)) world
+        (alexandria:when-let* ((player-position       (entity:pos selected-pc))
+                               (cost-player-position  (entity:calculate-cost-position selected-pc))
+                               (cost-pointer-position (world:pick-pointer-position world world x y))
+                               (cost-pointer-pos-x    (elt cost-pointer-position 0))
+                               (cost-pointer-pos-y    (elt cost-pointer-position 1))
+                               (cost-pointer          (or (get-cost main-state
+                                                                    cost-pointer-pos-x
+                                                                    cost-pointer-pos-y))
+                                                      +invalicable-element-cost+)
+                               (ghost                 (entity:ghost selected-pc)))
+          (when (pointer-moved-enough-p old-tile-position cost-pointer-position)
+            (setf old-tile-position cost-pointer-position)
+            (when (not (path-same-ends-p main-state
+                                         cost-player-position
+                                         cost-pointer-position))
+              (let ((min-cost (map-utils:map-manhattam-distance-cost cost-pointer-position
+                                                                     cost-player-position))
+                    (player-movement-points (character:current-movement-points ghost)))
+                (when (and (>= player-movement-points +open-terrain-cost+)
+                           (<= min-cost player-movement-points)
+                           (<= cost-pointer player-movement-points))
+                  (let ((island (position-confined-in-labyrinth-p main-state
+                                                                  cost-pointer-position)))
+                    (when (or (null island)
+                              (find cost-player-position island :test #'ivec2=))
+                      (multiple-value-bind (path cost)
+                          (game-state:build-movement-path-pc main-state
+                                                             cost-player-position
+                                                             cost-pointer-position
+                                                             :heuristic-cost-function
+                                                             (heuristic-manhattam))
+                        (when (and path
+                                   (<= cost player-movement-points))
+                          (setf (game-state:selected-path main-state)
+                                (game-state:make-movement-path path cost))
+                          (world:highlight-path-costs-space world world path))))))))))))))
 
 (defmethod mousemotion-event ((object test-window) ts mask x y xr yr)
   (with-accessors ((world world)) object
